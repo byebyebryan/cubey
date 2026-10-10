@@ -88,6 +88,8 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_daylight.glsl"
@@ -95,6 +97,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_rapids.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_bank_edge.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_whitewater_motion.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
@@ -102,6 +105,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_sampling.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_bspline_surface.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_terrain_wetness.glsl"
 )
 
 target_include_directories(
@@ -157,6 +161,10 @@ if (BUILD_TESTING)
                 ../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl
                 ../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl
                 ../sim/fluid_25d/shaders/fluid_25d_water_rapids.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_bank_edge.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_bspline_surface.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_terrain_wetness.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_surface_sampling.glsl
                 ../sim/fluid_25d/shaders/fluid_25d_whitewater_motion.glsl
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
@@ -301,6 +309,17 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_stream_foam_v1.py)
         set_tests_properties(fluid_25d_stream_foam_review_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_bank_edge_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_bank_edge_v1.py)
+        set_tests_properties(fluid_25d_bank_edge_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_bank_edge_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_bank_edge_gpu.py"
+                --app "$<TARGET_FILE:cubey_project_fluid_25d>")
+        set_tests_properties(fluid_25d_bank_edge_gpu
+            PROPERTIES LABELS "gpu;fluid;presentation" TIMEOUT 300)
         add_test(NAME fluid_25d_whitewater_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_whitewater_gpu.py"

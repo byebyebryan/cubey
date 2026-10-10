@@ -48,6 +48,7 @@ struct Uniforms {
     math::Vec4 water_agitation;
     math::Vec4 water_rapids;
     math::Vec4 water_stream_foam;
+    math::Vec4 water_bank;
 };
 struct DaylightPush {
     math::Vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
@@ -55,7 +56,7 @@ struct DaylightPush {
 };
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 384U);
+static_assert(sizeof(Uniforms) == 400U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
@@ -64,6 +65,7 @@ static_assert(offsetof(Uniforms, water_shallow_optics) == 320U);
 static_assert(offsetof(Uniforms, water_agitation) == 336U);
 static_assert(offsetof(Uniforms, water_rapids) == 352U);
 static_assert(offsetof(Uniforms, water_stream_foam) == 368U);
+static_assert(offsetof(Uniforms, water_bank) == 384U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -443,6 +445,7 @@ void Fluid25DScenic::record(
     Fluid25DRainVisualFrame rain, std::span<const Fluid25DWhitewaterSeed> whitewater_seeds,
     std::uint64_t whitewater_generation) {
     auto& s = *state_;
+    const bool full_water_shading = water_view == 0U || water_view == 19U;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
         profiler->begin_frame(commands, slot.index);
@@ -566,7 +569,9 @@ void Fluid25DScenic::record(
          {material.water_rapid_strength, material.water_rapid_scale_m,
           material.water_cascade_strength, material.water_landing_strength},
          {material.water_stream_foam_strength, material.water_stream_foam_patchiness,
-          material.water_stream_foam_brightness, 0.0F}});
+          material.water_stream_foam_brightness, 0.0F},
+         {material.water_bank_irregularity_m, material.water_bank_motion_m,
+          material.water_bank_scale_m, material.water_bank_band_m}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -707,7 +712,7 @@ void Fluid25DScenic::record(
         });
     // Render-only whitewater. OFF adds no pipeline, pass, target or native write.
     if (material.water_whitewater_strength > 0.0F && !whitewater_seeds.empty() &&
-        terrain_view == 0U && water_view == 0U) {
+        terrain_view == 0U && full_water_shading) {
         s.whitewater_slots.resize(slot.count);
         auto& seeds_slot = s.whitewater_slots.at(slot.index);
         const auto seed_bytes = VkDeviceSize(whitewater_seeds.size_bytes());
@@ -820,7 +825,7 @@ void Fluid25DScenic::record(
     // depth is sampled, not attached: water does not write that depth, so the
     // streak shader also terminates at the displayed bed+h surface. OFF adds
     // no graph pass, dispatch, target or hydraulic write.
-    if (rain.streak_count != 0U && terrain_view == 0U && water_view == 0U) {
+    if (rain.streak_count != 0U && terrain_view == 0U && full_water_shading) {
         const auto rain_volume =
             fluid_25d_rain_visual_volume(s.terrain_low, s.terrain_high, s.domain_m, height_scale);
         const RainPush rain_push{push.view_projection,
@@ -874,7 +879,7 @@ void Fluid25DScenic::record(
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.display->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    if (markers && terrain_view == 0U && water_view == 0U)
+                    if (markers && terrain_view == 0U && full_water_shading)
                         markers->record_draw(
                             r.handle(), resources.current_depth_is_a(), push.view_projection,
                             target.extent, push.grid_cell.w, marker_fraction,

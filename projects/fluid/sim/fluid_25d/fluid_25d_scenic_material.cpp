@@ -79,6 +79,11 @@ constexpr std::array kProperties{
              0.0, 1.0},
     Property{"water_stream_foam_brightness", &Fluid25DScenicMaterial::water_stream_foam_brightness,
              0.0, 1.0},
+    Property{"water_bank_irregularity_m", &Fluid25DScenicMaterial::water_bank_irregularity_m, 0.0,
+             24.0},
+    Property{"water_bank_motion_m", &Fluid25DScenicMaterial::water_bank_motion_m, 0.0, 12.0},
+    Property{"water_bank_scale_m", &Fluid25DScenicMaterial::water_bank_scale_m, 8.0, 128.0},
+    Property{"water_bank_band_m", &Fluid25DScenicMaterial::water_bank_band_m, 1.0, 64.0},
     Property{"daylight_environment", &Fluid25DScenicMaterial::daylight_environment, 0.0, 1.0},
     Property{"daylight_exposure", &Fluid25DScenicMaterial::daylight_exposure, -6.0, 4.0},
     Property{"daylight_sun_scale", &Fluid25DScenicMaterial::daylight_sun_scale, 0.0, 2.0},
@@ -236,7 +241,7 @@ unsigned fluid_25d_scenic_water_view(std::string_view view) {
         "no-environment",   "no-direct",        "no-clarity",    "no-detail",
         "depth-bands",      "coverage",         "film-weight",   "roughness",
         "rapid-activity",   "rapid-foam",       "no-rapid-foam", "cascade-weight",
-        "landing-activity", "no-landing-foam"};
+        "landing-activity", "no-landing-foam",  "bank-edge",     "no-bank-edge"};
     const auto found = std::find(names.begin(), names.end(), view);
     if (found == names.end())
         invalid("unknown water view");

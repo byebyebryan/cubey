@@ -66,6 +66,11 @@ struct Fluid25DScenicMaterial {
     // opacity, velocity and lighting.
     float water_stream_foam_patchiness = 0.0F;
     float water_stream_foam_brightness = 1.0F;
+    // Opt-in display-edge insets, not terrain erosion or extra water. Metres.
+    float water_bank_irregularity_m = 0.0F;
+    float water_bank_motion_m = 0.0F;
+    float water_bank_scale_m = 48.0F;
+    float water_bank_band_m = 12.0F;
     float daylight_environment = 0.0F; // opt-in fixed shared Cubey sky, no weather system
     float daylight_exposure = 0.4F;    // EV bias; shared mode only, no automatic exposure
     float daylight_sun_scale = 1.0F;   // shared direct sun only; 1 matches sky source units

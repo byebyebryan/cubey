@@ -12,7 +12,7 @@ layout(location=1) out vec3 world_normal;
 layout(location=2) out vec2 world_xz;
 void main() {
     uvec2 grid = uvec2(params.grid_cell.xy);
-    // Terrain fragment retains palette.w (speed); spare presentation.x is VS-only.
+    // presentation.x also selects cubic wet-ground depth in the terrain fragment.
     uint subdivision = uint(params.presentation.x);
     vec2 p = fluid25d_bspline_vertex(uint(gl_VertexIndex),grid,subdivision);
     vec2 bh,dx,dy;

@@ -6,8 +6,13 @@
 #include "fluid_25d_water_film.glsl"
 #include "fluid_25d_water_rapids.glsl"
 #include "fluid_25d_whitewater_motion.glsl"
+#include "fluid_25d_bank_edge.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) writeonly buffer Result { vec4 values[]; } result;
+layout(set=0,binding=1,std430) readonly buffer Terrain { float values[]; } terrain;
+layout(set=0,binding=2,std430) readonly buffer Depth { float values[]; } depth;
+#include "fluid_25d_bspline_surface.glsl"
+#include "fluid_25d_terrain_wetness.glsl"
 const vec3 normals[16] = vec3[16](
     vec3(0,1,0),vec3(1,0,0),vec3(-1,0,0),vec3(0,0,1),vec3(0,0,-1),vec3(0,-1,0),
     vec3(0.3,1,0.6),vec3(-0.3,1,-0.6),
@@ -135,4 +140,87 @@ void main() {
         result.values[614u+i]=vec4(fluid25d_stream_foam_shape(vec2(0.8,0.8),
             vec2(weight,1.0-weight),1.0,vec3(0.005),envelope),0,0,0);
     }
+    for (uint i=0; i<16; ++i) {
+        float angle=float(i)*0.37;
+        vec2 dx=vec2(cos(angle),sin(angle))*float(i%4u+1u);
+        vec2 dy=vec2(-sin(angle),cos(angle))*0.7;
+        if (i==15u) dy=dx*2.0;
+        vec2 target=vec2(0.2,-0.3);
+        result.values[630u+i]=vec4(fluid25d_bank_gradient(dx,dy,dot(dx,target),dot(dy,target)),0,0);
+        float peak=float(i%4u)*0.08;
+        vec2 gradient=i<8u || i>=12u ? vec2(0.001,0) : vec2(0);
+        result.values[646u+i]=vec4(fluid25d_bank_support(peak,gradient,30),0,0,0);
+    }
+    for (uint i=0; i<64; ++i) {
+        uint mode=i%8u;
+        vec4 controls=mode==0u ? vec4(0,0,48,12) : vec4(3,1,48,12);
+        float local_depth=mode==2u ? 0.0 : mode==3u ? 0.03 : mode==4u ? 10.0 : 0.3;
+        vec2 gradient=mode==1u || mode==5u ? vec2(0) : mode==3u ? vec2(0.001,0) : vec2(0.2,0);
+        result.values[662u+i]=vec4(fluid25d_bank_inset(vec2(17.3,-29.2),local_depth,gradient,
+            vec2(2,0),float(i/8u)*0.5,mode==6u ? 128.0 : 0.5,30.0,0.002,controls),0,0);
+    }
+    for (uint i=0; i<16; ++i) {
+        vec2 p=vec2(float(i)*37.0-280.0,float(i)*53.0-430.0);
+        float a=fluid25d_bank_moving_noise(p,vec2(3,-2),0.0,48.0);
+        float b=fluid25d_bank_moving_noise(p,vec2(3,-2),1024.0,48.0);
+        float c=fluid25d_bank_moving_noise(p,vec2(3,-2),7.999,48.0);
+        float d=fluid25d_bank_moving_noise(p,vec2(3,-2),8.001,48.0);
+        result.values[726u+i]=vec4(a,b,c,d);
+        vec2 first=fluid25d_bank_inset(p,0.3,vec2(0.2,0),vec2(0),0,
+                                      0.5,30,0.002,vec4(3,1,48,12));
+        vec2 second=fluid25d_bank_inset(p,0.3,vec2(0.2,0),vec2(0),float(i),
+                                       0.5,30,0.002,vec4(3,1,48,12));
+        result.values[742u+i]=vec4(first,second);
+    }
+    for (uint i=0; i<32; ++i) {
+        vec2 p=vec2(float(i)*17.0-240.0,float(i)*23.0-370.0);
+        vec4 controls=vec4(24,12,128,64);
+        float h=i<16u ? 0.03 : 0.3;
+        vec2 gradient=i<8u ? vec2(0) : i<16u ? vec2(0.001,0) : vec2(0.2,0);
+        vec2 bold=fluid25d_bank_inset(p,h,gradient,vec2(2,0),0,0.5,30,0.002,controls);
+        vec2 later=fluid25d_bank_inset(p,h,gradient,vec2(2,0),4,0.5,30,0.002,controls);
+        result.values[758u+i]=vec4(bold,later);
+    }
+    for (uint i=0; i<128; ++i) {
+        // Pairs straddle native grid lines, refined half-cell lines, and mesh
+        // diagonals. Sample the production cubic helper, not a test surrogate.
+        uint pair=(i%64u)/2u;
+        vec2 p=vec2(6.0+float(pair%4u),9.0-float(pair%4u)+0.25);
+        if (pair>=8u && pair<16u) p=p.yx;
+        if (pair>=16u && pair<24u) p=vec2(7.5,7.75);
+        if (pair>=24u) p=vec2(7.75,7.75);
+        float epsilon=(i%2u==0u ? -1.0 : 1.0)*(i<64u ? 0.0001 : 0.00001);
+        p+=pair>=8u && pair<16u ? vec2(0,epsilon) : vec2(epsilon,0);
+        vec2 bh,bx,by;
+        fluid25d_bspline_sample(p,uvec2(16),bh,bx,by);
+        vec2 g=vec2(bx.y,by.y)/30.0;
+        vec4 controls=pair%2u==0u ? vec4(24,0,128,64) : vec4(24,12,128,64);
+        vec2 edge=fluid25d_bank_inset(p*30.0,bh.y,g,vec2(2,1),float(pair%4u),0.5,30,0.002,controls);
+        result.values[790u+i]=vec4(bh.y,g,edge.x);
+    }
+    for (uint i=0; i<64; ++i) {
+        uint pair=i%32u;
+        float offset=float(pair/4u)/8.0;
+        vec2 p=vec2(6.0+float(pair%4u)+offset,7.05-float(pair%4u)-offset);
+        if (pair>=28u) p=vec2(pair%2u==0u ? -0.5 : 15.5,
+                             pair<30u ? -0.5 : 15.5);
+        float h=fluid25d_terrain_wet_depth(p,uvec2(16),i>=32u);
+        float wet=fluid25d_terrain_wet_weight(h,0.002);
+        result.values[918u+i]=vec4(h,wet,mix(1.0,0.86,wet),mix(0.94,0.78,wet));
+    }
+    for (uint i=0; i<48; ++i) {
+        uint pair=(i%24u)/2u;
+        vec2 p=vec2(6.0+float(pair%4u),7.05-float(pair%4u));
+        if (pair>=4u && pair<8u) p=p.yx;
+        if (pair>=8u) p=pair<10u ? vec2(6.5,6.55) : vec2(6.525);
+        float epsilon=(i%2u==0u ? -1.0 : 1.0)*(i<24u ? 0.001 : 0.0001);
+        p+=pair>=4u && pair<8u ? vec2(0,epsilon) : vec2(epsilon,0);
+        float h=fluid25d_terrain_wet_depth(p,uvec2(16),true);
+        float wet=fluid25d_terrain_wet_weight(h,0.002);
+        result.values[982u+i]=vec4(h,wet,mix(1.0,0.86,wet),mix(0.94,0.78,wet));
+    }
+    const float wet_depths[16]=float[16](-0.01,0.0,0.001,0.002,0.003,0.006,0.012,
+        0.02,0.03,0.04,0.049,0.05,0.06,0.2,1.0,52.0);
+    for (uint i=0; i<16; ++i)
+        result.values[1030u+i]=vec4(fluid25d_terrain_wet_weight(wet_depths[i],0.002),0,0,0);
 }

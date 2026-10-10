@@ -63,19 +63,39 @@ void run() {
                                             .require_present = false,
                                             .require_dynamic_rendering = false});
     cubey::vulkan::SubmissionCoordinator submission(device);
-    constexpr auto bytes = sizeof(Vec4) * 630U;
+    constexpr auto bytes = sizeof(Vec4) * 1046U;
     cubey::vulkan::Buffer storage(
         device, cubey::vulkan::device_local_buffer_config(
                     bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
     cubey::vulkan::Buffer readback(device, cubey::vulkan::readback_buffer_config(bytes));
-    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 1> bindings{
+    std::array<float, 256> beds{}, depths{};
+    for (unsigned y = 0; y < 16; ++y)
+        for (unsigned x = 0; x < 16; ++x)
+            depths[y * 16U + x] = x + y >= 15U ? 0.4F : 0.02F;
+    const cubey::vulkan::BufferConfig field_config{.size = sizeof(depths),
+                                                   .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                                   .memory_properties =
+                                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT};
+    cubey::vulkan::Buffer bed_buffer(device, field_config), depth_buffer(device, field_config);
+    bed_buffer.upload(beds.data(), sizeof(beds));
+    depth_buffer.upload(depths.data(), sizeof(depths));
+    const std::array<cubey::vulkan::DescriptorSetBindingConfig, 3> bindings{
         {{.binding = 0,
+          .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+         {.binding = 1,
+          .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+          .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
+         {.binding = 2,
           .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
           .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT}}};
     cubey::vulkan::DescriptorSetBundle descriptors(device,
                                                    cubey::vulkan::DescriptorSetInfo(bindings));
     cubey::vulkan::DescriptorWriteBatch writes;
     writes.storage_buffer(descriptors.set(), 0, storage.handle(), storage.size());
+    writes.storage_buffer(descriptors.set(), 1, bed_buffer.handle(), bed_buffer.size());
+    writes.storage_buffer(descriptors.set(), 2, depth_buffer.handle(), depth_buffer.size());
     writes.update(device);
     const std::array layouts{descriptors.layout()};
     cubey::render::ComputePipelineResource pipeline(
@@ -103,7 +123,7 @@ void run() {
     const VkBufferCopy copy{.srcOffset = 0, .dstOffset = 0, .size = bytes};
     vkCmdCopyBuffer(commands.command_buffer(), storage.handle(), readback.handle(), 1, &copy);
     commands.submit_and_wait();
-    std::array<Vec4, 630> values{};
+    std::array<Vec4, 1046> values{};
     readback.download(values.data(), bytes);
     for (unsigned mode = 0; mode < 5; ++mode) {
         for (std::size_t i = 0; i < normals.size(); ++i) {
@@ -337,7 +357,181 @@ void run() {
             std::abs(values[614U + i].x - expected) > 0.00002F)
             throw std::runtime_error("stream foam envelope must gate each layer before crossfade");
     }
-    std::cout << "PASS: 406 retained + 112 whitewater + 80 foam-shape + 32 breakup GPU controls\n";
+    for (unsigned i = 0; i < 16U; ++i) {
+        const auto expected_gradient = i == 15U ? Vec2{0} : Vec2{0.2F, -0.3F};
+        if (glm::length(Vec2{values[630U + i]} - expected_gradient) > 0.00002F)
+            throw std::runtime_error(
+                "bank gradient must be projection independent and guard degeneracy");
+        const float peak = float(i % 4U) * 0.08F;
+        const float expected_support =
+            (i < 8U || i >= 12U) ? smooth(0.12F, 0.20F, peak + 0.03F) : 0.0F;
+        if (std::abs(values[646U + i].x - expected_support) > 0.00002F)
+            throw std::runtime_error("bank support must exclude all-wet, dry and thin sheets");
+        const auto phases = values[726U + i];
+        if (glm::any(glm::isnan(phases)) || glm::any(glm::isinf(phases)) ||
+            glm::any(glm::lessThan(phases, Vec4{0})) ||
+            glm::any(glm::greaterThan(phases, Vec4{1})) ||
+            std::abs(phases.x - phases.y) > 0.00003F || std::abs(phases.z - phases.w) > 0.002F)
+            throw std::runtime_error("bank motion wrap/reset must be bounded and continuous");
+        const auto calm = values[742U + i];
+        if (glm::length(Vec2{calm} - Vec2{calm.z, calm.w}) > 0.000001F)
+            throw std::runtime_error("stationary bank pattern cannot crawl with clock advancement");
+    }
+    bool moving_edge_changed = false;
+    for (unsigned i = 0; i < 64U; ++i) {
+        const auto edge = values[662U + i];
+        if (!std::isfinite(edge.x) || !std::isfinite(edge.y) || edge.x < 0 || edge.x > 4.5F ||
+            edge.y < 0 || edge.y > 1 || (i % 8U != 7U && edge.x != 0))
+            throw std::runtime_error(
+                "bank inset must be capped, localized and inactive for controls");
+        if (i % 8U == 7U && i > 7U)
+            moving_edge_changed |= std::abs(edge.x - values[669U].x) > 0.00001F;
+    }
+    if (!moving_edge_changed)
+        throw std::runtime_error("moving shoreline detail must actually move");
+    bool bold_edge_changed = false, bold_edge_pronounced = false;
+    for (unsigned i = 0; i < 32U; ++i) {
+        const auto edge = values[758U + i];
+        if (glm::any(glm::isnan(edge)) || glm::any(glm::isinf(edge)) || edge.x < 0 ||
+            edge.x > 13.50001F || edge.z < 0 || edge.z > 13.50001F || edge.y < 0 || edge.y > 1 ||
+            edge.w < 0 || edge.w > 1 || (i < 16U && glm::length(edge) > 0.0F))
+            throw std::runtime_error(
+                "pronounced banks remain bounded and exclude uniform/depth-film controls: " +
+                std::to_string(i) + " inset=" + std::to_string(edge.x) + "/" +
+                std::to_string(edge.z));
+        if (i >= 16U) {
+            bold_edge_changed |= std::abs(edge.x - edge.z) > 0.1F;
+            bold_edge_pronounced |= edge.x > 4.5F;
+        }
+    }
+    if (!bold_edge_changed || !bold_edge_pronounced)
+        throw std::runtime_error("pronounced bank probe must exceed the old cap and visibly vary");
+    const auto basis = [](double t) {
+        const double t2 = t * t, t3 = t2 * t;
+        return std::array{std::pow(1.0 - t, 3) / 6.0, (3.0 * t3 - 6.0 * t2 + 4.0) / 6.0,
+                          (-3.0 * t3 + 3.0 * t2 + 3.0 * t + 1.0) / 6.0, t3 / 6.0};
+    };
+    const auto derivative = [](double t) {
+        return std::array{-0.5 * (1.0 - t) * (1.0 - t), 1.5 * t * t - 2.0 * t,
+                          -1.5 * t * t + t + 0.5, 0.5 * t * t};
+    };
+    bool active_seam = false;
+    for (unsigned i = 0; i < 128U; ++i) {
+        const unsigned pair = (i % 64U) / 2U;
+        Vec2 p{6.0F + float(pair % 4U), 9.0F - float(pair % 4U) + 0.25F};
+        if (pair >= 8U && pair < 16U)
+            p = {p.y, p.x};
+        if (pair >= 16U && pair < 24U)
+            p = {7.5F, 7.75F};
+        if (pair >= 24U)
+            p = {7.75F, 7.75F};
+        (pair >= 8U && pair < 16U ? p.y : p.x) +=
+            (i % 2U == 0U ? -1.0F : 1.0F) * (i < 64U ? 0.0001F : 0.00001F);
+        const auto wx = basis(p.x - std::floor(p.x)), wy = basis(p.y - std::floor(p.y));
+        const auto dx = derivative(p.x - std::floor(p.x)), dy = derivative(p.y - std::floor(p.y));
+        Vec3 target{0};
+        for (std::size_t y = 0; y < 4; ++y)
+            for (std::size_t x = 0; x < 4; ++x) {
+                const int cx = std::clamp(int(std::floor(p.x)) - 1 + int(x), 0, 15);
+                const int cy = std::clamp(int(std::floor(p.y)) - 1 + int(y), 0, 15);
+                const double value = depths[std::size_t(cy * 16 + cx)];
+                target += Vec3{float(value * wx[x] * wy[y]), float(value * dx[x] * wy[y] / 30.0),
+                               float(value * wx[x] * dy[y] / 30.0)};
+            }
+        const auto actual = values[790U + i];
+        if (glm::any(glm::isnan(actual)) || glm::any(glm::isinf(actual)) ||
+            glm::length(Vec3{actual} - target) > 0.000002F || actual.w < 0 || actual.w > 13.50001F)
+            throw std::runtime_error("B-spline bank depth/analytic gradient/cap control failed");
+        if (i % 2U == 1U) {
+            const float delta = glm::length(actual - values[789U + i]);
+            if (delta > (i < 64U ? 0.03F : 0.003F))
+                throw std::runtime_error(
+                    "bank inset must be continuous across native/refined/diagonal seams: pair=" +
+                    std::to_string(pair) + " inset=" + std::to_string(values[789U + i].w) + "/" +
+                    std::to_string(actual.w) +
+                    " delta=" + std::to_string(glm::length(actual - values[789U + i])));
+            if (i >= 64U &&
+                delta >
+                    0.2F * glm::length(values[790U + i - 64U] - values[789U + i - 64U]) + 0.0001F)
+                throw std::runtime_error(
+                    "bank seam delta must shrink with sample separation, not remain a jump");
+            active_seam |= actual.w > 1.0F;
+        }
+    }
+    if (!active_seam)
+        throw std::runtime_error("seam controls must exercise a positive strong inset");
+    const auto wet_depth = [&](Vec2 position, bool cubic) {
+        const auto p = glm::clamp(position, Vec2{0}, Vec2{15});
+        const auto cell = [&](int x, int y) {
+            return double(depths[std::size_t(std::clamp(y, 0, 15) * 16 + std::clamp(x, 0, 15))]);
+        };
+        const int x = int(std::floor(p.x)), y = int(std::floor(p.y));
+        const double fx = double(p.x) - x, fy = double(p.y) - y;
+        if (!cubic)
+            return float(
+                fx >= fy
+                    ? cell(x, y) * (1 - fx) + cell(x + 1, y) * (fx - fy) + cell(x + 1, y + 1) * fy
+                    : cell(x, y) * (1 - fy) + cell(x, y + 1) * (fy - fx) + cell(x + 1, y + 1) * fx);
+        const auto wx = basis(fx), wy = basis(fy);
+        double h = 0;
+        for (int row = 0; row < 4; ++row)
+            for (int column = 0; column < 4; ++column)
+                h += cell(x - 1 + column, y - 1 + row) * wx[std::size_t(column)] *
+                     wy[std::size_t(row)];
+        return float(h);
+    };
+    const auto wet_result = [&](float h) {
+        const float wet = smooth(0.002F, 0.012F, h) * (1 - smooth(0.02F, 0.05F, h));
+        return Vec4{h, wet, 1 + (0.86F - 1) * wet, 0.94F + (0.78F - 0.94F) * wet};
+    };
+    bool different_sampling = false, active_wet_seam = false;
+    for (unsigned i = 0; i < 64U; ++i) {
+        const unsigned pair = i % 32U;
+        const float offset = float(pair / 4U) / 8.0F;
+        Vec2 p{6.0F + float(pair % 4U) + offset, 7.05F - float(pair % 4U) - offset};
+        if (pair >= 28U)
+            p = {pair % 2U == 0U ? -0.5F : 15.5F, pair < 30U ? -0.5F : 15.5F};
+        const auto actual = values[918U + i];
+        const auto target = wet_result(wet_depth(p, i >= 32U));
+        if (glm::any(glm::isnan(actual)) || glm::any(glm::isinf(actual)) ||
+            glm::length(actual - target) > 0.00002F || actual.y < 0 || actual.y > 1)
+            throw std::runtime_error("terrain wetness sampling/weight/bounds control failed: " +
+                                     std::to_string(i));
+        if (i >= 32U)
+            different_sampling |= std::abs(actual.y - values[886U + i].y) > 0.05F;
+    }
+    for (unsigned i = 0; i < 48U; ++i) {
+        const unsigned pair = (i % 24U) / 2U;
+        Vec2 p{6.0F + float(pair % 4U), 7.05F - float(pair % 4U)};
+        if (pair >= 4U && pair < 8U)
+            p = {p.y, p.x};
+        if (pair >= 8U)
+            p = pair < 10U ? Vec2{6.5F, 6.55F} : Vec2{6.525F};
+        (pair >= 4U && pair < 8U ? p.y : p.x) +=
+            (i % 2U == 0U ? -1.0F : 1.0F) * (i < 24U ? 0.001F : 0.0001F);
+        const auto actual = values[982U + i];
+        if (glm::any(glm::isnan(actual)) || glm::any(glm::isinf(actual)) ||
+            glm::length(actual - wet_result(wet_depth(p, true))) > 0.00002F)
+            throw std::runtime_error("terrain wetness seam CPU/GPU parity failed");
+        active_wet_seam |= actual.y > 0.05F && actual.y < 0.95F;
+        if (i % 2U == 1U) {
+            const float delta = glm::length(actual - values[981U + i]);
+            if (delta > (i < 24U ? 0.015F : 0.0015F) ||
+                (i >= 24U &&
+                 delta > 0.2F * glm::length(values[958U + i] - values[957U + i]) + 0.00002F))
+                throw std::runtime_error("terrain wetness retains a grid/mesh-diagonal seam jump");
+        }
+    }
+    const std::array wet_depths{-0.01F, 0.0F,  0.001F, 0.002F, 0.003F, 0.006F, 0.012F, 0.02F,
+                                0.03F,  0.04F, 0.049F, 0.05F,  0.06F,  0.2F,   1.0F,   52.0F};
+    for (unsigned i = 0; i < wet_depths.size(); ++i)
+        if (!std::isfinite(values[1030U + i].x) ||
+            std::abs(values[1030U + i].x - wet_result(wet_depths[i]).y) > 0.00001F)
+            throw std::runtime_error("terrain current-film thresholds changed");
+    if (!different_sampling || !active_wet_seam)
+        throw std::runtime_error("terrain wetness controls must exercise the reconstruction fix");
+    std::cout << "PASS: 918 retained + 128 terrain-wetness GPU controls (selection, thresholds, "
+                 "clamped edges and continuous colour/roughness seams)\n";
 }
 } // namespace
 

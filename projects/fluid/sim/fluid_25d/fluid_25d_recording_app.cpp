@@ -1391,7 +1391,8 @@ class RecordingApp {
     Fluid25DRainVisualFrame rain_visual_frame() const {
         const bool shaded = scenic_material_active() &&
                             config_.native_scenic_terrain_view == "shaded" &&
-                            config_.native_scenic_water_view == "shaded";
+                            (config_.native_scenic_water_view == "shaded" ||
+                             config_.native_scenic_water_view == "no-bank-edge");
         const auto applied_rate = applied_rain_mm_per_hour();
         return {fluid_25d_rain_visual_count(config_.native_rain_visuals && shaded, applied_rate,
                                             config_.native_rain_strength),
@@ -1543,7 +1544,7 @@ class RecordingApp {
                 "no-environment",   "no-direct",        "no-clarity",    "no-detail",
                 "depth-bands",      "coverage",         "film-weight",   "roughness",
                 "rapid-activity",   "rapid-foam",       "no-rapid-foam", "cascade-weight",
-                "landing-activity", "no-landing-foam"};
+                "landing-activity", "no-landing-foam",  "bank-edge",     "no-bank-edge"};
             int water_view =
                 static_cast<int>(fluid_25d_scenic_water_view(config_.native_scenic_water_view));
             if (ImGui::Combo("Water component", &water_view, water_views.data(),
@@ -1563,6 +1564,32 @@ class RecordingApp {
             edited |=
                 ImGui::SliderFloat("Shallow bed tint", &scenic_material_.water_clarity, 0.0F, 1.0F);
             if (ImGui::TreeNode("Water appearance and daylight")) {
+                ImGui::TextDisabled("Optional bank-edge treatment (off by default)");
+                edited |=
+                    ImGui::SliderFloat("Bank irregularity (m)",
+                                       &scenic_material_.water_bank_irregularity_m, 0.0F, 24.0F);
+                edited |= ImGui::SliderFloat("Bank water motion (m)",
+                                             &scenic_material_.water_bank_motion_m, 0.0F, 12.0F);
+                if (scenic_material_.water_bank_irregularity_m > 0.0F ||
+                    scenic_material_.water_bank_motion_m > 0.0F) {
+                    edited |= ImGui::SliderFloat(
+                        "Bank noise scale (m)", &scenic_material_.water_bank_scale_m, 8.0F, 128.0F);
+                    edited |= ImGui::SliderFloat("Bank edge band (m)",
+                                                 &scenic_material_.water_bank_band_m, 1.0F, 64.0F);
+                    if (ImGui::SmallButton("Disable bank-edge treatment")) {
+                        scenic_material_.water_bank_irregularity_m = 0.0F;
+                        scenic_material_.water_bank_motion_m = 0.0F;
+                        edited = true;
+                    }
+                    ImGui::TextWrapped(
+                        "Experimental water-edge trimming only; terrain stays fixed. "
+                        "B-spline mode follows reconstructed depth and slope, not cell edges. "
+                        "Motion follows filtered flow and pauses with playback. "
+                        "Insets are capped relative to the native cell and local depth. "
+                        "Above 8/3 m, caps relax for an exaggerated comparison; narrow "
+                        "streams can visibly retreat or break. "
+                        "No new wet area; raw/component views bypass it.");
+                }
                 edited |= ImGui::SliderFloat("Flow surface agitation",
                                              &scenic_material_.water_flow_agitation, 0.0F, 1.0F);
                 edited |= ImGui::SliderFloat("Rain surface agitation",
@@ -1704,7 +1731,8 @@ class RecordingApp {
             ImGui::TextWrapped(
                 "Thin water uses wet-ground shading. Shallow bed tint is an artistic "
                 "color cue, not transparency or a depth reading. Material edits "
-                "do not move banks or modify water fields. JSON overrides load "
+                "do not move terrain or modify water fields. Bank controls trim only "
+                "the displayed water edge. JSON overrides load "
                 "once; effective settings are logged.");
         }
         const auto selected = render_.native_display_coverage  ? Fluid25DBankView::MarchingSquares

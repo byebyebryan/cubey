@@ -5,7 +5,9 @@
 #include "fluid_25d_scenic.glsl"
 #include "fluid_25d_surface_sampling.glsl"
 #include "fluid_25d_surface_gradient.glsl"
+layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
+#include "fluid_25d_terrain_wetness.glsl"
 layout(push_constant) uniform Params {
     mat4 view_projection; vec4 grid_cell; vec4 camera_wet; vec4 presentation; vec4 terrain_palette;
 } params;
@@ -112,13 +114,10 @@ void main() {
             normal_strength*fluid25d_detail_fade(footprint)*surface_detail_scale);
     }
     if (terrain_view == 10) n = base_normal;
-    vec2 f;
     vec2 coordinate = world_xz/params.grid_cell.z+0.5*(params.grid_cell.xy-1.0);
-    uvec4 i = fluid25d_quad_indices(coordinate,uvec2(params.grid_cell.xy),f);
-    float h = max(0.0,fluid25d_triangle_sample(vec4(depth.values[i.x],depth.values[i.y],
-                                                    depth.values[i.z],depth.values[i.w]),f));
-    // Current thin film only: no invented persistent wetness history or widening banks.
-    float wet = smoothstep(params.camera_wet.w,0.012,h)*(1.0-smoothstep(0.02,0.05,h));
+    float h = fluid25d_terrain_wet_depth(coordinate,uvec2(params.grid_cell.xy),
+                                       params.presentation.x>0.0);
+    float wet = fluid25d_terrain_wet_weight(h,params.camera_wet.w);
     base *= mix(1.0,scenic.ground_material.y,wet);
     if (terrain_view == 9) base = vec3(0.12);
     float roughness = mix(clamp(0.78+0.10*(detail.a-0.5),0.65,0.90),scenic.ground_material.x,wet);

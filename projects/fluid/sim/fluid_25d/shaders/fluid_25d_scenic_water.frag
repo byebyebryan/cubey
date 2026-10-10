@@ -3,6 +3,7 @@
 #define FLUID25D_SCENIC_WATER
 #include "cubey/pbr.glsl"
 #include "cubey/procedural/noise.glsl"
+#include "fluid_25d_bank_edge.glsl"
 #include "fluid_25d_scenic.glsl"
 #include "fluid_25d_surface_sampling.glsl"
 #include "fluid_25d_water_film.glsl"
@@ -12,6 +13,7 @@
 #include "fluid_25d_water_rapids.glsl"
 layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
+#include "fluid_25d_bspline_surface.glsl"
 layout(set=1,binding=9,std430) readonly buffer VisualVelocity { vec4 values[]; } visual_velocity;
 layout(set=0,binding=8,std430) readonly buffer DisplayCoverage { vec4 grid; float values[]; } display_coverage;
 layout(push_constant) uniform Params {
@@ -147,7 +149,8 @@ void main() {
     if ((options&8u)!=0u) h = fluid25d_supported_depth(depths,f,params.camera_wet.w);
     if ((options&16u)!=0u && fluid25d_bilinear_sample(vec4(greaterThan(depths,vec4(params.camera_wet.w))),f)<=0.5) h=0.0;
     float edge_width = max(fwidth(h),0.000001);
-    uint water_view = uint(scenic.water_view.x);
+    uint requested_water_view = uint(scenic.water_view.x);
+    uint water_view = requested_water_view==19u ? 0u : requested_water_view;
     float film_weight = fluid25d_film_weight(h,scenic.water_film.x,scenic.water_film.y);
     vec3 n = normalize(world_normal);
     if (scenic.water_view.y>0.0) {
@@ -388,8 +391,41 @@ void main() {
     if (water_view==13u) color=vec3(rapid_foam);
     if (water_view==15u) color=vec3(cascade_weight);
     if (water_view==16u) color=vec3(landing);
-    float coverage = smoothstep(0.0,edge_width,h-params.camera_wet.w);
-    if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,h);
+    float coverage_depth=h;
+    if ((requested_water_view==0u || requested_water_view==18u) &&
+        (scenic.water_bank.x>0.0 || scenic.water_bank.y>0.0)) {
+        // Compute derivatives before any per-fragment early exits in the helper.
+        vec2 dx=dFdx(world_position.xz),dy=dFdy(world_position.xz);
+        vec2 gradient=fluid25d_bank_gradient(dx,dy,dFdx(h),dFdy(h));
+        float bank_depth=h;
+        if (((options>>5u)&7u)>0u) {
+            // Use the same cubic reconstruction as the displayed B-spline
+            // surface, including its analytic continuous depth gradient.
+            // Native-quad thresholds and triangle derivatives must not define
+            // the irregular shoreline or its local strength limits.
+            vec2 bh,bx,by;
+            fluid25d_bspline_sample(field_coordinate,uvec2(params.grid_cell.xy),bh,bx,by);
+            bank_depth=bh.y;
+            gradient=vec2(bx.y,by.y)/params.grid_cell.z;
+        }
+        vec2 bank=fluid25d_bank_inset(world_position.xz,bank_depth,gradient,visual_u,
+            scenic.water_agitation.w,max(length(dx),length(dy)),params.grid_cell.z,
+            params.camera_wet.w,scenic.water_bank);
+        if (requested_water_view==0u) {
+            // Start the trim from reconstructed depth, not the native/refined
+            // triangle ramp. Fade the analytic correction with the same smooth
+            // edge band and never reveal water outside baseline coverage.
+            coverage_depth=min(h,mix(h,bank_depth,bank.y)-bank.x*length(gradient));
+            edge_width=max(fwidth(coverage_depth),0.000001);
+        } else color=vec3(bank.y);
+    }
+    if (requested_water_view==18u && scenic.water_bank.x<=0.0 && scenic.water_bank.y<=0.0)
+        color=vec3(0);
+    float coverage = smoothstep(0.0,edge_width,coverage_depth-params.camera_wet.w);
+    // Rain films make the displayed bank an opacity transition, not a true
+    // wet/dry boundary. Trim that transition too; physical h, optics and raw
+    // component views retain their original values. Zero strengths are exact.
+    if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,coverage_depth);
     // Only presentation and its coverage view: raw field/component diagnostics
     // must not conceal water just because an artist chooses a depth fade.
     if ((water_view==0u || water_view==9u || water_view==14u || water_view==17u) && scenic.water_shallow_optics.z>0.0)

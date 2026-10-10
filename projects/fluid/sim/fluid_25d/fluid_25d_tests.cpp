@@ -6997,6 +6997,52 @@ void test_whitewater_sources_and_clock() {
                        "whitewater tuning must be finite/bounded with an integer budget");
 }
 
+void test_bank_edge_material_contract() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    for (const auto* name : {"v1", "refined", "terrain", "macro"}) {
+        const auto preset = fluid_25d_scenic_material(name);
+        require(preset.water_bank_irregularity_m == 0 && preset.water_bank_motion_m == 0 &&
+                    preset.water_bank_scale_m == 48 && preset.water_bank_band_m == 12,
+                "water-edge trimming is opt-in in every material");
+    }
+    const auto preset = fluid_25d_scenic_material("macro");
+    const auto tuned = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_irregularity_m":3,"water_bank_motion_m":1,"water_bank_scale_m":40,"water_bank_band_m":10})",
+        preset);
+    require(tuned.water_bank_irregularity_m == 3 && tuned.water_bank_motion_m == 1 &&
+                tuned.water_bank_scale_m == 40 && tuned.water_bank_band_m == 10 &&
+                tuned.water_stream_foam_strength == preset.water_stream_foam_strength &&
+                tuned.water_whitewater_speed == preset.water_whitewater_speed &&
+                tuned.water_extinction_scale == preset.water_extinction_scale &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(tuned), preset)) ==
+                    fluid_25d_scenic_material_json(tuned),
+            "bank edge controls roundtrip without changing approved optics or foam");
+    const auto off = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_irregularity_m":0,"water_bank_motion_m":0})",
+        tuned);
+    require(off.water_bank_irregularity_m == 0 && off.water_bank_motion_m == 0,
+            "both bank effects can be disabled independently");
+    require(fluid_25d_scenic_water_view("bank-edge") == 18U &&
+                fluid_25d_scenic_water_view("no-bank-edge") == 19U,
+            "bank edge diagnostic and full-shading ablation append stable view IDs");
+    for (const auto* text :
+         {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_irregularity_m":-0.1})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_irregularity_m":24.1})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_motion_m":12.1})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_motion_m":true})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_scale_m":0})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_band_m":64.1})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, preset)); },
+                       "bank edge control bounds and types reject");
+    const auto bold = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_bank_irregularity_m":24,"water_bank_motion_m":12,"water_bank_band_m":64})",
+        preset);
+    require(bold.water_bank_irregularity_m == 24 && bold.water_bank_motion_m == 12 &&
+                bold.water_bank_band_m == 64,
+            "pronounced bank requests are accepted without changing preset defaults");
+}
+
 void test_scenic_material_contract() {
     using namespace cubey::projects::fluid::fluid_25d;
     const auto v1 = fluid_25d_scenic_material("v1");
@@ -7447,6 +7493,7 @@ int main() {
         test_recording_cli_is_separate_from_physics();
         test_rain_visual_cli();
         test_whitewater_sources_and_clock();
+        test_bank_edge_material_contract();
         test_scenic_material_contract();
         test_bank_comparison_controls();
         test_catchment_far_plane_geometry();
