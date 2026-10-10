@@ -32,6 +32,19 @@ class Commands(unittest.TestCase):
         self.assertEqual(terrain.demo.ref.APP, original)
         self.assertEqual(terrain.viewer_command(Path("/case"), Path("/session"), "test")[2], str(original))
 
+    def test_lower_display_density_keeps_bspline_and_simulation_untouched(self):
+        command = terrain.viewer_command(Path("/case"), Path("/session"), "test", surface_subdivision=1)
+        self.assertNotIn("--fluid25d-native-bank-view", command)
+        self.assertEqual(command[command.index("--fluid25d-native-water-sampling") + 1], "bspline")
+        self.assertEqual(command[command.index("--fluid25d-native-surface-subdivision") + 1], "1")
+        self.assertNotIn("--fluid25d-grid", command)
+        with self.assertRaises(ValueError):
+            terrain.viewer_command(Path("/case"), Path("/session"), "test", surface_subdivision=4)
+
+    def test_camera_uses_existing_recorded_view_controls(self):
+        command = terrain.viewer_command(Path("/case"), Path("/session"), "test", camera="collection")
+        self.assertEqual(command[command.index("--fluid25d-recording-camera") + 1], "collection")
+
 
 if __name__ == "__main__":
     unittest.main()

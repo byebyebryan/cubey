@@ -54,14 +54,23 @@ def worker_command(case, session, speed=60):
 
 
 def viewer_command(case, source, title, width=1920, height=1080, profile=None, live=True, start=0,
-                   surface="legacy", camera="overview", app=None):
+                   surface="legacy", camera="overview", app=None, surface_subdivision=2):
+    if surface_subdivision not in (1, 2):
+        raise ValueError("study display subdivision must be 1 or 2")
     command = ["rtk", "proxy", str(app or demo.ref.APP), "--width", str(width), "--height", str(height),
                "--frames", "0", "--title", title, "--fluid25d-recording-camera", camera,
                "--fluid25d-native-presentation", "scenic", "--fluid25d-scenic-material", "macro",
-               "--fluid25d-native-surface-highlights", "off", "--fluid25d-native-bank-view", "bspline-2x",
+               "--fluid25d-native-surface-highlights", "off",
                "--fluid25d-motion-markers", "--fluid25d-rain-visuals",
                "--fluid25d-scenic-surface-grid", str(case / "surface-grid.json"),
                "--fluid25d-scenic-surface-mode", surface]
+    if surface_subdivision == 2:
+        command += ["--fluid25d-native-bank-view", "bspline-2x"]
+    else:
+        # Keep B-spline reconstruction; change only its existing display tessellation.
+        # An explicit bank-view preset would override the advanced subdivision.
+        command += ["--fluid25d-native-water-sampling", "bspline",
+                    "--fluid25d-native-surface-subdivision", "1"]
     if live:
         command += ["--fluid25d-backend", "external", "--fluid25d-external-session", str(source)]
     else:
@@ -81,10 +90,13 @@ def main(argv=None):
     p.add_argument("--configuration", choices=CONFIGS, default="patch-1024-16m")
     p.add_argument("--recording", type=Path, help="explicit binary-capture replay; never substituted for live")
     p.add_argument("--surface", choices=("legacy", "correlated"), default="legacy")
+    p.add_argument("--camera", choices=("overview", "runoff", "collection"), default="overview")
     p.add_argument("--width", type=int, default=1920)
     p.add_argument("--height", type=int, default=1080)
     p.add_argument("--app", type=Path, default=demo.ref.APP,
                    help="explicit renderer artifact (for example Release); no build or fallback")
+    p.add_argument("--surface-subdivision", type=int, choices=(1, 2), default=2,
+                   help="existing B-spline display density; opt-in 1x does not change simulation resolution")
     p.add_argument("--print-command", action="store_true")
     a = p.parse_args(argv)
     if not 320 <= a.width <= 3840 or not 240 <= a.height <= 2160:
@@ -92,6 +104,7 @@ def main(argv=None):
     a.app = a.app.resolve(strict=True)
     if not a.app.is_file():
         p.error("renderer artifact must be an existing file")
+    app_sha256 = demo.ref.sha256_file(a.app)
     case = (a.study / "cases" / f"{a.site}-{a.configuration}").resolve(strict=True)
     identity = case_identity(case)
     if a.mode == "live":
@@ -107,7 +120,8 @@ def main(argv=None):
     source = session if a.mode == "live" else a.recording.resolve()
     saved = json.loads(source.read_bytes())["protocol"]["duration_s"] if a.mode == "replay" else 0
     commands = {"viewer": viewer_command(case, source, title, a.width, a.height, start=saved,
-                                         live=a.mode == "live", surface=a.surface, app=a.app)}
+                                         live=a.mode == "live", surface=a.surface, app=a.app,
+                                         surface_subdivision=a.surface_subdivision, camera=a.camera)}
     if a.mode == "live":
         commands["worker"] = worker_command(case, session)
     print(json.dumps(identity, indent=2))
@@ -133,10 +147,12 @@ def main(argv=None):
                 owned.append(worker)
                 demo.wait_ready(worker, source, 120, lambda: interrupted[0])
             viewer = subprocess.Popen(viewer_command(case, source, title, a.width, a.height,
-                live=a.mode == "live", start=saved, surface=a.surface, app=a.app), stdout=vlog,
+                live=a.mode == "live", start=saved, surface=a.surface, app=a.app,
+                surface_subdivision=a.surface_subdivision, camera=a.camera), stdout=vlog,
                 stderr=subprocess.STDOUT, start_new_session=True)
             owned.append(viewer)
-            print("Live starts dry/paused; Space resumes. Viewer close detaches; Ctrl-C stops owned worker.", flush=True)
+            print("Live starts dry/paused; Space resumes. Viewer close detaches; Ctrl-C stops owned worker."
+                  if a.mode == "live" else "Recorded view holds the final captured state; no solver is running.", flush=True)
             while not interrupted[0] and ((worker is not None and worker.poll() is None) or
                    (worker is None and viewer.poll() is None)):
                 if viewer.poll() is not None and viewer.returncode:
@@ -152,7 +168,8 @@ def main(argv=None):
         demo.ref.write_json_exclusive(out / "launch.json", {"identity": identity, "cleanup": cleanup,
             "mode": a.mode, "site": a.site, "configuration": a.configuration,
             "acceptance": "human review not automated", "surface": a.surface,
-            "app": str(a.app), "app_sha256": demo.ref.sha256_file(a.app)})
+            "app": str(a.app), "app_sha256": app_sha256,
+            "surface_subdivision": a.surface_subdivision, "camera": a.camera})
     return 0
 
 

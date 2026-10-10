@@ -224,7 +224,8 @@ class Display:
 
 
 def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
-              viewport=(1920, 1080), recording=None, capture=False, rain=None, control_probe=False):
+              viewport=(1920, 1080), recording=None, capture=False, rain=None, control_probe=False,
+              surface_subdivision=2, camera="overview"):
     if out.exists():
         raise ValueError("trial output must be fresh")
     out.mkdir()
@@ -232,7 +233,8 @@ def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
     owned, logs, cleanup, controls, samples = [], [], [], [], []
     result = {"case": case.name, "mode": mode, "identity": identity,
               "viewport_requested": viewport, "requested_speed": 60,
-              "horizon_s": horizon, "wall_limit_s": wall or cap, "status": "failed", "errors": []}
+              "horizon_s": horizon, "wall_limit_s": wall or cap, "status": "failed", "errors": [],
+              "surface_subdivision": surface_subdivision, "camera": camera}
     worker, viewer, initial, final = None, None, None, None
     session = out / "session"
     prefix = out / "viewer-profile"
@@ -254,7 +256,8 @@ def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
             title = f"Cubey live performance | {case.name} | {mode}"
             start = json.loads(recording.read_bytes())["protocol"]["duration_s"] if recording else 0
             argv = terrain.viewer_command(case, session if mode == "live" else recording,
-                title, *viewport, profile=prefix, live=mode == "live", start=start)
+                title, *viewport, profile=prefix, live=mode == "live", start=start,
+                surface_subdivision=surface_subdivision, camera=camera)
             result["viewer_command"] = argv
             vlog = (out / "viewer.log").open("wb")
             logs.append(vlog)
@@ -296,7 +299,7 @@ def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
                 raise RuntimeError("worker exited during measurement")
             if viewer and viewer.poll() is not None:
                 raise RuntimeError("viewer exited during measurement")
-            if capture and viewer and physical >= next_capture:
+            if capture and viewer and mode == "live" and physical >= next_capture:
                 name = f"live-{int(physical)}s.png"
                 subprocess.run(["rtk", "proxy", "import", "-window", hex(display.keys.window_id), str(out / name)],
                                check=True, timeout=15, capture_output=True)
@@ -318,19 +321,23 @@ def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
         if capture and viewer:
             subprocess.run(["rtk", "proxy", "import", "-window", hex(display.keys.window_id), str(out / "final.png")],
                            check=True, timeout=15, capture_output=True)
-            result["captures"].append({"path": "final.png", "observed_physical_s": physical, "unix_s": time.time(),
-                                        "kind": "actual live Vulkan GUI, worker running"})
+            kind = ("actual live Vulkan GUI, worker running" if mode == "live" else
+                    "actual Vulkan GUI held on an exact recorded state; not live water simulation")
+            result["captures"].append({"path": "final.png", "observed_physical_s": physical if mode == "live" else start,
+                                        "unix_s": time.time(), "kind": kind})
+            video_name = "live.mp4" if mode == "live" else "held.mp4"
             video = subprocess.Popen(["rtk", "proxy", "ffmpeg", "-nostdin", "-y", "-loglevel", "error",
                 "-f", "x11grab", "-framerate", "24", "-video_size", f"{viewport[0]}x{viewport[1]}",
                 "-i", os.environ["DISPLAY"] + ".0", "-t", "8", "-c:v", "libx264", "-preset", "veryfast",
-                "-crf", "21", "-pix_fmt", "yuv420p", str(out / "live.mp4")], stdout=subprocess.DEVNULL,
+                "-crf", "21", "-pix_fmt", "yuv420p", str(out / video_name)], stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE, start_new_session=True)
             try:
                 _, err = video.communicate(timeout=30)
                 if video.returncode:
                     result["errors"].append("video: " + err.decode()[-500:])
                 else:
-                    result["video"] = "live.mp4"
+                    result["video"] = video_name
+                    result["video_kind"] = kind
             finally:
                 if video.poll() is None:
                     demo.stop_owned(video)
@@ -404,6 +411,8 @@ def main():
     p.add_argument("--rain", type=float, choices=(512, 1024))
     p.add_argument("--app", type=Path, default=demo.ref.APP, help="explicit renderer artifact; no auto build/fallback")
     p.add_argument("--control-probe", action="store_true", help="eight warm same-pace commands after primary window")
+    p.add_argument("--surface-subdivision", type=int, choices=(1, 2), default=2)
+    p.add_argument("--camera", choices=("overview", "runoff", "collection"), default="overview")
     a = p.parse_args()
     demo.ref.APP = a.app.resolve(strict=True)
     demo.ref.SHADER_ROOT = demo.ref.APP.parent / "shaders"
@@ -446,7 +455,8 @@ def main():
                     label = f"{name}-{mode}-{repeat}"
                     result = run_trial(case, out / label, mode, display, horizon=a.horizon,
                         cap=a.cap, wall=a.wall, viewport=(a.width, a.height), recording=a.recording,
-                        capture=a.capture and mode == "live", rain=a.rain, control_probe=a.control_probe)
+                        capture=a.capture and mode != "worker-only", rain=a.rain, control_probe=a.control_probe,
+                        surface_subdivision=a.surface_subdivision, camera=a.camera)
                     rows.append({"directory": label, **{k: result.get(k) for k in
                         ("case", "mode", "status", "measurement_wall_s", "physical_wall_ratio", "errors")}})
                     write(out / "results.json", {"trials": rows})
