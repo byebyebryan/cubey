@@ -40,6 +40,14 @@ rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
 rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style readable
 ```
 
+The separate [live performance and terrain-options study](live_perf_terrain_v1.md)
+adds an opt-in prepared-case launcher, `run_terrain_rain_demo.py`, for existing
+mountain, alpine and rolling terrain at power-of-two spacings and footprints.
+It distinguishes a real running worker from an explicitly held captured state,
+and pins B-spline 2x for its study views without replacing this launcher's bank,
+terrain or solver defaults. Cases and the review report remain under `outputs`;
+the study document gives launch commands and measurement boundaries.
+
 In the native viewer, `V` switches Readable/Scenic while retaining the camera
 and dots. Scenic uses lit ground/rock materials, directional shadows, HDR
 environment reflection, absorption and guarded refraction. Its blue/green color
