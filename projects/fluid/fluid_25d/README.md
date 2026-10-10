@@ -106,6 +106,75 @@ live-backend option. The triangular reference remains the default: promoting
 flow appearance does not select a bank reconstruction or change numerical
 terrain. See the bank comparison sections below for their different tradeoffs.
 
+The water-edge spike adds four **opt-in** material-v2 controls under
+Scenic materials → Water appearance and daylight:
+`water_bank_irregularity_m` (0–24 m), `water_bank_motion_m` (0–12 m),
+`water_bank_scale_m` (8–128 m, initially 48), and `water_bank_band_m`
+(1–64 m, initially 12). Both strengths remain zero in every preset. Fixed
+world-space noise and weaker flow-linked variation trim only displayed water
+coverage; terrain, water surface heights, native depth/velocity, optics and
+solver dispatches are unchanged. The displayed rain-film opacity transition is
+included beside deeper water; isolated shallow films and all-deep interiors
+are excluded. Insets are capped and unresolved detail fades out.
+
+In B-spline mode the corrected edge band, support estimate and cap use the
+existing cubic display-depth reconstruction and its analytic gradient, not
+native-quad minimum/maximum gates or per-triangle slopes. Displayed coverage
+blends toward that reconstructed depth in the edge band before trimming. The
+depth used for coverage cannot exceed the original displayed depth, so it
+cannot introduce water outside the baseline wet area. This avoids reintroducing
+native cell patches into the smoothed bank. The off path is unchanged; enabling
+the effect adds a 16-sample cubic lookup in B-spline shading, with no new pass or
+resource. Reference geometry remains triangular.
+
+B-spline Scenic terrain wetness now uses the same continuous cubic depth
+reconstruction for both colour and roughness. Previously it used native
+triangle depth even below the smoothed display surface, revealing cell-shaped
+grey rain-film patches beside shallow pools. The existing film thresholds and
+material settings are retained; this correction is automatic within B-spline
+mode, not a new knob or promotion of B-spline/noisy banks. Both terrain material
+paths share the helper. Reference rendering, simulation fields, water coverage
+and the 2× display mesh remain unchanged. The
+[wet-ground comparison](../../../outputs/fluid/bspline-wet-ground-20261010-3haWIL/index.html)
+includes the marked stream crop, colour/roughness isolation, lake and overview.
+Small blue-pool faceting remains a separate finite-mesh issue. Reproduce in a
+fresh `outputs/fluid/bspline-wet-ground-*` leaf with
+`review_bspline_wet_ground_v1.py capture --phase before|after --out <leaf>`
+around the build change, then `report --out <leaf>` after saving focused CTest
+results as `tests.xml`. Rendering times in this study are noisy; a negative
+before/after delta is not a speedup claim or a strict cost guarantee.
+
+`--fluid25d-scenic-water-view bank-edge` shows local eligibility;
+`no-bank-edge` is a full-shading ablation retaining the existing flecks/rain.
+Raw/component views bypass the new effect. The new motion reuses the
+pause-aware presentation clock, not solver time or erosion. The original quiet
+matched captures showed very small changes at the close lake/stream cameras and none at
+the overview: this is not a replacement for B-spline geometry smoothing or a
+general stepped-bank fix. See the
+[study note](../../../docs/notes/fluid25d-bank-edge-v1.md) and
+[remote still/motion comparison](../../../outputs/fluid/bank-edge-v1-20261009-GLWoCh/index.html).
+Reproduce the study in a fresh output leaf with
+`review_bank_edge_v1.py --out <fresh-directory>`; `--mode motion|advancing|profile`
+selects held-field animation, advancing saved-field replay, or render-only timing.
+No solver is launched by this tool, and no default is promoted.
+
+The subsequent pronounced comparison uses 24 m fixed / 12 m moving requests
+with a 64 m edge band and 128 m noise scale. Above the old 8/3 m limits, the
+inset cap relaxes progressively to at most 45% of a native cell / 60% of local
+supported depth estimate. A smooth reshaping preserves noise instead of clipping
+a large request into a uniform inset. Large requests can visibly retreat or
+break narrow displayed channels and are not a
+fidelity setting. See the
+[stronger comparison](../../../outputs/fluid/bank-edge-bold-20261010-en2A9T/index.html).
+That version exposed cell-shaped cutouts; it is superseded by the
+[reconstructed-field fix comparison](../../../outputs/fluid/bank-edge-continuous-20261010-YG9GRH/index.html).
+The corrected field applies at quiet strengths too, without changing defaults.
+Following owner review, retain this as an optional visual treatment, not a
+default promotion or replacement for the existing bank reconstruction choices.
+The GUI labels it off by default and offers **Disable bank-edge treatment** to
+zero both strengths without changing the selected reconstruction or other
+water materials. Remaining coarse-edge and channel-width tradeoffs are explicit.
+
 Optional shallow-water treatments retain the accepted defaults. Existing
 `film_end_m` / `film_ground_mix` can extend the wet-ground appearance to 30 or
 60 cm without code changes. Independent `water_shallow_coverage_strength`
