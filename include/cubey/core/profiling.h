@@ -45,6 +45,8 @@ struct ProfileMetricRecord {
 struct ProfileRecorderConfig {
     std::filesystem::path output_prefix;
     std::uint32_t warmup_frames = 0;
+    std::uint32_t sample_interval = 1;
+    std::uint32_t maximum_frames = 0; // Zero retains the existing unlimited behaviour.
 };
 
 class ProfileRecorder;

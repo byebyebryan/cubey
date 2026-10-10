@@ -20,6 +20,8 @@ struct CommonRunConfig {
     std::filesystem::path output_path = "cubey-output.png";
     std::filesystem::path profile_output_prefix{};
     std::uint32_t profile_warmup_frames = 0U;
+    std::uint32_t profile_sample_interval = 1U;
+    std::uint32_t profile_maximum_frames = 0U;
     std::uint32_t profile_diagnostic_interval = 1U;
     CaptureMode capture_mode = CaptureMode::Png;
     bool headless = false;

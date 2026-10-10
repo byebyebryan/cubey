@@ -339,10 +339,18 @@ void ScopedCpuProfileSpan::finish() noexcept {
     recorder_ = nullptr;
 }
 
-ProfileRecorder::ProfileRecorder(ProfileRecorderConfig config) : config_(std::move(config)) {}
+ProfileRecorder::ProfileRecorder(ProfileRecorderConfig config) : config_(std::move(config)) {
+    if (config_.sample_interval == 0)
+        throw std::runtime_error("profile sample interval must be positive");
+}
 
 bool ProfileRecorder::should_record_frame(std::uint64_t frame_index) const noexcept {
-    return enabled() && frame_index >= config_.warmup_frames;
+    if (!enabled() || frame_index < config_.warmup_frames)
+        return false;
+    const auto relative = frame_index - config_.warmup_frames;
+    return relative % config_.sample_interval == 0 &&
+           (config_.maximum_frames == 0 ||
+            relative / config_.sample_interval < config_.maximum_frames);
 }
 
 ScopedCpuProfileSpan ProfileRecorder::cpu_span(std::uint64_t frame_index, std::string_view label) {

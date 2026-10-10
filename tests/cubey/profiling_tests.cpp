@@ -58,6 +58,28 @@ void test_profile_recorder_skips_warmup_and_records_spans() {
             "profile span should preserve GPU duration");
     require(metrics.front().name == "active_particles", "profile metric should preserve name");
     require(metrics.front().value == 42.0, "profile metric should preserve value");
+    cubey::profiling::ProfileRecorder bounded({.output_prefix = "ignored",
+                                               .warmup_frames = 2,
+                                               .sample_interval = 3,
+                                               .maximum_frames = 3});
+    for (unsigned frame = 0; frame < 1000; ++frame) {
+        bounded.record_frame({.frame_index = frame, .delta_seconds = 0.01});
+        bounded.record_gpu_span(frame, "bounded", 1);
+        bounded.record_metric(frame, "bounded", "value", 1);
+    }
+    require(bounded.frame_records().size() == 3 && bounded.span_records().size() == 3 &&
+                bounded.metric_records().size() == 3,
+            "profile sampling/cap did not bound every record type");
+    require(bounded.frame_records().back().frame_index == 8,
+            "sampled profile did not preserve original frame indices");
+    bool rejected = false;
+    try {
+        cubey::profiling::ProfileRecorder invalid(
+            {.output_prefix = "ignored", .sample_interval = 0});
+    } catch (const std::runtime_error&) {
+        rejected = true;
+    }
+    require(rejected, "zero profile sample interval accepted");
 }
 
 void test_profile_recorder_writes_csv_summary_and_trace_outputs() {

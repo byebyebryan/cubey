@@ -125,6 +125,14 @@ config::Schema common_run_config_schema(CommonRunConfig& config) {
                      "Profiling", "Frames to skip before profiling output starts.",
                      ValueType::UInt32),
               config.profile_warmup_frames)
+        .bind(option("profile.sample_interval", "--profile-sample-interval", "Sample Interval",
+                     "Profiling", "Retain every Nth frame; does not pace rendering.",
+                     ValueType::UInt32, {.has_min = true, .min = 1.0}),
+              config.profile_sample_interval)
+        .bind(option("profile.maximum_frames", "--profile-max-frames", "Maximum Profile Frames",
+                     "Profiling", "Maximum retained sampled frames; zero is unlimited.",
+                     ValueType::UInt32),
+              config.profile_maximum_frames)
         .bind(option("profile.diagnostic_interval", "--profile-diagnostic-interval",
                      "Diagnostic Interval", "Profiling", "Frame interval for profile diagnostics.",
                      ValueType::UInt32, {.has_min = true, .min = 1.0}),

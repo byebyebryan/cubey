@@ -370,6 +370,8 @@ void WindowedHost::create_profile_recorder() {
     profile_recorder_.emplace(cubey::profiling::ProfileRecorderConfig{
         .output_prefix = config_.run_config.profile_output_prefix,
         .warmup_frames = config_.run_config.profile_warmup_frames,
+        .sample_interval = config_.run_config.profile_sample_interval,
+        .maximum_frames = config_.run_config.profile_maximum_frames,
     });
 }
 
