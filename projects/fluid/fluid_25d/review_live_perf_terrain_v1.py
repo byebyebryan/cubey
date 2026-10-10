@@ -46,6 +46,24 @@ def gates(row, directory):
             "outcome_is_not_automatic_acceptance": True}
 
 
+def progress_plot(rows, site):
+    colors = {"patch-512-32m": "#587539", "patch-1024-16m": "#237ead", "patch-2048-8m": "#895892"}
+    lines = []
+    for row in rows:
+        for config, color in colors.items():
+            if row["case"] != site + "-" + config:
+                continue
+            points = [(0, row.get("measurement_initial_physical_s", 0))] + [
+                (s["wall_s"], s["physical_s"]) for s in row.get("samples", [])]
+            xy = " ".join(f'{45 + min(x,600)/600*600:.1f},{215-min(y,7200)/7200*180:.1f}' for x, y in points)
+            dash = ' stroke-dasharray="5 4"' if row["mode"] == "worker-only" else ''
+            lines.append(f'<polyline fill="none" stroke="{color}" stroke-width="2"{dash} points="{xy}"><title>{e(row["case"])} / {e(row["mode"])}</title></polyline>')
+    if not lines:
+        return ''
+    return f'<article><h3>{e(site)} · same 16.384 km patch</h3><svg viewBox="0 0 680 260" role="img" aria-label="Physical simulation progress versus wall time">' + \
+        '<path d="M45 35V215H645" fill="none" stroke="#80909f"/><path d="M45 215L165 35" fill="none" stroke="#999" stroke-dasharray="2 3"/><text x="45" y="250" font-size="12">0</text><text x="610" y="250" font-size="12">600 wall s</text><text x="45" y="20" font-size="12">7200 physical s (two hours)</text><text x="178" y="45" font-size="12">60× request</text>' + ''.join(lines) + '</svg><p>Green: 512/32 m · blue: 1024/16 m · purple: 2048/8 m. Dashed: worker-only; solid: live. Traces end when their bounded run ends.</p></article>'
+
+
 def render(root):
     rows = []
     for path in sorted(root.glob("*/**/result.json")):
@@ -117,6 +135,7 @@ def render(root):
     source += '<p>' + e(' · '.join(pending) or 'No active trial found; see results below.') + '</p><p>Reload this page for new results. Detailed repeats, stress and soak results appear as separate sections.</p></section>'
     source += '<div class="note"><p>Read GPU pass time separately from frame-loop time: private X11 presentation can dominate the frame-ending step. No physical-monitor FPS claim. Worker-only includes download/publication; it is not pure CUDA timing.</p><p>All coverage starts dry under continuous 512 mm/h rain and asks for 60× physical time. 54× is the proposed pace target. A 600-wall-second timeout is an incomplete two-hour horizon, not a solver fallback. 8 m spacing samples the same original 30 m terrain; it adds no new terrain detail.</p><p>Static isolation controls contain exactly two captured physical states and remain paused on the final state. They are not smooth recorded simulation replays. Match renderer-only against renderer-plus-worker to assess contention.</p></div>'
     source += '<p>“Completed” means the bounded trial finished, not that all targets passed. The <a href="overview.json">summary JSON</a> separately checks pace, frame time, field/advancing freshness, endpoint lag, viewer errors and clean input-preserving shutdown. Debug baseline and labelled Release follow-on are separate artifacts.</p>'
+    source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
     source += ''.join(headings)
     source += '<h2>Live captures</h2><p>Water color is artistic shading, not a depth legend. Whitewater/trails are rendering cues, not tracked water parcels. The side panel identifies LIVE, rainfall, physical time and the prepared terrain/grid.</p><div class="grid">' + ''.join(galleries) + '</div>'
     source += '<footer>Generated from retained trial JSON, sampled CSV profiles and scoped GUI captures. Numerical parity and human visual acceptance are separate checks.</footer></html>'
