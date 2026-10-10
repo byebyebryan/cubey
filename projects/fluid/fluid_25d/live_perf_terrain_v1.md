@@ -170,3 +170,12 @@ Next: profile owner-thread dispatch, submit/wait and presentation separately,
 then compare the same held/live case on the actual desktop path and private X11.
 Keep native timestep/publication costs separate from renderer costs. A solver
 port, CUDA interop or numerical-method rewrite is not justified by this study.
+
+Final validation: Debug and Release renderer/test targets built successfully;
+76 selected Debug CTest checks, 13 Release CPU/contract checks and four Release
+GPU checks passed, with no skips or failures. The optional-environment study
+helpers passed 19 tests and shared terrain sampling passed four. All 16 prepared
+cases revalidated; original elevation/climate payloads and the native extension
+retained their hashes. The report's completion receipt links the retained logs.
+Human visual acceptance remains deferred; performance-target failures above are
+still failures despite the successful regression suite.
