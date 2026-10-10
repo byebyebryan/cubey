@@ -13,6 +13,7 @@ from unittest.mock import patch
 import review_scenic_water as review
 import run_native_shoreline_raster_v1 as fixtures
 from test_scenic_water_gpu import runtime_identity
+from scenic_flow_reference import RETAINED_FLOW_CUES
 
 
 def run(out, target):
@@ -30,6 +31,7 @@ def run(out, target):
             tunings[name],
             {
                 "schema": "cubey.fluid25d.scenic-material.v2",
+                **RETAINED_FLOW_CUES,
                 "water_ripple_strength": 0,
                 "water_normal_strength": 0,
                 "water_flow_agitation": flow,

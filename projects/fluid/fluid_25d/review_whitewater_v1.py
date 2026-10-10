@@ -10,6 +10,7 @@ import subprocess
 from pathlib import Path
 
 import review_steep_flow_v1 as steep
+from scenic_flow_reference import RETAINED_FLOW_CUES
 
 review, ref = steep.review, steep.ref
 VARIANTS = {
@@ -36,7 +37,8 @@ def sources():
     result = review.sources()
     sim = ref.ROOT / "projects/fluid/sim/fluid_25d"
     paths = list(sim.glob("*whitewater*")) + list((sim / "shaders").glob("*whitewater*"))
-    paths += [Path(__file__), ref.ROOT / "projects/fluid/fluid_25d/CMakeLists.txt"]
+    paths += [Path(__file__), Path(__file__).with_name("scenic_flow_reference.py"),
+              ref.ROOT / "projects/fluid/fluid_25d/CMakeLists.txt"]
     for path in paths:
         if path.is_file():
             result[str(path.relative_to(ref.ROOT))] = ref.sha256_file(path)
@@ -55,7 +57,7 @@ def run(args):
     for name in args.scenes:
         scene = next(s for s in review.SCENES if s[0] == name)
         for variant in args.variants:
-            values = dict(VARIANTS[variant])
+            values = {**RETAINED_FLOW_CUES, **VARIANTS[variant]}
             if args.budget is not None:
                 values["water_whitewater_budget"] = args.budget
             tuning = out / (variant + ".json")

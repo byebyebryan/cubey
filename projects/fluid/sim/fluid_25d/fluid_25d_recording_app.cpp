@@ -1605,7 +1605,7 @@ class RecordingApp {
                     edited |=
                         ImGui::SliderFloat("Rapid texture period (m)",
                                            &scenic_material_.water_rapid_scale_m, 64.0F, 384.0F);
-                ImGui::TextWrapped("Opt-in downhill-water appearance. Cascade motion is artist "
+                ImGui::TextWrapped("Downhill-water appearance. Cascade motion is artist "
                                    "exaggerated; landing foam is a local steep-to-flat heuristic. "
                                    "Texture period is an "
                                    "artist scale, not wave height or transported foam. "

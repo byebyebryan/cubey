@@ -80,6 +80,32 @@ decorative normals and agitation. The agitation clock is presentation wall time:
 pause holds it, seek/reset restarts it, and physical playback acceleration does
 not accelerate it. This adds no geometry, water, solver work or foam.
 
+The mountain **Macro** material now also defaults to the accepted moving-water
+appearance: cascade strength 1, whitewater fleck strength 1, fleck travel speed
+2, gentle stream foam strength 0.3, patchiness 1 and brightness 0.55. Flecks retain
+their 3 m radius and 1.5 m lift. The restrained, irregular foam was accepted in
+the [subtle-foam review](../../../outputs/fluid/subtle-foam-20261009-9wsMvA/index.html).
+All controls remain adjustable under Scenic materials; setting
+`water_cascade_strength`, `water_whitewater_strength` and
+`water_stream_foam_strength` to zero restores the previous flow appearance.
+V1/refined/terrain retain these cues off. Older comparison reports describe their
+historical opt-in checkpoint; comparison tools now pin those controls explicitly
+instead of assuming that an omitted override means off. These are artistic,
+render-only motion cues, not a turbulence solver or accelerated hydraulic flow.
+The [default-promotion review](../../../outputs/fluid/whitewater-publish-20261009-uAwBCC/index.html)
+includes no-tuning default/approved pixel-equality checks and fresh comparisons
+with the existing B-spline bank option.
+
+Bank smoothing already has separate alternatives in **Banks [S]**:
+`--fluid25d-native-bank-view bspline-2x` rounds the displayed terrain/water without
+sidecars, but may widen streams or join narrow gaps. Marching-squares coverage
+requires `--fluid25d-native-bank-view marching-squares` and an exact
+recording/time-matched `--fluid25d-native-display-coverage` manifest; it smooths
+the displayed shoreline coverage, not the triangular height mesh, and is not a
+live-backend option. The triangular reference remains the default: promoting
+flow appearance does not select a bank reconstruction or change numerical
+terrain. See the bank comparison sections below for their different tradeoffs.
+
 Optional shallow-water treatments retain the accepted defaults. Existing
 `film_end_m` / `film_ground_mix` can extend the wet-ground appearance to 30 or
 60 cm without code changes. Independent `water_shallow_coverage_strength`

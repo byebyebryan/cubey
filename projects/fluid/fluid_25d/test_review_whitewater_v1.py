@@ -5,6 +5,22 @@ import review_whitewater_v1 as review
 
 
 class WhitewaterReviewTests(unittest.TestCase):
+    def test_retained_controls_do_not_follow_macro_defaults(self):
+        import review_stream_foam_v1 as foam
+
+        retained = review.RETAINED_FLOW_CUES
+        for key in ("water_rapid_strength", "water_cascade_strength", "water_landing_strength",
+                    "water_whitewater_strength", "water_stream_foam_strength"):
+            self.assertEqual(retained[key], 0)
+        self.assertEqual(retained["water_stream_foam_patchiness"], 0)
+        self.assertEqual(retained["water_stream_foam_brightness"], 1)
+        subtle = {**retained, **foam.VARIANTS["subtle"]}
+        self.assertEqual(subtle["water_stream_foam_strength"], .3)
+        self.assertEqual(subtle["water_stream_foam_patchiness"], 1)
+        self.assertEqual(subtle["water_stream_foam_brightness"], .55)
+        self.assertEqual(subtle["water_whitewater_speed"], 2)
+        self.assertFalse(any("solver" in key or "rain" in key for key in retained))
+
     def test_ablations_and_clock_rate_are_independent(self):
         self.assertNotIn("water_whitewater_strength", review.VARIANTS["off"])
         self.assertEqual(review.VARIANTS["both"]["water_whitewater_strength"], 1)

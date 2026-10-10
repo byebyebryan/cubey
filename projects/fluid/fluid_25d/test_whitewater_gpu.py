@@ -8,6 +8,7 @@ from unittest.mock import patch
 import run_native_shoreline_raster_v1 as fixtures
 import run_native_presentation_v1 as ref
 from test_scenic_water_gpu import runtime_identity
+from scenic_flow_reference import RETAINED_FLOW_CUES
 
 
 def run(out, app):
@@ -26,7 +27,8 @@ def run(out, app):
                              "water_stream_foam_brightness": .4},
     }.items():
         path = out / (name + ".json")
-        ref.write_json_exclusive(path, {"schema": "cubey.fluid25d.scenic-material.v2", **values})
+        ref.write_json_exclusive(path, {"schema": "cubey.fluid25d.scenic-material.v2",
+                                        **RETAINED_FLOW_CUES, **values})
         tunings[name] = path
 
     def render(case, manifest, variant, view="shaded", bank="reference"):

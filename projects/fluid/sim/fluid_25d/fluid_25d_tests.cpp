@@ -6947,10 +6947,14 @@ void test_whitewater_sources_and_clock() {
     thirty.reset();
     require(thirty.seconds() == 0.0, "seek/reset clears the presentation clock");
     const auto preset = fluid_25d_scenic_material("macro");
-    require(preset.water_whitewater_strength == 0.0F && preset.water_stream_foam_strength == 0.0F,
-            "new whitewater remains opt-in");
+    require(preset.water_cascade_strength == 1.0F && preset.water_whitewater_strength == 1.0F &&
+                preset.water_whitewater_speed == 2.0F &&
+                preset.water_stream_foam_strength == 0.3F &&
+                preset.water_stream_foam_patchiness == 1.0F &&
+                preset.water_stream_foam_brightness == 0.55F,
+            "Macro defaults to the reviewed cascades, moving flecks and subtle irregular foam");
     const auto tuned = fluid_25d_parse_scenic_material(
-        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_strength":1,"water_whitewater_speed":2,"water_stream_foam_strength":1})",
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_strength":1,"water_whitewater_speed":2,"water_stream_foam_strength":1,"water_stream_foam_patchiness":0,"water_stream_foam_brightness":1})",
         preset);
     require(tuned.water_whitewater_radius_m == 3 && tuned.water_whitewater_lift_m == 1.5F &&
                 tuned.water_whitewater_speed == 2 && tuned.water_stream_foam_strength == 1 &&
@@ -6971,6 +6975,15 @@ void test_whitewater_sources_and_clock() {
                 fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(patches), preset)) ==
                 fluid_25d_scenic_material_json(patches),
         "independent foam controls roundtrip without retiming motion or altering water roughness");
+    const auto disabled = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_cascade_strength":0,"water_whitewater_strength":0,"water_stream_foam_strength":0})",
+        preset);
+    require(disabled.water_cascade_strength == 0.0F && disabled.water_whitewater_strength == 0.0F &&
+                disabled.water_stream_foam_strength == 0.0F &&
+                disabled.water_extinction_scale == preset.water_extinction_scale &&
+                disabled.water_roughness == preset.water_roughness &&
+                disabled.daylight_environment == preset.daylight_environment,
+            "Macro flow cues can be disabled without changing optics, roughness or daylight");
     for (const auto* text :
          {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_budget":4096.5})",
           R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_speed":0})",
@@ -6991,11 +7004,18 @@ void test_scenic_material_contract() {
     const auto terrain = fluid_25d_scenic_material("terrain");
     const auto macro = fluid_25d_scenic_material("macro");
     const auto fixed_daylight = fluid_25d_fixed_daylight();
-    for (const auto* material : {&v1, &refined, &terrain, &macro})
+    for (const auto* material : {&v1, &refined, &terrain})
         require(material->water_rapid_strength == 0.0F && material->water_rapid_scale_m == 192.0F &&
                     material->water_cascade_strength == 0.0F &&
-                    material->water_landing_strength == 0.0F,
-                "all presets retain accepted shading; steep-flow material is opt-in");
+                    material->water_landing_strength == 0.0F &&
+                    material->water_whitewater_strength == 0.0F &&
+                    material->water_whitewater_speed == 1.0F &&
+                    material->water_stream_foam_strength == 0.0F &&
+                    material->water_stream_foam_patchiness == 0.0F &&
+                    material->water_stream_foam_brightness == 1.0F,
+                "legacy presets retain their reference flow appearance");
+    require(macro.water_rapid_strength == 0.0F && macro.water_landing_strength == 0.0F,
+            "Macro does not promote rejected rapid or landing treatments");
     const auto rapid = fluid_25d_parse_scenic_material(
         R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_strength":1,"water_rapid_scale_m":384})",
         macro);

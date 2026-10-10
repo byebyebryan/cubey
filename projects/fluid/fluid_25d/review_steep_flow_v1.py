@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 
 import review_water_agitation_v1 as review
+from scenic_flow_reference import RETAINED_FLOW_CUES
 
 ref = review.ref
 VARIANTS = {
@@ -39,6 +40,7 @@ def capture(args):
     for path in (Path(__file__), Path(__file__).with_name("fluid_25d_project_config.h"),
                  Path(__file__).with_name("CMakeLists.txt"),
                  Path(__file__).with_name("test_steep_flow_gpu.py"),
+                 Path(__file__).with_name("scenic_flow_reference.py"),
                  ref.ROOT / "shaders/cubey/procedural/noise.glsl",
                  ref.ROOT / "shaders/cubey/procedural/random.glsl",
                  ref.ROOT / "shaders/cubey/procedural/operators.glsl"):
@@ -52,7 +54,7 @@ def capture(args):
     for variant in variants:
         tuning = phase / (variant + ".json")
         ref.write_json_exclusive(tuning, {"schema": "cubey.fluid25d.scenic-material.v2",
-                                         **VARIANTS[variant]})
+                                         **RETAINED_FLOW_CUES, **VARIANTS[variant]})
         scenes = review.SCENES[:2] if args.phase == "baseline" else review.SCENES[:3]
         for scene in scenes:
             views = ("shaded",)

@@ -8,17 +8,22 @@ from unittest.mock import patch
 import run_native_shoreline_raster_v1 as fixtures
 import run_native_presentation_v1 as ref
 from test_scenic_water_gpu import runtime_identity
+from scenic_flow_reference import RETAINED_FLOW_CUES
 
 
 def run(out, app, variant="rapid"):
     ref.reserve_directory(out)
     runtime = runtime_identity(app)
+    off = out / "off.json"
+    ref.write_json_exclusive(off, {"schema": "cubey.fluid25d.scenic-material.v2", **RETAINED_FLOW_CUES})
     on = out / "on.json"
     controls = {"water_rapid_strength": 1, "water_rapid_scale_m": 192} if variant == "rapid" else {
         "water_cascade_strength": 1, "water_landing_strength": 1}
-    ref.write_json_exclusive(on, {"schema": "cubey.fluid25d.scenic-material.v2", **controls})
+    ref.write_json_exclusive(on, {"schema": "cubey.fluid25d.scenic-material.v2",
+                                  **RETAINED_FLOW_CUES, **controls})
     landing = out / "landing.json"
     ref.write_json_exclusive(landing, {"schema": "cubey.fluid25d.scenic-material.v2",
+                                      **RETAINED_FLOW_CUES,
                                       "water_landing_strength": 1})
     rows = []
     writer = fixtures._write_asc
@@ -31,8 +36,7 @@ def run(out, app, variant="rapid"):
                "--fluid25d-recording-gpu-validation", "--fluid25d-native-presentation", "scenic",
                "--fluid25d-scenic-material", "macro", "--fluid25d-scenic-water-view", view,
                "--fluid25d-render-height-scale", "1", "--output", str(image)]
-        if enabled:
-            cmd += ["--fluid25d-scenic-tuning", str(tuning)]
+        cmd += ["--fluid25d-scenic-tuning", str(tuning if enabled else off)]
         completed, receipt = ref.run_logged(cmd, out / "logs", label, timeout=90,
                                             expected_presentation="scenic")
         ref.verify_capture_log(completed.stdout + completed.stderr, True)

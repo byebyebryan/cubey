@@ -49,12 +49,12 @@ struct Fluid25DScenicMaterial {
     // Zero retains the previous shading, independently of visible rain.
     float water_flow_agitation = 0.0F;
     float water_rain_agitation = 0.0F;
-    // Opt-in steep-flow material; zero retains all existing presets.
+    // Base/reference presets stay disabled; Macro enables reviewed cascades.
     float water_rapid_strength = 0.0F;
     float water_rapid_scale_m = 192.0F;  // texture period, not a physical wave size
     float water_cascade_strength = 0.0F; // directional artistic replacement, not detached water
     float water_landing_strength = 0.0F; // local steep-to-flat cue, not transported foam
-    // Render-only whitewater; disabled in all presets pending animated review.
+    // Render-only whitewater; Macro enables reviewed 3 m flecks / 2x travel.
     float water_whitewater_strength = 0.0F;
     float water_whitewater_radius_m = 3.0F;
     float water_whitewater_lift_m = 1.5F;
