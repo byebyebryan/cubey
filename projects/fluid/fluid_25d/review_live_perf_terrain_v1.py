@@ -115,7 +115,8 @@ def isolation_table(rows):
     output = []
     def key(row):
         return (row.get("_directory", "unlabelled/").split("/")[0], row["case"])
-    for phase, case in sorted({key(r) for r in rows if r["mode"] == "renderer-only"}):
+    for phase, case in sorted({key(r) for r in rows if r["mode"] == "renderer-only" and
+                              not key(r)[0].startswith("display-")}):
         group = [r for r in rows if key(r) == (phase, case) and r["mode"].startswith("renderer")]
         for label, get in (("GPU render p95 ms", lambda r: (r.get("profile") or {}).get(
                 "passes_ms", {}).get("gpu:fluid_25d native presentation total", {}).get("p95")),
@@ -161,6 +162,33 @@ def build_table(rows):
             output.append('<tr>' + ''.join(f'<td>{e(value)}</td>' for value in fields) + '</tr>')
     return '<section><h2>Build-only experiment · live fields</h2><p>Median [run-to-run range] of per-run p95 values; pace uses the per-run physical/wall ratio. Debug coverage has one run per case, not a repeated baseline. Native extension, numerical inputs and visual settings are unchanged.</p><div class="scroll"><table><thead><tr>' + \
         ''.join(f'<th>{h}</th>' for h in ("Case", "Artifact / repeats", "Pace ×", "Frame p95 ms", "GPU p95 ms", "Field age p95 s", "Whitewater classification p95 ms", "Whitewater source age p95 s")) + \
+        '</tr></thead><tbody>' + ''.join(output) + '</tbody></table></div></section>'
+
+
+def display_table(rows):
+    groups = {}
+    for row in rows:
+        if row["_directory"].startswith("display-") and row["mode"] == "renderer-only":
+            groups.setdefault((row.get("camera", "overview"), row.get("surface_subdivision", 2)), []).append(row)
+    if not groups:
+        return ''
+    output = []
+    for (camera, subdivision), group in sorted(groups.items()):
+        def describe(get):
+            values = [value for row in group if (value := get(row)) is not None]
+            return (f'{statistics.median(values):.2f} [{min(values):.2f}–{max(values):.2f}] / n={len(values)}'
+                    if values else "not measured")
+        spec = group[0].get("identity", {}).get("spec", {})
+        width, height = spec.get("cols"), spec.get("rows")
+        triangles = (f'{2*(width-1)*(height-1)*subdivision**2/1e6:.2f} M'
+                     if width and height else "not measured")
+        values = (camera, f'{subdivision}×', triangles,
+                  describe(lambda r: (r.get("profile") or {}).get("frame_ms", {}).get("p95")),
+                  describe(lambda r: (r.get("profile") or {}).get("passes_ms", {}).get(
+                      "gpu:fluid_25d native presentation total", {}).get("p95")))
+        output.append('<tr>' + ''.join(f'<td>{e(value)}</td>' for value in values) + '</tr>')
+    return '<section><h2>Display-density experiment · identical held 2k field</h2><p>Median [range] of per-run p95 values, not pooled frames. B-spline reconstruction and native fields are unchanged; triangle counts are derived per display layer, not a GPU counter. Closer-camera checks have only one repetition per option.</p><div class="scroll"><table><thead><tr>' + \
+        ''.join(f'<th>{h}</th>' for h in ("Camera", "Display subdivision", "Triangles / layer (derived)", "Frame p95 ms", "GPU p95 ms")) + \
         '</tr></thead><tbody>' + ''.join(output) + '</tbody></table></div></section>'
 
 
@@ -222,6 +250,11 @@ def render(root):
     live = [r for r in coverage if r["mode"] == "live"]
     solver = [r for r in coverage if r["mode"] == "worker-only"]
     summary = {"coverage_completed_trials": len(coverage), "total_coverage_trials": 30,
+        "coverage_retained_trials": len(coverage),
+        "coverage_horizon_completed_trials": sum(r["status"] == "completed" for r in coverage),
+        "total_retained_trials": len(rows),
+        "outcomes": {status: sum(r["status"] == status for r in rows)
+                     for status in sorted({r["status"] for r in rows})},
         "live_cases": len(live), "worker_cases": len(solver),
         "live_at_least_54x": sum((r.get("physical_wall_ratio") or 0) >= 54 for r in live),
         "timeouts": sum(r["status"] == "timeout" for r in rows),
@@ -253,7 +286,7 @@ def render(root):
         if (root / "analysis.json").exists():
             source += ' · <a href="analysis.json">Per-run analysis and soak trends</a>'
         source += '</p></section>'
-    source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained. {len(live)} live and {len(solver)} worker-only cases. {summary["timeouts"]} timeouts retained.</p>'
+    source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained; {summary["coverage_horizon_completed_trials"]} reached the horizon. {len(live)} live and {len(solver)} worker-only cases. Across all phases: {len(rows)} trials; {summary["timeouts"]} timeouts and {summary["outcomes"].get("failed", 0)} failed trials retained.</p>'
     source += '<p>' + ('Study execution and review complete; human visual acceptance remains deferred.'
                        if summary["study_completion"] else
                        'Study still in progress. Broad coverage is only one phase; Release, isolation, stress, soaks and final review are separate.') + '</p>'
@@ -268,6 +301,7 @@ def render(root):
     source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
     source += build_table(rows)
     source += isolation_table(rows)
+    source += display_table(rows)
     if display_captures:
         source += '<details><summary>B-spline display-density experiment · held-state comparisons</summary><p>Existing B-spline reconstruction is unchanged. Only display tessellation changes between 2× and 1×; native fields and terrain are the same. These held-state views do not demonstrate live simulation motion.</p><div class="grid">' + ''.join(gallery(r) for r in display_captures) + '</div></details>'
     source += '<h2>Detailed timing phases</h2><p>Expand a phase for individual repetitions, resource bounds and the raw evidence links.</p>' + ''.join(headings)

@@ -137,6 +137,22 @@ class Review(unittest.TestCase):
         self.assertIn("52.0 [50.0–54.0]", text)
         self.assertIn("not a repeated baseline", text)
 
+    def test_display_comparison_keeps_camera_and_subdivision_separate(self):
+        rows = [{"case": "mountain", "mode": "renderer-only", "camera": camera,
+                 "surface_subdivision": subdivision, "_directory": "display-test/trial",
+                 "identity": {"spec": {"rows": 2048, "cols": 2048}},
+                 "profile": {"frame_ms": {"p95": value}}}
+                for camera, subdivision, value in (("overview", 1, 40), ("overview", 1, 44),
+                                                     ("overview", 2, 50), ("runoff", 1, 60))]
+        text = review.display_table(rows)
+        self.assertIn("42.00 [40.00–44.00] / n=2", text)
+        self.assertIn("8.38 M", text)
+        self.assertIn("33.52 M", text)
+        self.assertIn("60.00 [60.00–60.00] / n=1", text)
+        self.assertIn("derived per display layer", text)
+        self.assertEqual(review.isolation_table(rows), "")
+        self.assertEqual(review.display_table([]), "")
+
 
 if __name__ == "__main__":
     unittest.main()
