@@ -98,6 +98,10 @@ class Review(unittest.TestCase):
             self.assertIn("<h3>Practical next choices</h3>", page)
             self.assertIn("&lt;script&gt;literal text&lt;/script&gt;", page)
             self.assertNotIn("Keep <script>", page)
+            (root / "study-completion.json").write_text('{"execution_review_complete":false}')
+            with contextlib.redirect_stdout(io.StringIO()):
+                review.render(root)
+            self.assertIn("Study still in progress", (root / "index.html").read_text())
             (root / "study-completion.json").write_text('{"execution_review_complete":true}')
             with contextlib.redirect_stdout(io.StringIO()):
                 review.render(root)

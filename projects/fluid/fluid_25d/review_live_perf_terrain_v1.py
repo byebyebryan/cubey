@@ -266,6 +266,8 @@ def render(root):
         "measurement_scope": "private-X11 real GUI; sampled profiles; not physical-monitor scanout or calibrated hydrology"}
     completion = root / "study-completion.json"
     summary["study_completion"] = json.loads(completion.read_bytes()) if completion.exists() else None
+    complete = bool(summary["study_completion"] and
+                    summary["study_completion"].get("execution_review_complete") is True)
     phases = root / "follow-on/results.json"
     summary["follow_on_phases"] = json.loads(phases.read_bytes()).get("phases", []) if phases.exists() else []
     (root / "overview.json").write_text(json.dumps(summary, indent=2) + "\n")
@@ -294,8 +296,10 @@ def render(root):
         source += '</p></section>'
     source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained; {summary["coverage_horizon_completed_trials"]} reached the horizon. {len(live)} live and {len(solver)} worker-only cases. Across all phases: {len(rows)} trials; {summary["timeouts"]} timeouts and {summary["outcomes"].get("failed", 0)} failed trials retained.</p>'
     source += '<p>' + ('Study execution and review complete; human visual acceptance remains deferred.'
-                       if summary["study_completion"] else
+                       if complete else
                        'Study still in progress. Broad coverage is only one phase; Release, isolation, stress, soaks and final review are separate.') + '</p>'
+    if complete:
+        source += '<p><a href="study-completion.json">Completion, validation and provenance receipt</a></p>'
     if summary["follow_on_phases"]:
         last_phase = summary["follow_on_phases"][-1]
         source += f'<p>Last retained follow-on phase: {e(last_phase["phase"])} / {e(last_phase["status"])}. <a href="follow-on/results.json">Phase receipts</a></p>'
