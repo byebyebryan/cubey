@@ -29,6 +29,8 @@ class Review(unittest.TestCase):
             gates = review.gates(row, root)
             self.assertTrue(gates["viewer_reported_failure"])
             self.assertFalse(gates["display_near_worker_endpoint"])
+            (root / "viewer.log").write_text("fluid_25d: backend adapter: dem_asc is missing provenance")
+            self.assertTrue(review.gates(row, root)["viewer_reported_failure"])
 
     def test_progress_plot_distinguishes_scope_and_escapes_labels(self):
         rows = [{"case": "mountain-patch-1024-16m", "mode": "worker-only",
@@ -86,6 +88,14 @@ class Review(unittest.TestCase):
             self.assertIn("No physical-monitor FPS claim", page)
             self.assertIn("Study still in progress", page)
             self.assertEqual((trial / "result.json").read_bytes(), raw)
+            (root / "verdict.json").write_text(json.dumps({"summary": "Keep <script>literal text</script>",
+                                                           "findings": ["measured, not universal"]}))
+            with contextlib.redirect_stdout(io.StringIO()):
+                review.render(root)
+            page = (root / "index.html").read_text()
+            self.assertIn("Review verdict", page)
+            self.assertIn("&lt;script&gt;literal text&lt;/script&gt;", page)
+            self.assertNotIn("Keep <script>", page)
             (root / "study-completion.json").write_text('{"execution_review_complete":true}')
             with contextlib.redirect_stdout(io.StringIO()):
                 review.render(root)
@@ -105,7 +115,7 @@ class Review(unittest.TestCase):
         rows[0]["_directory"] = "other-display-density/one"
         text = review.isolation_table(rows)
         self.assertIn("other-display-density / mountain", text)
-        self.assertIn("pending", text)
+        self.assertIn("not measured", text)
 
     def test_held_capture_is_never_labelled_live(self):
         row = {"case": "mountain", "mode": "renderer-only", "_directory": "display-1x/trial-0",

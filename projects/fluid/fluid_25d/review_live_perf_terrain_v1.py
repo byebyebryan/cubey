@@ -33,7 +33,7 @@ def gates(row, directory):
     viewer = row["mode"] != "worker-only"
     log = directory / "viewer.log"
     text = log.read_text(errors="replace") if log.exists() else ""
-    viewer_failure = (any(marker in text for marker in ("VIEWER ERROR", "no changed valid service publication", "external service publication is stale"))
+    viewer_failure = (any(marker in text for marker in ("VIEWER ERROR", "backend adapter:", "no changed valid service publication", "external service publication is stale"))
                       if log.exists() else None)
     completion = row.get("completion") or {}
     cleanup = row.get("cleanup")
@@ -125,7 +125,7 @@ def isolation_table(rows):
                       for mode in ("renderer-only", "renderer-plus-worker")}
             def describe(items):
                 return (f'{statistics.median(items):.2f} [{min(items):.2f}–{max(items):.2f}] / n={len(items)}'
-                        if items else "pending")
+                        if items else "not measured")
             base, contended = values["renderer-only"], values["renderer-plus-worker"]
             change = (f'{(statistics.median(contended)/statistics.median(base)-1)*100:+.1f}%'
                       if base and contended and statistics.median(base) > 0 else "—")
@@ -241,6 +241,18 @@ def render(root):
     if (root / "environment.json").exists():
         source += '<p><a href="environment.json">Measured host and evidence boundaries</a></p>'
     source += '<h1>Fluid 2.5D: live solver + rendering</h1><p>Three existing Terrain Diffusion sites; five power-of-two grid/footprint configurations. Native SynxFlow unchanged. New options are opt-in; existing defaults stay intact.</p>'
+    verdict = root / "verdict.json"
+    if verdict.exists():
+        value = json.loads(verdict.read_bytes())
+        source += '<section><h2>Review verdict</h2><p>' + e(value["summary"]) + '</p>'
+        for title, key in (("What the measurements support", "findings"),
+                           ("Practical next choices", "recommendations"),
+                           ("Limits still retained", "remaining_limits")):
+            source += f'<h3>{title}</h3><ul>' + ''.join('<li>' + e(item) + '</li>' for item in value.get(key, [])) + '</ul>'
+        source += '<p><a href="verdict.json">Review JSON</a>'
+        if (root / "analysis.json").exists():
+            source += ' · <a href="analysis.json">Per-run analysis and soak trends</a>'
+        source += '</p></section>'
     source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained. {len(live)} live and {len(solver)} worker-only cases. {summary["timeouts"]} timeouts retained.</p>'
     source += '<p>' + ('Study execution and review complete; human visual acceptance remains deferred.'
                        if summary["study_completion"] else
