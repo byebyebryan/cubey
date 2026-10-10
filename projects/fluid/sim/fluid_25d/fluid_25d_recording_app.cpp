@@ -46,7 +46,7 @@ namespace {
 
 struct WhitewaterBuild {
     Fluid25DWhitewaterSelection selection;
-    double source_s = 0.0, cpu_ms = 0.0;
+    double source_s = 0.0, cpu_ms = 0.0, published_unix_s = 0.0;
     std::uint64_t epoch = 0U;
 };
 
@@ -215,7 +215,12 @@ class RecordingApp {
         scenario_.source_depth_rate_m_per_s.assign(shown_->depth_m.size(), 0.0F);
         scenario_.sink_depth_rate_m_per_s.assign(shown_->depth_m.size(), 0.0F);
         scenario_.boundary_outflow_face_mask.assign(shown_->depth_m.size(), 0U);
-        if (config_.native_scenic_surface_source) {
+        if (config_.native_scenic_surface_grid) {
+            terrain_surface_ = fluid_25d_load_sampled_terrain_surface(
+                *config_.native_scenic_surface_grid, simulation_.grid_width,
+                simulation_.grid_height, simulation_.cell_size_m, scenario_.terrain_height_m);
+            std::printf("fluid_25d_terrain_surface: %s\n", terrain_surface_->receipt.c_str());
+        } else if (config_.native_scenic_surface_source) {
             terrain_surface_ = fluid_25d_load_terrain_surface(
                 *config_.native_scenic_surface_source,
                 recording_->provenance().at("terrain_source_identity"), simulation_.grid_width,
@@ -522,6 +527,9 @@ class RecordingApp {
             if (build.epoch != whitewater_epoch_)
                 return; // Seek/reset invalidates in-flight placement, not immutable fields.
             whitewater_selection_ = std::move(build.selection);
+            whitewater_source_s_ = build.source_s;
+            whitewater_build_cpu_ms_ = build.cpu_ms;
+            whitewater_source_published_unix_s_ = build.published_unix_s;
             ++whitewater_generation_;
             std::printf(
                 "fluid_25d_whitewater_sources: saved_s=%.9f displayed_s=%.9f generation=%llu "
@@ -550,7 +558,7 @@ class RecordingApp {
                                        std::chrono::duration<double, std::milli>(
                                            std::chrono::steady_clock::now() - started)
                                            .count(),
-                                       epoch};
+                                       frame->published_unix_s, epoch};
             };
         whitewater_dirty_ = false;
         if (config_.common.headless)
@@ -563,6 +571,7 @@ class RecordingApp {
         ++whitewater_epoch_;
         ++whitewater_generation_;
         whitewater_selection_.seeds.clear();
+        whitewater_source_s_ = whitewater_build_cpu_ms_ = whitewater_source_published_unix_s_ = 0;
         whitewater_dirty_ = true;
         scenic_clock_s_ = 0.0;
         rain_clock_.reset();
@@ -780,6 +789,9 @@ class RecordingApp {
                     external_snapshot_ = std::move(next);
                     backend_metadata_ = external_session_->metadata();
                     external_published_unix_s_ = external_snapshot_->fields->published_unix_s;
+                    if (generation_changed || !shown_ ||
+                        external_snapshot_->fields->time_s > shown_->time_s)
+                        external_last_advance_unix_s_ = external_published_unix_s_;
                     external_last_valid_publication_steady_ = std::chrono::steady_clock::now();
                     accept_frame(external_snapshot_->fields);
                     shown_index_ = static_cast<std::size_t>(external_snapshot_->header.sequence);
@@ -1215,6 +1227,22 @@ class RecordingApp {
                 compiled);
         }
         if (profile) {
+            const double unix_s =
+                std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch())
+                    .count();
+            profile->record_metric(frame_index, "fluid_25d.study", "command_recorded_unix_s",
+                                   unix_s);
+            profile->record_metric(frame_index, "fluid_25d.whitewater", "source_physical_s",
+                                   whitewater_source_s_);
+            profile->record_metric(frame_index, "fluid_25d.whitewater",
+                                   "display_minus_source_physical_s",
+                                   std::max(0.0, shown_->time_s - whitewater_source_s_));
+            profile->record_metric(frame_index, "fluid_25d.whitewater", "classification_cpu_ms",
+                                   whitewater_build_cpu_ms_);
+            profile->record_metric(frame_index, "fluid_25d.whitewater", "requested_sources",
+                                   double(whitewater_selection_.requested));
+            profile->record_metric(frame_index, "fluid_25d.whitewater", "allocated_sources",
+                                   double(whitewater_selection_.seeds.size()));
             if (config_.native_rain_visuals) {
                 const auto rain = rain_visual_frame();
                 const auto applied = applied_rain_mm_per_hour();
@@ -1235,9 +1263,6 @@ class RecordingApp {
                 const auto metric = [&](const char* name, double value) {
                     profile->record_metric(frame_index, "fluid_25d.external", name, value);
                 };
-                const double unix_s = std::chrono::duration<double>(
-                                          std::chrono::system_clock::now().time_since_epoch())
-                                          .count();
                 metric("reset_generation",
                        static_cast<double>(external_snapshot_->header.reset_generation));
                 metric("frame_sequence", static_cast<double>(external_snapshot_->header.sequence));
@@ -1246,6 +1271,14 @@ class RecordingApp {
                 metric("published_unix_s", external_published_unix_s_);
                 metric("publication_freshness_s",
                        std::max(0.0, unix_s - external_published_unix_s_));
+                metric("advancing_state_age_s",
+                       external_last_advance_unix_s_ > 0
+                           ? std::max(0.0, unix_s - external_last_advance_unix_s_)
+                           : 0);
+                metric("whitewater_source_age_s",
+                       whitewater_source_published_unix_s_ > 0
+                           ? std::max(0.0, unix_s - whitewater_source_published_unix_s_)
+                           : 0);
                 metric("command_pending", external_session_->command_pending() ? 1.0 : 0.0);
                 metric("command_recorded_unix_s", external_command_recorded_unix_s_);
                 metric("water_volume_m3", shown_->stats.water_volume_m3);
@@ -1872,6 +1905,15 @@ class RecordingApp {
         if (ImGui::Begin("Mountain Rain - LIVE solver")) {
             ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
                                "LIVE - external SynxFlow / Vulkan viewer");
+            if (config_.native_scenic_surface_grid) {
+                const auto label =
+                    config_.native_scenic_surface_grid->parent_path().filename().string();
+                ImGui::TextWrapped("Terrain/grid: %s", label.c_str());
+                ImGui::Text("%u x %u | %.0f m cells | %.3f x %.3f km", simulation_.grid_width,
+                            simulation_.grid_height, simulation_.cell_size_m,
+                            double(simulation_.grid_width) * simulation_.cell_size_m / 1000.0,
+                            double(simulation_.grid_height) * simulation_.cell_size_m / 1000.0);
+            }
             const auto health = external_health();
             ImGui::Text("Lifecycle: %s | heartbeat: %s",
                         lifecycle_name(external_snapshot_->header.lifecycle),
@@ -2579,6 +2621,8 @@ class RecordingApp {
     bool scenic_flow_reset_ = true;
     bool whitewater_dirty_ = true;
     Fluid25DWhitewaterSelection whitewater_selection_;
+    double whitewater_source_s_ = 0, whitewater_build_cpu_ms_ = 0;
+    double whitewater_source_published_unix_s_ = 0, external_last_advance_unix_s_ = 0;
     std::uint64_t whitewater_generation_ = 0U;
     std::uint64_t whitewater_epoch_ = 0U;
     // Destroyed/waited before the earlier-declared immutable scenario bed.

@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cmath>
 #include <fstream>
+#include <limits>
 #include <stdexcept>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -213,6 +214,102 @@ Fluid25DTerrainSurface fluid_25d_load_terrain_surface(const std::filesystem::pat
         field.weights.size() * sizeof(math::Vec4);
     receipt["correlated_crop_independent"] = true;
     receipt["correlated_sha256"] = asset::sha256_hex(std::as_bytes(std::span(result.correlated)));
+    result.receipt = receipt.dump();
+    return result;
+}
+Fluid25DTerrainSurface
+fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_manifest,
+                                       std::uint32_t width, std::uint32_t height, float spacing_m,
+                                       std::span<const float> bed) {
+    if (width < 2 || height < 2 || std::size_t(width) * height > 4194304U ||
+        !std::isfinite(spacing_m) || spacing_m < 1.0F)
+        throw std::runtime_error("invalid sampled surface grid geometry");
+    if (std::filesystem::is_symlink(binding_manifest) ||
+        !std::filesystem::is_regular_file(binding_manifest) ||
+        std::filesystem::file_size(binding_manifest) > 65536U)
+        throw std::runtime_error("invalid sampled terrain binding manifest");
+    std::ifstream input(binding_manifest);
+    nlohmann::json id;
+    input >> id;
+    const auto& grid = id.at("target_grid");
+    if (id.at("schema") != "cubey.terrain.sampled-source.v1" ||
+        grid.at("schema") != "cubey.terrain.sampled-grid.v1" ||
+        grid.at("orientation") != "row-major-x-fastest-z-rows" ||
+        grid.at("sampling") != "bilinear-lod0" || grid.at("width") != width ||
+        grid.at("height") != height || grid.at("spacing_m") != spacing_m ||
+        bed.size() != std::size_t(width) * height ||
+        asset::sha256_hex(std::as_bytes(bed)) != id.at("solver_bed_sha256").get<std::string>())
+        throw std::runtime_error("sampled terrain/native grid or bed identity mismatch");
+    const auto origin = grid.at("sample_origin_xz_m").get<std::array<float, 2>>();
+    if (!std::isfinite(origin[0]) || !std::isfinite(origin[1]))
+        throw std::runtime_error("nonfinite sampled terrain origin");
+    const std::filesystem::path heightfield = id.at("manifest_path").get<std::string>();
+    if (std::filesystem::is_symlink(heightfield) ||
+        !std::filesystem::is_regular_file(heightfield) ||
+        std::filesystem::file_size(heightfield) > 65536U)
+        throw std::runtime_error("invalid sampled terrain source path");
+    std::ifstream source_stream(heightfield, std::ios::binary);
+    const std::string source_text{std::istreambuf_iterator<char>(source_stream), {}};
+    if (asset::sha256_hex(std::as_bytes(std::span(source_text))) !=
+        id.at("manifest_sha256").get<std::string>())
+        throw std::runtime_error("sampled terrain source manifest changed");
+    asset::TerrainRasterHeightSource source(heightfield);
+    asset::TerrainRasterClimateSource climate(heightfield.parent_path() / "surface-fields.json");
+    asset::validate_terrain_climate_binding(source, climate);
+    if (source.provenance().elevation_sha256 != id.at("elevation_sha256").get<std::string>())
+        throw std::runtime_error("sampled terrain source elevation changed");
+    const auto relative = std::filesystem::path(id.at("source_bed_path").get<std::string>());
+    if (relative.has_parent_path() || relative.empty() || relative.is_absolute())
+        throw std::runtime_error("unsafe sampled source-bed path");
+    const auto path = binding_manifest.parent_path() / relative;
+    if (std::filesystem::is_symlink(path) || !std::filesystem::is_regular_file(path) ||
+        std::filesystem::file_size(path) != bed.size_bytes())
+        throw std::runtime_error("sampled source-bed size mismatch");
+    std::vector<float> reference(bed.size());
+    std::ifstream payload(path, std::ios::binary);
+    payload.read(reinterpret_cast<char*>(reference.data()), std::streamsize(bed.size_bytes()));
+    if (!payload || asset::sha256_hex(std::as_bytes(std::span(reference))) !=
+                        id.at("source_bed_sha256").get<std::string>())
+        throw std::runtime_error("sampled source-bed integrity mismatch");
+    const auto point = [&](unsigned x, unsigned z) {
+        return math::Vec2(origin[0], origin[1]) + math::Vec2(float(x), float(z)) * spacing_m;
+    };
+    std::vector<math::Vec4> samples;
+    samples.reserve(bed.size());
+    float maximum_error = 0.0F;
+    for (unsigned z = 0; z < height; ++z)
+        for (unsigned x = 0; x < width; ++x) {
+            const auto p = point(x, z);
+            if (!source.contains_disk(p, 0) || !climate.contains(p))
+                throw std::runtime_error("sampled terrain/climate coverage mismatch");
+            const auto expected = source.sample_height({.world_xz = p});
+            const auto supplied = reference[std::size_t(z) * width + x];
+            const float error = std::abs(expected - supplied);
+            const float tolerance = std::max(0.0002F, 8 * std::numeric_limits<float>::epsilon() *
+                                                          std::max(std::abs(expected), 1.0F));
+            if (!std::isfinite(supplied) || error > tolerance)
+                throw std::runtime_error("sampled source-bed orientation/interpolation mismatch");
+            maximum_error = std::max(maximum_error, error);
+            const auto c = climate.sample(p);
+            samples.emplace_back(c.temperature_mean_c, c.temperature_stddev_c,
+                                 c.precipitation_annual_mm, c.precipitation_cv);
+        }
+    auto result = fluid_25d_build_terrain_surface(width, height, spacing_m, bed, samples);
+    const auto started = std::chrono::steady_clock::now();
+    const auto field = terrain::make_terrain_surface_field(source, source.bounds(), &climate);
+    result.correlated.reserve(bed.size());
+    for (unsigned z = 0; z < height; ++z)
+        for (unsigned x = 0; x < width; ++x)
+            result.correlated.push_back(field.sample(point(x, z)));
+    auto receipt = nlohmann::json::parse(result.receipt);
+    receipt["source_identity"] = id;
+    receipt["source_sample_max_abs_error_m"] = maximum_error;
+    receipt["climate_sha256"] = climate.metadata().climate_sha256;
+    receipt["correlated_formula"] = terrain::kTerrainSurfaceFieldFormula;
+    receipt["correlated_crop_independent"] = true;
+    receipt["correlated_preparation_ms"] =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
+            .count();
     result.receipt = receipt.dump();
     return result;
 }

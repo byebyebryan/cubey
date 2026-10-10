@@ -7402,6 +7402,32 @@ void test_scenic_material_contract() {
                 surface_study.native_scenic_surface_source == "heightfield.json" &&
                 surface_study.simulation.solver == Fluid25DSolver::VirtualPipes,
             "surface study changed numerical defaults");
+    for (const char* source : {"--fluid25d-recording", "--fluid25d-external-session"}) {
+        const auto bound =
+            parse_project({"fluid_25d", source, "fixture", "--fluid25d-native-presentation",
+                           "scenic", "--fluid25d-scenic-surface-grid", "grid.json",
+                           "--fluid25d-scenic-surface-mode", "correlated"});
+        require(bound.native_scenic_surface_grid == "grid.json" &&
+                    bound.native_scenic_surface_mode == "correlated" &&
+                    bound.simulation.solver == Fluid25DSolver::VirtualPipes,
+                "world-coordinate binding must support live and recorded views without numerical "
+                "changes");
+    }
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-stream", "fixture",
+                                 "--fluid25d-native-presentation", "scenic",
+                                 "--fluid25d-scenic-surface-grid", "grid.json"});
+        },
+        "legacy streams lack validated live geometry binding");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-native-presentation", "scenic",
+                                 "--fluid25d-scenic-surface-grid", "grid.json",
+                                 "--fluid25d-scenic-surface-source", "old.json"});
+        },
+        "mixed source bindings accepted");
     for (const char* source : {"--fluid25d-stream", "--fluid25d-external-session"})
         require_throws(
             [&] {

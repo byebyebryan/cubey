@@ -532,10 +532,45 @@ struct Fluid25DRecording::Impl {
         }
         if (live_stream && (native_time_s < times.back() || native_time_s > duration))
             invalid("native time is outside the published prefix and finite protocol horizon");
-        validate_raw_asc_hashes(required_member(provenance_json, "raw_asc_sha256", "provenance"));
+        if (provenance_json.value("capture_schema", std::string{}) ==
+            "cubey.fluid25d.external-binary-capture.v1") {
+            if (live_stream)
+                invalid("binary capture provenance requires a completed recording");
+            const auto& captures = required_member(provenance_json, "captures", "provenance");
+            if (!captures.is_array() || captures.size() != descriptors.size())
+                invalid("binary captures must match saved frame count");
+            for (std::size_t i = 0; i < captures.size(); ++i) {
+                if (required_finite_number(
+                        required_member(captures[i], "physical_time_s", "capture"),
+                        "capture physical time") != descriptors[i].time_s)
+                    invalid("binary capture time differs from saved physical time");
+                for (const auto* key : {"state_sha256", "packet_sha256"})
+                    if (!cubey::asset::is_sha256_hex(
+                            required_string(required_member(captures[i], key, "capture"), key)))
+                        invalid("invalid binary capture digest");
+            }
+        } else {
+            validate_raw_asc_hashes(
+                required_member(provenance_json, "raw_asc_sha256", "provenance"));
+        }
     }
 
     void validate_provenance(const Json& provenance) {
+        if (provenance.value("capture_schema", std::string{}) ==
+            "cubey.fluid25d.external-binary-capture.v1") {
+            // Binary service snapshots are not native ASCII output. Keep their
+            // identities explicit rather than inventing legacy ASC provenance.
+            const auto& hashes = required_member(provenance, "source_sha256", "provenance");
+            for (const auto* key :
+                 {"case_spec", "case_protocol", "metadata", "native_numerical_bed"})
+                if (!cubey::asset::is_sha256_hex(
+                        required_string(required_member(hashes, key, "source_sha256"), key)))
+                    invalid("invalid binary capture source digest");
+            if (required_string(required_member(provenance, "field_source", "provenance"),
+                                "field source") != "validated external service binary snapshots")
+                invalid("unsupported binary field source");
+            return;
+        }
         const Json& source_hashes = required_member(provenance, "source_sha256", "provenance");
         if (!source_hashes.is_object()) {
             invalid("source_sha256 must be an object");

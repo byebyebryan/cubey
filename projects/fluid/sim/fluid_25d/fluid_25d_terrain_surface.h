@@ -37,4 +37,11 @@ fluid_25d_load_terrain_surface(const std::filesystem::path& heightfield,
 
 [[nodiscard]] unsigned fluid_25d_terrain_surface_mode(std::string_view mode);
 
+// Source hashes, world-coordinate sampling and exact native bed are checked
+// for both recorded and live external views. Source terrain stays immutable.
+[[nodiscard]] Fluid25DTerrainSurface
+fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_manifest,
+                                       std::uint32_t width, std::uint32_t height, float spacing_m,
+                                       std::span<const float> bed);
+
 } // namespace cubey::projects::fluid::fluid_25d

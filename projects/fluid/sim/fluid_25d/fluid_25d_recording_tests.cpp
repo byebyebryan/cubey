@@ -701,6 +701,38 @@ int main() {
         test_reader_rejects_malformed_recorded_rainfall_histories();
         test_pure_playback_clock_controls_and_end_state();
         test_live_prefix_identity_lifecycle_and_checked_frames();
+        {
+            auto fixture = make_recording();
+            auto& provenance = fixture.manifest["provenance"];
+            provenance =
+                Json{{"capture_schema", "cubey.fluid25d.external-binary-capture.v1"},
+                     {"field_source", "validated external service binary snapshots"},
+                     {"source_sha256", Json{{"case_spec", std::string(64, 'a')},
+                                            {"case_protocol", std::string(64, 'b')},
+                                            {"metadata", std::string(64, 'c')},
+                                            {"native_numerical_bed", std::string(64, 'd')}}},
+                     {"captures", Json::array()}};
+            for (const auto& frame : fixture.manifest["frames"])
+                provenance["captures"].push_back(Json{{"physical_time_s", frame["time_s"]},
+                                                      {"state_sha256", std::string(64, 'a')},
+                                                      {"packet_sha256", std::string(64, 'b')}});
+            const auto path = fixture.directory / "recording.json";
+            write_manifest(path, fixture.manifest);
+            Fluid25DRecording recording(path);
+            require(recording.frame(1)->depth_m ==
+                        std::vector<float>(fixture.frames[1].depth.begin(),
+                                           fixture.frames[1].depth.end()),
+                    "binary capture altered numerical fields");
+            provenance["captures"][1]["physical_time_s"] = 11;
+            write_manifest(path, fixture.manifest);
+            require_throws([&] { Fluid25DRecording invalid(path); },
+                           "binary physical time mismatch accepted");
+            provenance["captures"][1]["physical_time_s"] = 10;
+            provenance["captures"][0]["packet_sha256"] = "bad";
+            write_manifest(path, fixture.manifest);
+            require_throws([&] { Fluid25DRecording invalid(path); },
+                           "binary digest mismatch accepted");
+        }
     } catch (const std::exception& error) {
         std::cerr << "fluid_25d_recording_tests: " << error.what() << '\n';
         return 1;

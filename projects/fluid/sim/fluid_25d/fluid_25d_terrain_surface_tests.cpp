@@ -132,6 +132,53 @@ void test_source_binding() {
     require(overlap.correlated[0] == valid.correlated[1] &&
                 overlap.correlated[2] == valid.correlated[4],
             "crop changed source-correlated material weights");
+    // Same source, non-native spacing: shared world-coordinate material samples.
+    std::vector<float> derived_bed;
+    for (unsigned z = 0; z < 3; ++z)
+        for (unsigned x = 0; x < 4; ++x)
+            derived_bed.push_back(
+                source.sample_height({.world_xz = {10.F + 5.F * float(x), 10.F + 5.F * float(z)}}));
+    write(root / "source-bed.f32", std::span(derived_bed));
+    nlohmann::json sampled{
+        {"schema", "cubey.terrain.sampled-source.v1"},
+        {"manifest_path", (root / "heightfield.json").string()},
+        {"manifest_sha256", identity["manifest_sha256"]},
+        {"elevation_sha256", elevation_hash},
+        {"source_bed_path", "source-bed.f32"},
+        {"source_bed_sha256", cubey::asset::sha256_hex(std::as_bytes(std::span(derived_bed)))},
+        {"solver_bed_sha256", cubey::asset::sha256_hex(std::as_bytes(std::span(derived_bed)))},
+        {"target_grid",
+         {{"schema", "cubey.terrain.sampled-grid.v1"},
+          {"width", 4},
+          {"height", 3},
+          {"spacing_m", 5},
+          {"sampling", "bilinear-lod0"},
+          {"orientation", "row-major-x-fastest-z-rows"},
+          {"sample_origin_xz_m", {10, 10}}}}};
+    const auto load_sampled = [&](const auto& binding, const auto& native_bed) {
+        const auto text = binding.dump();
+        write(root / "sampled.json", std::span(text));
+        return fluid_25d_load_sampled_terrain_surface(root / "sampled.json", 4, 3, 5, native_bed);
+    };
+    const auto derived = load_sampled(sampled, derived_bed);
+    require(derived.correlated.size() == 12, "sampled terrain field missing");
+    for (unsigned z = 0; z < 3; ++z)
+        for (unsigned x = 0; x < 4; ++x)
+            require(derived.correlated[z * 4 + x] ==
+                        field.sample({10.F + 5.F * float(x), 10.F + 5.F * float(z)}),
+                    "derived grid diverges from shared Terrain material field");
+    auto wrong_native = derived_bed;
+    wrong_native[0] += 1;
+    rejects([&] { (void)load_sampled(sampled, wrong_native); });
+    auto wrong_origin = sampled;
+    wrong_origin["target_grid"]["sample_origin_xz_m"] = {1000, 10};
+    rejects([&] { (void)load_sampled(wrong_origin, derived_bed); });
+    auto wrong_spacing = sampled;
+    wrong_spacing["target_grid"]["spacing_m"] = 10;
+    rejects([&] { (void)load_sampled(wrong_spacing, derived_bed); });
+    auto wrong_hash = sampled;
+    wrong_hash["manifest_sha256"] = std::string(64, '0');
+    rejects([&] { (void)load_sampled(wrong_hash, derived_bed); });
     auto bad = identity;
     bad["manifest_sha256"] = std::string(64U, '0');
     rejects([&] { (void)load(bad, bed); });

@@ -67,6 +67,7 @@ struct Fluid25DProjectConfig {
     std::string native_scenic_material = "refined";
     std::optional<std::filesystem::path> native_scenic_tuning_path{};
     std::optional<std::filesystem::path> native_scenic_surface_source{};
+    std::optional<std::filesystem::path> native_scenic_surface_grid{};
     std::string native_scenic_surface_mode = "legacy";
     std::string native_scenic_terrain_view = "shaded";
     std::string native_scenic_water_view = "shaded";
@@ -559,6 +560,12 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "and adjacent SHA-bound climate companion. No simulation changes.",
                      ValueType::Path),
               config.native_scenic_surface_source)
+        .bind(
+            option("fluid25d.scenic_surface_grid", "--fluid25d-scenic-surface-grid",
+                   "Sampled Surface Grid",
+                   "SHA-bound world-coordinate terrain/climate binding for recorded or live grids.",
+                   ValueType::Path),
+            config.native_scenic_surface_grid)
         .bind(option("fluid25d.scenic_surface_mode", "--fluid25d-scenic-surface-mode",
                      "Surface Model",
                      "Render-only legacy, landform or climate-plus-landform masks.",
@@ -967,16 +974,26 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     if (project_config.native_scenic_water_view != "shaded" &&
         project_config.native_scenic_terrain_view != "shaded")
         throw std::runtime_error("water component diagnostics require shaded terrain");
-    if ((project_config.native_scenic_surface_source ||
-         parsed.path_was_assigned("fluid25d.scenic_surface_mode")) &&
+    if (project_config.native_scenic_surface_source &&
         (!project_config.recording_path || project_config.stream_path || service_session ||
          project_config.native_presentation != "scenic"))
         throw std::runtime_error("Scenic surface study requires a completed recording and Scenic");
+    if (project_config.native_scenic_surface_grid &&
+        (project_config.native_scenic_surface_grid->empty() ||
+         project_config.native_scenic_surface_source || project_config.stream_path ||
+         (!project_config.recording_path && !service_session) ||
+         project_config.native_presentation != "scenic"))
+        throw std::runtime_error(
+            "sampled surface binding requires one recorded/live Scenic source");
+    if (parsed.path_was_assigned("fluid25d.scenic_surface_mode") &&
+        ((!project_config.recording_path && !service_session) ||
+         project_config.native_presentation != "scenic"))
+        throw std::runtime_error("Scenic surface mode requires a recorded/live Scenic source");
     if (project_config.native_scenic_surface_source &&
         project_config.native_scenic_surface_source->empty())
         throw std::runtime_error("Scenic surface source must not be empty");
     if (project_config.native_scenic_surface_mode != "legacy" &&
-        !project_config.native_scenic_surface_source)
+        !project_config.native_scenic_surface_source && !project_config.native_scenic_surface_grid)
         throw std::runtime_error(
             "landform/climate surface mode requires a matching surface source");
     if (project_config.native_camera_sweep_radians > 0.0F &&

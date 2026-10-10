@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstdio>
 #include <span>
 #include <stdexcept>
 #include <vector>
@@ -148,6 +149,8 @@ void Swapchain::create(VkExtent2D desired_extent) {
                                                     present_modes.data()),
           "vkGetPhysicalDeviceSurfacePresentModesKHR");
     present_mode_ = choose_swapchain_present_mode(present_modes, present_mode_);
+    std::fprintf(stderr, "cubey_swapchain_present_mode: %d (0=immediate,1=mailbox,2=fifo)\n",
+                 static_cast<int>(present_mode_));
 
     surface_format_ = choose_swapchain_surface_format(formats);
 
