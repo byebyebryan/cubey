@@ -153,6 +153,24 @@ class Review(unittest.TestCase):
         self.assertEqual(review.isolation_table(rows), "")
         self.assertEqual(review.display_table([]), "")
 
+    def test_soak_views_are_curated_without_duplicate_gallery(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            trial = root / "soak-rolling-patch-1024-16m/trial"
+            trial.mkdir(parents=True)
+            (trial / "result.json").write_text(json.dumps({
+                "case": "rolling-patch-1024-16m", "mode": "live", "status": "completed",
+                "errors": [], "captures": [{"path": "final.png", "observed_physical_s": 36000}]}))
+            with contextlib.redirect_stdout(io.StringIO()):
+                review.render(root)
+            page = (root / "index.html").read_text()
+            self.assertIn("Longer live runs", page)
+            self.assertIn("not seeded lakes or unbounded runs", page)
+            self.assertIn("All other live captures · 0", page)
+            summary = json.loads((root / "overview.json").read_text())
+            self.assertEqual(summary["total_retained_trials"], 1)
+            self.assertEqual(summary["outcomes"], {"completed": 1})
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -243,7 +243,9 @@ def render(root):
             representatives.append(sorted(candidates, key=lambda r: (
                 not r["_directory"].startswith("release-"), r["_directory"]))[0])
     representative_paths = {r["_directory"] for r in representatives}
-    galleries = [gallery(r) for r in captured if r["_directory"] not in representative_paths]
+    soaks = [r for r in captured if r["_directory"].startswith("soak-")]
+    selected_paths = representative_paths | {r["_directory"] for r in soaks}
+    galleries = [gallery(r) for r in captured if r["_directory"] not in selected_paths]
     display_captures = [r for r in rows if r["_directory"].startswith("display-") and
                         r["mode"] == "renderer-only" and r.get("captures") and
                         r["_directory"].endswith("-0")]
@@ -297,6 +299,8 @@ def render(root):
     source += '<div class="note"><p>Read GPU pass time separately from frame-loop time. The host frame-ending span includes owner-thread dispatch, submission and presentation; those components are not separately measured here. Its delay cannot be assigned to X11 alone. No physical-monitor FPS claim. Worker-only includes download/publication; it is not pure CUDA timing.</p><p>All coverage starts dry under continuous 512 mm/h rain and asks for 60× physical time. 54× is the proposed pace target. A 600-wall-second timeout is an incomplete two-hour horizon, not a solver fallback. 8 m spacing samples the same original 30 m terrain; it adds no new terrain detail.</p><p>Static isolation controls contain exactly two captured physical states and remain paused on the final state. They are not smooth recorded simulation replays. Match renderer-only against renderer-plus-worker to assess contention.</p><p>Milestone PNG captures are included in the instrumented live timing window. Final screenshots, eight-second videos and warm control probes are outside it. GPU clocks are not controlled by this campaign; read repeated ranges rather than a universal overhead percentage.</p></div>'
     source += '<p>“Completed” means the bounded trial finished, not that all targets passed. The <a href="overview.json">summary JSON</a> separately checks pace, frame time, field/advancing freshness, endpoint lag, viewer errors and clean input-preserving shutdown. Debug baseline and labelled Release follow-on are separate artifacts.</p>'
     source += '<h2>Start here: the three 1k terrain options</h2><p>Same 16.384 km square size, same forcing. These are full-scene overviews, not close-up bank-quality comparisons. The terrain and water amounts differ; those differences are the point of the site options.</p><div class="grid">' + ''.join(gallery(r) for r in representatives) + '</div>'
+    if soaks:
+        source += '<details><summary>Longer live runs · runoff and pooling after about ten physical hours</summary><p>Same 1k/16 m grids and continuous 512 mm/h demo rain, starting dry. These are 600-wall-second Release soaks, not seeded lakes or unbounded runs. The rolling site collects a broader connected pool; mountain retains pronounced downhill channels.</p><div class="grid">' + ''.join(gallery(r) for r in soaks) + '</div></details>'
     source += '<section><h2>Broad coverage at a glance · Debug baseline</h2>' + coverage_matrix(coverage) + '</section>'
     source += '<h2>How quickly does the water simulation advance?</h2><div class="grid">' + ''.join(progress_plot(coverage, site) for site in ("mountain", "alpine", "rolling")) + '</div>'
     source += build_table(rows)
