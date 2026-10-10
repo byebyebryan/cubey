@@ -160,7 +160,7 @@ def build_table(rows):
                       describe(lambda r: metric(r, "fluid_25d.whitewater.classification_cpu_ms"), 1),
                       describe(lambda r: metric(r, "fluid_25d.external.whitewater_source_age_s")))
             output.append('<tr>' + ''.join(f'<td>{e(value)}</td>' for value in fields) + '</tr>')
-    return '<section><h2>Build-only experiment · live fields</h2><p>Median [run-to-run range] of per-run p95 values; pace uses the per-run physical/wall ratio. Debug coverage has one run per case, not a repeated baseline. Native extension, numerical inputs and visual settings are unchanged.</p><div class="scroll"><table><thead><tr>' + \
+    return '<section><h2>Build-only experiment · live fields</h2><p>Median [run-to-run range] of per-run p95 values; pace uses the per-run physical/wall ratio. Debug coverage has one run per case, not a repeated baseline. Native extension, numerical inputs and visual settings are unchanged. The later Release artifact also contains the recorded-capture fingerprint repair; that path is not exercised by these live measurements.</p><div class="scroll"><table><thead><tr>' + \
         ''.join(f'<th>{h}</th>' for h in ("Case", "Artifact / repeats", "Pace ×", "Frame p95 ms", "GPU p95 ms", "Field age p95 s", "Whitewater classification p95 ms", "Whitewater source age p95 s")) + \
         '</tr></thead><tbody>' + ''.join(output) + '</tbody></table></div></section>'
 

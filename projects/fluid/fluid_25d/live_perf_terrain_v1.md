@@ -128,6 +128,10 @@ Release reduced 1k whitewater classification p95 from about 590ms to 32ms, and
 2k classification from multiple seconds to about 105ms. The native extension,
 numerical inputs, shaders and material settings did not change. Release still
 does not solve the frame-loop budget or the 2k/8m accelerated-simulation pace.
+The later Release artifact includes the repaired recorded-capture fingerprint
+adapter; that startup path is not exercised in these live timing comparisons.
+Retained protocol receipts pin the exact artifacts rather than implying identical
+whole binaries or repeated Debug baselines.
 
 The matched held-state 2k controls measured about +23% GPU-pass p95 and +21%
 frame-loop p95 with a computing/publishing worker present. The 1k controls did
