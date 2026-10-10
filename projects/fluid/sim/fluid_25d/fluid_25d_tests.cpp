@@ -13,8 +13,10 @@
 #include "fluid_25d_oracle.h"
 #include "fluid_25d_presentation.h"
 #include "fluid_25d_rain_study.h"
+#include "fluid_25d_rain_visuals.h"
 #include "fluid_25d_scenic_environment.h"
 #include "fluid_25d_scenic_material.h"
+#include "fluid_25d_whitewater.h"
 
 #include <cubey/asset/file_digest.h>
 
@@ -6895,6 +6897,93 @@ void test_external_session_freshness_and_typed_inputs() {
         "typed controls refresh only when clean, applied, reset-generation changed, or canceled");
 }
 
+void test_whitewater_sources_and_clock() {
+    using namespace cubey::projects::fluid::fluid_25d;
+    constexpr std::uint32_t width = 32U, height = 24U;
+    std::vector<float> bed(width * height), h(width * height, 0.25F);
+    std::vector<Fluid25DVelocity> u(width * height, {-3.0F, 0.0F});
+    for (std::size_t i = 0; i < bed.size(); ++i)
+        bed[i] = float(i % width) * 10.0F;
+    const auto before_bed = bed, before_h = h;
+    const auto a = fluid_25d_whitewater_seeds(width, height, 10, bed, h, u, 4096);
+    const auto b = fluid_25d_whitewater_seeds(width, height, 10, bed, h, u, 4096);
+    require(a.seeds.size() == 4096U && a.requested == (width - 1U) * (height - 1U) * 19U,
+            "whitewater must respect budget and reference density on a fast steep plane");
+    bool first = false, last = false;
+    for (std::size_t i = 0; i < a.seeds.size(); ++i) {
+        const auto& seed = a.seeds[i];
+        require(seed.cell == b.seeds[i].cell && seed.slot == b.seeds[i].slot &&
+                    seed.weight == b.seeds[i].weight && seed.slot < 19U && seed.weight >= 0.0F &&
+                    seed.weight <= 1.0F,
+                "retained native cell/slot IDs and opacity must be deterministic and bounded");
+        first |= seed.cell / width == 0U;
+        last |= seed.cell / width == height - 2U;
+    }
+    require(first && last && bed == before_bed && h == before_h,
+            "budget selection must not starve later branches or mutate water/terrain");
+    for (const auto velocity :
+         {Fluid25DVelocity{0, 0}, Fluid25DVelocity{3, 0}, Fluid25DVelocity{0, 3}}) {
+        std::fill(u.begin(), u.end(), velocity);
+        require(fluid_25d_whitewater_seeds(width, height, 10, bed, h, u, 4096).seeds.empty(),
+                "stationary, uphill and cross-slope controls cannot emit steep flecks");
+    }
+    std::fill(u.begin(), u.end(), Fluid25DVelocity{-3, 0});
+    for (const float depth : {0.0F, 0.06F, 0.08F}) {
+        std::fill(h.begin(), h.end(), depth);
+        require(fluid_25d_whitewater_seeds(width, height, 10, bed, h, u, 4096).seeds.empty(),
+                "dry and thin hillside films must not acquire whitewater sources");
+    }
+    h[0] = std::numeric_limits<float>::quiet_NaN();
+    require_throws(
+        [&] { static_cast<void>(fluid_25d_whitewater_seeds(width, height, 10, bed, h, u, 4096)); },
+        "non-finite display fields are rejected");
+    Fluid25DRainVisualClock thirty, sixty;
+    thirty.capture(30, 30, true, 8);
+    sixty.capture(60, 60, true, 0.25F);
+    require(thirty.seconds() == 1.0 && sixty.seconds() == 1.0,
+            "whitewater presentation time is frame-rate and rain-speed independent");
+    thirty.advance(0.1, false);
+    require(thirty.seconds() == 1.0, "pause holds whitewater presentation time");
+    thirty.reset();
+    require(thirty.seconds() == 0.0, "seek/reset clears the presentation clock");
+    const auto preset = fluid_25d_scenic_material("macro");
+    require(preset.water_whitewater_strength == 0.0F && preset.water_stream_foam_strength == 0.0F,
+            "new whitewater remains opt-in");
+    const auto tuned = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_strength":1,"water_whitewater_speed":2,"water_stream_foam_strength":1})",
+        preset);
+    require(tuned.water_whitewater_radius_m == 3 && tuned.water_whitewater_lift_m == 1.5F &&
+                tuned.water_whitewater_speed == 2 && tuned.water_stream_foam_strength == 1 &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(tuned), preset)) ==
+                    fluid_25d_scenic_material_json(tuned),
+            "3 m whitewater controls roundtrip without changing physical time");
+    require(tuned.water_stream_foam_patchiness == 0 && tuned.water_stream_foam_brightness == 1,
+            "existing foam tuning retains its dense pattern and brightness");
+    const auto patches = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_stream_foam_patchiness":1,"water_stream_foam_brightness":0.4})",
+        tuned);
+    require(
+        patches.water_stream_foam_patchiness == 1 && patches.water_stream_foam_brightness == 0.4F &&
+            patches.water_whitewater_speed == tuned.water_whitewater_speed &&
+            patches.water_roughness == tuned.water_roughness &&
+            fluid_25d_scenic_material_json(
+                fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(patches), preset)) ==
+                fluid_25d_scenic_material_json(patches),
+        "independent foam controls roundtrip without retiming motion or altering water roughness");
+    for (const auto* text :
+         {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_budget":4096.5})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_speed":0})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_whitewater_radius_m":100})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_stream_foam_strength":2})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_stream_foam_patchiness":-0.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_stream_foam_patchiness":1.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_stream_foam_brightness":-0.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_stream_foam_brightness":1.01})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, preset)); },
+                       "whitewater tuning must be finite/bounded with an integer budget");
+}
+
 void test_scenic_material_contract() {
     using namespace cubey::projects::fluid::fluid_25d;
     const auto v1 = fluid_25d_scenic_material("v1");
@@ -6902,6 +6991,48 @@ void test_scenic_material_contract() {
     const auto terrain = fluid_25d_scenic_material("terrain");
     const auto macro = fluid_25d_scenic_material("macro");
     const auto fixed_daylight = fluid_25d_fixed_daylight();
+    for (const auto* material : {&v1, &refined, &terrain, &macro})
+        require(material->water_rapid_strength == 0.0F && material->water_rapid_scale_m == 192.0F &&
+                    material->water_cascade_strength == 0.0F &&
+                    material->water_landing_strength == 0.0F,
+                "all presets retain accepted shading; steep-flow material is opt-in");
+    const auto rapid = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_strength":1,"water_rapid_scale_m":384})",
+        macro);
+    require(rapid.water_rapid_strength == 1.0F && rapid.water_rapid_scale_m == 384.0F &&
+                rapid.water_extinction_scale == macro.water_extinction_scale &&
+                rapid.water_ripple_strength == macro.water_ripple_strength &&
+                rapid.water_shallow_coverage_strength == macro.water_shallow_coverage_strength &&
+                fluid_25d_scenic_material_json(
+                    fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(rapid), v1)) ==
+                    fluid_25d_scenic_material_json(rapid),
+            "rapid tuning roundtrips without replacing optics, wind or coverage");
+    const auto cascade = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","water_cascade_strength":1,"water_landing_strength":0.5})",
+        macro);
+    require(cascade.water_cascade_strength == 1.0F && cascade.water_landing_strength == 0.5F &&
+                cascade.water_rapid_strength == 0.0F &&
+                cascade.water_shallow_coverage_strength == macro.water_shallow_coverage_strength &&
+                fluid_25d_scenic_material_json(
+                    fluid_25d_parse_scenic_material(fluid_25d_scenic_material_json(cascade), v1)) ==
+                    fluid_25d_scenic_material_json(cascade),
+            "cascade controls roundtrip independently of previous rapid and coverage options");
+    for (const auto* text :
+         {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_cascade_strength":-0.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_cascade_strength":1.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_cascade_strength":true})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_landing_strength":-0.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_landing_strength":1.01})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
+                       "cascade controls reject invalid bounds and types");
+    for (const auto* text :
+         {R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_strength":-0.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_strength":1.01})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_strength":true})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_scale_m":63.9})",
+          R"({"schema":"cubey.fluid25d.scenic-material.v2","water_rapid_scale_m":384.1})"})
+        require_throws([&] { static_cast<void>(fluid_25d_parse_scenic_material(text, macro)); },
+                       "rapid controls reject invalid bounds and types");
     require(glm::length(cubey::render::atmosphere_environment_sun_direction(fixed_daylight) -
                         glm::normalize(cubey::math::Vec3{-0.35F, 0.42F, 0.84F})) < 1e-6F &&
                 !fixed_daylight.reference_geometry_enabled && !fixed_daylight.render_night_sky &&
@@ -7030,7 +7161,13 @@ void test_scenic_material_contract() {
                        "shallow absorption controls reject invalid/non-numeric bounds");
     require(fluid_25d_scenic_water_view("shaded") == 0U &&
                 fluid_25d_scenic_water_view("coverage") == 9U &&
-                fluid_25d_scenic_water_view("roughness") == 11U,
+                fluid_25d_scenic_water_view("roughness") == 11U &&
+                fluid_25d_scenic_water_view("rapid-activity") == 12U &&
+                fluid_25d_scenic_water_view("rapid-foam") == 13U &&
+                fluid_25d_scenic_water_view("no-rapid-foam") == 14U &&
+                fluid_25d_scenic_water_view("cascade-weight") == 15U &&
+                fluid_25d_scenic_water_view("landing-activity") == 16U &&
+                fluid_25d_scenic_water_view("no-landing-foam") == 17U,
             "water component diagnostic slots remain stable");
     for (const auto* material : {&v1, &refined, &terrain, &macro})
         require(material->film_begin_m == 0.02F && material->film_end_m == 0.12F &&
@@ -7289,6 +7426,7 @@ int main() {
         test_external_session_freshness_and_typed_inputs();
         test_recording_cli_is_separate_from_physics();
         test_rain_visual_cli();
+        test_whitewater_sources_and_clock();
         test_scenic_material_contract();
         test_bank_comparison_controls();
         test_catchment_far_plane_geometry();

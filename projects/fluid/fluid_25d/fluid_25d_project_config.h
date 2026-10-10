@@ -577,7 +577,8 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Enum, {},
                      {"shaded", "environment-only", "direct-only", "transmission-only",
                       "no-environment", "no-direct", "no-clarity", "no-detail", "depth-bands",
-                      "coverage", "film-weight", "roughness"}),
+                      "coverage", "film-weight", "roughness", "rapid-activity", "rapid-foam",
+                      "no-rapid-foam", "cascade-weight", "landing-activity", "no-landing-foam"}),
               config.native_scenic_water_view)
         .bind(option("fluid25d.rain_visuals", "--fluid25d-rain-visuals", "Visible Rain",
                      "Opt-in Scenic render-only streaks driven by applied rain, not water parcels.",

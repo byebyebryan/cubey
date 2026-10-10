@@ -1,4 +1,5 @@
 #include <cubey/core/math.h>
+#include <cubey/procedural/noise.h>
 #include <cubey/render/pipeline_resource.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_recorder.h>
@@ -17,6 +18,7 @@
 #include <string_view>
 
 namespace {
+using cubey::math::Vec2;
 using cubey::math::Vec3;
 using cubey::math::Vec4;
 constexpr std::array<Vec3, 16> normals{{{0, 1, 0},
@@ -61,7 +63,7 @@ void run() {
                                             .require_present = false,
                                             .require_dynamic_rendering = false});
     cubey::vulkan::SubmissionCoordinator submission(device);
-    constexpr auto bytes = sizeof(Vec4) * 190U;
+    constexpr auto bytes = sizeof(Vec4) * 630U;
     cubey::vulkan::Buffer storage(
         device, cubey::vulkan::device_local_buffer_config(
                     bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
@@ -101,7 +103,7 @@ void run() {
     const VkBufferCopy copy{.srcOffset = 0, .dstOffset = 0, .size = bytes};
     vkCmdCopyBuffer(commands.command_buffer(), storage.handle(), readback.handle(), 1, &copy);
     commands.submit_and_wait();
-    std::array<Vec4, 190> values{};
+    std::array<Vec4, 630> values{};
     readback.download(values.data(), bytes);
     for (unsigned mode = 0; mode < 5; ++mode) {
         for (std::size_t i = 0; i < normals.size(); ++i) {
@@ -185,8 +187,157 @@ void run() {
             (i % 8U > 0U && actual < values[165U + i].x))
             throw std::runtime_error("shallow coverage identity/bounds/monotonicity failed");
     }
-    std::cout << "PASS: 80 terrain gradient + 22 wet-normal/ripple + 64 agitation + 24 shallow "
-                 "coverage GPU controls\n";
+    const auto smooth = [](float low, float high, float value) {
+        const float t = std::clamp((value - low) / (high - low), 0.0F, 1.0F);
+        return t * t * (3.0F - 2.0F * t);
+    };
+    const std::array<float, 4> rapid_depths{0.0F, 0.02F, 0.08F, 2.0F};
+    for (unsigned i = 0; i < 96U; ++i) {
+        // Flat, stationary, downhill, cross-slope, uphill, gentle, extreme,
+        // near-stationary. Height exaggeration must not change classification.
+        const unsigned mode = i % 8U;
+        const float grade = mode == 2U || mode == 6U ? 1.0F : 0.0F;
+        const float speed = mode == 1U ? 0.0F : mode == 7U ? 0.04F : 3.0F;
+        const float target =
+            smooth(0.08F, 1.4F, speed) * grade * smooth(0.002F, 0.08F, rapid_depths[(i / 8U) % 4U]);
+        const float actual = values[190U + i].x;
+        if (!std::isfinite(actual) || actual < 0.0F || actual > 1.0F ||
+            std::abs(actual - target) > 0.00001F)
+            throw std::runtime_error("rapid directional/depth/height control failed: " +
+                                     std::to_string(i));
+    }
+    const std::array clocks{0.0F, 0.001F, 7.999F, 8.0F, 8.001F, 1023.999F, 1024.0F, 1024.001F};
+    for (unsigned i = 0; i < 16U; ++i) {
+        const float time = clocks[i % 8U] / 8.0F + (i < 8U ? 0.0F : 0.13F);
+        const float a = time - std::floor(time);
+        const float b = time + 0.5F - std::floor(time + 0.5F);
+        const Vec4 target{a, b, 1.0F - std::abs(a * 2 - 1), 1.0F - std::abs(b * 2 - 1)};
+        const auto actual = values[286U + i];
+        if (glm::length(actual - target) > 0.00005F ||
+            std::abs(actual.z + actual.w - 1.0F) > 0.00001F)
+            throw std::runtime_error("rapid phase/weight/reset control failed");
+    }
+    if (glm::length(values[286] - values[292]) > 0.00001F ||
+        glm::length(values[294] - values[300]) > 0.00005F)
+        throw std::runtime_error("rapid 1024-second clock wrap failed");
+    const std::array<Vec2, 8> grades{Vec2{0},    Vec2{1, 0},    Vec2{1, 0},    Vec2{1, 0},
+                                     Vec2{1, 0}, Vec2{0.1F, 0}, Vec2{1000, 0}, Vec2{1, 0}};
+    const std::array<Vec2, 8> velocities{Vec2{3, 0},       Vec2{0},        Vec2{-3, 0},
+                                         Vec2{0, 3},       Vec2{3, 0},     Vec2{-3, 0},
+                                         Vec2{-100000, 0}, Vec2{-0.04F, 0}};
+    const std::array heights{0.25F, 1.0F, 4.0F};
+    for (unsigned i = 0; i < 24; ++i) {
+        const auto u = velocities[i % 8U];
+        const auto g = grades[i % 8U];
+        const float height = heights[i / 8U];
+        const Vec3 n = glm::normalize(Vec3{-g.x * height, 1, -g.y * height});
+        Vec3 expected{0};
+        if (glm::length(u) > 0.00001F) {
+            const Vec3 tangent{u.x, -glm::dot(Vec2{n.x, n.z}, u) / (std::max(n.y, 0.05F) * height),
+                               u.y};
+            expected =
+                glm::normalize(tangent) * std::clamp(glm::length(tangent) * 3.0F, 6.0F, 24.0F);
+        }
+        const Vec3 actual{values[302U + i]};
+        if (!std::isfinite(actual.x) || !std::isfinite(actual.y) || !std::isfinite(actual.z) ||
+            glm::length(actual - expected) > 0.0001F || glm::length(actual) > 24.0001F)
+            throw std::runtime_error("cascade lifted/bounded flow control failed");
+    }
+    const std::array local_grades{0.0F, 1.0F, 0.3F, -0.1F, 0.0F, 0.0F, 0.0F, 0.0F};
+    const std::array upstream_grades{1.0F, 1.0F, 0.3F, 1.0F, 0.1F, 1.0F, 1.0F, 1.0F};
+    const std::array landing_depths{0.0F, 0.08F, 0.14F, 0.30F};
+    for (unsigned i = 0; i < 64; ++i) {
+        const unsigned mode = i % 8U;
+        const float local = local_grades[mode], up = upstream_grades[mode];
+        const float depth = mode == 5U || mode == 6U ? 0.0F : landing_depths[(i / 8U) % 4U];
+        const float speed = mode == 7U ? 0.0F : i < 32U ? 3.0F : 0.08F;
+        const float expected =
+            smooth(0.08F, 0.20F, depth) * smooth(0.08F, 1.4F, speed) * smooth(0.4F, 1.0F, up) *
+            (1.0F - smooth(0.25F, 0.75F, std::max(local, 0.0F))) *
+            smooth(0.15F, 0.7F, up - std::max(local, 0.0F)) * (local >= -0.05F ? 1.0F : 0.0F);
+        const float actual = values[326U + i].x;
+        if (!std::isfinite(actual) || actual < 0 || actual > 1 ||
+            std::abs(actual - expected) > 0.00001F)
+            throw std::runtime_error("landing support/direction/flattening control failed");
+    }
+    for (unsigned i = 0; i < 16U; ++i) {
+        const float target = 0.94F * (float(i % 4U) / 3.0F) * (float(i / 4U) / 3.0F);
+        const float actual = values[390U + i].x;
+        if (!std::isfinite(actual) || actual < 0.0F || actual > 0.94F ||
+            std::abs(actual - target) > 0.00001F)
+            throw std::runtime_error("cascade zero-floor/peak control failed");
+    }
+    const float phase = cubey::procedural::hash_to_unit_masked_24(0x25d2026U + 2U);
+    for (unsigned i = 0; i < 64U; ++i) {
+        const float clock = float(i % 8U) * 0.5F;
+        const float age = clock * 0.5F + phase - std::floor(clock * 0.5F + phase);
+        const unsigned mode = (i / 8U) % 4U;
+        const Vec2 velocity = mode == 2U ? Vec2{30, -40} : mode == 3U ? Vec2{0} : Vec2{3, -4};
+        const Vec2 offset = velocity / std::max(1.0F, glm::length(velocity) / 12.0F) *
+                            (age * 2.0F * (mode == 1U ? 2.0F : 1.0F)) / 10.0F;
+        const Vec4 target{offset, age, smooth(0, 0.12F, age) * (1.0F - smooth(0.65F, 1, age))};
+        if (glm::length(values[406U + i] - target) > 0.00006F) {
+            std::cerr << "motion case " << i << " actual " << values[406U + i].x << ','
+                      << values[406U + i].y << ',' << values[406U + i].z << ','
+                      << values[406U + i].w << " expected " << target.x << ',' << target.y << ','
+                      << target.z << ',' << target.w << '\n';
+            throw std::runtime_error(
+                "whitewater direction/cap/speed/life/fps/wrap GPU control failed");
+        }
+    }
+    const std::array stream_depths{0.0F, 0.04F, 0.14F, 0.4F};
+    const std::array stream_speeds{0.0F, 0.7F, 2.0F, 4.0F};
+    for (unsigned i = 0; i < 32U; ++i) {
+        const float expected_stream = i < 16U
+                                          ? smooth(0.8F, 4.0F, stream_speeds[i % 4U]) *
+                                                smooth(0.08F, 0.20F, stream_depths[(i / 4U) % 4U])
+                                          : 0.0F;
+        if (std::abs(values[470U + i].x - expected_stream) > 0.00002F)
+            throw std::runtime_error(
+                "general-stream speed/depth/steep-preservation GPU control failed");
+    }
+    const std::array current_flow{Vec2{0}, Vec2{3, -4}, Vec2{-3, 4}, Vec2{1, 0}};
+    const std::array filtered_flow{Vec2{3, -4}, Vec2{-3, 4}, Vec2{0}, Vec2{0, 1}};
+    for (unsigned i = 0; i < 16U; ++i) {
+        const auto current = current_flow[i % 4U], filtered = filtered_flow[i / 4U];
+        const auto expected_flow =
+            glm::length(current) <= 0.00001F || glm::dot(current, filtered) <= 0 ? current
+                                                                                 : filtered;
+        if (glm::length(values[502U + i] - Vec4{expected_flow, 0, 0}) > 0.00001F)
+            throw std::runtime_error("whitewater stop/reversal/stale-direction GPU control failed");
+    }
+    const std::array foam_samples{Vec2{0.8F, 0.2F}, Vec2{0.72F, 0.67F}, Vec2{0.65F},
+                                  Vec2{0.1F, 0.3F}};
+    const std::array patchiness{0.0F, 0.1F, 2.0F / 3.0F, 1.0F};
+    for (unsigned i = 0; i < 80U; ++i) {
+        const auto samples = foam_samples[(i / 5U) % 4U];
+        const float weight = float(i % 5U) / 4.0F;
+        const float patches = patchiness[i / 20U];
+        const float dense = smooth(0.495F, 0.625F, samples.x * weight + samples.y * (1 - weight));
+        const float low = 0.50F + (0.65F - 0.50F) * patches;
+        const float high = 0.62F + (0.75F - 0.62F) * patches;
+        const float shaped = smooth(low - 0.005F, high + 0.005F, samples.x) * weight +
+                             smooth(low - 0.005F, high + 0.005F, samples.y) * (1 - weight);
+        const float target = dense + (shaped - dense) * smooth(0, 0.2F, patches);
+        if (!std::isfinite(values[518U + i].x) || std::abs(values[518U + i].x - target) > 0.00002F)
+            throw std::runtime_error("stream foam patchiness/phase/legacy GPU control failed");
+    }
+    if (std::abs(values[578U + 2U].x - 0.5F) > 0.00002F || values[518U + 2U].x >= 0.005F)
+        throw std::runtime_error(
+            "sparse midpoint must crossfade patches, not threshold their mean");
+    for (unsigned i = 0; i < 16U; ++i) {
+        const auto domain = values[598U + i];
+        if (!std::isfinite(domain.x) || !std::isfinite(domain.y) || !std::isfinite(domain.z) ||
+            !std::isfinite(domain.w) || domain.x < 0 || domain.x > 1 || domain.y < 0 ||
+            domain.y > 1 || domain.z <= 0.0001F || domain.w <= 0.0001F)
+            throw std::runtime_error("stream foam domain must break 64 m repetition on both axes");
+        const float weight = float(i % 5U) / 4.0F;
+        const float expected = float(i % 4U) / 3.0F * weight + float(i / 4U) / 3.0F * (1 - weight);
+        if (!std::isfinite(values[614U + i].x) ||
+            std::abs(values[614U + i].x - expected) > 0.00002F)
+            throw std::runtime_error("stream foam envelope must gate each layer before crossfade");
+    }
+    std::cout << "PASS: 406 retained + 112 whitewater + 80 foam-shape + 32 breakup GPU controls\n";
 }
 } // namespace
 

@@ -44,6 +44,12 @@
 namespace cubey::projects::fluid::fluid_25d {
 namespace {
 
+struct WhitewaterBuild {
+    Fluid25DWhitewaterSelection selection;
+    double source_s = 0.0, cpu_ms = 0.0;
+    std::uint64_t epoch = 0U;
+};
+
 const char* lifecycle_name(Fluid25DLifecycle lifecycle) {
     switch (lifecycle) {
     case Fluid25DLifecycle::Ready:
@@ -506,9 +512,58 @@ class RecordingApp {
             packed_velocity_[i] = {{shown_->velocity[i].x_m_per_s, shown_->velocity[i].y_m_per_s,
                                     shown_->depth_m[i] > 0.0F ? 1.0F : 0.0F, 0.0F}};
         upload_pending_ = true;
+        whitewater_dirty_ = true;
+    }
+
+    void prepare_whitewater_sources() {
+        if (scenic_material_.water_whitewater_strength <= 0.0F)
+            return;
+        const auto accept = [&](WhitewaterBuild build) {
+            if (build.epoch != whitewater_epoch_)
+                return; // Seek/reset invalidates in-flight placement, not immutable fields.
+            whitewater_selection_ = std::move(build.selection);
+            ++whitewater_generation_;
+            std::printf(
+                "fluid_25d_whitewater_sources: saved_s=%.9f displayed_s=%.9f generation=%llu "
+                "requested=%zu allocated=%zu cutoff=%.6f cpu_ms=%.6f; render only\n",
+                build.source_s, shown_->time_s,
+                static_cast<unsigned long long>(whitewater_generation_),
+                whitewater_selection_.requested, whitewater_selection_.seeds.size(),
+                whitewater_selection_.priority_cutoff, build.cpu_ms);
+        };
+        if (whitewater_pending_.valid() &&
+            whitewater_pending_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+            accept(whitewater_pending_.get());
+        if (!whitewater_dirty_ || whitewater_pending_.valid())
+            return;
+        // Bed is immutable and outlives the future. A shared native snapshot
+        // pins h/u; at most one classification job runs, coalescing newer fields.
+        const auto build =
+            [frame = shown_, bed = std::span<const float>(scenario_.terrain_height_m),
+             width = simulation_.grid_width, height = simulation_.grid_height,
+             spacing = simulation_.cell_size_m, epoch = whitewater_epoch_,
+             budget = static_cast<std::uint32_t>(scenic_material_.water_whitewater_budget)] {
+                const auto started = std::chrono::steady_clock::now();
+                auto selected = fluid_25d_whitewater_seeds(width, height, spacing, bed,
+                                                           frame->depth_m, frame->velocity, budget);
+                return WhitewaterBuild{std::move(selected), frame->time_s,
+                                       std::chrono::duration<double, std::milli>(
+                                           std::chrono::steady_clock::now() - started)
+                                           .count(),
+                                       epoch};
+            };
+        whitewater_dirty_ = false;
+        if (config_.common.headless)
+            accept(build()); // Deterministic captures never use a stale candidate list.
+        else
+            whitewater_pending_ = std::async(std::launch::async, build);
     }
 
     void reset_presentation_history() {
+        ++whitewater_epoch_;
+        ++whitewater_generation_;
+        whitewater_selection_.seeds.clear();
+        whitewater_dirty_ = true;
         scenic_clock_s_ = 0.0;
         rain_clock_.reset();
         scenic_flow_reset_ = true;
@@ -1120,6 +1175,7 @@ class RecordingApp {
             native_profile_scenic_[slot.index] = scenic_active;
         if (scenic_active) {
             ensure_scenic_resources(device, target);
+            prepare_whitewater_sources();
             std::optional<Fluid25DScenicEnvironment> environment;
             if (scenic_material_.daylight_environment > 0.5F) {
                 // Fixed sky: capture once, no ongoing updates or transitions.
@@ -1140,7 +1196,8 @@ class RecordingApp {
                            fluid_25d_scenic_terrain_view(config_.native_scenic_terrain_view),
                            fluid_25d_scenic_water_view(config_.native_scenic_water_view),
                            fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode),
-                           environment ? &*environment : nullptr, rain_visual_frame());
+                           environment ? &*environment : nullptr, rain_visual_frame(),
+                           whitewater_selection_.seeds, whitewater_generation_);
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1482,9 +1539,11 @@ class RecordingApp {
                                    : "Terrain organization study requires a matching "
                                      "--fluid25d-scenic-surface-source.");
             constexpr std::array water_views{
-                "shaded",         "environment-only", "direct-only", "transmission-only",
-                "no-environment", "no-direct",        "no-clarity",  "no-detail",
-                "depth-bands",    "coverage",         "film-weight", "roughness"};
+                "shaded",           "environment-only", "direct-only",   "transmission-only",
+                "no-environment",   "no-direct",        "no-clarity",    "no-detail",
+                "depth-bands",      "coverage",         "film-weight",   "roughness",
+                "rapid-activity",   "rapid-foam",       "no-rapid-foam", "cascade-weight",
+                "landing-activity", "no-landing-foam"};
             int water_view =
                 static_cast<int>(fluid_25d_scenic_water_view(config_.native_scenic_water_view));
             if (ImGui::Combo("Water component", &water_view, water_views.data(),
@@ -1508,6 +1567,49 @@ class RecordingApp {
                                              &scenic_material_.water_flow_agitation, 0.0F, 1.0F);
                 edited |= ImGui::SliderFloat("Rain surface agitation",
                                              &scenic_material_.water_rain_agitation, 0.0F, 1.0F);
+                edited |= ImGui::SliderFloat("Steep-flow rapid material",
+                                             &scenic_material_.water_rapid_strength, 0.0F, 1.0F);
+                edited |= ImGui::SliderFloat("Cascade streaks",
+                                             &scenic_material_.water_cascade_strength, 0.0F, 1.0F);
+                edited |= ImGui::SliderFloat("Landing foam cue",
+                                             &scenic_material_.water_landing_strength, 0.0F, 1.0F);
+                const float old_whitewater = scenic_material_.water_whitewater_strength;
+                edited |= ImGui::SliderFloat(
+                    "Whitewater flecks", &scenic_material_.water_whitewater_strength, 0.0F, 1.0F);
+                if (old_whitewater == 0.0F && scenic_material_.water_whitewater_strength > 0.0F)
+                    whitewater_dirty_ = true;
+                edited |=
+                    ImGui::SliderFloat("Gentler-stream foam",
+                                       &scenic_material_.water_stream_foam_strength, 0.0F, 1.0F);
+                if (scenic_material_.water_stream_foam_strength > 0.0F) {
+                    edited |= ImGui::SliderFloat("Gentle foam patchiness",
+                                                 &scenic_material_.water_stream_foam_patchiness,
+                                                 0.0F, 1.0F);
+                    edited |= ImGui::SliderFloat("Gentle foam brightness",
+                                                 &scenic_material_.water_stream_foam_brightness,
+                                                 0.0F, 1.0F);
+                    ImGui::TextWrapped(
+                        "Patchiness leaves irregular clear-water gaps; brightness changes "
+                        "the lit foam tint. Neither changes current or fleck speed. "
+                        "Patchiness 0 / brightness 1 restores retained dense foam.");
+                }
+                if (scenic_material_.water_whitewater_strength > 0.0F)
+                    ImGui::TextWrapped("3D flecks: %zu/%zu sources; %.1fx cosmetic travel. "
+                                       "Speed/size are startup tuning settings.",
+                                       whitewater_selection_.seeds.size(),
+                                       whitewater_selection_.requested,
+                                       double(scenic_material_.water_whitewater_speed));
+                if (scenic_material_.water_rapid_strength > 0.0F ||
+                    scenic_material_.water_cascade_strength > 0.0F ||
+                    scenic_material_.water_landing_strength > 0.0F)
+                    edited |=
+                        ImGui::SliderFloat("Rapid texture period (m)",
+                                           &scenic_material_.water_rapid_scale_m, 64.0F, 384.0F);
+                ImGui::TextWrapped("Opt-in downhill-water appearance. Cascade motion is artist "
+                                   "exaggerated; landing foam is a local steep-to-flat heuristic. "
+                                   "Texture period is an "
+                                   "artist scale, not wave height or transported foam. "
+                                   "Water footprint and numerical fields stay unchanged.");
                 ImGui::TextWrapped("Render-only activity proxies. Rain response uses applied "
                                    "weather even when streaks are hidden. Zero restores retained "
                                    "shading; no water mass, banks or solver changes.");
@@ -2447,6 +2549,12 @@ class RecordingApp {
     double scenic_clock_s_ = 0.0;
     Fluid25DRainVisualClock rain_clock_{};
     bool scenic_flow_reset_ = true;
+    bool whitewater_dirty_ = true;
+    Fluid25DWhitewaterSelection whitewater_selection_;
+    std::uint64_t whitewater_generation_ = 0U;
+    std::uint64_t whitewater_epoch_ = 0U;
+    // Destroyed/waited before the earlier-declared immutable scenario bed.
+    std::future<WhitewaterBuild> whitewater_pending_;
     std::optional<vulkan::GpuTimestampProfiler> native_profiler_;
     std::optional<vulkan::GpuTimestampProfiler> coverage_profiler_;
     std::vector<std::uint64_t> native_profile_frames_;

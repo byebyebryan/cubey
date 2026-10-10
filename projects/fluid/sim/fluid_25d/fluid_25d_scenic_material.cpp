@@ -61,6 +61,24 @@ constexpr std::array kProperties{
     Property{"water_ripple_scale_m", &Fluid25DScenicMaterial::water_ripple_scale_m, 8.0, 128.0},
     Property{"water_flow_agitation", &Fluid25DScenicMaterial::water_flow_agitation, 0.0, 1.0},
     Property{"water_rain_agitation", &Fluid25DScenicMaterial::water_rain_agitation, 0.0, 1.0},
+    Property{"water_rapid_strength", &Fluid25DScenicMaterial::water_rapid_strength, 0.0, 1.0},
+    Property{"water_rapid_scale_m", &Fluid25DScenicMaterial::water_rapid_scale_m, 64.0, 384.0},
+    Property{"water_cascade_strength", &Fluid25DScenicMaterial::water_cascade_strength, 0.0, 1.0},
+    Property{"water_landing_strength", &Fluid25DScenicMaterial::water_landing_strength, 0.0, 1.0},
+    Property{"water_whitewater_strength", &Fluid25DScenicMaterial::water_whitewater_strength, 0.0,
+             1.0},
+    Property{"water_whitewater_radius_m", &Fluid25DScenicMaterial::water_whitewater_radius_m, 1.0,
+             8.0},
+    Property{"water_whitewater_lift_m", &Fluid25DScenicMaterial::water_whitewater_lift_m, 0.0, 8.0},
+    Property{"water_whitewater_speed", &Fluid25DScenicMaterial::water_whitewater_speed, 0.25, 4.0},
+    Property{"water_whitewater_budget", &Fluid25DScenicMaterial::water_whitewater_budget, 4096.0,
+             524288.0},
+    Property{"water_stream_foam_strength", &Fluid25DScenicMaterial::water_stream_foam_strength, 0.0,
+             1.0},
+    Property{"water_stream_foam_patchiness", &Fluid25DScenicMaterial::water_stream_foam_patchiness,
+             0.0, 1.0},
+    Property{"water_stream_foam_brightness", &Fluid25DScenicMaterial::water_stream_foam_brightness,
+             0.0, 1.0},
     Property{"daylight_environment", &Fluid25DScenicMaterial::daylight_environment, 0.0, 1.0},
     Property{"daylight_exposure", &Fluid25DScenicMaterial::daylight_exposure, -6.0, 4.0},
     Property{"daylight_sun_scale", &Fluid25DScenicMaterial::daylight_sun_scale, 0.0, 2.0},
@@ -69,6 +87,8 @@ constexpr std::array kProperties{
     throw std::runtime_error("fluid 2.5D Scenic material: " + message);
 }
 void validate(const Fluid25DScenicMaterial& material) {
+    if (std::floor(material.water_whitewater_budget) != material.water_whitewater_budget)
+        invalid("water_whitewater_budget must be an integer");
     if (material.film_begin_m >= material.film_end_m)
         invalid("film_begin_m must be below film_end_m");
     if (material.daylight_environment != 0.0F && material.daylight_environment != 1.0F)
@@ -206,9 +226,11 @@ unsigned fluid_25d_scenic_terrain_view(std::string_view view) {
 
 unsigned fluid_25d_scenic_water_view(std::string_view view) {
     constexpr std::array names{
-        "shaded",         "environment-only", "direct-only", "transmission-only",
-        "no-environment", "no-direct",        "no-clarity",  "no-detail",
-        "depth-bands",    "coverage",         "film-weight", "roughness"};
+        "shaded",           "environment-only", "direct-only",   "transmission-only",
+        "no-environment",   "no-direct",        "no-clarity",    "no-detail",
+        "depth-bands",      "coverage",         "film-weight",   "roughness",
+        "rapid-activity",   "rapid-foam",       "no-rapid-foam", "cascade-weight",
+        "landing-activity", "no-landing-foam"};
     const auto found = std::find(names.begin(), names.end(), view);
     if (found == names.end())
         invalid("unknown water view");

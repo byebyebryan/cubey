@@ -6,7 +6,7 @@
 
 namespace cubey::projects::fluid::fluid_25d {
 
-// Scenic-only artistic controls. Never used by hydraulic or coverage code.
+// Scenic-only artistic controls. Never used by hydraulic code.
 struct Fluid25DScenicMaterial {
     float wet_roughness = 0.38F;
     float wet_darkening = 0.72F;
@@ -49,6 +49,23 @@ struct Fluid25DScenicMaterial {
     // Zero retains the previous shading, independently of visible rain.
     float water_flow_agitation = 0.0F;
     float water_rain_agitation = 0.0F;
+    // Opt-in steep-flow material; zero retains all existing presets.
+    float water_rapid_strength = 0.0F;
+    float water_rapid_scale_m = 192.0F;  // texture period, not a physical wave size
+    float water_cascade_strength = 0.0F; // directional artistic replacement, not detached water
+    float water_landing_strength = 0.0F; // local steep-to-flat cue, not transported foam
+    // Render-only whitewater; disabled in all presets pending animated review.
+    float water_whitewater_strength = 0.0F;
+    float water_whitewater_radius_m = 3.0F;
+    float water_whitewater_lift_m = 1.5F;
+    float water_whitewater_speed = 1.0F;       // travel only, not lifetime or hydraulic time
+    float water_whitewater_budget = 131072.0F; // integer draw cap; no per-frame reseeding
+    float water_stream_foam_strength = 0.0F;   // lighter material foam on fast gentler streams
+    // Zero patchiness / unit brightness preserve the retained dense treatment.
+    // Patchiness shapes coverage and non-repeating breakup, independently of
+    // opacity, velocity and lighting.
+    float water_stream_foam_patchiness = 0.0F;
+    float water_stream_foam_brightness = 1.0F;
     float daylight_environment = 0.0F; // opt-in fixed shared Cubey sky, no weather system
     float daylight_exposure = 0.4F;    // EV bias; shared mode only, no automatic exposure
     float daylight_sun_scale = 1.0F;   // shared direct sun only; 1 matches sky source units

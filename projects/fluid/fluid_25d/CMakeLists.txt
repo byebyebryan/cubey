@@ -50,6 +50,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain_legacy.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_water.frag
+        ../sim/fluid_25d/shaders/fluid_25d_whitewater.vert
+        ../sim/fluid_25d/shaders/fluid_25d_whitewater.frag
         ../sim/fluid_25d/shaders/fluid_25d_scenic_flow.comp
         ../sim/fluid_25d/shaders/fluid_25d_daylight.comp
         ../sim/fluid_25d/shaders/fluid_25d_scenic_sky.frag
@@ -92,6 +94,8 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_film.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_rapids.glsl"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_whitewater_motion.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
@@ -148,9 +152,15 @@ if (BUILD_TESTING)
     cubey_add_glsl_shaders(cubey_project_fluid_25d_surface_gradient_gpu_tests
         OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-shaders"
         SOURCES ../sim/fluid_25d/shaders/fluid_25d_surface_gradient_test.comp
+        INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/shaders"
         DEPENDS ../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl
                 ../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl
                 ../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_water_rapids.glsl
+                ../sim/fluid_25d/shaders/fluid_25d_whitewater_motion.glsl
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
                 ../sim/fluid_25d/shaders/fluid_25d_water_film.glsl)
     add_test(NAME fluid_25d_surface_gradient_gpu COMMAND cubey_project_fluid_25d_surface_gradient_gpu_tests)
     set_tests_properties(fluid_25d_surface_gradient_gpu PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
@@ -276,6 +286,39 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_scenic_water.py)
         set_tests_properties(fluid_25d_scenic_water_helpers
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_steep_flow_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_steep_flow_v1.py)
+        set_tests_properties(fluid_25d_steep_flow_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_whitewater_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_whitewater_v1.py)
+        set_tests_properties(fluid_25d_whitewater_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_stream_foam_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_stream_foam_v1.py)
+        set_tests_properties(fluid_25d_stream_foam_review_helpers
+            PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_whitewater_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_whitewater_gpu.py"
+                --app "$<TARGET_FILE:cubey_project_fluid_25d>")
+        set_tests_properties(fluid_25d_whitewater_gpu
+            PROPERTIES LABELS "gpu;fluid;presentation" TIMEOUT 600)
+        add_test(NAME fluid_25d_steep_flow_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_steep_flow_gpu.py"
+                --app "$<TARGET_FILE:cubey_project_fluid_25d>")
+        set_tests_properties(fluid_25d_steep_flow_gpu
+            PROPERTIES LABELS "gpu;fluid;presentation" TIMEOUT 300)
+        add_test(NAME fluid_25d_cascade_cues_gpu
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_steep_flow_gpu.py"
+                --app "$<TARGET_FILE:cubey_project_fluid_25d>" --variant cascade)
+        set_tests_properties(fluid_25d_cascade_cues_gpu
+            PROPERTIES LABELS "gpu;fluid;presentation" TIMEOUT 300)
         add_test(NAME fluid_25d_rain_visuals_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_rain_visuals_gpu.py"

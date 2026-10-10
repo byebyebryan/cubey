@@ -18,6 +18,8 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 environment_mode; // shared fixed daylight enabled, direct sun gain, reserved
     vec4 water_shallow_optics; // absorption boost/end m, coverage fade strength/end m
     vec4 water_agitation; // flow strength, rain strength, applied rain response, wall clock s
+    vec4 water_rapids; // artist steep-flow strength, texture period m, reserved
+    vec4 water_stream_foam; // strength, patchiness, brightness, reserved; no extra water coverage
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;

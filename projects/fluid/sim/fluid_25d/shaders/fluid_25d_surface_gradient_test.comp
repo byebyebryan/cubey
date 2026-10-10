@@ -4,6 +4,8 @@
 #include "fluid_25d_water_detail.glsl"
 #include "fluid_25d_water_agitation.glsl"
 #include "fluid_25d_water_film.glsl"
+#include "fluid_25d_water_rapids.glsl"
+#include "fluid_25d_whitewater_motion.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) writeonly buffer Result { vec4 values[]; } result;
 const vec3 normals[16] = vec3[16](
@@ -57,4 +59,80 @@ void main() {
     for (uint i=0; i<24; ++i)
         result.values[166u+i] = vec4(fluid25d_shallow_coverage(depths[i%8u],
             float(i/8u)*0.5,0.30),0.0,0.0,0.0);
+    const vec2 grades[8] = vec2[8](vec2(0),vec2(1,0),vec2(1,0),vec2(1,0),
+        vec2(1,0),vec2(0.1,0),vec2(1000,0),vec2(1,0));
+    const vec2 velocities[8] = vec2[8](vec2(3,0),vec2(0),vec2(-3,0),vec2(0,3),
+        vec2(3,0),vec2(-3,0),vec2(-100000,0),vec2(-0.04,0));
+    const float rapid_depths[4] = float[4](0.0,0.02,0.08,2.0);
+    const float heights[3] = float[3](0.25,1.0,4.0);
+    for (uint i=0; i<96; ++i) {
+        vec2 grade = grades[i%8u];
+        float height = heights[i/32u];
+        vec3 n = normalize(vec3(-grade.x*height,1.0,-grade.y*height));
+        result.values[190u+i] = vec4(fluid25d_rapid_activity(n,velocities[i%8u],
+            rapid_depths[(i/8u)%4u],height,0.002),0.0,0.0,0.0);
+    }
+    const float clocks[8] = float[8](0.0,0.001,7.999,8.0,8.001,1023.999,1024.0,1024.001);
+    for (uint i=0; i<16; ++i)
+        result.values[286u+i] = fluid25d_rapid_phases(clocks[i%8u],i<8u ? 0.0 : 0.13);
+    for (uint i=0; i<24; ++i) {
+        float height=heights[i/8u];
+        vec2 grade=grades[i%8u];
+        vec3 n=normalize(vec3(-grade.x*height,1.0,-grade.y*height));
+        result.values[302u+i]=vec4(fluid25d_cascade_flow(n,velocities[i%8u],height),0);
+    }
+    const float local_grade[8]=float[8](0.0,1.0,0.3,-0.1,0.0,0.0,0.0,0.0);
+    const float upstream_grade[8]=float[8](1.0,1.0,0.3,1.0,0.1,1.0,1.0,1.0);
+    const float landing_depth[4]=float[4](0.0,0.08,0.14,0.30);
+    for (uint i=0; i<64; ++i) {
+        uint mode=i%8u;
+        vec3 h=vec3(landing_depth[(i/8u)%4u]);
+        if (mode==5u) h.y=0;
+        if (mode==6u) h.z=0;
+        float speed=mode==7u ? 0.0 : (i<32u ? 3.0 : 0.08);
+        result.values[326u+i]=vec4(fluid25d_landing_activity(local_grade[mode],
+            upstream_grade[mode],speed,h,0.002),0,0,0);
+    }
+    for (uint i=0; i<16; ++i)
+        result.values[390u+i]=vec4(fluid25d_cascade_replacement(float(i%4u)/3.0,
+            float(i/4u)/3.0),0,0,0);
+    for (uint i=0; i<64; ++i) {
+        uint fps=i<32u ? 30u : 60u;
+        float clock=float((i%8u)*(fps/2u))/float(fps)+(i<32u ? 0.0 : 1024.0);
+        uint mode=(i/8u)%4u;
+        vec2 velocity=mode==2u ? vec2(30,-40) : mode==3u ? vec2(0) : vec2(3,-4);
+        float age=fluid25d_whitewater_age(clock,0x25d2026u);
+        result.values[406u+i]=vec4(fluid25d_whitewater_offset(velocity,age,mode==1u ? 2.0 : 1.0,10.0),
+                                 age,fluid25d_whitewater_life(age));
+    }
+    const float stream_depths[4]=float[4](0.0,0.04,0.14,0.4);
+    const float stream_speeds[4]=float[4](0.0,0.7,2.0,4.0);
+    for (uint i=0; i<32; ++i)
+        result.values[470u+i]=vec4(fluid25d_stream_foam_activity(stream_speeds[i%4u],
+            stream_depths[(i/4u)%4u],i<16u ? 0.0 : 1.0,0.002),0,0,0);
+    const vec2 current_flow[4]=vec2[4](vec2(0),vec2(3,-4),vec2(-3,4),vec2(1,0));
+    const vec2 filtered_flow[4]=vec2[4](vec2(3,-4),vec2(-3,4),vec2(0),vec2(0,1));
+    for (uint i=0; i<16; ++i)
+        result.values[502u+i]=vec4(fluid25d_whitewater_current_flow(current_flow[i%4u],
+            filtered_flow[i/4u]),0,0);
+    const vec2 foam_samples[4]=vec2[4](vec2(0.8,0.2),vec2(0.72,0.67),
+                                     vec2(0.65),vec2(0.1,0.3));
+    const float patchiness[4]=float[4](0.0,0.1,2.0/3.0,1.0);
+    for (uint i=0; i<80; ++i) {
+        float weight=float(i%5u)/4.0;
+        result.values[518u+i]=vec4(fluid25d_stream_foam_shape(foam_samples[(i/5u)%4u],
+            vec2(weight,1.0-weight),patchiness[i/20u],vec3(0.005)),0,0,0);
+    }
+    for (uint i=0; i<16; ++i) {
+        vec2 p=vec2(float(i)*37.0-280.0,float(i)*53.0-430.0);
+        vec3 a=fluid25d_stream_foam_domain(p);
+        vec3 b=fluid25d_stream_foam_domain(p+vec2(64,0));
+        vec3 c=fluid25d_stream_foam_domain(p+vec2(0,64));
+        result.values[598u+i]=vec4(a.z,b.z,length(b.xy-a.xy-vec2(0.96,-0.28)),
+                                                  length(c.xy-a.xy-vec2(0.28,0.96)));
+        float weight=float(i%5u)/4.0;
+        vec2 envelope=vec2(float(i%4u)/3.0,float(i/4u)/3.0);
+        result.values[614u+i]=vec4(fluid25d_stream_foam_shape(vec2(0.8,0.8),
+            vec2(weight,1.0-weight),1.0,vec3(0.005),envelope),0,0,0);
+    }
 }

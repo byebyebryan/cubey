@@ -11,7 +11,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <array>
+#include <chrono>
 #include <cstddef>
+#include <cstdio>
 #include <filesystem>
 #include <limits>
 #include <stdexcept>
@@ -28,6 +30,11 @@ struct RainPush {
     math::Mat4 view_projection;
     math::Vec4 grid_cell, camera_floor, clock_viewport, volume;
 };
+struct WhitewaterPush {
+    math::Mat4 view_projection;
+    math::Vec4 grid_cell, camera_wet, clock_shape, viewport_sampling;
+};
+static_assert(sizeof(WhitewaterPush) == 128U);
 static_assert(sizeof(RainPush) == 128U);
 struct Uniforms {
     math::Mat4 inverse_view_projection, shadow_view_projection;
@@ -39,6 +46,8 @@ struct Uniforms {
     math::Vec4 environment_mode;
     math::Vec4 water_shallow_optics;
     math::Vec4 water_agitation;
+    math::Vec4 water_rapids;
+    math::Vec4 water_stream_foam;
 };
 struct DaylightPush {
     math::Vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
@@ -46,13 +55,15 @@ struct DaylightPush {
 };
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 352U);
+static_assert(sizeof(Uniforms) == 384U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
 static_assert(offsetof(Uniforms, environment_mode) == 304U);
 static_assert(offsetof(Uniforms, water_shallow_optics) == 320U);
 static_assert(offsetof(Uniforms, water_agitation) == 336U);
+static_assert(offsetof(Uniforms, water_rapids) == 352U);
+static_assert(offsetof(Uniforms, water_stream_foam) == 368U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
@@ -69,7 +80,7 @@ render::MaterialPassInfo frame_material() {
                             .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
     bindings.push_back({.binding = 9U,
                         .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
+                        .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT});
     bindings.push_back({.binding = 10U,
                         .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                         .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
@@ -181,6 +192,13 @@ struct Fluid25DScenic::State {
     std::optional<render::GraphicsPipelineResource> terrain_legacy, terrain_bspline_legacy;
     std::optional<render::GraphicsPipelineResource> shadow, shadow_bspline, sky, copy, display;
     std::optional<render::GraphicsPipelineResource> rain;
+    std::optional<render::GraphicsPipelineResource> whitewater;
+    struct WhitewaterSlot {
+        std::optional<vulkan::Buffer> buffer;
+        std::unique_ptr<vulkan::DescriptorSetBundle> descriptors;
+        std::uint64_t generation = std::numeric_limits<std::uint64_t>::max();
+    };
+    std::vector<WhitewaterSlot> whitewater_slots;
     math::Mat4 shadow_matrix{1.0F};
     float terrain_low = 0.0F, terrain_high = 0.0F, domain_m = 0.0F;
     VkExtent2D extent{};
@@ -227,7 +245,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
             device, render::FrameUniformMaterialInstanceConfig{.material_pass = frame_material(),
                                                                .descriptor_set = 1U,
                                                                .frame_slot_count = slots});
-        s.profiler.emplace(device, slots, 6U);
+        s.profiler.emplace(device, slots, 7U);
         s.visual_flow.emplace(
             device, vulkan::device_local_buffer_config(fields.velocity().size(),
                                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
@@ -387,6 +405,7 @@ void Fluid25DScenic::destroy_swapchain_resources() {
     auto& s = *state_;
     s.display.reset();
     s.rain.reset();
+    s.whitewater.reset();
     s.copy.reset();
     s.sky.reset();
     s.shadow_bspline.reset();
@@ -413,17 +432,16 @@ std::vector<vulkan::GpuPassTiming> Fluid25DScenic::collect_timings(std::uint32_t
     return state_->profiler->latest_timings();
 }
 
-void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
-                            render::RenderGraphFrameExecutor& executor, render::FrameSlot slot,
-                            render::ColorTargetView target, Fluid25DRenderTargetMode target_mode,
-                            const Fluid25DGpuResources& resources, const Fluid25DConfig& config,
-                            const Fluid25DRenderCamera& camera,
-                            Fluid25DCatchmentRenderOptions options, double visual_clock_s,
-                            const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
-                            float marker_fraction, bool profile, bool reset_visual_flow,
-                            unsigned terrain_view, unsigned water_view, unsigned surface_mode,
-                            const Fluid25DScenicEnvironment* environment,
-                            Fluid25DRainVisualFrame rain) {
+void Fluid25DScenic::record(
+    vulkan::Device& device, VkCommandBuffer commands, render::RenderGraphFrameExecutor& executor,
+    render::FrameSlot slot, render::ColorTargetView target, Fluid25DRenderTargetMode target_mode,
+    const Fluid25DGpuResources& resources, const Fluid25DConfig& config,
+    const Fluid25DRenderCamera& camera, Fluid25DCatchmentRenderOptions options,
+    double visual_clock_s, const Fluid25DScenicMaterial& material, Fluid25DMotionMarkers* markers,
+    float marker_fraction, bool profile, bool reset_visual_flow, unsigned terrain_view,
+    unsigned water_view, unsigned surface_mode, const Fluid25DScenicEnvironment* environment,
+    Fluid25DRainVisualFrame rain, std::span<const Fluid25DWhitewaterSeed> whitewater_seeds,
+    std::uint64_t whitewater_generation) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
@@ -544,7 +562,11 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
           material.water_shallow_coverage_strength, material.water_shallow_coverage_end_m},
          {material.water_flow_agitation, material.water_rain_agitation,
           fluid_25d_water_rain_response(rain.applied_mm_per_hour),
-          float(std::fmod(rain.clock_s, 1024.0))}});
+          float(std::fmod(rain.clock_s, 1024.0))},
+         {material.water_rapid_strength, material.water_rapid_scale_m,
+          material.water_cascade_strength, material.water_landing_strength},
+         {material.water_stream_foam_strength, material.water_stream_foam_patchiness,
+          material.water_stream_foam_brightness, 0.0F}});
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -597,7 +619,8 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
             // The display buffer survives frames. Serialize earlier fragment reads
             // against this write on the same queue; no hydraulic write access.
             vulkan::record_memory_barrier(
-                commands, {.src_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                commands, {.src_stage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
                                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                            .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                            .src_access = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
@@ -682,6 +705,117 @@ void Fluid25DScenic::record(vulkan::Device& device, VkCommandBuffer commands,
                     }
                 });
         });
+    // Render-only whitewater. OFF adds no pipeline, pass, target or native write.
+    if (material.water_whitewater_strength > 0.0F && !whitewater_seeds.empty() &&
+        terrain_view == 0U && water_view == 0U) {
+        s.whitewater_slots.resize(slot.count);
+        auto& seeds_slot = s.whitewater_slots.at(slot.index);
+        const auto seed_bytes = VkDeviceSize(whitewater_seeds.size_bytes());
+        const std::array<vulkan::DescriptorSetBindingConfig, 1> seed_bindings{
+            {{.binding = 0U,
+              .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+              .stage_flags = VK_SHADER_STAGE_VERTEX_BIT}}};
+        // Only the host's fence-retired frame slot is touched. Other slots and
+        // their descriptor/buffer lifetimes remain valid while GPU work runs.
+        if (!seeds_slot.descriptors)
+            seeds_slot.descriptors = std::make_unique<vulkan::DescriptorSetBundle>(
+                device, vulkan::DescriptorSetInfo(seed_bindings));
+        if (!seeds_slot.buffer || seeds_slot.buffer->size() < seed_bytes) {
+            seeds_slot.buffer.emplace(
+                device,
+                vulkan::BufferConfig{.size = seed_bytes,
+                                     .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                     .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                          VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+            seeds_slot.generation = std::numeric_limits<std::uint64_t>::max();
+        }
+        const bool seed_upload = seeds_slot.generation != whitewater_generation;
+        if (seed_upload) {
+            const auto started = std::chrono::steady_clock::now();
+            seeds_slot.buffer->upload(whitewater_seeds.data(), seed_bytes);
+            seeds_slot.generation = whitewater_generation;
+            render::MaterialDescriptorWriter(seeds_slot.descriptors->set())
+                .storage_buffer(0U, seeds_slot.buffer->handle(), seeds_slot.buffer->size())
+                .update(device);
+            std::printf(
+                "fluid_25d_whitewater_upload: generation=%llu slot=%u bytes=%llu cpu_ms=%.6f\n",
+                static_cast<unsigned long long>(whitewater_generation), slot.index,
+                static_cast<unsigned long long>(seed_bytes),
+                std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() -
+                                                          started)
+                    .count());
+        }
+        const auto seeds = graph.import_buffer(
+            {.label = "scenic stable whitewater seeds", .byte_size = seeds_slot.buffer->size()},
+            seeds_slot.buffer->handle(),
+            render::RenderGraphBufferState{
+                .access_mask = seed_upload ? VK_ACCESS_HOST_WRITE_BIT : VK_ACCESS_SHADER_READ_BIT,
+                .stage_mask = seed_upload ? VK_PIPELINE_STAGE_HOST_BIT
+                                          : VK_PIPELINE_STAGE_VERTEX_SHADER_BIT});
+        const auto seeds_set = seeds_slot.descriptors->set();
+        const auto seed_count = static_cast<std::uint32_t>(whitewater_seeds.size());
+        if (!s.whitewater) {
+            std::vector<vulkan::DescriptorSetBindingConfig> bindings;
+            for (std::uint32_t i = 0U; i <= 8U; ++i)
+                bindings.push_back(
+                    {.binding = i,
+                     .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                     .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT});
+            vulkan::DescriptorSetBundle field_layout(device, vulkan::DescriptorSetInfo(bindings));
+            const std::array<VkDescriptorSetLayout, 3> layouts{
+                field_layout.layout(), s.frame->layout(), seeds_slot.descriptors->layout()};
+            const std::array<render::ShaderStageFile, 2> stages{
+                render::vertex_shader_file(shader("fluid_25d_whitewater.vert.spv")),
+                render::fragment_shader_file(shader("fluid_25d_whitewater.frag.spv"))};
+            s.whitewater.emplace(device, render::GraphicsPipelineFileResourceConfig{
+                                             .extent = target.extent,
+                                             .color_format = kHdrFormat,
+                                             .depth_format = VK_FORMAT_UNDEFINED,
+                                             .shader_stage_files = stages,
+                                             .descriptor_set_layouts = layouts,
+                                             .material_pass = mesh_pass(true)});
+        }
+        const WhitewaterPush whitewater_push{
+            push.view_projection,
+            push.grid_cell,
+            push.camera_wet,
+            // Independent of physical pacing and rain streak speed/visibility.
+            {float(std::fmod(rain.clock_s, 1024.0)), material.water_whitewater_strength,
+             material.water_whitewater_radius_m, material.water_whitewater_lift_m},
+            {float(target.extent.width), float(target.extent.height), push.terrain_palette.w,
+             material.water_whitewater_speed}};
+        graph.add_pass("scenic whitewater (render only)", render::RenderGraphQueueDomain::Graphics)
+            .read_storage_buffer(bed)
+            .read_storage_buffer(h)
+            .read_storage_buffer(flow)
+            .read_storage_buffer(u)
+            .read_storage_buffer(mask)
+            .read_storage_buffer(seeds, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)
+            .read_texture(depth)
+            .read_texture(shadow_depth)
+            .read_write_color(composed)
+            .execute([&, whitewater_push, fields, set, composed, seeds_set,
+                      seed_count](const auto& ctx) {
+                vulkan::GpuTimestampScope timing(profiler, commands, slot.index,
+                                                 "fluid_25d scenic whitewater");
+                render::record_render_target_pass(
+                    ctx.recorder(),
+                    render::render_target_view(render::resolved_color_target_view(ctx, composed)),
+                    {}, {.color = vulkan::load_store_attachment_ops()}, [&](const auto& r) {
+                        const auto& p = *s.whitewater;
+                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U,
+                                              fields);
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U, set);
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 2U,
+                                              seeds_set);
+                        r.push_constants(p.layout(),
+                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0U, whitewater_push);
+                        r.draw(6U, seed_count);
+                    });
+            });
+    }
     // Blend into existing linear HDR before the one display transform. Opaque
     // depth is sampled, not attached: water does not write that depth, so the
     // streak shader also terminates at the displayed bed+h surface. OFF adds

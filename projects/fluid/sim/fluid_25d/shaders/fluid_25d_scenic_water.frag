@@ -2,12 +2,14 @@
 #extension GL_GOOGLE_include_directive : require
 #define FLUID25D_SCENIC_WATER
 #include "cubey/pbr.glsl"
+#include "cubey/procedural/noise.glsl"
 #include "fluid_25d_scenic.glsl"
 #include "fluid_25d_surface_sampling.glsl"
 #include "fluid_25d_water_film.glsl"
 #include "fluid_25d_surface_gradient.glsl"
 #include "fluid_25d_water_detail.glsl"
 #include "fluid_25d_water_agitation.glsl"
+#include "fluid_25d_water_rapids.glsl"
 layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
 layout(set=1,binding=9,std430) readonly buffer VisualVelocity { vec4 values[]; } visual_velocity;
@@ -36,6 +38,88 @@ vec2 flow_detail(vec2 p, vec2 flow, float clock) {
     vec2 a = texture(scenic_detail,p/96.0-offset*phase0).rg*2.0-1.0;
     vec2 b = texture(scenic_detail,p/96.0-offset*phase1).rg*2.0-1.0;
     return (a*weight0+b*weight1)/max(weight0+weight1,0.00001);
+}
+float rapid_pattern(vec2 p, vec2 velocity, float clock, float period) {
+    vec2 dx=dFdx(p),dy=dFdy(p);
+    float noise=textureGrad(scenic_detail,p/512.0,dx/512.0,dy/512.0).b;
+    vec4 phases=fluid25d_rapid_phases(clock,noise);
+    // World-fixed base coordinates, bounded offsets, no rotation by a
+    // spatially varying velocity. The 8 m/s cap is an artist motion limit.
+    vec2 flow=velocity/max(1.0,length(velocity)/8.0);
+    vec2 uv0=p/period-flow*(phases.x-0.5)*8.0/period;
+    vec2 uv1=p/period-flow*(phases.y-0.5)*8.0/period+vec2(0.37,0.61);
+    float a=textureGrad(scenic_detail,uv0,dFdx(uv0),dFdy(uv0)).b;
+    float b=textureGrad(scenic_detail,uv1,dFdx(uv1),dFdy(uv1)).b;
+    float pattern=a*phases.z+b*phases.w;
+    float edge=max(0.005,0.5*fwidth(pattern));
+    return smoothstep(0.50-edge,0.62+edge,pattern);
+}
+float stream_foam_pattern(vec2 p, vec2 velocity, float clock, float patchiness) {
+    // Uniform fallback retains the previous stream/cascade arithmetic exactly.
+    if (patchiness<=0.0) return rapid_pattern(p,velocity,clock,64.0);
+    vec2 dx=dFdx(p),dy=dFdy(p);
+    float noise=textureGrad(scenic_detail,p/512.0,dx/512.0,dy/512.0).b;
+    vec4 phases=fluid25d_rapid_phases(clock,noise);
+    vec2 flow=velocity/max(1.0,length(velocity)/8.0);
+    vec2 p0=p-flow*(phases.x-0.5)*8.0;
+    vec2 p1=p-flow*(phases.y-0.5)*8.0;
+    vec3 domain0=fluid25d_stream_foam_domain(p0);
+    vec3 domain1=fluid25d_stream_foam_domain(p1+vec2(117.7,241.3));
+    vec2 uv0=mix(p0/64.0,domain0.xy,patchiness);
+    vec2 uv1=mix(p1/64.0+vec2(0.37,0.61),domain1.xy,patchiness);
+    float a=textureGrad(scenic_detail,uv0,dFdx(uv0),dFdy(uv0)).b;
+    float b=textureGrad(scenic_detail,uv1,dFdx(uv1),dFdy(uv1)).b;
+    float combined=a*phases.z+b*phases.w;
+    vec3 edges=max(vec3(0.005),0.5*vec3(fwidth(combined),fwidth(a),fwidth(b)));
+    // Filter and gate each layer before crossfading. The envelope moves with
+    // the texture; it is not a stationary world mask pinning foam to the bed.
+    vec2 footprint=vec2(max(length(dFdx(p0)),length(dFdy(p0))),
+                        max(length(dFdx(p1)),length(dFdy(p1))))/173.0;
+    vec2 broad=mix(vec2(domain0.z,domain1.z),vec2(0.5),smoothstep(0.4,1.0,footprint));
+    vec2 envelope=mix(vec2(1),smoothstep(0.18,0.75,broad),patchiness);
+    return fluid25d_stream_foam_shape(vec2(a,b),phases.zw,patchiness,edges,envelope);
+}
+float cascade_pattern(vec3 p, vec3 velocity, float clock, float period) {
+    float dephase=0.5+0.5*cubey_proc_value_noise_3d(p/800.0,0x25d1u);
+    vec4 phases=fluid25d_rapid_phases(clock,dephase);
+    // A fixed 3D domain survives vertical faces. Long vertical features, no
+    // borrowed terrain texture and no per-fragment coordinate rotation.
+    vec3 scale=period*vec3(0.20,0.90,0.20);
+    vec3 a=(p-velocity*(phases.x-0.5)*8.0)/scale;
+    vec3 b=(p-velocity*(phases.y-0.5)*8.0)/scale+vec3(7.3,2.1,4.7);
+    // Filter each layer BEFORE weighting. A resetting zero-weight layer must
+    // never force the live layer to its mean via an unrelated huge derivative.
+    float fa=max(length(dFdx(a)),length(dFdy(a)));
+    float fb=max(length(dFdx(b)),length(dFdy(b)));
+    float va=mix(0.5,0.5+0.5*cubey_proc_value_noise_3d(a,0x25d2u),
+                 1.0-smoothstep(0.4,1.0,fa));
+    float vb=mix(0.5,0.5+0.5*cubey_proc_value_noise_3d(b,0x25d2u),
+                 1.0-smoothstep(0.4,1.0,fb));
+    float value=va*phases.z+vb*phases.w;
+    float edge=max(0.025,0.5*fwidth(value));
+    return smoothstep(0.40-edge,0.65+edge,value);
+}
+vec2 surface_at(vec2 p) {
+    vec2 f; uvec4 i=fluid25d_quad_indices(p,uvec2(params.grid_cell.xy),f);
+    vec4 h=vec4(depth.values[i.x],depth.values[i.y],depth.values[i.z],depth.values[i.w]);
+    vec4 z=vec4(terrain.values[i.x],terrain.values[i.y],terrain.values[i.z],terrain.values[i.w]);
+    // Conservative landing cue: do not infer a wet drop from dry neighbor bed.
+    if (any(lessThanEqual(h,vec4(params.camera_wet.w)))) return vec2(0);
+    return vec2(fluid25d_bilinear_sample(z+h,f),fluid25d_bilinear_sample(h,f));
+}
+float landing_activity(vec3 n,vec2 velocity,float h) {
+    float speed=length(velocity);
+    if (speed<=0.00001 || n.y<=0.0) return 0.0;
+    vec2 direction=velocity/speed;
+    vec2 near_p=field_coordinate-direction;
+    vec2 far_p=field_coordinate-direction*2.0;
+    if (any(lessThan(near_p,vec2(0))) || any(lessThan(far_p,vec2(0))) ||
+        any(greaterThan(near_p,params.grid_cell.xy-1.0)) ||
+        any(greaterThan(far_p,params.grid_cell.xy-1.0))) return 0.0;
+    vec2 near_h=surface_at(near_p),far_h=surface_at(far_p);
+    float local=dot(n.xz,direction)/(max(n.y,0.05)*max(params.grid_cell.w,0.001));
+    return fluid25d_landing_activity(local,(far_h.x-near_h.x)/params.grid_cell.z,
+                                    speed,vec3(h,near_h.y,far_h.y),params.camera_wet.w);
 }
 vec3 wet_normal(uint index) {
     uvec2 extent = uvec2(params.grid_cell.xy);
@@ -82,6 +166,41 @@ void main() {
         fluid25d_bilinear_sample(vec4(visual_velocity.values[i.x].y,
         visual_velocity.values[i.y].y,visual_velocity.values[i.z].y,visual_velocity.values[i.w].y),f));
     float speed = length(visual_u);
+    float rapid_activity = 0.0;
+    if (((scenic.water_rapids.x>0.0 || scenic.water_rapids.z>0.0 || scenic.water_stream_foam.x>0.0) &&
+         (water_view==0u || water_view>=12u)) || water_view==12u)
+        rapid_activity=fluid25d_rapid_activity(n,visual_u,h,params.grid_cell.w,
+                                              params.camera_wet.w);
+    float rapid_gain=scenic.water_rapids.x*rapid_activity;
+    float rapid_foam=0.0;
+    float stream_foam=0.0;
+    if (scenic.water_stream_foam.x>0.0 && water_view==0u) {
+        float activity=fluid25d_stream_foam_activity(speed,h,rapid_activity,params.camera_wet.w);
+        stream_foam=0.35*scenic.water_stream_foam.x*activity*
+                    stream_foam_pattern(world_position.xz,visual_u,scenic.water_agitation.w,
+                                        scenic.water_stream_foam.y);
+    }
+    // Uniform branch: derivatives remain defined even in inactive lake pixels.
+    if (scenic.water_rapids.x>0.0 && (water_view==0u || water_view==13u))
+        rapid_foam=0.25*rapid_gain*rapid_pattern(world_position.xz,visual_u,
+                                  scenic.water_agitation.w,scenic.water_rapids.y);
+    float cascade_gain=0.0,landing_gain=0.0,cascade_weight=0.0,landing_weight=0.0;
+    if (scenic.water_rapids.z>0.0 && (water_view==0u || water_view==15u || water_view==17u))
+        cascade_gain=scenic.water_rapids.z*rapid_activity*
+                     fluid25d_cascade_support(h,params.camera_wet.w);
+    float landing=0.0;
+    if ((scenic.water_rapids.w>0.0 && water_view==0u) || water_view==16u)
+        landing=landing_activity(n,visual_u,h);
+    if (water_view==0u) landing_gain=scenic.water_rapids.w*landing;
+    // Uniform branch, so all derivative-based filtering precedes any discard.
+    if ((scenic.water_rapids.z>0.0 || scenic.water_rapids.w>0.0) &&
+        (water_view==0u || water_view==15u || water_view==17u)) {
+        vec3 p=world_position; p.y/=max(params.grid_cell.w,0.001);
+        float pattern=cascade_pattern(p,fluid25d_cascade_flow(n,visual_u,params.grid_cell.w),
+                                      scenic.water_agitation.w,scenic.water_rapids.y);
+        cascade_weight=fluid25d_cascade_replacement(cascade_gain,pattern);
+        landing_weight=0.75*landing_gain*(0.35+0.65*pattern);
+    }
     // Activity is a visual proxy from filtered speed and the unperturbed
     // surface slope. A steep, stationary lake is not flowing turbulence.
     float surface_slope = length(n.xz)/max(n.y,0.05);
@@ -146,6 +265,10 @@ void main() {
     // The retained V5 wet-ground treatment: only shallow RGB shading changes.
     if (film_weight>0.0)
         roughness=mix(roughness,max(roughness,scenic.water_film.z),film_weight);
+    if (rapid_gain>0.0 && (water_view==0u || water_view==14u))
+        roughness=mix(roughness,max(roughness,0.52),rapid_gain);
+    if (cascade_gain>0.0 || landing_gain>0.0)
+        roughness=mix(roughness,max(roughness,0.72),max(cascade_gain,landing_gain));
     // Evaluate before any fragment-dependent discard/specular branch so shared
     // receiver-plane derivatives are defined for the entire quad.
     float sun_visibility=scenic_sun_visibility(world_position,n);
@@ -234,6 +357,24 @@ void main() {
     if (film_weight>0.0)
         color=fluid25d_film_ground_emphasis(color,texture(scenic_opaque,uv).rgb,
                                             film_weight,scenic.water_film.w);
+    if (water_view==0u && rapid_foam>0.0) {
+        // Replace clear-water energy rather than adding emissive white. Share
+        // sun/shadow and sky irradiance with the accepted Scenic lighting.
+        vec3 foam_light=scenic_irradiance_at(n)+scenic_sun_radiance()*ndotl*
+                         sun_visibility/CUBEY_PBR_PI;
+        color=mix(color,vec3(0.22,0.25,0.23)*foam_light,rapid_foam);
+    }
+    if ((water_view==0u || water_view==17u) && (cascade_weight>0.0 || landing_weight>0.0)) {
+        vec3 foam_light=scenic_irradiance_at(n)+scenic_sun_radiance()*ndotl*
+                         sun_visibility/CUBEY_PBR_PI;
+        float weight=1.0-(1.0-cascade_weight)*(1.0-landing_weight);
+        color=mix(color,vec3(0.32,0.35,0.33)*foam_light,weight);
+    }
+    if (water_view==0u && stream_foam>0.0) {
+        vec3 foam_light=scenic_irradiance_at(n)+scenic_sun_radiance()*ndotl*
+                        sun_visibility/CUBEY_PBR_PI;
+        color=mix(color,vec3(0.84,0.89,0.87)*foam_light*scenic.water_stream_foam.z,stream_foam);
+    }
     if (water_view==1u) color=environment_term;
     if (water_view==2u) color=direct_term;
     if (water_view==3u) color=transmission_term;
@@ -243,11 +384,15 @@ void main() {
     if (water_view==9u) color=vec3(1.0);
     if (water_view==10u) color=vec3(film_weight);
     if (water_view==11u) color=vec3(roughness);
+    if (water_view==12u) color=vec3(rapid_activity);
+    if (water_view==13u) color=vec3(rapid_foam);
+    if (water_view==15u) color=vec3(cascade_weight);
+    if (water_view==16u) color=vec3(landing);
     float coverage = smoothstep(0.0,edge_width,h-params.camera_wet.w);
     if (params.presentation.z>0.5) coverage *= smoothstep(0.002,0.050,h);
     // Only presentation and its coverage view: raw field/component diagnostics
     // must not conceal water just because an artist chooses a depth fade.
-    if ((water_view==0u || water_view==9u) && scenic.water_shallow_optics.z>0.0)
+    if ((water_view==0u || water_view==9u || water_view==14u || water_view==17u) && scenic.water_shallow_optics.z>0.0)
         coverage *= fluid25d_shallow_coverage(h,scenic.water_shallow_optics.z,
                                               scenic.water_shallow_optics.w);
     if ((options&512u)!=0u) {
