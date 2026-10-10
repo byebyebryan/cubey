@@ -410,22 +410,38 @@ void validate_builtin_scenario(const Fluid25DProjectConfig& project,
                                                  std::size_t cell_count) {
     const Json& provenance = recording.provenance();
     const Json& source_hashes = required_object_member(provenance, "source_sha256", "source hash");
+    const bool binary_capture = provenance.value("capture_schema", std::string{}) ==
+                                "cubey.fluid25d.external-binary-capture.v1";
     CanonicalWriter writer;
-    writer.string("cubey.fluid25d.recording-input.v1");
+    writer.string(binary_capture ? "cubey.fluid25d.recording-input.external-binary-capture.v1"
+                                 : "cubey.fluid25d.recording-input.v1");
     writer.u32(recording.grid_width());
     writer.u32(recording.grid_height());
     writer.f32(recording.cell_size_m());
-    for (const std::string_view key :
-         {"case_spec", "case_protocol", "dem_asc", "native_numerical_bed"}) {
-        writer.string(key);
-        writer.string(required_sha256(source_hashes, key, key));
+    if (binary_capture) {
+        // The recording loader validates this distinct capture schema. Do not
+        // fabricate ASCII DEM/output precision provenance for binary snapshots.
+        for (const std::string_view key :
+             {"case_spec", "case_protocol", "metadata", "native_numerical_bed"}) {
+            writer.string(key);
+            writer.string(required_sha256(source_hashes, key, key));
+        }
+        writer.string(bounded_json_dump(
+            required_object_member(provenance, "captures", "binary capture identities"),
+            "binary capture identities"));
+    } else {
+        // Preserve legacy recording/stock-stream input fingerprints exactly.
+        for (const std::string_view key :
+             {"case_spec", "case_protocol", "dem_asc", "native_numerical_bed"}) {
+            writer.string(key);
+            writer.string(required_sha256(source_hashes, key, key));
+        }
+        const Json& terrain_identity = required_object_member(provenance, "terrain_source_identity",
+                                                              "terrain source identity");
+        const Json& precision = required_object_member(provenance, "precision", "precision report");
+        writer.string(bounded_json_dump(terrain_identity, "terrain source identity"));
+        writer.string(bounded_json_dump(precision, "precision report"));
     }
-
-    const Json& terrain_identity =
-        required_object_member(provenance, "terrain_source_identity", "terrain source identity");
-    const Json& precision = required_object_member(provenance, "precision", "precision report");
-    writer.string(bounded_json_dump(terrain_identity, "terrain source identity"));
-    writer.string(bounded_json_dump(precision, "precision report"));
     writer.string(bounded_json_dump(recording.protocol(), "recording protocol"));
 
     const std::span<const Fluid25DRecordedRainKnot> rain = recording.rainfall_history();

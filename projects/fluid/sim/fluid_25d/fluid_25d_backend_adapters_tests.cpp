@@ -431,6 +431,55 @@ void test_recording_and_stock_bridge_have_viewer_scoped_playback_metadata() {
             "recording case_result audit hash leaked into immutable physics identity");
 }
 
+void test_binary_capture_recording_has_distinct_validated_provenance() {
+    auto fixture = make_recording_fixture(false, 4U);
+    Json manifest;
+    std::ifstream(fixture.directory / "recording.json") >> manifest;
+    Json captures = Json::array();
+    for (const auto& frame : manifest.at("frames")) {
+        captures.push_back(Json{{"physical_time_s", frame.at("time_s")},
+                                {"state_sha256", std::string(64U, 'a')},
+                                {"packet_sha256", std::string(64U, 'b')}});
+    }
+    manifest["provenance"] =
+        Json{{"capture_schema", "cubey.fluid25d.external-binary-capture.v1"},
+             {"field_source", "validated external service binary snapshots"},
+             {"source_sha256", Json{{"case_spec", std::string(64U, '1')},
+                                    {"case_protocol", std::string(64U, '2')},
+                                    {"metadata", std::string(64U, '3')},
+                                    {"native_numerical_bed", std::string(64U, '4')}}},
+             {"captures", captures}};
+    write_json(fixture.directory / "recording.json", manifest);
+    Fluid25DRecording recording(fixture.directory);
+    const auto metadata = make_fluid_25d_recording_backend_metadata(recording, "capture-viewer");
+    require(metadata.kind == Fluid25DBackendKind::Recorded && metadata.capabilities.playback.seek &&
+                !metadata.capabilities.solver.set_rain &&
+                metadata.grid.solver_bed_sha256 == expected_float32_le_sha256(recording.bed()),
+            "binary capture did not retain draw-only recording ownership and exact bed identity");
+    require(
+        make_fluid_25d_recording_backend_metadata(recording, "another-viewer").grid.input_sha256 ==
+            metadata.grid.input_sha256,
+        "viewer ownership changed binary capture input identity");
+    manifest["provenance"]["source_sha256"]["metadata"] = std::string(64U, '5');
+    write_json(fixture.directory / "recording.json", manifest);
+    Fluid25DRecording changed_handshake(fixture.directory);
+    require(
+        make_fluid_25d_recording_backend_metadata(changed_handshake, "viewer").grid.input_sha256 !=
+            metadata.grid.input_sha256,
+        "binary handshake provenance was omitted from capture identity");
+    manifest["provenance"]["source_sha256"]["metadata"] = std::string(64U, '3');
+    manifest["provenance"]["captures"][0]["packet_sha256"] = std::string(64U, 'c');
+    write_json(fixture.directory / "recording.json", manifest);
+    Fluid25DRecording changed_packet(fixture.directory);
+    require(make_fluid_25d_recording_backend_metadata(changed_packet, "viewer").grid.input_sha256 !=
+                metadata.grid.input_sha256,
+            "binary packet provenance was omitted from capture identity");
+    manifest["provenance"]["source_sha256"].erase("metadata");
+    write_json(fixture.directory / "recording.json", manifest);
+    require_throws([&] { Fluid25DRecording invalid(fixture.directory); },
+                   "binary capture with missing handshake provenance was accepted");
+}
+
 void test_builtin_identity_buffer_is_bounded() {
     Fluid25DProjectConfig project = builtin_config(132U, 129U);
     Fluid25DScenarioData scenario = make_scenario(project);
@@ -534,6 +583,7 @@ int main() {
         test_builtin_identity_is_stable_and_tracks_immutable_physics();
         test_builtin_rejects_bounds_geometry_and_nonfinite_arrays();
         test_recording_and_stock_bridge_have_viewer_scoped_playback_metadata();
+        test_binary_capture_recording_has_distinct_validated_provenance();
         test_builtin_identity_buffer_is_bounded();
         test_generated_session_ids_are_bounded_unique_identifiers();
         test_local_runtime_frames_and_boundary_controls();
