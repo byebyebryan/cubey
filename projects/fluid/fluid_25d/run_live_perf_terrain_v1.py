@@ -88,8 +88,12 @@ def save_recording(case, session, initial, final, out):
         (out / f"capture-{index}.state.json").write_text(capture["_state_raw"])
         frames.append({"time_s": state["frame"]["physical_time_s"], "path": path.name,
                        "sha256": digest(planes), **field_stats(planes, spec["dx_m"])})
+    applied = initial[0]["rain_m_per_s"]
+    if final[0]["rain_m_per_s"] != applied:
+        raise ValueError("two-state isolation recording cannot claim a constant changed rainfall history")
     protocol = dict(spec, duration_s=duration, output_interval_s=duration,
-                    rainfall_history=[[0, spec["rain_rate_m_per_s"]], [duration, spec["rain_rate_m_per_s"]]])
+                    rain_rate_m_per_s=applied, rain_rate_mm_per_h=applied * 3600000,
+                    rainfall_history=[[0, applied], [duration, applied]])
     document = {"schema": "cubey.fluid25d.recording.v1", "encoding": "float32-little-endian", "field_layout": "planar",
                 "fields": ["h_m", "qx_m2_per_s", "qz_m2_per_s"],
                 "grid": {"width": spec["cols"], "height": spec["rows"], "cell_size_m": spec["dx_m"],
@@ -220,7 +224,7 @@ class Display:
 
 
 def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
-              viewport=(1920, 1080), recording=None, capture=False, rain=None):
+              viewport=(1920, 1080), recording=None, capture=False, rain=None, control_probe=False):
     if out.exists():
         raise ValueError("trial output must be fresh")
     out.mkdir()
@@ -331,6 +335,10 @@ def run_trial(case, out, mode, display, *, horizon=7200, cap=600, wall=None,
                 if video.poll() is None:
                     demo.stop_owned(video)
         result["measurement_end_unix_s"] = measure_unix + result["measurement_wall_s"]
+        if control_probe and worker:
+            warm = [command(session, "set_time_scale", 60) for _ in range(8)]
+            controls.extend(warm)
+            result["warm_ack_ms"] = percentiles([c["acknowledgement_ms"] for c in warm])
     except Exception as error:
         result["errors"].append(str(error))
         result["measurement_wall_s"] = time.monotonic() - started if started else 0
@@ -394,7 +402,13 @@ def main():
     p.add_argument("--repeats", type=int, default=1)
     p.add_argument("--capture", action="store_true")
     p.add_argument("--rain", type=float, choices=(512, 1024))
+    p.add_argument("--app", type=Path, default=demo.ref.APP, help="explicit renderer artifact; no auto build/fallback")
+    p.add_argument("--control-probe", action="store_true", help="eight warm same-pace commands after primary window")
     a = p.parse_args()
+    demo.ref.APP = a.app.resolve(strict=True)
+    demo.ref.SHADER_ROOT = demo.ref.APP.parent / "shaders"
+    global PROBE
+    PROBE = demo.ref.APP.parent / "cubey_project_fluid_25d_external_probe"
     out = a.out.resolve()
     if out.exists() or not out.parent.is_dir() or not out.is_relative_to(demo.ref.OUTPUT_ROOT.resolve()):
         p.error("output must be a fresh leaf under outputs/fluid")
@@ -412,7 +426,7 @@ def main():
         write(campaign, {"unix_s": time.time(), "maximum_wall_s": 8 * 3600})
     deadline = json.loads(campaign.read_bytes())["unix_s"] + 8 * 3600
     out.mkdir()
-    write(out / "protocol.json", {"arguments": vars(a) | {"study": str(a.study), "out": str(out), "recording": str(a.recording) if a.recording else None},
+    write(out / "protocol.json", {"arguments": vars(a) | {"study": str(a.study), "out": str(out), "recording": str(a.recording) if a.recording else None, "app": str(demo.ref.APP)},
         "app_sha256": demo.ref.sha256_file(demo.ref.APP), "shader_identity": demo.ref.shader_identity(),
         "extension_sha256": demo.ref.sha256_file(demo.EXTENSION), "worker_sha256": demo.ref.sha256_file(terrain.HERE / "external_synxflow/session_worker.py"),
         "created_unix_s": time.time(), "profile_scope": "private X11, real Vulkan; sampled frames; CPU download and wall progress, not pure CUDA kernels",
@@ -432,7 +446,7 @@ def main():
                     label = f"{name}-{mode}-{repeat}"
                     result = run_trial(case, out / label, mode, display, horizon=a.horizon,
                         cap=a.cap, wall=a.wall, viewport=(a.width, a.height), recording=a.recording,
-                        capture=a.capture and mode == "live", rain=a.rain)
+                        capture=a.capture and mode == "live", rain=a.rain, control_probe=a.control_probe)
                     rows.append({"directory": label, **{k: result.get(k) for k in
                         ("case", "mode", "status", "measurement_wall_s", "physical_wall_ratio", "errors")}})
                     write(out / "results.json", {"trials": rows})

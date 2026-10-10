@@ -21,6 +21,31 @@ def metric(row, key, stat="p95"):
     return (row.get("profile") or {}).get("metrics", {}).get(key, {}).get(stat)
 
 
+def gates(row, directory):
+    prof = row.get("profile") or {}
+    frame = prof.get("frame_ms", {}).get("p95")
+    fresh = metric(row, "fluid_25d.external.publication_freshness_s")
+    advancing = metric(row, "fluid_25d.external.advancing_state_age_s")
+    shown = metric(row, "fluid_25d.external.physical_time_s", "max")
+    end = row.get("measurement_final_physical_s")
+    worker = row["mode"] != "renderer-only"
+    viewer = row["mode"] != "worker-only"
+    log = directory / "viewer.log"
+    text = log.read_text(errors="replace") if log.exists() else ""
+    viewer_failure = any(marker in text for marker in ("VIEWER ERROR", "no changed valid service publication", "external service publication is stale"))
+    completion = row.get("completion") or {}
+    clean = all(not c.get("active_group_remaining") and not c.get("escalated") for c in row.get("cleanup", []))
+    return {"pace_at_least_54x": (row.get("physical_wall_ratio") or 0) >= 54 if worker else None,
+            "frame_p95_at_most_16_7ms": frame <= 16.7 if frame is not None else None,
+            "field_freshness_p95_at_most_1s": fresh <= 1 if fresh is not None else None,
+            "advancing_state_p95_at_most_1s": advancing <= 1 if advancing is not None else None,
+            "display_near_worker_endpoint": abs(end - shown) <= 180 if end is not None and shown is not None else None,
+            "viewer_reported_failure": viewer_failure if viewer else None,
+            "immutable_native_inputs": completion.get("inputs_unchanged") and completion.get("reference_inputs_unchanged") if worker else None,
+            "clean_owned_shutdown": clean,
+            "outcome_is_not_automatic_acceptance": True}
+
+
 def render(root):
     rows = []
     for path in sorted(root.glob("*/**/result.json")):
@@ -30,6 +55,7 @@ def render(root):
         if "mode" not in data or "case" not in data:
             continue
         data["_directory"] = str(path.parent.relative_to(root))
+        data["_gates"] = gates(data, path.parent)
         rows.append(data)
     headings = []
     for group in sorted({r["_directory"].split("/")[0] for r in rows}):
@@ -78,6 +104,7 @@ def render(root):
         "live_at_least_54x": sum((r.get("physical_wall_ratio") or 0) >= 54 for r in live),
         "timeouts": sum(r["status"] == "timeout" for r in rows),
         "errors": [{"directory": r["_directory"], "errors": r["errors"]} for r in rows if r.get("errors")],
+        "gates": {r["_directory"]: r["_gates"] for r in rows},
         "written_unix_s": time.time(), "human_visual_acceptance": "deferred",
         "measurement_scope": "private-X11 real GUI; sampled profiles; not physical-monitor scanout or calibrated hydrology"}
     (root / "overview.json").write_text(json.dumps(summary, indent=2) + "\n")
@@ -89,6 +116,7 @@ def render(root):
     source += f'<section><h2>Campaign progress</h2><p>{len(coverage)}/30 broad-coverage trials retained. {len(live)} live and {len(solver)} worker-only cases. {summary["timeouts"]} timeouts retained.</p>'
     source += '<p>' + e(' · '.join(pending) or 'No active trial found; see results below.') + '</p><p>Reload this page for new results. Detailed repeats, stress and soak results appear as separate sections.</p></section>'
     source += '<div class="note"><p>Read GPU pass time separately from frame-loop time: private X11 presentation can dominate the frame-ending step. No physical-monitor FPS claim. Worker-only includes download/publication; it is not pure CUDA timing.</p><p>All coverage starts dry under continuous 512 mm/h rain and asks for 60× physical time. 54× is the proposed pace target. A 600-wall-second timeout is an incomplete two-hour horizon, not a solver fallback. 8 m spacing samples the same original 30 m terrain; it adds no new terrain detail.</p><p>Static isolation controls contain exactly two captured physical states and remain paused on the final state. They are not smooth recorded simulation replays. Match renderer-only against renderer-plus-worker to assess contention.</p></div>'
+    source += '<p>“Completed” means the bounded trial finished, not that all targets passed. The <a href="overview.json">summary JSON</a> separately checks pace, frame time, field/advancing freshness, endpoint lag, viewer errors and clean input-preserving shutdown. Debug baseline and labelled Release follow-on are separate artifacts.</p>'
     source += ''.join(headings)
     source += '<h2>Live captures</h2><p>Water color is artistic shading, not a depth legend. Whitewater/trails are rendering cues, not tracked water parcels. The side panel identifies LIVE, rainfall, physical time and the prepared terrain/grid.</p><div class="grid">' + ''.join(galleries) + '</div>'
     source += '<footer>Generated from retained trial JSON, sampled CSV profiles and scoped GUI captures. Numerical parity and human visual acceptance are separate checks.</footer></html>'
