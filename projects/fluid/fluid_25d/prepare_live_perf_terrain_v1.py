@@ -7,8 +7,8 @@ prepares inputs only: no CUDA execution, installs, terrain generation or fallbac
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
+import shutil
 from pathlib import Path
 import sys
 import subprocess
@@ -25,6 +25,7 @@ SITES = {"mountain": "temperate-mountain-valley", "alpine": "alpine-range",
 CONFIGS = {"patch-512-32m": (512, 32), "patch-1024-16m": (1024, 16),
            "patch-2048-8m": (2048, 8), "small-512-16m": (512, 16),
            "large-2048-16m": (2048, 16)}
+HISTORICAL_CONFIG = "historical-512-30m"
 
 
 def write_json(path, value):
@@ -34,8 +35,10 @@ def write_json(path, value):
 def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
     if out.exists() or out.is_symlink() or not out.parent.is_dir():
         raise ValueError("case output must be a fresh leaf")
-    if site not in SITES or config not in CONFIGS or rainfall not in (512, 1024):
+    if site not in SITES or config not in (*CONFIGS, HISTORICAL_CONFIG) or rainfall not in (512, 1024):
         raise ValueError("unknown approved site/configuration/rainfall")
+    if config == HISTORICAL_CONFIG and site != "mountain":
+        raise ValueError("historical control exists only for the original mountain site")
     source = ROOT / "cache/terrain/sources/v1/landscape-variations" / SITES[site] / "heightfield.json"
     manifest, raw = load_source(source)
     g = manifest["grid"]
@@ -50,7 +53,7 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
     if site == "mountain":
         center = (g["sample_origin_x_m"] + 1407.5 * g["sample_spacing_m"],
                   g["sample_origin_z_m"] + 1663.5 * g["sample_spacing_m"])
-    n, spacing = CONFIGS[config]
+    n, spacing = (512, 30) if config == HISTORICAL_CONFIG else CONFIGS[config]
     grid = grid_geometry(n, n, spacing, center, bounds)
     bed = sample_grid(manifest, raw, grid)
     out.mkdir()
@@ -72,7 +75,19 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
     # Reuse the established optional InputModel preparation API, not solver math.
     import run_native_runoff_reuse_v1 as native
     native.write_ascii(out / "DEM.asc", bed, spacing)
-    inputs = native._make_model_inputs(spec, out)
+    if config == HISTORICAL_CONFIG:
+        import run_mountain_rain_demo as demo
+        original = demo.CASE / "native/input"
+        if demo.input_tree(original) != demo.CASE_INPUT_SHA:
+            raise ValueError("historical reference input changed")
+        shutil.copytree(original, out / "native/input")
+        (out / "native/output").mkdir()
+        (out / "native/input/times_setup.dat").write_text("0\n72000\n7200\n72000\n")
+        rate = rainfall / 3600000
+        (out / "native/input/field/precipitation_source_all.dat").write_text(f"1\n0 {rate:.17g}\n72000 {rate:.17g}\n")
+        inputs = native._input_hashes(out / "native/input")
+    else:
+        inputs = native._make_model_inputs(spec, out)
     audit = native._native_input_audit(spec, out)
     _, solver_bed = native._grid_from_native_ids(out / "native/input/field/z.dat", n, n)
     solver_bed.astype("<f4").tofile(out / "solver-bed.f32")
@@ -84,6 +99,20 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
                 "input_hashes": inputs, "input_audit": audit,
                 "water_volume_for_one_hour_rain_m3": n * n * spacing ** 2 * rainfall / 1000,
                 "source_inputs_unchanged": sha256(source) == source_identity["manifest_sha256"]}
+    if config == HISTORICAL_CONFIG:
+        import run_mountain_rain_demo as demo
+        original = demo.CASE / "native/input"
+        if demo.input_tree(original) != demo.CASE_INPUT_SHA:
+            raise ValueError("historical reference input changed")
+        # Preserve the old numerical bed and all non-forcing field values exactly.
+        historical_fields = {str(path.relative_to(original)): sha256(path)
+                             for path in original.rglob("*") if path.is_file()}
+        allowed = {"times_setup.dat", "field/precipitation_source_all.dat"}
+        changed = [key for key, value in historical_fields.items() if inputs.get(key) != value]
+        if any(key not in allowed for key in changed):
+            raise ValueError("historical control changed a non-rainfall/runtime input: " + str(changed))
+        protocol["historical_control"] = {"reference_input_sha256": demo.CASE_INPUT_SHA,
+            "changed_native_paths": changed, "native_bed_and_nonforcing_fields_exact": True}
     write_json(out / "case-protocol.json", protocol)
     return protocol
 
@@ -91,7 +120,7 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--site", required=True, choices=(*SITES, "all"))
-    p.add_argument("--configuration", required=True, choices=(*CONFIGS, "all"))
+    p.add_argument("--configuration", required=True, choices=(*CONFIGS, HISTORICAL_CONFIG, "all"))
     p.add_argument("--rain", type=float, default=512, choices=(512, 1024))
     p.add_argument("--out", required=True, type=Path)
     a = p.parse_args()
@@ -114,9 +143,11 @@ def main():
                 started = time.monotonic()
                 with (out / f"{label}.prepare.log").open("w") as log:
                     try:
-                        result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-                        status = "prepared" if result.returncode == 0 else "failed"
+                        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                        status = "prepared" if process.wait(timeout=1200) == 0 else "failed"
                     except subprocess.TimeoutExpired:
+                        import run_mountain_rain_demo as demo
+                        demo.stop_owned(process)
                         status = "timeout"
                 row = {"site": site, "configuration": config, "case": label, "status": status,
                        "preparation_wall_s": time.monotonic() - started, "command": command}
