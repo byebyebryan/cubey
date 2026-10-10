@@ -1,7 +1,11 @@
 import unittest
+import hashlib
+import json
+from pathlib import Path
+import tempfile
 import numpy as np
 
-from terrain_grid_sampling import grid_geometry, sample_grid
+from terrain_grid_sampling import grid_geometry, sample_grid, load_source
 
 
 class SamplingTests(unittest.TestCase):
@@ -28,6 +32,32 @@ class SamplingTests(unittest.TestCase):
         for size, spacing in ((2048, 32), (4096, 8), (512, float("nan")), (512, 0)):
             with self.assertRaises(ValueError):
                 grid_geometry(size, size, spacing, (0, 0), (-30000, -30000, 30000, 30000))
+        with self.assertRaises(ValueError):
+            grid_geometry(512.0, 512, 32, (0, 0), (-30000, -30000, 30000, 30000))
+
+    def test_source_custody_and_immutable_reads(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            raw = np.arange(12, dtype="<f4").tobytes()
+            (root / "elevation.f32").write_bytes(raw)
+            manifest = {"schema": "cubey.terrain.heightfield.v1", "grid": {"width": 4, "height": 3},
+                "files": {"elevation": {"path": "elevation.f32", "dtype": "float32-le",
+                    "layout": "row-major-zx", "shape": [3, 4], "sha256": hashlib.sha256(raw).hexdigest()}}}
+            path = root / "heightfield.json"
+            path.write_text(json.dumps(manifest))
+            before = path.read_bytes()
+            _, sampled = load_source(path)
+            self.assertEqual(sampled[2, 3], 11)
+            self.assertEqual(before, path.read_bytes())
+            self.assertEqual(raw, (root / "elevation.f32").read_bytes())
+            manifest["files"]["elevation"]["sha256"] = "0" * 64
+            path.write_text(json.dumps(manifest))
+            with self.assertRaises(ValueError):
+                load_source(path)
+            manifest["files"]["elevation"]["path"] = "../escape.f32"
+            path.write_text(json.dumps(manifest))
+            with self.assertRaises(ValueError):
+                load_source(path)
 
 
 if __name__ == "__main__":
