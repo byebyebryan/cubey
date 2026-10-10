@@ -1,7 +1,6 @@
 """CPU-only launcher contracts; no optional native import or GPU."""
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 import run_terrain_rain_demo as terrain
 
@@ -24,6 +23,14 @@ class Commands(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--profile-max-frames") + 1], "12000")
         self.assertEqual(cmd[cmd.index("--profile-sample-interval") + 1], "10")
         self.assertEqual(cmd[cmd.index("--fluid25d-recording-time-seconds") + 1], "20")
+
+    def test_renderer_artifact_override_does_not_mutate_default(self):
+        original = terrain.demo.ref.APP
+        command = terrain.viewer_command(Path("/case"), Path("/session"), "test",
+                                         app=Path("/release/fluid_25d"))
+        self.assertEqual(command[:3], ["rtk", "proxy", "/release/fluid_25d"])
+        self.assertEqual(terrain.demo.ref.APP, original)
+        self.assertEqual(terrain.viewer_command(Path("/case"), Path("/session"), "test")[2], str(original))
 
 
 if __name__ == "__main__":

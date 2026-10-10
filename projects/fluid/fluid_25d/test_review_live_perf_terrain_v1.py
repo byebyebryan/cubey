@@ -35,6 +35,17 @@ class Review(unittest.TestCase):
         self.assertIn("7200 physical s", svg)
         self.assertEqual(review.progress_plot(rows, "alpine"), "")
 
+    def test_missing_evidence_is_not_an_acceptance_pass(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            row = {"mode": "live"}
+            result = review.gates(row, Path(temporary))
+            self.assertIsNone(result["clean_owned_shutdown"])
+            self.assertIsNone(result["warm_ack_p95_at_most_250ms"])
+            row["warm_ack_ms"] = {"p95": 251}
+            self.assertFalse(review.gates(row, Path(temporary))["warm_ack_p95_at_most_250ms"])
+            row["warm_ack_ms"]["p95"] = 249
+            self.assertTrue(review.gates(row, Path(temporary))["warm_ack_p95_at_most_250ms"])
+
 
 if __name__ == "__main__":
     unittest.main()

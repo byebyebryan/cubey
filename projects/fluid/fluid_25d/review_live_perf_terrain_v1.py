@@ -34,12 +34,16 @@ def gates(row, directory):
     text = log.read_text(errors="replace") if log.exists() else ""
     viewer_failure = any(marker in text for marker in ("VIEWER ERROR", "no changed valid service publication", "external service publication is stale"))
     completion = row.get("completion") or {}
-    clean = all(not c.get("active_group_remaining") and not c.get("escalated") for c in row.get("cleanup", []))
+    cleanup = row.get("cleanup")
+    clean = (all(not c.get("active_group_remaining") and not c.get("escalated")
+                 for c in cleanup) if cleanup else None)
+    warm_ack = (row.get("warm_ack_ms") or {}).get("p95")
     return {"pace_at_least_54x": (row.get("physical_wall_ratio") or 0) >= 54 if worker else None,
             "frame_p95_at_most_16_7ms": frame <= 16.7 if frame is not None else None,
             "field_freshness_p95_at_most_1s": fresh <= 1 if fresh is not None else None,
             "advancing_state_p95_at_most_1s": advancing <= 1 if advancing is not None else None,
             "display_near_worker_endpoint": abs(end - shown) <= 180 if end is not None and shown is not None else None,
+            "warm_ack_p95_at_most_250ms": warm_ack <= 250 if warm_ack is not None else None,
             "viewer_reported_failure": viewer_failure if viewer else None,
             "immutable_native_inputs": completion.get("inputs_unchanged") and completion.get("reference_inputs_unchanged") if worker else None,
             "clean_owned_shutdown": clean,
@@ -88,13 +92,14 @@ def render(root):
                 number(row.get("measurement_final_physical_s"), 0), number(row.get("measurement_wall_s")),
                 number(row.get("physical_wall_ratio")), number(prof.get("frame_ms", {}).get("p95")),
                 number(gpu, 2), number(end, 2), number(metric(row, "fluid_25d.external.publication_freshness_s"), 2),
-                number(metric(row, "fluid_25d.external.whitewater_source_age_s"), 2), number(rss, 0)]
+                number(metric(row, "fluid_25d.external.whitewater_source_age_s"), 2),
+                number((row.get("warm_ack_ms") or {}).get("p95")), number(rss, 0)]
             link = row["_directory"] + "/result.json"
             cells = "".join(f"<td>{e(value)}</td>" for value in fields)
             table.append(f'<tr>{cells}<td><a href="{e(link)}">JSON</a></td></tr>')
         headings.append(f'<section><h2>{e(group)}</h2><div class="scroll"><table><thead><tr>' +
             ''.join(f'<th>{x}</th>' for x in ("Site / grid", "Mode", "Outcome", "Physical s", "Wall s", "Pace ×",
-                "Frame p95 ms", "GPU p95 ms", "End frame p95 ms", "Freshness p95 s", "Fleck age p95 s", "RSS peak MiB", "Evidence")) +
+                "Frame p95 ms", "GPU p95 ms", "End frame p95 ms", "Freshness p95 s", "Fleck age p95 s", "Warm ack p95 ms", "RSS peak MiB", "Evidence")) +
             '</tr></thead><tbody>' + ''.join(table) + '</tbody></table></div></section>')
     coverage = [r for r in rows if r["_directory"].startswith("coverage/")]
     pending = []

@@ -54,8 +54,8 @@ def worker_command(case, session, speed=60):
 
 
 def viewer_command(case, source, title, width=1920, height=1080, profile=None, live=True, start=0,
-                   surface="legacy", camera="overview"):
-    command = ["rtk", "proxy", str(demo.ref.APP), "--width", str(width), "--height", str(height),
+                   surface="legacy", camera="overview", app=None):
+    command = ["rtk", "proxy", str(app or demo.ref.APP), "--width", str(width), "--height", str(height),
                "--frames", "0", "--title", title, "--fluid25d-recording-camera", camera,
                "--fluid25d-native-presentation", "scenic", "--fluid25d-scenic-material", "macro",
                "--fluid25d-native-surface-highlights", "off", "--fluid25d-native-bank-view", "bspline-2x",
@@ -83,10 +83,15 @@ def main(argv=None):
     p.add_argument("--surface", choices=("legacy", "correlated"), default="legacy")
     p.add_argument("--width", type=int, default=1920)
     p.add_argument("--height", type=int, default=1080)
+    p.add_argument("--app", type=Path, default=demo.ref.APP,
+                   help="explicit renderer artifact (for example Release); no build or fallback")
     p.add_argument("--print-command", action="store_true")
     a = p.parse_args(argv)
     if not 320 <= a.width <= 3840 or not 240 <= a.height <= 2160:
         p.error("viewport must fit the bounded 320x240..3840x2160 range")
+    a.app = a.app.resolve(strict=True)
+    if not a.app.is_file():
+        p.error("renderer artifact must be an existing file")
     case = (a.study / "cases" / f"{a.site}-{a.configuration}").resolve(strict=True)
     identity = case_identity(case)
     if a.mode == "live":
@@ -102,7 +107,7 @@ def main(argv=None):
     source = session if a.mode == "live" else a.recording.resolve()
     saved = json.loads(source.read_bytes())["protocol"]["duration_s"] if a.mode == "replay" else 0
     commands = {"viewer": viewer_command(case, source, title, a.width, a.height, start=saved,
-                                         live=a.mode == "live", surface=a.surface)}
+                                         live=a.mode == "live", surface=a.surface, app=a.app)}
     if a.mode == "live":
         commands["worker"] = worker_command(case, session)
     print(json.dumps(identity, indent=2))
@@ -128,7 +133,7 @@ def main(argv=None):
                 owned.append(worker)
                 demo.wait_ready(worker, source, 120, lambda: interrupted[0])
             viewer = subprocess.Popen(viewer_command(case, source, title, a.width, a.height,
-                live=a.mode == "live", start=saved, surface=a.surface), stdout=vlog,
+                live=a.mode == "live", start=saved, surface=a.surface, app=a.app), stdout=vlog,
                 stderr=subprocess.STDOUT, start_new_session=True)
             owned.append(viewer)
             print("Live starts dry/paused; Space resumes. Viewer close detaches; Ctrl-C stops owned worker.", flush=True)
@@ -146,7 +151,8 @@ def main(argv=None):
             signal.signal(sig, handler)
         demo.ref.write_json_exclusive(out / "launch.json", {"identity": identity, "cleanup": cleanup,
             "mode": a.mode, "site": a.site, "configuration": a.configuration,
-            "acceptance": "human review not automated", "surface": a.surface})
+            "acceptance": "human review not automated", "surface": a.surface,
+            "app": str(a.app), "app_sha256": demo.ref.sha256_file(a.app)})
     return 0
 
 
