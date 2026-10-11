@@ -732,6 +732,24 @@ int main() {
             write_manifest(path, fixture.manifest);
             require_throws([&] { Fluid25DRecording invalid(path); },
                            "binary digest mismatch accepted");
+            provenance["captures"][0]["packet_sha256"] = std::string(64, 'b');
+            fixture.manifest["frames"][1]["time_s"] = 11.5;
+            fixture.manifest["frames"][2]["time_s"] = 23.25;
+            provenance["captures"][1]["physical_time_s"] = 11.5;
+            provenance["captures"][2]["physical_time_s"] = 23.25;
+            write_manifest(path, fixture.manifest);
+            Fluid25DRecording irregular(path);
+            require(irregular.times_s()[1] == 11.5 && irregular.times_s()[2] == 23.25,
+                    "binary snapshot times were resampled or rounded");
+            require(irregular.frame(2)->depth_m ==
+                        std::vector<float>(fixture.frames[2].depth.begin(),
+                                           fixture.frames[2].depth.end()),
+                    "irregular capture altered numerical fields");
+            fixture.manifest["frames"][2]["time_s"] = 11.5;
+            provenance["captures"][2]["physical_time_s"] = 11.5;
+            write_manifest(path, fixture.manifest);
+            require_throws([&] { Fluid25DRecording invalid(path); },
+                           "duplicate binary snapshot time accepted");
         }
     } catch (const std::exception& error) {
         std::cerr << "fluid_25d_recording_tests: " << error.what() << '\n';

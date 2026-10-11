@@ -517,23 +517,30 @@ struct Fluid25DRecording::Impl {
             !nearly_equal(times.back(), duration, 0.0, 1.0e-9)) {
             invalid("the final saved timestamp does not match protocol duration");
         }
-        const double interval_count = duration / output_interval;
-        if (!std::isfinite(interval_count) || interval_count < 1.0 ||
-            std::floor(interval_count) != interval_count || interval_count + 1.0 > 100'000.0 ||
-            (live_stream ? static_cast<double>(times.size()) > interval_count + 1.0
-                         : interval_count + 1.0 != static_cast<double>(times.size()))) {
-            invalid("frame timestamps do not match the protocol output cadence");
-        }
-        for (std::size_t index = 0U; index < times.size(); ++index) {
-            const double expected_time = static_cast<double>(index) * output_interval;
-            if (!nearly_equal(times[index], expected_time, 0.0, 1.0e-9)) {
+        const bool binary_capture = provenance_json.value("capture_schema", std::string{}) ==
+                                    "cubey.fluid25d.external-binary-capture.v1";
+        // A sealed live-service capture is sampled at actual solver-boundary
+        // times, not the native ASC output cadence. Keep its strict monotonic
+        // timeline, endpoint and per-frame capture proofs below. ASC recordings
+        // and growing file streams retain the established exact cadence rule.
+        if (!binary_capture || live_stream) {
+            const double interval_count = duration / output_interval;
+            if (!std::isfinite(interval_count) || interval_count < 1.0 ||
+                std::floor(interval_count) != interval_count || interval_count + 1.0 > 100'000.0 ||
+                (live_stream ? static_cast<double>(times.size()) > interval_count + 1.0
+                             : interval_count + 1.0 != static_cast<double>(times.size()))) {
                 invalid("frame timestamps do not match the protocol output cadence");
+            }
+            for (std::size_t index = 0U; index < times.size(); ++index) {
+                const double expected_time = static_cast<double>(index) * output_interval;
+                if (!nearly_equal(times[index], expected_time, 0.0, 1.0e-9)) {
+                    invalid("frame timestamps do not match the protocol output cadence");
+                }
             }
         }
         if (live_stream && (native_time_s < times.back() || native_time_s > duration))
             invalid("native time is outside the published prefix and finite protocol horizon");
-        if (provenance_json.value("capture_schema", std::string{}) ==
-            "cubey.fluid25d.external-binary-capture.v1") {
+        if (binary_capture) {
             if (live_stream)
                 invalid("binary capture provenance requires a completed recording");
             const auto& captures = required_member(provenance_json, "captures", "provenance");
