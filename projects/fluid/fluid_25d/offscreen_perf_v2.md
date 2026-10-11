@@ -75,3 +75,61 @@ and capture with `--headless-only`. The amended loop has 62 completed timing
 slots: 42 frozen baseline, 8 correction controls, and 12 operational/resolution/
 rolling/soak checks. The reporting root retains `study-scope.json` with this
 authorization; do not silently describe the deferred checks as measured.
+
+## Completed result — 2026-10-10
+
+Retained study: `outputs/fluid/offscreen-perf-20261010-CwWtK3/`.
+The [HTML review](http://starship:8801/fluid/offscreen-perf-20261010-CwWtK3/)
+contains raw receipts, host identities, timing ranges, exact-state captures and
+the separate performance-budget misses. All 62 amended timing slots completed
+and the final raw-evidence audit reports no failures. One user-closed native
+window remains an incomplete attempt; its replacement used the frozen original
+executable and is identified through `phase-aliases.json`, not an overwritten
+receipt. The four additional native controls and native screenshots remain
+deferred, as requested.
+
+| Live offscreen, 1080p, render cap 60 Hz | Physical / wall | CPU service p95 | Field age p95 |
+| --- | ---: | ---: | ---: |
+| Mountain 1k / 16 m, 45 s | 59.97× | 2.80 ms | 0.140 s |
+| Mountain 2k / 8 m, 45 s | 3.88× | 15.16 ms | 0.315 s |
+| Rolling 1k / 16 m, three 45 s runs, median | 60.05× | 2.73 ms | 0.146 s |
+| Mountain 1k / 16 m, ten-minute soak | 59.99× | 2.70 ms | 0.143 s |
+
+The soak's GPU scene p95 was 5.29 ms, sampled CPU service maximum 5.21 ms,
+and loop p95 16.74 ms including intentional pacing. Worker RSS median stayed
+608.37 MiB; viewer RSS early/late medians were 427.93/430.20 MiB (+2.26 MiB).
+Both owned processes exited zero without escalation. This supports bounded
+stability, not indefinite leak freedom or guaranteed monitor FPS.
+
+The one measured correction is worthwhile: 2k unpaced service p95 fell from
+125.59 to 23.90 ms by sharing the existing asynchronous whitewater policy.
+It also exposed the contention tradeoff: unpaced 1k rendering left the worker
+at 21.61×, while pacing restored ~60×. At 2k, worker-only throughput was already
+8.88–9.82× including publication; the paced live trial still misses the ≥54×
+fast-simulation target. Keep 2k as a finer-grid/slower-live or offline option,
+not the fast-live recommendation. No second optimization was attempted; the
+2k budget misses remain explicit.
+
+Held 1k renderer-only service p95 was 3.15/3.26/4.36 ms at
+1080p/1440p/4K (one corrected 1080p control, three larger-output repeats).
+These isolate output resolution, not finer simulation or live 4K capacity.
+Prefer 1k/16 m with a 60 Hz render cap for this fast-live workload, without
+changing launcher defaults. If faster 2k becomes important, separately profile
+solver/publication and scene geometry before choosing further work.
+
+Validation retained under the study root: 20 Release CTests, two Debug CTests,
+the post-fix actual offscreen pause/resume/reset check, and the final helper
+CTest (12 Python contract tests). Four actual Vulkan PNGs were inspected;
+both held 1k/2k images are byte-identical to the archived pre-fix executable.
+These are static endpoints, not proof of motion or human visual acceptance.
+
+`audit_offscreen_perf_v2.py --study <V1-root> --out <V2-root>` recomputes each
+timing summary from raw CSV and rechecks the exact slot set, continuously
+advancing worker samples, frozen source/native/shader identities, actual
+backend/device/viewport, owned cleanup, reset control and capture byte proofs.
+Run it with the same optional SynxFlow environment used by the campaign.
+`capture_offscreen_perf_v2.py` collects separate visual receipts; pass
+`--headless-only` and `--baseline-app <archived-app>` for this amended study.
+The audit never starts applications; capture with this flag never opens native
+windows. All exact commands and per-trial binary identities are retained in
+protocol/receipt JSON.

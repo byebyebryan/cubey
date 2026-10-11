@@ -48,6 +48,16 @@ and pins B-spline 2x for its study views without replacing this launcher's bank,
 terrain or solver defaults. Cases and the review report remain under `outputs`;
 the study document gives launch commands and measurement boundaries.
 
+The [corrected Vulkan performance loop](offscreen_perf_v2.md) uses the shared
+offscreen host without a virtual display, readback or encoding, alongside
+verified native Wayland controls. `--headless --headless-render-only --frames 0
+--run-seconds 30 --render-fps 60` is an opt-in bounded continuous loop; it does
+not start a solver by itself. External-session runs advance actual worker
+fields; recording runs hold their saved state. Continuous offscreen shares
+the GUI's bounded asynchronous whitewater classification, while PNG/video
+captures retain deterministic synchronous classification. No numerical,
+material or launcher defaults are promoted by the performance study.
+
 In the native viewer, `V` switches Readable/Scenic while retaining the camera
 and dots. Scenic uses lit ground/rock materials, directional shadows, HDR
 environment reflection, absorption and guarded refraction. Its blue/green color
