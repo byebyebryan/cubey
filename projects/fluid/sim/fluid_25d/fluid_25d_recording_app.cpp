@@ -297,6 +297,8 @@ class RecordingApp {
         render_.native_bilinear_water = config.native_water_sampling == "bilinear";
         render_.native_bspline_surface = config.native_water_sampling == "bspline";
         render_.native_surface_subdivision = config.native_surface_subdivision;
+        render_.native_shadow_scene_fit = config.native_shadow_projection == "scene";
+        render_.native_shadow_extent = config.native_shadow_extent;
         if (config.native_display_coverage_path) {
             coverage_ = std::make_shared<Fluid25DDisplayCoverage>(
                 *config.native_display_coverage_path, *recording_);
@@ -1073,6 +1075,14 @@ class RecordingApp {
             ensure_scenic_resources(device, target);
     }
 
+    void select_camera(const char* name) {
+        config_.recording_camera = name;
+        config_.native_camera_target_x.reset();
+        config_.native_camera_target_z.reset();
+        config_.native_camera_span_m.reset();
+        configure_camera();
+    }
+
     void configure_camera() {
         const float width =
             static_cast<float>(simulation_.grid_width - 1U) * simulation_.cell_size_m;
@@ -1835,6 +1845,9 @@ class RecordingApp {
                                          &scenic_material_.terrain_specular_scale, 0.0F, 1.0F);
             edited |= ImGui::SliderFloat("Terrain shadows", &scenic_material_.terrain_shadow_scale,
                                          0.0F, 1.0F);
+            if (ImGui::Checkbox("Whole-scene shadow fit", &render_.native_shadow_scene_fit))
+                config_.native_shadow_projection =
+                    render_.native_shadow_scene_fit ? "scene" : "legacy";
             edited |= ImGui::SliderFloat("Slope color contrast",
                                          &scenic_material_.terrain_slope_color_scale, 0.0F, 1.0F);
             constexpr std::array terrain_views{
@@ -2145,8 +2158,7 @@ class RecordingApp {
         ImGui::EndDisabled();
         ImGui::SameLine();
         if (ImGui::Button("Fit overview")) {
-            config_.recording_camera = "overview";
-            configure_camera();
+            select_camera("overview");
         }
         if (loading)
             ImGui::TextWrapped("Loading: %s. Previous scene and motion held.",
@@ -2250,8 +2262,7 @@ class RecordingApp {
             if (!control || control->case_by_id(demo->current_case_id()).site == "mountain") {
                 for (const char* camera : {"overview", "runoff", "collection"}) {
                     if (ImGui::RadioButton(camera, config_.recording_camera == camera)) {
-                        config_.recording_camera = camera;
-                        configure_camera();
+                        select_camera(camera);
                     }
                     ImGui::SameLine();
                 }
@@ -2523,8 +2534,7 @@ class RecordingApp {
             ImGui::Separator();
             for (const char* name : {"overview", "runoff", "collection"}) {
                 if (ImGui::RadioButton(name, config_.recording_camera == name)) {
-                    config_.recording_camera = name;
-                    configure_camera();
+                    select_camera(name);
                 }
                 ImGui::SameLine();
             }

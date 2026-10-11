@@ -1,12 +1,13 @@
 # Fluid 2.5D
 
-The render-only surface study also supports
+The render-only surface organization supports
 `--fluid25d-scenic-surface-mode correlated` with a SHA-matching
 `--fluid25d-scenic-surface-source`. The GUI labels this **Source-aligned masks
 (study)**. It samples `cubey::terrain::TerrainSurfaceField`, the same full-source
 descriptor as Terrain, rather than normalizing/filtering only the recording crop.
-The existing three modes and numerical defaults are unchanged. This remains a
-completed-recording study; it does not launch a solver or change rainfall/bed data.
+The existing three modes and numerical defaults are unchanged. Source-aligned
+organization also works with provenance-matched `--fluid25d-scenic-surface-grid`
+bindings in the prepared live/replay terrain demo; it never changes rainfall/bed data.
 Its attempted new material recipe was rejected and removed; the existing Scenic
 material consumes the diagnostic masks. See
 `outputs/terrain/correlated-surface-v1-20261008-b2` for prototype versus final proof.
@@ -26,6 +27,12 @@ The broader technique map lives in
 The prepared terrain launcher now defaults to **live SynxFlow streaming,
 mountain terrain at 1024² / 16 m, the Release renderer, and a 60 Hz render cap**.
 It retains Scenic Macro/daylight, B-spline 2x, visible rain and dots/trails.
+Terrain organization now defaults to the shared **source-aligned masks**, with
+a **whole-scene fitted 2048² shadow** and corrected steep receiver-plane filtering.
+`--surface legacy` retains the uniform-material control. The GUI's Terrain
+organization selector retains all four existing modes; Whole-scene shadow fit
+can be disabled for the original shadow reference. The direct app retains its
+legacy projection default for older studies. See [terrain presentation review](terrain_presentation_v1.md).
 This is a demo-launch preset, not a change to Cubey's builtin solver, numerical
 method, terrain or rainfall. The optional runtime and prepared cases must
 already exist; nothing is installed, generated or silently substituted.

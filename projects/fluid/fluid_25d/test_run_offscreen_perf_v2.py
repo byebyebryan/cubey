@@ -92,6 +92,19 @@ class ContractTests(unittest.TestCase):
         self.assertIn("--fluid25d-external-session", native)
         self.assertNotIn("--fluid25d-recording", native)
 
+    def test_presentation_controls_are_explicit_and_share_live_held_builder(self):
+        args = argparse.Namespace(width=1920, height=1080, wall=30, warmup=5,
+            render_fps=60, app=Path("release-app"), prefix=Path("profile"),
+            camera="overview", host="offscreen", surface="correlated",
+            shadow_projection="scene", shadow_extent=4096)
+        for live in (False, True):
+            argv = study.viewer_command(Path("case"), Path("source"), "owned", args, live, 0)
+            self.assertEqual(argv[argv.index("--fluid25d-scenic-surface-mode")+1], "correlated")
+            self.assertEqual(argv[argv.index("--fluid25d-native-shadow-projection")+1], "scene")
+            self.assertEqual(argv[argv.index("--fluid25d-native-shadow-extent")+1], "4096")
+            self.assertIn("--headless-render-only", argv)
+            self.assertNotIn("--fluid25d-solver", argv)
+
     def test_campaign_is_sequential_and_has_42_primary_and_56_total_trials(self):
         rows = campaign.plan(Path("frozen-study"))
         primary = total = 0

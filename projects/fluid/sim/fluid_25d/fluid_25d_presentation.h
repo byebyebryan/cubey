@@ -36,6 +36,8 @@ struct Fluid25DCatchmentRenderOptions {
     // Independent opacity sidecar; no terrain/depth reconstruction or field writes.
     bool native_display_coverage = false;
     std::uint32_t native_surface_subdivision = 2U;
+    bool native_shadow_scene_fit = false;
+    std::uint32_t native_shadow_extent = 2048U;
     float quiver_speed_upper_m_per_s = 0.80F;
 };
 

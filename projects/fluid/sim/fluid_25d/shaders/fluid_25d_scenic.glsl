@@ -15,7 +15,7 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 water_film; // begin_m, end_m, film perceptual roughness, ground mix
     vec4 water_view; // component view, wet-normal blend, ripple slope, wavelength m
     vec4 terrain_surface; // mode, grid width, grid height, reserved
-    vec4 environment_mode; // shared fixed daylight enabled, direct sun gain, reserved
+    vec4 environment_mode; // shared daylight, sun gain, scene-fit residual/min and cap (depth units)
     vec4 water_shallow_optics; // absorption boost/end m, coverage fade strength/end m
     vec4 water_agitation; // flow strength, rain strength, applied rain response, wall clock s
     vec4 water_rapids; // artist steep-flow strength, texture period m, reserved
@@ -58,6 +58,8 @@ float scenic_sun_visibility(vec3 p, vec3 n) {
     vec2 gradient=vec2(0);
     if (scenic.environment_mode.x>0.5)
         gradient=fluid25d_receiver_plane_gradient(dFdx(vec3(uv,q.z)),dFdy(vec3(uv,q.z)));
+    // Explicit legacy projection retains its original shader behavior for A/B.
+    if (scenic.environment_mode.z<=0.0) gradient=clamp(gradient,vec2(-1),vec2(1));
     if (any(lessThan(uv,vec2(0))) || any(greaterThan(uv,vec2(1))) || q.z < 0 || q.z > 1)
         return 1.0;
     // Fixed 2x2 PCF, no temporal stochastic sampling. Bias is shadow-only.
@@ -81,7 +83,12 @@ float scenic_sun_visibility(vec3 p, vec3 n) {
         for (int y=-1;y<=2;++y) for (int x=-1;x<=2;++x) {
             ivec2 cell=clamp(origin+ivec2(x,y),ivec2(0),extent-1);
             vec2 sample_uv=(vec2(cell)+0.5)*texel;
-            float residual_bias=0.00006+min(0.0002,0.75*dot(abs(gradient),texel));
+            // Scene fit uses half a world texel of residual guard, capped at
+            // two texels of curvature allowance. Changing light-space depth
+            // range must not silently change the world-space bias by 5x.
+            float base_bias=scenic.environment_mode.z>0.0 ? scenic.environment_mode.z : 0.00006;
+            float curvature_cap=scenic.environment_mode.z>0.0 ? scenic.environment_mode.w : 0.0002;
+            float residual_bias=base_bias+min(curvature_cap,0.75*dot(abs(gradient),texel));
             float receiver=q.z+dot(gradient,sample_uv-uv)-residual_bias;
             float weight=fluid25d_shadow_tent(float(x)-fraction.x)*
                          fluid25d_shadow_tent(float(y)-fraction.y)/16.0;

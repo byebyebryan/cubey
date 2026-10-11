@@ -28,7 +28,7 @@ CAMERAS = {
     "steep-ridges": {"slope": [.820, .285, 900], "basin": [.183, .655, 1800]},
 }
 VIEWS = ("shaded", "terrain-only", "albedo", "base-normal", "detail-normal",
-         "constant-albedo", "no-shadows", "no-detail", "face-normal")
+         "constant-albedo", "no-shadows", "no-detail", "face-normal", "raw-depth", "raw-speed")
 
 
 def digest(path):
@@ -74,16 +74,21 @@ def runtime():
 
 def command(site, camera, view, output, *, surface="legacy", subdivision=2,
             dry=False, cues=False, video=False, sweep=0, profile=None, seconds=0,
-            extra=()):
+            shadow=None, shadow_extent=None):
     case, recording, manifest = scene(site)
     start = 0 if dry else manifest["frames"][-1]["time_s"]
     argv = terrain.viewer_command(case, recording, "Terrain presentation review", 1280, 720,
-        live=False, start=start, surface=surface, app=APP, surface_subdivision=1)
+        live=False, start=start, surface=surface, app=APP, surface_subdivision=1,
+        shadow_projection=shadow or "legacy")
     if not cues:
         argv.remove("--fluid25d-motion-markers")
         argv.remove("--fluid25d-rain-visuals")
     argv[argv.index("--fluid25d-native-surface-subdivision") + 1] = str(subdivision)
-    argv += ["--headless", "--fluid25d-scenic-terrain-view", view]
+    argv += ["--headless"]
+    if view.startswith("raw-"):
+        argv += ["--fluid25d-view", "diagnostics", "--fluid25d-debug-view", view[4:]]
+    else:
+        argv += ["--fluid25d-scenic-terrain-view", view]
     if camera != "overview":
         x, z, span = CAMERAS[site][camera]
         argv += ["--fluid25d-native-camera-target-x", str(x),
@@ -105,7 +110,9 @@ def command(site, camera, view, output, *, surface="legacy", subdivision=2,
                  "--fluid25d-recording-frame-interval-seconds", "0"]
         if sweep:
             argv += ["--fluid25d-native-camera-sweep", str(sweep)]
-    return argv + list(extra)
+    if shadow_extent is not None:
+        argv += ["--fluid25d-native-shadow-extent", str(shadow_extent)]
+    return argv
 
 
 def run_capture(argv, log_path, timeout=180):
@@ -122,7 +129,7 @@ def run_capture(argv, log_path, timeout=180):
     raw = log_path.read_text(errors="replace")
     if "NVIDIA GeForce RTX 5070 Ti" not in raw:
         raise ValueError("unexpected Vulkan device")
-    if "validation error" in raw.lower() or "Validation Error" in raw:
+    if "validation error" in raw.lower() or "VUID-" in raw:
         raise ValueError("Vulkan validation failed")
     if "--fluid25d-recording-gpu-validation" in argv and "fluid_25d_recording_upload: PASS bit-exact" not in raw:
         raise ValueError("native-field GPU validation receipt missing")
@@ -153,9 +160,11 @@ def capture(args):
                     subdivision=args.subdivision, dry=args.dry, cues=args.cues,
                     video=args.video, sweep=args.sweep,
                     profile=phase/name if args.seconds else None, seconds=args.seconds,
-                    extra=args.extra)
+                    shadow=args.shadow, shadow_extent=args.shadow_extent)
                 argv[2] = str(frozen_app)
                 receipt = run_capture(argv, phase/(name+".log"))
+                if not args.seconds and (not path.is_file() or path.stat().st_size == 0):
+                    raise ValueError("renderer did not create the requested media")
                 rows.append({"site": site, "camera": camera, "view": view,
                     "surface": args.surface, "subdivision": args.subdivision,
                     "dry": args.dry, "cues": args.cues, "path": path.name if path.exists() else None,
@@ -184,7 +193,9 @@ def main():
     p.add_argument("--video", action="store_true")
     p.add_argument("--sweep", type=float, default=0)
     p.add_argument("--seconds", type=float, default=0, help="held-state 1080p render-only profiling")
-    args, args.extra = p.parse_known_args()
+    p.add_argument("--shadow", choices=("legacy", "scene"))
+    p.add_argument("--shadow-extent", type=int, choices=(2048, 4096))
+    args = p.parse_args()
     if args.seconds and not 3 <= args.seconds <= 60:
         raise ValueError("profile duration must be 3..60 seconds")
     if args.video and args.seconds:

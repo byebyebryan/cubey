@@ -34,7 +34,11 @@ def environment(host):
 
 def viewer_command(case, source, title, args, live, start):
     argv = terrain.viewer_command(case, source, title, args.width, args.height,
-        live=live, start=start, app=args.app, camera=args.camera)
+        live=live, start=start, app=args.app, camera=args.camera,
+        surface=getattr(args, "surface", "legacy"),
+        shadow_projection=getattr(args, "shadow_projection", None) or "legacy")
+    if getattr(args, "shadow_projection", None) is not None:
+        argv += ["--fluid25d-native-shadow-extent", str(args.shadow_extent)]
     argv += ["--run-seconds", str(args.wall + args.warmup + 8),
              "--render-fps", str(args.render_fps), "--no-validation",
              "--profile-output", str(args.prefix), "--profile-warmup-frames", "0",
@@ -251,6 +255,9 @@ def main():
     p.add_argument("--height", type=int, default=1080)
     p.add_argument("--render-fps", type=int, choices=(0, 60), default=0)
     p.add_argument("--camera", choices=("overview", "runoff", "collection"), default="overview")
+    p.add_argument("--surface", choices=("legacy", "landform", "climate", "correlated"), default="legacy")
+    p.add_argument("--shadow-projection", choices=("legacy", "scene"))
+    p.add_argument("--shadow-extent", type=int, choices=(2048, 4096), default=2048)
     p.add_argument("--exercise-controls", action="store_true", help="validation trial, not steady-state performance")
     a = p.parse_args()
     if not (1 <= a.wall <= 600 and 0 <= a.warmup <= 30 and 0 <= a.prewarm <= 7200 and 1 <= a.repeats <= 3 and 0 <= a.repeat_offset <= 2 and a.repeat_offset + a.repeats <= 3 and 320 <= a.width <= 3840 and 240 <= a.height <= 2160):

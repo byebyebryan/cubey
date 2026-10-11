@@ -12,9 +12,9 @@ float fluid25d_sh_lambert(int i) { return i==0 ? 1.0 : (i<4 ? 2.0/3.0 : 0.25); }
 vec2 fluid25d_receiver_plane_gradient(vec3 dx, vec3 dy) {
     float determinant=dx.x*dy.y-dx.y*dy.x;
     if (abs(determinant)<1e-12) return vec2(0);
-    // Screen derivatives -> shadow UV depth gradient. Bound degeneracies at silhouettes.
-    return clamp(vec2(dx.z*dy.y-dy.z*dx.y,dy.z*dx.x-dx.z*dy.x)/determinant,
-                 vec2(-1),vec2(1));
+    // Screen derivatives -> shadow UV depth gradient. A finite steep receiver
+    // can legitimately exceed +/-1; clipping it produces periodic false shadow.
+    return vec2(dx.z*dy.y-dy.z*dx.y,dy.z*dx.x-dx.z*dy.x)/determinant;
 }
 float fluid25d_shadow_tent(float offset) { return max(0.0,2.0-abs(offset)); }
 #endif

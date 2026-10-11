@@ -7484,6 +7484,21 @@ void test_scenic_material_contract() {
                 camera_recipe.native_camera_span_m == 900.0F &&
                 camera_recipe.simulation.solver == Fluid25DSolver::VirtualPipes,
             "observation recipe changed numerical defaults");
+    const auto shadow_control = parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                               "--fluid25d-native-presentation", "scenic",
+                                               "--fluid25d-native-shadow-projection", "scene",
+                                               "--fluid25d-native-shadow-extent", "4096"});
+    require(shadow_control.native_shadow_projection == "scene" &&
+                shadow_control.native_shadow_extent == 4096U &&
+                shadow_control.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "shadow control changed numerical defaults");
+    for (const auto& args : std::vector<std::vector<std::string>>{
+             {"fluid_25d", "--fluid25d-native-shadow-projection", "scene"},
+             {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-shadow-extent",
+              "4096"},
+             {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-presentation",
+              "scenic", "--fluid25d-native-shadow-extent", "3072"}})
+        require_throws([&] { (void)parse_project(args); }, "invalid shadow control accepted");
     for (const auto& args : std::vector<std::vector<std::string>>{
              {"fluid_25d", "--fluid25d-native-camera-target-x", "0.5"},
              {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-camera-target-x",

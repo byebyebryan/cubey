@@ -14,6 +14,7 @@ class Commands(unittest.TestCase):
         self.assertEqual(args.configuration, "patch-1024-16m")
         self.assertEqual(args.render_fps, 60)
         self.assertEqual(args.app, terrain.RELEASE_APP)
+        self.assertEqual(args.surface, "correlated")
         command = terrain.viewer_command(Path("/case"), Path("/session"), "test",
                                          app=args.app, render_fps=args.render_fps)
         self.assertEqual(command[2], str(terrain.RELEASE_APP))
@@ -42,7 +43,8 @@ class Commands(unittest.TestCase):
         self.assertNotIn("--fluid25d-recording", cmd)
         self.assertNotIn("--fluid25d-solver", cmd)
         self.assertEqual(cmd[cmd.index("--fluid25d-native-bank-view") + 1], "bspline-2x")
-        self.assertEqual(cmd[cmd.index("--fluid25d-scenic-surface-mode") + 1], "legacy")
+        self.assertEqual(cmd[cmd.index("--fluid25d-scenic-surface-mode") + 1], "correlated")
+        self.assertEqual(cmd[cmd.index("--fluid25d-native-shadow-projection") + 1], "scene")
         self.assertIn("--paused", terrain.worker_command(Path("/case"), Path("/session")))
         self.assertNotIn("--render-fps", cmd)
 

@@ -137,18 +137,21 @@ def worker_command(case, session, speed=60):
 
 
 def viewer_command(case, source, title, width=1920, height=1080, profile=None, live=True, start=0,
-                   surface="legacy", camera="overview", app=None, surface_subdivision=2,
+                   surface="correlated", camera="overview", app=None, surface_subdivision=2,
                    render_fps=None, control=None, headless_seconds=None, switch_script=None,
-                   no_validation=False):
+                   no_validation=False, shadow_projection="scene"):
     if surface_subdivision not in (1, 2):
         raise ValueError("study display subdivision must be 1 or 2")
+    if shadow_projection not in ("legacy", "scene"):
+        raise ValueError("unknown scene shadow projection")
     command = ["rtk", "proxy", str(app or demo.ref.APP), "--width", str(width), "--height", str(height),
                "--frames", "0", "--title", title, "--fluid25d-recording-camera", camera,
                "--fluid25d-native-presentation", "scenic", "--fluid25d-scenic-material", "macro",
                "--fluid25d-native-surface-highlights", "off",
                "--fluid25d-motion-markers", "--fluid25d-rain-visuals",
                "--fluid25d-scenic-surface-grid", str(case / "surface-grid.json"),
-               "--fluid25d-scenic-surface-mode", surface]
+               "--fluid25d-scenic-surface-mode", surface,
+               "--fluid25d-native-shadow-projection", shadow_projection]
     # Existing study/capture callers retain their timing unless explicitly paced.
     if render_fps is not None:
         if not 0 <= render_fps <= 0xFFFFFFFF:
@@ -196,7 +199,7 @@ def parser():
     p.add_argument("--site-catalogue", type=Path, default=DEFAULT_CATALOGUE)
     p.add_argument("--configuration", choices=CONFIGS, default="patch-1024-16m")
     p.add_argument("--recording", type=Path, help="explicit binary-capture replay; never substituted for live")
-    p.add_argument("--surface", choices=("legacy", "correlated"), default="legacy")
+    p.add_argument("--surface", choices=("legacy", "landform", "climate", "correlated"), default="correlated")
     p.add_argument("--camera", choices=("overview", "runoff", "collection"), default="overview")
     p.add_argument("--width", type=int, default=1920)
     p.add_argument("--height", type=int, default=1080)

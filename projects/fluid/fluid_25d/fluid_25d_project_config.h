@@ -81,6 +81,8 @@ struct Fluid25DProjectConfig {
     std::string native_water_debug = "shaded";
     std::string native_water_sampling = "triangular";
     std::uint32_t native_surface_subdivision = 2U;
+    std::string native_shadow_projection = "legacy";
+    std::uint32_t native_shadow_extent = 2048U;
     std::optional<std::filesystem::path> native_display_coverage_path{};
     std::optional<std::string> native_bank_view{};
     bool bank_comparison = false;
@@ -708,6 +710,15 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 128.0, .max = 32768.0}),
               config.native_camera_span_m)
+        .bind(option("fluid25d.native_shadow_projection", "--fluid25d-native-shadow-projection",
+                     "Native Shadow Projection", "Whole-scene light-space fit or legacy bounds.",
+                     ValueType::Enum, {}, {"legacy", "scene"}),
+              config.native_shadow_projection)
+        .bind(option("fluid25d.native_shadow_extent", "--fluid25d-native-shadow-extent",
+                     "Native Shadow Extent", "Scenic shadow resolution control: 2048 or 4096.",
+                     ValueType::UInt32,
+                     {.has_min = true, .has_max = true, .min = 2048, .max = 4096}),
+              config.native_shadow_extent)
         .bind(option("fluid25d.view", "--fluid25d-view", "View",
                      "Top-level River V0 surface: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
@@ -1010,7 +1021,9 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.native_camera_sweep") ||
          parsed.path_was_assigned("fluid25d.native_camera_target_x") ||
          parsed.path_was_assigned("fluid25d.native_camera_target_z") ||
-         parsed.path_was_assigned("fluid25d.native_camera_span_m")) &&
+         parsed.path_was_assigned("fluid25d.native_camera_span_m") ||
+         parsed.path_was_assigned("fluid25d.native_shadow_projection") ||
+         parsed.path_was_assigned("fluid25d.native_shadow_extent")) &&
         !project_config.recording_path && !project_config.stream_path && !service_session)
         throw std::runtime_error("native presentation requires a recording or external source");
     if ((parsed.path_was_assigned("fluid25d.scenic_material") ||
@@ -1025,6 +1038,13 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     if (project_config.native_scenic_water_view != "shaded" &&
         project_config.native_scenic_terrain_view != "shaded")
         throw std::runtime_error("water component diagnostics require shaded terrain");
+    if ((parsed.path_was_assigned("fluid25d.native_shadow_projection") ||
+         parsed.path_was_assigned("fluid25d.native_shadow_extent")) &&
+        project_config.native_presentation != "scenic")
+        throw std::runtime_error("shadow controls require Scenic");
+    if (project_config.native_shadow_extent != 2048U &&
+        project_config.native_shadow_extent != 4096U)
+        throw std::runtime_error("native shadow extent must be 2048 or 4096");
     if (project_config.native_scenic_surface_source &&
         (!project_config.recording_path || project_config.stream_path || service_session ||
          project_config.native_presentation != "scenic"))

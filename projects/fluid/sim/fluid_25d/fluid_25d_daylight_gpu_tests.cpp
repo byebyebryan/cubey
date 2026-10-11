@@ -48,10 +48,10 @@ void run() {
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
     vulkan::Buffer values(device,
-                          vulkan::device_local_buffer_config(sizeof(math::Vec4) * 18U,
+                          vulkan::device_local_buffer_config(sizeof(math::Vec4) * 20U,
                                                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
-    vulkan::Buffer readback(device, vulkan::readback_buffer_config(sizeof(math::Vec4) * 28U));
+    vulkan::Buffer readback(device, vulkan::readback_buffer_config(sizeof(math::Vec4) * 30U));
     const std::array<vulkan::DescriptorSetBindingConfig, 2> bindings{
         {{.binding = 0,
           .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -151,7 +151,7 @@ void run() {
         vkCmdCopyBuffer(commands.command_buffer(), coefficients.handle(), readback.handle(), 1, &c);
         vkCmdCopyBuffer(commands.command_buffer(), values.handle(), readback.handle(), 1, &v);
         commands.submit_and_wait();
-        std::array<math::Vec4, 28> actual{};
+        std::array<math::Vec4, 30> actual{};
         readback.download(actual.data(), sizeof(actual));
         for (unsigned i = 0; i < 8; ++i) {
             const auto expected =
@@ -185,6 +185,9 @@ void run() {
                 "receiver-plane analytic/degenerate control failed");
         require(std::abs(actual[26].x - 4) < 0.00001F && std::abs(actual[27].x - 4) < 0.00001F,
                 "continuous shadow tent must retain constant unit weight");
+        require(glm::length(math::Vec2(actual[28]) - math::Vec2{3, -5}) < .00001F &&
+                    glm::length(math::Vec2(actual[29]) - math::Vec2{3, -5}) < .00001F,
+                "steep receiver gradient must not be clipped or depend on screen scale");
     }
     std::cout << "PASS: captured daylight E/pi, cube axes, sun attenuation, backdrop and shadow "
                  "controls\n";

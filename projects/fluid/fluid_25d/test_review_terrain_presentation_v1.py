@@ -43,6 +43,16 @@ class TerrainPresentationReviewTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--fluid25d-recording-frame-interval-seconds") + 1], "0")
         self.assertEqual(argv[argv.index("--fluid25d-native-camera-sweep") + 1], "0.2")
 
+    def test_raw_diagnostics_bypass_material_shading(self):
+        with patch.object(review, "scene", return_value=(Path("/case"), Path("/recording"),
+                {"frames": [{"time_s": 0}, {"time_s": 6000}]})):
+            argv = review.command("mountain", "overview", "raw-depth", Path("/image.png"),
+                                   surface="correlated", shadow="scene")
+        self.assertNotIn("--fluid25d-scenic-terrain-view", argv)
+        self.assertEqual(argv[argv.index("--fluid25d-view") + 1], "diagnostics")
+        self.assertEqual(argv[argv.index("--fluid25d-debug-view") + 1], "depth")
+        self.assertEqual(argv.count("--fluid25d-native-shadow-projection"), 1)
+
     def test_failed_capture_always_cleans_owned_group(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(review.subprocess, "Popen") as launch, \
                 patch.object(review.demo, "stop_owned") as cleanup:

@@ -7,6 +7,7 @@
 #include <cubey/render/material_instance.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/shadow_map.h>
+#include <cubey/render/terrain_shadow.h>
 #include <cubey/vulkan/memory_barriers.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -202,6 +203,8 @@ struct Fluid25DScenic::State {
     };
     std::vector<WhitewaterSlot> whitewater_slots;
     math::Mat4 shadow_matrix{1.0F};
+    math::Mat4 reported_shadow_matrix{0.0F};
+    std::uint32_t reported_shadow_extent = 0U;
     float terrain_low = 0.0F, terrain_high = 0.0F, domain_m = 0.0F;
     VkExtent2D extent{};
     VkFormat format = VK_FORMAT_UNDEFINED;
@@ -329,7 +332,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     destroy_swapchain_resources();
     s.extent = target.extent;
     s.format = target.format;
-    std::printf("fluid_25d_scenic_resources: extent=%ux%u HDR=rgba16f shadow=2048x2048\n",
+    std::printf("fluid_25d_scenic_resources: extent=%ux%u HDR=rgba16f shadow=runtime-selected\n",
                 target.extent.width, target.extent.height);
     std::fflush(stdout);
     // Set zero matches the immutable native field layout; set one owns frame-slot textures.
@@ -526,6 +529,31 @@ void Fluid25DScenic::record(
                                          shadow_domain, 1.0F, shadow_domain * 6.0F) *
                       glm::lookAt(shadow_center + direction * shadow_domain * 3.0F, shadow_center,
                                   math::Vec3{0.0F, 1.0F, 0.0F});
+    if (options.native_shadow_extent != 2048U && options.native_shadow_extent != 4096U)
+        throw std::runtime_error("Scenic shadow extent must be 2048 or 4096");
+    const VkExtent2D shadow_extent{options.native_shadow_extent, options.native_shadow_extent};
+    float shadow_span = 2.0F * shadow_domain;
+    float shadow_depth_span = 6.0F * shadow_domain - 1.0F;
+    if (options.native_shadow_scene_fit) {
+        const float half_width = float(config.grid_width - 1U) * config.cell_size_m * 0.5F;
+        const float half_height = float(config.grid_height - 1U) * config.cell_size_m * 0.5F;
+        const auto projection = render::terrain_shadow_box_projection(
+            {{-half_width, s.terrain_low * height_scale, -half_height},
+             {half_width, s.terrain_high * height_scale, half_height}},
+            direction, options.native_shadow_extent);
+        s.shadow_matrix = projection.light_view_projection;
+        shadow_span = projection.orthographic_span_m;
+        shadow_depth_span = projection.depth_span_m;
+    }
+    if (s.reported_shadow_matrix != s.shadow_matrix ||
+        s.reported_shadow_extent != shadow_extent.width) {
+        std::printf("fluid_25d_shadow_projection: mode=%s extent=%u span_m=%.6f depth_m=%.6f "
+                    "max_texel_m=%.6f camera_independent=1 all_casters=1\n",
+                    options.native_shadow_scene_fit ? "scene" : "legacy", shadow_extent.width,
+                    shadow_span, shadow_depth_span, shadow_span / float(shadow_extent.width));
+        s.reported_shadow_matrix = s.shadow_matrix;
+        s.reported_shadow_extent = shadow_extent.width;
+    }
     Push push{camera.view_projection,
               {float(config.grid_width), float(config.grid_height), config.cell_size_m,
                options.terrain_height_scale.value_or(1.0F)},
@@ -560,7 +588,13 @@ void Fluid25DScenic::record(
          {float(water_view), material.water_wet_normal, material.water_ripple_strength,
           material.water_ripple_scale_m},
          {float(surface_mode), float(config.grid_width), float(config.grid_height), 0.0F},
-         {environment ? 1.0F : 0.0F, material.daylight_sun_scale, 0.0F, 0.0F},
+         {environment ? 1.0F : 0.0F, material.daylight_sun_scale,
+          options.native_shadow_scene_fit
+              ? 0.5F * shadow_span / float(shadow_extent.width) / shadow_depth_span
+              : 0.0F,
+          options.native_shadow_scene_fit
+              ? 2.0F * shadow_span / float(shadow_extent.width) / shadow_depth_span
+              : 0.0F},
          {material.water_shallow_extinction_boost, material.water_shallow_extinction_end_m,
           material.water_shallow_coverage_strength, material.water_shallow_coverage_end_m},
          {material.water_flow_agitation, material.water_rain_agitation,
@@ -583,7 +617,7 @@ void Fluid25DScenic::record(
                                       : render::render_graph_color_attachment_texture_state(),
                                   final_state);
     const auto shadow_depth = graph.create_texture(
-        texture("scenic sun shadow", kShadowExtent, VK_FORMAT_D32_SFLOAT, true));
+        texture("scenic sun shadow", shadow_extent, VK_FORMAT_D32_SFLOAT, true));
     const auto opaque =
         graph.create_texture(texture("scenic opaque HDR", target.extent, kHdrFormat));
     const auto depth = graph.create_texture(

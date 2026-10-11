@@ -4,7 +4,7 @@
 #include "cubey/atmosphere/sky_background_direction.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) readonly buffer Input { vec4 coefficients[10]; } input_light;
-layout(set=0,binding=1,std430) writeonly buffer Output { vec4 values[18]; } output_light;
+layout(set=0,binding=1,std430) writeonly buffer Output { vec4 values[20]; } output_light;
 void main() {
     vec3 normals[8]=vec3[8](vec3(1,0,0),vec3(-1,0,0),vec3(0,1,0),vec3(0,-1,0),
         vec3(0,0,1),vec3(0,0,-1),normalize(vec3(1,2,3)),normalize(vec3(-3,1,-2)));
@@ -25,4 +25,8 @@ void main() {
         for(int i=-1;i<=2;++i) sum+=fluid25d_shadow_tent(float(i)-fraction);
         output_light.values[16+k]=vec4(sum,0,0,0);
     }
+    output_light.values[18]=vec4(fluid25d_receiver_plane_gradient(
+        vec3(.2,.1,.1),vec3(-.1,.3,-1.8)),0,0);
+    output_light.values[19]=vec4(fluid25d_receiver_plane_gradient(
+        vec3(.002,.001,.001),vec3(-.001,.003,-.018)),0,0);
 }
