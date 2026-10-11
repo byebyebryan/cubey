@@ -239,6 +239,18 @@ int WindowedHost::run() {
         ++frame;
     }
 
+    if (config_.run_config.run_seconds > 0.0) {
+        const char* reason = window().should_close() ? "window_close"
+                             : config_.run_config.frames != 0 && frame >= config_.run_config.frames
+                                 ? "frame_limit"
+                                 : "wall_limit";
+        std::printf(
+            "windowed_render_complete: frames=%u wall_s=%.6f reason=%s\n", frame,
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - loop_started).count(),
+            reason);
+        std::fflush(stdout);
+    }
+
     if ((config_.run_config.print_frame_stats || config_.run_config.frames != 0) &&
         latest_stats_sample.has_value() && total_stats_seconds > 0.0 && total_stats_frames > 0) {
         const FrameStatsSnapshot summary = make_frame_stats_snapshot(

@@ -199,6 +199,23 @@ When Cubey is built with FFmpeg/libav, the same host can produce MP4 directly:
 The committed showcase clips, exact recipes, hashes, and poster timestamps are
 recorded in the [showcase manifest](media/showcase/manifest.json).
 
+For bounded performance work without image readback or encoding, reuse the
+offscreen Vulkan host in render-only mode:
+
+```bash
+./build/dev/projects/fluid/fluid_25d/fluid_25d --headless \
+  --headless-render-only --frames 0 --run-seconds 30 --render-fps 60
+```
+
+This opt-in mode requires a frame or wall-time bound, uses actual wall-time
+updates and two in-flight render slots, and writes no PNG/MP4. `--render-fps 0`
+is unpaced; `60` deliberately leaves GPU time available for other work. The
+same `--run-seconds` and `--render-fps` options can bound and pace a native
+window. Wall-time bounds exclude resource setup. Existing deterministic
+PNG/video capture behavior is unchanged. Fluid 2.5D's external-session path
+polls and renders advancing solver fields in this mode; other project-specific
+capture/update policies still belong to their applications.
+
 ## Configuration
 
 Every active executable owns a typed configuration facade composed from the

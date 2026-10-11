@@ -235,6 +235,15 @@ setup before swapchain setup, and callback forwarding.
   keeping resource setup, simulation/update work, and capture command recording
   local. The `HeadlessPngHost` name remains source-compatible, but the contract
   includes both PNG and optional MP4 capture.
+- Opt-in bounded `--headless-render-only` execution reuses this host, not a
+  virtual display or alternate renderer: two in-flight offscreen slots, no
+  RGBA readback/encoding, and wall-time `before_frame` updates. It requires
+  `--frames N` or `--run-seconds S`; `--render-fps` is independent of capture
+  FPS. The windowed host also supports the wall-time bound and pacing. CPU
+  profiles distinguish service time, owner dispatch, slot waits, recording,
+  submit and intentional pacing; the windowed path additionally attributes
+  acquisition and presentation. These are application measurements, not
+  monitor scanout. Default PNG/video paths retain their timing and output.
 - Automated PNG and video smokes select the headless host centrally rather
   than relying on every project call site to pass `--headless`. Their launch
   environment removes display and desktop-session variables, and successful
