@@ -30,6 +30,20 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n")
 
 
+def run_capture(command, log_path, env, timeout=180):
+    """Bound the whole owned renderer group, including the RTK wrapper's child."""
+    with log_path.open("wb") as log:
+        process = subprocess.Popen(command, env=env, stdout=log,
+            stderr=subprocess.STDOUT, start_new_session=True)
+        try:
+            returncode = process.wait(timeout=timeout)
+            if returncode:
+                raise subprocess.CalledProcessError(returncode, command)
+        finally:
+            cleanup = demo.stop_owned(process, grace_s=5)
+    return cleanup
+
+
 def bounds_for(manifest, climate):
     grids = (manifest["grid"], climate["grid"])
     return (max(g["sample_origin_x_m"] for g in grids), max(g["sample_origin_z_m"] for g in grids),
@@ -234,13 +248,13 @@ def capture(out, configuration, sites):
                     cmd[cmd.index("--frames") + 1] = "240"
                     cmd[cmd.index("--fluid25d-recording-time-seconds") + 1] = "0"
                     cmd += ["--capture", "video", "--fps", "24", "--fluid25d-recording-frame-interval-seconds", str(end/239)]
-                with (leaf / f"{view}-{kind}.log").open("wb") as log:
-                    subprocess.run(cmd, env=environment("offscreen"), stdout=log, stderr=subprocess.STDOUT, check=True, timeout=180)
+                cleanup = run_capture(cmd, leaf / f"{view}-{kind}.log", environment("offscreen"))
                 raw = (leaf / f"{view}-{kind}.log").read_text(errors="replace")
                 if (not target.is_file() or "vulkan validation error" in raw.lower() or
                         "NVIDIA GeForce RTX 5070 Ti" not in raw or "fluid_25d_recording_upload: PASS" not in raw):
                     raise RuntimeError("invalid headless visual receipt")
                 receipts.append({"artifact": target.name, "sha256": sha256(target), "command": cmd,
+                    "cleanup": cleanup,
                     "scope": "Vulkan offscreen reconstruction of sampled native states; accelerated replay, not live timing"})
         write(leaf / "captures.json", receipts)
 
@@ -292,15 +306,13 @@ def capture_motion(out, catalog):
         command += ["--headless", "--capture", "video", "--fps", "24",
             "--fluid25d-recording-frame-interval-seconds", ".5", "--fluid25d-recording-gpu-validation",
             "--output", str(target)]
-        with (leaf / "late-flow.log").open("wb") as log:
-            subprocess.run(command, env=environment("offscreen"), stdout=log, stderr=subprocess.STDOUT,
-                check=True, timeout=180)
+        cleanup = run_capture(command, leaf / "late-flow.log", environment("offscreen"))
         raw = (leaf / "late-flow.log").read_text(errors="replace")
         if ("fluid_25d_recording_upload: PASS" not in raw or "vulkan validation error" in raw.lower()
                 or "NVIDIA GeForce RTX 5070 Ti" not in raw):
             raise RuntimeError("invalid late-motion GPU receipt")
         write(receipt, {"sha256": sha256(target), "command": command, "physical_start_s": start,
-            "physical_end_s": start+119.5, "speedup": 12,
+            "physical_end_s": start+119.5, "speedup": 12, "cleanup": cleanup,
             "scope": "12x playback of interpolated native fields; dots/trails and foam illustrate native velocity, not native particles or solver-performance evidence"})
 
 

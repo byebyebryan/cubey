@@ -138,4 +138,6 @@ directly under `outputs/fluid`. Screening is capped at 12 unique cached sources;
 six hydraulic pilots are frozen before execution. Every trial has a wall cap.
 All-preset preparation is gated on completed default-grid confirmations to
 prevent two preparation writers sharing a case. Sealed visual receipts are
-not overwritten on rerun. No automated score alone promotes a site.
+not overwritten on rerun. Capture subprocesses own a fresh process group;
+success, failure and timeout all reap the RTK wrapper and its renderer children.
+No automated score alone promotes a site.

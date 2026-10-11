@@ -2,9 +2,13 @@
 import unittest
 import tempfile
 from pathlib import Path
+import subprocess
+import sys
+from unittest.mock import Mock, patch
 import numpy as np
 
-from survey_terrain_sites_v1 import water_metrics, bounds_for, prepare_presets
+import survey_terrain_sites_v1 as survey
+from survey_terrain_sites_v1 import water_metrics, bounds_for, prepare_presets, run_capture
 from terrain_water_sites import DEFAULT_CATALOGUE
 
 
@@ -45,6 +49,43 @@ class Diagnostics(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "finish default-grid confirmation"):
                 prepare_presets(root, DEFAULT_CATALOGUE, None)
             self.assertEqual(list(root.iterdir()), [])
+
+
+class CaptureCleanup(unittest.TestCase):
+    def test_capture_cleanup_on_success_failure_and_timeout(self):
+        command = ["rtk", "proxy", "renderer"]
+        for result in (0, 7, subprocess.TimeoutExpired(command, 180)):
+            with self.subTest(result=result), tempfile.TemporaryDirectory() as tmp:
+                process = Mock()
+                if isinstance(result, Exception):
+                    process.wait.side_effect = result
+                else:
+                    process.wait.return_value = result
+                cleanup = {"active_group_remaining": []}
+                with patch.object(survey.subprocess, "Popen", return_value=process) as popen, \
+                        patch.object(survey.demo, "stop_owned", return_value=cleanup) as stop:
+                    if result == 0:
+                        self.assertEqual(run_capture(command, Path(tmp) / "capture.log", {}), cleanup)
+                    else:
+                        error = subprocess.TimeoutExpired if isinstance(result, Exception) else subprocess.CalledProcessError
+                        with self.assertRaises(error):
+                            run_capture(command, Path(tmp) / "capture.log", {})
+                    self.assertTrue(popen.call_args.kwargs["start_new_session"])
+                    process.wait.assert_called_once_with(timeout=180)
+                    stop.assert_called_once_with(process, grace_s=5)
+
+    @unittest.skipUnless(Path("/proc").is_dir(), "Linux owned-group cleanup")
+    def test_timeout_reaps_rtk_child_and_descendant(self):
+        child = "import time; time.sleep(60)"
+        program = ("import os,subprocess,sys,time; "
+                   f"subprocess.Popen([sys.executable, '-c', {child!r}]); "
+                   "print(os.getpgrp(), flush=True); time.sleep(60)")
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "capture.log"
+            with self.assertRaises(subprocess.TimeoutExpired):
+                run_capture(["rtk", "proxy", sys.executable, "-u", "-c", program], log, None, timeout=2)
+            group = int(log.read_text().strip())
+            self.assertEqual(survey.demo.active_owned_group(group), [])
 
 
 if __name__ == "__main__":
