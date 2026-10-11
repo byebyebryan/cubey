@@ -89,6 +89,10 @@ struct Fluid25DProjectConfig {
     float native_camera_pitch_radians = -0.92F;
     float native_camera_yaw_radians = -0.52F;
     float native_camera_sweep_radians = 0.0F;
+    // Explicit observation recipe for any site; normalized cell-center coordinates.
+    std::optional<float> native_camera_target_x{};
+    std::optional<float> native_camera_target_z{};
+    std::optional<float> native_camera_span_m{};
     bool recording_gpu_validation = false;
     Fluid25DCatchmentRenderOptions catchment_render{};
     Fluid25DConfig simulation{};
@@ -691,6 +695,19 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Headless video-only total heading sweep with a mild zoom.", ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 0.0, .max = 0.8}),
               config.native_camera_sweep_radians)
+        .bind(option("fluid25d.native_camera_target_x", "--fluid25d-native-camera-target-x",
+                     "Native Camera Target X", "Observation-only normalized site coordinate.",
+                     ValueType::Float, {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
+              config.native_camera_target_x)
+        .bind(option("fluid25d.native_camera_target_z", "--fluid25d-native-camera-target-z",
+                     "Native Camera Target Z", "Observation-only normalized site coordinate.",
+                     ValueType::Float, {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
+              config.native_camera_target_z)
+        .bind(option("fluid25d.native_camera_span_m", "--fluid25d-native-camera-span-m",
+                     "Native Camera Span", "Observation framing width; not a terrain crop.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 128.0, .max = 32768.0}),
+              config.native_camera_span_m)
         .bind(option("fluid25d.view", "--fluid25d-view", "View",
                      "Top-level River V0 surface: catchment or diagnostics.", ValueType::Enum, {},
                      {"catchment", "diagnostics"}),
@@ -990,7 +1007,10 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.native_surface_subdivision") ||
          parsed.path_was_assigned("fluid25d.native_camera_pitch") ||
          parsed.path_was_assigned("fluid25d.native_camera_yaw") ||
-         parsed.path_was_assigned("fluid25d.native_camera_sweep")) &&
+         parsed.path_was_assigned("fluid25d.native_camera_sweep") ||
+         parsed.path_was_assigned("fluid25d.native_camera_target_x") ||
+         parsed.path_was_assigned("fluid25d.native_camera_target_z") ||
+         parsed.path_was_assigned("fluid25d.native_camera_span_m")) &&
         !project_config.recording_path && !project_config.stream_path && !service_session)
         throw std::runtime_error("native presentation requires a recording or external source");
     if ((parsed.path_was_assigned("fluid25d.scenic_material") ||
@@ -1031,6 +1051,12 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         (!project_config.recording_path || !project_config.common.headless ||
          project_config.common.capture_mode != CaptureMode::Video))
         throw std::runtime_error("native camera sweep requires a headless recorded video");
+    const unsigned camera_recipe_fields =
+        unsigned(project_config.native_camera_target_x.has_value()) +
+        unsigned(project_config.native_camera_target_z.has_value()) +
+        unsigned(project_config.native_camera_span_m.has_value());
+    if (camera_recipe_fields != 0U && camera_recipe_fields != 3U)
+        throw std::runtime_error("explicit native camera requires target x, target z, and span");
     if (project_config.native_surface_subdivision != 1U &&
         project_config.native_surface_subdivision != 2U &&
         project_config.native_surface_subdivision != 4U)

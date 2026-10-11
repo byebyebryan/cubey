@@ -1084,13 +1084,14 @@ class RecordingApp {
         const float scale = *render_.terrain_height_scale;
         target_ = {0.0F, 0.5F * (*lo + *hi) * scale, 0.0F};
         float framing = domain;
-        if (config_.recording_camera != "overview") {
+        const bool explicit_target = config_.native_camera_target_x.has_value();
+        if (explicit_target || config_.recording_camera != "overview") {
             // Observation-only normalized positions in the retained mountain.
             // Collection is the already surveyed B20 basin, not an authored drain.
-            const float fx =
-                config_.recording_camera == "collection" ? 474.0F / 511.0F : 392.0F / 511.0F;
-            const float fz =
-                config_.recording_camera == "collection" ? 105.0F / 511.0F : 311.0F / 511.0F;
+            const float fx = config_.native_camera_target_x.value_or(
+                config_.recording_camera == "collection" ? 474.0F / 511.0F : 392.0F / 511.0F);
+            const float fz = config_.native_camera_target_z.value_or(
+                config_.recording_camera == "collection" ? 105.0F / 511.0F : 311.0F / 511.0F);
             const auto col = static_cast<std::uint32_t>(
                 std::round(fx * static_cast<float>(simulation_.grid_width - 1U)));
             const auto row = static_cast<std::uint32_t>(
@@ -1102,14 +1103,18 @@ class RecordingApp {
                     scale,
                 (fz - 0.5F) * height};
             framing =
-                std::min(domain, config_.recording_camera == "collection" ? 2400.0F : 3200.0F);
+                std::min(domain, config_.native_camera_span_m.value_or(
+                                     config_.recording_camera == "collection" ? 2400.0F : 3200.0F));
         }
         const float maximum_distance = std::max(64.0F, domain * 4.0F);
         const float minimum_distance = std::max(16.0F, framing * 0.30F);
         const float home = render_.home_camera_distance_m.value_or(std::max(
-            32.0F, framing * (render_.native_presentation >= 2U
-                                  ? (config_.recording_camera == "overview" ? 1.50F : 1.18F)
-                                  : (config_.recording_camera == "overview" ? 1.65F : 1.35F))));
+            32.0F,
+            framing *
+                (render_.native_presentation >= 2U
+                     ? (!explicit_target && config_.recording_camera == "overview" ? 1.50F : 1.18F)
+                     : (!explicit_target && config_.recording_camera == "overview" ? 1.65F
+                                                                                   : 1.35F))));
         if (home < minimum_distance || home > maximum_distance)
             throw std::runtime_error("imported-state camera home distance exceeds orbit limits");
         orbit_.set_distance_limits(minimum_distance, maximum_distance);
@@ -1121,6 +1126,11 @@ class RecordingApp {
             {0.5F * width, (*hi + 100.0F) * scale, 0.5F * height}, target_);
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, std::max(8.0F, framing * 0.10F),
                                far);
+        std::printf("fluid_25d_camera_recipe: target=(%.6f,%.6f,%.6f) span=%.6f "
+                    "home=%.6f yaw=%.6f pitch=%.6f explicit=%u\n",
+                    target_.x, target_.y, target_.z, framing, home,
+                    config_.native_camera_yaw_radians, config_.native_camera_pitch_radians,
+                    explicit_target ? 1U : 0U);
     }
 
     Fluid25DRenderCamera camera(VkExtent2D extent, std::uint64_t frame_index = 0U) const {
@@ -3059,8 +3069,12 @@ void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, s
         const auto& previous = control_->case_by_id(current_case_id_);
         config.external_session_path = control_->ready_session_directory();
         config.native_scenic_surface_grid = entry.surface_grid;
-        if (entry.site != previous.site || entry.extent != previous.extent)
+        if (entry.site != previous.site || entry.extent != previous.extent) {
             config.recording_camera = "overview";
+            config.native_camera_target_x.reset();
+            config.native_camera_target_z.reset();
+            config.native_camera_span_m.reset();
+        }
         const auto render = active_->render_;
         const auto material = active_->scenic_material_;
         const auto view = active_->view_;

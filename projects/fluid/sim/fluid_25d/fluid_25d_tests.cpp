@@ -7475,6 +7475,23 @@ void test_scenic_material_contract() {
                 study.native_camera_yaw_radians == 0.2F &&
                 study.native_camera_sweep_radians == 0.0F,
             "terrain diagnostic and heading remain render-only options");
+    const auto camera_recipe = parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                              "--fluid25d-native-camera-target-x", "0.25",
+                                              "--fluid25d-native-camera-target-z", "0.75",
+                                              "--fluid25d-native-camera-span-m", "900"});
+    require(camera_recipe.native_camera_target_x == 0.25F &&
+                camera_recipe.native_camera_target_z == 0.75F &&
+                camera_recipe.native_camera_span_m == 900.0F &&
+                camera_recipe.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "observation recipe changed numerical defaults");
+    for (const auto& args : std::vector<std::vector<std::string>>{
+             {"fluid_25d", "--fluid25d-native-camera-target-x", "0.5"},
+             {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-camera-target-x",
+              "0.5"},
+             {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-camera-target-x",
+              "1.1", "--fluid25d-native-camera-target-z", "0.5", "--fluid25d-native-camera-span-m",
+              "900"}})
+        require_throws([&] { (void)parse_project(args); }, "invalid camera recipe accepted");
     for (const auto* flag : {"--fluid25d-scenic-terrain-view", "--fluid25d-native-camera-sweep"})
         require_throws(
             [&] {
