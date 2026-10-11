@@ -6,7 +6,36 @@ import run_terrain_rain_demo as terrain
 
 
 class Commands(unittest.TestCase):
-    def test_live_is_explicit_and_does_not_change_solver_or_material_defaults(self):
+    def test_default_launch_is_live_1k_release_and_paced(self):
+        args = terrain.parser().parse_args(["--study", "/study"])
+        self.assertEqual(args.mode, "live")
+        self.assertEqual(args.site, "mountain")
+        self.assertEqual(args.configuration, "patch-1024-16m")
+        self.assertEqual(args.render_fps, 60)
+        self.assertEqual(args.app, terrain.RELEASE_APP)
+        command = terrain.viewer_command(Path("/case"), Path("/session"), "test",
+                                         app=args.app, render_fps=args.render_fps)
+        self.assertEqual(command[2], str(terrain.RELEASE_APP))
+        self.assertEqual(command[command.index("--render-fps") + 1], "60")
+
+    def test_replay_finer_grid_and_pacing_overrides_remain_explicit(self):
+        args = terrain.parser().parse_args(["replay", "--study", "/study",
+            "--recording", "/capture/recording.json", "--configuration", "patch-2048-8m",
+            "--render-fps", "0", "--app", "/custom/fluid_25d"])
+        self.assertEqual(args.mode, "replay")
+        self.assertEqual(args.configuration, "patch-2048-8m")
+        self.assertEqual(args.render_fps, 0)
+        self.assertEqual(args.app, Path("/custom/fluid_25d"))
+        command = terrain.viewer_command(Path("/case"), args.recording, "test",
+                                         live=False, render_fps=args.render_fps)
+        self.assertEqual(command[command.index("--render-fps") + 1], "0")
+        self.assertIn("--fluid25d-recording", command)
+        self.assertNotIn("--fluid25d-external-session", command)
+        for fps in (-1, 0x100000000):
+            with self.assertRaises(ValueError):
+                terrain.viewer_command(Path("/case"), Path("/session"), "test", render_fps=fps)
+
+    def test_live_does_not_change_global_solver_or_material_defaults(self):
         cmd = terrain.viewer_command(Path("/case"), Path("/session"), "test")
         self.assertIn("--fluid25d-external-session", cmd)
         self.assertNotIn("--fluid25d-recording", cmd)
@@ -14,6 +43,7 @@ class Commands(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--fluid25d-native-bank-view") + 1], "bspline-2x")
         self.assertEqual(cmd[cmd.index("--fluid25d-scenic-surface-mode") + 1], "legacy")
         self.assertIn("--paused", terrain.worker_command(Path("/case"), Path("/session")))
+        self.assertNotIn("--render-fps", cmd)
 
     def test_profile_bounds_and_correlated_are_explicit(self):
         cmd = terrain.viewer_command(Path("/case"), Path("/capture/recording.json"), "test",

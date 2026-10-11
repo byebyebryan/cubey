@@ -21,10 +21,35 @@ The broader technique map lives in
 
 ## Status
 
-### Mountain Rain Demo V1: start here
+### Terrain Rain Demo: start here
 
-The main visual demo is rain/runoff on the existing, unchanged Terrain Diffusion
-mountain terrain, not an authored river. The dedicated launcher now defaults to
+The prepared terrain launcher now defaults to **live SynxFlow streaming,
+mountain terrain at 1024² / 16 m, the Release renderer, and a 60 Hz render cap**.
+It retains Scenic Macro/daylight, B-spline 2x, visible rain and dots/trails.
+This is a demo-launch preset, not a change to Cubey's builtin solver, numerical
+method, terrain or rainfall. The optional runtime and prepared cases must
+already exist; nothing is installed, generated or silently substituted.
+
+For the current prepared study:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
+  --study outputs/fluid/live-perf-terrain-20261010-Dd6K3h
+```
+
+Live starts dry and paused; Space resumes the actual solver. Use
+`--print-command` remotely for a read-only preflight without opening a GUI.
+`--render-fps 0` restores unpaced rendering; other positive values select a
+custom cap. `--configuration patch-2048-8m` selects the finer, slower-live grid.
+Explicit `replay --recording <recording.json>` holds a saved state and starts
+no solver. `--app` retains the existing-artifact override; no automatic build
+or fallback is attempted. See the [performance verdict](offscreen_perf_v2.md)
+for the headless measurements and deferred native-FPS confirmation.
+
+### Historical Mountain Rain Demo V1
+
+The earlier launcher remains available for the historical mountain scene and
+bank studies. It defaults to
 **Scenic with the accepted shared daylight, balanced 512 mm/h rainfall,
 triangular reference banks, dots/trails on and procedural highlights off**.
 These are mountain-demo defaults, not a replacement of the built-in solver or
@@ -40,8 +65,8 @@ rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
 rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style readable
 ```
 
-The separate [live performance and terrain-options study](live_perf_terrain_v1.md)
-adds an opt-in prepared-case launcher, `run_terrain_rain_demo.py`, for existing
+The [live performance and terrain-options study](live_perf_terrain_v1.md)
+supplies prepared cases for `run_terrain_rain_demo.py` across existing
 mountain, alpine and rolling terrain at power-of-two spacings and footprints.
 It distinguishes a real running worker from an explicitly held captured state,
 and pins B-spline 2x for its study views without replacing this launcher's bank,

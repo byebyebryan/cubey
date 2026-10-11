@@ -133,3 +133,13 @@ Run it with the same optional SynxFlow environment used by the campaign.
 The audit never starts applications; capture with this flag never opens native
 windows. All exact commands and per-trial binary identities are retained in
 protocol/receipt JSON.
+
+### Subsequent approved launcher promotion
+
+After reviewing these results, the user approved live + 1k/16 m + 60 Hz as the
+prepared terrain-demo launch default. `run_terrain_rain_demo.py` now selects
+that preset and the measured Release build when mode/app/pacing are omitted.
+Explicit replay, other configurations, custom caps and `--render-fps 0` remain
+available. Startup stays paused until Space resumes the worker. This follow-up
+changes only the prepared launcher; the frozen study receipts, shared host,
+other launchers and Cubey's builtin solver defaults are unchanged.

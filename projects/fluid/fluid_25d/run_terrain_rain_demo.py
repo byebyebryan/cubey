@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Opt-in prepared terrain launcher. No installs, solver port, generation or fallback."""
+"""Prepared terrain demo: live 1k/16m at 60 Hz by default, explicit replay optional.
+
+No installs, solver port, terrain generation, automatic builds or fallback.
+"""
 from __future__ import annotations
 
 import argparse
@@ -17,6 +20,7 @@ import run_mountain_rain_demo as demo
 HERE = Path(__file__).resolve().parent
 SITES = ("mountain", "alpine", "rolling")
 CONFIGS = ("patch-512-32m", "patch-1024-16m", "patch-2048-8m", "small-512-16m", "large-2048-16m")
+RELEASE_APP = demo.ref.ROOT / "build/release/projects/fluid/fluid_25d/fluid_25d"
 
 
 def case_identity(case):
@@ -54,7 +58,8 @@ def worker_command(case, session, speed=60):
 
 
 def viewer_command(case, source, title, width=1920, height=1080, profile=None, live=True, start=0,
-                   surface="legacy", camera="overview", app=None, surface_subdivision=2):
+                   surface="legacy", camera="overview", app=None, surface_subdivision=2,
+                   render_fps=None):
     if surface_subdivision not in (1, 2):
         raise ValueError("study display subdivision must be 1 or 2")
     command = ["rtk", "proxy", str(app or demo.ref.APP), "--width", str(width), "--height", str(height),
@@ -64,6 +69,11 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
                "--fluid25d-motion-markers", "--fluid25d-rain-visuals",
                "--fluid25d-scenic-surface-grid", str(case / "surface-grid.json"),
                "--fluid25d-scenic-surface-mode", surface]
+    # Existing study/capture callers retain their timing unless explicitly paced.
+    if render_fps is not None:
+        if not 0 <= render_fps <= 0xFFFFFFFF:
+            raise ValueError("render fps must fit a nonnegative uint32")
+        command += ["--render-fps", str(render_fps)]
     if surface_subdivision == 2:
         command += ["--fluid25d-native-bank-view", "bspline-2x"]
     else:
@@ -82,9 +92,10 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
     return command
 
 
-def main(argv=None):
+def parser():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("mode", choices=("live", "replay"))
+    p.add_argument("mode", choices=("live", "replay"), nargs="?", default="live",
+                   help="default live; replay requires an explicit recording and runs no solver")
     p.add_argument("--study", required=True, type=Path)
     p.add_argument("--site", choices=SITES, default="mountain")
     p.add_argument("--configuration", choices=CONFIGS, default="patch-1024-16m")
@@ -93,12 +104,21 @@ def main(argv=None):
     p.add_argument("--camera", choices=("overview", "runoff", "collection"), default="overview")
     p.add_argument("--width", type=int, default=1920)
     p.add_argument("--height", type=int, default=1080)
-    p.add_argument("--app", type=Path, default=demo.ref.APP,
-                   help="explicit renderer artifact (for example Release); no build or fallback")
+    p.add_argument("--app", type=Path, default=RELEASE_APP,
+                   help="existing renderer artifact; default measured Release build, no build/fallback")
+    p.add_argument("--render-fps", type=int, default=60,
+                   help="render pacing only: default 60 Hz; 0 unpaced, independent of solver speed")
     p.add_argument("--surface-subdivision", type=int, choices=(1, 2), default=2,
                    help="existing B-spline display density; opt-in 1x does not change simulation resolution")
     p.add_argument("--print-command", action="store_true")
+    return p
+
+
+def main(argv=None):
+    p = parser()
     a = p.parse_args(argv)
+    if not 0 <= a.render_fps <= 0xFFFFFFFF:
+        p.error("render fps must fit a nonnegative uint32")
     if not 320 <= a.width <= 3840 or not 240 <= a.height <= 2160:
         p.error("viewport must fit the bounded 320x240..3840x2160 range")
     a.app = a.app.resolve(strict=True)
@@ -121,7 +141,8 @@ def main(argv=None):
     saved = json.loads(source.read_bytes())["protocol"]["duration_s"] if a.mode == "replay" else 0
     commands = {"viewer": viewer_command(case, source, title, a.width, a.height, start=saved,
                                          live=a.mode == "live", surface=a.surface, app=a.app,
-                                         surface_subdivision=a.surface_subdivision, camera=a.camera)}
+                                         surface_subdivision=a.surface_subdivision, camera=a.camera,
+                                         render_fps=a.render_fps)}
     if a.mode == "live":
         commands["worker"] = worker_command(case, session)
     print(json.dumps(identity, indent=2))
@@ -148,7 +169,8 @@ def main(argv=None):
                 demo.wait_ready(worker, source, 120, lambda: interrupted[0])
             viewer = subprocess.Popen(viewer_command(case, source, title, a.width, a.height,
                 live=a.mode == "live", start=saved, surface=a.surface, app=a.app,
-                surface_subdivision=a.surface_subdivision, camera=a.camera), stdout=vlog,
+                surface_subdivision=a.surface_subdivision, camera=a.camera,
+                render_fps=a.render_fps), stdout=vlog,
                 stderr=subprocess.STDOUT, start_new_session=True)
             owned.append(viewer)
             print("Live starts dry/paused; Space resumes. Viewer close detaches; Ctrl-C stops owned worker."
@@ -169,7 +191,8 @@ def main(argv=None):
             "mode": a.mode, "site": a.site, "configuration": a.configuration,
             "acceptance": "human review not automated", "surface": a.surface,
             "app": str(a.app), "app_sha256": app_sha256,
-            "surface_subdivision": a.surface_subdivision, "camera": a.camera})
+            "surface_subdivision": a.surface_subdivision, "camera": a.camera,
+            "render_fps": a.render_fps})
     return 0
 
 

@@ -47,7 +47,10 @@ already-installed optional SynxFlow IO/NumPy environment. No command installs or
 rebuilds the native extension. Use a fresh output directory for each campaign.
 
 The named launcher itself uses ordinary Python and validates the prepared case
-before starting either process. For the current study:
+before starting either process. Following the corrected V2 performance study
+and explicit user approval, this launcher defaults to `live`, mountain
+`patch-1024-16m`, the Release renderer and `--render-fps 60`. The study's frozen
+measurements and other launchers' defaults are unchanged. For the current study:
 
 ```sh
 rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py live \
@@ -66,6 +69,10 @@ named interactive launch.
 `--app` selects an existing renderer artifact explicitly, without changing the
 project's default binary or silently building/falling back. Sites are `mountain`,
 `alpine`, and `rolling`; configurations are the five named sizes above.
+`--render-fps 0` selects unpaced rendering; positive values override the default
+60 Hz cap. This controls rendering, not the worker's requested 60x simulation
+pace. The optional mode argument can be omitted for live, but replay always
+requires explicit selection and a recording.
 
 `replay` requires an explicit `--recording`; it is never substituted for live.
 The campaign's `static-recording/recording.json` files contain just two exact
