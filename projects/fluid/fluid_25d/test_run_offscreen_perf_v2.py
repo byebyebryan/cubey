@@ -86,6 +86,31 @@ class ContractTests(unittest.TestCase):
                 self.assertEqual(host, "offscreen")
         self.assertEqual((primary, total), (42, 56))
 
+    def test_correction_stage_has_six_affected_repeats_and_four_controls(self):
+        rows = campaign.correction_plan(Path("frozen-study"))
+        self.assertEqual(sum(int(options[options.index("--repeats") + 1])
+                             for _, _, _, options in rows), 10)
+        for name, _, host, options in rows:
+            self.assertTrue(name.startswith("corrected-"))
+            repeats = int(options[options.index("--repeats") + 1])
+            if name.endswith("-held"):
+                self.assertEqual(host, "offscreen")
+                self.assertIn("--recording", options)
+                self.assertEqual(repeats, 1)
+            else:
+                self.assertEqual(options[options.index("--modes") + 1], "live")
+                self.assertEqual(repeats, 3 if host == "offscreen" else 1)
+
+    def test_campaign_resume_rejects_partial_duplicate_or_failed_trials(self):
+        options = ["--modes", "renderer-only", "live", "--repeats", "3"]
+        trials = [{"mode": mode, "repeat": repeat, "status": "completed", "errors": []}
+                  for mode in ("renderer-only", "live") for repeat in range(3)]
+        self.assertTrue(campaign.complete_phase(trials, options))
+        self.assertFalse(campaign.complete_phase(trials[:-1], options))
+        self.assertFalse(campaign.complete_phase(trials[:-1] + [trials[0]], options))
+        trials[-1]["errors"] = ["failed receipt"]
+        self.assertFalse(campaign.complete_phase(trials, options))
+
     def test_summary_separates_pacing_service_and_gpu(self):
         row = {"host": "offscreen", "profile": {"frame_ms": {"p95": 16.8},
                "passes_ms": {"cpu:headless.frame_service": {"p95": 3.2},
@@ -111,6 +136,35 @@ class ContractTests(unittest.TestCase):
             self.assertTrue(checks["actual_expected_device"])
             self.assertTrue(checks["owned_cleanup"])
             self.assertIsNone(checks["native_inputs_unchanged"])
+
+    def test_analysis_keeps_app_hashes_and_correction_results_separate(self):
+        row = {"host": "offscreen", "mode": "live", "case": "mountain-patch-2048-8m",
+               "repeat": 0, "status": "completed", "errors": [],
+               "input_identity": {"sha": "unchanged"}, "input_identity_after": {"sha": "unchanged"},
+               "cleanup": [{"exit_code": 0, "active_group_remaining": [], "escalated": False}],
+               "completion": {"inputs_unchanged": True, "reference_inputs_unchanged": True},
+               "measurement_final_physical_s": 40, "physical_wall_ratio": 1,
+               "profile": {"metrics": {"fluid_25d.external.hydraulic_dispatch_count": {"max": 0},
+                                        "fluid_25d.external.physical_time_s": {"max": 40}}}}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for phase, app_hash in (("primary-2048-8m-offscreen", "original-app"),
+                                    ("corrected-2048-8m-offscreen-live", "corrected-app"),
+                                    ("native-wayland-map-race-preflight", "original-app")):
+                directory = root / phase / "live-0"
+                directory.mkdir(parents=True)
+                (directory / "result.json").write_text(json.dumps({**row, "app_sha256": app_hash}))
+                (directory / "viewer.log").write_text(
+                    "headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti readback=0 encode=0\n")
+            result = review.analyze(root)
+            self.assertEqual(result["observed_primary_trials"], 1)
+            self.assertEqual(result["observed_correction_trials"], 1)
+            self.assertEqual(result["observed_total_trials"], 2)
+            self.assertEqual(len(result["phases"]), 2)
+            self.assertEqual({t["app_sha256"] for t in result["trials"]},
+                             {"original-app", "corrected-app"})
+            self.assertTrue(all(t["checks"]["viewer_hydraulic_dispatches_zero"] and
+                                t["checks"]["display_near_worker_endpoint"] for t in result["trials"]))
 
 
 if __name__ == "__main__":

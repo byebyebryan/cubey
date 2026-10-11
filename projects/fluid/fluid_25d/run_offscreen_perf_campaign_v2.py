@@ -46,16 +46,59 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2) + "\n")
 
 
+def correction_plan(study: Path):
+    """Affected-path repeats plus held/native controls for the new app hash."""
+    rows = []
+    for name, case, host, extra in plan(study):
+        if not name.startswith("primary-"):
+            continue
+        recording = extra[extra.index("--recording") + 1]
+        prefix = name.replace("primary-", "corrected-", 1)
+        rows.append((prefix + "-live", case, host,
+                     ["--modes", "live", "--repeats", "3" if host == "offscreen" else "1"]))
+        if host == "offscreen":
+            rows.append((prefix + "-held", case, host,
+                         ["--modes", "renderer-only", "--recording", recording, "--repeats", "1"]))
+    return rows
+
+
+def complete_phase(trials, options):
+    repeats = int(options[options.index("--repeats") + 1])
+    modes = ["live"]
+    if "--modes" in options:
+        modes = []
+        index = options.index("--modes") + 1
+        while index < len(options) and not options[index].startswith("--"):
+            modes.append(options[index])
+            index += 1
+    expected = {(mode, repeat) for mode in modes for repeat in range(repeats)}
+    actual = {(t.get("mode"), t.get("repeat")) for t in trials}
+    return (len(trials) == len(expected) and actual == expected and
+            all(t.get("status") == "completed" and not t.get("errors") for t in trials))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--study", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
+    parser.add_argument("--stage", choices=("all", "primary", "corrected", "secondary"), default="all",
+                        help="Separate a frozen baseline from post-fix operational checks")
     args = parser.parse_args()
     if not args.out.is_dir() or not args.study.is_dir():
         parser.error("use existing approved study and V2 output roots")
     campaign = []
     started = time.time()
-    for name, case, host, extra in plan(args.study):
+    standard = plan(args.study)
+    rows = ([row for row in standard if row[0].startswith("primary-")] +
+            correction_plan(args.study) +
+            [row for row in standard if not row[0].startswith("primary-")])
+    for name, case, host, extra in rows:
+        if args.stage == "primary" and not name.startswith("primary-"):
+            continue
+        if args.stage == "corrected" and not name.startswith("corrected-"):
+            continue
+        if args.stage == "secondary" and name.startswith(("primary-", "corrected-")):
+            continue
         destination = args.out / name
         command = [sys.executable, str(HERE / "run_offscreen_perf_v2.py"),
                    "--study", str(args.study), "--out", str(destination),
@@ -65,7 +108,7 @@ def main():
         if destination.exists():
             receipt = destination / "results.json"
             results = json.loads(receipt.read_text()) if receipt.exists() else {}
-            if not results.get("trials") or any(t["status"] != "completed" for t in results["trials"]):
+            if not complete_phase(results.get("trials", []), extra):
                 raise RuntimeError(f"refuse to overwrite or skip incomplete campaign: {destination}")
             row.update(status="retained-completed", trials=len(results["trials"]))
         else:
@@ -84,11 +127,15 @@ def main():
                 row["interrupted"] = True
             row.update(status="completed" if result.returncode == 0 else "failed",
                        exit_code=result.returncode, ended_unix_s=time.time())
+            receipt = destination / "results.json"
+            results = json.loads(receipt.read_text()) if receipt.exists() else {}
+            if row["status"] == "completed" and not complete_phase(results.get("trials", []), extra):
+                row.update(status="failed", receipt_error="incomplete or duplicate trial set")
         campaign.append(row)
         write(args.out / "campaign-progress.json", {"current": None, "completed": campaign})
         if row["status"] == "failed":
             return 1
-    write(args.out / "campaign-completion.json", {"started_unix_s": started,
+    write(args.out / ("campaign-completion.json" if args.stage == "all" else args.stage + "-campaign-completion.json"), {"started_unix_s": started,
           "ended_unix_s": time.time(), "campaigns": campaign,
           "scope": "sequential GPU workloads; no native 4K window on 1440-high output"})
     return 0

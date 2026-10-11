@@ -50,6 +50,19 @@ are allowed only after identifying a repeatable bottleneck; keep originals and
 rerun affected controls. Performance-target failure does not become acceptance
 because regression tests pass. Human visual/monitor acceptance stays separate.
 
+The first frozen baseline exposed one host-policy mismatch: continuous
+offscreen inherited synchronous whitewater classification from PNG/video
+captures, whereas native GUI already uses a bounded asynchronous job. The
+targeted correction reuses that existing GUI policy for render-only execution;
+deterministic captures stay synchronous. Retain all 42 original primary trials
+and their app hash. The separate `--stage corrected` supplies three affected
+live-offscreen repeats per grid plus one held-offscreen and one live-Wayland
+control per grid (10 supplemental trials). `--stage secondary` supplies the
+14 paced/resolution/rolling/soak trials with the corrected app. These are not
+pooled with the old app's timings. Include sampled maximum service time as
+well as p95, solver pace, and actual whitewater source age: removing blocking
+work does not prove either lower GPU contention or fresher decorative cues.
+
 Publish one HTML report under outputs with original and corrected host identities,
 measurement receipts, failures, matched visuals and practical recommendations.
 Commit validated checkpoints; no automatic push.
