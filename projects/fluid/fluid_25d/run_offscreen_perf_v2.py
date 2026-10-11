@@ -35,7 +35,7 @@ def environment(host):
 def viewer_command(case, source, title, args, live, start):
     argv = terrain.viewer_command(case, source, title, args.width, args.height,
         live=live, start=start, app=args.app, camera=args.camera)
-    argv += ["--run-seconds", str(args.wall + args.warmup + 4),
+    argv += ["--run-seconds", str(args.wall + args.warmup + 8),
              "--render-fps", str(args.render_fps), "--no-validation",
              "--profile-output", str(args.prefix), "--profile-warmup-frames", "0",
              "--profile-sample-interval", "10", "--profile-max-frames", "12000"]
@@ -61,14 +61,21 @@ def wait_viewer(viewer, log, host, timeout=120):
     raise TimeoutError("viewer startup")
 
 
-def size_owned_window(title, width, height):
+def size_owned_window(title, width, height, timeout=5):
     """Adjust only this trial's unique window; never change compositor config."""
     if not os.environ.get("NIRI_SOCKET"):
         return {"available": False, "reason": "not niri; actual viewport will still be checked"}
-    windows = json.loads(subprocess.check_output(["rtk", "proxy", "niri", "msg", "--json", "windows"]))
-    matches = [w for w in windows if w.get("title", "").startswith(title)]
-    if len(matches) != 1:
-        raise RuntimeError("could not identify the unique owned Wayland window")
+    # Readiness is emitted before the first buffer is presented; Wayland does
+    # not expose an unmapped xdg_toplevel as a compositor window yet.
+    started = time.monotonic()
+    while True:
+        windows = json.loads(subprocess.check_output(["rtk", "proxy", "niri", "msg", "--json", "windows"]))
+        matches = [w for w in windows if w.get("title", "").startswith(title)]
+        if len(matches) == 1:
+            break
+        if len(matches) > 1 or time.monotonic() - started >= timeout:
+            raise RuntimeError("could not identify the unique owned Wayland window")
+        time.sleep(.05)
     window = matches[0]
     commands = []
     if not window["is_floating"]:
@@ -78,7 +85,8 @@ def size_owned_window(title, width, height):
     for command in commands:
         subprocess.run(["rtk", "proxy", "niri", "msg", "action", *command], check=True,
                        capture_output=True, timeout=10)
-    return {"available": True, "window_id": window["id"], "commands": commands}
+    return {"available": True, "window_id": window["id"], "commands": commands,
+            "mapping_wait_s": time.monotonic() - started}
 
 
 def run_trial(case, out, args, mode, repeat):

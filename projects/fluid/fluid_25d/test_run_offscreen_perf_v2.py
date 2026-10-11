@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -11,6 +12,23 @@ import review_offscreen_perf_v2 as review
 
 
 class ContractTests(unittest.TestCase):
+    def test_wayland_mapping_is_bounded_and_ambiguity_fails_closed(self):
+        window = {"id": 42, "title": "Cubey V2 owned", "is_floating": True}
+        with patch.dict(os.environ, {"NIRI_SOCKET": "owned-socket"}), \
+             patch.object(study.subprocess, "check_output", side_effect=[b"[]", json.dumps([window]).encode()]), \
+             patch.object(study.subprocess, "run") as run, patch.object(study.time, "sleep"):
+            result = study.size_owned_window("Cubey V2 owned", 1920, 1080)
+            self.assertEqual(result["window_id"], 42)
+            self.assertEqual(run.call_count, 2)
+            self.assertTrue(all("42" in call.args[0] for call in run.call_args_list))
+        for windows in ([], [window, window]):
+            with patch.dict(os.environ, {"NIRI_SOCKET": "owned-socket"}), \
+                 patch.object(study.subprocess, "check_output", return_value=json.dumps(windows).encode()), \
+                 patch.object(study.subprocess, "run") as run:
+                with self.assertRaisesRegex(RuntimeError, "unique owned"):
+                    study.size_owned_window("Cubey V2 owned", 1920, 1080, timeout=0)
+                run.assert_not_called()
+
     def test_offscreen_has_no_display_and_native_has_no_x11_fallback(self):
         with patch.dict(os.environ, {"DISPLAY": ":88", "WAYLAND_DISPLAY": "wayland-1",
                                     "CUBEY_PRIVATE_XVFB": "1"}, clear=True):
