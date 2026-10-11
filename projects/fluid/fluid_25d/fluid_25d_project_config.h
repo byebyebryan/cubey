@@ -57,6 +57,9 @@ struct Fluid25DProjectConfig {
     std::optional<std::filesystem::path> recording_path{};
     // Attach to an already-running service; Cubey never launches the producer.
     std::optional<std::filesystem::path> external_session_path{};
+    // Explicit launcher-owned selection/restart; never a hydraulic command.
+    std::optional<std::filesystem::path> terrain_demo_control_path{};
+    std::optional<std::filesystem::path> terrain_demo_script_path{};
     std::optional<std::filesystem::path> stream_path{};
     bool stream_follow_latest = false;
     float recording_speed = 60.0F;
@@ -522,6 +525,14 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Attach to an existing service directory; Cubey never launches or builds it.",
                      ValueType::Path),
               config.external_session_path)
+        .bind(option("fluid25d.terrain_demo_control", "--fluid25d-terrain-demo-control",
+                     "Managed Terrain Demo",
+                     "Attach to the launcher's prepared-case restart mailbox.", ValueType::Path),
+              config.terrain_demo_control_path)
+        .bind(option("fluid25d.terrain_demo_script", "--fluid25d-terrain-demo-script",
+                     "Managed Demo Regression",
+                     "Headless-only actions through the same demo controls.", ValueType::Path),
+              config.terrain_demo_script_path)
         .bind(option("fluid25d.stream_follow_latest", "--fluid25d-stream-follow-latest",
                      "Follow Latest",
                      "Follow the latest validated snapshot instead of paced viewing.",
@@ -924,6 +935,13 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         "fluid25d.recording_frame_interval_seconds", "fluid25d.recording_camera",
         "fluid25d.recording_gpu_validation"};
     const bool service_session = project_config.external_session_path.has_value();
+    if (project_config.terrain_demo_control_path &&
+        (!service_session || project_config.terrain_demo_control_path->empty()))
+        throw std::runtime_error("managed terrain demo requires an external service session");
+    if (project_config.terrain_demo_script_path &&
+        (!project_config.terrain_demo_control_path || !project_config.common.headless_render_only ||
+         project_config.terrain_demo_script_path->empty()))
+        throw std::runtime_error("managed demo script requires headless render-only live mode");
     if (project_config.bank_comparison &&
         (!project_config.recording_path || project_config.stream_path || service_session ||
          !project_config.native_display_coverage_path))

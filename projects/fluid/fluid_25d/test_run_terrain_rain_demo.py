@@ -1,6 +1,7 @@
 """CPU-only launcher contracts; no optional native import or GPU."""
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import run_terrain_rain_demo as terrain
 
@@ -74,6 +75,34 @@ class Commands(unittest.TestCase):
     def test_camera_uses_existing_recorded_view_controls(self):
         command = terrain.viewer_command(Path("/case"), Path("/session"), "test", camera="collection")
         self.assertEqual(command[command.index("--fluid25d-recording-camera") + 1], "collection")
+
+    def test_managed_headless_commands_are_explicit(self):
+        command = terrain.viewer_command(Path("/case"), Path("/session"), "test",
+            control=Path("/control"), headless_seconds=120, switch_script=Path("/script.json"))
+        for flag in ("--headless", "--headless-render-only", "--fluid25d-recording-gpu-validation",
+                     "--fluid25d-terrain-demo-control", "--fluid25d-terrain-demo-script"):
+            self.assertIn(flag, command)
+        self.assertEqual(command[command.index("--run-seconds") + 1], "120")
+        with self.assertRaises(ValueError):
+            terrain.viewer_command(Path("/case"), Path("/session"), "test",
+                live=False, control=Path("/control"))
+        with self.assertRaises(ValueError):
+            terrain.viewer_command(Path("/case"), Path("/session"), "test",
+                switch_script=Path("/script.json"))
+        for duration in (0, 3601, float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                terrain.viewer_command(Path("/case"), Path("/session"), "test",
+                    headless_seconds=duration)
+
+    def test_unavailable_catalogue_entries_remain_visible_but_disabled(self):
+        with patch.object(terrain, "case_identity", side_effect=ValueError("changed input")):
+            entries = terrain.catalogue(Path("/study"))
+        self.assertEqual(len(entries), 15)
+        self.assertEqual(len({entry["id"] for entry in entries}), 15)
+        self.assertTrue(all(not entry["available"] and entry["error"] == "changed input"
+                            for entry in entries))
+        self.assertEqual({(entry["width"], entry["spacing_m"]) for entry in entries},
+                         {(512, 32), (1024, 16), (2048, 8), (512, 16), (2048, 16)})
 
 
 if __name__ == "__main__":

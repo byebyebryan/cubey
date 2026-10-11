@@ -32,6 +32,7 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_recording_app.cpp
         ../sim/fluid_25d/fluid_25d_scenic.cpp
         ../sim/fluid_25d/fluid_25d_scenic_material.cpp
+        ../sim/fluid_25d/fluid_25d_terrain_demo.cpp
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
@@ -125,6 +126,13 @@ target_link_libraries(cubey_project_fluid_25d_external_probe
     PRIVATE cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_fluid_25d_terrain_demo_tests
+        ../sim/fluid_25d/fluid_25d_terrain_demo.cpp
+        ../sim/fluid_25d/fluid_25d_terrain_demo_tests.cpp)
+    target_link_libraries(cubey_project_fluid_25d_terrain_demo_tests PRIVATE
+        cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
+    add_test(NAME fluid_25d_terrain_demo_contract COMMAND cubey_project_fluid_25d_terrain_demo_tests)
+    set_tests_properties(fluid_25d_terrain_demo_contract PROPERTIES LABELS "unit;fluid;backend")
     add_executable(cubey_project_fluid_25d_daylight_gpu_tests
         ../sim/fluid_25d/fluid_25d_daylight_gpu_tests.cpp)
     target_link_libraries(cubey_project_fluid_25d_daylight_gpu_tests PRIVATE
@@ -284,6 +292,14 @@ if (BUILD_TESTING)
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_mountain_rain_demo.py)
         set_tests_properties(fluid_25d_mountain_demo_launcher
             PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 60)
+        add_test(NAME fluid_25d_terrain_demo_supervisor
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_terrain_demo_session.py)
+        set_tests_properties(fluid_25d_terrain_demo_supervisor PROPERTIES LABELS "unit;fluid;backend" TIMEOUT 60)
+        add_test(NAME fluid_25d_terrain_demo_evidence_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_validate_terrain_demo_v1.py)
+        set_tests_properties(fluid_25d_terrain_demo_evidence_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
         add_test(NAME fluid_25d_mountain_demo_review_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_mountain_rain_demo_v1.py)

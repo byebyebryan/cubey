@@ -37,7 +37,11 @@ rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
   --study outputs/fluid/live-perf-terrain-20261010-Dd6K3h
 ```
 
-Live starts dry and paused; Space resumes the actual solver. Use
+Live starts dry and paused; Space resumes the actual solver. The managed
+**Terrain Water** panel now supports prepared site/grid selection followed by
+Apply & restart in the same window. Rain, pace and appearance are retained;
+water starts dry/paused again. Closing this launcher stops its owned worker.
+See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Use
 `--print-command` remotely for a read-only preflight without opening a GUI.
 `--render-fps 0` restores unpaced rendering; other positive values select a
 custom cap. `--configuration patch-2048-8m` selects the finer, slower-live grid.

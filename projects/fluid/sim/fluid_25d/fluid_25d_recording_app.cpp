@@ -13,10 +13,12 @@
 #include "fluid_25d_recording.h"
 #include "fluid_25d_scenic.h"
 #include "fluid_25d_scenic_environment.h"
+#include "fluid_25d_terrain_demo.h"
 #include "fluid_25d_terrain_surface.h"
 
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/host/headless_png_host.h>
+#include <cubey/host/performance_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/scene/camera_3d.h>
@@ -35,6 +37,7 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <functional>
 #include <future>
 #include <limits>
 #include <numbers>
@@ -117,7 +120,48 @@ const char* external_health_name(fluid_25d_project_config_detail::ExternalSessio
 
 // This application intentionally has no hydraulic compute entry point. Its
 // resources do not create solver pipelines; the frame graph is draw-only.
+class RecordingApp;
+class ManagedSceneReload {
+  public:
+    explicit ManagedSceneReload(RecordingApp& initial);
+    ~ManagedSceneReload();
+    RecordingApp& scene() {
+        return *active_;
+    }
+    Fluid25DTerrainDemoControl* control() {
+        return control_.get();
+    }
+    const std::string& current_case_id() const {
+        return current_case_id_;
+    }
+    const std::string& stage() const {
+        return stage_;
+    }
+    std::string selected_case_id;
+    void request_case(const std::string& id);
+    void poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
+              render::ColorTargetView target, const std::function<void()>& wait_frames);
+    void shutdown(vulkan::GpuRuntime& gpu);
+
+  private:
+    void run_script();
+    void log(const std::string& event);
+    RecordingApp* active_;
+    std::unique_ptr<RecordingApp> installed_;
+    std::unique_ptr<Fluid25DTerrainDemoControl> control_;
+    std::future<std::unique_ptr<RecordingApp>> prepared_;
+    std::optional<vulkan::GpuJobHandle<std::unique_ptr<RecordingApp>>> uploaded_;
+    std::string current_case_id_, stage_;
+    std::uint64_t preparing_request_id_ = 0;
+    std::chrono::steady_clock::time_point next_poll_{}, action_started_{};
+    std::vector<Fluid25DTerrainDemoAction> script_;
+    std::size_t action_index_ = 0;
+    bool action_waiting_ = false;
+};
+
 class RecordingApp {
+    friend class ManagedSceneReload;
+
   public:
     explicit RecordingApp(const Fluid25DProjectConfig& config)
         : config_(config),
@@ -492,8 +536,8 @@ class RecordingApp {
     }
 
     [[nodiscard]] bool external_controls_allowed() const {
-        return external_session_ && !external_terminal_ && external_error_.empty() &&
-               !external_session_->command_pending() &&
+        return external_session_ && !managed_held_ && !external_terminal_ &&
+               external_error_.empty() && !external_session_->command_pending() &&
                external_health() == fluid_25d_project_config_detail::ExternalSessionHealth::Healthy;
     }
 
@@ -868,6 +912,11 @@ class RecordingApp {
     }
 
     void update_view(double wall_delta_s) {
+        if (managed_held_) {
+            visual_delta_ = 0.0;
+            pace_meter_.sample(0, shown_->time_s, false);
+            return;
+        }
         poll_comparison_cache();
         if (comparison_ && (!coverage_cache_ || !comparison_error_.empty())) {
             visual_delta_ = 0.0;
@@ -875,6 +924,14 @@ class RecordingApp {
         }
         if (external_session_) {
             poll_external_session();
+            pace_meter_.sample(
+                std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch())
+                    .count(),
+                shown_->time_s,
+                external_snapshot_->header.lifecycle == Fluid25DLifecycle::Running &&
+                    external_error_.empty() &&
+                    external_health() ==
+                        fluid_25d_project_config_detail::ExternalSessionHealth::Healthy);
             visual_delta_ = 0.0;
             if (external_snapshot_ && external_error_.empty() &&
                 external_health() ==
@@ -947,7 +1004,8 @@ class RecordingApp {
         resources_.create_global_resources_if_needed(device, runtime_.gpu(), simulation_, scenario_,
                                                      slots, true,
                                                      coverage_ ? coverage_->subdivision() : 0U);
-        markers_available_ = config_.motion_markers || comparison_.has_value();
+        markers_available_ = config_.motion_markers || comparison_.has_value() ||
+                             config_.terrain_demo_control_path.has_value();
         if (markers_available_)
             markers_.create(device, runtime_.gpu(), simulation_,
                             {&resources_.terrain(), &resources_.depth_a(), &resources_.depth_b(),
@@ -1892,11 +1950,22 @@ class RecordingApp {
         ImGui::Text("Active supply: %.3f mm/h (%s)", external_snapshot_->rain_m_per_s * 3.6e6,
                     external_snapshot_->rain_m_per_s > 0.0 ? "ON" : "OFF");
         if (backend_metadata_.capabilities.solver.set_rain) {
+            ImGui::BeginDisabled(busy);
+            if (ImGui::BeginCombo("Rain preset", "Choose")) {
+                for (const int rate : {0, 128, 256, 512, 1024}) {
+                    const auto label =
+                        rate == 0 ? std::string("Off") : std::to_string(rate) + " mm/h";
+                    if (ImGui::Selectable(label.c_str()))
+                        send_external_command(Fluid25DCommandKind::SetRain, double(rate) / 3.6e6);
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::EndDisabled();
             // Typing is local, not a solver command. Keep edits available across
             // paused heartbeat phases; Apply alone requires healthy authority.
             // A matching applied acknowledgement refreshes the input. Do not
             // allow a newer draft to be overwritten while a command is in flight.
-            ImGui::BeginDisabled(external_session_->command_pending());
+            ImGui::BeginDisabled(external_session_->command_pending() || managed_held_);
             ImGui::SetNextItemWidth(140.0F);
             if (ImGui::InputFloat("Intensity (mm/h)", &external_rain_input_mm_per_hour_, 0.1F, 1.0F,
                                   "%.3f"))
@@ -1904,7 +1973,8 @@ class RecordingApp {
             ImGui::EndDisabled();
             ImGui::BeginDisabled(busy || !external_rain_dirty_ ||
                                  !std::isfinite(external_rain_input_mm_per_hour_) ||
-                                 external_rain_input_mm_per_hour_ < 0.0F);
+                                 external_rain_input_mm_per_hour_ < 0.0F ||
+                                 external_rain_input_mm_per_hour_ > 36000.0F);
             if (ImGui::Button("Apply rain"))
                 send_external_command(Fluid25DCommandKind::SetRain,
                                       static_cast<double>(external_rain_input_mm_per_hour_) /
@@ -1924,212 +1994,327 @@ class RecordingApp {
         ImGui::TextWrapped(
             "Set zero to stop new rain; existing water still flows and drains. "
             "Intensity is depth added per hour, not retained water or playback speed.");
+        ImGui::TextDisabled(
+            "128-1024 mm/h presets are exaggerated demo rainfall, not typical weather.");
         ImGui::Separator();
     }
 
-    void draw_external_ui() {
+    void draw_terrain_selection_ui(ManagedSceneReload& demo) {
+        auto* control = demo.control();
+        if (!control)
+            return;
+        const auto& current = control->case_by_id(demo.current_case_id());
+        ImGui::SeparatorText("Terrain and simulation grid");
+        ImGui::Text("Current: %s | %u x %u | %.0f m cells", current.site_label.c_str(),
+                    current.width, current.height, current.spacing_m);
+        const auto& selected = control->case_by_id(demo.selected_case_id);
+        ImGui::BeginDisabled(control->busy());
+        if (ImGui::BeginCombo("Site", selected.site_label.c_str())) {
+            for (const char* site : {"mountain", "alpine", "rolling"}) {
+                const auto found = std::find_if(
+                    control->cases().begin(), control->cases().end(), [&](const auto& item) {
+                        return item.site == site && item.configuration == selected.configuration;
+                    });
+                if (found == control->cases().end())
+                    continue;
+                ImGui::BeginDisabled(!found->available);
+                if (ImGui::Selectable(found->site_label.c_str(), selected.site == site))
+                    demo.selected_case_id = found->id;
+                ImGui::EndDisabled();
+            }
+            ImGui::EndCombo();
+        }
+        const auto& edited = control->case_by_id(demo.selected_case_id);
+        if (ImGui::BeginCombo("Grid / area", edited.label.c_str())) {
+            for (const bool same_area : {true, false}) {
+                ImGui::SeparatorText(same_area ? "Same area: 16.384 km square"
+                                               : "Advanced: different coverage");
+                for (const auto& entry : control->cases()) {
+                    if (entry.site != edited.site || (entry.extent == "same") != same_area)
+                        continue;
+                    ImGui::BeginDisabled(!entry.available);
+                    const std::string label =
+                        entry.label + " | " + std::to_string(entry.width) + " | " +
+                        std::to_string(static_cast<int>(entry.spacing_m)) + " m";
+                    if (ImGui::Selectable(label.c_str(), entry.id == edited.id))
+                        demo.selected_case_id = entry.id;
+                    if (!entry.available &&
+                        ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                        ImGui::SetTooltip("%s", entry.error.c_str());
+                    ImGui::EndDisabled();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        const auto& pending = control->case_by_id(demo.selected_case_id);
+        ImGui::Text("Selected: %u x %u | %.0f m | %.3f km square", pending.width, pending.height,
+                    pending.spacing_m, double(pending.width) * pending.spacing_m / 1000);
+        ImGui::TextDisabled(
+            "Source terrain: %.0f m. Finer sim grids interpolate, not add terrain detail.",
+            pending.source_spacing_m);
+        if (pending.width >= 2048)
+            ImGui::TextWrapped("Fine/large grids run the solver substantially slower; 60x is a "
+                               "request, not a guarantee.");
+        ImGui::BeginDisabled(!pending.available || pending.id == current.id ||
+                             external_session_->command_pending());
+        if (ImGui::Button("Apply & restart"))
+            demo.request_case(pending.id);
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button("Discard selection"))
+            demo.selected_case_id = current.id;
+        ImGui::EndDisabled();
+        ImGui::TextWrapped(
+            "Clears water/time; keeps rainfall, pace and appearance. Starts dry and paused.");
+        if (control->busy())
+            ImGui::TextWrapped("LOADING: %s. Previous scene held; no old/new field mixing.",
+                               demo.stage().empty() ? control->status().phase.c_str()
+                                                    : demo.stage().c_str());
+        if (!control->status().error.empty()) {
+            ImGui::TextWrapped("Load failed: %s", control->status().error.c_str());
+            ImGui::BeginDisabled(control->busy());
+            if (ImGui::Button("Retry selected"))
+                demo.request_case(demo.selected_case_id);
+            ImGui::SameLine();
+            if (ImGui::Button("Restart previous case (dry)"))
+                demo.request_case(current.id);
+            ImGui::EndDisabled();
+        }
+    }
+
+    void draw_external_ui(ManagedSceneReload* demo = nullptr) {
         ImGui::SetNextWindowSize(
-            ImVec2(510.0F, std::min(850.0F, ImGui::GetIO().DisplaySize.y - 32.0F)),
+            ImVec2(450.0F, std::min(790.0F, ImGui::GetIO().DisplaySize.y - 32.0F)),
             ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin("Mountain Rain - LIVE solver")) {
-            ImGui::TextColored(ImVec4(0.25F, 0.85F, 1.0F, 1.0F),
-                               "LIVE - external SynxFlow / Vulkan viewer");
-            if (config_.native_scenic_surface_grid) {
-                const auto label =
-                    config_.native_scenic_surface_grid->parent_path().filename().string();
-                ImGui::TextWrapped("Terrain/grid: %s", label.c_str());
-                ImGui::Text("%u x %u | %.0f m cells | %.3f x %.3f km", simulation_.grid_width,
-                            simulation_.grid_height, simulation_.cell_size_m,
-                            double(simulation_.grid_width) * simulation_.cell_size_m / 1000.0,
-                            double(simulation_.grid_height) * simulation_.cell_size_m / 1000.0);
-            }
-            const auto health = external_health();
-            ImGui::Text("Lifecycle: %s | heartbeat: %s",
-                        lifecycle_name(external_snapshot_->header.lifecycle),
-                        external_health_name(health));
-            const auto lifecycle = external_snapshot_->header.lifecycle;
-            const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
-                                  lifecycle == Fluid25DLifecycle::Failed ||
-                                  lifecycle == Fluid25DLifecycle::Stopped;
-            const bool busy =
-                external_session_->command_pending() || !external_error_.empty() || terminal ||
-                health != fluid_25d_project_config_detail::ExternalSessionHealth::Healthy;
-            ImGui::Text("Native physical time: %.6f s", shown_->time_s);
-            ImGui::Text("Solver pacing %.1fx (separate from rainfall intensity)",
-                        external_snapshot_->pacing);
-            draw_external_rain_ui(busy);
-            draw_native_color_legend();
+        if (!ImGui::Begin("Terrain Water")) {
+            ImGui::End();
+            return;
+        }
+        const auto lifecycle = external_snapshot_->header.lifecycle;
+        const auto health = external_health();
+        const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
+                              lifecycle == Fluid25DLifecycle::Failed ||
+                              lifecycle == Fluid25DLifecycle::Stopped;
+        const bool busy = managed_held_ || external_session_->command_pending() ||
+                          !external_error_.empty() || terminal ||
+                          health != fluid_25d_project_config_detail::ExternalSessionHealth::Healthy;
+        auto* control = demo ? demo->control() : nullptr;
+        const bool loading = control && control->busy();
+        const char* state = loading         ? "LOADING"
+                            : managed_held_ ? "HELD - NOT LIVE"
+                                            : lifecycle_name(lifecycle);
+        ImGui::TextColored(ImVec4(.25F, .85F, 1.F, 1.F), "LIVE SynxFlow | %s", state);
+        if (control) {
+            const auto& current = control->case_by_id(demo->current_case_id());
+            ImGui::Text("%s | %u x %u | %.0f m cells", current.site_label.c_str(), current.width,
+                        current.height, current.spacing_m);
+            ImGui::Text("Coverage %.3f km square", current.width * current.spacing_m / 1000);
+            ImGui::Text("Simulated: %s / %s", fluid_25d_demo_time_label(shown_->time_s).c_str(),
+                        fluid_25d_demo_time_label(current.duration_s).c_str());
+        } else {
+            ImGui::Text("%u x %u | %.0f m cells | simulated %s", simulation_.grid_width,
+                        simulation_.grid_height, simulation_.cell_size_m,
+                        fluid_25d_demo_time_label(shown_->time_s).c_str());
+        }
+        ImGui::BeginDisabled(busy);
+        if ((lifecycle == Fluid25DLifecycle::Ready || lifecycle == Fluid25DLifecycle::Paused) &&
+            backend_metadata_.capabilities.solver.resume &&
+            ImGui::Button(shown_->time_s == 0 ? "Start [Space]" : "Resume [Space]"))
+            send_external_command(Fluid25DCommandKind::Resume);
+        if (lifecycle == Fluid25DLifecycle::Running &&
+            backend_metadata_.capabilities.solver.pause && ImGui::Button("Pause [Space]"))
+            send_external_command(Fluid25DCommandKind::Pause);
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(control ? loading || external_session_->command_pending()
+                                     : busy || !backend_metadata_.capabilities.solver.reset);
+        if (ImGui::Button("Reset water [R]")) {
+            if (control)
+                demo->request_case(demo->current_case_id());
+            else if (backend_metadata_.capabilities.solver.reset)
+                send_external_command(Fluid25DCommandKind::Reset);
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button("Fit overview")) {
+            config_.recording_camera = "overview";
+            configure_camera();
+        }
+        if (loading)
+            ImGui::TextWrapped("Loading: %s. Previous scene and motion held.",
+                               demo->stage().empty() ? control->status().phase.c_str()
+                                                     : demo->stage().c_str());
+        else if (managed_held_)
+            ImGui::TextWrapped("Last scene held. No running producer is attached; retry or restart "
+                               "in Scene setup.");
+        else if (lifecycle == Fluid25DLifecycle::Completed)
+            ImGui::TextWrapped("Simulation horizon reached. The final water state is held; Reset "
+                               "water starts a new run.");
+        else if ((lifecycle == Fluid25DLifecycle::Paused ||
+                  lifecycle == Fluid25DLifecycle::Ready) &&
+                 shown_->time_s == 0)
+            ImGui::TextWrapped("Dry and paused. Press Start to supply rain across the terrain.");
+        if (external_session_->command_pending())
+            ImGui::TextDisabled("Applying solver command...");
+        if (!external_error_.empty())
+            ImGui::TextWrapped("Service/viewer error: %s", external_error_.c_str());
+        if (control && !control->status().error.empty())
+            ImGui::TextWrapped("Selection/restart error: %s", control->status().error.c_str());
+        if (!loading && !managed_held_ &&
+            (health == fluid_25d_project_config_detail::ExternalSessionHealth::Delayed ||
+             health == fluid_25d_project_config_detail::ExternalSessionHealth::Disconnected))
             ImGui::TextWrapped(
-                "Space pauses/resumes computation. Esc only detaches; the foreground "
-                "launcher owns the worker (Ctrl-C to stop). No playback seek.");
-            const double publication_age_s = external_publication_age_s();
-            const double now_unix_s =
-                std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch())
-                    .count();
+                "Published field frozen; producer heartbeat is delayed/disconnected.");
+        if (shown_->stats.water_volume_m3 >= 1.0e6)
+            ImGui::Text("Water %.2f million m3 | max depth %.2f m",
+                        shown_->stats.water_volume_m3 / 1.0e6, shown_->stats.max_depth_m);
+        else
+            ImGui::Text("Water %.0f m3 | max depth %.2f m", shown_->stats.water_volume_m3,
+                        shown_->stats.max_depth_m);
+
+        if (ImGui::CollapsingHeader("Simulation", ImGuiTreeNodeFlags_DefaultOpen)) {
+            draw_external_rain_ui(busy);
+            ImGui::Text("Requested pace: %.1fx", external_snapshot_->pacing);
+            if (const auto achieved = pace_meter_.achieved())
+                ImGui::Text("Achieved: %.1fx (recent simulated seconds / wall seconds)", *achieved);
+            else
+                ImGui::TextDisabled("Achieved pace: paused / collecting a running window");
+            if (backend_metadata_.capabilities.solver.set_time_scale) {
+                ImGui::BeginDisabled(busy);
+                if (ImGui::BeginCombo("Pace preset", "Choose")) {
+                    for (const int pace : {1, 10, 30, 60, 120}) {
+                        const auto label = std::to_string(pace) + "x";
+                        if (ImGui::Selectable(label.c_str()))
+                            send_external_command(Fluid25DCommandKind::SetTimeScale, pace);
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::SetNextItemWidth(120);
+                if (ImGui::InputFloat("Custom pace (x)", &external_time_scale_input_, .125F, 1.F,
+                                      "%.2f"))
+                    external_time_scale_dirty_ = true;
+                ImGui::BeginDisabled(
+                    !external_time_scale_dirty_ || !std::isfinite(external_time_scale_input_) ||
+                    external_time_scale_input_ < .125F || external_time_scale_input_ > 300);
+                if (ImGui::Button("Apply pace"))
+                    send_external_command(Fluid25DCommandKind::SetTimeScale,
+                                          external_time_scale_input_);
+                ImGui::EndDisabled();
+                ImGui::EndDisabled();
+                if (external_time_scale_dirty_)
+                    ImGui::TextDisabled("Custom pace edit is not applied yet.");
+            }
+            ImGui::TextWrapped("Pace accelerates simulation time, not rain intensity or FPS. Fine "
+                               "grids may not keep up.");
+            if ((external_rain_dirty_ || external_time_scale_dirty_) &&
+                !external_session_->command_pending() && ImGui::Button("Discard control edits")) {
+                external_rain_input_mm_per_hour_ = float(external_snapshot_->rain_m_per_s * 3.6e6);
+                external_time_scale_input_ = float(external_snapshot_->pacing);
+                external_rain_dirty_ = external_time_scale_dirty_ = false;
+            }
+        }
+
+        if (control && ImGui::CollapsingHeader("Scene setup")) {
+            draw_terrain_selection_ui(*demo);
+            ImGui::TextDisabled("Closing this managed demo stops only its owned worker.");
+        }
+        if (ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen)) {
+            int reading = static_cast<int>(catchment_view_);
+            if (ImGui::Combo("3D view", &reading,
+                             "Scenic composite\0Water isolation\0Flow inspection\0")) {
+                catchment_view_ = static_cast<Fluid25DCatchmentView>(reading);
+                view_ = Fluid25DPresentationView::Catchment;
+                quiver_reset_ = true;
+            }
+            bool diagnostic = view_ == Fluid25DPresentationView::Diagnostics;
+            if (ImGui::Checkbox("2D diagnostic map [A]", &diagnostic))
+                view_ = diagnostic ? Fluid25DPresentationView::Diagnostics
+                                   : Fluid25DPresentationView::Catchment;
+            if (diagnostic) {
+                int map = static_cast<int>(debug_view_);
+                if (ImGui::Combo("Map [D]", &map,
+                                 "Terrain\0Depth\0Surface\0Speed\0Direction\0Wet/dry\0"))
+                    debug_view_ = static_cast<Fluid25DDebugView>(map);
+                draw_native_color_legend();
+            }
+            // Existing runoff/collection observation points were authored for
+            // the mountain crop. Do not pretend they identify another site's basin.
+            if (!control || control->case_by_id(demo->current_case_id()).site == "mountain") {
+                for (const char* camera : {"overview", "runoff", "collection"}) {
+                    if (ImGui::RadioButton(camera, config_.recording_camera == camera)) {
+                        config_.recording_camera = camera;
+                        configure_camera();
+                    }
+                    ImGui::SameLine();
+                }
+                ImGui::NewLine();
+            }
+            ImGui::BeginDisabled(!markers_available_);
+            if (ImGui::Checkbox("Dots / trails [W]", &config_.motion_markers))
+                marker_reset_ = true;
+            ImGui::EndDisabled();
+            ImGui::TextDisabled(
+                "Dots/trails and foam illustrate motion; they are not native particles.");
+            if (ImGui::CollapsingHeader("Appearance - render only"))
+                draw_native_presentation_ui();
+        }
+        if (ImGui::CollapsingHeader("How to read this")) {
+            ImGui::TextWrapped(
+                "Rain supplies the whole map. Water follows slopes, collects in depressions and "
+                "can leave through the open perimeter. There is no authored source/drain here.");
+            ImGui::TextWrapped(
+                "Rain off stops new supply; existing water still flows. Small streams can appear "
+                "before large pools. Visible rain density/fall speed only affect rendering.");
+            ImGui::TextWrapped("Live runs the solver. Replay elsewhere only displays saved fields. "
+                               "A healthy paused heartbeat does not mean water is advancing.");
+        }
+        if (ImGui::CollapsingHeader("Diagnostics / advanced")) {
+            ImGui::Text("Backend %s | %s", backend_metadata_.id.c_str(),
+                        backend_profile_name(backend_metadata_.profile));
+            ImGui::Text("Heartbeat %s | field age %.3f s", external_health_name(health),
+                        external_publication_age_s());
             ImGui::Text(
                 "Generation %llu | sequence %llu",
                 static_cast<unsigned long long>(external_snapshot_->header.reset_generation),
                 static_cast<unsigned long long>(external_snapshot_->header.sequence));
-            ImGui::Text("Publication age %.3f s", publication_age_s);
-            if (external_session_->command_pending())
-                ImGui::TextWrapped("Command pending %.2f s | recorded at Unix %.6f",
-                                   std::max(0.0, now_unix_s - external_command_recorded_unix_s_),
-                                   external_command_recorded_unix_s_);
+            ImGui::Text("Session %.16s", backend_metadata_.session.session_id.c_str());
+            ImGui::Text("Input %.12s | bed %.12s", backend_metadata_.grid.input_sha256.c_str(),
+                        backend_metadata_.grid.solver_bed_sha256.c_str());
+            ImGui::Text("Max speed %.3f m/s", shown_->stats.max_speed_m_per_s);
             if (!external_session_->last_command_message().empty())
-                ImGui::TextWrapped("Last command acknowledgement: %s",
+                ImGui::TextWrapped("Last acknowledgement: %s",
                                    external_session_->last_command_message().c_str());
-            if (external_snapshot_->acknowledgement) {
-                const auto& ack = *external_snapshot_->acknowledgement;
-                ImGui::Text("Ack %llu %s | generation %llu",
-                            static_cast<unsigned long long>(ack.command_id),
-                            acknowledgement_name(ack.state),
-                            static_cast<unsigned long long>(ack.reset_generation));
-                if (ack.application_time_s)
-                    ImGui::Text("Applied at %.6f s | %s", *ack.application_time_s,
-                                lifecycle_name(ack.lifecycle));
-            }
-            if (!external_error_.empty())
-                ImGui::TextWrapped("VIEWER ERROR (fail-closed): %s", external_error_.c_str());
-            if (!external_snapshot_->header.failure_message.empty())
-                ImGui::TextWrapped("Service failure: %s",
-                                   external_snapshot_->header.failure_message.c_str());
-
-            const auto& solver_caps = backend_metadata_.capabilities.solver;
-            const auto supports = [&](Fluid25DCommandKind kind) {
-                return fluid_25d_command_supported(backend_metadata_.capabilities,
-                                                   Fluid25DControlDomain::Solver, kind);
-            };
+            if (external_snapshot_->acknowledgement)
+                ImGui::Text("Command %llu: %s",
+                            static_cast<unsigned long long>(
+                                external_snapshot_->acknowledgement->command_id),
+                            acknowledgement_name(external_snapshot_->acknowledgement->state));
             ImGui::BeginDisabled(busy);
-            if (supports(Fluid25DCommandKind::Pause) && lifecycle == Fluid25DLifecycle::Running &&
-                ImGui::Button("Pause solver [Space]"))
-                send_external_command(Fluid25DCommandKind::Pause);
-            if (supports(Fluid25DCommandKind::Resume) &&
-                (lifecycle == Fluid25DLifecycle::Paused || lifecycle == Fluid25DLifecycle::Ready) &&
-                ImGui::Button("Resume solver [Space]"))
-                send_external_command(Fluid25DCommandKind::Resume);
-            if (supports(Fluid25DCommandKind::Step)) {
-                ImGui::SameLine();
-                if (ImGui::Button("Step"))
-                    send_external_command(Fluid25DCommandKind::Step);
-            }
-            if (supports(Fluid25DCommandKind::Reset)) {
-                ImGui::SameLine();
-                if (ImGui::Button("Full reset [R]"))
-                    send_external_command(Fluid25DCommandKind::Reset);
-            }
-            if (supports(Fluid25DCommandKind::Stop)) {
-                if (ImGui::Button("Stop producer"))
-                    send_external_command(Fluid25DCommandKind::Stop);
-            }
+            if (backend_metadata_.capabilities.solver.step && ImGui::Button("Step solver"))
+                send_external_command(Fluid25DCommandKind::Step);
+            if (backend_metadata_.capabilities.solver.stop && ImGui::Button("Stop producer"))
+                send_external_command(Fluid25DCommandKind::Stop);
             ImGui::EndDisabled();
-
-            if (supports(Fluid25DCommandKind::SetTimeScale)) {
-                ImGui::BeginDisabled(busy);
-                ImGui::SetNextItemWidth(140.0F);
-                if (ImGui::InputFloat("Producer time scale", &external_time_scale_input_, 0.125F,
-                                      1.0F, "%.3f"))
-                    external_time_scale_dirty_ = true;
-                ImGui::BeginDisabled(
-                    !external_time_scale_dirty_ || !std::isfinite(external_time_scale_input_) ||
-                    external_time_scale_input_ < 0.125F || external_time_scale_input_ > 300.0F);
-                if (ImGui::Button("Apply time scale"))
-                    send_external_command(Fluid25DCommandKind::SetTimeScale,
-                                          external_time_scale_input_);
-                ImGui::EndDisabled();
-                ImGui::SameLine();
-                ImGui::Text("active %.3fx", external_snapshot_->pacing);
-                ImGui::EndDisabled();
-            }
-            if (external_rain_dirty_ || external_time_scale_dirty_) {
-                if (ImGui::Button("Discard typed edits")) {
-                    if (fluid_25d_project_config_detail::should_refresh_external_control_input(
-                            true, false, false, true)) {
-                        external_rain_input_mm_per_hour_ =
-                            static_cast<float>(external_snapshot_->rain_m_per_s * 3.6e6);
-                        external_time_scale_input_ = static_cast<float>(external_snapshot_->pacing);
-                        external_rain_dirty_ = false;
-                        external_time_scale_dirty_ = false;
-                    }
-                }
-            }
-
-            if (ImGui::CollapsingHeader("Backend details")) {
-                ImGui::Text("Adapter: %s", backend_metadata_.id.c_str());
-                ImGui::Text("Profile: %s | service ID: %s",
-                            backend_profile_name(backend_metadata_.profile),
-                            backend_metadata_.id.c_str());
-                ImGui::Text("Input: %.12s | solver bed: %.12s",
-                            backend_metadata_.grid.input_sha256.c_str(),
-                            backend_metadata_.grid.solver_bed_sha256.c_str());
-                ImGui::Text("Grid: %u x %u at %.6g m; row-major x-fastest/z rows",
-                            backend_metadata_.grid.width, backend_metadata_.grid.height,
-                            backend_metadata_.grid.spacing_m);
-                ImGui::Text("Solver controls: pause=%d resume=%d reset=%d step=%d stop=%d",
-                            solver_caps.pause, solver_caps.resume, solver_caps.reset,
-                            solver_caps.step, solver_caps.stop);
-                ImGui::Text("Set rain=%d time scale=%d", solver_caps.set_rain,
-                            solver_caps.set_time_scale);
-                ImGui::Text("Native fields: h=%d vx=%d vz=%d momentum=(%d,%d) face-Q=%d",
-                            backend_metadata_.fields.depth_m,
-                            backend_metadata_.fields.horizontal_velocity_x_m_per_s,
-                            backend_metadata_.fields.horizontal_velocity_z_m_per_s,
-                            backend_metadata_.fields.momentum_x_m2_per_s,
-                            backend_metadata_.fields.momentum_z_m2_per_s,
-                            backend_metadata_.fields.face_discharge_m3_per_s);
-                ImGui::TextDisabled("No native ledger or tracer claim. Playback/seek controls are "
-                                    "not producer controls.");
-                ImGui::TextDisabled("Closing detaches the viewer; Stop is explicit.");
-            }
-            ImGui::Text("Water %.3f million m3", shown_->stats.water_volume_m3 / 1.0e6);
-            ImGui::Text("Max depth %.3f m | max speed %.3f m/s", shown_->stats.max_depth_m,
-                        shown_->stats.max_speed_m_per_s);
-            ImGui::TextWrapped(
-                "The published field is held until the next native publication. "
-                "Source time above is the actual shown service time. Rain override "
-                "is uniform; native fall boundary and terrain remain service-owned.");
-            if (health == fluid_25d_project_config_detail::ExternalSessionHealth::Delayed ||
-                health == fluid_25d_project_config_detail::ExternalSessionHealth::Disconnected)
-                ImGui::TextWrapped("Last field is frozen; heartbeat is not healthy and solver "
-                                   "controls are disabled.");
-
-            for (const char* name : {"overview", "runoff", "collection"}) {
-                if (ImGui::RadioButton(name, config_.recording_camera == name)) {
-                    config_.recording_camera = name;
-                    configure_camera();
-                }
-                ImGui::SameLine();
-            }
-            ImGui::NewLine();
-            draw_native_presentation_ui();
-            int mode = static_cast<int>(catchment_view_);
-            if (ImGui::Combo("3D reading", &mode,
-                             "Composite\0Water isolation\0Flow inspection\0")) {
-                catchment_view_ = static_cast<Fluid25DCatchmentView>(mode);
-                view_ = Fluid25DPresentationView::Catchment;
-                quiver_reset_ = true;
-            }
-            bool diagnostics = view_ == Fluid25DPresentationView::Diagnostics;
-            if (ImGui::Checkbox("2D diagnostics [A]", &diagnostics))
-                view_ = diagnostics ? Fluid25DPresentationView::Diagnostics
-                                    : Fluid25DPresentationView::Catchment;
-            if (diagnostics) {
-                int debug = static_cast<int>(debug_view_);
-                if (ImGui::Combo("Map [D]", &debug,
-                                 "Terrain\0Depth\0Surface\0Speed\0Direction\0Wet/dry\0"))
-                    debug_view_ = static_cast<Fluid25DDebugView>(debug);
-            }
-            ImGui::Text("Display time is native physical time; no playback speed or seek.");
-            ImGui::TextWrapped("Arrows and optional dots/trails are local visual cues derived from "
-                               "the held field, not native particles or conserved dye.");
-            ImGui::Text("Esc detaches the viewer; it does not stop the producer.");
+            ImGui::TextDisabled(
+                "No native ledger/tracer claim. Viewer performs no hydraulic solve.");
+            ImGui::Text("Renderer cap %u Hz (0 = unpaced)", config_.common.render_fps);
+            host::draw_performance_ui(
+                {.frame_stats = frame_stats_snapshot_,
+                 .process = process_stats_,
+                 .device_memory_budget = device_memory_budget_,
+                 .gpu_timings = resources_.latest_timings(),
+                 .config = {.label = "Renderer performance", .default_open = false}});
+            if (!control)
+                ImGui::TextWrapped("Standalone viewer: Esc closes/detaches; the launcher owns the "
+                                   "producer. Closing alone does not stop it.");
         }
         ImGui::End();
     }
 
-    void draw_ui() {
+    void draw_ui(ManagedSceneReload* demo = nullptr) {
         if (external_session_) {
-            draw_external_ui();
+            draw_external_ui(demo);
             return;
         }
         ImGui::SetNextWindowSize(
@@ -2383,90 +2568,55 @@ class RecordingApp {
     }
 
     int run_windowed() {
+        ManagedSceneReload reload(*this);
         host::WindowedAppCallbacks callbacks;
-        callbacks.create_global_resources = [this](host::WindowedAppContext& context) {
-            create_resources(context.device(), context.gpu(), context.frame_slot_count());
+        callbacks.create_global_resources = [&reload](host::WindowedAppContext& context) {
+            reload.scene().create_resources(context.device(), context.gpu(),
+                                            context.frame_slot_count());
         };
-        callbacks.create_swapchain_resources = [this](host::WindowedAppContext& context) {
-            create_render_resources(
+        callbacks.create_swapchain_resources = [&reload](host::WindowedAppContext& context) {
+            auto& app = reload.scene();
+            app.create_render_resources(
                 context.device(), render::ColorTargetView{.extent = context.swapchain().extent(),
                                                           .format = context.swapchain().format()});
-            graph_.clear();
-            graph_.resize(context.frame_slot_count());
+            app.graph_.clear();
+            app.graph_.resize(context.frame_slot_count());
         };
-        callbacks.destroy_swapchain_resources = [this](host::WindowedAppContext&) {
-            graph_.clear();
-            scenic_.destroy_swapchain_resources();
-            markers_.destroy_render_pipeline();
-            resources_.destroy_swapchain_resources();
+        callbacks.destroy_swapchain_resources = [&reload](host::WindowedAppContext&) {
+            auto& app = reload.scene();
+            app.graph_.clear();
+            app.scenic_.destroy_swapchain_resources();
+            app.markers_.destroy_render_pipeline();
+            app.resources_.destroy_swapchain_resources();
         };
-        callbacks.draw_ui = [this](host::WindowedAppContext&) { draw_ui(); };
-        callbacks.update = [this](host::WindowedAppContext& context, const FrameTiming& timing) {
-            const auto input = context.filtered_input();
-            orbit_.update_pointer_input(input, timing.delta_seconds);
-            if (input.key_pressed(input::Key::S))
-                cycle_bank_view();
-            if (input.key_pressed(input::Key::W) && markers_available_)
-                config_.motion_markers = !config_.motion_markers;
-            if (input.key_pressed(input::Key::V))
-                select_native_style(render_.native_presentation == 3U ? 2U : 3U);
-            if (external_session_) {
-                const auto lifecycle = external_snapshot_->header.lifecycle;
-                const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
-                                      lifecycle == Fluid25DLifecycle::Failed ||
-                                      lifecycle == Fluid25DLifecycle::Stopped;
-                const bool controls_available = !terminal && external_controls_allowed();
-                if (input.key_pressed(input::Key::Space)) {
-                    if (controls_available && lifecycle == Fluid25DLifecycle::Running &&
-                        fluid_25d_command_supported(backend_metadata_.capabilities,
-                                                    Fluid25DControlDomain::Solver,
-                                                    Fluid25DCommandKind::Pause))
-                        send_external_command(Fluid25DCommandKind::Pause);
-                    else if (controls_available &&
-                             (lifecycle == Fluid25DLifecycle::Paused ||
-                              lifecycle == Fluid25DLifecycle::Ready) &&
-                             fluid_25d_command_supported(backend_metadata_.capabilities,
-                                                         Fluid25DControlDomain::Solver,
-                                                         Fluid25DCommandKind::Resume))
-                        send_external_command(Fluid25DCommandKind::Resume);
-                }
-                if (controls_available && input.key_pressed(input::Key::R) &&
-                    fluid_25d_command_supported(backend_metadata_.capabilities,
-                                                Fluid25DControlDomain::Solver,
-                                                Fluid25DCommandKind::Reset))
-                    send_external_command(Fluid25DCommandKind::Reset);
-            } else {
-                if (input.key_pressed(input::Key::Space)) {
-                    if (config_.stream_path)
-                        live_playing_ = !live_playing_;
-                    else
-                        toggle_playback();
-                }
-                if (input.key_pressed(input::Key::R)) {
-                    restart_playback();
-                }
-            }
-            if (input.key_pressed(input::Key::A)) {
-                view_ = view_ == Fluid25DPresentationView::Diagnostics
-                            ? Fluid25DPresentationView::Catchment
-                            : Fluid25DPresentationView::Diagnostics;
-                quiver_reset_ = true;
-            }
-            if (input.key_pressed(input::Key::D))
-                debug_view_ =
-                    static_cast<Fluid25DDebugView>((static_cast<int>(debug_view_) + 1) % 6);
-            update_view(timing.delta_seconds);
+        callbacks.draw_ui = [&reload](host::WindowedAppContext&) {
+            reload.scene().draw_ui(&reload);
         };
-        callbacks.record_frame = [this](host::WindowedAppContext& context,
-                                        const host::WindowedRenderFrame& frame) {
+        callbacks.update = [&reload](host::WindowedAppContext& context, const FrameTiming& timing) {
+            reload.poll(
+                context.device(), context.gpu(), context.frame_slot_count(),
+                {.extent = context.swapchain().extent(), .format = context.swapchain().format()},
+                [&] {
+                    for (std::uint32_t slot = 0; slot < context.frame_slot_count(); ++slot) {
+                        context.frame_resources().wait_for_frame(slot);
+                        context.gpu().mark_submission_completed(
+                            context.frame_resources().submitted_ticket(slot));
+                    }
+                });
+            reload.scene().update_windowed(context, timing, &reload);
+        };
+        callbacks.record_frame = [&reload](host::WindowedAppContext& context,
+                                           const host::WindowedRenderFrame& frame) {
             const vulkan::CommandRecorder recorder(frame.command_buffer);
             recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-            record(context.device(), frame.command_buffer, frame.color_target, frame.frame_slot,
-                   Fluid25DRenderTargetMode::Present, context.profile_recorder(),
-                   frame.timing.frame_index);
-            recorder.end("recorded SynxFlow window");
+            reload.scene().record(context.device(), frame.command_buffer, frame.color_target,
+                                  frame.frame_slot, Fluid25DRenderTargetMode::Present,
+                                  context.profile_recorder(), frame.timing.frame_index);
+            recorder.end("terrain water window");
         };
-        callbacks.shutdown = [this](host::WindowedAppContext&) { shutdown(); };
+        callbacks.shutdown = [&reload](host::WindowedAppContext& context) {
+            reload.shutdown(context.gpu());
+        };
         return host::run_windowed_app(
             {.run_config = config_.common,
              .app_name = "fluid_25d",
@@ -2480,125 +2630,202 @@ class RecordingApp {
             std::move(callbacks));
     }
 
+    void update_windowed(host::WindowedAppContext& context, const FrameTiming& timing,
+                         ManagedSceneReload* reload) {
+        if (auto sample =
+                frame_stats_.record_frame({.delta_seconds = timing.delta_seconds,
+                                           .width = context.swapchain().extent().width,
+                                           .height = context.swapchain().extent().height})) {
+            frame_stats_snapshot_ = *sample;
+            process_stats_ = process_sampler_.sample();
+            device_memory_budget_ = context.device().device_memory_budget();
+        }
+        const auto input = context.filtered_input();
+        orbit_.update_pointer_input(input, timing.delta_seconds);
+        if (input.key_pressed(input::Key::S))
+            cycle_bank_view();
+        if (input.key_pressed(input::Key::W) && markers_available_)
+            config_.motion_markers = !config_.motion_markers;
+        if (input.key_pressed(input::Key::V))
+            select_native_style(render_.native_presentation == 3U ? 2U : 3U);
+        if (external_session_) {
+            const auto lifecycle = external_snapshot_->header.lifecycle;
+            const bool terminal = lifecycle == Fluid25DLifecycle::Completed ||
+                                  lifecycle == Fluid25DLifecycle::Failed ||
+                                  lifecycle == Fluid25DLifecycle::Stopped;
+            const bool controls_available = !terminal && external_controls_allowed();
+            if (input.key_pressed(input::Key::Space)) {
+                if (controls_available && lifecycle == Fluid25DLifecycle::Running &&
+                    fluid_25d_command_supported(backend_metadata_.capabilities,
+                                                Fluid25DControlDomain::Solver,
+                                                Fluid25DCommandKind::Pause))
+                    send_external_command(Fluid25DCommandKind::Pause);
+                else if (controls_available &&
+                         (lifecycle == Fluid25DLifecycle::Paused ||
+                          lifecycle == Fluid25DLifecycle::Ready) &&
+                         fluid_25d_command_supported(backend_metadata_.capabilities,
+                                                     Fluid25DControlDomain::Solver,
+                                                     Fluid25DCommandKind::Resume))
+                    send_external_command(Fluid25DCommandKind::Resume);
+            }
+            if (reload->control() && !reload->control()->busy() && input.key_pressed(input::Key::R))
+                reload->request_case(reload->current_case_id());
+            else if (controls_available && input.key_pressed(input::Key::R) &&
+                     fluid_25d_command_supported(backend_metadata_.capabilities,
+                                                 Fluid25DControlDomain::Solver,
+                                                 Fluid25DCommandKind::Reset))
+                send_external_command(Fluid25DCommandKind::Reset);
+        } else {
+            if (input.key_pressed(input::Key::Space)) {
+                if (config_.stream_path)
+                    live_playing_ = !live_playing_;
+                else
+                    toggle_playback();
+            }
+            if (input.key_pressed(input::Key::R)) {
+                restart_playback();
+            }
+        }
+        if (input.key_pressed(input::Key::A)) {
+            view_ = view_ == Fluid25DPresentationView::Diagnostics
+                        ? Fluid25DPresentationView::Catchment
+                        : Fluid25DPresentationView::Diagnostics;
+            quiver_reset_ = true;
+        }
+        if (input.key_pressed(input::Key::D))
+            debug_view_ = static_cast<Fluid25DDebugView>((static_cast<int>(debug_view_) + 1) % 6);
+        update_view(timing.delta_seconds);
+    }
+
     int run_headless() {
+        ManagedSceneReload reload(*this);
         host::HeadlessPngHostCallbacks callbacks;
-        callbacks.create_resources = [this](host::HeadlessPngContext& context) {
-            create_resources(context.device(), context.gpu(),
-                             host::headless_capture_frame_slot_count(config_.common));
-            create_render_resources(context.device(), context.render_target());
+        callbacks.create_resources = [&reload](host::HeadlessPngContext& context) {
+            reload.scene().create_resources(
+                context.device(), context.gpu(),
+                host::headless_capture_frame_slot_count(context.config()));
+            reload.scene().create_render_resources(context.device(), context.render_target());
         };
-        callbacks.before_frame = [this](host::HeadlessPngContext& context,
-                                        const host::HeadlessCaptureFrame& frame) {
-            if (config_.common.headless_render_only) {
+        callbacks.before_frame = [&reload](host::HeadlessPngContext& context,
+                                           const host::HeadlessCaptureFrame& frame) {
+            reload.poll(context.device(), context.gpu(),
+                        host::headless_capture_frame_slot_count(context.config()),
+                        context.render_target(),
+                        [&] { context.gpu().wait_queue_idle("terrain scene replacement"); });
+            if (context.config().headless_render_only) {
                 auto span =
                     context.profile_recorder()
                         ? context.profile_recorder()->cpu_span(frame.index, "fluid25d.update_view")
                         : profiling::ScopedCpuProfileSpan{};
-                update_view(frame.timing.delta_seconds);
+                reload.scene().update_view(frame.timing.delta_seconds);
             }
         };
-        callbacks.record_frame = [this](host::HeadlessPngContext& context,
-                                        const host::HeadlessCaptureFrame& frame,
-                                        VkCommandBuffer commands,
-                                        const host::HeadlessRenderTarget& target) {
-            if (config_.common.headless_render_only) {
-                record(context.device(), commands, target, frame.frame_slot,
-                       Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
-                       frame.index);
-                return;
-            }
-            if (external_session_) {
-                visual_delta_ = 0.0;
-                rain_clock_.capture(frame.index, config_.common.fps,
-                                    config_.common.capture_mode == CaptureMode::Video &&
-                                        external_snapshot_->header.lifecycle ==
-                                            Fluid25DLifecycle::Running,
-                                    config_.native_rain_speed);
-                record(context.device(), commands, target, frame.frame_slot,
-                       Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
-                       frame.index);
-                std::printf(
-                    "fluid_25d_external_capture: output_frame=%u physical_s=%.9f "
-                    "generation=%llu sequence=%llu camera=%s hydraulic_dispatches=0\n",
-                    frame.index, shown_->time_s,
-                    static_cast<unsigned long long>(external_snapshot_->header.reset_generation),
-                    static_cast<unsigned long long>(external_snapshot_->header.sequence),
-                    config_.recording_camera.c_str());
-                log_rain_capture(frame.index);
-                return;
-            }
-            // Load by immutable capture index on the GPU-owner callback. The
-            // video producer may already be preparing later output frames.
-            const bool video = config_.common.capture_mode == CaptureMode::Video;
-            const double unbounded =
-                static_cast<double>(config_.recording_time_seconds) +
-                (video ? static_cast<double>(frame.index) * config_.recording_frame_interval_seconds
-                       : 0.0);
-            const double time =
-                comparison_ ? unbounded : std::min(recording_->times_s().back(), unbounded);
-            const auto bounded = comparison_ ? comparison_->map(time, comparison_loop_)
-                                             : Fluid25DBankWindowTime{time};
-            const double presented = bounded.time_s;
-            const double previous = shown_->time_s;
-            double previous_requested = frame.index == 0U
-                                            ? time
-                                            : static_cast<double>(config_.recording_time_seconds) +
-                                                  static_cast<double>(frame.index - 1U) *
-                                                      config_.recording_frame_interval_seconds;
-            if (comparison_)
-                previous_requested = comparison_->map(previous_requested, comparison_loop_).time_s;
-            else
-                previous_requested = std::min(recording_->times_s().back(), previous_requested);
-            if (frame.index > 0U && presented < previous_requested)
-                seek_playback(presented);
-            else
-                clock_.seek(presented);
-            comparison_at_end_ = bounded.at_end;
-            const auto index = clock_.frame_index();
-            if (index != shown_index_) {
-                accept_frame(recording_->frame(index));
-                shown_index_ = index;
-            }
-            if (config_.bank_comparison_cycle_frames != 0U) {
-                const auto mode = static_cast<Fluid25DBankView>(
-                    (frame.index / config_.bank_comparison_cycle_frames) % 3U);
-                if (mode != bank_view_)
-                    set_bank_view(mode);
-            }
-            // A sparse recording can jump far in physical time. Bound only
-            // the optional approximate visual history, never the saved fields.
-            visual_delta_ = !video || presented < previous_requested ? 0.0
-                            : render_.native_presentation != 0U
-                                ? fluid_25d_recorded_visual_delta(previous_requested, presented,
-                                                                  recording_->times_s().back())
-                                : std::clamp(shown_->time_s - previous, 0.0, 60.0);
-            const double captured_visual_delta = visual_delta_;
-            if (frame.index == 0U || presented > previous_requested)
-                rain_clock_.capture(frame.index, config_.common.fps, video,
-                                    config_.native_rain_speed);
-            record(context.device(), commands, target, frame.frame_slot,
-                   Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
-                   frame.index);
-            std::printf("fluid_25d_recording_capture: output_frame=%u requested_s=%.9f "
-                        "saved_s=%.9f camera=%s hydraulic_dispatches=0 visual_delta_s=%.9f "
-                        "presentation=%s\n",
-                        frame.index, presented, shown_->time_s, config_.recording_camera.c_str(),
-                        captured_visual_delta, config_.native_presentation.c_str());
-            log_rain_capture(frame.index);
-            if (comparison_)
-                std::printf(
-                    "fluid_25d_bank_capture: output_frame=%u mode=%s requested_unbounded_s=%.9f "
-                    "presented_s=%.9f saved_s=%.9f end=%u looped=%u cache_hit=%u\n",
-                    frame.index, fluid_25d_bank_view_name(bank_view_), time, presented,
-                    shown_->time_s, bounded.at_end ? 1U : 0U, bounded.looped ? 1U : 0U,
-                    coverage_cache_ ? 1U : 0U);
+        callbacks.record_frame =
+            [&reload](host::HeadlessPngContext& context, const host::HeadlessCaptureFrame& frame,
+                      VkCommandBuffer commands, const host::HeadlessRenderTarget& target) {
+                reload.scene().record_headless_frame(context, frame, commands, target);
+            };
+        callbacks.shutdown = [&reload](host::HeadlessPngContext& context) {
+            reload.shutdown(context.gpu());
         };
-        callbacks.shutdown = [this](host::HeadlessPngContext&) { shutdown(); };
         host::HeadlessPngHost host(
             {.run_config = config_.common,
              .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
             std::move(callbacks));
         return host.run();
+    }
+
+    void record_headless_frame(host::HeadlessPngContext& context,
+                               const host::HeadlessCaptureFrame& frame, VkCommandBuffer commands,
+                               const host::HeadlessRenderTarget& target) {
+        if (config_.common.headless_render_only) {
+            record(context.device(), commands, target, frame.frame_slot,
+                   Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
+                   frame.index);
+            return;
+        }
+        if (external_session_) {
+            visual_delta_ = 0.0;
+            rain_clock_.capture(frame.index, config_.common.fps,
+                                config_.common.capture_mode == CaptureMode::Video &&
+                                    external_snapshot_->header.lifecycle ==
+                                        Fluid25DLifecycle::Running,
+                                config_.native_rain_speed);
+            record(context.device(), commands, target, frame.frame_slot,
+                   Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
+                   frame.index);
+            std::printf(
+                "fluid_25d_external_capture: output_frame=%u physical_s=%.9f "
+                "generation=%llu sequence=%llu camera=%s hydraulic_dispatches=0\n",
+                frame.index, shown_->time_s,
+                static_cast<unsigned long long>(external_snapshot_->header.reset_generation),
+                static_cast<unsigned long long>(external_snapshot_->header.sequence),
+                config_.recording_camera.c_str());
+            log_rain_capture(frame.index);
+            return;
+        }
+        // Load by immutable capture index on the GPU-owner callback. The
+        // video producer may already be preparing later output frames.
+        const bool video = config_.common.capture_mode == CaptureMode::Video;
+        const double unbounded =
+            static_cast<double>(config_.recording_time_seconds) +
+            (video ? static_cast<double>(frame.index) * config_.recording_frame_interval_seconds
+                   : 0.0);
+        const double time =
+            comparison_ ? unbounded : std::min(recording_->times_s().back(), unbounded);
+        const auto bounded =
+            comparison_ ? comparison_->map(time, comparison_loop_) : Fluid25DBankWindowTime{time};
+        const double presented = bounded.time_s;
+        const double previous = shown_->time_s;
+        double previous_requested = frame.index == 0U
+                                        ? time
+                                        : static_cast<double>(config_.recording_time_seconds) +
+                                              static_cast<double>(frame.index - 1U) *
+                                                  config_.recording_frame_interval_seconds;
+        if (comparison_)
+            previous_requested = comparison_->map(previous_requested, comparison_loop_).time_s;
+        else
+            previous_requested = std::min(recording_->times_s().back(), previous_requested);
+        if (frame.index > 0U && presented < previous_requested)
+            seek_playback(presented);
+        else
+            clock_.seek(presented);
+        comparison_at_end_ = bounded.at_end;
+        const auto index = clock_.frame_index();
+        if (index != shown_index_) {
+            accept_frame(recording_->frame(index));
+            shown_index_ = index;
+        }
+        if (config_.bank_comparison_cycle_frames != 0U) {
+            const auto mode = static_cast<Fluid25DBankView>(
+                (frame.index / config_.bank_comparison_cycle_frames) % 3U);
+            if (mode != bank_view_)
+                set_bank_view(mode);
+        }
+        // A sparse recording can jump far in physical time. Bound only
+        // the optional approximate visual history, never the saved fields.
+        visual_delta_ = !video || presented < previous_requested ? 0.0
+                        : render_.native_presentation != 0U
+                            ? fluid_25d_recorded_visual_delta(previous_requested, presented,
+                                                              recording_->times_s().back())
+                            : std::clamp(shown_->time_s - previous, 0.0, 60.0);
+        const double captured_visual_delta = visual_delta_;
+        if (frame.index == 0U || presented > previous_requested)
+            rain_clock_.capture(frame.index, config_.common.fps, video, config_.native_rain_speed);
+        record(context.device(), commands, target, frame.frame_slot,
+               Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(), frame.index);
+        std::printf("fluid_25d_recording_capture: output_frame=%u requested_s=%.9f "
+                    "saved_s=%.9f camera=%s hydraulic_dispatches=0 visual_delta_s=%.9f "
+                    "presentation=%s\n",
+                    frame.index, presented, shown_->time_s, config_.recording_camera.c_str(),
+                    captured_visual_delta, config_.native_presentation.c_str());
+        log_rain_capture(frame.index);
+        if (comparison_)
+            std::printf(
+                "fluid_25d_bank_capture: output_frame=%u mode=%s requested_unbounded_s=%.9f "
+                "presented_s=%.9f saved_s=%.9f end=%u looped=%u cache_hit=%u\n",
+                frame.index, fluid_25d_bank_view_name(bank_view_), time, presented, shown_->time_s,
+                bounded.at_end ? 1U : 0U, bounded.looped ? 1U : 0U, coverage_cache_ ? 1U : 0U);
     }
 
     Fluid25DProjectConfig config_;
@@ -2632,6 +2859,13 @@ class RecordingApp {
     float external_time_scale_input_ = 1.0F;
     std::optional<Fluid25DExternalSnapshot> external_snapshot_{};
     bool external_terminal_ = false;
+    bool managed_held_ = false;
+    Fluid25DDemoPaceMeter pace_meter_;
+    host::FrameStats frame_stats_;
+    std::optional<host::FrameStatsSnapshot> frame_stats_snapshot_;
+    host::ProcessResourceStatsSampler process_sampler_;
+    host::ProcessResourceStats process_stats_;
+    std::optional<vulkan::DeviceMemoryBudgetInfo> device_memory_budget_;
     bool external_rain_dirty_ = false;
     bool external_time_scale_dirty_ = false;
     bool live_playing_ = false, follow_latest_ = false;
@@ -2694,6 +2928,264 @@ class RecordingApp {
     double visual_delta_ = 0.0, marker_accumulator_ = 0.0;
     float marker_fraction_ = 1.0F;
 };
+
+ManagedSceneReload::ManagedSceneReload(RecordingApp& initial) : active_(&initial) {
+    if (!initial.config_.terrain_demo_control_path)
+        return;
+    control_ =
+        std::make_unique<Fluid25DTerrainDemoControl>(*initial.config_.terrain_demo_control_path);
+    current_case_id_ = selected_case_id = control_->initial_case_id();
+    const auto& entry = control_->case_by_id(current_case_id_);
+    const auto& metadata = initial.backend_metadata_;
+    if (metadata.session.session_id != control_->status().session_id ||
+        metadata.grid.width != entry.width || metadata.grid.height != entry.height ||
+        metadata.grid.spacing_m != entry.spacing_m ||
+        metadata.grid.input_sha256 != entry.input_sha256 ||
+        metadata.grid.solver_bed_sha256 != entry.solver_bed_sha256 ||
+        !initial.config_.native_scenic_surface_grid ||
+        *initial.config_.native_scenic_surface_grid != entry.surface_grid)
+        throw std::runtime_error(
+            "managed initial scene does not match the prepared catalogue/session");
+    if (initial.config_.terrain_demo_script_path)
+        script_ = fluid_25d_load_terrain_demo_script(*initial.config_.terrain_demo_script_path);
+    log("initial");
+}
+
+ManagedSceneReload::~ManagedSceneReload() = default;
+
+void ManagedSceneReload::log(const std::string& event) {
+    if (control_)
+        control_->event(event, current_case_id_, active_->backend_metadata_.session.session_id,
+                        active_->shown_->time_s, active_->external_snapshot_->rain_m_per_s * 3.6e6,
+                        active_->simulation_.grid_width, active_->simulation_.grid_height,
+                        active_->backend_metadata_.grid.solver_bed_sha256);
+}
+
+void ManagedSceneReload::request_case(const std::string& id) {
+    if (!control_ || active_->external_session_->command_pending())
+        return;
+    control_->request(id, active_->external_snapshot_->rain_m_per_s * 3.6e6,
+                      active_->external_snapshot_->pacing);
+    selected_case_id = id;
+    active_->managed_held_ = true;
+    active_->visual_delta_ = 0;
+    stage_ = "Validating selected case";
+    log("switch-request");
+}
+
+void ManagedSceneReload::run_script() {
+    if (script_.empty() || !control_)
+        return;
+    if (control_->status().phase == "error")
+        throw std::runtime_error("managed regression switch failed: " + control_->status().error);
+    if (control_->busy() || active_->managed_held_ || active_->external_session_->command_pending())
+        return;
+    if (!active_->external_error_.empty())
+        throw std::runtime_error("managed regression service failed: " + active_->external_error_);
+    const auto now = std::chrono::steady_clock::now();
+    if (action_started_ == std::chrono::steady_clock::time_point{}) {
+        action_started_ = now; // Cold setup time is not part of an action's delay.
+        return;
+    }
+    if (active_->external_refresh_after_render_setup_)
+        return; // Let update_view validate a post-setup publication first.
+    if (action_waiting_) {
+        log("action-applied");
+        action_waiting_ = false;
+        action_started_ = now;
+    }
+    if (action_index_ >= script_.size())
+        return;
+    const auto& action = script_[action_index_];
+    if (std::chrono::duration<double>(now - action_started_).count() < action.after_s)
+        return;
+    if (action.kind == "switch") {
+        control_->request(action.case_id, action.rain_mm_per_hour, action.pacing);
+        selected_case_id = action.case_id;
+        active_->managed_held_ = true;
+        stage_ = "Validating selected case";
+    } else if (action.kind == "reset") {
+        request_case(current_case_id_);
+    } else {
+        const auto kind = action.kind == "resume"     ? Fluid25DCommandKind::Resume
+                          : action.kind == "pause"    ? Fluid25DCommandKind::Pause
+                          : action.kind == "set-rain" ? Fluid25DCommandKind::SetRain
+                                                      : Fluid25DCommandKind::SetTimeScale;
+        auto value = action.value;
+        if (action.kind == "set-rain")
+            value = *value / 3.6e6;
+        if (!active_->external_controls_allowed())
+            return; // Health/pending transitions are observed, never bypassed.
+        active_->send_external_command(kind, value);
+    }
+    log("action-" + action.kind);
+    ++action_index_;
+    action_waiting_ = true;
+}
+
+void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
+                              render::ColorTargetView target,
+                              const std::function<void()>& wait_frames) {
+    if (!control_)
+        return;
+    const auto now = std::chrono::steady_clock::now();
+    bool status_changed = false;
+    if (now >= next_poll_) {
+        next_poll_ = now + std::chrono::milliseconds(100);
+        if (control_->poll()) {
+            status_changed = true;
+            log("status-" + control_->status().phase);
+        }
+    }
+    const auto& status = control_->status();
+    active_->managed_held_ =
+        control_->busy() ||
+        (!status.worker_available && status.phase != "completed" && status.phase != "stopped") ||
+        status.session_id != active_->backend_metadata_.session.session_id;
+    if (status_changed && !control_->busy() && status.phase == "error" && status.worker_available &&
+        status.session_id == active_->backend_metadata_.session.session_id) {
+        // Failed preflight never stopped the current worker. Refresh its actual
+        // publication rather than re-dating a held field after the loading pause.
+        active_->external_refresh_after_render_setup_ = true;
+    }
+    if (status.phase == "ready" && status.request_id != preparing_request_id_ &&
+        !prepared_.valid() && !uploaded_) {
+        preparing_request_id_ = status.request_id;
+        auto config = active_->config_;
+        const auto& entry = control_->case_by_id(status.case_id);
+        const auto& previous = control_->case_by_id(current_case_id_);
+        config.external_session_path = control_->ready_session_directory();
+        config.native_scenic_surface_grid = entry.surface_grid;
+        if (entry.site != previous.site || entry.extent != previous.extent)
+            config.recording_camera = "overview";
+        const auto render = active_->render_;
+        const auto material = active_->scenic_material_;
+        const auto view = active_->view_;
+        const auto reading = active_->catchment_view_;
+        const auto debug = active_->debug_view_;
+        const auto bank = active_->bank_view_;
+        const auto expected_id = status.session_id;
+        stage_ = "Loading terrain, climate and dry water fields";
+        prepared_ = std::async(std::launch::async, [config, render, material, view, reading, debug,
+                                                    bank, entry, expected_id] {
+            auto replacement = std::make_unique<RecordingApp>(config);
+            const auto& metadata = replacement->backend_metadata_;
+            if (metadata.session.session_id != expected_id || metadata.grid.width != entry.width ||
+                metadata.grid.height != entry.height ||
+                metadata.grid.spacing_m != entry.spacing_m ||
+                metadata.grid.input_sha256 != entry.input_sha256 ||
+                metadata.grid.solver_bed_sha256 != entry.solver_bed_sha256 ||
+                replacement->shown_->time_s != 0 || replacement->shown_->stats.max_depth_m != 0)
+                throw std::runtime_error("replacement scene is not the selected dry session");
+            replacement->render_ = render;
+            replacement->scenic_material_ = material;
+            replacement->view_ = view;
+            replacement->catchment_view_ = reading;
+            replacement->debug_view_ = debug;
+            replacement->bank_view_ = bank;
+            replacement->configure_camera();
+            return replacement;
+        });
+    }
+    bool retirement_started = false;
+    try {
+        if (prepared_.valid() &&
+            prepared_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            auto replacement = prepared_.get();
+            if (status.phase == "ready" && status.request_id == preparing_request_id_) {
+                stage_ = "Preparing Vulkan scene resources";
+                uploaded_.emplace(gpu.submit(
+                    "terrain water replacement", [replacement = std::move(replacement), slots,
+                                                  target](vulkan::GpuOwnerContext& owner) mutable {
+                        try {
+                            replacement->create_resources(owner.device(), owner.runtime(), slots);
+                            replacement->create_render_resources(owner.device(), target);
+                            return std::move(replacement);
+                        } catch (...) {
+                            replacement->shutdown();
+                            throw;
+                        }
+                    }));
+            }
+        }
+        if (uploaded_ && uploaded_->ready()) {
+            auto upload = std::move(*uploaded_);
+            uploaded_.reset();
+            auto replacement = upload.get();
+            wait_frames();
+            if (status.phase != "ready" || status.request_id != preparing_request_id_) {
+                replacement->shutdown();
+            } else {
+                const auto& previous = control_->case_by_id(current_case_id_);
+                const auto& next = control_->case_by_id(status.case_id);
+                if (previous.site == next.site && previous.extent == next.extent) {
+                    replacement->camera_ = active_->camera_;
+                    replacement->orbit_ = active_->orbit_;
+                    replacement->target_ = active_->target_;
+                }
+                retirement_started = true;
+                active_->shutdown(); // Drains reader/whitewater jobs before their bed is released.
+                if (active_->shutdown_failure_) {
+                    replacement->shutdown();
+                    std::rethrow_exception(active_->shutdown_failure_);
+                }
+                active_->external_session_.reset();
+                active_->external_snapshot_.reset();
+                active_->shown_.reset();
+                active_->scenario_ = {};
+                std::vector<Fluid25DVelocityGpu>().swap(active_->packed_velocity_);
+                active_->whitewater_selection_ = {};
+                active_->terrain_surface_.reset();
+                installed_ = std::move(replacement);
+                active_ = installed_.get();
+                current_case_id_ = selected_case_id = next.id;
+                active_->managed_held_ = true;
+                control_->confirm_installed(true);
+                stage_ = "Scene installed; waiting for launcher acknowledgement";
+                log("installed");
+            }
+        }
+    } catch (const std::exception& error) {
+        if (retirement_started)
+            throw; // A failed numerical/upload audit is fatal, never a recoverable old scene.
+        if (status.phase == "ready")
+            control_->confirm_installed(false, error.what());
+        stage_ = std::string("Replacement failed: ") + error.what();
+        if (!script_.empty())
+            throw;
+    }
+    if (!control_->busy())
+        stage_.clear();
+    run_script();
+    static_cast<void>(device); // GPU installation belongs to the shared runtime owner.
+}
+
+void ManagedSceneReload::shutdown(vulkan::GpuRuntime& gpu) {
+    // Close during any loading stage still joins CPU work and releases unused
+    // GPU products while the host device/runtime are alive.
+    if (prepared_.valid()) {
+        try {
+            static_cast<void>(prepared_.get());
+        } catch (...) {
+        }
+    }
+    if (uploaded_) {
+        try {
+            auto unused = uploaded_->get();
+            gpu.wait_queue_idle("unused terrain water replacement");
+            unused->shutdown();
+        } catch (...) {
+        }
+        uploaded_.reset();
+    }
+    active_->shutdown();
+    if (active_->shutdown_failure_)
+        std::rethrow_exception(active_->shutdown_failure_);
+    if (!script_.empty() && (action_index_ != script_.size() || action_waiting_))
+        throw std::runtime_error("managed regression ended before all actions were acknowledged");
+    if (control_)
+        log("viewer-closed");
+}
 } // namespace
 
 int run_fluid_25d_recording(const Fluid25DProjectConfig& config) {
