@@ -140,6 +140,15 @@ add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
 set_property(TEST cubey_core_tests APPEND PROPERTY LABELS "gltf;core")
 
+add_executable(cubey_headless_failure_gpu_tests headless_failure_gpu_tests.cpp)
+target_link_libraries(cubey_headless_failure_gpu_tests PRIVATE cubey::cubey cubey::host)
+add_test(NAME headless_failure_gpu_tests
+    COMMAND "${CMAKE_COMMAND}" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY --unset=XAUTHORITY
+        --unset=XDG_SESSION_TYPE $<TARGET_FILE:cubey_headless_failure_gpu_tests>)
+set_tests_properties(headless_failure_gpu_tests PROPERTIES
+    LABELS "headless;gpu;core" SKIP_RETURN_CODE 77 TIMEOUT 60
+    FAIL_REGULAR_EXPRESSION "vulkan validation error")
+
 if (CUBEY_ENABLE_TSAN_TESTS)
     add_test(
         NAME cubey_tsan_concurrency_tests

@@ -71,6 +71,12 @@ struct HeadlessCaptureSlot {
 
     ~HeadlessCaptureSlot() {
         if (fence != VK_NULL_HANDLE) {
+            // A before_frame/recording exception unwinds these local slots
+            // before run() reaches its device-idle cleanup. Retire submitted
+            // work here, while its fence, command pool and image still exist.
+            if (submitted)
+                static_cast<void>(vkWaitForFences(device_handle, 1, &fence, VK_TRUE,
+                                                  std::numeric_limits<std::uint64_t>::max()));
             vkDestroyFence(device_handle, fence, nullptr);
         }
     }
