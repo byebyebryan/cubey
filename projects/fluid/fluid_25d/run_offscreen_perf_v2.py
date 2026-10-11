@@ -245,13 +245,15 @@ def main():
     p.add_argument("--warmup", type=float, default=5)
     p.add_argument("--prewarm", type=float, default=1800)
     p.add_argument("--repeats", type=int, default=3)
+    p.add_argument("--repeat-offset", type=int, default=0,
+                   help="Keep the original repetition label for an explicitly retained replacement")
     p.add_argument("--width", type=int, default=1920)
     p.add_argument("--height", type=int, default=1080)
     p.add_argument("--render-fps", type=int, choices=(0, 60), default=0)
     p.add_argument("--camera", choices=("overview", "runoff", "collection"), default="overview")
     p.add_argument("--exercise-controls", action="store_true", help="validation trial, not steady-state performance")
     a = p.parse_args()
-    if not (1 <= a.wall <= 600 and 0 <= a.warmup <= 30 and 0 <= a.prewarm <= 7200 and 1 <= a.repeats <= 3 and 320 <= a.width <= 3840 and 240 <= a.height <= 2160):
+    if not (1 <= a.wall <= 600 and 0 <= a.warmup <= 30 and 0 <= a.prewarm <= 7200 and 1 <= a.repeats <= 3 and 0 <= a.repeat_offset <= 2 and a.repeat_offset + a.repeats <= 3 and 320 <= a.width <= 3840 and 240 <= a.height <= 2160):
         p.error("outside approved bounds")
     if a.exercise_controls and (a.modes != ["live"] or a.repeats != 1):
         p.error("control exercise is one separate live validation trial")
@@ -281,7 +283,7 @@ def main():
         "capture_scope": "no X11; actual backend verified; whole-device samples not per-process GPU accounting",
         "measurement_scope": "bounded wall window after setup and warmup; fixed held fields; live uses authoritative worker time"})
     rows = []
-    for repeat in range(a.repeats):
+    for repeat in range(a.repeat_offset, a.repeat_offset + a.repeats):
         for mode in a.modes:
             rows.append(run_trial(case, a.out / f"{mode}-{repeat}", a, mode, repeat))
             v1.write(a.out / "results.json", {"trials": rows})

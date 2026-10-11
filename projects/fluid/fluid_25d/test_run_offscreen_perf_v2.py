@@ -111,6 +111,17 @@ class ContractTests(unittest.TestCase):
         trials[-1]["errors"] = ["failed receipt"]
         self.assertFalse(campaign.complete_phase(trials, options))
 
+    def test_headless_continuation_never_selects_native_windows(self):
+        for stage, expected in (("corrected", 8), ("secondary", 12)):
+            rows = campaign.selected_plan(Path("frozen-study"), stage, ["offscreen"])
+            self.assertTrue(all(host == "offscreen" for _, _, host, _ in rows))
+            count = 0
+            for _, _, _, options in rows:
+                repeats = int(options[options.index("--repeats") + 1])
+                # These selected stages contain exactly one workload per phase.
+                count += repeats
+            self.assertEqual(count, expected)
+
     def test_summary_separates_pacing_service_and_gpu(self):
         row = {"host": "offscreen", "profile": {"frame_ms": {"p95": 16.8},
                "passes_ms": {"cpu:headless.frame_service": {"p95": 3.2},
@@ -165,6 +176,22 @@ class ContractTests(unittest.TestCase):
                              {"original-app", "corrected-app"})
             self.assertTrue(all(t["checks"]["viewer_hydraulic_dispatches_zero"] and
                                 t["checks"]["display_near_worker_endpoint"] for t in result["trials"]))
+            replacement = root / "primary-2048-8m-offscreen-replacement" / "live-0"
+            replacement.mkdir(parents=True)
+            failed = root / "primary-2048-8m-offscreen" / "live-0" / "result.json"
+            failed.write_text(json.dumps({**row, "status": "failed", "errors": ["early exit"],
+                                          "app_sha256": "original-app"}))
+            (replacement / "result.json").write_text(json.dumps({**row, "app_sha256": "original-app"}))
+            (replacement / "viewer.log").write_text(
+                "headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti readback=0 encode=0\n")
+            (root / "phase-aliases.json").write_text(json.dumps({"aliases": {
+                "primary-2048-8m-offscreen-replacement": "primary-2048-8m-offscreen"}}))
+            result = review.analyze(root)
+            self.assertEqual(result["observed_attempts"], 3)
+            self.assertEqual(result["observed_total_trials"], 2)
+            self.assertEqual(result["observed_primary_trials"], 1)
+            self.assertEqual(len(result["phases"]), 2)
+            self.assertEqual(len(result["correctness_failures"]), 1)
 
 
 if __name__ == "__main__":

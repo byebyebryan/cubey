@@ -77,28 +77,32 @@ def complete_phase(trials, options):
             all(t.get("status") == "completed" and not t.get("errors") for t in trials))
 
 
+def selected_plan(study, stage, hosts):
+    standard = plan(study)
+    rows = ([row for row in standard if row[0].startswith("primary-")] +
+            correction_plan(study) +
+            [row for row in standard if not row[0].startswith("primary-")])
+    return [row for row in rows if row[2] in hosts and
+            (stage == "all" or
+             stage == "primary" and row[0].startswith("primary-") or
+             stage == "corrected" and row[0].startswith("corrected-") or
+             stage == "secondary" and not row[0].startswith(("primary-", "corrected-")))]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--study", required=True, type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--stage", choices=("all", "primary", "corrected", "secondary"), default="all",
                         help="Separate a frozen baseline from post-fix operational checks")
+    parser.add_argument("--hosts", nargs="+", choices=("offscreen", "wayland"),
+                        default=["offscreen", "wayland"], help="Do not open native windows when offscreen alone is selected")
     args = parser.parse_args()
     if not args.out.is_dir() or not args.study.is_dir():
         parser.error("use existing approved study and V2 output roots")
     campaign = []
     started = time.time()
-    standard = plan(args.study)
-    rows = ([row for row in standard if row[0].startswith("primary-")] +
-            correction_plan(args.study) +
-            [row for row in standard if not row[0].startswith("primary-")])
-    for name, case, host, extra in rows:
-        if args.stage == "primary" and not name.startswith("primary-"):
-            continue
-        if args.stage == "corrected" and not name.startswith("corrected-"):
-            continue
-        if args.stage == "secondary" and name.startswith(("primary-", "corrected-")):
-            continue
+    for name, case, host, extra in selected_plan(args.study, args.stage, args.hosts):
         destination = args.out / name
         command = [sys.executable, str(HERE / "run_offscreen_perf_v2.py"),
                    "--study", str(args.study), "--out", str(destination),
@@ -135,8 +139,11 @@ def main():
         write(args.out / "campaign-progress.json", {"current": None, "completed": campaign})
         if row["status"] == "failed":
             return 1
-    write(args.out / ("campaign-completion.json" if args.stage == "all" else args.stage + "-campaign-completion.json"), {"started_unix_s": started,
+    selection = "" if len(set(args.hosts)) == 2 else "-" + args.hosts[0]
+    completion_name = ("campaign-completion" if args.stage == "all" else args.stage + "-campaign-completion") + selection + ".json"
+    write(args.out / completion_name, {"started_unix_s": started,
           "ended_unix_s": time.time(), "campaigns": campaign,
+          "selected_hosts": args.hosts,
           "scope": "sequential GPU workloads; no native 4K window on 1440-high output"})
     return 0
 

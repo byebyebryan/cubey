@@ -66,3 +66,12 @@ work does not prove either lower GPU contention or fresher decorative cues.
 Publish one HTML report under outputs with original and corrected host identities,
 measurement receipts, failures, matched visuals and practical recommendations.
 Commit validated checkpoints; no automatic push.
+
+During execution the user explicitly requested **headless only from here**.
+The completed 42-slot baseline retains its native Wayland controls, but the
+two extra corrected-native confirmations, two paced-native checks and native
+screenshots are deferred. Continue both remaining stages with `--hosts offscreen`
+and capture with `--headless-only`. The amended loop has 62 completed timing
+slots: 42 frozen baseline, 8 correction controls, and 12 operational/resolution/
+rolling/soak checks. The reporting root retains `study-scope.json` with this
+authorization; do not silently describe the deferred checks as measured.
