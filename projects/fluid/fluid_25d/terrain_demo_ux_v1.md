@@ -15,7 +15,7 @@ GPL solver code into Cubey.
 
 ```sh
 rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
-  --study outputs/fluid/live-perf-terrain-20261010-Dd6K3h
+  --study outputs/fluid/site-expansion-20261011-jtIA3s
 ```
 
 The **Terrain Water** panel puts Start/Pause, Reset water and Fit overview first.
@@ -41,7 +41,12 @@ pace and the depth supplied by rain are separate quantities.
 
 ### Prepared selections
 
-Mountain valley, Alpine terrain and Rolling hills each have these presets:
+Mountain valley, Alpine terrain, Rolling hills, Upland basins, Joining valleys
+and Steep ridges each have these presets in the expanded prepared study. The
+site list comes from the pinned [crop catalogue](terrain_water_sites.json), not
+renderer name allowlists. See the [selection study](site_expansion_v1.md) for
+matched rainfall evidence and reserves. The old prepared study still works,
+with missing new-site cases disabled.
 
 | Group | Grid | Cell size | Coverage |
 | --- | --- | --- | --- |

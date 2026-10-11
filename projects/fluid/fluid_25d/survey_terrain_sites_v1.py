@@ -267,6 +267,43 @@ def seal_recording(case, leaf):
     write(path, doc)
 
 
+def capture_motion(out, catalog):
+    """Short late-flow view, distinct from the six-hour formation timelapse."""
+    from run_offscreen_perf_v2 import environment
+    for sid in load_sites(catalog):
+        case = out / "cases" / f"{sid}-patch-1024-16m"
+        leaf = out / "runs" / case.name
+        recording = leaf / "recording/recording.json"
+        seal_recording(case, leaf)
+        end = json.loads((leaf / "result.json").read_bytes())["last_physical_s"]
+        # Headless captures must begin on an actual saved state. Keep that
+        # contract rather than weakening it for a decorative clip.
+        times = [frame["time_s"] for frame in json.loads(recording.read_bytes())["frames"]]
+        start = max(t for t in times if t <= end-119.5)
+        target = leaf / "late-flow.mp4"
+        receipt = leaf / "late-flow-receipt.json"
+        if receipt.is_file():
+            if sha256(target) != json.loads(receipt.read_bytes())["sha256"]:
+                raise ValueError("late-flow receipt changed")
+            continue
+        command = terrain.viewer_command(case, recording, "Late flow cues", live=False,
+            start=start, app=terrain.RELEASE_APP, width=1280, height=720)
+        command[command.index("--frames") + 1] = "240"
+        command += ["--headless", "--capture", "video", "--fps", "24",
+            "--fluid25d-recording-frame-interval-seconds", ".5", "--fluid25d-recording-gpu-validation",
+            "--output", str(target)]
+        with (leaf / "late-flow.log").open("wb") as log:
+            subprocess.run(command, env=environment("offscreen"), stdout=log, stderr=subprocess.STDOUT,
+                check=True, timeout=180)
+        raw = (leaf / "late-flow.log").read_text(errors="replace")
+        if ("fluid_25d_recording_upload: PASS" not in raw or "vulkan validation error" in raw.lower()
+                or "NVIDIA GeForce RTX 5070 Ti" not in raw):
+            raise RuntimeError("invalid late-motion GPU receipt")
+        write(receipt, {"sha256": sha256(target), "command": command, "physical_start_s": start,
+            "physical_end_s": start+119.5, "speedup": 12,
+            "scope": "12x playback of interpolated native fields; dots/trails and foam illustrate native velocity, not native particles or solver-performance evidence"})
+
+
 def prepare_presets(out, catalog, baseline):
     from prepare_live_perf_terrain_v1 import prepare, CONFIGS
     recipes = load_sites(catalog)
@@ -333,18 +370,43 @@ def audit(out):
 
 
 def report(out):
-    cards = []
+    cards, pilots = [], []
     for path in sorted((out / "runs").glob("*/result.json")):
         r = json.loads(path.read_bytes())
         leaf = path.parent.relative_to(out).as_posix()
         f = r["final"]
-        cards.append(f'<article><h2>{html.escape(r["site"])} · {html.escape(r["configuration"])}</h2><p>{r["last_physical_s"]/3600:.2f} simulated hours; {r["wall_s"]:.1f}s wall; target reached: {r["reached_target"]}. Wet ≥0.1m: {f["material_wet_km2"]:.2f}km²; largest slow ≥1m patch: {f["largest_slow_deep_patch_km2"]:.2f}km²; wet speed P95: {f["wet_speed_p95_m_per_s"]:.2f}m/s.</p><a href="{leaf}/overview.png"><img src="{leaf}/overview.png"></a><video controls preload="metadata" src="{leaf}/overview.mp4"></video><details><summary>Full-map flow diagnostic and receipts</summary><img loading="lazy" src="{leaf}/flow.png"><video controls preload="none" src="{leaf}/flow.mp4"></video><a href="{leaf}/result.json">Result</a> · <a href="{leaf}/captures.json">GPU receipts</a></details></article>')
-    (out / "index.html").write_text('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Terrain Water · site expansion</title><style>body{font:16px system-ui;background:#18212a;color:#e2e8ed;max-width:1200px;margin:auto;padding:24px}a{color:#8acbff}img,video{width:100%;height:auto}article{margin:36px 0}p{line-height:1.5}</style><h1>Terrain Water · cached-site audition</h1><p>Dry start, uniform continuous 512mm/h rain, open/fall boundaries, Manning 0.05. No source/drain, lake seeds, infiltration, erosion, terrain edits or per-site forcing. Same 16.384km footprint. Locator scores do not guarantee river/lake behaviour.</p><p>Videos compress six simulated hours into ten seconds from ~300s sampled states. Interpolation and flow cues are presentation, not a realtime-performance measurement. Generated Terrain Diffusion terrain is not surveyed real terrain. A slow deep connected patch is a diagnostic, not proof of a lake or overflow.</p><p><a href="screen.json">Screen and shortlist</a> · <a href="candidate-sites.json">Frozen candidate recipes</a></p>' + ''.join(cards) + '</html>')
+        card = f'<article id="{html.escape(r["site"])}"><h2>{html.escape(r["site"])} · {html.escape(r["configuration"])}</h2><p>{r["last_physical_s"]/3600:.2f} simulated hours; {r["wall_s"]:.1f}s observed wall time; target reached: {r["reached_target"]}. Wet ≥0.1m: {f["material_wet_km2"]:.2f}km²; largest slow ≥1m patch: {f["largest_slow_deep_patch_km2"]:.2f}km²; wet speed P95: {f["wet_speed_p95_m_per_s"]:.2f}m/s.</p><a href="{leaf}/overview.png"><img loading="lazy" src="{leaf}/overview.png"></a><video controls preload="metadata" poster="{leaf}/overview.png" src="{leaf}/overview.mp4"></video><details><summary>Full-map flow diagnostic and receipts</summary><img loading="lazy" src="{leaf}/flow.png"><video controls preload="none" src="{leaf}/flow.mp4"></video><a href="{leaf}/result.json">Result</a> · <a href="{leaf}/captures.json">GPU receipts</a></details></article>'
+        if (path.parent / "late-flow-receipt.json").is_file():
+            card = card.replace('</article>', f'<p>Late flow cues: two physical minutes near the end at 12×, not the six-hour formation timelapse. Dots/foam are render-only velocity illustrations.</p><video controls preload="none" poster="{leaf}/overview.png" src="{leaf}/late-flow.mp4"></video></article>')
+        (cards if r["configuration"] == "patch-1024-16m" else pilots).append(card)
+    decision = json.loads((out / "selection.json").read_bytes()) if (out / "selection.json").exists() else {}
+    introduction = '<p>' + html.escape(decision.get("stage", "Survey in progress")) + '</p><ul>'
+    for row in decision.get("selected", []):
+        introduction += f'<li><a href="#{html.escape(row["site"])}">{html.escape(row["site"])}</a>: {html.escape(row["reason"])}</li>'
+    introduction += '</ul><details><summary>Why the other candidates were not added</summary><ul>'
+    for row in decision.get("not_added", []):
+        introduction += f'<li>{html.escape(row["candidate"])}: {html.escape(row["reason"])}</li>'
+    introduction += '</ul></details>'
+    if (out / "review-receipt.json").is_file():
+        introduction += '<p><a href="review-receipt.json">Final reviewed evidence receipt</a></p>'
+    lifecycle = ''
+    validation_path = out / "switch-validation/validation.json"
+    if validation_path.is_file():
+        validation = json.loads(validation_path.read_bytes())
+        applied = sum(e["event"] == "action-applied" for e in validation["events"])
+        installed = [e for e in validation["events"] if e["event"] == "installed"]
+        actions = json.loads((out / "switch-matrix.json").read_bytes())["actions"]
+        expected = {a["case_id"] for a in actions if a["kind"] == "switch"}
+        valid = (not validation["errors"] and validation["returncode"] == 0 and applied == len(actions)
+            and {e["case_id"] for e in installed} == expected
+            and all(e["physical_s"] == 0 and e["hydraulic_dispatches"] == 0 for e in installed))
+        lifecycle = f'<h2>Prepared selector and restart validation</h2><p>Status: {"PASS" if valid else "FAIL"}; {applied} acknowledged script actions, {len(installed)} replacements, every installation dry. All 15 new site/grid combinations were briefly run, followed by return to Mountain valley. This is offscreen lifecycle/upload validation, not native GUI acceptance or a steady-state FPS benchmark.</p><p><a href="switch-validation/validation.json">Validation and cleanup receipt</a> · <a href="switch-matrix.json">Exact script</a></p>'
+    (out / "index.html").write_text('<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Terrain Water · site expansion</title><style>body{font:16px system-ui;background:#18212a;color:#e2e8ed;max-width:1200px;margin:auto;padding:24px}a{color:#8acbff}img,video{width:100%;height:auto}article{margin:36px 0}p,li{line-height:1.5}summary{cursor:pointer}</style><h1>Terrain Water · three new behaviours</h1>' + introduction + '<h2>How to read this</h2><p>Dry start, uniform continuous 512mm/h rain, open/fall boundaries, Manning 0.05. No source/drain, lake seeds, infiltration, erosion, terrain edits or per-site forcing. Same 16.384km footprint. Look for tributaries joining, collections expanding, and faster drainage along steeper terrain. The perimeter lets water leave; there is no drain marker. Scenic blue/green is optical and lighting color, not a depth/speed palette.</p><p>Videos compress six simulated hours into ten seconds from ~300s sampled states. Interpolation, rain streaks and dots/trails are presentation, not a realtime-performance measurement. Observed audition wall times include startup/teardown and concurrent capture/preparation work; they are not an isolated benchmark. Generated Terrain Diffusion terrain is not surveyed real terrain. A slow deep connected patch is a diagnostic, not proof of a lake or overflow.</p><p>The default remains Mountain valley, live 1k/16m, dry/paused, 60Hz rendering and requested 60× solver pace. New sites are selection + restart options; water is not transferred between terrain grids.</p><p><a href="screen.json">99-crop screen</a> · <a href="candidate-sites.json">Frozen pilots</a> · <a href="selection.json">Selection reasoning</a> · <a href="field-audit.json">Field audit</a> · <a href="preset-preparation.json">Prepared grids</a></p>' + lifecycle + ''.join(cards) + '<details><summary>Six coarse hydraulic pilots · includes reserves and rejected presentation</summary>' + ''.join(pilots) + '</details></html>')
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("mode", choices=("screen", "run", "capture", "prepare-presets", "audit", "report"))
+    p.add_argument("mode", choices=("screen", "run", "capture", "motion", "prepare-presets", "audit", "report"))
     p.add_argument("--out", required=True, type=Path)
     p.add_argument("--catalogue", type=Path)
     p.add_argument("--baseline-study", type=Path)
@@ -372,6 +434,8 @@ def main():
         capture(out, a.configuration, list(load_sites(catalog)) if a.site == "all" else [a.site])
     elif a.mode == "prepare-presets":
         prepare_presets(out, catalog, a.baseline_study)
+    elif a.mode == "motion":
+        capture_motion(out, catalog)
     elif a.mode == "audit":
         audit(out)
     else:

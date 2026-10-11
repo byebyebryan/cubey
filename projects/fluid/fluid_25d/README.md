@@ -34,7 +34,7 @@ For the current prepared study:
 
 ```sh
 rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
-  --study outputs/fluid/live-perf-terrain-20261010-Dd6K3h
+  --study outputs/fluid/site-expansion-20261011-jtIA3s
 ```
 
 Live starts dry and paused; Space resumes the actual solver. The managed
@@ -49,6 +49,14 @@ Explicit `replay --recording <recording.json>` holds a saved state and starts
 no solver. `--app` retains the existing-artifact override; no automatic build
 or fallback is attempted. See the [performance verdict](offscreen_perf_v2.md)
 for the headless measurements and deferred native-FPS confirmation.
+
+The [cached-site expansion](site_expansion_v1.md) adds **Upland basins**, **Joining
+valleys** and **Steep ridges** alongside the original three sites. Selection is
+catalogue-driven, with pinned existing Terrain sources/crop coordinates and no
+terrain edits or per-site forcing. The report contains matched six-hour native
+rainfall runs, Vulkan overview/flow clips and preparation/lifecycle receipts.
+The older `live-perf-terrain-20261010-Dd6K3h` study remains usable; new cases are
+disabled there rather than silently prepared or substituted.
 
 ### Historical Mountain Rain Demo V1
 

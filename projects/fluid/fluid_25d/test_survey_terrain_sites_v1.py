@@ -1,8 +1,11 @@
 """Optional NumPy/SciPy tests; no native runtime import or GPU execution."""
 import unittest
+import tempfile
+from pathlib import Path
 import numpy as np
 
-from survey_terrain_sites_v1 import water_metrics, bounds_for
+from survey_terrain_sites_v1 import water_metrics, bounds_for, prepare_presets
+from terrain_water_sites import DEFAULT_CATALOGUE
 
 
 class Diagnostics(unittest.TestCase):
@@ -35,6 +38,13 @@ class Diagnostics(unittest.TestCase):
         b = {"grid": {"sample_origin_x_m": -80, "sample_origin_z_m": -80,
                       "width": 9, "height": 9, "sample_spacing_m": 20}}
         self.assertEqual(bounds_for(a, b), (-80, -80, 80, 80))
+
+    def test_preset_preparation_is_gated_before_any_case_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with self.assertRaisesRegex(ValueError, "finish default-grid confirmation"):
+                prepare_presets(root, DEFAULT_CATALOGUE, None)
+            self.assertEqual(list(root.iterdir()), [])
 
 
 if __name__ == "__main__":
