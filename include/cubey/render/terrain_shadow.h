@@ -15,6 +15,13 @@ struct TerrainShadowProductBounds {
     float maximum_height_m = 0.0F;
 };
 
+// Whole-scene box fit, independent of the observer camera. All eight corners
+// remain casters/receivers; no camera-frustum crop can discard an offscreen hill.
+struct TerrainShadowBoxBounds {
+    cubey::math::Vec3 minimum_m{};
+    cubey::math::Vec3 maximum_m{};
+};
+
 struct TerrainShadowProjection {
     cubey::math::Mat4 light_view_projection{1.0F};
     cubey::math::Vec3 light_direction{0.0F, 1.0F, 0.0F};
@@ -37,6 +44,11 @@ struct TerrainShadowCacheState {
 terrain_shadow_projection(const TerrainShadowProductBounds& bounds,
                           cubey::math::Vec3 light_direction,
                           cubey::math::Vec2 center_xz = {0.0F, 0.0F});
+
+[[nodiscard]] TerrainShadowProjection
+terrain_shadow_box_projection(const TerrainShadowBoxBounds& bounds,
+                              cubey::math::Vec3 light_direction,
+                              std::uint32_t map_extent = kTerrainShadowMapExtent);
 
 [[nodiscard]] bool terrain_shadow_update_required(
     const TerrainShadowCacheState& cache, bool shadows_enabled, std::uint64_t product_content_hash,

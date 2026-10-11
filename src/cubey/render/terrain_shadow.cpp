@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 namespace cubey::render {
@@ -29,6 +30,46 @@ constexpr float kShadowDepthGuardM = 64.0F;
 
 bool terrain_shadow_light_above_horizon(cubey::math::Vec3 light_direction) noexcept {
     return normalized_or_zero(light_direction).y > 0.0F;
+}
+
+TerrainShadowProjection terrain_shadow_box_projection(const TerrainShadowBoxBounds& bounds,
+                                                      cubey::math::Vec3 light_direction,
+                                                      std::uint32_t map_extent) {
+    const auto direction = normalized_or_zero(light_direction);
+    if (!finite(bounds.minimum_m) || !finite(bounds.maximum_m) ||
+        bounds.maximum_m.x <= bounds.minimum_m.x || bounds.maximum_m.z <= bounds.minimum_m.z ||
+        bounds.maximum_m.y < bounds.minimum_m.y ||
+        glm::dot(direction, direction) <= kMinimumDirectionLengthSquared || map_extent == 0U)
+        throw std::runtime_error("terrain shadow box must be finite, ordered, and nondegenerate");
+    const auto center = (bounds.minimum_m + bounds.maximum_m) * 0.5F;
+    const float radius = glm::length((bounds.maximum_m - bounds.minimum_m) * 0.5F);
+    const auto up =
+        std::abs(direction.y) > 0.95F ? cubey::math::Vec3{0, 0, 1} : cubey::math::Vec3{0, 1, 0};
+    const auto view =
+        glm::lookAtRH(center + direction * (radius + 2.0F * kShadowDepthGuardM), center, up);
+    cubey::math::Vec3 low{std::numeric_limits<float>::max()};
+    cubey::math::Vec3 high{std::numeric_limits<float>::lowest()};
+    for (unsigned corner = 0; corner < 8U; ++corner) {
+        const cubey::math::Vec3 world{corner & 1U ? bounds.maximum_m.x : bounds.minimum_m.x,
+                                      corner & 2U ? bounds.maximum_m.y : bounds.minimum_m.y,
+                                      corner & 4U ? bounds.maximum_m.z : bounds.minimum_m.z};
+        const auto p = cubey::math::Vec3(view * cubey::math::Vec4(world, 1.0F));
+        low = glm::min(low, p);
+        high = glm::max(high, p);
+    }
+    const float near_z = std::max(1.0F, -high.z - kShadowDepthGuardM);
+    const float far_z = -low.z + kShadowDepthGuardM;
+    const float span = std::max(high.x - low.x, high.y - low.y) + 2.0F * kShadowBoundsGuardM;
+    return {.light_view_projection =
+                cubey::math::orthographic(low.x - kShadowBoundsGuardM, high.x + kShadowBoundsGuardM,
+                                          low.y - kShadowBoundsGuardM, high.y + kShadowBoundsGuardM,
+                                          near_z, far_z) *
+                view,
+            .light_direction = direction,
+            .orthographic_span_m = span,
+            .depth_span_m = far_z - near_z,
+            .texel_world_size_m = span / static_cast<float>(map_extent),
+            .light_above_horizon = direction.y > 0.0F};
 }
 
 TerrainShadowProjection terrain_shadow_projection(const TerrainShadowProductBounds& bounds,
