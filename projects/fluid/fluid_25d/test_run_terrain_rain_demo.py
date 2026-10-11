@@ -97,8 +97,9 @@ class Commands(unittest.TestCase):
     def test_unavailable_catalogue_entries_remain_visible_but_disabled(self):
         with patch.object(terrain, "case_identity", side_effect=ValueError("changed input")):
             entries = terrain.catalogue(Path("/study"))
-        self.assertEqual(len(entries), 15)
-        self.assertEqual(len({entry["id"] for entry in entries}), 15)
+        expected_count = len(terrain.SITES) * len(terrain.CONFIGS)
+        self.assertEqual(len(entries), expected_count)
+        self.assertEqual(len({entry["id"] for entry in entries}), expected_count)
         self.assertTrue(all(not entry["available"] and entry["error"] == "changed input"
                             for entry in entries))
         self.assertEqual({(entry["width"], entry["spacing_m"]) for entry in entries},

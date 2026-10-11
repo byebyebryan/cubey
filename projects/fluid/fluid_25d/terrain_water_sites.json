@@ -4,6 +4,9 @@
   "sites": [
     {"id": "mountain", "label": "Mountain valley", "manifest": "cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json", "elevation_sha256": "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737", "center_xz_m": [11520, 19200]},
     {"id": "alpine", "label": "Alpine terrain", "manifest": "cache/terrain/sources/v1/landscape-variations/alpine-range/heightfield.json", "elevation_sha256": "5fbf519f9af538d0f1b684e01a4aa1c830ac1896ced2f082ddecb09a3bc9a63a", "center_xz_m": [0, 0]},
-    {"id": "rolling", "label": "Rolling hills", "manifest": "cache/terrain/sources/v1/landscape-variations/rolling-wet-lowland/heightfield.json", "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2", "center_xz_m": [0, 0]}
+    {"id": "rolling", "label": "Rolling hills", "manifest": "cache/terrain/sources/v1/landscape-variations/rolling-wet-lowland/heightfield.json", "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2", "center_xz_m": [0, 0]},
+    {"id": "upland-basins", "label": "Upland basins · filling pools", "manifest": "cache/terrain/sources/v1/landscape-variations/dry-upland/heightfield.json", "elevation_sha256": "7e0d5cfc47abdfc8d1338217efa7c70a082fe46bc742028c5e90e871b73f441c", "center_xz_m": [12000, -12000]},
+    {"id": "joining-valleys", "label": "Joining valleys · streams and collection", "manifest": "cache/terrain/sources/v1/desert-canyon-study/canyon-candidate-3/heightfield.json", "elevation_sha256": "c35a8d9757fbd856a44bc48dceb49cd939f16b9819727ea07ef97c5d37a7f7d5", "center_xz_m": [12000, 0]},
+    {"id": "steep-ridges", "label": "Steep ridges · fast runoff", "manifest": "cache/terrain/sources/v1/desert-canyon-study/canyon-candidate-4/heightfield.json", "elevation_sha256": "88cc6c1fdacbd9759f90e6781ddf4ff570e4516fb0652438dc28f7ad23086d8b", "center_xz_m": [-12000, 0]}
   ]
 }
