@@ -119,11 +119,18 @@ int WindowedHost::run() {
     std::uint64_t total_stats_frames = 0;
     std::optional<FrameStatsSample> latest_stats_sample;
     frame_clock_.reset();
+    const auto loop_started = std::chrono::steady_clock::now();
     cubey::vulkan::SwapchainRecreateTracker recreate_tracker;
     while (!window().should_close() &&
            (config_.run_config.frames == 0 || frame < config_.run_config.frames)) {
         const std::chrono::steady_clock::time_point frame_started =
             std::chrono::steady_clock::now();
+        if (config_.run_config.run_seconds > 0.0 &&
+            std::chrono::duration<double>(frame_started - loop_started).count() >=
+                config_.run_config.run_seconds) {
+            break;
+        }
+        auto service_span = profile_span(frame, "host.frame_service");
         input_state_.begin_frame();
         {
             [[maybe_unused]] auto span = profile_span(frame, "host.poll_events");
@@ -213,7 +220,18 @@ int WindowedHost::run() {
         } else {
             record_profile_frame(frame, timing, std::nullopt);
         }
-        apply_profile_pacing(config_, frame_started);
+        service_span = {};
+        {
+            [[maybe_unused]] auto span = profile_span(frame, "host.intentional_pacing");
+            if (config_.run_config.render_fps != 0U) {
+                std::this_thread::sleep_until(
+                    frame_started +
+                    std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                        std::chrono::duration<double>(
+                            1.0 / static_cast<double>(config_.run_config.render_fps))));
+            }
+            apply_profile_pacing(config_, frame_started);
+        }
         ++frame;
     }
 

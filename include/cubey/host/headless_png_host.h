@@ -158,6 +158,7 @@ class HeadlessPngHost {
                                                            const char* label);
     void write_png(const HeadlessRenderTarget& target);
     void write_video(HeadlessPngContext& context, const HeadlessRenderTarget& target);
+    void run_render_only(HeadlessPngContext& context, const HeadlessRenderTarget& target);
     void shutdown_resources(HeadlessPngContext& context);
 
     [[nodiscard]] cubey::vulkan::Instance& instance();

@@ -2457,10 +2457,26 @@ class RecordingApp {
                              host::headless_capture_frame_slot_count(config_.common));
             create_render_resources(context.device(), context.render_target());
         };
+        callbacks.before_frame = [this](host::HeadlessPngContext& context,
+                                        const host::HeadlessCaptureFrame& frame) {
+            if (config_.common.headless_render_only) {
+                auto span =
+                    context.profile_recorder()
+                        ? context.profile_recorder()->cpu_span(frame.index, "fluid25d.update_view")
+                        : profiling::ScopedCpuProfileSpan{};
+                update_view(frame.timing.delta_seconds);
+            }
+        };
         callbacks.record_frame = [this](host::HeadlessPngContext& context,
                                         const host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer commands,
                                         const host::HeadlessRenderTarget& target) {
+            if (config_.common.headless_render_only) {
+                record(context.device(), commands, target, frame.frame_slot,
+                       Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
+                       frame.index);
+                return;
+            }
             if (external_session_) {
                 visual_delta_ = 0.0;
                 rain_clock_.capture(frame.index, config_.common.fps,

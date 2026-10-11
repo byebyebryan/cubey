@@ -1,5 +1,6 @@
 #include <cubey/host/common_config.h>
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -68,6 +69,20 @@ void normalize_common_run_config(CommonRunConfig& config, bool output_path_expli
     if (config.fps == 0U) {
         throw std::runtime_error("fps must be positive");
     }
+    if (!std::isfinite(config.run_seconds) || config.run_seconds < 0.0) {
+        throw std::runtime_error("run seconds must be finite and nonnegative");
+    }
+    if (config.headless_render_only &&
+        (!config.headless || config.capture_mode != CaptureMode::Png)) {
+        throw std::runtime_error("render-only requires --headless and no video capture");
+    }
+    if (config.headless_render_only && config.frames == 0U && config.run_seconds == 0.0) {
+        throw std::runtime_error("render-only requires a positive frame or wall-time limit");
+    }
+    if (config.headless && !config.headless_render_only &&
+        (config.run_seconds != 0.0 || config.render_fps != 0U)) {
+        throw std::runtime_error("headless wall limits/pacing require --headless-render-only");
+    }
     if (config.profile_diagnostics && config.profile_output_prefix.empty()) {
         throw std::runtime_error("profile diagnostics require --profile-output");
     }
@@ -115,6 +130,19 @@ config::Schema common_run_config_schema(CommonRunConfig& config) {
         .bind(option("headless", "--headless", "Headless", "Host", "Run without opening a window.",
                      ValueType::Bool),
               config.headless)
+        .bind(option("headless_render_only", "--headless-render-only", "Render Only", "Host",
+                     "Bounded offscreen rendering without readback or encoding.", ValueType::Bool),
+              config.headless_render_only)
+        .bind(
+            option(
+                "run_seconds", "--run-seconds", "Wall Limit", "Host",
+                "Stop the windowed/render-only loop after this many wall seconds; excludes setup.",
+                ValueType::Float, {.has_min = true, .min = 0.0}),
+            config.run_seconds)
+        .bind(option("render_fps", "--render-fps", "Render Pacing", "Host",
+                     "Operational render pacing in Hz; zero is unpaced, not capture fps.",
+                     ValueType::UInt32),
+              config.render_fps)
         .bind(option("print_frame_stats", "--print-frame-stats", "Print Frame Stats", "Host",
                      "Print periodic frame statistics to stdout.", ValueType::Bool),
               config.print_frame_stats)

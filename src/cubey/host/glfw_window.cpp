@@ -4,6 +4,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cstdio>
 #include <stdexcept>
 #include <utility>
 
@@ -216,6 +217,10 @@ void GlfwWindow::create(const GlfwWindowConfig& config) {
         throw std::runtime_error("glfwInit failed");
     }
     glfw_initialized_ = true;
+    std::printf("cubey_window_backend: %s\n", glfwGetPlatform() == GLFW_PLATFORM_WAYLAND ? "wayland"
+                                              : glfwGetPlatform() == GLFW_PLATFORM_X11   ? "x11"
+                                                                                         : "other");
+    std::fflush(stdout);
 
     if (glfwVulkanSupported() == 0) {
         throw std::runtime_error("GLFW reports Vulkan is not supported");

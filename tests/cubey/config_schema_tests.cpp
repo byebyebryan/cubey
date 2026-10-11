@@ -284,6 +284,30 @@ void test_config_schema_named_values_can_spell_bootstrap_flags() {
 
 void test_common_host_config_normalizes_capture_compatibility() {
     {
+        Args args({"--headless", "--headless-render-only", "--run-seconds", "0.25", "--render-fps",
+                   "60"});
+        const auto config = cubey::host::parse_common_run_config(
+            static_cast<int>(args.pointers.size()), args.pointers.data());
+        require(config.headless_render_only && config.run_seconds == 0.25 &&
+                    config.render_fps == 60U,
+                "render-only wall limit and pacing must be explicit and independent of capture");
+        require(config.frames == 0U && config.capture_mode == cubey::CaptureMode::Png,
+                "render-only must not silently enable video encoding");
+    }
+    for (const auto& invalid : std::initializer_list<std::initializer_list<std::string>>{
+             {"--headless-render-only", "--frames", "4"},
+             {"--headless", "--headless-render-only"},
+             {"--headless", "--run-seconds", "1"},
+             {"--headless", "--headless-render-only", "--capture", "video", "--frames", "4"}}) {
+        Args args(invalid);
+        require_throws(
+            [&] {
+                static_cast<void>(cubey::host::parse_common_run_config(
+                    static_cast<int>(args.pointers.size()), args.pointers.data()));
+            },
+            "render-only must reject unbounded, non-headless or encoding combinations");
+    }
+    {
         Args args({"--headless", "--capture", "video"});
         const cubey::host::CommonRunConfig config = cubey::host::parse_common_run_config(
             static_cast<int>(args.pointers.size()), args.pointers.data());

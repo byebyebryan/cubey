@@ -86,6 +86,10 @@ void test_headless_capture_frame_helpers_select_png_or_video_timing() {
     require(png_frame.frame_slot.count == 1, "PNG capture should use a single frame slot");
     require(png_frame.timing.frame_index == 0, "PNG timing should use frame index zero");
     require(png_frame.timing.delta_seconds == 0.0, "PNG timing should be static");
+    config.headless_render_only = true;
+    require(cubey::host::headless_capture_frame_slot_count(config) == 2U,
+            "render-only should match the GUI two-slot ring without changing PNG defaults");
+    config.headless_render_only = false;
 
     config.capture_mode = cubey::CaptureMode::Video;
     config.frames = 0;

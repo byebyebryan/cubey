@@ -25,6 +25,9 @@ struct CommonRunConfig {
     std::uint32_t profile_diagnostic_interval = 1U;
     CaptureMode capture_mode = CaptureMode::Png;
     bool headless = false;
+    bool headless_render_only = false;
+    double run_seconds = 0.0;
+    std::uint32_t render_fps = 0U; // Zero is unpaced; independent of capture fps.
     bool print_frame_stats = false;
     bool profile_diagnostics = false;
     bool validation = true;

@@ -8,6 +8,7 @@
 #include <cubey/vulkan/queue_submit.h>
 #include <cubey/vulkan/vk_check.h>
 
+#include <chrono>
 #include <cstdio>
 #include <exception>
 #include <limits>
@@ -15,6 +16,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -42,10 +44,9 @@ void validate_config(const HeadlessPngHostConfig& config,
 }
 
 struct HeadlessCaptureSlot {
-    HeadlessCaptureSlot(cubey::vulkan::Device& device, VkExtent2D extent, VkFormat format)
+    HeadlessCaptureSlot(cubey::vulkan::Device& device, VkExtent2D extent, VkFormat format,
+                        bool capture_readback = true)
         : image(device, cubey::vulkan::color_render_target_image_config(extent, format)),
-          readback(device, cubey::vulkan::readback_buffer_config(static_cast<VkDeviceSize>(
-                               video_frame_byte_size(extent.width, extent.height)))),
           command_pool(device,
                        cubey::vulkan::CommandPoolConfig{
                            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
@@ -57,6 +58,11 @@ struct HeadlessCaptureSlot {
               .image = image.handle(),
               .view = image.view(),
           } {
+        if (capture_readback) {
+            readback.emplace(device,
+                             cubey::vulkan::readback_buffer_config(static_cast<VkDeviceSize>(
+                                 video_frame_byte_size(extent.width, extent.height))));
+        }
         auto fence_info =
             cubey::vulkan::vk_struct<VkFenceCreateInfo>(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
         cubey::vulkan::check(vkCreateFence(device_handle, &fence_info, nullptr, &fence),
@@ -73,7 +79,7 @@ struct HeadlessCaptureSlot {
     HeadlessCaptureSlot& operator=(const HeadlessCaptureSlot&) = delete;
 
     cubey::vulkan::Image image;
-    cubey::vulkan::Buffer readback;
+    std::optional<cubey::vulkan::Buffer> readback;
     cubey::vulkan::CommandPool command_pool;
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkDevice device_handle = VK_NULL_HANDLE;
@@ -113,6 +119,9 @@ std::size_t headless_png_byte_size(std::uint32_t width, std::uint32_t height) {
 }
 
 std::uint32_t headless_capture_frame_slot_count(const CommonRunConfig& config) {
+    if (config.headless_render_only) {
+        return 2U;
+    }
     return config.capture_mode == CaptureMode::Video
                ? static_cast<std::uint32_t>(kVideoCaptureSlotCount)
                : cubey::render::kSingleFrameSlotCount;
@@ -209,7 +218,7 @@ void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, Com
         if (previous_before_capture) {
             previous_before_capture(context);
         }
-        if (config.capture_mode != CaptureMode::Png) {
+        if (config.capture_mode != CaptureMode::Png || config.headless_render_only) {
             return;
         }
         for (std::uint32_t frame_index = 0; frame_index < shared_driver->png_frame_count;
@@ -229,6 +238,10 @@ void install_headless_simulation_driver(HeadlessPngHostCallbacks& callbacks, Com
             HeadlessPngContext& context, const HeadlessCaptureFrame& frame) mutable {
             if (previous_before_frame) {
                 previous_before_frame(context, frame);
+            }
+            if (context.config().headless_render_only) {
+                shared_driver->simulate_frame(context, frame);
+                return;
             }
             if (context.config().capture_mode != CaptureMode::Video) {
                 return;
@@ -283,7 +296,9 @@ int HeadlessPngHost::run() {
         }
         drain_gpu_work();
 
-        if (config_.run_config.capture_mode == CaptureMode::Video) {
+        if (config_.run_config.headless_render_only) {
+            run_render_only(context, target);
+        } else if (config_.run_config.capture_mode == CaptureMode::Video) {
             [[maybe_unused]] auto span = profile_span(0, "headless.write_video");
             write_video(context, target);
         } else {
@@ -507,7 +522,7 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
             .rgba8 = std::vector<std::uint8_t>(
                 video_frame_byte_size(slot.target.extent.width, slot.target.extent.height)),
         };
-        slot.readback.download(frame.rgba8.data(), static_cast<VkDeviceSize>(frame.rgba8.size()));
+        slot.readback->download(frame.rgba8.data(), static_cast<VkDeviceSize>(frame.rgba8.size()));
         slot.submitted = false;
         encoder.enqueue_frame(std::move(frame));
     };
@@ -543,7 +558,7 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
                         VkExtent3D{slot.target.extent.width, slot.target.extent.height, 1});
                     vkCmdCopyImageToBuffer(slot.command_buffer, slot.target.image,
                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                           slot.readback.handle(), 1, &copy);
+                                           slot.readback->handle(), 1, &copy);
                     cubey::vulkan::end_command_buffer(slot.command_buffer,
                                                       "vkEndCommandBuffer headless video capture");
                     slot.ticket = gpu_context.submission().submit(
@@ -584,6 +599,125 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
                 device().device_name(), output_path.c_str(), target.extent.width,
                 target.extent.height, frame_count, config_.run_config.fps,
                 video_encoding_backend_name());
+}
+
+void HeadlessPngHost::run_render_only(HeadlessPngContext&, const HeadlessRenderTarget& target) {
+    const auto& run = config_.run_config;
+    if (run.frames == 0U && run.run_seconds <= 0.0) {
+        throw std::runtime_error("render-only execution must be bounded");
+    }
+    std::vector<std::unique_ptr<HeadlessCaptureSlot>> slots;
+    for (std::uint32_t i = 0; i < headless_capture_frame_slot_count(run); ++i) {
+        slots.push_back(
+            std::make_unique<HeadlessCaptureSlot>(device(), target.extent, target.format, false));
+    }
+    const auto started = std::chrono::steady_clock::now();
+    FrameClock clock(started);
+    const auto count = run.frames == 0U ? std::numeric_limits<std::uint32_t>::max() : run.frames;
+    std::printf(
+        "headless_render_only_ready: %s at %ux%u slots=%zu pacing_hz=%u readback=0 encode=0\n",
+        device().device_name(), target.extent.width, target.extent.height, slots.size(),
+        run.render_fps);
+    std::fflush(stdout);
+    auto wait = [this](HeadlessCaptureSlot& slot) {
+        if (!slot.submitted)
+            return;
+        cubey::vulkan::check(
+            vkWaitForFences(device().handle(), 1, &slot.fence, VK_TRUE, UINT64_MAX),
+            "vkWaitForFences offscreen render slot");
+        gpu().mark_submission_completed(slot.ticket);
+        slot.submitted = false;
+    };
+    std::uint32_t index = 0;
+    for (; index < count; ++index) {
+        const auto frame_started = std::chrono::steady_clock::now();
+        if (run.run_seconds > 0.0 &&
+            std::chrono::duration<double>(frame_started - started).count() >= run.run_seconds)
+            break;
+        const HeadlessCaptureFrame frame{
+            .index = index,
+            .count = count,
+            .frame_slot = cubey::render::frame_slot_for_index(
+                index, static_cast<std::uint32_t>(slots.size())),
+            .timing = clock.tick(frame_started),
+        };
+        HeadlessCaptureSlot& slot = *slots[frame.frame_slot.index];
+        HeadlessPngContext frame_context(run, instance(), device(), gpu(), slot.target,
+                                         profile_recorder());
+        {
+            [[maybe_unused]] auto service = profile_span(index, "headless.frame_service");
+            {
+                [[maybe_unused]] auto span = profile_span(index, "headless.slot_wait");
+                wait(slot);
+            }
+            if (callbacks_.before_frame) {
+                [[maybe_unused]] auto span = profile_span(index, "headless.before_frame");
+                callbacks_.before_frame(frame_context, frame);
+                drain_gpu_work();
+            }
+            const auto dispatched = std::chrono::steady_clock::now();
+            {
+                [[maybe_unused]] auto span = profile_span(index, "headless.dispatch_and_submit");
+                static_cast<void>(gpu().submit_and_wait({
+                    .label = "offscreen render-only frame",
+                    .work =
+                        [this, &frame_context, &slot, frame,
+                         dispatched](cubey::vulkan::GpuOwnerContext& owner) {
+                            if (auto* recorder = profile_recorder()) {
+                                recorder->record_cpu_span(
+                                    frame.index, "headless.owner_dispatch_wait",
+                                    std::chrono::duration<double, std::milli>(
+                                        std::chrono::steady_clock::now() - dispatched)
+                                        .count());
+                            }
+                            cubey::vulkan::check(
+                                vkResetFences(owner.device().handle(), 1, &slot.fence),
+                                "vkResetFences offscreen render");
+                            cubey::vulkan::check(vkResetCommandBuffer(slot.command_buffer, 0),
+                                                 "vkResetCommandBuffer offscreen render");
+                            cubey::vulkan::begin_command_buffer(
+                                slot.command_buffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+                            cubey::vulkan::transition_image_layout(
+                                slot.command_buffer,
+                                cubey::vulkan::begin_color_attachment_transition(
+                                    slot.target.image));
+                            {
+                                [[maybe_unused]] auto record_span =
+                                    profile_span(frame.index, "headless.record_frame");
+                                if (callbacks_.record_frame)
+                                    callbacks_.record_frame(frame_context, frame,
+                                                            slot.command_buffer, slot.target);
+                                else
+                                    callbacks_.record_capture(frame_context, slot.command_buffer,
+                                                              slot.target);
+                            }
+                            cubey::vulkan::end_command_buffer(
+                                slot.command_buffer, "vkEndCommandBuffer offscreen render");
+                            {
+                                [[maybe_unused]] auto submit_span =
+                                    profile_span(frame.index, "headless.queue_submit");
+                                slot.ticket = owner.submission().submit(
+                                    {.command_buffers = {slot.command_buffer}, .fence = slot.fence},
+                                    "vkQueueSubmit offscreen render");
+                            }
+                            slot.submitted = true;
+                        },
+                }));
+            }
+            record_profile_frame(frame, slot.target);
+        }
+        if (run.render_fps != 0U) {
+            [[maybe_unused]] auto span = profile_span(index, "headless.intentional_pacing");
+            std::this_thread::sleep_until(
+                frame_started +
+                std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+                    std::chrono::duration<double>(1.0 / static_cast<double>(run.render_fps))));
+        }
+    }
+    for (auto& slot : slots)
+        wait(*slot);
+    std::printf("headless_render_only_complete: frames=%u wall_s=%.6f readback=0 encode=0\n", index,
+                std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count());
 }
 
 void HeadlessPngHost::shutdown_resources(HeadlessPngContext& context) {
