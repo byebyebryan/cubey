@@ -58,6 +58,72 @@ are in the report's validation receipt. Do not infer performance for 2k grids,
 every camera, every light direction, or late-time solver states from the 1k
 bounded live trials. The original 30 m source information still limits detail.
 
+## Measured performance
+
+All 16 sequential paired trials completed on the frozen Release binary and
+shaders. Legacy/candidate order reverses on repeat two. Each trial uses
+1920×1080 and a 60 Hz render cap; live requests 60× native pace. Native prewarm
+to 1,800 physical seconds occurs before renderer startup. Five wall seconds of
+warmup precede each 45-second live or 15-second held measurement window.
+The held states are the developed recordings described above, not equal-age
+controls for the live trial. Neither timing mode reads back images or encodes video.
+
+The ranges below are the two **individual trial p95 values**, not a pooled
+percentile. Every candidate trial passes GPU p95 ≤8 ms, live pace ≥54× and
+advancing-field age p95 ≤0.5 s.
+
+| Candidate site/mode | Scene GPU p95 (ms) | Actual native pace | Field age p95 (s) |
+| --- | --- | --- | --- |
+| Mountain, held | 4.20–4.21 | no solver | held |
+| Mountain, live | 5.24–5.30 | 59.92–59.97× | 0.143–0.146 |
+| Steep ridges, held | 3.97–4.49 | no solver | held |
+| Steep ridges, live | 4.07–5.22 | 60.00–60.03× | 0.144–0.145 |
+
+These are scene GPU timestamps while CUDA shares the device, not pure native
+kernel timings. CPU frame service excludes intentional pacing. A capped loop
+near 16.74 ms is not evidence of uncapped FPS. Existing desktop GPU background
+work was left running. Full per-trial legacy/candidate results are in
+`paired-performance/results.json` under the report leaf.
+
+The 4× geometry control gave little visible benefit but reached 8.69 ms GPU
+p95 in the short Mountain held probe; retain 2×. A 4096² shadow control remains
+available for study but is not promoted. Its short probes are not balanced
+evidence that it is faster than 2048². Tightening shadow bounds without fixing
+the clipped steep-plane gradient was explicitly rejected.
+
+## Final validation
+
+The selected 55 CTest checks passed without failures or skips; the final
+headless-policy/review-helper checks also passed. The three Python contract
+modules passed 34 checks, including incomplete evidence, per-trial gate
+failures, immutable inputs and failed-process cleanup.
+
+Legacy projection/material images remain byte-identical in all 12 views.
+All eight raw depth/speed images match across legacy/candidate appearance.
+42 of 46 compiled shaders are unchanged; only the four shared lighting
+consumers differ. Every final capture has a bit-exact native terrain/depth/
+velocity GPU-upload receipt, without hydraulic dispatches.
+
+The managed 160-second headless lifecycle run acknowledged all 14 actions:
+start, pause, rain adjustment, reset, site change and 512²/32 m, 1024²/16 m,
+2048²/8 m grid changes. It returned cleanly, had no Vulkan validation errors
+and reaped all owned processes. Its mixed-switch timings are not used as
+steady-state performance evidence.
+
+The four camera-sweep videos contain 120 frames at 24 Hz each. Their receipts
+prove a constant native playhead/state and zero visual time advance, while
+decoded frames change with the camera. The recording API requires a positive
+interval; starting at the final recording time clamps the playhead there.
+Dry sweeps are deliberately rejected by this harness rather than claiming a
+hold the API does not supply. Three setup-only failed phases remain archived
+and excluded from acceptance; no failed capture or timing trial was promoted.
+
+The report's 33 local HTTP targets return 200 and its page appears in the
+existing report index. Desktop and narrow HTML layouts were inspected with
+headless Chromium. Cubey was never opened as a native GUI. Owner visual
+acceptance and native scanout remain deferred; finer shadow patterning and
+source-limited surface detail remain explicit limitations.
+
 ## Reference and reproduction
 
 The sequence follows established shadow-map practice: diagnose first, tighten

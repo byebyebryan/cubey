@@ -86,7 +86,8 @@ def command(site, camera, view, output, *, surface="legacy", subdivision=2,
     argv[argv.index("--fluid25d-native-surface-subdivision") + 1] = str(subdivision)
     argv += ["--headless"]
     if view.startswith("raw-"):
-        argv += ["--fluid25d-view", "diagnostics", "--fluid25d-debug-view", view[4:]]
+        diagnostic = "depth" if view == "raw-depth" else "flow"
+        argv += ["--fluid25d-view", "diagnostics", "--debug-view", diagnostic]
     else:
         argv += ["--fluid25d-scenic-terrain-view", view]
     if camera != "overview":
@@ -107,7 +108,9 @@ def command(site, camera, view, output, *, surface="legacy", subdivision=2,
     if video:
         argv[argv.index("--frames") + 1] = "120"
         argv += ["--capture", "video", "--fps", "24",
-                 "--fluid25d-recording-frame-interval-seconds", "0"]
+                 # The recording API requires a positive interval. Starting at
+                 # its last frame clamps both playhead and fields at that time.
+                 "--fluid25d-recording-frame-interval-seconds", str(1/24)]
         if sweep:
             argv += ["--fluid25d-native-camera-sweep", str(sweep)]
     if shadow_extent is not None:
@@ -200,6 +203,8 @@ def main():
         raise ValueError("profile duration must be 3..60 seconds")
     if args.video and args.seconds:
         raise ValueError("video and render-only timings are separate evidence")
+    if args.video and args.dry:
+        raise ValueError("held-field sweeps require the developed final recording frame")
     capture(args)
 
 
