@@ -13,6 +13,12 @@ class EvidenceHelpers(unittest.TestCase):
         self.assertAlmostEqual(result["p95"], 2.9)
         self.assertEqual(result["max"], 3)
 
+    def test_control_trials_are_not_throughput_measurements(self):
+        self.assertTrue(study.uninterrupted_run([{"kind": "resume", "after_s": 1}]))
+        for actions in (None, [], [{"kind": "reset"}],
+                        [{"kind": "resume"}, {"kind": "pause"}]):
+            self.assertFalse(study.uninterrupted_run(actions))
+
 
 if __name__ == "__main__":
     unittest.main()

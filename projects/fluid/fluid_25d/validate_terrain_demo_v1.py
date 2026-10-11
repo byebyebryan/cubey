@@ -51,6 +51,12 @@ def percentiles(values):
     return {"count": len(values), "p50": at(.5), "p95": at(.95), "max": values[-1]}
 
 
+def uninterrupted_run(actions):
+    """A control/lifecycle trial is not a solver-throughput measurement."""
+    return (isinstance(actions, list) and len(actions) == 1
+            and isinstance(actions[0], dict) and actions[0].get("kind") == "resume")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--study", type=Path, required=True)
@@ -68,6 +74,7 @@ def main():
         parser.error("seconds must be 1..3600")
     if not math.isfinite(args.warmup) or not 0 <= args.warmup < args.seconds:
         parser.error("warmup must be finite, nonnegative and shorter than the trial")
+    continuous = uninterrupted_run(demo.managed.read_json(args.script).get("actions"))
     out = demo.demo.fresh_output(args.out)
     out.mkdir()
     trial = out / "trial"
@@ -118,7 +125,7 @@ def main():
     measurement_start = running[0]["unix_s"] + args.warmup if running else math.inf
     running = [row for row in running if row["unix_s"] >= measurement_start]
     pace = None
-    if len(running) > 2 and len({row["case_id"] for row in running}) == 1:
+    if continuous and len(running) > 2 and len({row["case_id"] for row in running}) == 1:
         pace = ((running[-1]["physical_s"] - running[0]["physical_s"]) /
                 (running[-1]["wall_s"] - running[0]["wall_s"]))
     by_frame = {}
@@ -148,6 +155,7 @@ def main():
         "frame_ms": percentiles([float(row["delta_ms"]) for row in frames]),
         "viewport": sorted({(int(row["width"]), int(row["height"])) for row in frames}),
         "warmup_seconds": args.warmup,
+        "uninterrupted_throughput_trial": continuous,
         "profile_scope": "Running lifecycle only; mixed-grid switch trials are not steady-state performance comparisons",
         "scope": "Offscreen Vulkan with live CUDA worker; no GUI, presentation, scanout or per-process GPU accounting"}
     demo.demo.ref.write_json_exclusive(out / "validation.json", result)
