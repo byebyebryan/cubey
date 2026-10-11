@@ -9,9 +9,39 @@ from unittest.mock import patch
 import run_offscreen_perf_v2 as study
 import run_offscreen_perf_campaign_v2 as campaign
 import review_offscreen_perf_v2 as review
+import audit_offscreen_perf_v2 as audit
 
 
 class ContractTests(unittest.TestCase):
+    def test_progress_audit_rejects_stalls_reversal_reset_and_nonrunning(self):
+        first = {"lifecycle": "running", "physical_s": 10, "generation": 1, "sequence": 10}
+        last = {**first, "physical_s": 20, "sequence": 20}
+        row = {"mode": "live", "samples": [first, last], "measurement_final_physical_s": 20}
+        self.assertTrue(audit.progress_valid(row))
+        for change in ({"physical_s": 10}, {"physical_s": 9}, {"sequence": 9},
+                       {"generation": 2}, {"lifecycle": "paused"}, {"physical_s": float("nan")}):
+            self.assertFalse(audit.progress_valid({**row, "samples": [first, {**last, **change}]}))
+        self.assertTrue(audit.progress_valid({"mode": "renderer-only"}))
+
+    def test_capture_audit_rechecks_images_sources_and_app(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "captures").mkdir()
+            image = root / "captures/held-offscreen.png"
+            source = root / "recording.json"
+            app = root / "app"
+            for path in (image, source, app):
+                path.write_bytes(b"frozen")
+            captures = {"app_sha256": audit.sha(app), "captures": [{
+                "name": "held", "host": "offscreen PNG", "image_sha256": audit.sha(image),
+                "recording_sha256": audit.sha(source),
+                "command": ["rtk", "proxy", str(app), "--fluid25d-recording", str(source)]}]}
+            self.assertEqual(audit.capture_failures(root, captures), [])
+            self.assertEqual(audit.command_app([str(app)]), app)
+            for path in (image, source, app):
+                path.write_bytes(b"changed")
+            self.assertEqual(len(audit.capture_failures(root, captures)), 3)
+
     def test_wayland_mapping_is_bounded_and_ambiguity_fails_closed(self):
         window = {"id": 42, "title": "Cubey V2 owned", "is_floating": True}
         with patch.dict(os.environ, {"NIRI_SOCKET": "owned-socket"}), \
@@ -121,6 +151,11 @@ class ContractTests(unittest.TestCase):
                 # These selected stages contain exactly one workload per phase.
                 count += repeats
             self.assertEqual(count, expected)
+        slots = audit.expected_slots(Path("frozen-study"), ["offscreen"])
+        self.assertEqual(len(slots), 62)
+        self.assertEqual(sum(phase.startswith("primary-") for phase, _, _ in slots), 42)
+        self.assertTrue(all("wayland" not in phase for phase, _, _ in slots
+                            if not phase.startswith("primary-")))
 
     def test_summary_separates_pacing_service_and_gpu(self):
         row = {"host": "offscreen", "profile": {"frame_ms": {"p95": 16.8},

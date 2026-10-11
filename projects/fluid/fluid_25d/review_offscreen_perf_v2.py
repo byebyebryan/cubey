@@ -184,6 +184,10 @@ def render(root):
 <p class="tag">Cubey · performance study, not an automatic demo-default promotion</p><h1>Fluid 2.5D: real offscreen Vulkan and native Wayland</h1>'''
     page += '<div class="callout">' + overview + '</div>'
     page += f'<p>{analysis["observed_primary_trials"]}/{analysis["expected_primary_trials"]} frozen-baseline trials; {analysis["observed_correction_trials"]}/{analysis["expected_correction_trials"]} correction controls; {analysis["observed_total_trials"]}/{analysis["expected_total_trials"]} total trials ({analysis["expected_standard_trials"]} standard plus {analysis["expected_correction_trials"]} supplemental). <a href="analysis.json">Derived statistics</a> · <a href="campaign-progress.json">Campaign receipt</a> · <a href="../live-perf-terrain-20261010-Dd6K3h/">Original V1 study</a></p>'
+    audit_path = root / "audit.json"
+    if audit_path.exists():
+        audit = json.loads(audit_path.read_text())
+        page += '<p><a href="audit.json">Final raw-evidence audit</a>: ' + escaped(audit["completed_slots"]) + '/' + escaped(audit["expected_slots"]) + ' complete slots; ' + escaped(len(audit["failures"])) + ' audit failures. This recomputes summaries and rechecks frozen inputs, compiled shaders, capture bytes and continuously advancing worker samples; performance targets remain separate.</p>'
     if analysis["study_scope"].get("deferred_native_checks"):
         page += '<p>Continuation is headless-only at the user’s request. The completed native Wayland baseline is retained; four additional corrected/paced native controls and native screenshots are deferred. <a href="study-scope.json">Explicit scope amendment</a></p>'
     page += '<p>' + escaped(analysis["observed_attempts"] - analysis["observed_total_trials"]) + ' incomplete attempts retained; applicable correctness-check failures across all attempts: ' + escaped(len(analysis["correctness_failures"])) + '. Incomplete windows are excluded from aggregate timings and never relabeled as passing. Performance-budget misses remain separate.</p>'
