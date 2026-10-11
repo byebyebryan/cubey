@@ -95,6 +95,9 @@ class ProfileRecorder {
     void record_frame(const ProfileFrameRecord& frame);
     void record_cpu_span(std::uint64_t frame_index, std::string_view label,
                          double duration_milliseconds);
+    void record_cpu_interval(std::uint64_t frame_index, std::string_view label,
+                             std::chrono::steady_clock::time_point start,
+                             std::chrono::steady_clock::time_point end);
     void record_gpu_span(std::uint64_t frame_index, std::string_view label,
                          double duration_milliseconds);
     void record_metric(std::uint64_t frame_index, std::string_view category, std::string_view name,

@@ -58,6 +58,13 @@ void test_profile_recorder_skips_warmup_and_records_spans() {
             "profile span should preserve GPU duration");
     require(metrics.front().name == "active_particles", "profile metric should preserve name");
     require(metrics.front().value == 42.0, "profile metric should preserve value");
+    const auto interval_start = std::chrono::steady_clock::now();
+    recorder.record_cpu_interval(1, "owner dispatch", interval_start,
+                                 interval_start + std::chrono::milliseconds(4));
+    const auto interval = recorder.span_records().back();
+    require(interval.start_milliseconds >= 0.0 && interval.duration_milliseconds == 4.0 &&
+                interval.frame_index == 1,
+            "explicit CPU interval must preserve its trace origin and correlated frame");
     cubey::profiling::ProfileRecorder bounded({.output_prefix = "ignored",
                                                .warmup_frames = 2,
                                                .sample_interval = 3,

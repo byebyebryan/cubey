@@ -6880,6 +6880,13 @@ void test_external_session_freshness_and_typed_inputs() {
                 external_session_health(Fluid25DLifecycle::Paused, 0.1, 3.0) ==
                     ExternalSessionHealth::Disconnected,
             "three seconds without a changed or fresh publication should disconnect");
+    require(external_session_health(Fluid25DLifecycle::Running, 4.0, 4.0, true, 4.0) ==
+                    ExternalSessionHealth::Delayed &&
+                external_session_health(Fluid25DLifecycle::Running, 31.0, 31.0, true, 30.0) ==
+                    ExternalSessionHealth::Disconnected &&
+                external_session_health(Fluid25DLifecycle::Failed, 4.0, 4.0, true, 4.0) ==
+                    ExternalSessionHealth::Failed,
+            "announced reset is delayed, bounded to thirty seconds, and never masks failure");
     require(external_session_health(Fluid25DLifecycle::Completed, 50.0, 50.0) ==
                     ExternalSessionHealth::Completed &&
                 external_session_health(Fluid25DLifecycle::Stopped, 50.0, 50.0) ==

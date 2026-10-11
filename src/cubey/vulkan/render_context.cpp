@@ -2,6 +2,7 @@
 
 #include <cubey/vulkan/vk_check.h>
 
+#include <chrono>
 #include <cstddef>
 #include <stdexcept>
 #include <vector>
@@ -59,13 +60,23 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     FrameResources& frame_resources = *config_.frame_resources;
     const std::uint32_t frame_slot_index = frame_resources.current_frame_slot_index();
     const FrameResourceSlot& frame_slot = frame_resources.slot(frame_slot_index);
-    frame_resources.wait_for_frame(frame_slot_index);
+    {
+        auto span = config_.profile
+                        ? config_.profile->cpu_span(config_.frame_index, "host.slot_wait")
+                        : cubey::profiling::ScopedCpuProfileSpan{};
+        frame_resources.wait_for_frame(frame_slot_index);
+    }
     config_.gpu->mark_submission_completed(frame_resources.submitted_ticket(frame_slot_index));
 
     std::uint32_t image_index = 0;
-    VkResult acquired =
-        vkAcquireNextImageKHR(device.handle(), active_swapchain.handle(), UINT64_MAX,
-                              frame_slot.image_available, VK_NULL_HANDLE, &image_index);
+    VkResult acquired;
+    {
+        auto span = config_.profile
+                        ? config_.profile->cpu_span(config_.frame_index, "host.acquire_image")
+                        : cubey::profiling::ScopedCpuProfileSpan{};
+        acquired = vkAcquireNextImageKHR(device.handle(), active_swapchain.handle(), UINT64_MAX,
+                                         frame_slot.image_available, VK_NULL_HANDLE, &image_index);
+    }
     if (acquired == VK_ERROR_OUT_OF_DATE_KHR) {
         return RenderFrameResult::RecreateSwapchain;
     }
@@ -76,6 +87,9 @@ RenderFrameResult RenderContext::begin_frame(RenderFrame* frame) const {
     const std::size_t image_slot = static_cast<std::size_t>(image_index);
     const VkFence image_fence = frame_resources.image_in_flight(image_slot);
     if (image_fence != VK_NULL_HANDLE) {
+        auto span = config_.profile
+                        ? config_.profile->cpu_span(config_.frame_index, "host.image_wait")
+                        : cubey::profiling::ScopedCpuProfileSpan{};
         check(vkWaitForFences(device.handle(), 1, &image_fence, VK_TRUE, UINT64_MAX),
               "vkWaitForFences swapchain image");
     }
@@ -117,24 +131,35 @@ RenderContext::end_frame(const RenderFrame& frame,
     command_buffers.push_back(frame.command_buffer);
     command_buffers.insert(command_buffers.end(), additional_command_buffers.begin(),
                            additional_command_buffers.end());
+    const auto dispatched = std::chrono::steady_clock::now();
     static_cast<void>(config_.gpu->submit_and_wait({
         .label = "submit and present frame",
         .work =
             [&](GpuOwnerContext& gpu_context) {
-                submitted = gpu_context.submission().submit(
-                    {
-                        .waits =
-                            {
-                                QueueWait{
-                                    .semaphore = frame_slot.image_available,
-                                    .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                if (config_.profile) {
+                    config_.profile->record_cpu_interval(config_.frame_index,
+                                                         "host.owner_dispatch_wait", dispatched,
+                                                         std::chrono::steady_clock::now());
+                }
+                {
+                    auto span = config_.profile ? config_.profile->cpu_span(config_.frame_index,
+                                                                            "host.queue_submit")
+                                                : cubey::profiling::ScopedCpuProfileSpan{};
+                    submitted = gpu_context.submission().submit(
+                        {
+                            .waits =
+                                {
+                                    QueueWait{
+                                        .semaphore = frame_slot.image_available,
+                                        .stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                    },
                                 },
+                            .command_buffers = command_buffers,
+                            .signals = {QueueSignal{.semaphore = present_ready}},
+                            .fence = frame_slot.fence,
                         },
-                        .command_buffers = command_buffers,
-                        .signals = {QueueSignal{.semaphore = present_ready}},
-                        .fence = frame_slot.fence,
-                    },
-                    "vkQueueSubmit frame");
+                        "vkQueueSubmit frame");
+                }
 
                 auto present = vk_struct<VkPresentInfoKHR>(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR);
                 present.waitSemaphoreCount = 1;
@@ -143,7 +168,12 @@ RenderContext::end_frame(const RenderFrame& frame,
                 VkSwapchainKHR swapchain_handle = active_swapchain.handle();
                 present.pSwapchains = &swapchain_handle;
                 present.pImageIndices = &frame.image_index;
-                presented = vkQueuePresentKHR(gpu_context.device().queue(), &present);
+                {
+                    auto span = config_.profile
+                                    ? config_.profile->cpu_span(config_.frame_index, "host.present")
+                                    : cubey::profiling::ScopedCpuProfileSpan{};
+                    presented = vkQueuePresentKHR(gpu_context.device().queue(), &present);
+                }
             },
     }));
     frame_resources.mark_submitted(frame.frame_slot_index, submitted);

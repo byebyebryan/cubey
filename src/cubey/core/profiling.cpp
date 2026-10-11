@@ -376,6 +376,12 @@ void ProfileRecorder::record_cpu_span(std::uint64_t frame_index, std::string_vie
     });
 }
 
+void ProfileRecorder::record_cpu_interval(std::uint64_t frame_index, std::string_view label,
+                                          std::chrono::steady_clock::time_point start,
+                                          std::chrono::steady_clock::time_point end) {
+    record_cpu_span(frame_index, label, start, end);
+}
+
 void ProfileRecorder::record_gpu_span(std::uint64_t frame_index, std::string_view label,
                                       double duration_milliseconds) {
     record_span({

@@ -127,13 +127,19 @@ inline constexpr double kExternalDisconnectAfterSeconds = 3.0;
 
 [[nodiscard]] inline ExternalSessionHealth
 external_session_health(Fluid25DLifecycle lifecycle, double seconds_since_valid_publication,
-                        double publication_age_seconds) noexcept {
+                        double publication_age_seconds, bool accepted_reset_pending = false,
+                        double reset_wait_seconds = 0.0) noexcept {
     if (lifecycle == Fluid25DLifecycle::Completed)
         return ExternalSessionHealth::Completed;
     if (lifecycle == Fluid25DLifecycle::Stopped)
         return ExternalSessionHealth::Stopped;
     if (lifecycle == Fluid25DLifecycle::Failed)
         return ExternalSessionHealth::Failed;
+    // Explicit acknowledged reinitialization is a bounded delayed operation,
+    // not normal healthy streaming. Never re-date the displayed fields.
+    if (accepted_reset_pending && std::isfinite(reset_wait_seconds) && reset_wait_seconds >= 0.0 &&
+        reset_wait_seconds < 30.0)
+        return ExternalSessionHealth::Delayed;
     if (!std::isfinite(seconds_since_valid_publication) ||
         !std::isfinite(publication_age_seconds) || seconds_since_valid_publication < 0.0 ||
         publication_age_seconds < 0.0 ||

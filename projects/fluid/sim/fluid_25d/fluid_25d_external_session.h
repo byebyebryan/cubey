@@ -20,6 +20,7 @@ struct Fluid25DExternalSnapshot {
     Fluid25DFrameHeader header{};
     std::shared_ptr<const Fluid25DRecordedFrame> fields{};
     std::optional<Fluid25DCommandAcknowledgement> acknowledgement{};
+    std::optional<Fluid25DControlCommand> observed_reset_command{};
     double next_step_s = 0.0;
     double rain_m_per_s = 0.0;
     double pacing = 1.0;
@@ -47,6 +48,7 @@ class Fluid25DExternalSession {
     bool accept(const Fluid25DExternalSnapshot& snapshot);
     void send(Fluid25DCommandKind kind, std::optional<double> value = {});
     [[nodiscard]] bool command_pending() const noexcept;
+    [[nodiscard]] bool reset_reinitialization_pending() const noexcept;
     [[nodiscard]] const std::string& last_command_message() const noexcept;
 
   private:
@@ -55,6 +57,8 @@ class Fluid25DExternalSession {
     Fluid25DSessionGuard guard_;
     std::vector<float> bed_{};
     std::optional<Fluid25DControlCommand> pending_{};
+    std::optional<Fluid25DControlCommand> observed_reset_{};
+    std::string observed_reset_ack_{};
     std::string last_command_message_{};
     std::string last_acknowledgement_{};
     std::uint64_t next_command_id_ = 1U;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cubey/core/profiling.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/frame_resources.h>
 #include <cubey/vulkan/gpu_runtime.h>
@@ -30,6 +31,8 @@ struct RenderContextConfig {
     Swapchain* swapchain = nullptr;
     FrameResources* frame_resources = nullptr;
     GpuRuntime* gpu = nullptr;
+    cubey::profiling::ProfileRecorder* profile = nullptr;
+    std::uint64_t frame_index = 0;
 };
 
 class SwapchainRecreateTracker {

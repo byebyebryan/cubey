@@ -20,6 +20,13 @@ automation. Selected GLFW backend is logged, not inferred from environment.
 Live offscreen uses the same external-session update, validation, health, upload
 and rendering logic as the GUI. Physical time belongs to the solver; render
 updates use wall time. Recorded render-only controls hold exact saved fields.
+Passive viewers follow an external controller's reset only with its matching
+validated command/acknowledgement. Explicit accepted reinitialization is marked
+delayed with a thirty-second bound, rather than claiming healthy/fresh fields;
+ordinary publication disconnect still uses the existing three-second threshold.
+The validation controller retains the latest reset command until the passive
+viewer observes the applied generation, before publishing another command.
+This is not a multi-controller or arbitrary missed-reset-history protocol.
 
 Before primary timings, validate contracts, existing capture behavior, actual
 advancing offscreen publications, pause/resume/reset and clean shutdown. Verify

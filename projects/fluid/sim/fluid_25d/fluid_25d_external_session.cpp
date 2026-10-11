@@ -184,6 +184,25 @@ std::optional<Fluid25DExternalSnapshot> Fluid25DExternalSession::load_latest() c
           result.acknowledgement->application_time_s &&
           *result.acknowledgement->application_time_s > result.header.physical_time_s)))
         invalid("acknowledgement does not belong to this publication");
+    // A passive viewer can follow the sole external controller's reset only
+    // with the matching validated command and acknowledgement. It never sends
+    // commands or takes the controller lock to observe that transition.
+    if (result.acknowledgement && std::filesystem::exists(directory_ / "command.json")) {
+        const auto command =
+            decode_fluid_25d_control_command_json(document(directory_, "command.json"));
+        const auto& ack = *result.acknowledgement;
+        if (command.kind == Fluid25DCommandKind::Reset &&
+            command.domain == Fluid25DControlDomain::Solver &&
+            command.session_id == result.header.session_id &&
+            command.command_id == ack.command_id &&
+            ((ack.state == Fluid25DAcknowledgementState::Accepted &&
+              command.reset_generation == ack.reset_generation) ||
+             (ack.state == Fluid25DAcknowledgementState::Applied &&
+              command.reset_generation < std::numeric_limits<std::uint64_t>::max() &&
+              command.reset_generation + 1U == ack.reset_generation))) {
+            result.observed_reset_command = command;
+        }
+    }
     if (!state.at("slot").is_number_unsigned() || state.at("slot").get<std::uint64_t>() > 2U)
         invalid("slot is outside the three-slot ring");
     const auto slot = state.at("slot").get<std::size_t>();
@@ -261,11 +280,27 @@ bool Fluid25DExternalSession::accept(const Fluid25DExternalSnapshot& snapshot) {
     const bool matching_ack = snapshot.acknowledgement && pending_ &&
                               snapshot.acknowledgement->command_id == pending_->command_id &&
                               acknowledgement != last_acknowledgement_;
-    if (matching_ack)
+    auto observed = observed_reset_;
+    if (!pending_ && control_lock_ < 0 && snapshot.observed_reset_command &&
+        snapshot.observed_reset_command->reset_generation == candidate.session().reset_generation &&
+        (!observed || observed->command_id != snapshot.observed_reset_command->command_id)) {
+        candidate.observe_command(*snapshot.observed_reset_command);
+        observed = snapshot.observed_reset_command;
+    }
+    const bool observed_ack = snapshot.acknowledgement && observed &&
+                              observed->command_id == snapshot.acknowledgement->command_id &&
+                              acknowledgement != observed_reset_ack_;
+    if (matching_ack || observed_ack)
         candidate.accept_acknowledged_frame(*snapshot.acknowledgement, snapshot.header);
     else
         candidate.accept_frame(snapshot.header);
     guard_ = std::move(candidate);
+    observed_reset_ = observed;
+    if (observed_ack) {
+        observed_reset_ack_ = acknowledgement;
+        if (snapshot.acknowledgement->state != Fluid25DAcknowledgementState::Accepted)
+            observed_reset_.reset();
+    }
     if (snapshot.acknowledgement) {
         next_command_id_ = std::max(next_command_id_, snapshot.acknowledgement->command_id + 1U);
     }
@@ -278,6 +313,11 @@ bool Fluid25DExternalSession::accept(const Fluid25DExternalSnapshot& snapshot) {
     if (snapshot.header.lifecycle == Fluid25DLifecycle::Failed)
         pending_.reset();
     return true;
+}
+
+bool Fluid25DExternalSession::reset_reinitialization_pending() const noexcept {
+    return (pending_ && pending_->kind == Fluid25DCommandKind::Reset) ||
+           observed_reset_.has_value();
 }
 
 void Fluid25DExternalSession::send(Fluid25DCommandKind kind, std::optional<double> value) {

@@ -114,6 +114,10 @@ int WindowedHost::run() {
     }
     static_cast<void>(gpu().drain());
 
+    std::printf("windowed_render_ready: %s at %ux%u slots=%u pacing_hz=%u\n",
+                device().device_name(), swapchain().extent().width, swapchain().extent().height,
+                config_.frame_slot_count, config_.run_config.render_fps);
+    std::fflush(stdout);
     std::uint32_t frame = 0;
     double total_stats_seconds = 0.0;
     std::uint64_t total_stats_frames = 0;
@@ -457,6 +461,8 @@ cubey::vulkan::RenderFrameResult WindowedHost::draw_frame(const FrameTiming& tim
         .swapchain = &swapchain(),
         .frame_resources = &frame_resources(),
         .gpu = &gpu(),
+        .profile = profile_recorder(),
+        .frame_index = frame_index,
     });
 
     cubey::vulkan::RenderFrame frame;

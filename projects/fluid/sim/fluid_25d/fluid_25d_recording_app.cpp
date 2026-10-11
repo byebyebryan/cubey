@@ -483,7 +483,12 @@ class RecordingApp {
             return fluid_25d_project_config_detail::ExternalSessionHealth::Disconnected;
         return fluid_25d_project_config_detail::external_session_health(
             external_snapshot_->header.lifecycle, external_seconds_since_valid_publication(),
-            external_publication_age_s());
+            external_publication_age_s(), external_reset_started_.has_value(),
+            external_reset_started_
+                ? std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                                *external_reset_started_)
+                      .count()
+                : 0.0);
     }
 
     [[nodiscard]] bool external_controls_allowed() const {
@@ -744,9 +749,7 @@ class RecordingApp {
                 if (external_pending_.valid())
                     static_cast<void>(external_pending_.get());
                 external_pending_ =
-                    std::async(std::launch::async, [session = external_session_.get()] {
-                        return session->load_latest();
-                    });
+                    std::async(std::launch::async, [this] { return timed_external_read(); });
                 if (external_pending_.wait_for(std::chrono::seconds(1)) !=
                     std::future_status::ready) {
                     fail_external_session(
@@ -787,6 +790,12 @@ class RecordingApp {
                         external_pending_command_kind_.reset();
                     }
                     external_snapshot_ = std::move(next);
+                    if (external_session_->reset_reinitialization_pending()) {
+                        if (!external_reset_started_)
+                            external_reset_started_ = std::chrono::steady_clock::now();
+                    } else {
+                        external_reset_started_.reset();
+                    }
                     backend_metadata_ = external_session_->metadata();
                     external_published_unix_s_ = external_snapshot_->fields->published_unix_s;
                     if (generation_changed || !shown_ ||
@@ -842,10 +851,19 @@ class RecordingApp {
             next_external_poll_ = now + std::chrono::milliseconds(33);
             // load_latest only reads the immutable handshake/bed identity and
             // atomically published files. accept/send remain on the UI thread.
-            external_pending_ = std::async(std::launch::async, [session = external_session_.get()] {
-                return session->load_latest();
-            });
+            external_pending_ =
+                std::async(std::launch::async, [this] { return timed_external_read(); });
         }
+    }
+
+    std::optional<Fluid25DExternalSnapshot> timed_external_read() {
+        const auto started = std::chrono::steady_clock::now();
+        auto result = external_session_->load_latest();
+        external_read_ms_.store(
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
+                .count());
+        ++external_read_jobs_;
+        return result;
     }
 
     void update_view(double wall_delta_s) {
@@ -1088,6 +1106,8 @@ class RecordingApp {
             native_profiler_ && profile ? &*native_profiler_ : nullptr, commands, slot.index,
             "fluid_25d native presentation total");
         if (upload_pending_) {
+            auto span = profile ? profile->cpu_span(frame_index, "fluid25d.record_field_upload")
+                                : profiling::ScopedCpuProfileSpan{};
             resources_.record_recording_upload(commands, slot.index, shown_->depth_m,
                                                packed_velocity_);
             upload_pending_ = false;
@@ -1267,6 +1287,8 @@ class RecordingApp {
                        static_cast<double>(external_snapshot_->header.reset_generation));
                 metric("frame_sequence", static_cast<double>(external_snapshot_->header.sequence));
                 metric("physical_time_s", shown_->time_s);
+                metric("reader_last_completed_ms", external_read_ms_.load());
+                metric("reader_completed_jobs", static_cast<double>(external_read_jobs_.load()));
                 metric("lifecycle_code", static_cast<double>(external_snapshot_->header.lifecycle));
                 metric("published_unix_s", external_published_unix_s_);
                 metric("publication_freshness_s",
@@ -2574,6 +2596,9 @@ class RecordingApp {
     Fluid25DProjectConfig config_;
     std::shared_ptr<Fluid25DRecording> recording_;
     std::unique_ptr<Fluid25DExternalSession> external_session_;
+    std::atomic<double> external_read_ms_{0.0};
+    std::atomic<std::uint64_t> external_read_jobs_{0U};
+    std::optional<std::chrono::steady_clock::time_point> external_reset_started_{};
     Fluid25DBackendMetadata backend_metadata_;
     std::optional<Fluid25DLocalSession> playback_session_{};
     std::optional<Fluid25DCommandKind> playback_navigation_kind_{};

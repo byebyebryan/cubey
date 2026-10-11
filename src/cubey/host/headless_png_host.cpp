@@ -664,11 +664,9 @@ void HeadlessPngHost::run_render_only(HeadlessPngContext&, const HeadlessRenderT
                         [this, &frame_context, &slot, frame,
                          dispatched](cubey::vulkan::GpuOwnerContext& owner) {
                             if (auto* recorder = profile_recorder()) {
-                                recorder->record_cpu_span(
-                                    frame.index, "headless.owner_dispatch_wait",
-                                    std::chrono::duration<double, std::milli>(
-                                        std::chrono::steady_clock::now() - dispatched)
-                                        .count());
+                                recorder->record_cpu_interval(
+                                    frame.index, "headless.owner_dispatch_wait", dispatched,
+                                    std::chrono::steady_clock::now());
                             }
                             cubey::vulkan::check(
                                 vkResetFences(owner.device().handle(), 1, &slot.fence),

@@ -246,6 +246,33 @@ void control_owner(const std::filesystem::path& root) {
     throws([&] { second.send(Fluid25DCommandKind::Pause); });
     require(!second.command_pending(), "rejected controller queued command");
 }
+void passive_reset(const std::filesystem::path& root) {
+    Fixture fixture(root);
+    Fluid25DExternalSession session(root);
+    session.accept(*session.load_latest());
+    Fluid25DControlCommand reset{.command_id = 1,
+                                 .session_id = fixture.metadata.session.session_id,
+                                 .reset_generation = 1,
+                                 .domain = Fluid25DControlDomain::Solver,
+                                 .kind = Fluid25DCommandKind::Reset};
+    text(root / "command.json", encode_fluid_25d_control_command_json(reset));
+    auto accepted = fixture.ack(1, 1, 5.0, Fluid25DLifecycle::Running);
+    accepted.state = Fluid25DAcknowledgementState::Accepted;
+    accepted.application_time_s.reset();
+    fixture.publish(2, 1, 5.0, Fluid25DLifecycle::Running, accepted);
+    require(session.accept(*session.load_latest()) && session.reset_reinitialization_pending(),
+            "passive viewer must observe the sole controller's announced reset");
+    fixture.publish(3, 2, 0.0, Fluid25DLifecycle::Ready,
+                    fixture.ack(1, 2, 0.0, Fluid25DLifecycle::Ready));
+    require(
+        session.accept(*session.load_latest()) && !session.reset_reinitialization_pending() &&
+            session.metadata().session.reset_generation == 2 && !session.command_pending(),
+        "passive reset acknowledgement must apply before the generation without owning controls");
+    require(!std::filesystem::exists(root / "control.lock"),
+            "passive observer must not acquire controller lock");
+    fixture.publish(4, 3, 0.0, Fluid25DLifecycle::Ready);
+    throws([&] { session.accept(*session.load_latest()); });
+}
 } // namespace
 
 int main() {
@@ -257,6 +284,7 @@ int main() {
         lifecycle(root / "lifecycle");
         pending_step(root / "pending-step");
         attach_after_reset(root / "reattach");
+        passive_reset(root / "passive-reset");
         corruption(root / "corruption");
         control_owner(root / "owner");
         std::filesystem::remove_all(root);
