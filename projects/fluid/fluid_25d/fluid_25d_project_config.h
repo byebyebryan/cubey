@@ -125,6 +125,13 @@ enum class ExternalSessionHealth : std::uint8_t {
 inline constexpr double kExternalHealthyHeartbeatSeconds = 0.5;
 inline constexpr double kExternalDisconnectAfterSeconds = 3.0;
 
+[[nodiscard]] inline bool
+use_synchronous_whitewater_classification(const host::CommonRunConfig& run) noexcept {
+    // PNG/video require exact deterministic candidates. A continuous offscreen
+    // viewer instead shares the GUI's bounded, epoch-checked async job policy.
+    return run.headless && !run.headless_render_only;
+}
+
 [[nodiscard]] inline ExternalSessionHealth
 external_session_health(Fluid25DLifecycle lifecycle, double seconds_since_valid_publication,
                         double publication_age_seconds, bool accepted_reset_pending = false,

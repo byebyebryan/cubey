@@ -6861,6 +6861,20 @@ void test_backend_selection_preserves_existing_modes() {
 
 void test_external_session_freshness_and_typed_inputs() {
     using namespace cubey::projects::fluid::fluid_25d;
+    using fluid_25d_project_config_detail::use_synchronous_whitewater_classification;
+    cubey::host::CommonRunConfig whitewater_run;
+    require(!use_synchronous_whitewater_classification(whitewater_run),
+            "GUI whitewater should use bounded asynchronous classification");
+    whitewater_run.headless = true;
+    require(use_synchronous_whitewater_classification(whitewater_run),
+            "PNG captures should retain deterministic synchronous classification");
+    whitewater_run.capture_mode = cubey::CaptureMode::Video;
+    require(use_synchronous_whitewater_classification(whitewater_run),
+            "video captures should retain deterministic synchronous classification");
+    whitewater_run.capture_mode = cubey::CaptureMode::Png;
+    whitewater_run.headless_render_only = true;
+    require(!use_synchronous_whitewater_classification(whitewater_run),
+            "continuous offscreen should share the GUI asynchronous policy");
     using fluid_25d_project_config_detail::external_session_health;
     using fluid_25d_project_config_detail::ExternalSessionHealth;
     using fluid_25d_project_config_detail::should_refresh_external_control_input;

@@ -566,7 +566,8 @@ class RecordingApp {
                                        frame->published_unix_s, epoch};
             };
         whitewater_dirty_ = false;
-        if (config_.common.headless)
+        if (fluid_25d_project_config_detail::use_synchronous_whitewater_classification(
+                config_.common))
             accept(build()); // Deterministic captures never use a stale candidate list.
         else
             whitewater_pending_ = std::async(std::launch::async, build);
@@ -1410,6 +1411,13 @@ class RecordingApp {
         try {
             if (external_pending_.valid())
                 static_cast<void>(external_pending_.get());
+        } catch (...) {
+            if (!shutdown_failure_)
+                shutdown_failure_ = std::current_exception();
+        }
+        try {
+            if (whitewater_pending_.valid())
+                static_cast<void>(whitewater_pending_.get());
         } catch (...) {
             if (!shutdown_failure_)
                 shutdown_failure_ = std::current_exception();
