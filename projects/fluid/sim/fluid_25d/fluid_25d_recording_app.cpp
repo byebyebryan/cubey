@@ -138,6 +138,7 @@ class ManagedSceneReload {
         return stage_;
     }
     std::string selected_case_id;
+    bool restart_allowed() const;
     void request_case(const std::string& id);
     void poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
               render::ColorTargetView target, const std::function<void()>& wait_frames);
@@ -2056,7 +2057,7 @@ class RecordingApp {
             ImGui::TextWrapped("Fine/large grids run the solver substantially slower; 60x is a "
                                "request, not a guarantee.");
         ImGui::BeginDisabled(!pending.available || pending.id == current.id ||
-                             external_session_->command_pending());
+                             !demo.restart_allowed());
         if (ImGui::Button("Apply & restart"))
             demo.request_case(pending.id);
         ImGui::EndDisabled();
@@ -2072,7 +2073,7 @@ class RecordingApp {
                                                     : demo.stage().c_str());
         if (!control->status().error.empty()) {
             ImGui::TextWrapped("Load failed: %s", control->status().error.c_str());
-            ImGui::BeginDisabled(control->busy());
+            ImGui::BeginDisabled(!demo.restart_allowed());
             if (ImGui::Button("Retry selected"))
                 demo.request_case(demo.selected_case_id);
             ImGui::SameLine();
@@ -2127,7 +2128,7 @@ class RecordingApp {
             send_external_command(Fluid25DCommandKind::Pause);
         ImGui::EndDisabled();
         ImGui::SameLine();
-        ImGui::BeginDisabled(control ? loading || external_session_->command_pending()
+        ImGui::BeginDisabled(control ? !demo->restart_allowed()
                                      : busy || !backend_metadata_.capabilities.solver.reset);
         if (ImGui::Button("Reset water [R]")) {
             if (control)
@@ -2668,7 +2669,7 @@ class RecordingApp {
                                                      Fluid25DCommandKind::Resume))
                     send_external_command(Fluid25DCommandKind::Resume);
             }
-            if (reload->control() && !reload->control()->busy() && input.key_pressed(input::Key::R))
+            if (reload->control() && reload->restart_allowed() && input.key_pressed(input::Key::R))
                 reload->request_case(reload->current_case_id());
             else if (controls_available && input.key_pressed(input::Key::R) &&
                      fluid_25d_command_supported(backend_metadata_.capabilities,
@@ -2961,8 +2962,14 @@ void ManagedSceneReload::log(const std::string& event) {
                         active_->backend_metadata_.grid.solver_bed_sha256);
 }
 
+bool ManagedSceneReload::restart_allowed() const {
+    return control_ && fluid_25d_demo_restart_allowed(control_->busy(),
+                                                      active_->external_session_->command_pending(),
+                                                      control_->status().worker_available);
+}
+
 void ManagedSceneReload::request_case(const std::string& id) {
-    if (!control_ || active_->external_session_->command_pending())
+    if (!restart_allowed())
         return;
     control_->request(id, active_->external_snapshot_->rain_m_per_s * 3.6e6,
                       active_->external_snapshot_->pacing);

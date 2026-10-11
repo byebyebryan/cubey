@@ -357,6 +357,13 @@ std::string fluid_25d_demo_time_label(double seconds) {
            std::to_string(whole % 60) + "s";
 }
 
+bool fluid_25d_demo_restart_allowed(bool restart_pending, bool command_pending,
+                                    bool worker_available) {
+    // A fresh identity can abandon an unresolved command only after the owning
+    // launcher confirms the previous producer has exited. Never race a live one.
+    return !restart_pending && (!command_pending || !worker_available);
+}
+
 void Fluid25DDemoPaceMeter::sample(double wall, double physical, bool running) {
     if (!running || !std::isfinite(wall) || !std::isfinite(physical) ||
         (!samples_.empty() &&

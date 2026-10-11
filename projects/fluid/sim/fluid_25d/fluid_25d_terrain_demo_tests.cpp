@@ -123,6 +123,11 @@ void contracts(const std::filesystem::path& root) {
 }
 
 void helpers(const std::filesystem::path& root) {
+    require(fluid_25d_demo_restart_allowed(false, false, true), "healthy restart denied");
+    require(!fluid_25d_demo_restart_allowed(false, true, true), "live command raced by restart");
+    require(fluid_25d_demo_restart_allowed(false, true, false), "dead command blocked recovery");
+    require(!fluid_25d_demo_restart_allowed(true, true, false),
+            "pending restart raced by recovery");
     require(fluid_25d_demo_time_label(72000) == "20h 0m 0s", "hours wrapped");
     require(fluid_25d_demo_time_label(-1) == "unknown", "invalid time accepted");
     Fluid25DDemoPaceMeter meter;

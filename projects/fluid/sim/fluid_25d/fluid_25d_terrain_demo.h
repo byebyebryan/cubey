@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -80,6 +81,8 @@ std::vector<Fluid25DTerrainDemoAction>
 fluid_25d_load_terrain_demo_script(const std::filesystem::path& path);
 
 std::string fluid_25d_demo_time_label(double physical_s);
+bool fluid_25d_demo_restart_allowed(bool restart_pending, bool command_pending,
+                                    bool worker_available);
 
 class Fluid25DDemoPaceMeter {
   public:

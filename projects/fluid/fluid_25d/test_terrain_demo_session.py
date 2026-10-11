@@ -151,6 +151,19 @@ class SupervisorTests(unittest.TestCase):
         self.until("ready")
         self.assertEqual(self.manager.worker.state["frame"]["physical_time_s"], 0)
 
+    def test_unexpected_worker_exit_is_confirmed_and_can_restart(self):
+        old = self.manager.worker
+        old.returncode = 1
+        self.manager.poll()
+        self.assertEqual(self.manager.state["phase"], "error")
+        self.assertFalse(self.manager.state["worker_available"])
+        self.request(1, "mountain")
+        self.until("ready")
+        self.assertIsNot(self.manager.worker, old)
+        self.assertEqual(self.manager.worker.state["frame"]["physical_time_s"], 0)
+        self.installed()
+        self.until("active")
+
     def test_close_during_load_stops_only_owned_worker(self):
         self.request(1)
         self.manager.poll()
