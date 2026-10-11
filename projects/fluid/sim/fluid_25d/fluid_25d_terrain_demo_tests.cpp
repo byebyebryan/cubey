@@ -117,6 +117,27 @@ void contracts(const std::filesystem::path& root) {
     write(root / "catalog.json", catalogue);
     throws([&] { Fluid25DTerrainDemoControl invalid(root); });
     catalogue["cases"][0] = entry;
+    // New catalogue-selected names work without a renderer allowlist edit.
+    const std::string additional_id = "basin-crop-patch-512-32m";
+    auto additional = entry;
+    additional["id"] = additional_id;
+    additional["site"] = "basin-crop";
+    additional["site_label"] = "Basin crop";
+    additional["case_dir"] = "/study/cases/" + additional_id;
+    additional["surface_grid"] = "/study/cases/" + additional_id + "/surface-grid.json";
+    catalogue["cases"].push_back(additional);
+    write(root / "catalog.json", catalogue);
+    {
+        Fluid25DTerrainDemoControl expanded(root);
+        require(expanded.cases().size() == 2, "catalogued extra site rejected");
+    }
+    for (const std::string unsafe : {"../basin", "-basin", "basin-", "basin--crop", "Basin"}) {
+        catalogue["cases"][1]["site"] = unsafe;
+        catalogue["cases"][1]["id"] = unsafe + "-patch-512-32m";
+        write(root / "catalog.json", catalogue);
+        throws([&] { Fluid25DTerrainDemoControl invalid_site(root); });
+    }
+    catalogue["cases"] = Json::array({entry});
     catalogue["cases"].push_back(entry);
     write(root / "catalog.json", catalogue);
     throws([&] { Fluid25DTerrainDemoControl duplicate(root); });

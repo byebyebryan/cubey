@@ -1,0 +1,9 @@
+{
+  "schema": "cubey.fluid25d.terrain-sites.v1",
+  "default_site": "mountain",
+  "sites": [
+    {"id": "mountain", "label": "Mountain valley", "manifest": "cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json", "elevation_sha256": "a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737", "center_xz_m": [11520, 19200]},
+    {"id": "alpine", "label": "Alpine terrain", "manifest": "cache/terrain/sources/v1/landscape-variations/alpine-range/heightfield.json", "elevation_sha256": "5fbf519f9af538d0f1b684e01a4aa1c830ac1896ced2f082ddecb09a3bc9a63a", "center_xz_m": [0, 0]},
+    {"id": "rolling", "label": "Rolling hills", "manifest": "cache/terrain/sources/v1/landscape-variations/rolling-wet-lowland/heightfield.json", "elevation_sha256": "fd52d7c3b25f139ac709b8ced673ccc77d749cc33e4c52e66745494a86dcf7a2", "center_xz_m": [0, 0]}
+  ]
+}

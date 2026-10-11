@@ -20,8 +20,9 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "projects/terrain/tools"))
 from terrain_grid_sampling import grid_geometry, load_source, sample_grid, sha256
 
-SITES = {"mountain": "temperate-mountain-valley", "alpine": "alpine-range",
-         "rolling": "rolling-wet-lowland"}
+from terrain_water_sites import DEFAULT_CATALOGUE, load_sites
+
+SITES = load_sites()
 CONFIGS = {"patch-512-32m": (512, 32), "patch-1024-16m": (1024, 16),
            "patch-2048-8m": (2048, 8), "small-512-16m": (512, 16),
            "large-2048-16m": (2048, 16)}
@@ -32,15 +33,19 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + "\n")
 
 
-def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
+def prepare(site: str, config: str, out: Path, rainfall: float = 512, sites=None) -> dict:
+    sites = SITES if sites is None else sites
     if out.exists() or out.is_symlink() or not out.parent.is_dir():
         raise ValueError("case output must be a fresh leaf")
-    if site not in SITES or config not in (*CONFIGS, HISTORICAL_CONFIG) or rainfall not in (512, 1024):
+    if site not in sites or config not in (*CONFIGS, HISTORICAL_CONFIG) or rainfall not in (512, 1024):
         raise ValueError("unknown approved site/configuration/rainfall")
     if config == HISTORICAL_CONFIG and site != "mountain":
         raise ValueError("historical control exists only for the original mountain site")
-    source = ROOT / "cache/terrain/sources/v1/landscape-variations" / SITES[site] / "heightfield.json"
+    recipe = sites[site]
+    source = ROOT / recipe["manifest"]
     manifest, raw = load_source(source)
+    if manifest["files"]["elevation"]["sha256"] != recipe["elevation_sha256"]:
+        raise ValueError("catalogued source elevation identity changed")
     g = manifest["grid"]
     cg = json.loads((source.parent / "surface-fields.json").read_text())["grid"]
     bounds = (max(g["sample_origin_x_m"], cg["sample_origin_x_m"]),
@@ -49,10 +54,7 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
                   cg["sample_origin_x_m"] + (cg["width"] - 1) * cg["sample_spacing_m"]),
               min(g["sample_origin_z_m"] + (g["height"] - 1) * g["sample_spacing_m"],
                   cg["sample_origin_z_m"] + (cg["height"] - 1) * cg["sample_spacing_m"]))
-    center = (0., 0.)
-    if site == "mountain":
-        center = (g["sample_origin_x_m"] + 1407.5 * g["sample_spacing_m"],
-                  g["sample_origin_z_m"] + 1663.5 * g["sample_spacing_m"])
+    center = tuple(recipe["center_xz_m"])
     n, spacing = (512, 30) if config == HISTORICAL_CONFIG else CONFIGS[config]
     grid = grid_geometry(n, n, spacing, center, bounds)
     bed = sample_grid(manifest, raw, grid)
@@ -119,26 +121,31 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512) -> dict:
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--site", required=True, choices=(*SITES, "all"))
+    p.add_argument("--site", required=True)
+    p.add_argument("--site-catalogue", type=Path, default=DEFAULT_CATALOGUE)
     p.add_argument("--configuration", required=True, choices=(*CONFIGS, HISTORICAL_CONFIG, "all"))
     p.add_argument("--rain", type=float, default=512, choices=(512, 1024))
     p.add_argument("--out", required=True, type=Path)
     a = p.parse_args()
+    sites = load_sites(a.site_catalogue)
+    if a.site not in (*sites, "all"):
+        p.error("site not in the selected catalogue")
     if a.site == "all" or a.configuration == "all":
         out = a.out.absolute()
         if out.exists() or out.is_symlink() or not out.parent.is_dir():
             raise ValueError("batch output must be a fresh leaf")
         out.mkdir()
-        sites = tuple(SITES) if a.site == "all" else (a.site,)
+        selected_sites = tuple(sites) if a.site == "all" else (a.site,)
         configs = tuple(CONFIGS) if a.configuration == "all" else (a.configuration,)
         # Screen-size preparations first; never choose crops from simulation outcomes.
         configs = sorted(configs, key=lambda key: (key != "patch-1024-16m", key))
         results = []
         for config in configs:
-            for site in sites:
+            for site in selected_sites:
                 label = f"{site}-{config}"
                 command = ["rtk", "proxy", sys.executable, "-u", str(Path(__file__).resolve()),
                            "--site", site, "--configuration", config, "--rain", str(a.rain),
+                           "--site-catalogue", str(a.site_catalogue.resolve()),
                            "--out", str(out / label)]
                 started = time.monotonic()
                 with (out / f"{label}.prepare.log").open("w") as log:
@@ -155,7 +162,7 @@ def main():
                 write_json(out / "preparation.json", {"cases": results})
                 print(json.dumps(row), flush=True)
         return
-    result = prepare(a.site, a.configuration, a.out.absolute(), a.rain)
+    result = prepare(a.site, a.configuration, a.out.absolute(), a.rain, sites)
     print(json.dumps({"case": result["case"]["name"], "grid": result["case"]["terrain_source_identity"]["target_grid"],
                       "audit": result["input_audit"]}, allow_nan=False), flush=True)
 

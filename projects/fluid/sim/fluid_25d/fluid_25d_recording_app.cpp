@@ -2011,16 +2011,12 @@ class RecordingApp {
         const auto& selected = control->case_by_id(demo.selected_case_id);
         ImGui::BeginDisabled(control->busy());
         if (ImGui::BeginCombo("Site", selected.site_label.c_str())) {
-            for (const char* site : {"mountain", "alpine", "rolling"}) {
-                const auto found = std::find_if(
-                    control->cases().begin(), control->cases().end(), [&](const auto& item) {
-                        return item.site == site && item.configuration == selected.configuration;
-                    });
-                if (found == control->cases().end())
+            for (const auto& entry : control->cases()) {
+                if (entry.configuration != selected.configuration)
                     continue;
-                ImGui::BeginDisabled(!found->available);
-                if (ImGui::Selectable(found->site_label.c_str(), selected.site == site))
-                    demo.selected_case_id = found->id;
+                ImGui::BeginDisabled(!entry.available);
+                if (ImGui::Selectable(entry.site_label.c_str(), selected.site == entry.site))
+                    demo.selected_case_id = entry.id;
                 ImGui::EndDisabled();
             }
             ImGui::EndCombo();

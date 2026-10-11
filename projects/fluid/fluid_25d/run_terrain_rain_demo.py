@@ -19,12 +19,13 @@ import time
 
 import run_mountain_rain_demo as demo
 import terrain_demo_session as managed
+from terrain_water_sites import DEFAULT_CATALOGUE, load_sites
 
 HERE = Path(__file__).resolve().parent
-SITES = ("mountain", "alpine", "rolling")
+SITES = tuple(load_sites())
 CONFIGS = ("patch-512-32m", "patch-1024-16m", "patch-2048-8m", "small-512-16m", "large-2048-16m")
 RELEASE_APP = demo.ref.ROOT / "build/release/projects/fluid/fluid_25d/fluid_25d"
-SITE_LABELS = {"mountain": "Mountain valley", "alpine": "Alpine terrain", "rolling": "Rolling hills"}
+SITE_LABELS = {key: value["label"] for key, value in load_sites().items()}
 GRID_PRESETS = {"patch-512-32m": (512, 32, "Coarse", "same"),
                 "patch-1024-16m": (1024, 16, "Default", "same"),
                 "patch-2048-8m": (2048, 8, "Fine (slower solver)", "same"),
@@ -60,15 +61,16 @@ def case_identity(case):
             "climate_manifest_sha256": demo.ref.sha256_file(manifest_path.parent / "surface-fields.json")}
 
 
-def catalogue(study):
+def catalogue(study, sites=None):
     """Admit only named existing cases; missing/invalid entries stay disabled."""
     entries = []
-    for site in SITES:
+    sites = load_sites() if sites is None else sites
+    for site, recipe in sites.items():
         for configuration in CONFIGS:
             size, spacing, label, extent = GRID_PRESETS[configuration]
             case = (study / "cases" / f"{site}-{configuration}").absolute()
             entry = {"id": f"{site}-{configuration}", "site": site,
-                     "site_label": SITE_LABELS[site], "configuration": configuration,
+                     "site_label": recipe["label"], "configuration": configuration,
                      "label": label, "extent": extent, "width": size, "height": size,
                      "spacing_m": spacing, "source_spacing_m": 30,
                      "case_dir": str(case), "surface_grid": str(case / "surface-grid.json"),
@@ -79,9 +81,29 @@ def catalogue(study):
             try:
                 identity = case_identity(case)
                 spec = identity["spec"]
+                binding = spec["terrain_source_identity"]
+                if (Path(binding["manifest_path"]) != (demo.ref.ROOT / recipe["manifest"]).resolve() or
+                        binding["elevation_sha256"] != recipe["elevation_sha256"]):
+                    raise ValueError("prepared case does not match its catalogued terrain source")
                 if (spec["site"], spec["configuration"], spec["cols"], spec["rows"], spec["dx_m"]) != (
                         site, configuration, size, size, spacing):
                     raise ValueError("prepared case does not match its named preset")
+                # Pin crop coordinates too, including the established border
+                # clamp for the original mountain large-area preset. This is
+                # admission geometry only; sampling remains shared Terrain code.
+                cg = json.loads((Path(binding["manifest_path"]).parent / "surface-fields.json").read_bytes())["grid"]
+                source_grid = binding["source_grid"]
+                half = (size - 1) * spacing / 2
+                expected_center = []
+                for axis, dimension in (("x", "width"), ("z", "height")):
+                    lo = max(g[f"sample_origin_{axis}_m"] for g in (source_grid, cg))
+                    hi = min(g[f"sample_origin_{axis}_m"] + (g[dimension]-1)*g["sample_spacing_m"] for g in (source_grid, cg))
+                    expected_center.append(min(max(recipe["center_xz_m"][len(expected_center)], lo+half), hi-half))
+                target = binding["target_grid"]
+                if ((target["width"], target["height"], target["spacing_m"]) != (size, size, spacing) or
+                        target["center_xz_m"] != expected_center or
+                        target["sample_origin_xz_m"] != [v-half for v in expected_center]):
+                    raise ValueError("prepared crop does not match its catalogued world coordinates")
                 protocol = json.loads((case / "case-protocol.json").read_bytes())
                 native_identity = {**protocol["input_hashes"],
                     "../case-spec.json": demo.ref.sha256_file(case / "case-spec.json"),
@@ -93,7 +115,7 @@ def catalogue(study):
                     solver_bed_sha256=spec["terrain_source_identity"]["solver_bed_sha256"],
                     protocol_sha256=identity["protocol_sha256"],
                     climate_manifest_sha256=identity["climate_manifest_sha256"])
-            except (ValueError, OSError, KeyError) as error:
+            except (ValueError, OSError, KeyError, TypeError) as error:
                 entry["error"] = str(error)[:512]
             entries.append(entry)
     return entries
@@ -170,7 +192,8 @@ def parser():
     p.add_argument("mode", choices=("live", "replay"), nargs="?", default="live",
                    help="default live; replay requires an explicit recording and runs no solver")
     p.add_argument("--study", required=True, type=Path)
-    p.add_argument("--site", choices=SITES, default="mountain")
+    p.add_argument("--site", default="mountain")
+    p.add_argument("--site-catalogue", type=Path, default=DEFAULT_CATALOGUE)
     p.add_argument("--configuration", choices=CONFIGS, default="patch-1024-16m")
     p.add_argument("--recording", type=Path, help="explicit binary-capture replay; never substituted for live")
     p.add_argument("--surface", choices=("legacy", "correlated"), default="legacy")
@@ -196,6 +219,9 @@ def parser():
 def main(argv=None):
     p = parser()
     a = p.parse_args(argv)
+    sites = load_sites(a.site_catalogue)
+    if a.site not in sites:
+        p.error("site not in the selected catalogue")
     if not 0 <= a.render_fps <= 0xFFFFFFFF:
         p.error("render fps must fit a nonnegative uint32")
     if not 320 <= a.width <= 3840 or not 240 <= a.height <= 2160:
@@ -217,7 +243,7 @@ def main(argv=None):
         p.error("switch scripts require headless live mode")
     if a.switch_script:
         a.switch_script = a.switch_script.resolve(strict=True)
-    entries = catalogue(a.study.resolve(strict=True)) if a.mode == "live" else []
+    entries = catalogue(a.study.resolve(strict=True), sites) if a.mode == "live" else []
     if entries and not next(entry for entry in entries if entry["id"] == case.name)["available"]:
         raise ValueError("selected prepared case is unavailable")
     preview = demo.ref.OUTPUT_ROOT / "terrain-rain-launch-FRESH"

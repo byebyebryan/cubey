@@ -145,7 +145,10 @@ Fluid25DTerrainDemoControl::Fluid25DTerrainDemoControl(const std::filesystem::pa
         entry.extent = string(item, "extent");
         if (entry.id.empty() || !ids.insert(entry.id).second ||
             entry.id != entry.site + "-" + entry.configuration ||
-            (entry.site != "mountain" && entry.site != "alpine" && entry.site != "rolling") ||
+            entry.site.empty() || entry.site.size() > 64 ||
+            entry.site.front() == '-' || entry.site.back() == '-' ||
+            entry.site.find("--") != std::string::npos ||
+            entry.site.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789-") != std::string::npos ||
             (entry.extent != "same" && entry.extent != "small" && entry.extent != "large"))
             invalid("unknown/duplicate prepared case");
         if (!item.at("width").is_number_unsigned() || !item.at("height").is_number_unsigned())
