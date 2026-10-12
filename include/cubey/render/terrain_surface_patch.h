@@ -58,6 +58,12 @@ class TerrainSurfacePatchRenderer {
     void shadow(const vulkan::CommandRecorder& recorder, VkDescriptorSet fields,
                 VkDescriptorSet frame, const TerrainSurfacePatchPush& push, std::uint32_t vertices,
                 bool bspline) const;
+    void ensure_context(const vulkan::Device& device, VkExtent2D extent,
+                        VkDescriptorSetLayout fields, VkDescriptorSetLayout frame,
+                        const std::filesystem::path& shader_directory);
+    void context(const vulkan::CommandRecorder& recorder, VkDescriptorSet fields,
+                 VkDescriptorSet frame, const TerrainSurfacePatchPush& push, VkBuffer indices,
+                 std::uint32_t index_count, bool shadow = false) const;
 
   private:
     struct State;

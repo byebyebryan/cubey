@@ -281,6 +281,18 @@ target_compile_definitions(cubey_terrain_surface_context_tests PRIVATE
     CUBEY_TEST_ASSET_DIR="${PROJECT_SOURCE_DIR}/tests/assets")
 add_test(NAME terrain_surface_context_cpu COMMAND cubey_terrain_surface_context_tests)
 set_tests_properties(terrain_surface_context_cpu PROPERTIES TIMEOUT 60)
+add_executable(cubey_terrain_surface_context_edge_tests terrain_surface_context_edge_tests.cpp)
+target_link_libraries(cubey_terrain_surface_context_edge_tests PRIVATE cubey::render cubey::terrain cubey_project_warnings)
+target_compile_definitions(cubey_terrain_surface_context_edge_tests PRIVATE
+    CUBEY_TEST_ASSET_DIR="${PROJECT_SOURCE_DIR}/tests/assets"
+    CUBEY_TERRAIN_PATCH_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/context-test-shaders")
+cubey_terrain_surface_patch_shader_depends(CUBEY_TERRAIN_CONTEXT_TEST_DEPENDS)
+cubey_add_glsl_shaders(cubey_terrain_surface_context_edge_tests
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/context-test-shaders"
+    SOURCES terrain_surface_context_edge.comp DEPENDS ${CUBEY_TERRAIN_CONTEXT_TEST_DEPENDS})
+add_test(NAME terrain_surface_context_edge_gpu COMMAND cubey_terrain_surface_context_edge_tests)
+set_tests_properties(terrain_surface_context_edge_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
 target_link_libraries(cubey_terrain_surface_patch_gap_tests PRIVATE cubey::render cubey_project_warnings)
 target_compile_definitions(cubey_terrain_surface_patch_gap_tests PRIVATE
     CUBEY_TERRAIN_PATCH_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/patch-test-shaders")

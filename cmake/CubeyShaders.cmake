@@ -256,6 +256,8 @@ endfunction()
 # Solver-neutral paired-surface package, shared by Fluid and Terrain.
 function(cubey_terrain_surface_patch_shader_sources out_var)
     set(patch_sources
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline.vert"
@@ -279,6 +281,7 @@ endfunction()
 function(cubey_terrain_surface_patch_shader_depends out_var)
     cubey_atmosphere_shader_depends(patch_dependencies)
     list(APPEND patch_dependencies
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_body.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl"

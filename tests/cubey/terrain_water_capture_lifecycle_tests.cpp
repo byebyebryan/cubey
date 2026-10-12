@@ -15,7 +15,7 @@ int main() {
             std::filesystem::path(CUBEY_TEST_ASSET_DIR) / "terrain/backdrop-smoke/heightfield.json";
         asset::TerrainRasterHeightSource source(source_path);
         asset::TerrainWaterCapture c;
-        c.grid = {5U, 5U, 128.0F, {4096.0F, 0.0F}};
+        c.grid = {5U, 5U, 128.0F, {4096.0F, 512.0F}};
         c.source_elevation_sha256 = source.provenance().elevation_sha256;
         c.capture_time_s = 100.0;
         c.rain_mm_per_hour = 512.0;
@@ -46,6 +46,7 @@ int main() {
         vulkan::GpuRuntime gpu(device, submission);
         TerrainWaterCaptureRuntime runtime(temporary, source_path,
                                            CUBEY_TERRAIN_CAPTURE_TEST_SHADER_DIR);
+        runtime.prepare_context();
         for (unsigned size : {128U, 192U, 128U}) {
             runtime.destroy_target_resources(); // No outstanding commands: retired synchronously
                                                 // below.
@@ -85,7 +86,7 @@ int main() {
                                      : frame < 4U ? 1.0
                                                   : double(frame) - 2.0;
                 runtime.record(device, commands.command_buffer(), {slot, 2U}, target, false, view,
-                               clock, frame != 2U, true);
+                               clock, frame != 2U, true, frame % 2U == 0U);
                 commands.submit_and_wait();
             }
             runtime.verify_immutable_fields(gpu);

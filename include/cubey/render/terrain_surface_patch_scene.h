@@ -37,6 +37,15 @@ struct TerrainSurfacePatchFields {
     const vulkan::Buffer& coverage;
     VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
 };
+// Optional read-only exterior ground in the opaque/shadow stages. Not water.
+struct TerrainSurfaceContextDraw {
+    const vulkan::Buffer* vertices = nullptr;
+    const vulkan::Buffer* indices = nullptr;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptor_layout = VK_NULL_HANDLE;
+    std::uint32_t index_count = 0;
+    math::Vec3 minimum{}, maximum{};
+};
 struct TerrainSurfacePatchSurface {
     std::uint32_t width = 0U, height = 0U;
     std::span<const math::Vec4> landform, climate, correlated;

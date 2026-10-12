@@ -1,6 +1,7 @@
 #pragma once
 #include <cubey/asset/terrain_water_capture.h>
 #include <cubey/render/terrain_surface_patch_scene.h>
+#include <cubey/terrain/terrain_surface_context.h>
 #include <memory>
 
 namespace cubey {
@@ -16,10 +17,13 @@ class TerrainWaterCaptureRuntime {
                           std::uint32_t slots, render::ColorTargetView target);
     void destroy_target_resources();
     void destroy();
+    void prepare_context(); // Once, before recording; no solver or source edits.
+    [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;
     void record(const vulkan::Device& device, VkCommandBuffer commands, render::FrameSlot slot,
                 render::ColorTargetView target, bool present,
                 const render::TerrainSurfacePatchCamera& camera, double animation_s,
-                bool water_visible, bool profile);
+                bool water_visible, bool profile, bool context_visible = false,
+                unsigned ground_view = 0U);
     [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
     // Expensive end-of-study check only, never in a measured frame window.
     void verify_immutable_fields(vulkan::GpuRuntime& gpu) const;

@@ -53,6 +53,14 @@ TerrainProjectConfig parse(std::initializer_list<std::string> arguments) {
 
 void test_defaults_and_explicit_default_paths() {
     const TerrainProjectConfig parsed = parse({});
+    require(!parsed.captured_water_context, "wider context must remain opt-in");
+    const auto context =
+        parse({"--terrain-water-context", "--terrain-water-capture-camera", "landscape"});
+    require(context.captured_water_context && context.water_capture_camera == "landscape",
+            "context CLI not retained");
+    require(
+        !parse({"--terrain-water-context", "--no-terrain-water-context"}).captured_water_context,
+        "context disable override not retained");
     require(!parsed.debug_view.has_value() && !parsed.terrain.seed.has_value() &&
                 !parsed.terrain.heightfield_path.has_value() &&
                 !parsed.terrain.surface_fields_path.has_value(),

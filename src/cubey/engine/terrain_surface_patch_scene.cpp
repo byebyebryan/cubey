@@ -130,6 +130,8 @@ struct TerrainSurfacePatchScene::State {
     std::optional<vulkan::Sampler> linear_sampler, nearest_sampler;
     std::optional<render::FrameUniformMaterialInstance<Uniforms>> frame;
     std::optional<vulkan::GpuTimestampProfiler> profiler;
+    std::optional<vulkan::GpuTimestampProfiler> context_profiler;
+    std::vector<bool> context_profile_slots;
     std::optional<vulkan::Buffer> visual_flow;
     std::optional<vulkan::DescriptorSetBundle> visual_flow_set;
     std::optional<render::ComputePipelineResource> visual_flow_pipeline;
@@ -199,7 +201,7 @@ bool TerrainSurfacePatchScene::ensure_resources(
                                     .material_pass = render::terrain_surface_patch_frame_material(),
                                     .descriptor_set = 1U,
                                     .frame_slot_count = slots});
-        s.profiler.emplace(device, slots, 7U);
+        s.profiler.emplace(device, slots, 9U);
         s.visual_flow.emplace(
             device, vulkan::device_local_buffer_config(fields.velocity.size(),
                                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
@@ -353,7 +355,14 @@ std::vector<vulkan::GpuPassTiming> TerrainSurfacePatchScene::collect_timings(std
     if (!state_)
         return {};
     state_->profiler->collect(slot);
-    return state_->profiler->latest_timings();
+    auto timings = state_->profiler->latest_timings();
+    if (state_->context_profiler && state_->context_profile_slots.at(slot)) {
+        state_->context_profiler->collect(slot);
+        const auto& additional = state_->context_profiler->latest_timings();
+        timings.insert(timings.end(), additional.begin(), additional.end());
+        state_->context_profile_slots[slot] = false;
+    }
+    return timings;
 }
 
 void TerrainSurfacePatchScene::record(
@@ -367,12 +376,27 @@ void TerrainSurfacePatchScene::record(
     bool reset_visual_flow, unsigned terrain_view, unsigned water_view, unsigned surface_mode,
     const TerrainSurfacePatchEnvironment* environment, TerrainSurfacePatchRain rain,
     std::span<const TerrainSurfacePatchWhitewaterSeed> whitewater_seeds,
-    std::uint64_t whitewater_generation) {
+    std::uint64_t whitewater_generation, const render::TerrainSurfaceContextDraw* context) {
     auto& s = *state_;
+    if (context) {
+        if (!context->vertices || !context->indices || !context->index_count)
+            throw std::runtime_error("invalid retained terrain context draw");
+        s.patch->ensure_context(device, target.extent, context->descriptor_layout,
+                                s.frame->layout(), shader_directory_);
+    }
     const bool full_water_shading = water_view == 0U || water_view == 19U;
     auto* profiler = profile ? &*s.profiler : nullptr;
     if (profiler)
         profiler->begin_frame(commands, slot.index);
+    if (profile && context && !s.context_profiler) {
+        s.context_profiler.emplace(device, slot.count, 2U);
+        s.context_profile_slots.assign(slot.count, false);
+    }
+    auto* context_profiler = profile && context ? &*s.context_profiler : nullptr;
+    if (s.context_profiler)
+        s.context_profile_slots.at(slot.index) = context_profiler != nullptr;
+    if (context_profiler)
+        context_profiler->begin_frame(commands, slot.index);
     if (environment && !s.daylight_initialized) {
         if (!s.captured_daylight || !s.daylight_pipeline ||
             environment->sky_radiance_sampler == VK_NULL_HANDLE ||
@@ -460,10 +484,27 @@ void TerrainSurfacePatchScene::record(
     if (options.native_shadow_scene_fit) {
         const float half_width = float(config.grid_width - 1U) * config.cell_size_m * 0.5F;
         const float half_height = float(config.grid_height - 1U) * config.cell_size_m * 0.5F;
-        const auto projection = render::terrain_shadow_box_projection(
-            {{-half_width, s.terrain_low * height_scale, -half_height},
-             {half_width, s.terrain_high * height_scale, half_height}},
-            direction, options.native_shadow_extent);
+        render::TerrainShadowBoxBounds bounds{
+            {-half_width, s.terrain_low * height_scale, -half_height},
+            {half_width, s.terrain_high * height_scale, half_height}};
+        if (context) {
+            // Conservative up-sun caster reach for ALL core receivers. The far
+            // context is not qualified as a shadow receiver; protect core density.
+            const float reach = std::max(0.0F, context->maximum.y - bounds.minimum_m.y) /
+                                std::max(direction.y, 0.05F);
+            bounds.minimum_m.x = std::max(context->minimum.x,
+                                          bounds.minimum_m.x + std::min(0.0F, direction.x * reach));
+            bounds.minimum_m.z = std::max(context->minimum.z,
+                                          bounds.minimum_m.z + std::min(0.0F, direction.z * reach));
+            bounds.maximum_m.x = std::min(context->maximum.x,
+                                          bounds.maximum_m.x + std::max(0.0F, direction.x * reach));
+            bounds.maximum_m.z = std::min(context->maximum.z,
+                                          bounds.maximum_m.z + std::max(0.0F, direction.z * reach));
+            bounds.minimum_m.y = std::min(bounds.minimum_m.y, context->minimum.y);
+            bounds.maximum_m.y = std::max(bounds.maximum_m.y, context->maximum.y);
+        }
+        const auto projection =
+            render::terrain_shadow_box_projection(bounds, direction, options.native_shadow_extent);
         s.shadow_matrix = projection.light_view_projection;
         shadow_span = projection.orthographic_span_m;
         shadow_depth_span = projection.depth_span_m;
@@ -471,9 +512,13 @@ void TerrainSurfacePatchScene::record(
     if (s.reported_shadow_matrix != s.shadow_matrix ||
         s.reported_shadow_extent != shadow_extent.width) {
         std::printf("fluid_25d_shadow_projection: mode=%s extent=%u span_m=%.6f depth_m=%.6f "
-                    "max_texel_m=%.6f camera_independent=1 all_casters=1\n",
+                    "max_texel_m=%.6f camera_independent=1 all_casters=%u\n",
                     options.native_shadow_scene_fit ? "scene" : "legacy", shadow_extent.width,
-                    shadow_span, shadow_depth_span, shadow_span / float(shadow_extent.width));
+                    shadow_span, shadow_depth_span, shadow_span / float(shadow_extent.width),
+                    context ? 0U : 1U);
+        if (context)
+            std::printf("terrain_context_shadow: core_receivers=covered; up_sun_casters=bounded; "
+                        "far_receivers=unqualified\n");
         s.reported_shadow_matrix = s.shadow_matrix;
         s.reported_shadow_extent = shadow_extent.width;
     }
@@ -549,6 +594,15 @@ void TerrainSurfacePatchScene::record(
     const auto flow = graph.import_buffer(
         {.label = "scenic render-only filtered velocity", .byte_size = s.visual_flow->size()},
         s.visual_flow->handle());
+    std::optional<render::RenderGraphBufferHandle> context_vertices, context_indices;
+    if (context) {
+        context_vertices = graph.import_buffer(
+            {.label = "retained exterior ground vertices", .byte_size = context->vertices->size()},
+            context->vertices->handle());
+        context_indices = graph.import_buffer(
+            {.label = "retained exterior ground indices", .byte_size = context->indices->size()},
+            context->indices->handle());
+    }
     const auto set = s.frame->set(slot);
     const auto fields = resources.descriptor_set;
     const bool reset_flow =
@@ -584,8 +638,8 @@ void TerrainSurfacePatchScene::record(
                            ((std::uint64_t(config.grid_width) * config.grid_height) + 255U) / 256U),
                        1U, 1U);
         });
-    graph.add_pass("scenic shadow", render::RenderGraphQueueDomain::Graphics)
-        .read_storage_buffer(bed)
+    auto shadow_pass = graph.add_pass("scenic shadow", render::RenderGraphQueueDomain::Graphics);
+    shadow_pass.read_storage_buffer(bed)
         .read_storage_buffer(h)
         .write_depth(shadow_depth)
         .execute([&, push, fields, set, vertices, shadow_depth, bspline](const auto& ctx) {
@@ -597,10 +651,18 @@ void TerrainSurfacePatchScene::record(
                 ctx.recorder(), render::resolved_depth_target_view(ctx, shadow_depth),
                 render::depth_clear_value(), [&](const auto& r) {
                     s.patch->shadow(r, fields, set, shadow_push, vertices, bspline);
+                    if (context) {
+                        vulkan::GpuTimestampScope timer(context_profiler, commands, slot.index,
+                                                        "terrain context shadow");
+                        s.patch->context(r, context->descriptor_set, set, shadow_push,
+                                         context->indices->handle(), context->index_count, true);
+                    }
                 });
         });
-    graph.add_pass("scenic opaque", render::RenderGraphQueueDomain::Graphics)
-        .read_storage_buffer(bed)
+    if (context)
+        shadow_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
+    auto opaque_pass = graph.add_pass("scenic opaque", render::RenderGraphQueueDomain::Graphics);
+    opaque_pass.read_storage_buffer(bed)
         .read_storage_buffer(h)
         .read_storage_buffer(u)
         .read_texture(shadow_depth)
@@ -622,8 +684,16 @@ void TerrainSurfacePatchScene::record(
                                           set);
                     r.draw(3U);
                     s.patch->ground(r, fields, set, push, vertices, bspline, legacy_terrain);
+                    if (context) {
+                        vulkan::GpuTimestampScope timer(context_profiler, commands, slot.index,
+                                                        "terrain context opaque");
+                        s.patch->context(r, context->descriptor_set, set, push,
+                                         context->indices->handle(), context->index_count);
+                    }
                 });
         });
+    if (context)
+        opaque_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
     graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(bed)
         .read_storage_buffer(h)

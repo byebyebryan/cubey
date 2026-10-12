@@ -113,6 +113,8 @@ struct TerrainProjectConfig {
     std::string water_capture_view = "captured-patch";
     std::string water_capture_camera = "overview";
     bool captured_water_visible = true;
+    bool captured_water_context = false;
+    std::string captured_water_ground_view = "shaded";
     bool captured_water_animate = true;
     bool captured_water_audit = false;
     bool captured_water_transition_smoke = false;

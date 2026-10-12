@@ -125,6 +125,7 @@ MaterialPassInfo terrain_surface_patch_mesh_pass(bool water) {
 struct TerrainSurfacePatchRenderer::State {
     std::array<std::unique_ptr<GraphicsPipelineResource>, 4> ground;
     std::array<std::unique_ptr<GraphicsPipelineResource>, 2> water, shadow;
+    std::unique_ptr<GraphicsPipelineResource> context_ground, context_shadow;
 };
 TerrainSurfacePatchRenderer::TerrainSurfacePatchRenderer(const vulkan::Device& device,
                                                          VkExtent2D extent,
@@ -195,5 +196,46 @@ void TerrainSurfacePatchRenderer::shadow(const vulkan::CommandRecorder& r, VkDes
                                          VkDescriptorSet frame, const TerrainSurfacePatchPush& push,
                                          std::uint32_t vertices, bool bspline) const {
     draw(r, *state_->shadow[std::size_t(bspline)], fields, frame, push, vertices);
+}
+void TerrainSurfacePatchRenderer::ensure_context(const vulkan::Device& device, VkExtent2D extent,
+                                                 VkDescriptorSetLayout fields,
+                                                 VkDescriptorSetLayout frame,
+                                                 const std::filesystem::path& directory) {
+    if (state_->context_ground)
+        return;
+    const std::array layouts{fields, frame};
+    const std::array stages{vertex_shader_file(directory / "terrain_surface_context.vert.spv"),
+                            fragment_shader_file(directory / "terrain_surface_context.frag.spv")};
+    state_->context_ground = std::make_unique<GraphicsPipelineResource>(
+        device,
+        GraphicsPipelineFileResourceConfig{.extent = extent,
+                                           .color_format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                                           .depth_format = VK_FORMAT_D32_SFLOAT,
+                                           .shader_stage_files = stages,
+                                           .descriptor_set_layouts = layouts,
+                                           .material_pass = terrain_surface_patch_mesh_pass()});
+    auto pass = terrain_surface_patch_mesh_pass();
+    pass.kind = MaterialPassKind::DepthOnly;
+    const std::array shadow_stages{stages[0]};
+    state_->context_shadow = std::make_unique<GraphicsPipelineResource>(
+        device, GraphicsPipelineFileResourceConfig{.extent = {2048U, 2048U},
+                                                   .color_format = VK_FORMAT_UNDEFINED,
+                                                   .depth_format = VK_FORMAT_D32_SFLOAT,
+                                                   .shader_stage_files = shadow_stages,
+                                                   .descriptor_set_layouts = layouts,
+                                                   .material_pass = pass});
+}
+void TerrainSurfacePatchRenderer::context(const vulkan::CommandRecorder& r, VkDescriptorSet fields,
+                                          VkDescriptorSet frame,
+                                          const TerrainSurfacePatchPush& push, VkBuffer indices,
+                                          std::uint32_t count, bool shadow) const {
+    const auto& p = shadow ? *state_->context_shadow : *state_->context_ground;
+    r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
+    r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U, fields);
+    r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U, frame);
+    r.push_constants(p.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0U,
+                     push);
+    vkCmdBindIndexBuffer(r.handle(), indices, 0, VK_INDEX_TYPE_UINT32);
+    r.draw_indexed(count);
 }
 } // namespace cubey::render

@@ -80,6 +80,36 @@ exception without rewriting the automated gate. Its pure report checks run with
 
 ## Product Contract
 
+### Captured-water landscape context (opt-in study)
+
+Add `--terrain-water-context --terrain-water-capture-camera landscape` to the
+captured-water invocation for wider ground from the same source. The core's
+saved fields and B-spline ground/water stay unchanged. Static rectangular rings
+join its exact 2x perimeter, with an exterior-only 128 m reconstruction collar
+and progressively coarser source sampling. There is no overlapping radial ground.
+
+The UI can toggle the context without changing hydraulic state. `landscape`
+provides a supported scenic framing; `boundary` deliberately exposes a wet edge.
+`--terrain-water-ground-view normal|clay|ownership` provides ground diagnostics
+that hide water. Ownership shows captured ground in orange and context in blue.
+
+This does **not** compute water in the surroundings: streams can visibly end at
+the saved rectangle, especially in the boundary view. The outer source is also
+finite and asymmetric around this capture. Do not describe a broad overview as
+a seamless landscape-wide hydrology product. Ground dampness fades as a visual
+weight over 64 m outside the core, not as invented water depth or persistent soil
+moisture. Clouds remain disabled.
+
+Both ground products render before water into shared opaque color/depth using
+the accepted material/lighting code and one HDR transform. Context-on uses a
+4096 shadow with bounded up-sun caster coverage for the core; far-context shadow
+receivers remain unqualified. It does not reduce the core shadow to fit the
+entire 61.41 km terrain. The original no-context path stays the default.
+
+Report helper:
+`python3 projects/terrain/review_captured_water_context_v1.py OUTPUT --phase capture|performance|report`.
+No solver, terrain inference or native GUI is launched by this study.
+
 ### Shared surface-field study (2026-10-08)
 
 Climate loading and optional surface math now belong to `cubey::asset` and

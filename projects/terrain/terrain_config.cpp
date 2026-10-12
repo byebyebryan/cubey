@@ -476,7 +476,7 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
         .bind(option("terrain.water_capture_camera", "--terrain-water-capture-camera",
                      "Capture Camera", "Terrain",
                      "Observation-only framing for the Mountain rain-fed capture.", ValueType::Enum,
-                     {}, {"overview", "stream", "lake"}),
+                     {}, {"overview", "stream", "lake", "landscape", "boundary"}),
               config.water_capture_camera)
         .bind(option("terrain.captured_water_animation_s", "--terrain-water-animation-seconds",
                      "Animation Clock", "Terrain",
@@ -499,6 +499,17 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
         "Draw captured water without changing the stored state.", ValueType::Bool);
     water_visible.negative_cli_name = "--no-terrain-water-visible";
     builder.bind(std::move(water_visible), config.captured_water_visible);
+    auto context = option(
+        "terrain.captured_water_context", "--terrain-water-context", "Landscape Context", "Terrain",
+        "Same-source ground outside the capture; no additional water is computed.",
+        ValueType::Bool);
+    context.negative_cli_name = "--no-terrain-water-context";
+    builder.bind(std::move(context), config.captured_water_context);
+    builder.bind(option("terrain.captured_water_ground_view", "--terrain-water-ground-view",
+                        "Ground Diagnostic", "Terrain",
+                        "Paired/context ground diagnostic; non-shaded views hide water.",
+                        ValueType::Enum, {}, {"shaded", "normal", "clay", "ownership"}),
+                 config.captured_water_ground_view);
     auto water_animate =
         option("terrain.captured_water_animate", "--terrain-water-animate", "Animate Surface",
                "Terrain", "Animate shading and flecks, not hydrology.", ValueType::Bool);

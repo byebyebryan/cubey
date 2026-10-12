@@ -22,6 +22,9 @@ struct TerrainWaterCaptureRuntime::State {
     AtmosphereEnvironmentRuntime daylight;
     std::optional<render::AtmosphereBackgroundAtlasResources> atlases;
     std::optional<vulkan::Buffer> bed, depth, velocity, zeros, coverage;
+    std::optional<terrain::TerrainSurfaceContextProduct> context;
+    std::optional<vulkan::Buffer> context_vertices, context_indices;
+    std::optional<vulkan::DescriptorSetBundle> context_fields;
     std::optional<vulkan::DescriptorSetBundle> fields;
     std::optional<vulkan::GpuTimestampProfiler> whole_scene_profiler;
     std::vector<math::Vec4> velocity_values, weights;
@@ -127,6 +130,30 @@ void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
                 .count());
     }
+    if (s.context && !s.context_fields) {
+        static_assert(sizeof(terrain::TerrainSurfaceContextVertex) == 48U);
+        const auto started = std::chrono::steady_clock::now();
+        s.context_vertices.emplace(vulkan::upload_device_buffer(
+            gpu, s.context->vertices.data(),
+            s.context->vertices.size() * sizeof(terrain::TerrainSurfaceContextVertex),
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        s.context_indices.emplace(vulkan::upload_device_buffer(
+            gpu, s.context->indices.data(), s.context->indices.size() * sizeof(std::uint32_t),
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+        const std::array bindings{
+            vulkan::DescriptorSetBindingConfig{.binding = 0,
+                                               .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                               .stage_flags = VK_SHADER_STAGE_VERTEX_BIT}};
+        s.context_fields.emplace(device, vulkan::DescriptorSetInfo(bindings));
+        render::MaterialDescriptorWriter(s.context_fields->set())
+            .storage_buffer(0, s.context_vertices->handle(), s.context_vertices->size())
+            .update(device);
+        std::printf(
+            "terrain_context_upload: once; bytes=%llu wall_ms=%.3f\n",
+            static_cast<unsigned long long>(s.context_vertices->size() + s.context_indices->size()),
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
+                .count());
+    }
     const render::TerrainSurfacePatchSurface surface{
         s.capture.grid.width, s.capture.grid.height, {}, {}, s.weights};
     s.scene.ensure_resources(device, gpu, slots, target, s.grid(), s.capture.bed_m, s.field_view(),
@@ -150,7 +177,8 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
                                         render::FrameSlot slot, render::ColorTargetView target,
                                         bool present,
                                         const render::TerrainSurfacePatchCamera& camera,
-                                        double seconds, bool water, bool profile) {
+                                        double seconds, bool water, bool profile,
+                                        bool context_visible, unsigned ground_view) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.whole_scene_profiler : nullptr;
     if (profiler)
@@ -165,10 +193,49 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
         s.daylight.reflection_probe().sky_radiance_cube().sampler().handle(),
         s.daylight.reflection_probe().sky_radiance_cube().view(),
         render::atmosphere_environment_frame_uniforms(s.daylight.environment(), {})};
+    std::optional<render::TerrainSurfaceContextDraw> context;
+    if (context_visible) {
+        if (!s.context_fields)
+            throw std::runtime_error("terrain context not prepared before recording");
+        context.emplace(render::TerrainSurfaceContextDraw{
+            &*s.context_vertices, &*s.context_indices, s.context_fields->set(),
+            s.context_fields->layout(), std::uint32_t(s.context->indices.size()),
+            s.context->minimum, s.context->maximum});
+    }
     s.scene.record(device, commands, s.graph, slot, target, present, s.field_view(), s.grid(),
-                   camera, {.terrain_thin_water_composite = true, .water_visible = water},
-                   seconds * 0.03, s.material, {}, profile, false, 0U, 0U, 3U, &environment,
-                   {0U, seconds, seconds, s.capture.rain_mm_per_hour}, s.whitewater.seeds, 0U);
+                   camera,
+                   {.terrain_thin_water_composite = true,
+                    .native_shadow_extent = context_visible ? 4096U : 2048U,
+                    .water_visible = water},
+                   seconds * 0.03, s.material, {}, profile, false, ground_view, 0U, 3U,
+                   &environment, {0U, seconds, seconds, s.capture.rain_mm_per_hour},
+                   s.whitewater.seeds, 0U, context ? &*context : nullptr);
+}
+void TerrainWaterCaptureRuntime::prepare_context() {
+    auto& s = *state_;
+    if (s.context)
+        return;
+    const auto started = std::chrono::steady_clock::now();
+    std::optional<asset::TerrainRasterClimateSource> climate;
+    const auto companion =
+        s.source.provenance().manifest_path.parent_path() / "surface-fields.json";
+    if (std::filesystem::exists(companion)) {
+        climate.emplace(companion);
+        asset::validate_terrain_climate_binding(s.source, *climate);
+    }
+    const auto field = terrain::make_terrain_surface_field(s.source, s.source.bounds(),
+                                                           climate ? &*climate : nullptr);
+    s.context.emplace(terrain::make_terrain_surface_context(s.capture, s.source, field));
+    std::printf(
+        "terrain_context: ground-only; vertices=%zu triangles=%zu perimeter=%u; build_ms=%.3f; "
+        "water_continuation=none far_shadows=unqualified\n",
+        s.context->vertices.size(), s.context->indices.size() / 3,
+        s.context->inner_perimeter_vertices,
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
+            .count());
+}
+const terrain::TerrainSurfaceContextProduct* TerrainWaterCaptureRuntime::context_product() const {
+    return state_->context ? &*state_->context : nullptr;
 }
 void TerrainWaterCaptureRuntime::destroy_target_resources() {
     if (state_) {

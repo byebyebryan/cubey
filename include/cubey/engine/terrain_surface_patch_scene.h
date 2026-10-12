@@ -36,7 +36,8 @@ class TerrainSurfacePatchScene {
                 const render::TerrainSurfacePatchEnvironment* environment = nullptr,
                 render::TerrainSurfacePatchRain rain = {},
                 std::span<const render::TerrainSurfacePatchWhitewaterSeed> whitewater_seeds = {},
-                std::uint64_t whitewater_generation = 0U);
+                std::uint64_t whitewater_generation = 0U,
+                const render::TerrainSurfaceContextDraw* context = nullptr);
 
   private:
     struct State;
