@@ -361,6 +361,12 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_source_cache.py"
     )
     set_tests_properties(terrain_source_cache_tests PROPERTIES LABELS terrain)
+    add_test(
+        NAME terrain_world_coverage_tests
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_world_coverage.py"
+    )
+    set_tests_properties(terrain_world_coverage_tests PROPERTIES LABELS terrain)
 
     add_executable(cubey_project_terrain_shadow_tests terrain_shadow_tests.cpp)
     target_link_libraries(
