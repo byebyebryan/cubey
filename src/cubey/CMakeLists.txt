@@ -247,6 +247,7 @@ add_library(cubey_render STATIC
     render/terrain_ocean_fields.cpp
     render/terrain_shadow.cpp
     render/terrain_surface_patch.cpp
+    render/terrain_surface_patch_scene.cpp
     render/texture.cpp
     render/uniform_buffer.cpp
 )

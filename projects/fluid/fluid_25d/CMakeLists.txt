@@ -39,27 +39,27 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
-        ../sim/fluid_25d/shaders/fluid_25d.vert
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d.vert"
         ../sim/fluid_25d/shaders/fluid_25d_bank_controls.comp
         ../sim/fluid_25d/shaders/fluid_25d_render.frag
-        ../sim/fluid_25d/shaders/fluid_25d_terrain.vert
-        ../sim/fluid_25d/shaders/fluid_25d_terrain_bspline.vert
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline.vert"
         ../sim/fluid_25d/shaders/fluid_25d_terrain.frag
-        ../sim/fluid_25d/shaders/fluid_25d_water.vert
-        ../sim/fluid_25d/shaders/fluid_25d_water_bspline.vert
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline.vert"
         ../sim/fluid_25d/shaders/fluid_25d_water.frag
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain.frag
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_terrain_legacy.frag
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_water.frag
-        ../sim/fluid_25d/shaders/fluid_25d_whitewater.vert
-        ../sim/fluid_25d/shaders/fluid_25d_whitewater.frag
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_flow.comp
-        ../sim/fluid_25d/shaders/fluid_25d_daylight.comp
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_sky.frag
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_copy.frag
-        ../sim/fluid_25d/shaders/fluid_25d_scenic_display.frag
-        ../sim/fluid_25d/shaders/fluid_25d_rain_visual.vert
-        ../sim/fluid_25d/shaders/fluid_25d_rain_visual.frag
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_legacy.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_water.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_flow.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_sky.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_copy.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_display.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp"
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.vert
         ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.frag
@@ -92,21 +92,21 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_scenic.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_daylight.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_film.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_water_rapids.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_bank_edge.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_whitewater_motion.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_agitation.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_rapids.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bank_edge.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater_motion.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_gradient.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_surface_sampling.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_bspline_surface.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_terrain_wetness.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"
 )
 
 target_include_directories(
@@ -159,10 +159,10 @@ if (BUILD_TESTING)
         CUBEY_FLUID25D_DAYLIGHT_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/test-shaders")
     cubey_add_glsl_shaders(cubey_project_fluid_25d_daylight_gpu_tests
         OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-shaders"
-        SOURCES ../sim/fluid_25d/shaders/fluid_25d_daylight.comp
+        SOURCES "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp"
                 ../sim/fluid_25d/shaders/fluid_25d_daylight_controls.comp
         INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/shaders"
-        DEPENDS ../sim/fluid_25d/shaders/fluid_25d_daylight.glsl
+        DEPENDS "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/sky_background_direction.glsl")
     add_test(NAME fluid_25d_daylight_gpu COMMAND cubey_project_fluid_25d_daylight_gpu_tests)
@@ -183,19 +183,19 @@ if (BUILD_TESTING)
         OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-shaders"
         SOURCES ../sim/fluid_25d/shaders/fluid_25d_surface_gradient_test.comp
         INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/shaders"
-        DEPENDS ../sim/fluid_25d/shaders/fluid_25d_surface_gradient.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_water_detail.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_water_agitation.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_water_rapids.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_bank_edge.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_bspline_surface.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_terrain_wetness.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_surface_sampling.glsl
-                ../sim/fluid_25d/shaders/fluid_25d_whitewater_motion.glsl
+        DEPENDS "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_gradient.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_agitation.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_rapids.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bank_edge.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl"
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater_motion.glsl"
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
                 "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
-                ../sim/fluid_25d/shaders/fluid_25d_water_film.glsl)
+                "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl")
     add_test(NAME fluid_25d_surface_gradient_gpu COMMAND cubey_project_fluid_25d_surface_gradient_gpu_tests)
     set_tests_properties(fluid_25d_surface_gradient_gpu PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
     add_executable(cubey_project_fluid_25d_external_session_tests

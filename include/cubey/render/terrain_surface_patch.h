@@ -43,7 +43,7 @@ terrain_surface_patch_uniforms(const TerrainSurfacePatchFrame& frame,
 
 class TerrainSurfacePatchRenderer {
   public:
-    TerrainSurfacePatchRenderer(vulkan::Device& device, VkExtent2D extent,
+    TerrainSurfacePatchRenderer(const vulkan::Device& device, VkExtent2D extent,
                                 VkDescriptorSetLayout fields, VkDescriptorSetLayout frame,
                                 const std::filesystem::path& shader_directory);
     ~TerrainSurfacePatchRenderer();

@@ -1775,7 +1775,16 @@ void test_sustained_headwaters_scenario_construction() {
             "extended endpoint references should preserve source/outlet coordinates");
 
     const auto read_shader = [](const std::filesystem::path& path) {
-        std::ifstream stream(path);
+        const auto shared = std::filesystem::path(__FILE__)
+                                .parent_path()
+                                .parent_path()
+                                .parent_path()
+                                .parent_path()
+                                .parent_path() /
+                            "shaders/cubey/terrain/surface_patch" / path.filename();
+        std::ifstream stream(
+            path.parent_path().filename() == "shaders" && std::filesystem::exists(shared) ? shared
+                                                                                          : path);
         if (!stream) {
             throw std::runtime_error("failed to read endpoint-marker shader layout");
         }
@@ -4833,7 +4842,16 @@ void test_presentation_cue_contract() {
     const std::filesystem::path shader_directory =
         std::filesystem::path(__FILE__).parent_path() / "shaders";
     const auto read_shader = [](const std::filesystem::path& path) {
-        std::ifstream stream(path);
+        const auto shared = std::filesystem::path(__FILE__)
+                                .parent_path()
+                                .parent_path()
+                                .parent_path()
+                                .parent_path()
+                                .parent_path() /
+                            "shaders/cubey/terrain/surface_patch" / path.filename();
+        std::ifstream stream(
+            path.parent_path().filename() == "shaders" && std::filesystem::exists(shared) ? shared
+                                                                                          : path);
         if (!stream) {
             throw std::runtime_error("failed to read presentation cue shader");
         }
@@ -5898,7 +5916,16 @@ void test_dye_zero_sink_transfer_and_real_sink() {
     // guard against reintroducing the unconditional h/h.
     const auto path =
         std::filesystem::path(__FILE__).parent_path() / "shaders/fluid_25d_fv_update.comp";
-    std::ifstream stream(path);
+    const auto shared = std::filesystem::path(__FILE__)
+                            .parent_path()
+                            .parent_path()
+                            .parent_path()
+                            .parent_path()
+                            .parent_path() /
+                        "shaders/cubey/terrain/surface_patch" / path.filename();
+    std::ifstream stream(
+        path.parent_path().filename() == "shaders" && std::filesystem::exists(shared) ? shared
+                                                                                      : path);
     const std::string shader{std::istreambuf_iterator<char>(stream),
                              std::istreambuf_iterator<char>()};
     require(stream.good() || stream.eof(), "zero-sink shader control must read the shipped source");
@@ -6295,7 +6322,16 @@ void test_finite_volume_gpu_candidate_commit_shader_contract() {
     const std::filesystem::path shader_directory =
         std::filesystem::path(__FILE__).parent_path() / "shaders";
     const auto read_shader = [](const std::filesystem::path& path) {
-        std::ifstream stream(path);
+        const auto shared = std::filesystem::path(__FILE__)
+                                .parent_path()
+                                .parent_path()
+                                .parent_path()
+                                .parent_path()
+                                .parent_path() /
+                            "shaders/cubey/terrain/surface_patch" / path.filename();
+        std::ifstream stream(
+            path.parent_path().filename() == "shaders" && std::filesystem::exists(shared) ? shared
+                                                                                          : path);
         if (!stream) {
             throw std::runtime_error("failed to read finite-volume transaction shader");
         }

@@ -7,19 +7,13 @@
 #include "fluid_25d_whitewater.h"
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/generated_ibl.h>
+#include <cubey/render/terrain_surface_patch_scene.h>
 #include <memory>
 
 namespace cubey::projects::fluid::fluid_25d {
 
 // Caller-owned lighting/probe contract. Scenic does not own a sky service.
-struct Fluid25DScenicEnvironment {
-    render::PbrEnvironmentTextureBindings textures;
-    render::AtmosphereEnvironmentLighting lighting;
-    float exposure = 0.4F;
-    VkSampler sky_radiance_sampler = VK_NULL_HANDLE;
-    VkImageView sky_radiance_view = VK_NULL_HANDLE;
-    render::AtmosphereEnvironmentFrameUniforms atmosphere_frame{};
-};
+using Fluid25DScenicEnvironment = render::TerrainSurfacePatchEnvironment;
 
 // Native frontend only. All hydraulic buffers are read-only inputs; the
 // legacy draw graph and shaders are deliberately separate from this path.

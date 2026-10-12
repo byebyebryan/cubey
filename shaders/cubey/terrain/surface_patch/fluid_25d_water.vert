@@ -1,4 +1,5 @@
 #version 450
+// Shared paired terrain/water renderer; retained names preserve shader ABI.
 
 layout(set = 0, binding = 0, std430) readonly buffer TerrainField {
     float values[];

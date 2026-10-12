@@ -1,4 +1,5 @@
 #version 450
+// Shared paired terrain/water renderer; retained names preserve shader ABI.
 
 layout(location = 0) out vec2 frag_position;
 

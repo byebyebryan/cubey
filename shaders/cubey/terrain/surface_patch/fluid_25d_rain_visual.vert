@@ -1,4 +1,5 @@
 #version 450
+// Shared paired terrain/water renderer; retained names preserve shader ABI.
 #extension GL_GOOGLE_include_directive : require
 #include "cubey/procedural/random.glsl"
 layout(set=0,binding=0,std430) readonly buffer Terrain {float values[];} terrain;

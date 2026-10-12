@@ -72,4 +72,6 @@ struct TerrainSurfacePatchMaterial {
     float daylight_sun_scale = 1.0F;   // shared direct sun only; 1 matches sky source units
 };
 
+// Accepted macro recipe, shared by the native Fluid frontend and captures.
+[[nodiscard]] TerrainSurfacePatchMaterial terrain_surface_patch_macro_material();
 } // namespace cubey::render

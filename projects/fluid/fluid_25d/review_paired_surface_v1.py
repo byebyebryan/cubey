@@ -39,6 +39,6 @@ def capture(out, phase):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--phase", required=True, choices=("baseline-fluid", "shared-fluid"))
+    parser.add_argument("--phase", required=True, choices=("baseline-fluid", "shared-fluid", "shared-scene-fluid", "shared-final-fluid"))
     args = parser.parse_args()
     capture(args.output, args.phase)

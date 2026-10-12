@@ -1,4 +1,5 @@
 #version 450
+// Shared paired terrain/water renderer; retained names preserve shader ABI.
 #extension GL_GOOGLE_include_directive : require
 layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
 layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;

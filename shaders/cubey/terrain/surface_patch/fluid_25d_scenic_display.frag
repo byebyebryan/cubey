@@ -1,4 +1,5 @@
 #version 450
+// Shared paired terrain/water renderer; retained names preserve shader ABI.
 #extension GL_GOOGLE_include_directive : require
 #include "cubey/pbr.glsl"
 #include "fluid_25d_scenic.glsl"

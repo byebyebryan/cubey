@@ -5,6 +5,38 @@
 #include <glm/gtc/matrix_inverse.hpp>
 
 namespace cubey::render {
+TerrainSurfacePatchMaterial terrain_surface_patch_macro_material() {
+    TerrainSurfacePatchMaterial m;
+    m.wet_roughness = 0.78F;
+    m.wet_darkening = 0.86F;
+    m.terrain_saturation = 0.6F;
+    m.terrain_ambient = 2.0F;
+    m.terrain_direct = 1.0F;
+    m.water_scatter_lighting = 0.7F;
+    m.terrain_mineral_scale = 0.62F;
+    m.terrain_material_blend = 1.0F;
+    m.terrain_normal_strength = 0.12F;
+    m.terrain_diffuse_convolution = 1.0F;
+    m.daylight_environment = 1.0F;
+    m.daylight_exposure = 0.0F;
+    m.daylight_sun_scale = 0.45F;
+    m.water_wet_normal = 1.0F;
+    m.water_ripple_strength = 0.025F;
+    m.water_ripple_scale_m = 48.0F;
+    m.water_flow_agitation = 1.0F;
+    m.water_rain_agitation = 1.0F;
+    m.water_cascade_strength = 1.0F;
+    m.water_whitewater_strength = 1.0F;
+    m.water_whitewater_speed = 2.0F;
+    m.water_stream_foam_strength = 0.3F;
+    m.water_stream_foam_patchiness = 1.0F;
+    m.water_stream_foam_brightness = 0.55F;
+    m.water_roughness = 0.14F;
+    m.water_scatter_scale = 0.4F;
+    m.water_shallow_extinction_boost = 3.0F;
+    m.water_shallow_extinction_end_m = 16.0F;
+    return m;
+}
 static_assert(sizeof(TerrainSurfacePatchPush) == 128U);
 static_assert(sizeof(TerrainSurfacePatchUniforms) == 400U);
 static_assert(offsetof(TerrainSurfacePatchUniforms, terrain_macro) == 240U);
@@ -55,9 +87,9 @@ MaterialPassInfo terrain_surface_patch_frame_material() {
         b.push_back({.binding = i,
                      .type = storage ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
                                      : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                     .stage_flags = static_cast<VkShaderStageFlags>(i == 9U
-                                        ? VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
-                                        : VK_SHADER_STAGE_FRAGMENT_BIT)});
+                     .stage_flags = static_cast<VkShaderStageFlags>(
+                         i == 9U ? VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT
+                                 : VK_SHADER_STAGE_FRAGMENT_BIT)});
     }
     return result;
 }
@@ -81,7 +113,8 @@ struct TerrainSurfacePatchRenderer::State {
     std::array<std::unique_ptr<GraphicsPipelineResource>, 4> ground;
     std::array<std::unique_ptr<GraphicsPipelineResource>, 2> water, shadow;
 };
-TerrainSurfacePatchRenderer::TerrainSurfacePatchRenderer(vulkan::Device& device, VkExtent2D extent,
+TerrainSurfacePatchRenderer::TerrainSurfacePatchRenderer(const vulkan::Device& device,
+                                                         VkExtent2D extent,
                                                          VkDescriptorSetLayout fields,
                                                          VkDescriptorSetLayout frame,
                                                          const std::filesystem::path& directory)

@@ -112,34 +112,8 @@ void validate(const Fluid25DScenicMaterial& material) {
 Fluid25DScenicMaterial fluid_25d_scenic_material(std::string_view profile) {
     if (profile == "v1")
         return {};
-    if (profile == "macro") {
-        auto result = fluid_25d_scenic_material("terrain");
-        result.terrain_diffuse_convolution = 1.0F;
-        result.terrain_ambient_softening = 0.0F;
-        result.daylight_environment = 1.0F;
-        result.daylight_exposure = 0.0F;
-        result.daylight_sun_scale = 0.45F;
-        result.terrain_ambient = 2.0F;
-        result.terrain_direct = 1.0F;
-        result.water_wet_normal = 1.0F;
-        result.water_ripple_strength = 0.025F;
-        result.water_ripple_scale_m = 48.0F;
-        result.water_flow_agitation = 1.0F;
-        result.water_rain_agitation = 1.0F;
-        result.water_cascade_strength = 1.0F;
-        result.water_whitewater_strength = 1.0F;
-        result.water_whitewater_speed = 2.0F;
-        result.water_stream_foam_strength = 0.3F;
-        result.water_stream_foam_patchiness = 1.0F;
-        result.water_stream_foam_brightness = 0.55F;
-        result.water_roughness = 0.14F;
-        result.water_scatter_scale = 0.4F;
-        result.water_clarity = 0.0F;
-        result.water_extinction_scale = 1.0F;
-        result.water_shallow_extinction_boost = 3.0F;
-        result.water_shallow_extinction_end_m = 16.0F;
-        return result;
-    }
+    if (profile == "macro")
+        return render::terrain_surface_patch_macro_material();
     if (profile == "terrain") {
         auto result = fluid_25d_scenic_material("refined");
         result.terrain_material_blend = 1.0F;

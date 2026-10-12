@@ -252,3 +252,45 @@ function(cubey_cloud_layer_shader_depends out_var)
     list(REMOVE_DUPLICATES cloud_layer_shader_depends)
     set(${out_var} ${cloud_layer_shader_depends} PARENT_SCOPE)
 endfunction()
+
+# Solver-neutral paired-surface package, shared by Fluid and Terrain.
+function(cubey_terrain_surface_patch_shader_sources out_var)
+    set(patch_sources
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_legacy.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_water.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_flow.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_sky.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_copy.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_display.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp")
+    set(${out_var} ${patch_sources} PARENT_SCOPE)
+endfunction()
+function(cubey_terrain_surface_patch_shader_depends out_var)
+    cubey_atmosphere_shader_depends(patch_dependencies)
+    list(APPEND patch_dependencies
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_agitation.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_rapids.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bank_edge.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater_motion.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_gradient.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl")
+    set(${out_var} ${patch_dependencies} PARENT_SCOPE)
+endfunction()
