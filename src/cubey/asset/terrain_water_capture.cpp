@@ -118,7 +118,8 @@ void validate_terrain_water_capture(const TerrainWaterCapture& capture) {
     for (std::size_t i = 0; i < count; ++i) {
         const auto v = capture.velocity_xz_m_per_s[i];
         if (!std::isfinite(capture.bed_m[i]) || !std::isfinite(capture.depth_m[i]) ||
-            capture.depth_m[i] < 0 || !std::isfinite(v.x) || !std::isfinite(v.y) ||
+            !std::isfinite(capture.bed_m[i] + capture.depth_m[i]) || capture.depth_m[i] < 0 ||
+            !std::isfinite(v.x) || !std::isfinite(v.y) ||
             std::hypot(static_cast<double>(v.x), static_cast<double>(v.y)) >
                 std::numeric_limits<float>::max() ||
             (capture.depth_m[i] == 0 && (v.x != 0 || v.y != 0)))
@@ -195,7 +196,9 @@ TerrainWaterCapture load_terrain_water_capture(const std::filesystem::path& inpu
         const auto& fields = doc.at("fields");
         if (fields.at("bed_m").at("layout") != "scalar" ||
             fields.at("depth_m").at("layout") != "scalar" ||
-            fields.at("velocity_xz_m_per_s").at("layout") != "planar-xz")
+            fields.at("velocity_xz_m_per_s").at("layout") != "planar-xz" ||
+            fields.at("bed_m").at("unit") != "m" || fields.at("depth_m").at("unit") != "m" ||
+            fields.at("velocity_xz_m_per_s").at("unit") != "m/s")
             invalid("unsupported field layout");
         const auto root = path.parent_path();
         result.bed_m = read_plane(root, fields.at("bed_m"), count);
@@ -232,6 +235,8 @@ void write_terrain_water_capture(const std::filesystem::path& directory,
     fields["velocity_xz_m_per_s"] = write_plane(directory, "velocity.f32", velocity);
     fields["bed_m"]["layout"] = fields["depth_m"]["layout"] = "scalar";
     fields["velocity_xz_m_per_s"]["layout"] = "planar-xz";
+    fields["bed_m"]["unit"] = fields["depth_m"]["unit"] = "m";
+    fields["velocity_xz_m_per_s"]["unit"] = "m/s";
     const Json doc{{"schema", kSchema},
                    {"encoding", "float32-little-endian"},
                    {"grid",

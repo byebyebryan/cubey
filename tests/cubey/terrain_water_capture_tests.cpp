@@ -109,6 +109,10 @@ void run() {
         rejects([&] { validate_terrain_water_capture(bad); });
     }
     auto wrong = good;
+    wrong.bed_m[0] = std::numeric_limits<float>::max();
+    wrong.depth_m[0] = std::numeric_limits<float>::max();
+    rejects([&] { validate_terrain_water_capture(wrong); });
+    wrong = good;
     wrong.source_elevation_sha256 = std::string(64, 'c');
     rejects([&] { validate_terrain_water_capture_source(wrong, source); });
     wrong = good;
@@ -117,7 +121,7 @@ void run() {
     wrong = good;
     wrong.grid.sample_origin_xz_m.x = source.bounds().minimum_xz.x - 100;
     rejects([&] { validate_terrain_water_capture_source(wrong, source); });
-    for (unsigned variant = 0; variant < 8; ++variant) {
+    for (unsigned variant = 0; variant < 10; ++variant) {
         const auto directory = fixture.root / ("malformed-" + std::to_string(variant));
         write_terrain_water_capture(directory, good);
         auto doc = manifest(directory);
@@ -139,6 +143,10 @@ void run() {
             std::filesystem::create_symlink(base / "bed.f32", directory / "linked.f32");
             doc["fields"]["bed_m"]["path"] = "linked.f32";
         }
+        if (variant == 8)
+            doc["fields"]["depth_m"]["unit"] = "feet";
+        if (variant == 9)
+            doc["fields"]["velocity_xz_m_per_s"].erase("unit");
         replace_manifest(directory, doc);
         rejects([&] { static_cast<void>(load_terrain_water_capture(directory)); });
     }
