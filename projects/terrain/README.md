@@ -6,9 +6,77 @@ asset, selects a deterministic source placement, bakes one continuous cached
 mesh, and can replace that placement at runtime while rendering with shared
 atmosphere, clouds, and HDR composition.
 
-This is deliberately not a general terrain engine. It does not provide close
-terrain, traversal, streaming, hydrology, water, vegetation, deformation,
-collision, or planet projection.
+This is deliberately not a general terrain engine. The normal backdrop does not
+provide close terrain, traversal, streaming, hydrology, vegetation, deformation,
+collision, or planet projection. An optional captured-water patch is a separate
+bounded review view, not a water layer stitched into that backdrop.
+
+## Animated rain-fed capture (opt-in)
+
+The shared foundation can load a single `cubey.terrain.water-capture.v1` bundle
+containing source-bound bed, depth and XZ velocity. The captured patch uses the
+same positive B-spline basis, 2x triangles, shadows, material masks and water
+appearance as Fluid's Scenic renderer. No solver, CUDA, Python environment or
+hydraulic dispatch is needed to consume it. Source elevation/placement, payload
+sizes, hashes, units and finite fields are checked before rendering.
+
+The current locally retained Mountain bundle can be reviewed with:
+
+```sh
+build/release/projects/terrain/terrain \
+  --terrain-heightfield cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json \
+  --terrain-water-capture cache/terrain/water/v1/mountain-rain-fed-1024-16m/water-capture.json
+```
+
+For remote capture, add `--headless --output outputs/terrain/captured-water.png`.
+`--terrain-water-capture-camera overview|stream|lake` selects observation-only
+framing for this Mountain state. The UI offers **Backdrop / Captured patch**,
+**Water visible**, and **Animate surface (not hydrology)**. Hiding water retains
+the same paired ground and captured-depth wet material; it does not dry the bed.
+Surface shading and flecks animate independently of the fixed numerical fields.
+
+The finite patch is never overlaid with radial ground or radial shadow casters.
+Normal placement selection is deferred until Backdrop is actually requested.
+The capture view retains Fluid's fixed shared daylight and single HDR display
+transform; Terrain's normal solar/cloud controls apply to Backdrop only. Clouds
+are explicitly unsupported/off in the capture view because composed water depth
+is not yet provided to the depth-aware cloud pass. This does not promote a new
+default or claim seamless full-terrain coverage.
+
+An invalid requested capture fails explicitly in headless mode. The GUI instead
+disables it with an error and retains the normal source picker/backdrop path.
+`--terrain-water-audit` performs a one-time immutable GPU-field readback at
+shutdown, outside profiling. The bounded headless transition study uses
+`--headless --headless-render-only --frames 8 --terrain-water-transition-smoke`.
+
+The excluded offline exporter is built explicitly:
+
+```sh
+cmake --build build/release --target cubey_project_fluid_25d_export_water_capture
+build/release/projects/fluid/fluid_25d/cubey_project_fluid_25d_export_water_capture \
+  RECORDING.json HEIGHTFIELD.json NEW_OUTPUT_DIRECTORY
+```
+
+It selects the existing last rain-on frame, reuses checked momentum-to-velocity
+decoding, preserves bed/depth bit-for-bit, and refuses an existing destination.
+Generated bundles stay under ignored `cache/`; reports and headless evidence
+stay under `outputs/`. Rain-off, new simulations/sites and boundary stitching
+remain separate work.
+
+The first paired-surface review is at
+`http://starship:8801/terrain/captured-water-paired-20261011-JK0Nmf/`.
+Final 1080p render-only measurements on Starship's RTX 5070 Ti: whole-scene GPU
+p95 up to 3.78 ms and CPU service up to 0.32 ms. The final lake repeat adds
+2.034 ms of water cost, narrowly over the proposed 2.000 ms gate. This measured
+exception was accepted for opt-in V1; the original strict-gate failure is retained.
+Manual visual acceptance and seamless backdrop stitching remain deferred.
+
+The headless report helper runs capture/performance/report phases separately:
+`python3 projects/terrain/review_captured_water_v1.py OUTPUT --phase PHASE`.
+It freezes binary/shader/input identity across phases and never launches a solver.
+`--accept-measured-water-cost` is report-only and records an explicitly authorized
+exception without rewriting the automated gate. Its pure report checks run with
+`python3 projects/terrain/review_captured_water_v1_tests.py`.
 
 ## Product Contract
 

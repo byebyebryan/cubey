@@ -2,7 +2,39 @@
 
 Date: 2026-10-11
 
-Status: proposed next implementation pass. Planning only; no runtime changes.
+Status: implemented and accepted as opt-in V1 on 2026-10-12, with the measured
+incremental water-cost exception below. Manual visual review remains deferred.
+
+## Implementation result
+
+The existing rain-on state now has a strict solver-neutral export and a second
+consumer in Terrain. Fluid and Terrain share the paired ground/water/shadow
+shader package and narrow render stage. App-owned engine composition handles
+the fixed sky and single HDR transform; the render stage itself owns neither.
+Terrain's explicit Captured patch never submits radial ground/shadows or clouds.
+Its original Backdrop remains separate and unchanged. No new solver was run.
+
+Final headless validation: 10 CPU/GPU/regression tests passed; 1280 paired GPU
+samples have at most 0.351 mm gap error against the 1 mm gate. Three extracted
+Fluid views are byte-identical to the frozen baseline. Terrain differs by at
+most one 8-bit value because the two apps use sRGB versus UNORM attachments.
+Saved GPU fields remain exact through water off/on, held/resumed motion,
+two retired slots, resize, and actual patch/backdrop switches. An incompatible
+source rejects before GPU work; the Backdrop resident/control images match.
+
+Final 1080p render-only repeats: whole-scene GPU p95 3.11–3.78 ms, CPU service
+p95 0.19–0.32 ms. The last lake repeat adds 2.034 ms over paired ground, narrowly
+missing the proposed 2.000 ms water gate. **The automated strict gate remains
+failed; the user explicitly accepted that measured limitation for opt-in V1.**
+It is not a default promotion or manual GUI acceptance. Device-local heap usage
+is 374 MiB for the whole app, versus 28 MiB of retained input fields.
+
+Evidence and report:
+`outputs/terrain/captured-water-paired-20261011-JK0Nmf/index.html`, served at
+`http://starship:8801/terrain/captured-water-paired-20261011-JK0Nmf/`.
+Raw commands, hashes, test receipts and all final performance repeats are in
+that report's `summary.json`. Wider-terrain stitching, cloud depth composition,
+rain-off and more sites remain deferred.
 
 ## Decision
 
@@ -205,7 +237,7 @@ patch view or propose the smallest necessary coverage expansion later.
 Rain-off drainage, additional sites, snowmelt/baseflow, erosion, source surveys,
 global terrain replacement and new hydraulic math remain deferred.
 
-## Planning review
+## Original planning review
 
 Current code inspection confirms the working paired shaders and strict recording
 reader exist, while Scenic still couples them to project-local resources and
@@ -223,10 +255,14 @@ acceptance is a matched rain-fed patch, not seamless full-terrain integration.
 
 - `projects/fluid/sim/fluid_25d/fluid_25d_recording.cpp`: existing strict field
   reader and velocity decoding for offline conversion.
-- `projects/fluid/sim/fluid_25d/shaders/fluid_25d_bspline_surface.glsl`: positive
-  basis, mesh interpolation and fixed triangle diagonal to reuse.
-- `projects/fluid/sim/fluid_25d/fluid_25d_scenic.cpp`: paired ground/shadow/water
-  graph, descriptor coupling, visual-flow filter and caller environment support.
+- `shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl`: shared
+  positive basis, mesh interpolation and fixed triangle diagonal.
+- `include/cubey/render/terrain_surface_patch.h`: narrow paired render stage.
+- `src/cubey/engine/terrain_surface_patch_scene.cpp`: app-owned paired scene
+  composition, visual-flow filter and caller environment support.
+- `src/cubey/engine/terrain_water_capture_runtime.cpp`: strict capture binding,
+  retained GPU inputs, render-only presentation and immutable readback.
+- `projects/fluid/sim/fluid_25d/fluid_25d_scenic.cpp`: thin Fluid adapter.
 - `include/cubey/terrain/terrain_surface_field.h`: original-source material
   field semantics, independent of a consumer crop and not live rainfall.
 - `projects/terrain/terrain_app.cpp`: existing opaque, cloud and HDR composition
