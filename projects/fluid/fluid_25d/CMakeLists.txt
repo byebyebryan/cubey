@@ -118,6 +118,12 @@ target_include_directories(
 target_link_libraries(cubey_project_fluid_25d PRIVATE cubey_fluid25d_terrain_surface)
 
 # Explicit read/control diagnostic only; no automatic native launch or CUDA dependency.
+add_executable(cubey_project_fluid_25d_export_water_capture EXCLUDE_FROM_ALL
+    ../sim/fluid_25d/fluid_25d_recording.cpp
+    ../sim/fluid_25d/fluid_25d_export_water_capture.cpp)
+target_link_libraries(cubey_project_fluid_25d_export_water_capture PRIVATE
+    cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
+
 add_executable(cubey_project_fluid_25d_terrain_alignment_probe EXCLUDE_FROM_ALL
     ../sim/fluid_25d/fluid_25d_recording.cpp
     ../sim/fluid_25d/fluid_25d_terrain_alignment_probe.cpp)

@@ -138,6 +138,12 @@ cubey_add_glsl_shaders(
 add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
+add_executable(cubey_terrain_water_capture_tests terrain_water_capture_tests.cpp)
+target_link_libraries(cubey_terrain_water_capture_tests PRIVATE
+    cubey::asset nlohmann_json::nlohmann_json cubey_project_warnings)
+target_compile_definitions(cubey_terrain_water_capture_tests PRIVATE CUBEY_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+add_test(NAME terrain_water_capture_tests COMMAND cubey_terrain_water_capture_tests)
+set_tests_properties(terrain_water_capture_tests PROPERTIES LABELS "unit;terrain;asset")
 set_property(TEST cubey_core_tests APPEND PROPERTY LABELS "gltf;core")
 
 add_executable(cubey_headless_failure_gpu_tests headless_failure_gpu_tests.cpp)
