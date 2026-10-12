@@ -44,6 +44,7 @@ constexpr std::array kProperties{
     Property{"terrain_material_blend", &Fluid25DScenicMaterial::terrain_material_blend, 0.0, 1.0},
     Property{"terrain_normal_strength", &Fluid25DScenicMaterial::terrain_normal_strength, -1.0,
              2.0},
+    Property{"terrain_readability", &Fluid25DScenicMaterial::terrain_readability, 0.0, 2.0},
     Property{"terrain_ambient_softening", &Fluid25DScenicMaterial::terrain_ambient_softening, 0.0,
              1.0},
     Property{"terrain_diffuse_convolution", &Fluid25DScenicMaterial::terrain_diffuse_convolution,
@@ -92,6 +93,8 @@ constexpr std::array kProperties{
     throw std::runtime_error("fluid 2.5D Scenic material: " + message);
 }
 void validate(const Fluid25DScenicMaterial& material) {
+    if (std::floor(material.terrain_readability) != material.terrain_readability)
+        invalid("terrain_readability must be 0 (reference), 1 (detail-off), or 2 (readable)");
     if (std::floor(material.water_whitewater_budget) != material.water_whitewater_budget)
         invalid("water_whitewater_budget must be an integer");
     if (material.film_begin_m >= material.film_end_m)

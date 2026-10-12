@@ -1,7 +1,10 @@
 # Shared terrain readability study V1
 
-Opt-in study; no terrain/solver changes, asset imports, live GUI, default promotion,
-push or live terrain streaming. The existing three prepared sites and saved water
+The original study below was opt-in. After visual approval, the simple shared
+material was promoted on 2026-10-12; see the promotion section at the end. Original
+report artifacts remain unchanged. The study itself did not change terrain or
+solver code, import assets, open a live GUI, push commits or stream live terrain.
+The existing three prepared sites and saved water
 are protected by SHA-256. Results live under ignored `outputs/terrain/readability-*`.
 
 ## Display atlas
@@ -67,7 +70,8 @@ added. Climate/landform weights and the accepted palettes remain unchanged.
 The shared helper is `shaders/cubey/terrain/terrain_material_readability.glsl`.
 Prepared sites and captured ground use `--terrain-readability refined`; the
 established radial backdrop uses `--terrain-surface-detail readable-detail`.
-The respective UI study controls select these paths without making them default.
+At study time these were UI study selections; the approved refined material is
+now the default, and the previous selections remain available for reference.
 `--terrain-readability detail-off` removes periodic modulation for diagnosis;
 `--terrain-water-ground-view clay-clean|albedo|normal` offers matched views.
 `--terrain-context-max-spacing 512|1024` caps exterior spacing explicitly;
@@ -114,6 +118,39 @@ python3 projects/terrain/report_terrain_readability_v1.py OUTPUT --phase report
 python3 projects/terrain/report_terrain_readability_v1.py OUTPUT --phase http
 ```
 
-Default promotion remains a visual-review decision. Remaining limits are native
+The original study deferred promotion until visual review (now approved).
+Remaining limits are native
 30 m geometry, no vegetation/clutter, fixed filtered exterior geometry, unqualified
 far shadows/horizon and finite recorded-water boundaries. No push was performed.
+
+## Approved default promotion
+
+The default is now `refined` for prepared-site/captured ground and
+`ReadableDetail` for the radial backdrop and its shared runtime frame contract.
+The shared Macro recipe defaults to readability mode 2, so the Fluid mountain
+demo stays aligned. V1/refined/terrain Fluid reference recipes retain mode 0.
+Both recorded native crops and sampled grids carry their already-validated
+source-world centre into material uniforms; synthetic fixtures retain origin zero.
+This adds no terrain sampling, solver work, texture generation or GPU dispatches.
+
+Previous ground remains selectable using Terrain's `--terrain-readability current`
+or backdrop `--terrain-surface-detail filtered-detail`. Fluid exposes **Terrain
+detail** in its material UI, and its existing v2 tuning JSON accepts
+`"terrain_readability": 0` (previous), `1` (periodic detail off), or `2` (readable).
+Only ground shading changes; water optics/foam/rain, bank treatment and the
+original grid-dependent mesh density stay unchanged.
+
+`check_readability_defaults_v1.py` performs genuine headless checks in a fresh
+`outputs/terrain/readability-defaults-*` leaf. All three site defaults, wider-water
+default and radial backdrop default match the approved opt-in PNGs pixel-exactly.
+The previous Terrain and Fluid reference material still reproduces its prior
+PNG exactly. Terrain/Fluid default water views differ by at most one 8-bit value,
+the retained UNORM/sRGB attachment rounding boundary. Immutable GPU recording
+and source/world-centre receipts are required. The approved study is never rewritten.
+
+Promotion review: <http://starship:8801/terrain/readability-defaults-20261012-a1/>.
+No GUI, new simulation or terrain generation is needed for promotion.
+
+Historical V1 capture comparisons explicitly select the previous material;
+default-promotion checks omit that override. This preserves reference meaning
+without relying on whatever the current app defaults happen to be.

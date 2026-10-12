@@ -181,6 +181,9 @@ Fluid25DTerrainSurface fluid_25d_load_terrain_surface(const std::filesystem::pat
     }
     auto result = fluid_25d_build_terrain_surface(width, height, spacing_m, bed, samples);
     const auto preparation_started = std::chrono::steady_clock::now();
+    result.source_center_xz_m = origin + (math::Vec2(float(crop[0]), float(crop[1])) +
+                                          math::Vec2(float(width - 1), float(height - 1)) * 0.5F) *
+                                             spacing_m;
     const auto field = terrain::make_terrain_surface_field(source, source.bounds(), &climate);
     result.correlated.reserve(samples.size());
     for (unsigned z = 0; z < height; ++z)
@@ -192,6 +195,8 @@ Fluid25DTerrainSurface fluid_25d_load_terrain_surface(const std::filesystem::pat
     auto receipt = nlohmann::json::parse(result.receipt);
     receipt["source_manifest"] = std::filesystem::absolute(heightfield).string();
     receipt["source_identity"] = identity;
+    receipt["material_world_center_xz_m"] = {result.source_center_xz_m.x,
+                                             result.source_center_xz_m.y};
     receipt["climate_sha256"] = climate.metadata().climate_sha256;
     receipt["climate_sample_spacing_m"] = climate.metadata().sample_spacing_m;
     receipt["correlated_formula"] = terrain::kTerrainSurfaceFieldFormula;
@@ -296,6 +301,8 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
         }
     auto result = fluid_25d_build_terrain_surface(width, height, spacing_m, bed, samples);
     const auto started = std::chrono::steady_clock::now();
+    result.source_center_xz_m =
+        point(0, 0) + math::Vec2(float(width - 1), float(height - 1)) * spacing_m * 0.5F;
     const auto field = terrain::make_terrain_surface_field(source, source.bounds(), &climate);
     result.correlated.reserve(bed.size());
     for (unsigned z = 0; z < height; ++z)
@@ -303,6 +310,8 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
             result.correlated.push_back(field.sample(point(x, z)));
     auto receipt = nlohmann::json::parse(result.receipt);
     receipt["source_identity"] = id;
+    receipt["material_world_center_xz_m"] = {result.source_center_xz_m.x,
+                                             result.source_center_xz_m.y};
     receipt["source_sample_max_abs_error_m"] = maximum_error;
     receipt["climate_sha256"] = climate.metadata().climate_sha256;
     receipt["correlated_formula"] = terrain::kTerrainSurfaceFieldFormula;

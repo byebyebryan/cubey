@@ -65,7 +65,7 @@ struct TerrainRuntimeConfig {
     std::optional<float> initial_elevation_radians{};
     std::uint32_t render_stride = 3U;
     TerrainDebugView debug_view = TerrainDebugView::Surface;
-    TerrainMaterialMode material = TerrainMaterialMode::FilteredDetail;
+    TerrainMaterialMode material = TerrainMaterialMode::ReadableDetail;
     float aerial_perspective_strength = kTerrainDefaultAerialPerspectiveStrength;
     bool shadows = true;
     bool foreground_sphere = true;
@@ -124,7 +124,7 @@ struct TerrainProjectConfig {
     bool captured_water_visible = true;
     bool captured_water_context = false;
     std::string captured_water_ground_view = "shaded";
-    std::string terrain_readability = "current";
+    std::string terrain_readability = "refined";
     float terrain_context_max_spacing_m = 0.0F; // retained grid-dependent ring schedule
     float terrain_review_orbit_rad_per_s = 0.0F;
     bool captured_water_animate = true;

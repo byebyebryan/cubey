@@ -950,8 +950,8 @@ class TerrainApp {
                 int readability = config_.terrain_readability == "refined"      ? 2
                                   : config_.terrain_readability == "detail-off" ? 1
                                                                                 : 0;
-                if (ImGui::Combo("Terrain readability (study)", &readability,
-                                 "Retained\0Periodic detail off\0Refined / world-stable\0")) {
+                if (ImGui::Combo("Terrain material", &readability,
+                                 "Previous reference\0Periodic detail off\0Refined (default)\0")) {
                     config_.terrain_readability = readability == 2   ? "refined"
                                                   : readability == 1 ? "detail-off"
                                                                      : "current";
@@ -1238,12 +1238,12 @@ class TerrainApp {
             runtime_config_.material = TerrainMaterialMode::Flat;
         }
         ImGui::SameLine();
-        if (ImGui::RadioButton("Filtered detail",
+        if (ImGui::RadioButton("Filtered detail (previous)",
                                material == static_cast<int>(TerrainMaterialMode::FilteredDetail))) {
             runtime_config_.material = TerrainMaterialMode::FilteredDetail;
         }
         ImGui::SameLine();
-        if (ImGui::RadioButton("Readable detail (study)",
+        if (ImGui::RadioButton("Readable detail (default)",
                                material == static_cast<int>(TerrainMaterialMode::ReadableDetail)))
             runtime_config_.material = TerrainMaterialMode::ReadableDetail;
         ImGui::Checkbox("Directional shadows", &runtime_config_.shadows);

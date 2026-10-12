@@ -19,6 +19,7 @@ struct Fluid25DTerrainSurface {
     std::vector<math::Vec4> landform, climate;
     std::vector<math::Vec4> correlated;
     std::string receipt;
+    math::Vec2 source_center_xz_m{0.0F}; // validated source frame; zero for synthetic surfaces
 };
 
 // Reuses Terrain's climate classifier; no noise is added to imported climate.

@@ -155,9 +155,14 @@ the solver. The installed interpreter path is recorded in the study protocol.
 The finer display atlas and shared material readability follow-up are documented
 in [Shared terrain readability V1](../../docs/terrain-readability-v1.md), with
 matched controls at `http://starship:8801/terrain/readability-20261012-a1/`.
-`--terrain-readability refined` opts prepared-site/captured ground into the shared
-footprint-filtered material; `--terrain-surface-detail readable-detail` selects
-the same helper for the established radial backdrop. Both retain legacy defaults.
+The reviewed footprint-filtered material is now the default for prepared sites,
+captured ground and the established radial backdrop. The explicit equivalent
+selectors are `--terrain-readability refined` and
+`--terrain-surface-detail readable-detail`. Previous treatments remain available
+as `--terrain-readability current` and `--terrain-surface-detail filtered-detail`.
+Fluid's shared Macro preset also defaults to the new ground, with its validated
+source-world material origin. Older Fluid material profiles remain references.
+Promotion checks: `http://starship:8801/terrain/readability-defaults-20261012-a1/`.
 The atlas is display-only; wider terrain still does not imply wider water.
 
 The world/site study separates broad Terrain Diffusion coverage from saved water.

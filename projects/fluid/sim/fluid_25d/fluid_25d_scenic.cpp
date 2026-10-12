@@ -24,6 +24,7 @@ render::TerrainSurfacePatchOptions options(const Fluid25DCatchmentRenderOptions&
 } // namespace
 struct Fluid25DScenic::State {
     ::cubey::TerrainSurfacePatchScene scene{CUBEY_FLUID_25D_SHADER_DIR};
+    math::Vec2 material_world_origin_xz{0.0F};
 };
 Fluid25DScenic::Fluid25DScenic() = default;
 Fluid25DScenic::~Fluid25DScenic() = default;
@@ -34,6 +35,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                                       const Fluid25DTerrainSurface* surface, bool daylight) {
     if (!state_)
         state_ = std::make_unique<State>();
+    state_->material_world_origin_xz = surface ? surface->source_center_xz_m : math::Vec2{0.0F};
     std::optional<render::TerrainSurfacePatchSurface> weights;
     if (surface)
         weights = {surface->width, surface->height, surface->landform, surface->climate,
@@ -73,11 +75,14 @@ void Fluid25DScenic::record(
                                  o.native_bspline_surface || o.native_bilinear_water,
                                  o.native_bspline_surface ? o.native_surface_subdivision : 0U);
     };
+    auto source_material = material;
+    source_material.terrain_world_x_m = state_->material_world_origin_xz.x;
+    source_material.terrain_world_z_m = state_->material_world_origin_xz.y;
     state_->scene.record(
         device, commands, executor, slot, target, mode == Fluid25DRenderTargetMode::Present,
-        fields(f), grid(c), {camera.view_projection, camera.position}, options(o), clock, material,
-        overlay, profile, reset, terrain_view, water_view, surface_mode, environment,
-        {rain.streak_count, rain.clock_s, rain.motion_s, rain.applied_mm_per_hour}, seeds,
-        generation);
+        fields(f), grid(c), {camera.view_projection, camera.position}, options(o), clock,
+        source_material, overlay, profile, reset, terrain_view, water_view, surface_mode,
+        environment, {rain.streak_count, rain.clock_s, rain.motion_s, rain.applied_mm_per_hour},
+        seeds, generation);
 }
 } // namespace cubey::projects::fluid::fluid_25d

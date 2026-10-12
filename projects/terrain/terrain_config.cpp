@@ -302,9 +302,9 @@ std::string_view terrain_material_mode_name(TerrainMaterialMode mode) noexcept {
 }
 
 TerrainMaterialMode terrain_material_mode_from_name(std::string_view name) {
-    if (name == "readable-detail")
+    if (name.empty() || name == "readable-detail")
         return TerrainMaterialMode::ReadableDetail;
-    if (name.empty() || name == "filtered-detail" || name == "detail") {
+    if (name == "filtered-detail" || name == "detail") {
         return TerrainMaterialMode::FilteredDetail;
     }
     if (name == "flat") {
@@ -406,7 +406,7 @@ terrain_runtime_config_from_options(const TerrainStartupOptions& options,
         result.foreground_sphere =
             options.camera_preset.value() == TerrainCameraPreset::BackdropStage;
     }
-    result.material = options.surface_detail.value_or(TerrainMaterialMode::FilteredDetail);
+    result.material = options.surface_detail.value_or(TerrainMaterialMode::ReadableDetail);
     result.aerial_perspective_strength =
         options.aerial_perspective_strength.value_or(kTerrainDefaultAerialPerspectiveStrength);
     result.shadows = options.shadows.value_or(true);
@@ -580,10 +580,11 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                         ValueType::Enum, {},
                         {"shaded", "normal", "clay", "clay-clean", "albedo", "ownership"}),
                  config.captured_water_ground_view);
-    builder.bind(option("terrain.readability", "--terrain-readability", "Terrain Readability",
-                        "Terrain", "Opt-in shared material study; does not modify source or water.",
-                        ValueType::Enum, {}, {"current", "detail-off", "refined"}),
-                 config.terrain_readability);
+    builder.bind(
+        option("terrain.readability", "--terrain-readability", "Terrain Readability", "Terrain",
+               "Shared shading: refined default, current reference, detail-off diagnostic.",
+               ValueType::Enum, {}, {"current", "detail-off", "refined"}),
+        config.terrain_readability);
     builder.bind(option("terrain.review_orbit_rad_per_s", "--terrain-review-orbit-speed",
                         "Review Orbit", "Terrain", "Render-only camera motion, radians per second.",
                         ValueType::Float,

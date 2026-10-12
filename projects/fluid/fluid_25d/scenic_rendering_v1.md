@@ -1,5 +1,14 @@
 # Native Terrain–Water Rendering
 
+The Macro terrain recipe now uses the approved shared footprint-filtered material
+by default. Fine colour/roughness/normal contrast recedes together, with reduced
+flat-ground repetition. Native and sampled terrain bindings provide the material's
+source-world XZ centre. The **Terrain detail** material control retains the previous
+reference and periodic-detail-off diagnostic; v2 tuning JSON uses
+`terrain_readability: 0|1|2`. V1/refined/terrain reference profiles, water shading,
+rainfall, bank modes and geometry defaults are unchanged. See
+[shared terrain readability](../../../docs/terrain-readability-v1.md).
+
 Scenic is the mountain-demo launcher's default visual material path, not a solver, terrain or shoreline
 upgrade. It applies to the shared native replay/external live frontend's shaded
 Composite view. Readable and every raw diagnostic remain available. The builtin

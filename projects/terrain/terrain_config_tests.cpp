@@ -89,7 +89,7 @@ void test_defaults_and_explicit_default_paths() {
                 config.placement == TerrainPlacementMode::Selected &&
                 config.placement_index == 0U && config.initial_foreground_height_m == 200.0F &&
                 config.render_stride == 3U &&
-                config.material == TerrainMaterialMode::FilteredDetail &&
+                config.material == TerrainMaterialMode::ReadableDetail &&
                 config.aerial_perspective_strength ==
                     cubey::projects::terrain::kTerrainDefaultAerialPerspectiveStrength &&
                 config.shadows && config.debug_view == TerrainDebugView::Surface,
@@ -388,7 +388,9 @@ int main() {
         test_shared_environment_validation_and_defaults();
         test_runtime_validation_and_diagnostics();
         test_captured_water_options();
-        require(parse({}).terrain_readability == "current", "readability must remain opt-in");
+        require(parse({}).terrain_readability == "refined", "accepted readability must be default");
+        require(parse({"--terrain-readability", "current"}).terrain_readability == "current",
+                "retained material reference remains selectable");
         require(parse({}).terrain_context_max_spacing_m == 0.0F,
                 "legacy grid-dependent exterior density must remain the default");
         const auto study =

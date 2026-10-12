@@ -111,6 +111,9 @@ struct TerrainWaterCaptureRuntime::State {
         initialize_surface();
     }
     void initialize_surface() {
+        const auto center = capture.grid.center_xz_m();
+        material.terrain_world_x_m = center.x;
+        material.terrain_world_z_m = center.y;
         std::optional<asset::TerrainRasterClimateSource> climate;
         const auto companion =
             source.provenance().manifest_path.parent_path() / "surface-fields.json";

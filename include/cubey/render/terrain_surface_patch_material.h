@@ -32,8 +32,9 @@ struct TerrainSurfacePatchMaterial {
     float terrain_specular_scale = 1.0F;
     float terrain_shadow_scale = 1.0F;
     float terrain_slope_color_scale = 1.0F;
-    // Opt-in terrain readability study: 0 retained, 1 periodic detail off,
-    // 2 footprint-filtered/world-stable. Does not affect water or geometry.
+    // Terrain shading: 0 previous reference, 1 periodic detail off,
+    // 2 accepted footprint-filtered/world-stable Macro default. Older presets
+    // retain zero. Does not affect water or geometry.
     float terrain_readability = 0.0F;
     float terrain_world_x_m = 0.0F;
     float terrain_world_z_m = 0.0F;

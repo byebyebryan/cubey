@@ -30,7 +30,7 @@ enum class TerrainBackdropDebugView : std::uint8_t {
 enum class TerrainBackdropMaterialMode : std::uint8_t {
     Flat,
     FilteredDetail,
-    ReadableDetail, // opt-in shared footprint-filtered/world-stable material
+    ReadableDetail, // accepted shared footprint-filtered/world-stable material
 };
 
 } // namespace cubey::render

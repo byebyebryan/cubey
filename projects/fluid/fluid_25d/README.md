@@ -27,6 +27,9 @@ The broader technique map lives in
 The prepared terrain launcher now defaults to **live SynxFlow streaming,
 mountain terrain at 1024² / 16 m, the Release renderer, and a 60 Hz render cap**.
 It retains Scenic Macro/daylight, B-spline 2x, visible rain and dots/trails.
+Scenic Macro now defaults to the approved shared footprint-filtered terrain
+material, with validated source-world texture placement. The previous ground
+remains available in **Terrain detail**; water/rain/bank/grid defaults are unchanged.
 Terrain organization now defaults to the shared **source-aligned masks**, with
 a **whole-scene fitted 2048² shadow** and corrected steep receiver-plane filtering.
 This is the owner-reviewed, accepted demo default; no appearance flags are needed.

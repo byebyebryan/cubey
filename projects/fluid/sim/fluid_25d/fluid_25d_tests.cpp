@@ -7113,6 +7113,27 @@ void test_scenic_material_contract() {
     const auto refined = fluid_25d_scenic_material("refined");
     const auto terrain = fluid_25d_scenic_material("terrain");
     const auto macro = fluid_25d_scenic_material("macro");
+    require(macro.terrain_readability == 2.0F && v1.terrain_readability == 0.0F &&
+                refined.terrain_readability == 0.0F && terrain.terrain_readability == 0.0F,
+            "Macro promotes readable ground while older material references stay unchanged");
+    const auto previous_ground = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_readability":0})", macro);
+    require(previous_ground.terrain_readability == 0.0F &&
+                previous_ground.water_roughness == macro.water_roughness &&
+                previous_ground.water_shallow_extinction_boost ==
+                    macro.water_shallow_extinction_boost &&
+                previous_ground.water_stream_foam_strength == macro.water_stream_foam_strength &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(previous_ground), macro)) ==
+                    fluid_25d_scenic_material_json(previous_ground),
+            "previous ground is selectable without replacing water shading and roundtrips");
+    require_throws(
+        [&] {
+            (void)fluid_25d_parse_scenic_material(
+                R"({"schema":"cubey.fluid25d.scenic-material.v2","terrain_readability":1.5})",
+                macro);
+        },
+        "fractional terrain detail mode rejected");
     const auto fixed_daylight = fluid_25d_fixed_daylight();
     for (const auto* material : {&v1, &refined, &terrain})
         require(material->water_rapid_strength == 0.0F && material->water_rapid_scale_m == 192.0F &&

@@ -1850,6 +1850,13 @@ class RecordingApp {
                     render_.native_shadow_scene_fit ? "scene" : "legacy";
             edited |= ImGui::SliderFloat("Slope color contrast",
                                          &scenic_material_.terrain_slope_color_scale, 0.0F, 1.0F);
+            int readability = int(scenic_material_.terrain_readability);
+            if (ImGui::Combo(
+                    "Terrain detail", &readability,
+                    "Previous reference\0Periodic detail off\0Readable (Macro default)\0")) {
+                scenic_material_.terrain_readability = float(readability);
+                edited = true;
+            }
             constexpr std::array terrain_views{
                 "shaded",        "terrain-only", "albedo",      "weights",    "base-normal",
                 "detail-normal", "roughness",    "direct",      "ambient",    "constant-albedo",

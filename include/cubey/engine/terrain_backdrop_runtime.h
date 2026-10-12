@@ -59,7 +59,7 @@ struct TerrainBackdropRuntimeFrameInfo {
     render::AtmosphereEnvironmentLighting lighting{};
     render::TerrainBackdropDebugView debug_view = render::TerrainBackdropDebugView::Surface;
     render::TerrainBackdropMaterialMode material =
-        render::TerrainBackdropMaterialMode::FilteredDetail;
+        render::TerrainBackdropMaterialMode::ReadableDetail;
     float aerial_perspective_strength = render::kTerrainBackdropDefaultAerialPerspectiveStrength;
     bool shadows_enabled = true;
     bool reflections_enabled = true;

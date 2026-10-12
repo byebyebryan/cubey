@@ -112,6 +112,8 @@ void test_source_binding() {
     };
     const auto valid = load(identity, bed);
     require(valid.climate.size() == 6U, "rectangular source crop was not loaded");
+    require(valid.source_center_xz_m == cubey::math::Vec2{20.0F, 15.0F},
+            "recorded crop material origin must use the validated source frame");
     const cubey::asset::TerrainRasterHeightSource source(root / "heightfield.json");
     const cubey::asset::TerrainRasterClimateSource companion(root / "surface-fields.json");
     const auto field =
@@ -162,6 +164,10 @@ void test_source_binding() {
     };
     const auto derived = load_sampled(sampled, derived_bed);
     require(derived.correlated.size() == 12, "sampled terrain field missing");
+    require(derived.source_center_xz_m == cubey::math::Vec2{17.5F, 15.0F} &&
+                derived.source_center_xz_m + cubey::math::Vec2{2.5F, 0.0F} ==
+                    valid.source_center_xz_m,
+            "sampled and native grids must identify the same source-world material position");
     for (unsigned z = 0; z < 3; ++z)
         for (unsigned x = 0; x < 4; ++x)
             require(derived.correlated[z * 4 + x] ==

@@ -29,6 +29,7 @@ TerrainSurfacePatchMaterial terrain_surface_patch_macro_material() {
     m.terrain_mineral_scale = 0.62F;
     m.terrain_material_blend = 1.0F;
     m.terrain_normal_strength = 0.12F;
+    m.terrain_readability = 2.0F;
     m.terrain_diffuse_convolution = 1.0F;
     m.daylight_environment = 1.0F;
     m.daylight_exposure = 0.0F;
