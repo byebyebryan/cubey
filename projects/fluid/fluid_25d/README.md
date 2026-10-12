@@ -29,6 +29,7 @@ mountain terrain at 1024² / 16 m, the Release renderer, and a 60 Hz render cap*
 It retains Scenic Macro/daylight, B-spline 2x, visible rain and dots/trails.
 Terrain organization now defaults to the shared **source-aligned masks**, with
 a **whole-scene fitted 2048² shadow** and corrected steep receiver-plane filtering.
+This is the owner-reviewed, accepted demo default; no appearance flags are needed.
 `--surface legacy` retains the uniform-material control. The GUI's Terrain
 organization selector retains all four existing modes; Whole-scene shadow fit
 can be disabled for the original shadow reference. The direct app retains its

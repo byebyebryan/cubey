@@ -4,12 +4,17 @@ Scope: existing unmodified Mountain, Upland basins, Joining valleys and Steep
 ridges at 1024² / 16 m. Macro presentation, not ground-level realism. No assets,
 clutter, vegetation, solver port, elevation edits, erosion or finer simulation.
 
-## Recommendation
+## Accepted demo default
 
-Retain the 2× B-spline display mesh. Use the shared full-source correlated
-terrain masks and a camera-independent whole-terrain 2048² shadow box fit.
+Owner review accepted the improved presentation as the Terrain Rain demo
+default. Retain the 2× B-spline display mesh, shared full-source correlated
+terrain masks and camera-independent whole-terrain 2048² shadow box fit.
 The prepared terrain launcher selects this combination; old direct-app studies
 retain legacy projection, and all four material organizations remain available.
+No additional launch flags are needed. This acceptance is for the reviewed
+macro presentation; native GUI/scanout verification remains separate. The
+sealed report retains its original pre-review acceptance status as historical
+evidence rather than being rewritten.
 The review is at
 [the report](../../../outputs/fluid/terrain-presentation-v1-20261011-HPKiTL/index.html)
 or `http://starship:8801/fluid/terrain-presentation-v1-20261011-HPKiTL/`.
