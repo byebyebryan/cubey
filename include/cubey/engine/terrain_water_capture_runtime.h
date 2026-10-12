@@ -23,7 +23,7 @@ class TerrainWaterCaptureRuntime {
     void destroy_target_resources();
     void destroy();
     void prepare_context(const std::filesystem::path& extension = {},
-                         float maximum_spacing_m = 1024.0F);
+                         float maximum_spacing_m = 0.0F);
     void set_terrain_readability(unsigned mode);
     void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;

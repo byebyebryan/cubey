@@ -70,8 +70,9 @@ TerrainSurfaceContextProduct make_terrain_surface_context(
         throw std::runtime_error("invalid terrain surface context inputs");
     if (!std::isfinite(collar) || collar < 16 || collar > 512)
         throw std::runtime_error("invalid exterior terrain collar width");
-    if (maximum_spacing != 512.0F && maximum_spacing != 1024.0F)
-        throw std::runtime_error("exterior terrain spacing cap must be 512 or 1024 m");
+    if (maximum_spacing != 0.0F && maximum_spacing != 512.0F && maximum_spacing != 1024.0F)
+        throw std::runtime_error(
+            "exterior terrain spacing cap must be retained (0), 512 or 1024 m");
     const auto lo = c.grid.sample_origin_xz_m;
     const auto hi = lo + math::Vec2{c.grid.width - 1U, c.grid.height - 1U} * c.grid.cell_size_m;
     const auto bounds = source.bounds();
@@ -162,12 +163,14 @@ TerrainSurfaceContextProduct make_terrain_surface_context(
     };
     float offset = 0;
     while (true) {
-        const float step = std::min(maximum_spacing, offset < 128     ? fine
-                                                     : offset < 512   ? fine * 4
-                                                     : offset < 2048  ? fine * 8
-                                                     : offset < 8192  ? fine * 16
-                                                     : offset < 16384 ? fine * 32
-                                                                      : fine * 64);
+        const float retained_step = offset < 128     ? fine
+                                    : offset < 512   ? fine * 4
+                                    : offset < 2048  ? fine * 8
+                                    : offset < 8192  ? fine * 16
+                                    : offset < 16384 ? fine * 32
+                                                     : fine * 64;
+        const float step =
+            maximum_spacing > 0 ? std::min(maximum_spacing, retained_step) : retained_step;
         offset += step;
         const auto lower = glm::max(lo - math::Vec2{offset}, bounds.minimum_xz);
         const auto upper = glm::min(hi + math::Vec2{offset}, bounds.maximum_xz);

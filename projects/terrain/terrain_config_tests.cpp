@@ -389,6 +389,8 @@ int main() {
         test_runtime_validation_and_diagnostics();
         test_captured_water_options();
         require(parse({}).terrain_readability == "current", "readability must remain opt-in");
+        require(parse({}).terrain_context_max_spacing_m == 0.0F,
+                "legacy grid-dependent exterior density must remain the default");
         const auto study =
             parse({"--terrain-readability", "detail-off", "--terrain-water-ground-view",
                    "clay-clean", "--terrain-context-max-spacing", "512"});
