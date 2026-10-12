@@ -126,6 +126,7 @@ struct TerrainSurfacePatchRenderer::State {
     std::array<std::unique_ptr<GraphicsPipelineResource>, 4> ground;
     std::array<std::unique_ptr<GraphicsPipelineResource>, 2> water, shadow;
     std::unique_ptr<GraphicsPipelineResource> context_ground, context_shadow;
+    std::array<std::unique_ptr<GraphicsPipelineResource>, 3> fixed;
 };
 TerrainSurfacePatchRenderer::TerrainSurfacePatchRenderer(const vulkan::Device& device,
                                                          VkExtent2D extent,
@@ -234,6 +235,51 @@ void TerrainSurfacePatchRenderer::context(const vulkan::CommandRecorder& r, VkDe
     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U, fields);
     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U, frame);
     r.push_constants(p.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0U,
+                     push);
+    vkCmdBindIndexBuffer(r.handle(), indices, 0, VK_INDEX_TYPE_UINT32);
+    r.draw_indexed(count);
+}
+void TerrainSurfacePatchRenderer::ensure_fixed_lod(const vulkan::Device& device, VkExtent2D extent,
+                                                   VkDescriptorSetLayout fields,
+                                                   VkDescriptorSetLayout frame,
+                                                   VkDescriptorSetLayout mesh,
+                                                   const std::filesystem::path& directory) {
+    if (state_->fixed[0])
+        return;
+    const std::array layouts{fields, frame, mesh};
+    for (unsigned stage = 0; stage < 3; ++stage) {
+        const auto vertex = vertex_shader_file(
+            directory / (stage == 1 ? "terrain_surface_patch_lod_water.vert.spv"
+                                    : "terrain_surface_patch_lod_ground.vert.spv"));
+        const auto fragment =
+            fragment_shader_file(directory / (stage == 1 ? "fluid_25d_scenic_water.frag.spv"
+                                                         : "fluid_25d_scenic_terrain.frag.spv"));
+        const std::array stages{vertex, fragment};
+        auto pass = terrain_surface_patch_mesh_pass(stage == 1);
+        if (stage == 2)
+            pass.kind = MaterialPassKind::DepthOnly;
+        state_->fixed[stage] = std::make_unique<GraphicsPipelineResource>(
+            device,
+            GraphicsPipelineFileResourceConfig{
+                .extent = extent,
+                .color_format = stage == 2 ? VK_FORMAT_UNDEFINED : VK_FORMAT_R16G16B16A16_SFLOAT,
+                .depth_format = stage == 1 ? VK_FORMAT_UNDEFINED : VK_FORMAT_D32_SFLOAT,
+                .shader_stage_files = std::span{stages}.first(stage == 2 ? 1U : 2U),
+                .descriptor_set_layouts = layouts,
+                .material_pass = pass});
+    }
+}
+void TerrainSurfacePatchRenderer::fixed_lod(const vulkan::CommandRecorder& r,
+                                            VkDescriptorSet fields, VkDescriptorSet frame,
+                                            VkDescriptorSet mesh,
+                                            const TerrainSurfacePatchPush& push, VkBuffer indices,
+                                            std::uint32_t count, unsigned stage) const {
+    const auto& p = *state_->fixed.at(stage);
+    r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
+    r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0, fields);
+    r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1, frame);
+    r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 2, mesh);
+    r.push_constants(p.layout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                      push);
     vkCmdBindIndexBuffer(r.handle(), indices, 0, VK_INDEX_TYPE_UINT32);
     r.draw_indexed(count);

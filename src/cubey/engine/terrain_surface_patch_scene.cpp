@@ -378,6 +378,14 @@ void TerrainSurfacePatchScene::record(
     std::span<const TerrainSurfacePatchWhitewaterSeed> whitewater_seeds,
     std::uint64_t whitewater_generation, const render::TerrainSurfaceContextDraw* context) {
     auto& s = *state_;
+    const auto* fixed = options.fixed_mesh;
+    if (fixed) {
+        if (!fixed->coordinates || !fixed->indices || !fixed->index_count ||
+            !options.native_bspline_surface)
+            throw std::runtime_error("invalid fixed paired surface draw");
+        s.patch->ensure_fixed_lod(device, target.extent, fixed->fields_layout, s.frame->layout(),
+                                  fixed->descriptor_layout, shader_directory_);
+    }
     if (context) {
         if (!context->vertices || !context->indices || !context->index_count)
             throw std::runtime_error("invalid retained terrain context draw");
@@ -487,6 +495,23 @@ void TerrainSurfacePatchScene::record(
         render::TerrainShadowBoxBounds bounds{
             {-half_width, s.terrain_low * height_scale, -half_height},
             {half_width, s.terrain_high * height_scale, half_height}};
+        if (options.fixed_shadow_region) {
+            const auto& region = *options.fixed_shadow_region;
+            bounds.minimum_m.x = region.fine_minimum.x;
+            bounds.minimum_m.z = region.fine_minimum.y;
+            bounds.maximum_m.x = region.fine_maximum.x;
+            bounds.maximum_m.z = region.fine_maximum.y;
+            const float reach =
+                (s.terrain_high - s.terrain_low) * height_scale / std::max(direction.y, .05F);
+            bounds.minimum_m.x =
+                std::max(-half_width, bounds.minimum_m.x + std::min(0.0F, direction.x * reach));
+            bounds.minimum_m.z =
+                std::max(-half_height, bounds.minimum_m.z + std::min(0.0F, direction.z * reach));
+            bounds.maximum_m.x =
+                std::min(half_width, bounds.maximum_m.x + std::max(0.0F, direction.x * reach));
+            bounds.maximum_m.z =
+                std::min(half_height, bounds.maximum_m.z + std::max(0.0F, direction.z * reach));
+        }
         if (context) {
             // Conservative up-sun caster reach for ALL core receivers. The far
             // context is not qualified as a shadow receiver; protect core density.
@@ -515,7 +540,10 @@ void TerrainSurfacePatchScene::record(
                     "max_texel_m=%.6f camera_independent=1 all_casters=%u\n",
                     options.native_shadow_scene_fit ? "scene" : "legacy", shadow_extent.width,
                     shadow_span, shadow_depth_span, shadow_span / float(shadow_extent.width),
-                    context ? 0U : 1U);
+                    context || options.fixed_shadow_region ? 0U : 1U);
+        if (options.fixed_shadow_region)
+            std::printf("terrain_fixed_shadow: fine_receivers=covered; up_sun_casters=bounded; "
+                        "far_receivers=unqualified\n");
         if (context)
             std::printf("terrain_context_shadow: core_receivers=covered; up_sun_casters=bounded; "
                         "far_receivers=unqualified\n");
@@ -595,6 +623,15 @@ void TerrainSurfacePatchScene::record(
         {.label = "scenic render-only filtered velocity", .byte_size = s.visual_flow->size()},
         s.visual_flow->handle());
     std::optional<render::RenderGraphBufferHandle> context_vertices, context_indices;
+    std::optional<render::RenderGraphBufferHandle> mesh_coordinates, mesh_indices;
+    if (fixed) {
+        mesh_coordinates = graph.import_buffer(
+            {.label = "fixed paired coordinates", .byte_size = fixed->coordinates->size()},
+            fixed->coordinates->handle());
+        mesh_indices = graph.import_buffer(
+            {.label = "fixed paired indices", .byte_size = fixed->indices->size()},
+            fixed->indices->handle());
+    }
     if (context) {
         context_vertices = graph.import_buffer(
             {.label = "retained exterior ground vertices", .byte_size = context->vertices->size()},
@@ -650,7 +687,11 @@ void TerrainSurfacePatchScene::record(
             render::record_depth_only_pass(
                 ctx.recorder(), render::resolved_depth_target_view(ctx, shadow_depth),
                 render::depth_clear_value(), [&](const auto& r) {
-                    s.patch->shadow(r, fields, set, shadow_push, vertices, bspline);
+                    if (fixed)
+                        s.patch->fixed_lod(r, fields, set, fixed->descriptor_set, shadow_push,
+                                           fixed->indices->handle(), fixed->index_count, 2);
+                    else
+                        s.patch->shadow(r, fields, set, shadow_push, vertices, bspline);
                     if (context) {
                         vulkan::GpuTimestampScope timer(context_profiler, commands, slot.index,
                                                         "terrain context shadow");
@@ -661,6 +702,8 @@ void TerrainSurfacePatchScene::record(
         });
     if (context)
         shadow_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
+    if (fixed)
+        shadow_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
     auto opaque_pass = graph.add_pass("scenic opaque", render::RenderGraphQueueDomain::Graphics);
     opaque_pass.read_storage_buffer(bed)
         .read_storage_buffer(h)
@@ -683,7 +726,11 @@ void TerrainSurfacePatchScene::record(
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    s.patch->ground(r, fields, set, push, vertices, bspline, legacy_terrain);
+                    if (fixed)
+                        s.patch->fixed_lod(r, fields, set, fixed->descriptor_set, push,
+                                           fixed->indices->handle(), fixed->index_count, 0);
+                    else
+                        s.patch->ground(r, fields, set, push, vertices, bspline, legacy_terrain);
                     if (context) {
                         vulkan::GpuTimestampScope timer(context_profiler, commands, slot.index,
                                                         "terrain context opaque");
@@ -694,8 +741,12 @@ void TerrainSurfacePatchScene::record(
         });
     if (context)
         opaque_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
-    graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics)
-        .read_storage_buffer(bed)
+    if (fixed)
+        opaque_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
+    auto water_pass = graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics);
+    if (fixed)
+        water_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
+    water_pass.read_storage_buffer(bed)
         .read_storage_buffer(h)
         .read_storage_buffer(u)
         .read_storage_buffer(mask)
@@ -716,7 +767,11 @@ void TerrainSurfacePatchScene::record(
                                           set);
                     r.draw(3U);
                     if (terrain_view == 0U && options.water_visible) {
-                        s.patch->water(r, fields, set, push, vertices, bspline);
+                        if (fixed)
+                            s.patch->fixed_lod(r, fields, set, fixed->descriptor_set, push,
+                                               fixed->indices->handle(), fixed->index_count, 1);
+                        else
+                            s.patch->water(r, fields, set, push, vertices, bspline);
                     }
                 });
         });

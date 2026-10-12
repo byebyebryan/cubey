@@ -106,6 +106,8 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline_body.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline_body.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"
 )
 

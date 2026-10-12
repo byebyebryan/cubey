@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cubey/terrain/terrain_surface_patch_lod.h>
 #include <stdexcept>
+#include <unordered_map>
 
 namespace cubey::terrain {
 TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterCaptureGrid& grid,
@@ -23,17 +25,31 @@ TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterC
     TerrainSurfacePatchLod result;
     result.fine_minimum_world = lo;
     result.fine_maximum_world = hi;
+    std::unordered_map<std::uint64_t, std::uint32_t> boundary_vertices;
     const auto nx = std::uint32_t(std::ceil((hi.x - lo.x) / fine));
     const auto nz = std::uint32_t(std::ceil((hi.y - lo.y) / fine));
     if (std::uint64_t(nx + 1) * (nz + 1) > 2000000)
         throw std::runtime_error("fixed topology fine region exceeds vertex budget");
     const auto vertex = [&](math::Vec2 p) {
-        if (result.coordinates.size() >= 2000000)
-            throw std::runtime_error("fixed topology exceeds vertex budget");
         const auto coordinate = glm::clamp((p - lower) / grid.cell_size_m, math::Vec2{0},
                                            math::Vec2{grid.width - 1U, grid.height - 1U});
+        const bool boundary = coordinate.x == 0 || coordinate.y == 0 ||
+                              coordinate.x == float(grid.width - 1) ||
+                              coordinate.y == float(grid.height - 1);
+        const auto key = (std::uint64_t(std::bit_cast<std::uint32_t>(coordinate.x)) << 32U) |
+                         std::bit_cast<std::uint32_t>(coordinate.y);
+        if (boundary) {
+            const auto found = boundary_vertices.find(key);
+            if (found != boundary_vertices.end())
+                return found->second;
+        }
+        if (result.coordinates.size() >= 2000000)
+            throw std::runtime_error("fixed topology exceeds vertex budget");
         result.coordinates.push_back(coordinate);
-        return std::uint32_t(result.coordinates.size() - 1);
+        const auto id = std::uint32_t(result.coordinates.size() - 1);
+        if (boundary)
+            boundary_vertices.emplace(key, id);
+        return id;
     };
     const auto triangle = [&](std::uint32_t a, std::uint32_t b, std::uint32_t c) {
         const auto p = result.coordinates[a], q = result.coordinates[b], r = result.coordinates[c];
@@ -66,12 +82,15 @@ TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterC
         previous[3].push_back(z * (nx + 1));
     float offset = 0;
     while (lo != lower || hi != upper) {
-        const float step = offset < 128     ? fine
-                           : offset < 512   ? fine * 2
-                           : offset < 2048  ? fine * 4
-                           : offset < 8192  ? fine * 8
-                           : offset < 16384 ? fine * 16
-                                            : fine * 32;
+        const float requested_step = offset < 128     ? fine
+                                     : offset < 512   ? fine * 2
+                                     : offset < 2048  ? fine * 4
+                                     : offset < 8192  ? fine * 8
+                                     : offset < 16384 ? fine * 16
+                                                      : fine * 32;
+        // The first coarse pilot exposed exaggerated lake-edge depth and wet
+        // silhouettes at 128-1024 m. Keep this bounded alternative at 64 m.
+        const float step = std::min(requested_step, 64.0F);
         offset += step;
         const auto next_lo = glm::max(lower, lo - math::Vec2{offset});
         const auto next_hi = glm::min(upper, hi + math::Vec2{offset});
@@ -90,7 +109,7 @@ TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterC
             const auto segments = std::uint32_t(std::ceil(glm::length(b - a) / spacing));
             next[side].push_back(ids[side]);
             for (std::uint32_t i = 1; i < segments; ++i)
-                next[side].push_back(vertex(a + (b - a) * (float(i) / float(segments))));
+                next[side].push_back(vertex(a + glm::normalize(b - a) * (float(i) * spacing)));
             next[side].push_back(ids[(side + 1) % 4]);
             const auto& inner = previous[side];
             const auto& outer = next[side];

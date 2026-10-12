@@ -478,6 +478,60 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                      "Observation-only framing for the Mountain rain-fed capture.", ValueType::Enum,
                      {}, {"overview", "stream", "lake", "landscape", "boundary"}),
               config.water_capture_camera)
+        .bind(option("terrain.captured_water_detail", "--terrain-water-detail", "Capture Detail",
+                     "Terrain",
+                     "Uniform retained mesh, fixed paired LOD, or uniform with matching bounded "
+                     "shadows for study controls.",
+                     ValueType::Enum, {}, {"uniform", "fixed", "uniform-control"}),
+              config.captured_water_detail)
+        .bind(option("terrain.captured_water_detail_span_m", "--terrain-water-detail-span",
+                     "Fine Region Span", "Terrain",
+                     "Build-time fixed high-detail area; camera movement never changes it.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 256, .max = 65536}),
+              config.captured_water_detail_span_m)
+        .bind(option("terrain.captured_water_detail_focus_x_m", "--terrain-water-detail-focus-x",
+                     "Detail Focus X", "Terrain",
+                     "Fixed source-world topology focus independent of camera focus; requires "
+                     "Detail Focus Z.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1000000, .max = 1000000}),
+              config.captured_water_detail_focus_x_m)
+        .bind(option("terrain.captured_water_detail_focus_z_m", "--terrain-water-detail-focus-z",
+                     "Detail Focus Z", "Terrain",
+                     "Fixed source-world topology focus independent of camera movement; requires "
+                     "Detail Focus X.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1000000, .max = 1000000}),
+              config.captured_water_detail_focus_z_m)
+        .bind(option("terrain.captured_water_focus_x_m", "--terrain-water-focus-x",
+                     "Capture Focus X", "Terrain",
+                     "Absolute source-world camera focus X; requires Focus Z.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1000000, .max = 1000000}),
+              config.captured_water_focus_x_m)
+        .bind(option("terrain.captured_water_focus_z_m", "--terrain-water-focus-z",
+                     "Capture Focus Z", "Terrain",
+                     "Absolute source-world camera focus Z; requires Focus X.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1000000, .max = 1000000}),
+              config.captured_water_focus_z_m)
+        .bind(option("terrain.captured_water_focus_height_m", "--terrain-water-focus-height",
+                     "Capture Focus Height", "Terrain",
+                     "Explicit absolute focus height for locked-camera comparisons.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -100000, .max = 100000}),
+              config.captured_water_focus_height_m)
+        .bind(option("terrain.captured_water_span_m", "--terrain-water-span", "Capture Span",
+                     "Terrain", "Fixed capture-camera framing span in meters.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 16, .max = 200000}),
+              config.captured_water_span_m)
+        .bind(option("terrain.captured_water_yaw_rad", "--terrain-water-yaw", "Capture Yaw",
+                     "Terrain", "Fixed orbit yaw in radians.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -6.283186, .max = 6.283186}),
+              config.captured_water_yaw_rad)
+        .bind(option("terrain.captured_water_pitch_rad", "--terrain-water-pitch", "Capture Pitch",
+                     "Terrain", "Fixed orbit pitch in radians.", ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -1.5, .max = -0.1}),
+              config.captured_water_pitch_rad)
         .bind(option("terrain.captured_water_animation_s", "--terrain-water-animation-seconds",
                      "Animation Clock", "Terrain",
                      "Render-only clock offset; never advances captured water fields.",
@@ -585,6 +639,11 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
         argc, argv, terrain_project_config_schema, result);
     cubey::validate_atmosphere_environment_options(config.atmosphere);
     cubey::validate_cloud_environment_options(config.clouds);
+    if (config.captured_water_focus_x_m.has_value() != config.captured_water_focus_z_m.has_value())
+        throw std::runtime_error("capture camera focus requires both source-world X and Z");
+    if (config.captured_water_detail_focus_x_m.has_value() !=
+        config.captured_water_detail_focus_z_m.has_value())
+        throw std::runtime_error("fixed detail focus requires both source-world X and Z");
     return config;
 }
 

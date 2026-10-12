@@ -64,6 +64,14 @@ class TerrainSurfacePatchRenderer {
     void context(const vulkan::CommandRecorder& recorder, VkDescriptorSet fields,
                  VkDescriptorSet frame, const TerrainSurfacePatchPush& push, VkBuffer indices,
                  std::uint32_t index_count, bool shadow = false) const;
+    void ensure_fixed_lod(const vulkan::Device& device, VkExtent2D extent,
+                          VkDescriptorSetLayout fields, VkDescriptorSetLayout frame,
+                          VkDescriptorSetLayout mesh,
+                          const std::filesystem::path& shader_directory);
+    // stage: 0 ground, 1 water, 2 ground shadow. One shared indexed topology.
+    void fixed_lod(const vulkan::CommandRecorder& recorder, VkDescriptorSet fields,
+                   VkDescriptorSet frame, VkDescriptorSet mesh, const TerrainSurfacePatchPush& push,
+                   VkBuffer indices, std::uint32_t index_count, unsigned stage) const;
 
   private:
     struct State;

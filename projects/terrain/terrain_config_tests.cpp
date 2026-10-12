@@ -317,6 +317,14 @@ void test_runtime_validation_and_diagnostics() {
 
 void test_captured_water_options() {
     const auto defaults = parse({});
+    require(defaults.captured_water_detail == "uniform", "fixed paired detail remains opt-in");
+    require(parse({"--terrain-water-detail", "fixed"}).captured_water_detail == "fixed",
+            "fixed detail retained");
+    require(parse({"--terrain-water-detail", "uniform-control"}).captured_water_detail ==
+                "uniform-control",
+            "matched shadow control retained");
+    require_throws([] { (void)parse({"--terrain-water-detail", "invalid"}); },
+                   "invalid fixed detail rejected");
     require(!defaults.water_capture_path && defaults.captured_water_visible &&
                 defaults.captured_water_animate && defaults.water_capture_camera == "overview",
             "normal backdrop remains the default; capture is opt-in");
@@ -335,6 +343,29 @@ void test_captured_water_options() {
                    "unknown capture framing rejected");
     require_throws([] { (void)parse({"--terrain-water-animation-seconds", "-1"}); },
                    "negative animation clock rejected");
+    const auto framing =
+        parse({"--terrain-water-focus-x", "11520", "--terrain-water-focus-z", "19200",
+               "--terrain-water-focus-height", "1200", "--terrain-water-span", "8192",
+               "--terrain-water-yaw", "0", "--terrain-water-pitch", "-0.4"});
+    require(framing.captured_water_focus_x_m == 11520 &&
+                framing.captured_water_focus_z_m == 19200 &&
+                framing.captured_water_focus_height_m == 1200 &&
+                framing.captured_water_span_m == 8192 && framing.captured_water_yaw_rad == 0 &&
+                framing.captured_water_pitch_rad == -0.4F,
+            "locked world-camera controls preserved");
+    require_throws([] { (void)parse({"--terrain-water-focus-x", "0"}); },
+                   "partial world focus rejected");
+    require_throws([] { (void)parse({"--terrain-water-span", "0"}); },
+                   "zero framing span rejected");
+    require_throws([] { (void)parse({"--terrain-water-yaw", "nan"}); },
+                   "nonfinite framing rejected");
+    const auto detail_focus = parse(
+        {"--terrain-water-detail-focus-x", "11520", "--terrain-water-detail-focus-z", "19200"});
+    require(detail_focus.captured_water_detail_focus_x_m == 11520 &&
+                detail_focus.captured_water_detail_focus_z_m == 19200,
+            "fixed mesh placement independent of camera retained");
+    require_throws([] { (void)parse({"--terrain-water-detail-focus-x", "0"}); },
+                   "partial detail focus rejected");
 }
 
 int main() {

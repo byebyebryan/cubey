@@ -2,6 +2,7 @@
 #include <cubey/asset/terrain_water_capture.h>
 #include <cubey/render/terrain_surface_patch_scene.h>
 #include <cubey/terrain/terrain_surface_context.h>
+#include <cubey/terrain/terrain_surface_patch_lod.h>
 #include <memory>
 
 namespace cubey {
@@ -18,12 +19,13 @@ class TerrainWaterCaptureRuntime {
     void destroy_target_resources();
     void destroy();
     void prepare_context(); // Once, before recording; no solver or source edits.
+    void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;
     void record(const vulkan::Device& device, VkCommandBuffer commands, render::FrameSlot slot,
                 render::ColorTargetView target, bool present,
                 const render::TerrainSurfacePatchCamera& camera, double animation_s,
                 bool water_visible, bool profile, bool context_visible = false,
-                unsigned ground_view = 0U);
+                unsigned ground_view = 0U, bool fixed_lod = false);
     [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
     // Expensive end-of-study check only, never in a measured frame window.
     void verify_immutable_fields(vulkan::GpuRuntime& gpu) const;

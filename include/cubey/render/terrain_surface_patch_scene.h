@@ -50,6 +50,17 @@ struct TerrainSurfacePatchSurface {
     std::uint32_t width = 0U, height = 0U;
     std::span<const math::Vec4> landform, climate, correlated;
 };
+struct TerrainSurfacePatchMeshDraw {
+    const vulkan::Buffer* coordinates = nullptr;
+    const vulkan::Buffer* indices = nullptr;
+    VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+    VkDescriptorSetLayout descriptor_layout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout fields_layout = VK_NULL_HANDLE;
+    std::uint32_t index_count = 0;
+    // Local XZ bounds of the fixed high-detail region. Far shadow receivers
+    // remain unqualified; the fit includes conservative up-sun caster reach.
+    math::Vec2 fine_minimum{}, fine_maximum{};
+};
 struct TerrainSurfacePatchOptions {
     std::optional<float> terrain_height_scale{};
     bool terrain_thin_water_composite = false;
@@ -60,6 +71,8 @@ struct TerrainSurfacePatchOptions {
     bool native_shadow_scene_fit = true;
     std::uint32_t native_shadow_extent = 2048U;
     bool water_visible = true;
+    const TerrainSurfacePatchMeshDraw* fixed_mesh = nullptr;
+    const TerrainSurfacePatchMeshDraw* fixed_shadow_region = nullptr;
 };
 struct TerrainSurfacePatchRain {
     std::uint32_t streak_count = 0U;

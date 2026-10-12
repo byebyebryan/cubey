@@ -47,6 +47,7 @@ int main() {
         TerrainWaterCaptureRuntime runtime(temporary, source_path,
                                            CUBEY_TERRAIN_CAPTURE_TEST_SHADER_DIR);
         runtime.prepare_context();
+        runtime.prepare_fixed_lod(c.grid.center_xz_m(), 256.0F);
         for (unsigned size : {128U, 192U, 128U}) {
             runtime.destroy_target_resources(); // No outstanding commands: retired synchronously
                                                 // below.
@@ -86,7 +87,7 @@ int main() {
                                      : frame < 4U ? 1.0
                                                   : double(frame) - 2.0;
                 runtime.record(device, commands.command_buffer(), {slot, 2U}, target, false, view,
-                               clock, frame != 2U, true, frame % 2U == 0U);
+                               clock, frame != 2U, true, frame % 2U == 0U, 0U, frame % 2U == 1U);
                 commands.submit_and_wait();
             }
             runtime.verify_immutable_fields(gpu);
@@ -94,7 +95,8 @@ int main() {
         runtime.destroy_target_resources();
         runtime.destroy();
         std::filesystem::remove_all(temporary);
-        std::cout << "terrain_water_capture_lifecycle: PASS two retired slots; water on/off, "
+        std::cout << "terrain_water_capture_lifecycle: PASS two retired slots; uniform/fixed mesh, "
+                     "water on/off, "
                      "held/resumed clock, resize 128/192/128, immutable inputs and teardown\n";
         return 0;
     } catch (const std::exception& e) {

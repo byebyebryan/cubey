@@ -112,6 +112,12 @@ struct TerrainProjectConfig {
     std::optional<std::filesystem::path> water_capture_path{};
     std::string water_capture_view = "captured-patch";
     std::string water_capture_camera = "overview";
+    std::optional<float> captured_water_focus_x_m{}, captured_water_focus_z_m{};
+    std::optional<float> captured_water_focus_height_m{}, captured_water_span_m{};
+    std::optional<float> captured_water_yaw_rad{}, captured_water_pitch_rad{};
+    std::string captured_water_detail = "uniform";
+    float captured_water_detail_span_m = 16368.0F;
+    std::optional<float> captured_water_detail_focus_x_m{}, captured_water_detail_focus_z_m{};
     bool captured_water_visible = true;
     bool captured_water_context = false;
     std::string captured_water_ground_view = "shaded";

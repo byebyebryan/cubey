@@ -25,6 +25,9 @@ struct TerrainWaterCaptureRuntime::State {
     std::optional<terrain::TerrainSurfaceContextProduct> context;
     std::optional<vulkan::Buffer> context_vertices, context_indices;
     std::optional<vulkan::DescriptorSetBundle> context_fields;
+    std::optional<terrain::TerrainSurfacePatchLod> fixed_mesh;
+    std::optional<vulkan::Buffer> mesh_coordinates, mesh_indices;
+    std::optional<vulkan::DescriptorSetBundle> mesh_fields;
     std::optional<vulkan::DescriptorSetBundle> fields;
     std::optional<vulkan::GpuTimestampProfiler> whole_scene_profiler;
     std::vector<math::Vec4> velocity_values, weights;
@@ -130,6 +133,27 @@ void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
                 .count());
     }
+    if (s.fixed_mesh && !s.mesh_fields) {
+        s.mesh_coordinates.emplace(
+            vulkan::upload_device_buffer(gpu, s.fixed_mesh->coordinates.data(),
+                                         s.fixed_mesh->coordinates.size() * sizeof(math::Vec2),
+                                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        s.mesh_indices.emplace(vulkan::upload_device_buffer(
+            gpu, s.fixed_mesh->indices.data(), s.fixed_mesh->indices.size() * sizeof(std::uint32_t),
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
+        const std::array bindings{
+            vulkan::DescriptorSetBindingConfig{.binding = 0,
+                                               .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                                               .stage_flags = VK_SHADER_STAGE_VERTEX_BIT}};
+        s.mesh_fields.emplace(device, vulkan::DescriptorSetInfo(bindings));
+        render::MaterialDescriptorWriter(s.mesh_fields->set())
+            .storage_buffer(0, s.mesh_coordinates->handle(), s.mesh_coordinates->size())
+            .update(device);
+        std::printf(
+            "terrain_fixed_lod_upload: once; bytes=%llu vertices=%zu triangles=%zu\n",
+            static_cast<unsigned long long>(s.mesh_coordinates->size() + s.mesh_indices->size()),
+            s.fixed_mesh->coordinates.size(), s.fixed_mesh->indices.size() / 3);
+    }
     if (s.context && !s.context_fields) {
         static_assert(sizeof(terrain::TerrainSurfaceContextVertex) == 48U);
         const auto started = std::chrono::steady_clock::now();
@@ -178,7 +202,8 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
                                         bool present,
                                         const render::TerrainSurfacePatchCamera& camera,
                                         double seconds, bool water, bool profile,
-                                        bool context_visible, unsigned ground_view) {
+                                        bool context_visible, unsigned ground_view,
+                                        bool fixed_lod) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.whole_scene_profiler : nullptr;
     if (profiler)
@@ -202,14 +227,44 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
             s.context_fields->layout(), std::uint32_t(s.context->indices.size()),
             s.context->minimum, s.context->maximum});
     }
+    std::optional<render::TerrainSurfacePatchMeshDraw> mesh;
+    if (s.fixed_mesh) {
+        if (!s.mesh_fields)
+            throw std::runtime_error("fixed paired mesh was not uploaded before recording");
+        mesh.emplace(render::TerrainSurfacePatchMeshDraw{
+            .coordinates = &*s.mesh_coordinates,
+            .indices = &*s.mesh_indices,
+            .descriptor_set = s.mesh_fields->set(),
+            .descriptor_layout = s.mesh_fields->layout(),
+            .fields_layout = s.fields->layout(),
+            .index_count = std::uint32_t(s.fixed_mesh->indices.size()),
+            .fine_minimum = s.fixed_mesh->fine_minimum_world - s.capture.grid.center_xz_m(),
+            .fine_maximum = s.fixed_mesh->fine_maximum_world - s.capture.grid.center_xz_m()});
+    }
+    if (fixed_lod && !mesh)
+        throw std::runtime_error("fixed paired mesh not prepared");
     s.scene.record(device, commands, s.graph, slot, target, present, s.field_view(), s.grid(),
                    camera,
                    {.terrain_thin_water_composite = true,
-                    .native_shadow_extent = context_visible ? 4096U : 2048U,
-                    .water_visible = water},
+                    .native_shadow_extent = context_visible || mesh ? 4096U : 2048U,
+                    .water_visible = water,
+                    .fixed_mesh = fixed_lod ? &*mesh : nullptr,
+                    .fixed_shadow_region = mesh ? &*mesh : nullptr},
                    seconds * 0.03, s.material, {}, profile, false, ground_view, 0U, 3U,
                    &environment, {0U, seconds, seconds, s.capture.rain_mm_per_hour},
                    s.whitewater.seeds, 0U, context ? &*context : nullptr);
+}
+void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span) {
+    auto& s = *state_;
+    if (s.fixed_mesh)
+        return;
+    const auto started = std::chrono::steady_clock::now();
+    s.fixed_mesh.emplace(terrain::make_terrain_surface_patch_lod(s.capture.grid, focus, span));
+    std::printf(
+        "terrain_fixed_lod: CPU once; build_ms=%.3f fine_span_m=%.3f focus_world=(%.3f,%.3f)\n",
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
+            .count(),
+        span, focus.x, focus.y);
 }
 void TerrainWaterCaptureRuntime::prepare_context() {
     auto& s = *state_;

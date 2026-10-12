@@ -587,6 +587,16 @@ class TerrainApp {
                 capture_animation_s_ = config_.captured_water_animation_s;
                 if (config_.captured_water_context)
                     capture_runtime_->prepare_context();
+                if (config_.captured_water_detail != "uniform")
+                    capture_runtime_->prepare_fixed_lod(
+                        config_.captured_water_detail_focus_x_m
+                            ? cubey::math::Vec2{*config_.captured_water_detail_focus_x_m,
+                                                *config_.captured_water_detail_focus_z_m}
+                        : config_.captured_water_focus_x_m
+                            ? cubey::math::Vec2{*config_.captured_water_focus_x_m,
+                                                *config_.captured_water_focus_z_m}
+                            : capture_runtime_->capture().grid.center_xz_m(),
+                        config_.captured_water_detail_span_m);
                 configure_capture_camera();
             } catch (const std::exception& error) {
                 // Explicit headless requests fail loudly; interactive users can
@@ -648,6 +658,22 @@ class TerrainApp {
             capture_yaw_ = 0.25F;
             capture_pitch_ = -0.40F;
         }
+        if (config_.captured_water_focus_x_m) {
+            const cubey::math::Vec2 world{*config_.captured_water_focus_x_m,
+                                          *config_.captured_water_focus_z_m};
+            const auto grid = (world - c.grid.sample_origin_xz_m) / c.grid.cell_size_m;
+            if (grid.x < 0 || grid.y < 0 || grid.x > float(c.grid.width - 1U) ||
+                grid.y > float(c.grid.height - 1U))
+                throw std::runtime_error("capture camera focus is outside the captured domain");
+            const auto x = std::uint32_t(std::round(grid.x));
+            const auto z = std::uint32_t(std::round(grid.y));
+            const auto local = world - c.grid.center_xz_m();
+            capture_target_ = {local.x, c.bed_m[std::size_t(z) * c.grid.width + x], local.y};
+        }
+        capture_target_.y = config_.captured_water_focus_height_m.value_or(capture_target_.y);
+        span = config_.captured_water_span_m.value_or(span);
+        capture_yaw_ = config_.captured_water_yaw_rad.value_or(capture_yaw_);
+        capture_pitch_ = config_.captured_water_pitch_rad.value_or(capture_pitch_);
         const float maximum = domain * 4.0F;
         capture_orbit_.set_distance_limits(std::max(16.0F, span * 0.30F), maximum);
         capture_orbit_.set_pitch_limits(-0.38F, 0.38F);
@@ -874,6 +900,11 @@ class TerrainApp {
                             float(capture.grid.height - 1U) * capture.grid.cell_size_m * 0.001F);
                 ImGui::Text("Source origin: %.0f, %.0f m", capture.grid.sample_origin_xz_m.x,
                             capture.grid.sample_origin_xz_m.y);
+                ImGui::Text("Render detail: %s", config_.captured_water_detail.c_str());
+                if (config_.captured_water_detail != "uniform")
+                    ImGui::TextDisabled("Fixed fine region %.2f km; no camera-following LOD. Far "
+                                        "shadows unqualified.",
+                                        config_.captured_water_detail_span_m * .001F);
                 int view = config_.water_capture_camera == "overview"    ? 0
                            : config_.water_capture_camera == "stream"    ? 1
                            : config_.water_capture_camera == "lake"      ? 2
@@ -2138,7 +2169,8 @@ class TerrainApp {
                 config_.captured_water_ground_view == "normal"      ? 4U
                 : config_.captured_water_ground_view == "clay"      ? 9U
                 : config_.captured_water_ground_view == "ownership" ? 15U
-                                                                    : 0U);
+                                                                    : 0U,
+                config_.captured_water_detail == "fixed");
             if (owns_commands)
                 cubey::vulkan::check(vkEndCommandBuffer(command_buffer), "end captured patch");
             return;

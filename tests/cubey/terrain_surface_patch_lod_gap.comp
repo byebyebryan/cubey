@@ -1,0 +1,23 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+layout(local_size_x=64) in;
+layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
+layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
+layout(set=0,binding=2,std430) readonly buffer Coordinates { vec2 values[]; } coordinates;
+layout(set=0,binding=3,std430) readonly buffer Indices { uint values[]; } indices;
+layout(set=0,binding=4,std430) writeonly buffer Results { vec4 values[]; } results;
+layout(push_constant) uniform Parameters { uvec4 grid_triangles_samples; } params;
+#include "cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+void main() {
+    uint sample_id=gl_GlobalInvocationID.x;
+    if (sample_id>=params.grid_triangles_samples.w) return;
+    uint first=((sample_id*1999u)%params.grid_triangles_samples.z)*3u;
+    vec3 ground,water,depths;
+    for (uint corner=0;corner<3;++corner) {
+        vec2 p=coordinates.values[indices.values[first+corner]];
+        vec2 bh=fluid25d_bspline_bed_depth(p,params.grid_triangles_samples.xy);
+        ground[corner]=bh.x; water[corner]=bh.x+bh.y; depths[corner]=bh.y;
+    }
+    vec3 weights=sample_id%4u==0u ? vec3(1,0,0) : sample_id%4u==1u ? vec3(0,.5,.5) : vec3(.2,.3,.5);
+    results.values[sample_id]=vec4(dot(ground,weights),dot(water,weights),dot(depths,weights),0);
+}
