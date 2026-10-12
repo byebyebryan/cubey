@@ -25,6 +25,11 @@ struct Ring {
 } // namespace
 TerrainSurfaceContextSample terrain_surface_context_core_sample(const asset::TerrainWaterCapture& c,
                                                                 math::Vec2 p) {
+    return terrain_surface_context_core_sample(
+        TerrainSurfaceContextInput{c.grid, c.bed_m, c.depth_m}, p);
+}
+TerrainSurfaceContextSample terrain_surface_context_core_sample(const TerrainSurfaceContextInput& c,
+                                                                math::Vec2 p) {
     p = glm::clamp(p, math::Vec2{0}, math::Vec2{c.grid.width - 1U, c.grid.height - 1U});
     const auto base = glm::ivec2(glm::floor(p)) - glm::ivec2(1);
     const auto wx = basis(glm::fract(p).x), wz = basis(glm::fract(p).y);
@@ -36,7 +41,8 @@ TerrainSurfaceContextSample terrain_surface_context_core_sample(const asset::Ter
                                          glm::ivec2{c.grid.width - 1U, c.grid.height - 1U});
             const auto i = std::size_t(cell.y) * c.grid.width + std::size_t(cell.x);
             r.bed_m += c.bed_m[i] * wx[x] * wz[z];
-            r.depth_m += c.depth_m[i] * wx[x] * wz[z];
+            if (!c.depth_m.empty())
+                r.depth_m += c.depth_m[i] * wx[x] * wz[z];
             r.bed_gradient +=
                 math::Vec2{dx[x] * wz[z], wx[x] * dz[z]} * (c.bed_m[i] / c.grid.cell_size_m);
         }
@@ -47,6 +53,23 @@ make_terrain_surface_context(const asset::TerrainWaterCapture& c,
                              const asset::TerrainRasterHeightSource& source,
                              const TerrainSurfaceField& field, float collar) {
     asset::validate_terrain_water_capture_source(c, source);
+    return make_terrain_surface_context(TerrainSurfaceContextInput{c.grid, c.bed_m, c.depth_m},
+                                        source, field, collar);
+}
+TerrainSurfaceContextProduct
+make_terrain_surface_context(const TerrainSurfaceContextInput& c,
+                             const asset::TerrainRasterHeightSource& source,
+                             const TerrainSurfaceField& field, float collar) {
+    const auto count = std::uint64_t(c.grid.width) * c.grid.height;
+    if (c.grid.width < 2 || c.grid.height < 2 || count > 4194304 || c.bed_m.size() != count ||
+        (!c.depth_m.empty() && c.depth_m.size() != count) || !std::isfinite(c.grid.cell_size_m) ||
+        c.grid.cell_size_m < 2 || c.grid.cell_size_m > 256 ||
+        !std::isfinite(c.grid.sample_origin_xz_m.x) ||
+        !std::isfinite(c.grid.sample_origin_xz_m.y) ||
+        !std::all_of(c.bed_m.begin(), c.bed_m.end(), [](float v) { return std::isfinite(v); }) ||
+        !std::all_of(c.depth_m.begin(), c.depth_m.end(),
+                     [](float v) { return std::isfinite(v) && v >= 0; }))
+        throw std::runtime_error("invalid terrain surface context inputs");
     if (!std::isfinite(collar) || collar < 16 || collar > 512)
         throw std::runtime_error("invalid exterior terrain collar width");
     const auto lo = c.grid.sample_origin_xz_m;

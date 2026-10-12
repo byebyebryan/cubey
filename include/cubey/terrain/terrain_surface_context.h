@@ -1,6 +1,7 @@
 #pragma once
 #include <cubey/asset/terrain_water_capture.h>
 #include <cubey/terrain/terrain_surface_field.h>
+#include <span>
 
 namespace cubey::terrain {
 // Render-only exterior ground. No water cells, simulation or source mutation.
@@ -21,6 +22,18 @@ struct TerrainSurfaceContextSample {
     float bed_m = 0, depth_m = 0;
     math::Vec2 bed_gradient{};
 };
+// Geometry inputs shared by dry site inspection and validated saved water.
+// An empty depth span means terrain-only; it is not a hydraulic capture.
+struct TerrainSurfaceContextInput {
+    asset::TerrainWaterCaptureGrid grid;
+    std::span<const float> bed_m, depth_m;
+};
+[[nodiscard]] TerrainSurfaceContextSample
+terrain_surface_context_core_sample(const TerrainSurfaceContextInput& input, math::Vec2 coordinate);
+[[nodiscard]] TerrainSurfaceContextProduct
+make_terrain_surface_context(const TerrainSurfaceContextInput& input,
+                             const asset::TerrainRasterHeightSource& source,
+                             const TerrainSurfaceField& surface, float collar_width_m = 128.0F);
 [[nodiscard]] TerrainSurfaceContextSample
 terrain_surface_context_core_sample(const asset::TerrainWaterCapture& capture,
                                     math::Vec2 grid_coordinate);

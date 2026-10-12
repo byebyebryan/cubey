@@ -132,6 +132,7 @@ add_library(cubey_asset STATIC
     asset/terrain_raster_height_source.cpp
     asset/terrain_raster_climate_source.cpp
     asset/terrain_water_capture.cpp
+    asset/terrain_site.cpp
 )
 add_library(cubey::asset ALIAS cubey_asset)
 

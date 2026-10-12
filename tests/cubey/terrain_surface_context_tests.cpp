@@ -121,6 +121,25 @@ int main(int argc, char** argv) {
                     c.velocity_xz_m_per_s.push_back({});
                 }
             check(c, source, field);
+            const auto wet = terrain::make_terrain_surface_context(c, source, field);
+            const auto dry = terrain::make_terrain_surface_context(
+                terrain::TerrainSurfaceContextInput{c.grid, c.bed_m, {}}, source, field);
+            require(wet.indices == dry.indices && wet.vertices.size() == dry.vertices.size(),
+                    "terrain-only context changed geometry topology");
+            for (std::size_t i = 0; i < dry.vertices.size(); ++i) {
+                require(dry.vertices[i].position_wet_hint.y == wet.vertices[i].position_wet_hint.y,
+                        "terrain-only context changed bed geometry");
+                require(dry.vertices[i].position_wet_hint.w == 0,
+                        "terrain-only context invented a wet hint");
+            }
+            bool rejected = false;
+            try {
+                (void)terrain::make_terrain_surface_context(
+                    terrain::TerrainSurfaceContextInput{c.grid, {}, {}}, source, field);
+            } catch (const std::exception&) {
+                rejected = true;
+            }
+            require(rejected, "missing terrain-only bed accepted");
         }
         return 0;
     } catch (const std::exception& e) {
