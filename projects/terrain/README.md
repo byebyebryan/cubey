@@ -150,6 +150,67 @@ Capture/performance phases use standard Python; basin/report analysis uses the
 existing optional NumPy/Matplotlib environment, without importing or starting
 the solver. The installed interpreter path is recorded in the study protocol.
 
+### World-first prepared sites (opt-in)
+
+The world/site study separates broad Terrain Diffusion coverage from saved water.
+It uses one pinned seed/settings/coordinate mapping, a 262.144 km coarse survey,
+and 16.384 / 32.768 / 65.536 / 131.072 km requested site boxes. Site centers are
+admitted only if the complete outer backdrop plus 1 km camera movement and
+480 m sampling margins fits the world. The coarse conditioning map is a survey,
+not final rendered terrain. This is a bounded fixed/orbit foundation, not a
+free-flight or infinite-streaming system.
+
+With the existing landscape assets/tooling installed, explicitly prepare:
+
+```sh
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase freeze
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase spike
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase survey
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase site-0
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase site-1
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase site-2
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase validate
+python3 projects/terrain/study_terrain_world_v1.py outputs/terrain/world-sites-YYYYMMDD --phase publish
+```
+
+Each optional producer process has a 900 s wall limit; no downloads or installs
+are attempted. Complete validated site packages are reused without starting the
+producer. Cache publication refuses to overwrite an existing world package.
+All generated data stays outside Git; normal build/test does not generate it.
+The initial validated package is under
+`cache/terrain/worlds/v1/` (see the report's `published.json` for the exact leaf).
+
+Inspect a package with `--terrain-site PATH/site.json`. This prepares a sampled
+terrain-only surface in memory: zero water, no fabricated hydraulic recording.
+It reuses shared surface shading, filtering, fixed detail, exterior rings and
+core-focused shadows. The CLI owns its source selection and resets on startup;
+there is no new live GUI site picker. Far-context shadows remain unqualified.
+
+For existing captured water, retain its original matching heightfield and add
+`--terrain-water-context --terrain-water-context-source PATH/heightfield.json`.
+The wider source must match producer, seed, height transform, coordinate mapping,
+and every native anchor sample. The original capture hash/rounded-bed check
+remains unchanged; raw water fields are not replaced. Wider ground is not wider
+water coverage.
+
+The low-frequency-only export was rejected: its p95 difference from filtered
+native terrain was about 216 m. V1 instead generates native tiles for selected
+backdrops, then filters them. Runtime currently retains that native raster and
+its filtered mip chain; compact exported tier views are not yet sparse-resident
+runtime data. The initial three backdrops each took about 99–101 s including
+producer setup, with exact native tile/source/site overlaps on this machine.
+Dependency/model installation and cross-hardware reproducibility are not included.
+
+Review: `http://starship:8801/terrain/world-sites-20261012-a1/`.
+All 17 selected CPU/GPU/regression tests passed; three legacy views and a
+published-cache reload remained pixel-exact. Render-only 1080p GPU p95 was
+0.69–0.73 ms for terrain-only sites and 3.50–3.56 ms for the expanded-ground
+water scene (previous coverage: 3.48–3.52 ms); CPU service p95 was below 0.31 ms.
+These are headless measurements, not native GUI/frame-delivery qualification.
+Review commands use `review_terrain_world_v1.py OUTPUT --phase capture|performance|report`;
+the report/maps phase needs the existing optional NumPy/Matplotlib environment.
+No solver or native GUI is launched by the review tools. No default is promoted.
+
 ### Captured-water landscape context (opt-in study)
 
 Add `--terrain-water-context --terrain-water-capture-camera landscape` to the

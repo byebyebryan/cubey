@@ -13,9 +13,11 @@ import os
 from pathlib import Path
 import resource
 import signal
+import shutil
 import subprocess
 import sys
 import time
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "projects/terrain/tools"))
@@ -76,6 +78,11 @@ def freeze(out):
 def check(out):
     doc = json.loads((out / "protocol.json").read_text())
     if doc["protected"] != protected(): raise ValueError("protected source/capture changed")
+    revision = subprocess.check_output(["rtk", "proxy", "git", "-C", str(REFERENCE),
+                                       "rev-parse", "HEAD"], text=True).strip()
+    if revision != doc["code_revision"] or subprocess.run(["rtk", "proxy", "git", "-C",
+            str(REFERENCE), "diff", "HEAD", "--quiet"], check=False).returncode:
+        raise ValueError("pinned producer changed")
     return doc
 
 
@@ -331,6 +338,14 @@ def worker(out, phase):
 
 def run(out, phase):
     check(out)
+    if phase.startswith("site-"):
+        plans = json.loads((out / "survey.json").read_text())["sites"]
+        folder = out / "sites" / plans[int(phase[-1])]["site_id"]
+        if (folder / "site.json").exists():
+            validate(out)
+            write(out / (phase + "-cache-hit.json"), {"validated": True,
+                "producer_started": False, "site_sha256": digest(folder / "site.json")})
+            return
     env = os.environ.copy(); env.pop("DISPLAY", None); env.pop("WAYLAND_DISPLAY", None)
     env["PYTHONPATH"] = str(REFERENCE)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -392,16 +407,43 @@ def validate(out):
     write(out / "package-validation.json", {"sites": receipts, "protected_unchanged": True})
 
 
+def publish(out):
+    """Publish immutable prepared packages into the ignored shared asset cache."""
+    doc = check(out); validate(out)
+    plans = json.loads((out / "survey.json").read_text())["sites"]
+    if len(list((out / "sites").glob("*/site.json"))) != len(plans):
+        raise ValueError("all selected packages required before cache publication")
+    target = ROOT / "cache/terrain/worlds/v1" / doc["world"]["world_id"][:16]
+    if target.exists(): raise ValueError("refuse to overwrite an existing world cache")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(tempfile.mkdtemp(prefix=".world-prepare-", dir=target.parent))
+    shutil.copytree(out / "sites", temporary / "sites")
+    shutil.copytree(out / "survey", temporary / "survey")
+    shutil.copy2(out / "survey.json", temporary / "survey.json")
+    write(temporary / "world-recipe.json", doc["world"])
+    write(temporary / "world-index.json", {"schema": "cubey.terrain.world-index.v1",
+          "world_id": doc["world"]["world_id"], "sites": [{"id": p["site_id"],
+          "manifest": "sites/" + p["site_id"] + "/site.json"} for p in plans],
+          "water_coverage": "not-included"})
+    for p in sorted((out / "sites").rglob("*")):
+        if p.is_file() and digest(p) != digest(temporary / p.relative_to(out)):
+            raise ValueError("cache copy changed a prepared artifact")
+    temporary.rename(target)
+    write(out / "published.json", {"cache_root": str(target), "world_id": doc["world"]["world_id"],
+                                   "default_promoted": False, "copied_exact": True})
+
+
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("output", type=Path)
-    phases = ("freeze", "survey", "spike", "site-0", "site-1", "site-2", "validate")
+    phases = ("freeze", "survey", "spike", "site-0", "site-1", "site-2", "validate", "publish")
     parser.add_argument("--phase", choices=phases, default="freeze")
-    parser.add_argument("--worker", choices=phases[1:-1])
+    parser.add_argument("--worker", choices=phases[1:6])
     args = parser.parse_args(); out = owned(args.output)
     if args.worker: worker(out, args.worker)
     elif args.phase == "freeze": freeze(out)
     elif args.phase == "validate": validate(out)
+    elif args.phase == "publish": publish(out)
     else: run(out, args.phase)
 
 
