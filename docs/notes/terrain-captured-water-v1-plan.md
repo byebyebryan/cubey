@@ -2,8 +2,10 @@
 
 Date: 2026-10-11
 
-Status: proposed implementation plan, with a bounded readiness check completed.
-No new bake or runtime integration has started.
+Status: the implementation loop reached the first gate and rejected direct
+placement against the existing Terrain ground mesh. No new bake or runtime
+integration has started. See the [alignment result](terrain-captured-water-alignment-v1.md)
+before resuming the later gates.
 
 ## Decision and scope
 
