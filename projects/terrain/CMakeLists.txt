@@ -373,6 +373,12 @@ if (BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/test_review_terrain_world_v1.py")
     set_tests_properties(terrain_world_study_helpers terrain_world_review_helpers
         PROPERTIES LABELS terrain)
+    if (EXISTS "${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}/bin/python")
+        add_test(NAME terrain_atlas_filter_tests
+            COMMAND "${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}/bin/python" -B
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_study_terrain_atlas_v1.py")
+        set_tests_properties(terrain_atlas_filter_tests PROPERTIES LABELS "terrain;optional-scientific")
+    endif()
 
     add_executable(cubey_project_terrain_shadow_tests terrain_shadow_tests.cpp)
     target_link_libraries(
