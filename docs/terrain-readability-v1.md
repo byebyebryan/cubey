@@ -45,3 +45,75 @@ consumer tests, image and short motion review; two 1080p matched repeats with no
 concurrent producer/test GPU work, no readback/encoding in timed windows. Proposed
 added GPU p95 budget 0.3 ms; whole scene 8 ms GPU / 4 ms CPU service. These are
 local headless bounds, not native GUI or arbitrary-camera/horizon qualification.
+
+## Result and use
+
+Review: <http://starship:8801/terrain/readability-20261012-a1/>. The report starts
+with the finer atlas and plains comparison; diagnostic, mountain, water, backdrop,
+motion and timing evidence is collapsed underneath. HTTP/index/navigation and
+all 36 linked references were checked from Starship, not from remote Snap or a
+browser layout test. Three six-second actual orbit clips are available.
+
+The matched clean-clay and periodic-detail-off controls strongly implicate the
+material in the conspicuous plains pattern. A 512 m exterior cap changes real
+shape/filtering but does not address the repeating material. Candidate A was
+sufficient for this pass: colour/roughness as well as normal contrast fade with
+footprint, flat substrates have lower contrast, and material XZ follows the
+source-world frame instead of restarting at each selected site's local centre.
+The existing periodic texture remains at lower amplitude; this is not a claim
+of mathematically non-repeating terrain. No stochastic tiling/noise system was
+added. Climate/landform weights and the accepted palettes remain unchanged.
+
+The shared helper is `shaders/cubey/terrain/terrain_material_readability.glsl`.
+Prepared sites and captured ground use `--terrain-readability refined`; the
+established radial backdrop uses `--terrain-surface-detail readable-detail`.
+The respective UI study controls select these paths without making them default.
+`--terrain-readability detail-off` removes periodic modulation for diagnosis;
+`--terrain-water-ground-view clay-clean|albedo|normal` offers matched views.
+`--terrain-context-max-spacing 512|1024` caps exterior spacing explicitly;
+zero/default preserves the **original grid-dependent ring schedule**, including
+other supported cell sizes. Paired core/perimeter and water geometry are unchanged.
+`--terrain-review-orbit-speed 0.04` is a headless render-only camera study control,
+not hydraulic acceleration or a changed simulation clock.
+
+All 19 final selected CTests passed without skips. Six final disabled-candidate
+comparisons (three sites, three legacy water cameras) are pixel-exact. Immutable
+GPU fields, protected source/package hashes, seam checks, shared Fluid regressions,
+material GPU endpoints/world-frame controls and headless lifecycle checks passed.
+
+Twelve final 1080p measurements (two repeats x retained/refined x plains,
+mountain, existing water) passed the 0.3 ms added-p95 / 8 ms whole-GPU / 4 ms
+CPU-service gates. Maximum observed whole GPU p95 was 4.056 ms and CPU service
+0.360 ms. Paired candidate p95 did not increase in these repeats; **no speedup is
+claimed**. Terrain-only medians were about 0.56–0.59 ms while p95 varied about
+0.60–4.06 ms in both modes. The tail variability is retained and not assigned an
+unmeasured clock/host cause. Water-scene p95 was about 3.31–3.32 ms. These are
+captured-state renderer timings, not live solver contention measurements.
+
+The complete display atlas is published separately under
+`cache/terrain/atlases/v1/f12244a1ff943e37/256m/`, with grid, source transform,
+producer pin, payload hashes and coverage codes. It does not modify the immutable
+world packages or become a runtime height source. `--phase publish` refuses an
+existing destination and invalid/partial/nonfinite/hash-mismatched data.
+
+Reproduce using a fresh `outputs/terrain/readability-*` leaf (existing optional
+producer/scientific environment and pinned world cache required):
+
+```sh
+python3 projects/terrain/study_terrain_atlas_v1.py OUTPUT --phase freeze
+python3 projects/terrain/study_terrain_atlas_v1.py OUTPUT --phase generate
+python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase controls
+python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase refined
+python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase motion
+# Stop producer/GPU tests/encoding before this phase; freeze binary/shaders.
+python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase performance
+# Use the installed terrain-diffusion scientific Python for maps and publication.
+cache/terrain/tooling/v1/terrain-diffusion-venv/bin/python projects/terrain/report_terrain_readability_v1.py OUTPUT --phase maps
+# Final selected CTest receipt must be OUTPUT/final-tests.xml.
+python3 projects/terrain/report_terrain_readability_v1.py OUTPUT --phase report
+python3 projects/terrain/report_terrain_readability_v1.py OUTPUT --phase http
+```
+
+Default promotion remains a visual-review decision. Remaining limits are native
+30 m geometry, no vegetation/clutter, fixed filtered exterior geometry, unqualified
+far shadows/horizon and finite recorded-water boundaries. No push was performed.

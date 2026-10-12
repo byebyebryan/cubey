@@ -152,6 +152,14 @@ the solver. The installed interpreter path is recorded in the study protocol.
 
 ### World-first prepared sites (opt-in)
 
+The finer display atlas and shared material readability follow-up are documented
+in [Shared terrain readability V1](../../docs/terrain-readability-v1.md), with
+matched controls at `http://starship:8801/terrain/readability-20261012-a1/`.
+`--terrain-readability refined` opts prepared-site/captured ground into the shared
+footprint-filtered material; `--terrain-surface-detail readable-detail` selects
+the same helper for the established radial backdrop. Both retain legacy defaults.
+The atlas is display-only; wider terrain still does not imply wider water.
+
 The world/site study separates broad Terrain Diffusion coverage from saved water.
 It uses one pinned seed/settings/coordinate mapping, a 262.144 km coarse survey,
 and 16.384 / 32.768 / 65.536 / 131.072 km requested site boxes. Site centers are

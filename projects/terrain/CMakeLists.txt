@@ -373,6 +373,9 @@ if (BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/test_review_terrain_world_v1.py")
     set_tests_properties(terrain_world_study_helpers terrain_world_review_helpers
         PROPERTIES LABELS terrain)
+    add_test(NAME terrain_readability_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_terrain_readability_v1.py")
+    set_tests_properties(terrain_readability_review_helpers PROPERTIES LABELS terrain)
     if (EXISTS "${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}/bin/python")
         add_test(NAME terrain_atlas_filter_tests
             COMMAND "${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}/bin/python" -B

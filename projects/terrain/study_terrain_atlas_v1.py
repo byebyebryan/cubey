@@ -13,7 +13,9 @@ import os
 from pathlib import Path
 import resource
 import signal
+import shutil
 import subprocess
+import tempfile
 import time
 import study_terrain_world_v1 as study
 
@@ -180,13 +182,45 @@ def run(out):
     if code and not timed_out: raise RuntimeError("atlas failed; retained logs and partial coverage")
 
 
+def publish(out):
+    """Publish only a complete validated display atlas, separate from immutable sites."""
+    import numpy as np
+    doc=check(out); folder=out/"atlas"
+    manifest=json.loads((folder/"atlas.json").read_text())
+    raw=np.fromfile(folder/"elevation.f32",dtype="<f4")
+    mask=np.fromfile(folder/"coverage.u8",dtype="u1")
+    if (len(raw)!=SIZE*SIZE or len(mask)!=len(raw) or not np.isfinite(raw).all()
+        or manifest["elevation"]["shape"]!=[SIZE,SIZE] or manifest["spacing_m"]!=SPACING
+        or not manifest["complete"] or not np.isin(mask,[1,2]).all()
+        or study.digest(folder/"elevation.f32")!=manifest["elevation"]["sha256"]
+        or study.digest(folder/"coverage.u8")!=manifest["coverage_sha256"]
+        or manifest["world_id"]!=doc["world"]["world_id"]):
+        raise ValueError("cannot publish invalid or partial atlas")
+    target=study.ROOT/"cache/terrain/atlases/v1"/doc["world"]["world_id"][:16]/"256m"
+    if target.exists(): raise ValueError("refuse existing atlas cache")
+    target.parent.mkdir(parents=True,exist_ok=True)
+    temporary=Path(tempfile.mkdtemp(prefix=".atlas-prepare-",dir=target.parent))
+    shutil.copy2(folder/"elevation.f32",temporary/"elevation.f32")
+    shutil.copy2(folder/"coverage.u8",temporary/"coverage.u8")
+    manifest.update(grid=doc["atlas"],height_transform=doc["world"]["height_transform"],
+        producer=doc["world"]["producer"],purpose="display-only-not-runtime-height-source")
+    study.write(temporary/"atlas.json",manifest)
+    for name in ("elevation.f32","coverage.u8"):
+        if study.digest(temporary/name)!=study.digest(folder/name): raise ValueError("atlas cache copy changed")
+    temporary.rename(target)
+    study.write(out/"published-atlas.json",{"cache_root":str(target),"copied_exact":True,
+        "runtime_height_source":False,"world_packages_unchanged":True})
+    check(out)
+
+
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--phase", choices=("freeze", "cached", "generate", "worker"), default="freeze")
+    parser.add_argument("--phase", choices=("freeze", "cached", "generate", "worker", "publish"), default="freeze")
     args = parser.parse_args(); out = owned(args.output)
     if args.phase == "freeze": freeze(out)
     elif args.phase == "generate": run(out)
+    elif args.phase == "publish": publish(out)
     else: build(out, missing=args.phase == "worker")
 
 
