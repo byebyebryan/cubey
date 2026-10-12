@@ -1,5 +1,6 @@
 // Shared paired terrain/water renderer; retained names preserve shader ABI.
 #include "cubey/terrain/terrain_lighting.glsl"
+#include "cubey/terrain/terrain_material_readability.glsl"
 #define FLUID25D_TERRAIN_MACRO
 #include "fluid_25d_scenic.glsl"
 #include "fluid_25d_surface_sampling.glsl"
@@ -48,12 +49,18 @@ void main() {
     }
     vec3 base_normal = n;
     vec3 weights = pow(abs(n),vec3(4.0)); weights /= max(dot(weights,vec3(1)),0.00001);
+    bool readable = scenic.terrain_readability.z>1.5;
+    // Offset MATERIAL coordinates only. Field UVs, camera, light and geometry
+    // stay in the retained local frame. Exterior and paired core share phase.
+    vec3 material_position = world_position;
+    if (readable) material_position=terrain_material_world_position(world_position,scenic.terrain_readability.xy);
     // Cubey's existing mipmapped material detail, triplanar to avoid steep-slope stretch.
-    vec4 dx = texture(scenic_detail,world_position.zy/2048.0);
-    vec4 dy = texture(scenic_detail,world_position.xz/2048.0);
-    vec4 dz = texture(scenic_detail,world_position.xy/2048.0);
+    vec4 dx = texture(scenic_detail,material_position.zy/2048.0);
+    vec4 dy = texture(scenic_detail,material_position.xz/2048.0);
+    vec4 dz = texture(scenic_detail,material_position.xy/2048.0);
     vec4 detail = dx*weights.x+dy*weights.y+dz*weights.z;
     float macro = texture(scenic_detail,world_xz/32768.0).b;
+    if (readable) macro=texture(scenic_detail,material_position.xz/32768.0).b;
     if (scenic.terrain_readability.z == 1.0 || terrain_view == 16) {
         dx=dy=dz=detail=vec4(0.5); macro=0.5;
     }
@@ -76,6 +83,13 @@ void main() {
         rock_color = rock;
     }
     if (scenic.terrain_macro.w != 1.0) rock_color *= scenic.terrain_macro.w;
+    float footprint = max(length(dFdx(world_position)),length(dFdy(world_position)));
+    if (readable) {
+        // Fade colour and roughness too, not merely the normal. Flat substrates
+        // must not turn a repeatedly tiled detail sample into a macro biome.
+        detail=terrain_readability_detail(detail,footprint,rock);
+        macro=terrain_readability_macro(vec4(macro),footprint).b;
+    }
     vec3 grass = mix(vec3(0.070,0.105,0.043),vec3(0.14,0.18,0.080),macro);
     vec3 mineral = mix(vec3(0.15,0.14,0.12),vec3(0.25,0.24,0.21),detail.b)*scenic.art_direction.y;
     vec3 base = mix(grass,mineral,rock_color)*(0.85+0.30*detail.b);
@@ -113,8 +127,8 @@ void main() {
         float luminance = dot(base,vec3(0.2126,0.7152,0.0722));
         base = mix(vec3(luminance),base,scenic.ground_material.z);
     }
-    float footprint = max(length(dFdx(world_position)),length(dFdy(world_position)));
     float surface_detail_scale = organized ? mix(0.35,0.85,rock) : 1.0;
+    if (readable) surface_detail_scale*=mix(0.22,0.65,rock);
     float detail_strength = 0.12*(1.0-smoothstep(18.0,72.0,footprint))*surface_detail_scale;
     n = normalize(n+vec3(detail.r-0.5,0.0,detail.g-0.5)*detail_strength);
     float normal_strength = params.terrain_palette.z;

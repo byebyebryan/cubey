@@ -3,6 +3,7 @@
 
 #include "cubey/terrain/terrain_environment.glsl"
 #include "cubey/terrain/terrain_lighting.glsl"
+#include "cubey/terrain/terrain_material_readability.glsl"
 
 layout(push_constant) uniform TerrainBackdropPushConstants {
     mat4 view_projection;
@@ -157,11 +158,18 @@ void main() {
     vec4 macro_detail = vec4(0.5);
     vec4 local_planar_detail = vec4(0.5);
     vec3 planar_perturbation = vec3(0.0);
+    bool readable = pc.material_options.x>1.5;
+    vec2 material_xz=frag_world_position.xz;
+    if (readable) material_xz=terrain_material_world_position(frag_world_position,pc.material_options.zw).xz;
     if (pc.material_options.x > 0.5) {
         macro_detail = texture(backdrop_detail_texture,
-                               frag_world_position.xz / backdrop_macro_period_m);
-        vec2 planar_uv = frag_world_position.xz / backdrop_local_period_m;
+                               material_xz / backdrop_macro_period_m);
+        vec2 planar_uv = material_xz / backdrop_local_period_m;
         local_planar_detail = texture(backdrop_detail_texture, planar_uv);
+        if (readable) {
+            local_planar_detail=terrain_readability_detail(local_planar_detail,projected_span_m,rock);
+            macro_detail=terrain_readability_macro(macro_detail,projected_span_m);
+        }
         vec2 planar_tangent = local_planar_detail.rg * 2.0 - 1.0;
         planar_perturbation = vec3(planar_tangent.x, 0.0, planar_tangent.y);
     }

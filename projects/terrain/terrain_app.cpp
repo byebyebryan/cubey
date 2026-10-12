@@ -840,6 +840,13 @@ class TerrainApp {
             }
             prepare_capture_context(context.device(), context.gpu());
             if (capture_active_) {
+                if (config_.terrain_review_orbit_rad_per_s != 0.0F) {
+                    if (config_.common.capture_mode == CaptureMode::Video)
+                        capture_review_s_ =
+                            double(frame.index) / double(std::max(1U, config_.common.fps));
+                    else if (config_.common.headless_render_only)
+                        capture_review_s_ += std::clamp(frame.timing.delta_seconds, 0.0, 0.25);
+                }
                 if (config_.captured_water_animate) {
                     if (config_.common.capture_mode == CaptureMode::Video)
                         capture_animation_s_ =
@@ -940,16 +947,30 @@ class TerrainApp {
                     configure_capture_camera();
                 }
                 ImGui::Checkbox("Water visible", &config_.captured_water_visible);
-                int ground_view = config_.captured_water_ground_view == "shaded"   ? 0
-                                  : config_.captured_water_ground_view == "normal" ? 1
-                                  : config_.captured_water_ground_view == "clay"   ? 2
-                                                                                   : 3;
+                int readability = config_.terrain_readability == "refined"      ? 2
+                                  : config_.terrain_readability == "detail-off" ? 1
+                                                                                : 0;
+                if (ImGui::Combo("Terrain readability (study)", &readability,
+                                 "Retained\0Periodic detail off\0Refined / world-stable\0")) {
+                    config_.terrain_readability = readability == 2   ? "refined"
+                                                  : readability == 1 ? "detail-off"
+                                                                     : "current";
+                    capture_runtime_->set_terrain_readability(unsigned(readability));
+                }
+                int ground_view = config_.captured_water_ground_view == "shaded"       ? 0
+                                  : config_.captured_water_ground_view == "normal"     ? 1
+                                  : config_.captured_water_ground_view == "clay"       ? 2
+                                  : config_.captured_water_ground_view == "ownership"  ? 3
+                                  : config_.captured_water_ground_view == "clay-clean" ? 4
+                                                                                       : 5;
                 if (ImGui::Combo("Ground diagnostic (hides water)", &ground_view,
-                                 "Shaded\0Normals\0Clay\0Ownership\0"))
+                                 "Shaded\0Normals\0Clay\0Ownership\0Clean clay\0Albedo\0"))
                     config_.captured_water_ground_view = ground_view == 0   ? "shaded"
                                                          : ground_view == 1 ? "normal"
                                                          : ground_view == 2 ? "clay"
-                                                                            : "ownership";
+                                                         : ground_view == 3 ? "ownership"
+                                                         : ground_view == 4 ? "clay-clean"
+                                                                            : "albedo";
                 if (ImGui::Checkbox("Wider ground context (no added water)",
                                     &config_.captured_water_context))
                     configure_capture_camera();
@@ -1221,6 +1242,10 @@ class TerrainApp {
                                material == static_cast<int>(TerrainMaterialMode::FilteredDetail))) {
             runtime_config_.material = TerrainMaterialMode::FilteredDetail;
         }
+        ImGui::SameLine();
+        if (ImGui::RadioButton("Readable detail (study)",
+                               material == static_cast<int>(TerrainMaterialMode::ReadableDetail)))
+            runtime_config_.material = TerrainMaterialMode::ReadableDetail;
         ImGui::Checkbox("Directional shadows", &runtime_config_.shadows);
         ImGui::SliderFloat("Aerial perspective", &runtime_config_.aerial_perspective_strength, 0.0F,
                            1.0F, "%.2f");
@@ -1855,9 +1880,8 @@ class TerrainApp {
                                 placement_stage_.stage.minimum_camera_clearance_m);
         recorder->record_metric(frame_index, "terrain.placement", "foreground_height_m",
                                 foreground_height_m_);
-        recorder->record_metric(
-            frame_index, "terrain.backdrop", "filtered_detail",
-            runtime_config_.material == TerrainMaterialMode::FilteredDetail ? 1.0 : 0.0);
+        recorder->record_metric(frame_index, "terrain.backdrop", "filtered_detail",
+                                runtime_config_.material != TerrainMaterialMode::Flat ? 1.0 : 0.0);
         recorder->record_metric(frame_index, "terrain.backdrop", "material_texture_bytes",
                                 static_cast<double>(terrain_runtime_.material_texture_bytes()));
         recorder->record_metric(frame_index, "terrain.shadow", "enabled",
@@ -2174,11 +2198,12 @@ class TerrainApp {
                 cubey::vulkan::check(vkBeginCommandBuffer(command_buffer, &begin),
                                      "begin captured patch");
             }
-            const auto transform =
-                cubey::orbit_camera_transform({.target = capture_target_,
-                                               .distance = capture_orbit_.distance(),
-                                               .yaw = capture_yaw_ + capture_orbit_.yaw(),
-                                               .pitch = capture_pitch_ + capture_orbit_.pitch()});
+            const auto transform = cubey::orbit_camera_transform(
+                {.target = capture_target_,
+                 .distance = capture_orbit_.distance(),
+                 .yaw = capture_yaw_ + capture_orbit_.yaw() +
+                        float(capture_review_s_) * config_.terrain_review_orbit_rad_per_s,
+                 .pitch = capture_pitch_ + capture_orbit_.pitch()});
             capture_runtime_->record(
                 device, command_buffer, frame_slot, target,
                 target_final_state.layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
@@ -2303,6 +2328,7 @@ class TerrainApp {
     std::string capture_error_;
     std::vector<bool> capture_profile_slots_;
     double capture_animation_s_ = 0.0;
+    double capture_review_s_ = 0.0;
     cubey::OrbitController capture_orbit_;
     cubey::Camera3D capture_camera_;
     cubey::math::Vec3 capture_target_{};

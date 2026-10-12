@@ -773,12 +773,12 @@ void TerrainBackdropRuntime::record_surface_draws(const vulkan::CommandRecorder&
                  product.diagnostics.minimum_height_m + impl_->frame.world_translation.y,
                  product.diagnostics.maximum_height_m + impl_->frame.world_translation.y,
                  product.request.visible_inner_radius_m},
-            .material_options = {impl_->frame.material ==
-                                         render::TerrainBackdropMaterialMode::FilteredDetail
-                                     ? 1.0F
-                                     : 0.0F,
+            .material_options = {float(static_cast<std::uint8_t>(impl_->frame.material)),
                                  std::clamp(impl_->frame.aerial_perspective_strength, 0.0F, 1.0F),
-                                 0.0F, 0.0F},
+                                 product.request.source_focus_xz.x -
+                                     impl_->frame.world_translation.x,
+                                 product.request.source_focus_xz.y -
+                                     impl_->frame.world_translation.z},
             .world_translation = {impl_->frame.world_translation, 0.0F},
         });
     if (impl_->draw_plan.center_visible && impl_->generation->meshes.center.has_value()) {

@@ -400,6 +400,12 @@ int main() {
                        "non-study geometry cap rejected");
         require_throws([] { (void)parse({"--terrain-readability", "unknown"}); },
                        "unknown terrain recipe rejected");
+        require(parse({"--terrain-surface-detail", "readable-detail"}).terrain.surface_detail ==
+                    TerrainMaterialMode::ReadableDetail,
+                "shared backdrop readability option parsed");
+        require(parse({"--terrain-review-orbit-speed", "0.04"}).terrain_review_orbit_rad_per_s ==
+                    0.04F,
+                "render-only camera motion parsed");
         std::cout << "terrain config tests passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {

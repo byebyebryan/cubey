@@ -126,6 +126,7 @@ struct TerrainProjectConfig {
     std::string captured_water_ground_view = "shaded";
     std::string terrain_readability = "current";
     float terrain_context_max_spacing_m = 1024.0F;
+    float terrain_review_orbit_rad_per_s = 0.0F;
     bool captured_water_animate = true;
     bool captured_water_audit = false;
     bool captured_water_transition_smoke = false;

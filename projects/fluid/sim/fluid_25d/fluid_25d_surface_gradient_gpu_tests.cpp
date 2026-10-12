@@ -63,7 +63,7 @@ void run() {
                                             .require_present = false,
                                             .require_dynamic_rendering = false});
     cubey::vulkan::SubmissionCoordinator submission(device);
-    constexpr auto bytes = sizeof(Vec4) * 1046U;
+    constexpr auto bytes = sizeof(Vec4) * 1054U;
     cubey::vulkan::Buffer storage(
         device, cubey::vulkan::device_local_buffer_config(
                     bytes, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
@@ -123,7 +123,7 @@ void run() {
     const VkBufferCopy copy{.srcOffset = 0, .dstOffset = 0, .size = bytes};
     vkCmdCopyBuffer(commands.command_buffer(), storage.handle(), readback.handle(), 1, &copy);
     commands.submit_and_wait();
-    std::array<Vec4, 1046> values{};
+    std::array<Vec4, 1054> values{};
     readback.download(values.data(), bytes);
     for (unsigned mode = 0; mode < 5; ++mode) {
         for (std::size_t i = 0; i < normals.size(); ++i) {
@@ -530,7 +530,20 @@ void run() {
             throw std::runtime_error("terrain current-film thresholds changed");
     if (!different_sampling || !active_wet_seam)
         throw std::runtime_error("terrain wetness controls must exercise the reconstruction fix");
-    std::cout << "PASS: 918 retained + 128 terrain-wetness GPU controls (selection, thresholds, "
+    const std::array<Vec4, 8> readable{{{.434F, .478F, .544F, .566F},
+                                        {.305F, .435F, .63F, .695F},
+                                        Vec4{.5F},
+                                        Vec4{.5F},
+                                        {.395F, .465F, .57F, .605F},
+                                        {10520, 40, 21200, 1},
+                                        {10520, 40, 21200, 1},
+                                        Vec4{.5F}}};
+    for (unsigned i = 0; i < readable.size(); ++i)
+        if (glm::any(glm::isnan(values[1046U + i])) || glm::any(glm::isinf(values[1046U + i])) ||
+            glm::length(values[1046U + i] - readable[i]) > 0.00001F)
+            throw std::runtime_error("shared terrain material fade/world-frame GPU control failed");
+    std::cout << "PASS: 8 terrain-readability + 918 retained + 128 terrain-wetness GPU controls "
+                 "(selection, thresholds, "
                  "clamped edges and continuous colour/roughness seams)\n";
 }
 } // namespace

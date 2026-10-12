@@ -7,6 +7,7 @@
 #include "fluid_25d_water_rapids.glsl"
 #include "fluid_25d_whitewater_motion.glsl"
 #include "fluid_25d_bank_edge.glsl"
+#include "cubey/terrain/terrain_material_readability.glsl"
 layout(local_size_x=1) in;
 layout(set=0,binding=0,std430) writeonly buffer Result { vec4 values[]; } result;
 layout(set=0,binding=1,std430) readonly buffer Terrain { float values[]; } terrain;
@@ -223,4 +224,13 @@ void main() {
         0.02,0.03,0.04,0.049,0.05,0.06,0.2,1.0,52.0);
     for (uint i=0; i<16; ++i)
         result.values[1030u+i]=vec4(fluid25d_terrain_wet_weight(wet_depths[i],0.002),0,0,0);
+    vec4 material=vec4(0.2,0.4,0.7,0.8);
+    result.values[1046]=terrain_readability_detail(material,18.0,0.0);
+    result.values[1047]=terrain_readability_detail(material,18.0,1.0);
+    result.values[1048]=terrain_readability_detail(material,72.0,0.0);
+    result.values[1049]=terrain_readability_macro(material,1000.0);
+    result.values[1050]=terrain_readability_macro(material,0.0);
+    result.values[1051]=vec4(terrain_material_world_position(vec3(-1000,40,2000),vec2(11520,19200)),1);
+    result.values[1052]=vec4(terrain_material_world_position(vec3(520,40,-1800),vec2(10000,23000)),1);
+    result.values[1053]=terrain_readability_detail(material,100.0,1.0);
 }

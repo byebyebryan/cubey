@@ -136,7 +136,8 @@ void bind_camera_preset(cubey::config::Schema::Builder& builder, TerrainProjectC
 void bind_surface_detail(cubey::config::Schema::Builder& builder, TerrainProjectConfig& config) {
     const OptionSpec spec =
         option("terrain.surface_detail", "--terrain-surface-detail", "Surface Detail", "Terrain",
-               "Terrain material detail mode.", ValueType::Enum, {}, {"flat", "filtered-detail"});
+               "Terrain material detail mode.", ValueType::Enum, {},
+               {"flat", "filtered-detail", "readable-detail"});
     builder.bind_custom(
         spec,
         [&config](std::string_view value) {
@@ -295,10 +296,14 @@ TerrainPlacementMode terrain_placement_mode_from_name(std::string_view name) {
 }
 
 std::string_view terrain_material_mode_name(TerrainMaterialMode mode) noexcept {
+    if (mode == TerrainMaterialMode::ReadableDetail)
+        return "readable-detail";
     return mode == TerrainMaterialMode::Flat ? "flat" : "filtered-detail";
 }
 
 TerrainMaterialMode terrain_material_mode_from_name(std::string_view name) {
+    if (name == "readable-detail")
+        return TerrainMaterialMode::ReadableDetail;
     if (name.empty() || name == "filtered-detail" || name == "detail") {
         return TerrainMaterialMode::FilteredDetail;
     }
@@ -579,6 +584,11 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                         "Terrain", "Opt-in shared material study; does not modify source or water.",
                         ValueType::Enum, {}, {"current", "detail-off", "refined"}),
                  config.terrain_readability);
+    builder.bind(option("terrain.review_orbit_rad_per_s", "--terrain-review-orbit-speed",
+                        "Review Orbit", "Terrain", "Render-only camera motion, radians per second.",
+                        ValueType::Float,
+                        {.has_min = true, .has_max = true, .min = -0.5, .max = 0.5}),
+                 config.terrain_review_orbit_rad_per_s);
     builder.bind(option("terrain.context_max_spacing_m", "--terrain-context-max-spacing",
                         "Exterior Spacing Cap", "Terrain", "Exterior ground only; 512 or 1024 m.",
                         ValueType::Float,
