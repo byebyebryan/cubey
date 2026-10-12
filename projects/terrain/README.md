@@ -80,6 +80,76 @@ exception without rewriting the automated gate. Its pure report checks run with
 
 ## Product Contract
 
+### Wider rain-fed captured backdrop (opt-in study)
+
+The 2026-10-12 wider-water study reuses the same unmodified Mountain source and
+external solver. Its matching 957-square / 64 m pilot and 1913-square / 32 m
+candidate cover 61.184 km square; dimensions fit the existing elevation/climate
+bounds instead of forcing an out-of-bounds 2k / 32 m grid. Both start dry under
+continuous 512 mm/h visual-demo rain and retain sparse snapshots through twenty
+physical hours. This is not ordinary weather, equilibrium or a permanent-water
+classification. The larger catchment, resolution and duration can change water
+levels; the original 16 m capture is kept unchanged, not spliced into the result.
+
+The locally retained wider candidate can be consumed without any solver:
+
+```sh
+build/release/projects/terrain/terrain \
+  --terrain-heightfield cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json \
+  --terrain-water-capture cache/terrain/water/v1/mountain-wide-rain-fed-1913-32m-study/water-capture.json \
+  --terrain-water-capture-camera landscape --terrain-water-detail fixed \
+  --terrain-water-focus-x 11520 --terrain-water-focus-z 19200 \
+  --terrain-water-focus-height 1342.083496 --terrain-water-span 11457.6
+```
+
+The fixed topology is built/uploaded once: paired ground, water and ground shadow
+share field coordinates and indices. A 16 m fine region transitions to 32 / 64 m
+geometry; aggressive 128–1024 m exterior steps were rejected after they distorted
+distant wet silhouettes. The source/state remains unchanged, and a denser mesh
+does not invent extra simulated detail. Existing materials, flow and whitewater
+are shared; bank noise and numerical/render defaults do not change.
+
+`--terrain-water-detail uniform` retains the old uniform 2x path (default).
+`uniform-control` retains that geometry with the same fixed-region 4096 shadow
+fit as `fixed`, for a fair topology comparison. `--terrain-water-detail-span`
+sets the build-time fine-region size. `--terrain-water-detail-focus-x/z` pins it
+independently of camera translations. Explicit `--terrain-water-focus-x/z`,
+`--terrain-water-focus-height`, `--terrain-water-span`, `--terrain-water-yaw`
+and `--terrain-water-pitch` override preset framing without moving the asset.
+These are bounded scene controls, not a camera-following LOD/streaming system.
+
+Wider water removes the old inner hydraulic cutoff but cannot remove the finite
+outer source edge. Several headings in the full original-site orbit expose that
+edge; the full orbit envelope is not visually qualified. Far shadow receivers
+and close-up shores outside the fine region also remain unqualified. No masking
+pretends the outside world is dry, and no default promotion or manual GUI
+acceptance is implied. The normal Backdrop is still a separate unchanged product;
+this is a wider optional captured surface, not an overlapping radial water layer.
+
+Report: `http://starship:8801/terrain/wider-water-20261012-a1/`.
+Both twenty-hour bakes completed within their bounds: 4.08 minutes wall for
+64 m and 28.10 minutes for 32 m. The fixed 32 m consumer submits 3,901,302
+triangles per surface pass versus 29,245,952 uniformly at 2x. Eight 1080p
+render-only comparisons (two each for Landscape, Stream, original Lake location
+and a new large-basin stress view) pass the proposed scene GPU <=8 ms / CPU
+service <=4 ms gates: GPU p95 at most 3.292 ms, CPU service at most 0.317 ms.
+Matched uniform Landscape controls measure 8.560 ms; incremental water costs
+are recorded separately, not equated to attribution or monitor FPS. Reported
+device-local heap usage peaks at 653 MiB. Twelve CPU/GPU/regression checks and
+seven portable helper tests pass; original Terrain/Fluid PNG references stay
+exact. The solver is stopped during consumer timings; these are not wider-live
+streaming or native GUI performance measurements.
+
+`study_wider_water_v1.py freeze|prepare|run --out OUTPUT --candidate CANDIDATE`
+is an explicit offline tool using the existing optional environment and pinned
+extension. Its roots are fresh owned leaves and each solver run has a 30-minute
+wall bound. `review_wider_water_v1.py capture|performance|basin|report OUTPUT`
+never starts a solver or GUI, preserves frozen input/runtime hashes and uses
+genuine offscreen Vulkan. Generated bundles remain ignored local cache assets.
+Capture/performance phases use standard Python; basin/report analysis uses the
+existing optional NumPy/Matplotlib environment, without importing or starting
+the solver. The installed interpreter path is recorded in the study protocol.
+
 ### Captured-water landscape context (opt-in study)
 
 Add `--terrain-water-context --terrain-water-capture-camera landscape` to the

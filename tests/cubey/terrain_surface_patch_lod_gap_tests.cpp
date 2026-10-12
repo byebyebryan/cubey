@@ -122,6 +122,8 @@ int main() {
         return 0;
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
+        if (std::string_view(e.what()).find("no Vulkan") != std::string_view::npos)
+            return 77;
         return 1;
     }
 }

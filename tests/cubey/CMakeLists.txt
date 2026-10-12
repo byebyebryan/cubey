@@ -310,7 +310,7 @@ cubey_add_glsl_shaders(cubey_terrain_surface_patch_lod_gap_tests
     SOURCES terrain_surface_patch_lod_gap.comp DEPENDS ${CUBEY_TERRAIN_PATCH_TEST_DEPENDS})
 add_test(NAME terrain_surface_patch_lod_gap_gpu COMMAND cubey_terrain_surface_patch_lod_gap_tests)
 set_tests_properties(terrain_surface_patch_lod_gap_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
-    TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
+    SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
 cubey_add_glsl_shaders(cubey_terrain_surface_patch_gap_tests
     OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/patch-test-shaders"
     SOURCES terrain_surface_patch_gap.comp DEPENDS ${CUBEY_TERRAIN_PATCH_TEST_DEPENDS})
