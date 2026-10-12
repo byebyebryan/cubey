@@ -118,6 +118,12 @@ target_include_directories(
 target_link_libraries(cubey_project_fluid_25d PRIVATE cubey_fluid25d_terrain_surface)
 
 # Explicit read/control diagnostic only; no automatic native launch or CUDA dependency.
+add_executable(cubey_project_fluid_25d_terrain_alignment_probe EXCLUDE_FROM_ALL
+    ../sim/fluid_25d/fluid_25d_recording.cpp
+    ../sim/fluid_25d/fluid_25d_terrain_alignment_probe.cpp)
+target_link_libraries(cubey_project_fluid_25d_terrain_alignment_probe PRIVATE
+    cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
+
 add_executable(cubey_project_fluid_25d_external_probe EXCLUDE_FROM_ALL
     ../sim/fluid_25d/fluid_25d_backend_contract.cpp
     ../sim/fluid_25d/fluid_25d_external_session.cpp
@@ -126,6 +132,12 @@ target_link_libraries(cubey_project_fluid_25d_external_probe
     PRIVATE cubey::cubey nlohmann_json::nlohmann_json cubey_project_options cubey_project_warnings)
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_fluid_25d_terrain_alignment_tests
+        ../sim/fluid_25d/fluid_25d_terrain_alignment_tests.cpp)
+    target_link_libraries(cubey_project_fluid_25d_terrain_alignment_tests PRIVATE
+        cubey::cubey cubey_project_options cubey_project_warnings)
+    add_test(NAME fluid_25d_terrain_alignment COMMAND cubey_project_fluid_25d_terrain_alignment_tests)
+    set_tests_properties(fluid_25d_terrain_alignment PROPERTIES LABELS "unit;terrain;fluid")
     add_executable(cubey_project_fluid_25d_terrain_demo_tests
         ../sim/fluid_25d/fluid_25d_terrain_demo.cpp
         ../sim/fluid_25d/fluid_25d_terrain_demo_tests.cpp)
@@ -232,6 +244,10 @@ if (BUILD_TESTING)
     set_tests_properties(fluid_25d_backend_adapters PROPERTIES LABELS "unit;fluid;backend")
     find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
     if (CUBEY_FLUID_RECORDING_PYTHON)
+        add_test(NAME fluid_25d_captured_water_alignment_report
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_report_captured_water_alignment_v1.py)
+        set_tests_properties(fluid_25d_captured_water_alignment_report PROPERTIES LABELS "unit;fluid;terrain" TIMEOUT 30)
         add_test(NAME fluid_25d_terrain_presentation_review_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_terrain_presentation_v1.py)
