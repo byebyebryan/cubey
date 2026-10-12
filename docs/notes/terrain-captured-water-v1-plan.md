@@ -5,7 +5,9 @@ Date: 2026-10-11
 Status: the implementation loop reached the first gate and rejected direct
 placement against the existing Terrain ground mesh. No new bake or runtime
 integration has started. See the [alignment result](terrain-captured-water-alignment-v1.md)
-before resuming the later gates.
+before resuming the later gates. The proposed next pass is narrowed to a
+[single rain-fed paired surface](terrain-captured-water-v2-plan.md); the two-state
+bake below is retained as deferred scope, not the next implementation task.
 
 ## Decision and scope
 

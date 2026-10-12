@@ -109,6 +109,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain captured water alignment result](terrain-captured-water-alignment-v1.md):
   first-gate geometry rejection, density/filtering controls, and the required
   shared ground/water reconstruction decision before further integration.
+- [Terrain captured water paired surface plan](terrain-captured-water-v2-plan.md):
+  proposed single rain-fed capture, shared paired ground/water rendering, and an
+  explicit Terrain patch view before backdrop stitching or another bake.
 - [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
   hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
 - [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): superseded
