@@ -155,6 +155,7 @@ target_link_libraries(
 
 add_library(cubey_terrain STATIC
     terrain/terrain_surface_context.cpp
+    terrain/terrain_surface_patch_lod.cpp
     terrain/terrain_backdrop_density.cpp
     terrain/terrain_backdrop_placement.cpp
     terrain/terrain_backdrop_preparation.cpp

@@ -276,6 +276,10 @@ set_tests_properties(
 )
 add_executable(cubey_terrain_surface_patch_gap_tests terrain_surface_patch_gap_tests.cpp)
 add_executable(cubey_terrain_surface_context_tests terrain_surface_context_tests.cpp)
+add_executable(cubey_terrain_surface_patch_lod_tests terrain_surface_patch_lod_tests.cpp)
+target_link_libraries(cubey_terrain_surface_patch_lod_tests PRIVATE cubey::terrain cubey_project_warnings)
+add_test(NAME terrain_surface_patch_lod_cpu COMMAND cubey_terrain_surface_patch_lod_tests)
+set_tests_properties(terrain_surface_patch_lod_cpu PROPERTIES TIMEOUT 60)
 target_link_libraries(cubey_terrain_surface_context_tests PRIVATE cubey::terrain cubey_project_warnings)
 target_compile_definitions(cubey_terrain_surface_context_tests PRIVATE
     CUBEY_TEST_ASSET_DIR="${PROJECT_SOURCE_DIR}/tests/assets")
