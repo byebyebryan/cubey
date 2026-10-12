@@ -2,7 +2,38 @@
 
 Date: 2026-10-12
 
-Status: approved bounded implementation loop; opt-in study, no default promotion.
+Status: implemented and headlessly validated; retained as an opt-in study.
+Manual visual acceptance and default promotion remain deferred.
+
+## Result
+
+The fixed-ring candidate covers the existing source outside the captured core:
+271,358 vertices, 478,074 triangles and 18,762,072 GPU mesh bytes. All 8,184 inner
+perimeter vertices agree with the retained GPU basis within 0.488281 mm; projected
+exterior area is exact and there are no unmatched interior edges. Core fields
+remain immutable. Three context-off Terrain views and three Fluid views match
+the previous baselines exactly. Ten foundation/Fluid regression tests pass,
+including actual context/water toggles, two retired slots and resize.
+
+The supported Landscape framing removes the isolated-core appearance. Normal,
+clay and ownership controls are retained. The boundary stress view still exposes
+an abrupt water ending, and high overviews can expose the finite source boundary.
+This is useful scene context, not a seamless full-landscape water product. Broader
+unrestricted shots need additional water/source coverage, not further seam masking.
+
+Two 1080p repetitions per Landscape/Overview/Lake, without encode/readback in
+timing windows: context-on GPU p95 3.09–4.02 ms, CPU service p95 at most 0.33 ms.
+The <=8 ms scene / <=2 ms context increment / <=4 ms CPU gates pass. Isolated
+context opaque p95 is 0.041–0.147 ms; shadow draw p95 about 0.074 ms. Paired
+increments include the core-focused 4096 shadow upgrade, not just those draws.
+One context-off Overview p95 is 5.200 ms versus 2.989 ms in its repeat; all
+measurements are retained and negative deltas are not interpreted as speedups.
+Whole-app device-local usage is 488 MiB versus 374 MiB with context off.
+
+Report:
+`http://starship:8801/terrain/captured-water-context-20261012-aAoOLi/`.
+Original failed and high-overview pilots are preserved in that output directory,
+separate from the frozen final dataset. No solver/generator/native GUI was run.
 
 The accepted rain-fed Mountain core stays unchanged. Its 16.368 km drawn patch
 sits inside a 61.41 km source, with only 3.321 km of +Z margin. Water reaches

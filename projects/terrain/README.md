@@ -110,6 +110,14 @@ Report helper:
 `python3 projects/terrain/review_captured_water_context_v1.py OUTPUT --phase capture|performance|report`.
 No solver, terrain inference or native GUI is launched by this study.
 
+The first context report is
+`http://starship:8801/terrain/captured-water-context-20261012-aAoOLi/`.
+Ten foundation/Fluid tests pass; all 8,184 CPU/GPU edge comparisons are within
+0.49 mm. The retained context-off and Fluid captures remain exact. Context-on
+whole-scene GPU p95 is at most 4.02 ms at 1080p on Starship, with 488 MiB of
+whole-app device-local usage. The boundary view still reveals water cutoffs:
+context is opt-in, not seamless full-landscape coverage or a promoted default.
+
 ### Shared surface-field study (2026-10-08)
 
 Climate loading and optional surface math now belong to `cubey::asset` and
