@@ -10,6 +10,7 @@
 #include <cubey/terrain/terrain_placement_mode.h>
 
 #include <cstdint>
+#include <cubey/asset/terrain_site.h>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -110,6 +111,8 @@ struct TerrainProjectConfig {
     cubey::CloudEnvironmentOptions clouds{};
     TerrainRuntimeConfig runtime{};
     std::optional<std::filesystem::path> water_capture_path{};
+    std::optional<std::filesystem::path> terrain_site_path{}, captured_water_context_source{};
+    std::optional<cubey::asset::TerrainSite> terrain_site{};
     std::string water_capture_view = "captured-patch";
     std::string water_capture_camera = "overview";
     std::optional<float> captured_water_focus_x_m{}, captured_water_focus_z_m{};

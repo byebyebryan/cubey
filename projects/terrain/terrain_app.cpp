@@ -578,15 +578,20 @@ class TerrainApp {
         edit_placement_index_ = runtime_config_.placement_index;
         edit_surface_model_ = runtime_config_.surface_model;
         edit_source_choice_index_ = source_choice_index_;
-        if (config_.water_capture_path) {
+        if (config_.water_capture_path || config_.terrain_site) {
             try {
-                capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
-                    *config_.water_capture_path, runtime_config_.heightfield_path,
-                    CUBEY_TERRAIN_SHADER_DIR);
+                if (config_.terrain_site)
+                    capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+                        *config_.terrain_site, CUBEY_TERRAIN_SHADER_DIR);
+                else
+                    capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+                        *config_.water_capture_path, runtime_config_.heightfield_path,
+                        CUBEY_TERRAIN_SHADER_DIR);
                 capture_active_ = config_.water_capture_view == "captured-patch";
                 capture_animation_s_ = config_.captured_water_animation_s;
                 if (config_.captured_water_context)
-                    capture_runtime_->prepare_context();
+                    capture_runtime_->prepare_context(
+                        config_.captured_water_context_source.value_or(std::filesystem::path{}));
                 if (config_.captured_water_detail != "uniform")
                     capture_runtime_->prepare_fixed_lod(
                         config_.captured_water_detail_focus_x_m
@@ -887,10 +892,20 @@ class TerrainApp {
             }
             if (capture_active_) {
                 const auto& capture = capture_runtime_->capture();
-                ImGui::TextWrapped(
-                    "Animated rain-fed capture; fixed bed, depth and velocity. No solver running.");
-                ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
-                            capture.rain_mm_per_hour);
+                if (config_.terrain_site) {
+                    ImGui::TextWrapped(
+                        "Prepared terrain-only site; no water simulation or recording.");
+                    ImGui::Text("Site: %s / world %.12s", config_.terrain_site->id.c_str(),
+                                config_.terrain_site->world_id.c_str());
+                    ImGui::Text("Detail / backdrop: %.2f / %.2f km",
+                                config_.terrain_site->level_spans_m[0] * .001F,
+                                config_.terrain_site->level_spans_m[3] * .001F);
+                } else {
+                    ImGui::TextWrapped("Animated rain-fed capture; fixed bed, depth and velocity. "
+                                       "No solver running.");
+                    ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
+                                capture.rain_mm_per_hour);
+                }
                 ImGui::Text("Coverage: %u x %u / %.0f m", capture.grid.width, capture.grid.height,
                             capture.grid.cell_size_m);
                 ImGui::Text("Source: %s", capture_runtime_->source_label().c_str());

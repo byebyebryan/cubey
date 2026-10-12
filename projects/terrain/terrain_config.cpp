@@ -463,6 +463,16 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
         cubey::host::common_run_config_schema(config.common));
     bind_debug_view(builder, config);
     builder
+        .bind(option("terrain.site", "--terrain-site", "Prepared World Site", "Terrain",
+                     "Load a validated world/site package for terrain-only inspection.",
+                     ValueType::Path),
+              config.terrain_site_path)
+        .bind(option("terrain.water_context_source", "--terrain-water-context-source",
+                     "Wider World Source", "Terrain",
+                     "Explicit same-world extension for captured water's ground backdrop; bed "
+                     "stays unchanged.",
+                     ValueType::Path),
+              config.captured_water_context_source)
         .bind(option("terrain.water_capture", "--terrain-water-capture", "Captured Water",
                      "Terrain",
                      "Solver-neutral rain-fed paired patch. Requires its matching heightfield.",
@@ -639,6 +649,14 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
         argc, argv, terrain_project_config_schema, result);
     cubey::validate_atmosphere_environment_options(config.atmosphere);
     cubey::validate_cloud_environment_options(config.clouds);
+    if (config.terrain_site_path && (config.water_capture_path || config.terrain.heightfield_path ||
+                                     config.captured_water_context_source))
+        throw std::runtime_error(
+            "prepared site owns its source; do not combine with capture/source overrides");
+    if (config.captured_water_context_source &&
+        (!config.water_capture_path || !config.captured_water_context))
+        throw std::runtime_error(
+            "world extension requires --terrain-water-capture and --terrain-water-context");
     if (config.captured_water_focus_x_m.has_value() != config.captured_water_focus_z_m.has_value())
         throw std::runtime_error("capture camera focus requires both source-world X and Z");
     if (config.captured_water_detail_focus_x_m.has_value() !=
@@ -650,6 +668,23 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
 void resolve_terrain_project_config(TerrainProjectConfig& config,
                                     const std::filesystem::path& default_heightfield_path,
                                     const std::filesystem::path& default_surface_fields_path) {
+    if (config.terrain_site_path) {
+        config.terrain_site = cubey::asset::load_terrain_site(*config.terrain_site_path);
+        config.terrain.heightfield_path = config.terrain_site->heightfield;
+        config.terrain.surface_fields_path = config.terrain_site->surface_fields;
+        config.captured_water_visible = false;
+        config.captured_water_animate = false;
+        config.captured_water_context = true;
+        config.water_capture_camera = "landscape";
+        config.captured_water_detail = "fixed";
+        config.captured_water_detail_span_m = config.terrain_site->level_spans_m[0];
+        if (!config.captured_water_focus_x_m) {
+            config.captured_water_focus_x_m = config.terrain_site->center_xz_m.x;
+            config.captured_water_focus_z_m = config.terrain_site->center_xz_m.y;
+        }
+        if (!config.captured_water_span_m)
+            config.captured_water_span_m = 11457.6F;
+    }
     config.runtime = terrain_runtime_config_from_options(
         config.terrain, config.debug_view.value_or(TerrainDebugView::Surface),
         default_heightfield_path, default_surface_fields_path);

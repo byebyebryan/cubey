@@ -10,12 +10,76 @@
 #include <cubey/render/terrain_surface_patch_whitewater.h>
 #include <cubey/terrain/terrain_surface_field.h>
 #include <cubey/vulkan/buffer.h>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 
 namespace cubey {
+namespace {
+asset::TerrainWaterCapture inspection_surface(const asset::TerrainSite& site,
+                                              const asset::TerrainRasterHeightSource& source) {
+    asset::TerrainWaterCapture surface;
+    const float span = site.level_spans_m[0];
+    const auto intervals = std::uint32_t(std::ceil(span / 32.0F));
+    if (intervals == 0 || intervals > 1024)
+        throw std::runtime_error("terrain site inspection grid budget exceeded");
+    surface.grid = {intervals + 1U, intervals + 1U, span / float(intervals),
+                    site.center_xz_m - math::Vec2{span * .5F}};
+    const auto count = std::size_t(surface.grid.width) * surface.grid.height;
+    surface.source_elevation_sha256 = source.provenance().elevation_sha256;
+    surface.depth_m.assign(count, 0);
+    surface.velocity_xz_m_per_s.assign(count, math::Vec2{0});
+    surface.bed_m.reserve(count);
+    for (std::uint32_t z = 0; z < surface.grid.height; ++z)
+        for (std::uint32_t x = 0; x < surface.grid.width; ++x)
+            surface.bed_m.push_back(source.sample_height(
+                {.world_xz = surface.grid.sample_origin_xz_m +
+                             math::Vec2{float(x), float(z)} * surface.grid.cell_size_m}));
+    return surface;
+}
+
+void validate_extension(const asset::TerrainWaterCapture& capture,
+                        const asset::TerrainRasterHeightSource& anchor,
+                        const asset::TerrainRasterHeightSource& extension) {
+    const auto read = [](const auto& path) {
+        std::ifstream stream(path);
+        return nlohmann::json::parse(stream);
+    };
+    const auto a = read(anchor.provenance().manifest_path);
+    const auto b = read(extension.provenance().manifest_path);
+    const auto& ag = a.at("grid");
+    const auto& bg = b.at("grid");
+    const auto& ai = a.at("provenance").at("model_native_origin");
+    const auto& bi = b.at("provenance").at("model_native_origin");
+    const double spacing = ag.at("sample_spacing_m").get<double>();
+    if (a.at("seed") != b.at("seed") || a.at("source") != b.at("source") ||
+        a.at("height") != b.at("height") || ag.at("axis_mapping") != bg.at("axis_mapping") ||
+        bg.at("sample_spacing_m").get<double>() != spacing ||
+        std::abs(bg.at("sample_origin_x_m").get<double>() -
+                 ag.at("sample_origin_x_m").get<double>() -
+                 (bi.at("j").get<double>() - ai.at("j").get<double>()) * spacing) > .001 ||
+        std::abs(bg.at("sample_origin_z_m").get<double>() -
+                 ag.at("sample_origin_z_m").get<double>() -
+                 (bi.at("i").get<double>() - ai.at("i").get<double>()) * spacing) > .001)
+        throw std::runtime_error("terrain context extension is not the same world/coordinates");
+    // Preserve the original capture hash and rounded-bed check. Verify the
+    // stronger native source identity separately: sub-cell interpolation using
+    // a different float raster origin need not reproduce the same rounding.
+    asset::validate_terrain_water_capture_source(capture, anchor);
+    const auto origin = anchor.bounds().minimum_xz;
+    for (std::uint32_t z = 0; z < anchor.height(); ++z)
+        for (std::uint32_t x = 0; x < anchor.width(); ++x) {
+            const auto p = origin + math::Vec2{float(x), float(z)} * anchor.sample_spacing_m();
+            if (std::abs(double(extension.sample_height({.world_xz = p})) -
+                         double(anchor.sample_height({.world_xz = p}))) > .0001)
+                throw std::runtime_error("terrain context extension changes native anchor terrain");
+        }
+}
+} // namespace
 struct TerrainWaterCaptureRuntime::State {
-    asset::TerrainWaterCapture capture;
     asset::TerrainRasterHeightSource source;
+    asset::TerrainWaterCapture capture;
+    bool terrain_only = false;
     std::filesystem::path shaders;
     TerrainSurfacePatchScene scene;
     render::RenderGraphFrameExecutor graph;
@@ -35,13 +99,21 @@ struct TerrainWaterCaptureRuntime::State {
     render::TerrainSurfacePatchMaterial material = render::terrain_surface_patch_macro_material();
     State(const std::filesystem::path& capture_path, const std::filesystem::path& heightfield,
           std::filesystem::path directory)
-        : capture(asset::load_terrain_water_capture(capture_path)), source(heightfield),
+        : source(heightfield), capture(asset::load_terrain_water_capture(capture_path)),
           shaders(std::move(directory)), scene(shaders) {
         asset::validate_terrain_water_capture_source(capture, source);
+        initialize_surface();
+    }
+    State(const asset::TerrainSite& site, std::filesystem::path directory)
+        : source(site.heightfield), capture(inspection_surface(site, source)),
+          shaders(std::move(directory)), scene(shaders) {
+        terrain_only = true;
+        initialize_surface();
+    }
+    void initialize_surface() {
         std::optional<asset::TerrainRasterClimateSource> climate;
         const auto companion =
-            (std::filesystem::is_directory(heightfield) ? heightfield : heightfield.parent_path()) /
-            "surface-fields.json";
+            source.provenance().manifest_path.parent_path() / "surface-fields.json";
         if (std::filesystem::exists(companion)) {
             climate.emplace(companion);
             asset::validate_terrain_climate_binding(source, *climate);
@@ -87,6 +159,13 @@ TerrainWaterCaptureRuntime::TerrainWaterCaptureRuntime(const std::filesystem::pa
             .count());
 }
 TerrainWaterCaptureRuntime::~TerrainWaterCaptureRuntime() = default;
+TerrainWaterCaptureRuntime::TerrainWaterCaptureRuntime(const asset::TerrainSite& site,
+                                                       std::filesystem::path shaders) {
+    state_ = std::make_unique<State>(site, std::move(shaders));
+    std::printf("terrain_site: %s world=%.12s; terrain-only inspection, no hydraulic recording; "
+                "hydraulic_dispatches=0\n",
+                site.id.c_str(), site.world_id.c_str());
+}
 void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
                                                   vulkan::GpuRuntime& gpu, std::uint32_t slots,
                                                   render::ColorTargetView target) {
@@ -266,21 +345,34 @@ void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span)
             .count(),
         span, focus.x, focus.y);
 }
-void TerrainWaterCaptureRuntime::prepare_context() {
+void TerrainWaterCaptureRuntime::prepare_context(const std::filesystem::path& extension) {
     auto& s = *state_;
     if (s.context)
         return;
     const auto started = std::chrono::steady_clock::now();
+    std::optional<asset::TerrainRasterHeightSource> wider;
+    if (!extension.empty()) {
+        wider.emplace(extension);
+        validate_extension(s.capture, s.source, *wider);
+    }
+    const auto& source = wider ? *wider : s.source;
     std::optional<asset::TerrainRasterClimateSource> climate;
-    const auto companion =
-        s.source.provenance().manifest_path.parent_path() / "surface-fields.json";
+    const auto companion = source.provenance().manifest_path.parent_path() / "surface-fields.json";
     if (std::filesystem::exists(companion)) {
         climate.emplace(companion);
-        asset::validate_terrain_climate_binding(s.source, *climate);
+        asset::validate_terrain_climate_binding(source, *climate);
     }
-    const auto field = terrain::make_terrain_surface_field(s.source, s.source.bounds(),
-                                                           climate ? &*climate : nullptr);
-    s.context.emplace(terrain::make_terrain_surface_context(s.capture, s.source, field));
+    const auto field =
+        terrain::make_terrain_surface_field(source, source.bounds(), climate ? &*climate : nullptr);
+    if (wider || s.terrain_only)
+        s.context.emplace(terrain::make_terrain_surface_context(
+            terrain::TerrainSurfaceContextInput{s.capture.grid, s.capture.bed_m,
+                                                s.terrain_only
+                                                    ? std::span<const float>{}
+                                                    : std::span<const float>{s.capture.depth_m}},
+            source, field));
+    else
+        s.context.emplace(terrain::make_terrain_surface_context(s.capture, source, field));
     std::printf(
         "terrain_context: ground-only; vertices=%zu triangles=%zu perimeter=%u; build_ms=%.3f; "
         "water_continuation=none far_shadows=unqualified\n",

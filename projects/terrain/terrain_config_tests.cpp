@@ -54,6 +54,17 @@ TerrainProjectConfig parse(std::initializer_list<std::string> arguments) {
 void test_defaults_and_explicit_default_paths() {
     const TerrainProjectConfig parsed = parse({});
     require(!parsed.captured_water_context, "wider context must remain opt-in");
+    require(!parsed.terrain_site_path && !parsed.captured_water_context_source,
+            "world/site foundation must remain opt-in");
+    require(parse({"--terrain-site", "site.json"}).terrain_site_path.has_value(),
+            "site CLI missing");
+    require_throws(
+        [] {
+            (void)parse({"--terrain-site", "site.json", "--terrain-water-capture", "water.json"});
+        },
+        "site/capture conflict accepted");
+    require_throws([] { (void)parse({"--terrain-water-context-source", "wide.json"}); },
+                   "unbound world extension accepted");
     const auto context =
         parse({"--terrain-water-context", "--terrain-water-capture-camera", "landscape"});
     require(context.captured_water_context && context.water_capture_camera == "landscape",

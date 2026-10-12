@@ -1,4 +1,5 @@
 #pragma once
+#include <cubey/asset/terrain_site.h>
 #include <cubey/asset/terrain_water_capture.h>
 #include <cubey/render/terrain_surface_patch_scene.h>
 #include <cubey/terrain/terrain_surface_context.h>
@@ -13,12 +14,15 @@ class TerrainWaterCaptureRuntime {
     TerrainWaterCaptureRuntime(const std::filesystem::path& capture,
                                const std::filesystem::path& heightfield,
                                std::filesystem::path shaders);
+    // Reuse the surface renderer with sampled bed and zero water, not a fake
+    // recorded simulation. The site/world package owns terrain coverage.
+    TerrainWaterCaptureRuntime(const asset::TerrainSite& site, std::filesystem::path shaders);
     ~TerrainWaterCaptureRuntime();
     void ensure_resources(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                           std::uint32_t slots, render::ColorTargetView target);
     void destroy_target_resources();
     void destroy();
-    void prepare_context(); // Once, before recording; no solver or source edits.
+    void prepare_context(const std::filesystem::path& extension = {});
     void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;
     void record(const vulkan::Device& device, VkCommandBuffer commands, render::FrameSlot slot,
