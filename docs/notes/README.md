@@ -103,6 +103,9 @@ the detailed foundation notes under `docs/architecture/`.
 - [Terrain backdrop foundation promotion](terrain-backdrop-foundation-promotion.md):
   ownership, second-consumer composition, climate boundary, and acceptance
   gates for promoting the fixed-focus backdrop.
+- [Terrain captured water integration plan](terrain-captured-water-v1-plan.md):
+  proposed rain-fed/post-rain assets, shared water rendering, placement gates,
+  and bounded readiness validation without a terrain-owned solver.
 - [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
   hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
 - [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): superseded
