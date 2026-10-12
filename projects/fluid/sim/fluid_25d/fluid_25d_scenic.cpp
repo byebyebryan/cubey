@@ -1,6 +1,7 @@
 #include "fluid_25d_scenic.h"
 #include "fluid_25d_motion_markers.h"
 #include "fluid_25d_water_agitation.h"
+#include <cubey/render/terrain_surface_patch.h>
 
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/generated_texture.h>
@@ -22,11 +23,7 @@
 namespace cubey::projects::fluid::fluid_25d {
 namespace {
 constexpr VkFormat kHdrFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
-constexpr VkExtent2D kShadowExtent{2048U, 2048U};
-struct Push {
-    math::Mat4 view_projection;
-    math::Vec4 grid_cell, camera_wet, presentation, terrain_palette;
-};
+using Push = render::TerrainSurfacePatchPush;
 struct RainPush {
     math::Mat4 view_projection;
     math::Vec4 grid_cell, camera_floor, clock_viewport, volume;
@@ -37,20 +34,7 @@ struct WhitewaterPush {
 };
 static_assert(sizeof(WhitewaterPush) == 128U);
 static_assert(sizeof(RainPush) == 128U);
-struct Uniforms {
-    math::Mat4 inverse_view_projection, shadow_view_projection;
-    math::Vec4 light_direction_exposure, light_color_mips, clock_encoding;
-    math::Vec4 ground_material, surface_material, water_optics, art_direction;
-    math::Vec4 terrain_macro;
-    math::Vec4 water_film, water_view;
-    math::Vec4 terrain_surface;
-    math::Vec4 environment_mode;
-    math::Vec4 water_shallow_optics;
-    math::Vec4 water_agitation;
-    math::Vec4 water_rapids;
-    math::Vec4 water_stream_foam;
-    math::Vec4 water_bank;
-};
+using Uniforms = render::TerrainSurfacePatchUniforms;
 struct DaylightPush {
     math::Vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
     math::Vec4 sun_direction_radius, atmosphere_options;
@@ -70,57 +54,12 @@ static_assert(offsetof(Uniforms, water_bank) == 384U);
 std::filesystem::path shader(const char* name) {
     return std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR) / name;
 }
-render::MaterialPassInfo frame_material() {
-    render::MaterialPassInfo result{.label = "fluid_25d.scenic.frame"};
-    result.descriptor_sets.push_back({.set = 1U});
-    auto& bindings = result.descriptor_sets.back().bindings;
-    bindings.push_back({.binding = 0U,
-                        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
-    for (std::uint32_t i = 1; i <= 8; ++i)
-        bindings.push_back({.binding = i,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
-    bindings.push_back({.binding = 9U,
-                        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT});
-    bindings.push_back({.binding = 10U,
-                        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
-    for (std::uint32_t i = 11U; i <= 13U; ++i)
-        bindings.push_back({.binding = i,
-                            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                            .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
-    bindings.push_back({.binding = 14U,
-                        .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                        .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
-    return result;
-}
-render::MaterialPassInfo mesh_pass(bool water = false) {
-    render::MaterialPassInfo result{.label = "fluid_25d.scenic.mesh"};
-    result.push_constants.push_back(
-        {.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-         .offset = 0U,
-         .size = sizeof(Push)});
-    result.depth_test = !water;
-    result.depth_write = !water;
-    result.depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL;
-    result.blend_enable = water;
-    result.src_color_blend_factor = VK_BLEND_FACTOR_ONE;
-    result.dst_color_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    result.src_alpha_blend_factor = VK_BLEND_FACTOR_ONE;
-    result.dst_alpha_blend_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    return result;
-}
 render::RenderGraphTextureDesc texture(const char* name, VkExtent2D extent, VkFormat format,
                                        bool depth = false) {
     return {.label = name,
             .extent = {extent.width, extent.height, 1U},
             .format = format,
             .aspects = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT};
-}
-bool srgb_attachment(VkFormat format) {
-    return format == VK_FORMAT_R8G8B8A8_SRGB || format == VK_FORMAT_B8G8R8A8_SRGB;
 }
 render::Texture2D upload_surface(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                                  std::uint32_t width, std::uint32_t height,
@@ -162,15 +101,6 @@ render::Texture2D upload_surface(vulkan::Device& device, vulkan::GpuRuntime& gpu
          .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                      .max_lod = float(levels - 1U)}});
 }
-void draw(const vulkan::CommandRecorder& recorder, const render::GraphicsPipelineResource& pipeline,
-          VkDescriptorSet fields, VkDescriptorSet frame, const Push& push, std::uint32_t count) {
-    recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline());
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), 0U, fields);
-    recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.layout(), 1U, frame);
-    recorder.push_constants(pipeline.layout(),
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0U, push);
-    recorder.draw(count);
-}
 } // namespace
 
 struct Fluid25DScenic::State {
@@ -191,9 +121,8 @@ struct Fluid25DScenic::State {
     std::optional<vulkan::DescriptorSetBundle> daylight_set;
     std::optional<render::ComputePipelineResource> daylight_pipeline;
     bool daylight_initialized = false;
-    std::optional<render::GraphicsPipelineResource> terrain, terrain_bspline, water, water_bspline;
-    std::optional<render::GraphicsPipelineResource> terrain_legacy, terrain_bspline_legacy;
-    std::optional<render::GraphicsPipelineResource> shadow, shadow_bspline, sky, copy, display;
+    std::unique_ptr<render::TerrainSurfacePatchRenderer> patch;
+    std::optional<render::GraphicsPipelineResource> sky, copy, display;
     std::optional<render::GraphicsPipelineResource> rain;
     std::optional<render::GraphicsPipelineResource> whitewater;
     struct WhitewaterSlot {
@@ -246,10 +175,10 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
             device, vulkan::SamplerConfig{.min_filter = VK_FILTER_NEAREST,
                                           .mag_filter = VK_FILTER_NEAREST,
                                           .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE});
-        s.frame.emplace(
-            device, render::FrameUniformMaterialInstanceConfig{.material_pass = frame_material(),
-                                                               .descriptor_set = 1U,
-                                                               .frame_slot_count = slots});
+        s.frame.emplace(device, render::FrameUniformMaterialInstanceConfig{
+                                    .material_pass = render::terrain_surface_patch_frame_material(),
+                                    .descriptor_set = 1U,
+                                    .frame_slot_count = slots});
         s.profiler.emplace(device, slots, 7U);
         s.visual_flow.emplace(
             device, vulkan::device_local_buffer_config(fields.velocity().size(),
@@ -326,7 +255,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                     "water environment unchanged\n");
         std::fflush(stdout);
     }
-    if (s.terrain && s.extent.width == target.extent.width &&
+    if (s.patch && s.extent.width == target.extent.width &&
         s.extent.height == target.extent.height && s.format == target.format)
         return diffuse_created;
     destroy_swapchain_resources();
@@ -356,35 +285,12 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
                               .depth_format = water ? VK_FORMAT_UNDEFINED : VK_FORMAT_D32_SFLOAT,
                               .shader_stage_files = stages,
                               .descriptor_set_layouts = layouts,
-                              .material_pass = mesh_pass(water)});
+                              .material_pass = render::terrain_surface_patch_mesh_pass(water)});
     };
-    mesh(s.terrain, "fluid_25d_terrain.vert.spv", "fluid_25d_scenic_terrain.frag.spv", false);
-    mesh(s.terrain_bspline, "fluid_25d_terrain_bspline.vert.spv",
-         "fluid_25d_scenic_terrain.frag.spv", false);
-    mesh(s.terrain_legacy, "fluid_25d_terrain.vert.spv", "fluid_25d_scenic_terrain_legacy.frag.spv",
-         false);
-    mesh(s.terrain_bspline_legacy, "fluid_25d_terrain_bspline.vert.spv",
-         "fluid_25d_scenic_terrain_legacy.frag.spv", false);
-    mesh(s.water, "fluid_25d_water.vert.spv", "fluid_25d_scenic_water.frag.spv", true);
-    mesh(s.water_bspline, "fluid_25d_water_bspline.vert.spv", "fluid_25d_scenic_water.frag.spv",
-         true);
+    s.patch = std::make_unique<render::TerrainSurfacePatchRenderer>(
+        device, target.extent, field_layout.layout(), s.frame->layout(),
+        std::filesystem::path(CUBEY_FLUID_25D_SHADER_DIR));
     mesh(s.rain, "fluid_25d_rain_visual.vert.spv", "fluid_25d_rain_visual.frag.spv", true);
-    const auto shadow = [&](std::optional<render::GraphicsPipelineResource>& p,
-                            const char* vertex) {
-        const std::array<render::ShaderStageFile, 1> stages{
-            render::vertex_shader_file(shader(vertex))};
-        auto pass = mesh_pass();
-        pass.kind = render::MaterialPassKind::DepthOnly;
-        p.emplace(device,
-                  render::GraphicsPipelineFileResourceConfig{.extent = kShadowExtent,
-                                                             .color_format = VK_FORMAT_UNDEFINED,
-                                                             .depth_format = VK_FORMAT_D32_SFLOAT,
-                                                             .shader_stage_files = stages,
-                                                             .descriptor_set_layouts = layouts,
-                                                             .material_pass = pass});
-    };
-    shadow(s.shadow, "fluid_25d_terrain.vert.spv");
-    shadow(s.shadow_bspline, "fluid_25d_terrain_bspline.vert.spv");
     const auto fullscreen = [&](std::optional<render::GraphicsPipelineResource>& p,
                                 const char* fragment, VkFormat format, bool depth) {
         const std::array<render::ShaderStageFile, 2> stages{
@@ -413,14 +319,7 @@ void Fluid25DScenic::destroy_swapchain_resources() {
     s.whitewater.reset();
     s.copy.reset();
     s.sky.reset();
-    s.shadow_bspline.reset();
-    s.shadow.reset();
-    s.water_bspline.reset();
-    s.water.reset();
-    s.terrain_bspline.reset();
-    s.terrain.reset();
-    s.terrain_bspline_legacy.reset();
-    s.terrain_legacy.reset();
+    s.patch.reset();
 }
 void Fluid25DScenic::destroy() {
     state_.reset();
@@ -566,46 +465,32 @@ void Fluid25DScenic::record(
                      (bspline ? 16U + (subdivision << 5U) : 0U) +
                      (options.native_display_coverage ? 512U : 0U))}};
     s.frame->upload(
-        slot,
-        {glm::inverse(camera.view_projection),
-         s.shadow_matrix,
-         {direction, environment ? environment->exposure : 0.4F},
-         {sun, float(env.prefiltered_mip_levels)},
-         {float(std::fmod(visual_clock_s, 1024.0)), srgb_attachment(target.format) ? 0.0F : 1.0F,
-          float(target.extent.width), float(target.extent.height)},
-         {material.wet_roughness, material.wet_darkening, material.terrain_saturation,
-          material.terrain_ambient},
-         {material.terrain_direct, material.shadow_strength, material.water_roughness,
-          material.water_normal_strength},
-         {material.water_extinction_scale, material.water_scatter_scale,
-          material.water_reflection_scale, material.water_scatter_lighting},
-         {material.water_clarity, material.terrain_mineral_scale, 0.0F,
-          material.terrain_ambient_softening},
-         {material.terrain_diffuse_convolution, material.terrain_specular_scale,
-          material.terrain_shadow_scale, material.terrain_slope_color_scale},
-         {material.film_begin_m, material.film_end_m, material.film_roughness,
-          material.film_ground_mix},
-         {float(water_view), material.water_wet_normal, material.water_ripple_strength,
-          material.water_ripple_scale_m},
-         {float(surface_mode), float(config.grid_width), float(config.grid_height), 0.0F},
-         {environment ? 1.0F : 0.0F, material.daylight_sun_scale,
-          options.native_shadow_scene_fit
-              ? 0.5F * shadow_span / float(shadow_extent.width) / shadow_depth_span
-              : 0.0F,
-          options.native_shadow_scene_fit
-              ? 2.0F * shadow_span / float(shadow_extent.width) / shadow_depth_span
-              : 0.0F},
-         {material.water_shallow_extinction_boost, material.water_shallow_extinction_end_m,
-          material.water_shallow_coverage_strength, material.water_shallow_coverage_end_m},
-         {material.water_flow_agitation, material.water_rain_agitation,
-          fluid_25d_water_rain_response(rain.applied_mm_per_hour),
-          float(std::fmod(rain.clock_s, 1024.0))},
-         {material.water_rapid_strength, material.water_rapid_scale_m,
-          material.water_cascade_strength, material.water_landing_strength},
-         {material.water_stream_foam_strength, material.water_stream_foam_patchiness,
-          material.water_stream_foam_brightness, 0.0F},
-         {material.water_bank_irregularity_m, material.water_bank_motion_m,
-          material.water_bank_scale_m, material.water_bank_band_m}});
+        slot, render::terrain_surface_patch_uniforms(
+                  {.view_projection = camera.view_projection,
+                   .shadow_view_projection = s.shadow_matrix,
+                   .light_direction = direction,
+                   .light_color = sun,
+                   .exposure = environment ? environment->exposure : 0.4F,
+                   .prefiltered_mip_levels = env.prefiltered_mip_levels,
+                   .extent = target.extent,
+                   .target_format = target.format,
+                   .visual_clock_s = visual_clock_s,
+                   .rain_clock_s = rain.clock_s,
+                   .rain_response = fluid_25d_water_rain_response(rain.applied_mm_per_hour),
+                   .width = config.grid_width,
+                   .height = config.grid_height,
+                   .water_view = water_view,
+                   .surface_mode = surface_mode,
+                   .daylight = environment != nullptr,
+                   .shadow_base_bias =
+                       options.native_shadow_scene_fit
+                           ? 0.5F * shadow_span / float(shadow_extent.width) / shadow_depth_span
+                           : 0.0F,
+                   .shadow_slope_bias =
+                       options.native_shadow_scene_fit
+                           ? 2.0F * shadow_span / float(shadow_extent.width) / shadow_depth_span
+                           : 0.0F},
+                  material));
     render::RenderGraphBuilder graph;
     const auto final_state = target_mode == Fluid25DRenderTargetMode::Present
                                  ? render::render_graph_present_texture_state()
@@ -682,12 +567,11 @@ void Fluid25DScenic::record(
                                              "fluid_25d scenic shadow");
             auto shadow_push = push;
             shadow_push.view_projection = s.shadow_matrix;
-            render::record_depth_only_pass(ctx.recorder(),
-                                           render::resolved_depth_target_view(ctx, shadow_depth),
-                                           render::depth_clear_value(), [&](const auto& r) {
-                                               draw(r, bspline ? *s.shadow_bspline : *s.shadow,
-                                                    fields, set, shadow_push, vertices);
-                                           });
+            render::record_depth_only_pass(
+                ctx.recorder(), render::resolved_depth_target_view(ctx, shadow_depth),
+                render::depth_clear_value(), [&](const auto& r) {
+                    s.patch->shadow(r, fields, set, shadow_push, vertices, bspline);
+                });
         });
     graph.add_pass("scenic opaque", render::RenderGraphQueueDomain::Graphics)
         .read_storage_buffer(bed)
@@ -711,10 +595,7 @@ void Fluid25DScenic::record(
                     r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->layout(), 1U,
                                           set);
                     r.draw(3U);
-                    const auto& terrain =
-                        legacy_terrain ? (bspline ? *s.terrain_bspline_legacy : *s.terrain_legacy)
-                                       : (bspline ? *s.terrain_bspline : *s.terrain);
-                    draw(r, terrain, fields, set, push, vertices);
+                    s.patch->ground(r, fields, set, push, vertices, bspline, legacy_terrain);
                 });
         });
     graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics)
@@ -739,8 +620,7 @@ void Fluid25DScenic::record(
                                           set);
                     r.draw(3U);
                     if (terrain_view == 0U) {
-                        const auto& pipeline = bspline ? *s.water_bspline : *s.water;
-                        draw(r, pipeline, fields, set, push, vertices);
+                        s.patch->water(r, fields, set, push, vertices, bspline);
                     }
                 });
         });
@@ -806,13 +686,14 @@ void Fluid25DScenic::record(
             const std::array<render::ShaderStageFile, 2> stages{
                 render::vertex_shader_file(shader("fluid_25d_whitewater.vert.spv")),
                 render::fragment_shader_file(shader("fluid_25d_whitewater.frag.spv"))};
-            s.whitewater.emplace(device, render::GraphicsPipelineFileResourceConfig{
-                                             .extent = target.extent,
-                                             .color_format = kHdrFormat,
-                                             .depth_format = VK_FORMAT_UNDEFINED,
-                                             .shader_stage_files = stages,
-                                             .descriptor_set_layouts = layouts,
-                                             .material_pass = mesh_pass(true)});
+            s.whitewater.emplace(
+                device, render::GraphicsPipelineFileResourceConfig{
+                            .extent = target.extent,
+                            .color_format = kHdrFormat,
+                            .depth_format = VK_FORMAT_UNDEFINED,
+                            .shader_stage_files = stages,
+                            .descriptor_set_layouts = layouts,
+                            .material_pass = render::terrain_surface_patch_mesh_pass(true)});
         }
         const WhitewaterPush whitewater_push{
             push.view_projection,
