@@ -75,9 +75,12 @@ def run(argv, log, expected_exit=0):
             "exit_code": child.returncode}
 
 
-def command(camera, water=True):
+def command(camera, water=True, reference=True):
+    # Historical V1 comparisons must not follow subsequently promoted defaults.
     argv = ["rtk", "proxy", str(APP), "--headless", "--terrain-heightfield", str(SOURCE),
             "--terrain-water-capture", str(CAPTURE), "--terrain-water-capture-camera", camera]
+    if reference:
+        argv += ["--terrain-readability", "current"]
     if not water:
         argv += ["--no-terrain-water-visible"]
     return argv

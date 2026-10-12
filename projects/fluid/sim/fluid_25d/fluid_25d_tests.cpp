@@ -4872,9 +4872,16 @@ void test_presentation_cue_contract() {
     const std::string bspline_surface =
         read_shader(shader_directory / "fluid_25d_bspline_surface.glsl");
     const std::string bspline_water =
-        read_shader(shader_directory / "fluid_25d_water_bspline.vert");
+        read_shader(shader_directory / "fluid_25d_water_bspline.vert") +
+        read_shader(shader_directory / "fluid_25d_water_bspline_body.glsl");
     const std::string bspline_terrain =
-        read_shader(shader_directory / "fluid_25d_terrain_bspline.vert");
+        read_shader(shader_directory / "fluid_25d_terrain_bspline.vert") +
+        read_shader(shader_directory / "fluid_25d_terrain_bspline_body.glsl");
+    require(bspline_water.find("#include \"fluid_25d_water_bspline_body.glsl\"") !=
+                    std::string::npos &&
+                bspline_terrain.find("#include \"fluid_25d_terrain_bspline_body.glsl\"") !=
+                    std::string::npos,
+            "paired vertex wrappers must include the shared bodies being checked");
     require(bspline_water.find("fluid25d_bspline_vertex") != std::string::npos &&
                 bspline_terrain.find("fluid25d_bspline_vertex") != std::string::npos &&
                 bspline_water.find("water_depth = bh.y") != std::string::npos &&

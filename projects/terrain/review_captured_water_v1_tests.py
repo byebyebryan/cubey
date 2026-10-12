@@ -9,6 +9,11 @@ import review_captured_water_v1 as review
 
 
 class ReportTests(unittest.TestCase):
+    def test_reference_does_not_follow_promoted_material(self):
+        command=review.command("overview")
+        self.assertEqual(command[command.index("--terrain-readability")+1],"current")
+        self.assertNotIn("--terrain-readability",review.command("overview",reference=False))
+
     def test_nearest_rank_percentile(self):
         self.assertEqual(review.percentile(list(range(100))), 94)
         self.assertEqual(review.percentile([3]), 3)
