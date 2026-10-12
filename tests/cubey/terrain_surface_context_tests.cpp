@@ -140,6 +140,20 @@ int main(int argc, char** argv) {
                 rejected = true;
             }
             require(rejected, "missing terrain-only bed accepted");
+            rejected = false;
+            try {
+                (void)terrain::make_terrain_surface_context(c, source, field, 128.0F, 768.0F);
+            } catch (const std::exception&) {
+                rejected = true;
+            }
+            require(rejected, "unsupported exterior spacing cap accepted");
+            const auto finer =
+                terrain::make_terrain_surface_context(c, source, field, 128.0F, 512.0F);
+            require(finer.inner_perimeter_vertices == wet.inner_perimeter_vertices,
+                    "exterior cap changed the paired seam");
+            for (std::size_t i = 0; i < wet.inner_perimeter_vertices; ++i)
+                require(finer.vertices[i].position_wet_hint == wet.vertices[i].position_wet_hint,
+                        "exterior cap changed paired boundary data");
         }
         return 0;
     } catch (const std::exception& e) {

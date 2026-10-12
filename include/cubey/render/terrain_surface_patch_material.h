@@ -32,6 +32,11 @@ struct TerrainSurfacePatchMaterial {
     float terrain_specular_scale = 1.0F;
     float terrain_shadow_scale = 1.0F;
     float terrain_slope_color_scale = 1.0F;
+    // Opt-in terrain readability study: 0 retained, 1 periodic detail off,
+    // 2 footprint-filtered/world-stable. Does not affect water or geometry.
+    float terrain_readability = 0.0F;
+    float terrain_world_x_m = 0.0F;
+    float terrain_world_z_m = 0.0F;
     // Shallow-water artistic shading in every Scenic preset. Physical metres.
     float film_begin_m = 0.02F;
     float film_end_m = 0.12F;

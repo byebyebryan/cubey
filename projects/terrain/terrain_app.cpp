@@ -589,9 +589,14 @@ class TerrainApp {
                         CUBEY_TERRAIN_SHADER_DIR);
                 capture_active_ = config_.water_capture_view == "captured-patch";
                 capture_animation_s_ = config_.captured_water_animation_s;
+                capture_runtime_->set_terrain_readability(
+                    config_.terrain_readability == "refined"      ? 2U
+                    : config_.terrain_readability == "detail-off" ? 1U
+                                                                  : 0U);
                 if (config_.captured_water_context)
                     capture_runtime_->prepare_context(
-                        config_.captured_water_context_source.value_or(std::filesystem::path{}));
+                        config_.captured_water_context_source.value_or(std::filesystem::path{}),
+                        config_.terrain_context_max_spacing_m);
                 if (config_.captured_water_detail != "uniform")
                     capture_runtime_->prepare_fixed_lod(
                         config_.captured_water_detail_focus_x_m
@@ -2181,10 +2186,12 @@ class TerrainApp {
                  transform.translation},
                 capture_animation_s_, config_.captured_water_visible,
                 !config_.common.profile_output_prefix.empty(), config_.captured_water_context,
-                config_.captured_water_ground_view == "normal"      ? 4U
-                : config_.captured_water_ground_view == "clay"      ? 9U
-                : config_.captured_water_ground_view == "ownership" ? 15U
-                                                                    : 0U,
+                config_.captured_water_ground_view == "normal"       ? 4U
+                : config_.captured_water_ground_view == "clay"       ? 9U
+                : config_.captured_water_ground_view == "clay-clean" ? 16U
+                : config_.captured_water_ground_view == "albedo"     ? 2U
+                : config_.captured_water_ground_view == "ownership"  ? 15U
+                                                                     : 0U,
                 config_.captured_water_detail == "fixed");
             if (owns_commands)
                 cubey::vulkan::check(vkEndCommandBuffer(command_buffer), "end captured patch");

@@ -388,6 +388,18 @@ int main() {
         test_shared_environment_validation_and_defaults();
         test_runtime_validation_and_diagnostics();
         test_captured_water_options();
+        require(parse({}).terrain_readability == "current", "readability must remain opt-in");
+        const auto study =
+            parse({"--terrain-readability", "detail-off", "--terrain-water-ground-view",
+                   "clay-clean", "--terrain-context-max-spacing", "512"});
+        require(study.terrain_readability == "detail-off" &&
+                    study.captured_water_ground_view == "clay-clean" &&
+                    study.terrain_context_max_spacing_m == 512.0F,
+                "terrain study controls parsed");
+        require_throws([] { (void)parse({"--terrain-context-max-spacing", "768"}); },
+                       "non-study geometry cap rejected");
+        require_throws([] { (void)parse({"--terrain-readability", "unknown"}); },
+                       "unknown terrain recipe rejected");
         std::cout << "terrain config tests passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {

@@ -60,7 +60,7 @@ struct DaylightPush {
 };
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 400U);
+static_assert(sizeof(Uniforms) == 416U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
@@ -70,6 +70,7 @@ static_assert(offsetof(Uniforms, water_agitation) == 336U);
 static_assert(offsetof(Uniforms, water_rapids) == 352U);
 static_assert(offsetof(Uniforms, water_stream_foam) == 368U);
 static_assert(offsetof(Uniforms, water_bank) == 384U);
+static_assert(offsetof(Uniforms, terrain_readability) == 400U);
 
 render::RenderGraphTextureDesc texture(const char* name, VkExtent2D extent, VkFormat format,
                                        bool depth = false) {

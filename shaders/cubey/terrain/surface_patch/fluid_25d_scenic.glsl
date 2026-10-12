@@ -22,6 +22,7 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 water_rapids; // artist steep-flow strength, texture period m, reserved
     vec4 water_stream_foam; // strength, patchiness, brightness, reserved; no extra water coverage
     vec4 water_bank; // fixed inset m, flow-linked variation m, noise scale m, edge band m
+    vec4 terrain_readability; // material world XZ origin, study mode, reserved
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;

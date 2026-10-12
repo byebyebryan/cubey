@@ -21,6 +21,7 @@ struct TerrainSurfacePatchUniforms {
     math::Vec4 ground_material, surface_material, water_optics, art_direction;
     math::Vec4 terrain_macro, water_film, water_view, terrain_surface, environment_mode;
     math::Vec4 water_shallow_optics, water_agitation, water_rapids, water_stream_foam, water_bank;
+    math::Vec4 terrain_readability; // absolute material XZ origin, mode, reserved
 };
 struct TerrainSurfacePatchFrame {
     math::Mat4 view_projection{1.0F}, shadow_view_projection{1.0F};

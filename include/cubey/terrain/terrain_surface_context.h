@@ -33,12 +33,14 @@ terrain_surface_context_core_sample(const TerrainSurfaceContextInput& input, mat
 [[nodiscard]] TerrainSurfaceContextProduct
 make_terrain_surface_context(const TerrainSurfaceContextInput& input,
                              const asset::TerrainRasterHeightSource& source,
-                             const TerrainSurfaceField& surface, float collar_width_m = 128.0F);
+                             const TerrainSurfaceField& surface, float collar_width_m = 128.0F,
+                             float maximum_spacing_m = 1024.0F);
 [[nodiscard]] TerrainSurfaceContextSample
 terrain_surface_context_core_sample(const asset::TerrainWaterCapture& capture,
                                     math::Vec2 grid_coordinate);
 [[nodiscard]] TerrainSurfaceContextProduct
 make_terrain_surface_context(const asset::TerrainWaterCapture& capture,
                              const asset::TerrainRasterHeightSource& source,
-                             const TerrainSurfaceField& surface, float collar_width_m = 128.0F);
+                             const TerrainSurfaceField& surface, float collar_width_m = 128.0F,
+                             float maximum_spacing_m = 1024.0F);
 } // namespace cubey::terrain

@@ -22,7 +22,9 @@ class TerrainWaterCaptureRuntime {
                           std::uint32_t slots, render::ColorTargetView target);
     void destroy_target_resources();
     void destroy();
-    void prepare_context(const std::filesystem::path& extension = {});
+    void prepare_context(const std::filesystem::path& extension = {},
+                         float maximum_spacing_m = 1024.0F);
+    void set_terrain_readability(unsigned mode);
     void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;
     void record(const vulkan::Device& device, VkCommandBuffer commands, render::FrameSlot slot,

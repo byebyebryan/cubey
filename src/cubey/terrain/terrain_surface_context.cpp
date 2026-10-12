@@ -48,18 +48,16 @@ TerrainSurfaceContextSample terrain_surface_context_core_sample(const TerrainSur
         }
     return r;
 }
-TerrainSurfaceContextProduct
-make_terrain_surface_context(const asset::TerrainWaterCapture& c,
-                             const asset::TerrainRasterHeightSource& source,
-                             const TerrainSurfaceField& field, float collar) {
+TerrainSurfaceContextProduct make_terrain_surface_context(
+    const asset::TerrainWaterCapture& c, const asset::TerrainRasterHeightSource& source,
+    const TerrainSurfaceField& field, float collar, float maximum_spacing) {
     asset::validate_terrain_water_capture_source(c, source);
     return make_terrain_surface_context(TerrainSurfaceContextInput{c.grid, c.bed_m, c.depth_m},
-                                        source, field, collar);
+                                        source, field, collar, maximum_spacing);
 }
-TerrainSurfaceContextProduct
-make_terrain_surface_context(const TerrainSurfaceContextInput& c,
-                             const asset::TerrainRasterHeightSource& source,
-                             const TerrainSurfaceField& field, float collar) {
+TerrainSurfaceContextProduct make_terrain_surface_context(
+    const TerrainSurfaceContextInput& c, const asset::TerrainRasterHeightSource& source,
+    const TerrainSurfaceField& field, float collar, float maximum_spacing) {
     const auto count = std::uint64_t(c.grid.width) * c.grid.height;
     if (c.grid.width < 2 || c.grid.height < 2 || count > 4194304 || c.bed_m.size() != count ||
         (!c.depth_m.empty() && c.depth_m.size() != count) || !std::isfinite(c.grid.cell_size_m) ||
@@ -72,6 +70,8 @@ make_terrain_surface_context(const TerrainSurfaceContextInput& c,
         throw std::runtime_error("invalid terrain surface context inputs");
     if (!std::isfinite(collar) || collar < 16 || collar > 512)
         throw std::runtime_error("invalid exterior terrain collar width");
+    if (maximum_spacing != 512.0F && maximum_spacing != 1024.0F)
+        throw std::runtime_error("exterior terrain spacing cap must be 512 or 1024 m");
     const auto lo = c.grid.sample_origin_xz_m;
     const auto hi = lo + math::Vec2{c.grid.width - 1U, c.grid.height - 1U} * c.grid.cell_size_m;
     const auto bounds = source.bounds();
@@ -162,12 +162,12 @@ make_terrain_surface_context(const TerrainSurfaceContextInput& c,
     };
     float offset = 0;
     while (true) {
-        const float step = offset < 128     ? fine
-                           : offset < 512   ? fine * 4
-                           : offset < 2048  ? fine * 8
-                           : offset < 8192  ? fine * 16
-                           : offset < 16384 ? fine * 32
-                                            : fine * 64;
+        const float step = std::min(maximum_spacing, offset < 128     ? fine
+                                                     : offset < 512   ? fine * 4
+                                                     : offset < 2048  ? fine * 8
+                                                     : offset < 8192  ? fine * 16
+                                                     : offset < 16384 ? fine * 32
+                                                                      : fine * 64);
         offset += step;
         const auto lower = glm::max(lo - math::Vec2{offset}, bounds.minimum_xz);
         const auto upper = glm::min(hi + math::Vec2{offset}, bounds.maximum_xz);

@@ -572,8 +572,18 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
     builder.bind(option("terrain.captured_water_ground_view", "--terrain-water-ground-view",
                         "Ground Diagnostic", "Terrain",
                         "Paired/context ground diagnostic; non-shaded views hide water.",
-                        ValueType::Enum, {}, {"shaded", "normal", "clay", "ownership"}),
+                        ValueType::Enum, {},
+                        {"shaded", "normal", "clay", "clay-clean", "albedo", "ownership"}),
                  config.captured_water_ground_view);
+    builder.bind(option("terrain.readability", "--terrain-readability", "Terrain Readability",
+                        "Terrain", "Opt-in shared material study; does not modify source or water.",
+                        ValueType::Enum, {}, {"current", "detail-off", "refined"}),
+                 config.terrain_readability);
+    builder.bind(option("terrain.context_max_spacing_m", "--terrain-context-max-spacing",
+                        "Exterior Spacing Cap", "Terrain", "Exterior ground only; 512 or 1024 m.",
+                        ValueType::Float,
+                        {.has_min = true, .has_max = true, .min = 512.0, .max = 1024.0}),
+                 config.terrain_context_max_spacing_m);
     auto water_animate =
         option("terrain.captured_water_animate", "--terrain-water-animate", "Animate Surface",
                "Terrain", "Animate shading and flecks, not hydrology.", ValueType::Bool);
@@ -662,6 +672,9 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
     if (config.captured_water_detail_focus_x_m.has_value() !=
         config.captured_water_detail_focus_z_m.has_value())
         throw std::runtime_error("fixed detail focus requires both source-world X and Z");
+    if (config.terrain_context_max_spacing_m != 512.0F &&
+        config.terrain_context_max_spacing_m != 1024.0F)
+        throw std::runtime_error("exterior terrain spacing cap must be 512 or 1024 m");
     return config;
 }
 

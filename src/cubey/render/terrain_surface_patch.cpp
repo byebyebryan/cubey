@@ -51,7 +51,7 @@ TerrainSurfacePatchMaterial terrain_surface_patch_macro_material() {
     return m;
 }
 static_assert(sizeof(TerrainSurfacePatchPush) == 128U);
-static_assert(sizeof(TerrainSurfacePatchUniforms) == 400U);
+static_assert(sizeof(TerrainSurfacePatchUniforms) == 416U);
 static_assert(offsetof(TerrainSurfacePatchUniforms, terrain_macro) == 240U);
 static_assert(offsetof(TerrainSurfacePatchUniforms, water_bank) == 384U);
 
@@ -86,7 +86,8 @@ TerrainSurfacePatchUniforms terrain_surface_patch_uniforms(const TerrainSurfaceP
         {m.water_stream_foam_strength, m.water_stream_foam_patchiness,
          m.water_stream_foam_brightness, 0.0F},
         {m.water_bank_irregularity_m, m.water_bank_motion_m, m.water_bank_scale_m,
-         m.water_bank_band_m}};
+         m.water_bank_band_m},
+        {m.terrain_world_x_m, m.terrain_world_z_m, m.terrain_readability, 0.0F}};
 }
 MaterialPassInfo terrain_surface_patch_frame_material() {
     MaterialPassInfo result{.label = "terrain.surface_patch.frame"};

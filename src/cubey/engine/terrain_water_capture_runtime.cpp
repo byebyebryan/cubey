@@ -345,7 +345,17 @@ void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span)
             .count(),
         span, focus.x, focus.y);
 }
-void TerrainWaterCaptureRuntime::prepare_context(const std::filesystem::path& extension) {
+void TerrainWaterCaptureRuntime::set_terrain_readability(unsigned mode) {
+    if (mode > 2U)
+        throw std::runtime_error("invalid terrain readability mode");
+    auto& s = *state_;
+    s.material.terrain_readability = float(mode);
+    const auto center = s.capture.grid.center_xz_m();
+    s.material.terrain_world_x_m = center.x;
+    s.material.terrain_world_z_m = center.y;
+}
+void TerrainWaterCaptureRuntime::prepare_context(const std::filesystem::path& extension,
+                                                 float maximum_spacing) {
     auto& s = *state_;
     if (s.context)
         return;
@@ -370,9 +380,10 @@ void TerrainWaterCaptureRuntime::prepare_context(const std::filesystem::path& ex
                                                 s.terrain_only
                                                     ? std::span<const float>{}
                                                     : std::span<const float>{s.capture.depth_m}},
-            source, field));
+            source, field, 128.0F, maximum_spacing));
     else
-        s.context.emplace(terrain::make_terrain_surface_context(s.capture, source, field));
+        s.context.emplace(terrain::make_terrain_surface_context(s.capture, source, field, 128.0F,
+                                                                maximum_spacing));
     std::printf(
         "terrain_context: ground-only; vertices=%zu triangles=%zu perimeter=%u; build_ms=%.3f; "
         "water_continuation=none far_shadows=unqualified\n",

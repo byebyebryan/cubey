@@ -54,6 +54,9 @@ void main() {
     vec4 dz = texture(scenic_detail,world_position.xy/2048.0);
     vec4 detail = dx*weights.x+dy*weights.y+dz*weights.z;
     float macro = texture(scenic_detail,world_xz/32768.0).b;
+    if (scenic.terrain_readability.z == 1.0 || terrain_view == 16) {
+        dx=dy=dz=detail=vec4(0.5); macro=0.5;
+    }
     float rock = smoothstep(0.08,0.48,1.0-n.y);
     float rock_color = rock;
     vec4 surface_weights = vec4(rock,0.0,0.0,0.0);
@@ -122,7 +125,7 @@ void main() {
         n = fluid25d_resolve_surface_normal(base_normal,gradient,
             normal_strength*fluid25d_detail_fade(footprint)*surface_detail_scale);
     }
-    if (terrain_view == 10) n = base_normal;
+    if (terrain_view == 10 || terrain_view == 16) n = base_normal;
 #ifdef CUBEY_TERRAIN_SURFACE_CONTEXT
     float wet = clamp(context_wet,0.0,1.0);
 #else
@@ -132,7 +135,7 @@ void main() {
     float wet = fluid25d_terrain_wet_weight(h,params.camera_wet.w);
 #endif
     base *= mix(1.0,scenic.ground_material.y,wet);
-    if (terrain_view == 9) base = vec3(0.12);
+    if (terrain_view == 9 || terrain_view == 16) base = vec3(0.12);
     float roughness = mix(clamp(0.78+0.10*(detail.a-0.5),0.65,0.90),scenic.ground_material.x,wet);
     if (material_blend>0.0) {
         float dry_roughness = clamp(mix(0.94,0.86,rock)+0.08*(detail.a-0.5),0.80,0.98);
@@ -142,6 +145,7 @@ void main() {
         float dry_roughness = clamp(mix(0.97,0.90,rock)+0.04*(detail.b-0.5),0.87,0.99);
         roughness = mix(dry_roughness,scenic.ground_material.x,wet);
     }
+    if (terrain_view == 16) roughness=0.94;
     vec3 view = normalize(params.camera_wet.xyz-world_position);
     float sun_visibility = scenic_sun_visibility(world_position,n);
     if (scenic.terrain_macro.z != 1.0)
