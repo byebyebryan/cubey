@@ -274,3 +274,30 @@ set_tests_properties(
         TIMEOUT 20
         SKIP_RETURN_CODE 77
 )
+add_executable(cubey_terrain_surface_patch_gap_tests terrain_surface_patch_gap_tests.cpp)
+target_link_libraries(cubey_terrain_surface_patch_gap_tests PRIVATE cubey::render cubey_project_warnings)
+target_compile_definitions(cubey_terrain_surface_patch_gap_tests PRIVATE
+    CUBEY_TERRAIN_PATCH_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/patch-test-shaders")
+cubey_terrain_surface_patch_shader_depends(CUBEY_TERRAIN_PATCH_TEST_DEPENDS)
+cubey_add_glsl_shaders(cubey_terrain_surface_patch_gap_tests
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/patch-test-shaders"
+    SOURCES terrain_surface_patch_gap.comp DEPENDS ${CUBEY_TERRAIN_PATCH_TEST_DEPENDS})
+add_test(NAME terrain_surface_patch_gap_gpu COMMAND cubey_terrain_surface_patch_gap_tests)
+set_tests_properties(terrain_surface_patch_gap_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
+add_executable(cubey_terrain_water_capture_lifecycle_tests terrain_water_capture_lifecycle_tests.cpp)
+target_link_libraries(cubey_terrain_water_capture_lifecycle_tests PRIVATE cubey::engine cubey_project_warnings)
+target_compile_definitions(cubey_terrain_water_capture_lifecycle_tests PRIVATE
+    CUBEY_TEST_ASSET_DIR="${PROJECT_SOURCE_DIR}/tests/assets"
+    CUBEY_TERRAIN_CAPTURE_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/capture-test-shaders")
+cubey_terrain_surface_patch_shader_sources(CUBEY_TERRAIN_CAPTURE_TEST_SHADERS)
+cubey_add_glsl_shaders(cubey_terrain_water_capture_lifecycle_tests
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/capture-test-shaders"
+    SOURCES ${CUBEY_TERRAIN_CAPTURE_TEST_SHADERS}
+        "${PROJECT_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
+        "${PROJECT_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
+        "${PROJECT_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
+    DEPENDS ${CUBEY_TERRAIN_PATCH_TEST_DEPENDS})
+add_test(NAME terrain_water_capture_lifecycle_gpu COMMAND cubey_terrain_water_capture_lifecycle_tests)
+set_tests_properties(terrain_water_capture_lifecycle_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")

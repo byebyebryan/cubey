@@ -11,6 +11,7 @@
 #include <cubey/engine/cloud_environment_runtime.h>
 #include <cubey/engine/staged_resource.h>
 #include <cubey/engine/terrain_backdrop_runtime.h>
+#include <cubey/engine/terrain_water_capture_runtime.h>
 #include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/frame_stats.h>
@@ -38,6 +39,7 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/gpu_timestamps.h>
+#include <cubey/vulkan/vk_check.h>
 
 #include <imgui.h>
 #include <vulkan/vulkan.h>
@@ -544,8 +546,7 @@ terrain_stage_proxy_mesh_data() {
 }
 
 [[nodiscard]] TerrainProjectConfig resolve_terrain_app_config(TerrainProjectConfig config) {
-    resolve_terrain_project_config(config,
-                                   std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
+    resolve_terrain_project_config(config, std::filesystem::path(CUBEY_TERRAIN_DEFAULT_HEIGHTFIELD),
                                    std::filesystem::path(CUBEY_TERRAIN_DEFAULT_SURFACE_FIELDS));
     return config;
 }
@@ -553,8 +554,7 @@ terrain_stage_proxy_mesh_data() {
 class TerrainApp {
   public:
     explicit TerrainApp(TerrainProjectConfig config)
-        : config_(resolve_terrain_app_config(std::move(config))),
-          runtime_config_(config_.runtime),
+        : config_(resolve_terrain_app_config(std::move(config))), runtime_config_(config_.runtime),
           startup_runtime_config_(runtime_config_),
           product_cache_({.root = cubey::procedural::default_procedural_artifact_cache_root()}),
           product_builds_(product_jobs_), placement_stage_(loading_placement_stage()),
@@ -568,8 +568,8 @@ class TerrainApp {
               .far_z = 100'000.0F,
           }),
           atmosphere_state_(terrain_atmosphere_state_from_options(config_.atmosphere)),
-          clouds_config_(terrain_cloud_config_from_options(config_.clouds,
-                                                           atmosphere_state_.environment)) {
+          clouds_config_(
+              terrain_cloud_config_from_options(config_.clouds, atmosphere_state_.environment)) {
         source_choices_ = terrain_source_choices(startup_runtime_config_, preset_catalog_error_);
         source_choice_availability_.resize(source_choices_.size());
         source_choice_climate_available_.resize(source_choices_.size());
@@ -578,8 +578,25 @@ class TerrainApp {
         edit_placement_index_ = runtime_config_.placement_index;
         edit_surface_model_ = runtime_config_.surface_model;
         edit_source_choice_index_ = source_choice_index_;
+        if (config_.water_capture_path) {
+            try {
+                capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+                    *config_.water_capture_path, runtime_config_.heightfield_path,
+                    CUBEY_TERRAIN_SHADER_DIR);
+                capture_active_ = config_.water_capture_view == "captured-patch";
+                capture_animation_s_ = config_.captured_water_animation_s;
+                configure_capture_camera();
+            } catch (const std::exception& error) {
+                // Explicit headless requests fail loudly; interactive users can
+                // still use the normal source picker/backdrop after rejection.
+                if (config_.common.headless)
+                    throw;
+                capture_error_ = error.what();
+            }
+        }
         configure_camera_for_placement(true);
-        request_product_build(runtime_config_, source_choice_index_);
+        if (!capture_active_)
+            request_product_build(runtime_config_, source_choice_index_);
     }
 
     TerrainApp(const TerrainApp&) = delete;
@@ -590,6 +607,45 @@ class TerrainApp {
     }
 
   private:
+    void configure_capture_camera() {
+        const auto& c = capture_runtime_->capture();
+        const float width = float(c.grid.width - 1U) * c.grid.cell_size_m;
+        const float height = float(c.grid.height - 1U) * c.grid.cell_size_m;
+        const float domain = std::max(width, height);
+        const auto [lo, hi] = std::minmax_element(c.bed_m.begin(), c.bed_m.end());
+        capture_target_ = {0.0F, 0.5F * (*lo + *hi), 0.0F};
+        float span = domain;
+        const bool close = config_.water_capture_camera != "overview";
+        if (close) {
+            const bool stream = config_.water_capture_camera == "stream";
+            const float fx = stream ? 0.741F : 0.634F;
+            const float fz = stream ? 0.562F : 0.521F;
+            const auto x = std::uint32_t(std::round(fx * float(c.grid.width - 1U)));
+            const auto z = std::uint32_t(std::round(fz * float(c.grid.height - 1U)));
+            capture_target_ = {(fx - 0.5F) * width, c.bed_m[std::size_t(z) * c.grid.width + x],
+                               (fz - 0.5F) * height};
+            span = stream ? 900.0F : 1800.0F;
+        }
+        const float maximum = domain * 4.0F;
+        capture_orbit_.set_distance_limits(std::max(16.0F, span * 0.30F), maximum);
+        capture_orbit_.set_pitch_limits(-0.38F, 0.38F);
+        capture_orbit_.set_home_distance(span * (close ? 1.18F : 1.5F));
+        capture_orbit_.reset();
+        const auto far_corner = cubey::math::Vec3{
+            std::max(std::abs(-width * 0.5F - capture_target_.x),
+                     std::abs(width * 0.5F - capture_target_.x)),
+            std::max(std::abs(*lo - capture_target_.y), std::abs(*hi + 100.0F - capture_target_.y)),
+            std::max(std::abs(-height * 0.5F - capture_target_.z),
+                     std::abs(height * 0.5F - capture_target_.z))};
+        const float reach =
+            maximum + std::hypot(std::hypot(far_corner.x, far_corner.y), far_corner.z);
+        capture_camera_.set_projection(std::numbers::pi_v<float> / 3.0F,
+                                       std::max(8.0F, span * 0.10F),
+                                       reach + std::max(32.0F, reach * 0.05F));
+        std::printf("terrain_water_capture_camera: %s target=(%.6f,%.6f,%.6f) span=%.6f\n",
+                    config_.water_capture_camera.c_str(), capture_target_.x, capture_target_.y,
+                    capture_target_.z, span);
+    }
     int run_windowed() {
         cubey::host::WindowedAppCallbacks callbacks;
         callbacks.create_global_resources = [this](cubey::host::WindowedAppContext& context) {
@@ -610,7 +666,13 @@ class TerrainApp {
             poll_product_build(context.device(), context.gpu(), retire_after);
             poll_atmosphere_atlases(context.device(), context.gpu(), context.frame_resources(),
                                     retire_after);
-            orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
+            if (capture_active_) {
+                capture_orbit_.update_from_input(context.filtered_input(), timing.delta_seconds);
+                if (config_.captured_water_animate)
+                    capture_animation_s_ += std::clamp(timing.delta_seconds, 0.0, 0.25);
+            } else {
+                orbit_controller_.update_from_input(context.filtered_input(), timing.delta_seconds);
+            }
             (void)cubey::atmosphere_environment_advance_time(atmosphere_state_,
                                                              timing.delta_seconds);
             cloud_runtime_.advance(timing.delta_seconds);
@@ -653,6 +715,10 @@ class TerrainApp {
     }
 
     int run_headless() {
+        if (config_.captured_water_transition_smoke &&
+            (!capture_runtime_ || !config_.common.headless_render_only))
+            throw std::runtime_error(
+                "capture transition smoke requires a valid capture and headless render-only mode");
         cubey::host::HeadlessPngHostConfig host_config;
         host_config.run_config = config_.common;
         host_config.required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
@@ -671,11 +737,10 @@ class TerrainApp {
                                        context.render_target().format, frame_slot_count);
         };
         if (config_.common.capture_mode == CaptureMode::Video) {
-            const float duration_seconds =
-                config_.common.frames > 1U && config_.common.fps > 0U
-                    ? static_cast<float>(config_.common.frames) /
-                          static_cast<float>(config_.common.fps)
-                    : 0.0F;
+            const float duration_seconds = config_.common.frames > 1U && config_.common.fps > 0U
+                                               ? static_cast<float>(config_.common.frames) /
+                                                     static_cast<float>(config_.common.fps)
+                                               : 0.0F;
             orbit_controller_.set_auto_rotation_speed(
                 duration_seconds > 0.0F ? 2.0F * std::numbers::pi_v<float> / duration_seconds
                                         : kTerrainHeadlessOrbitSpeed);
@@ -687,6 +752,35 @@ class TerrainApp {
                 cloud_runtime_.advance(frame.timing.delta_seconds);
             };
         }
+        const auto backdrop_before_frame = callbacks.before_frame;
+        callbacks.before_frame = [this, backdrop_before_frame](
+                                     cubey::host::HeadlessPngContext& context,
+                                     const cubey::host::HeadlessCaptureFrame& frame) {
+            if (config_.captured_water_transition_smoke && frame.index < 8U) {
+                capture_active_ = frame.index != 3U && frame.index != 5U;
+                config_.captured_water_visible = frame.index != 1U;
+                config_.captured_water_animate = false;
+                if (!capture_active_ && !backdrop_requested_) {
+                    request_product_build(runtime_config_, source_choice_index_);
+                    product_builds_.finish(context.gpu());
+                    install_ready_product_build(context.device(), context.gpu(), {});
+                }
+                std::printf("terrain_water_transition: frame=%u mode=%s water=%u fixed_clock=1\n",
+                            frame.index, capture_active_ ? "capture" : "backdrop",
+                            config_.captured_water_visible ? 1U : 0U);
+            }
+            if (capture_active_) {
+                if (config_.captured_water_animate) {
+                    if (config_.common.capture_mode == CaptureMode::Video)
+                        capture_animation_s_ =
+                            config_.captured_water_animation_s +
+                            double(frame.index) / double(std::max(1U, config_.common.fps));
+                    else if (config_.common.headless_render_only)
+                        capture_animation_s_ += std::clamp(frame.timing.delta_seconds, 0.0, 0.25);
+                }
+            } else if (backdrop_before_frame)
+                backdrop_before_frame(context, frame);
+        };
         callbacks.record_frame = [this](cubey::host::HeadlessPngContext& context,
                                         const cubey::host::HeadlessCaptureFrame& frame,
                                         VkCommandBuffer command_buffer,
@@ -724,6 +818,48 @@ class TerrainApp {
             return;
         }
 
+        if (capture_runtime_) {
+            int mode = capture_active_ ? 1 : 0;
+            if (ImGui::Combo("View", &mode, "Backdrop\0Captured patch\0")) {
+                capture_active_ = mode == 1;
+                if (!capture_active_ && !backdrop_requested_)
+                    request_product_build(runtime_config_, source_choice_index_);
+            }
+            if (capture_active_) {
+                const auto& capture = capture_runtime_->capture();
+                ImGui::TextWrapped(
+                    "Animated rain-fed capture; fixed bed, depth and velocity. No solver running.");
+                ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
+                            capture.rain_mm_per_hour);
+                ImGui::Text("Coverage: %u x %u / %.0f m", capture.grid.width, capture.grid.height,
+                            capture.grid.cell_size_m);
+                ImGui::Text("Source: %s", capture_runtime_->source_label().c_str());
+                ImGui::Text("Elevation hash: %.12s", capture.source_elevation_sha256.c_str());
+                ImGui::Text("Footprint: %.3f x %.3f km (cell centers)",
+                            float(capture.grid.width - 1U) * capture.grid.cell_size_m * 0.001F,
+                            float(capture.grid.height - 1U) * capture.grid.cell_size_m * 0.001F);
+                ImGui::Text("Source origin: %.0f, %.0f m", capture.grid.sample_origin_xz_m.x,
+                            capture.grid.sample_origin_xz_m.y);
+                int view = config_.water_capture_camera == "overview" ? 0
+                           : config_.water_capture_camera == "stream" ? 1
+                                                                      : 2;
+                if (ImGui::Combo("Camera", &view, "Overview\0Stream\0Lake\0")) {
+                    config_.water_capture_camera = view == 0   ? "overview"
+                                                   : view == 1 ? "stream"
+                                                               : "lake";
+                    configure_capture_camera();
+                }
+                ImGui::Checkbox("Water visible", &config_.captured_water_visible);
+                ImGui::Checkbox("Animate surface (not hydrology)", &config_.captured_water_animate);
+                ImGui::TextDisabled(
+                    "Clouds disabled: composed water has no cloud-consumable depth.");
+                ImGui::TextDisabled("No radial terrain or radial shadow casters in this view.");
+                ImGui::End();
+                return;
+            }
+        }
+        if (!capture_error_.empty())
+            ImGui::TextWrapped("Captured patch disabled: %s", capture_error_.c_str());
         ImGui::SeparatorText("Source");
         refresh_source_choice_availability();
         const cubey::StagedResourceStatus& build_status = product_builds_.status();
@@ -1128,6 +1264,7 @@ class TerrainApp {
 
     void request_product_build(TerrainRuntimeConfig config,
                                std::size_t requested_source_choice_index) {
+        backdrop_requested_ = true;
         const std::string label = source_choices_.at(requested_source_choice_index).label;
         product_load_started_at_ = Clock::now();
         product_load_phase_.store(TerrainProductLoadPhase::Waiting, std::memory_order_relaxed);
@@ -1288,6 +1425,7 @@ class TerrainApp {
         if (global_resources_created_) {
             return;
         }
+        gpu_ = &gpu;
         gpu_profiler_.emplace(device, frame_slot_count, kTerrainGpuProfilerPassCapacity);
         const auto stage_proxy_data = terrain_stage_proxy_mesh_data();
         stage_proxy_mesh_.emplace(gpu, stage_proxy_data.mesh_config());
@@ -1308,6 +1446,11 @@ class TerrainApp {
 
     void create_swapchain_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
                                     VkFormat color_format, std::uint32_t frame_slot_count) {
+        if (capture_runtime_) {
+            capture_profile_slots_.assign(frame_slot_count, false);
+            capture_runtime_->ensure_resources(device, *gpu_, frame_slot_count,
+                                               {.extent = extent, .format = color_format});
+        }
         scene_depth_.emplace(device, extent, true);
         terrain_target_info_ = cubey::TerrainBackdropRuntimeTargetInfo{
             .extent = extent,
@@ -1360,6 +1503,8 @@ class TerrainApp {
     }
 
     void destroy_swapchain_resources() {
+        if (capture_runtime_)
+            capture_runtime_->destroy_target_resources();
         graph_executor_.clear();
         hdr_post_frame_.destroy_pipeline();
         cloud_runtime_.destroy_surface_target_resources();
@@ -1372,7 +1517,11 @@ class TerrainApp {
 
     void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
         product_builds_.shutdown(gpu);
+        if (capture_runtime_ && config_.captured_water_audit)
+            capture_runtime_->verify_immutable_fields(gpu);
         destroy_swapchain_resources();
+        if (capture_runtime_)
+            capture_runtime_->destroy();
         hdr_post_frame_.destroy();
         cloud_runtime_.destroy();
         atmosphere_background_.destroy();
@@ -1397,6 +1546,12 @@ class TerrainApp {
 
     void collect_gpu_timings(cubey::profiling::ProfileRecorder* profile_recorder,
                              std::uint64_t frame_index, cubey::render::FrameSlot frame_slot) {
+        if (capture_runtime_ && capture_profile_slots_.at(frame_slot.index)) {
+            record_gpu_timings(profile_recorder,
+                               collected_profile_frame_index(frame_index, frame_slot),
+                               capture_runtime_->collect_timings(frame_slot.index));
+            return;
+        }
         cubey::vulkan::GpuTimestampProfiler* profiler = gpu_profiler();
         if (profiler == nullptr) {
             return;
@@ -1882,6 +2037,36 @@ class TerrainApp {
                        cubey::render::RenderGraphTextureState target_initial_state,
                        cubey::render::RenderGraphTextureState target_final_state,
                        cubey::render::RenderGraphCommandBufferMode command_buffer_mode) {
+        if (capture_runtime_)
+            capture_profile_slots_.at(frame_slot.index) = capture_active_;
+        if (capture_active_) {
+            const bool owns_commands =
+                command_buffer_mode == cubey::render::RenderGraphCommandBufferMode::BeginAndEnd;
+            if (owns_commands) {
+                const VkCommandBufferBeginInfo begin{
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                    .pNext = nullptr,
+                    .flags = 0U,
+                    .pInheritanceInfo = nullptr};
+                cubey::vulkan::check(vkBeginCommandBuffer(command_buffer, &begin),
+                                     "begin captured patch");
+            }
+            const auto transform =
+                cubey::orbit_camera_transform({.target = capture_target_,
+                                               .distance = capture_orbit_.distance(),
+                                               .yaw = -0.52F + capture_orbit_.yaw(),
+                                               .pitch = -0.92F + capture_orbit_.pitch()});
+            capture_runtime_->record(
+                device, command_buffer, frame_slot, target,
+                target_final_state.layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                {capture_camera_.view_projection_matrix(transform, aspect(target.extent)),
+                 transform.translation},
+                capture_animation_s_, config_.captured_water_visible,
+                !config_.common.profile_output_prefix.empty());
+            if (owns_commands)
+                cubey::vulkan::check(vkEndCommandBuffer(command_buffer), "end captured patch");
+            return;
+        }
         frame_camera_transform_ = current_camera_transform();
         const cubey::render::AtmosphereEnvironmentFrameUniforms atmosphere_frame =
             atmosphere_uniforms(target.extent);
@@ -1889,18 +2074,18 @@ class TerrainApp {
             cubey::render::atmosphere_environment_lighting(atmosphere_state_.environment);
         if (terrain_runtime_.target_resources_created()) {
             terrain_runtime_.prepare_frame(
-                frame_slot, {
-                                .view_projection = camera_.view_projection_matrix(
-                                    frame_camera_transform_, aspect(target.extent)),
-                                .camera_position = frame_camera_transform_.translation,
-                                .atmosphere = atmosphere_frame,
-                                .lighting = lighting,
-                                .debug_view = runtime_config_.debug_view,
-                                .material = runtime_config_.material,
-                                .aerial_perspective_strength =
-                                    runtime_config_.aerial_perspective_strength,
-                                .shadows_enabled = runtime_config_.shadows,
-                            });
+                frame_slot,
+                {
+                    .view_projection = camera_.view_projection_matrix(frame_camera_transform_,
+                                                                      aspect(target.extent)),
+                    .camera_position = frame_camera_transform_.translation,
+                    .atmosphere = atmosphere_frame,
+                    .lighting = lighting,
+                    .debug_view = runtime_config_.debug_view,
+                    .material = runtime_config_.material,
+                    .aerial_perspective_strength = runtime_config_.aerial_perspective_strength,
+                    .shadows_enabled = runtime_config_.shadows,
+                });
         } else {
             terrain_runtime_.prepare_environment(frame_slot, atmosphere_frame, lighting);
         }
@@ -1981,6 +2166,16 @@ class TerrainApp {
         return stage_proxy_pipeline_.value();
     }
 
+    std::unique_ptr<cubey::TerrainWaterCaptureRuntime> capture_runtime_;
+    cubey::vulkan::GpuRuntime* gpu_ = nullptr;
+    bool capture_active_ = false;
+    bool backdrop_requested_ = false;
+    std::string capture_error_;
+    std::vector<bool> capture_profile_slots_;
+    double capture_animation_s_ = 0.0;
+    cubey::OrbitController capture_orbit_;
+    cubey::Camera3D capture_camera_;
+    cubey::math::Vec3 capture_target_{};
     TerrainProjectConfig config_;
     TerrainRuntimeConfig runtime_config_{};
     TerrainRuntimeConfig startup_runtime_config_{};

@@ -1,0 +1,36 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+layout(local_size_x=64) in;
+layout(set=0,binding=0,std430) readonly buffer Terrain { float values[]; } terrain;
+layout(set=0,binding=1,std430) readonly buffer Depth { float values[]; } depth;
+layout(set=0,binding=2,std430) writeonly buffer Results { vec4 values[]; } results;
+#include "cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+void main() {
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= 320u) return;
+    uvec2 grid = uvec2(5);
+    // Vertices, triangle interiors, and clamped boundary extension. Same 2x
+    // topology and diagonal as actual ground/water/shadow/whitewater consumers.
+    vec2 p = i < 128u ? fluid25d_bspline_vertex(i,grid,2u) :
+                       vec2(float(i%16u)*0.29-0.20,float(i/16u%16u)*0.31-0.20);
+    vec2 bounded = clamp(p,vec2(0),vec2(grid-uvec2(1)));
+    uvec2 q = min(uvec2(floor(bounded*2.0)),(grid-uvec2(1))*2u-uvec2(1));
+    vec2 f = bounded*2.0-vec2(q);
+    uint first = (q.y*(grid.x-1u)*2u+q.x)*6u;
+    vec3 weights = f.x >= f.y ? vec3(1.0-f.x,f.y,f.x-f.y)
+                              : vec3(1.0-f.y,f.y-f.x,f.x);
+    first += f.x >= f.y ? 0u : 3u;
+    vec3 ground,water;
+    for(uint corner=0u;corner<3u;++corner) {
+        vec2 vertex = fluid25d_bspline_vertex(first+corner,grid,2u);
+        vec2 bh = fluid25d_bspline_bed_depth(vertex,grid);
+        ground[corner] = bh.x;
+        water[corner] = bh.x+bh.y;
+    }
+    float displayed_ground = dot(ground,weights);
+    float displayed_water = dot(water,weights);
+    float expected_depth = fluid25d_bspline_mesh_bed_depth(p,grid,2u).y;
+    // Independent XZ translation changes neither basis nor the vertical gap.
+    vec2 world = (p-vec2(2))*16.0 + vec2(123456.0,-65432.0);
+    results.values[i] = vec4(displayed_ground,displayed_water,expected_depth,length(world));
+}

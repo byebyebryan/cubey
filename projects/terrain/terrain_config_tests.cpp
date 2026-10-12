@@ -47,8 +47,8 @@ TerrainProjectConfig parse(std::initializer_list<std::string> arguments) {
     for (std::string& argument : storage) {
         argv.push_back(argument.data());
     }
-    return cubey::projects::terrain::parse_terrain_project_config(
-        static_cast<int>(argv.size()), argv.data());
+    return cubey::projects::terrain::parse_terrain_project_config(static_cast<int>(argv.size()),
+                                                                  argv.data());
 }
 
 void test_defaults_and_explicit_default_paths() {
@@ -62,7 +62,7 @@ void test_defaults_and_explicit_default_paths() {
     const std::filesystem::path default_path = "/tmp/cubey-terrain-default";
     const std::filesystem::path default_surface = "/tmp/cubey-terrain-surface";
     cubey::projects::terrain::resolve_terrain_project_config(resolved, default_path,
-                                                               default_surface);
+                                                             default_surface);
     const auto& config = resolved.runtime;
     require(config.heightfield_path == default_path &&
                 config.surface_fields_path == default_surface && config.foreground_sphere &&
@@ -78,9 +78,8 @@ void test_defaults_and_explicit_default_paths() {
 
     TerrainStartupOptions explicit_heightfield;
     explicit_heightfield.heightfield_path = "/tmp/custom-heightfield";
-    const auto explicit_config =
-        cubey::projects::terrain::terrain_runtime_config_from_options(
-            explicit_heightfield, TerrainDebugView::Surface, default_path, default_surface);
+    const auto explicit_config = cubey::projects::terrain::terrain_runtime_config_from_options(
+        explicit_heightfield, TerrainDebugView::Surface, default_path, default_surface);
     require(explicit_config.heightfield_path == "/tmp/custom-heightfield" &&
                 explicit_config.surface_fields_path.empty(),
             "an explicit heightfield should not inherit the default climate companion");
@@ -95,30 +94,57 @@ void test_defaults_and_explicit_default_paths() {
 }
 
 void test_supported_overrides_and_aliases() {
-    const TerrainProjectConfig parsed = parse({
-        "--debug-view", "slope", "--terrain-heightfield", "/tmp/custom-heightfield.json",
-        "--terrain-surface-fields", "/tmp/custom-surface-fields.json",
-        "--terrain-surface-model", "climate-transition", "--terrain-seed", "9012",
-        "--terrain-placement", "raw-sample", "--terrain-placement-index", "9",
-        "--terrain-foreground-height", "500", "--terrain-camera-preset", "backdrop",
-        "--terrain-surface-detail", "filtered-detail", "--terrain-aerial-perspective", "0.6",
-        "--no-terrain-shadows", "--terrain-render-stride", "1", "--terrain-backdrop-azimuth",
-        "-90", "--terrain-backdrop-orbit-radius", "1000", "--terrain-backdrop-elevation",
-        "30", "--time-of-day-mode", "manual", "--sun-elevation", "20",
-        "--cloud-weather-preset", "storm", "--no-clouds"});
+    const TerrainProjectConfig parsed = parse({"--debug-view",
+                                               "slope",
+                                               "--terrain-heightfield",
+                                               "/tmp/custom-heightfield.json",
+                                               "--terrain-surface-fields",
+                                               "/tmp/custom-surface-fields.json",
+                                               "--terrain-surface-model",
+                                               "climate-transition",
+                                               "--terrain-seed",
+                                               "9012",
+                                               "--terrain-placement",
+                                               "raw-sample",
+                                               "--terrain-placement-index",
+                                               "9",
+                                               "--terrain-foreground-height",
+                                               "500",
+                                               "--terrain-camera-preset",
+                                               "backdrop",
+                                               "--terrain-surface-detail",
+                                               "filtered-detail",
+                                               "--terrain-aerial-perspective",
+                                               "0.6",
+                                               "--no-terrain-shadows",
+                                               "--terrain-render-stride",
+                                               "1",
+                                               "--terrain-backdrop-azimuth",
+                                               "-90",
+                                               "--terrain-backdrop-orbit-radius",
+                                               "1000",
+                                               "--terrain-backdrop-elevation",
+                                               "30",
+                                               "--time-of-day-mode",
+                                               "manual",
+                                               "--sun-elevation",
+                                               "20",
+                                               "--cloud-weather-preset",
+                                               "storm",
+                                               "--no-clouds"});
     require(parsed.debug_view == TerrainDebugView::Slope &&
                 parsed.terrain.heightfield_path == "/tmp/custom-heightfield.json" &&
                 parsed.terrain.surface_fields_path == "/tmp/custom-surface-fields.json" &&
-                parsed.terrain.seed == 9012U && parsed.terrain.camera_preset ==
-                                                   TerrainCameraPreset::Backdrop &&
+                parsed.terrain.seed == 9012U &&
+                parsed.terrain.camera_preset == TerrainCameraPreset::Backdrop &&
                 parsed.terrain.surface_detail == TerrainMaterialMode::FilteredDetail &&
                 parsed.terrain.shadows == false && parsed.atmosphere.time_of_day_mode == "manual" &&
                 parsed.clouds.weather_preset == "storm" && parsed.clouds.enabled == false,
             "terrain parser should retain live typed overrides and aliases");
 
     TerrainProjectConfig resolved = parsed;
-    cubey::projects::terrain::resolve_terrain_project_config(
-        resolved, "/tmp/default", "/tmp/default-surface");
+    cubey::projects::terrain::resolve_terrain_project_config(resolved, "/tmp/default",
+                                                             "/tmp/default-surface");
     const auto& config = resolved.runtime;
     require(config.heightfield_path == parsed.terrain.heightfield_path.value() &&
                 config.surface_fields_path == parsed.terrain.surface_fields_path.value() &&
@@ -126,12 +152,13 @@ void test_supported_overrides_and_aliases() {
                 config.expected_seed == 9012U && !config.foreground_sphere &&
                 config.placement == TerrainPlacementMode::RawSample &&
                 config.placement_index == 9U && config.initial_foreground_height_m == 500.0F &&
-                config.render_stride == 1U && config.material == TerrainMaterialMode::FilteredDetail &&
+                config.render_stride == 1U &&
+                config.material == TerrainMaterialMode::FilteredDetail &&
                 config.aerial_perspective_strength == 0.6F && !config.shadows &&
                 config.debug_view == TerrainDebugView::Slope,
             "terrain resolver should retain only product review overrides");
-    require(std::abs(config.initial_azimuth_radians.value() +
-                     std::numbers::pi_v<float> * 0.5F) < 0.0001F &&
+    require(std::abs(config.initial_azimuth_radians.value() + std::numbers::pi_v<float> * 0.5F) <
+                    0.0001F &&
                 config.initial_orbit_radius_m == 1'000.0F &&
                 std::abs(config.initial_elevation_radians.value() -
                          30.0F * std::numbers::pi_v<float> / 180.0F) < 0.0001F,
@@ -143,11 +170,18 @@ void test_file_named_set_layering_and_seed_semantics() {
         std::filesystem::temp_directory_path() / "cubey-terrain-config-v2-layering.json";
     {
         std::ofstream file(path);
-        file << R"({"terrain":{"heightfield":"file-heightfield","foreground_height_m":100,"seed":0},"atmosphere":{"time_hours":7}})";
+        file
+            << R"({"terrain":{"heightfield":"file-heightfield","foreground_height_m":100,"seed":0},"atmosphere":{"time_hours":7}})";
     }
-    std::vector<std::string> storage{
-        "terrain", "--config", path.string(), "--terrain-heightfield", "named-heightfield",
-        "--set", "terrain.heightfield=set-heightfield", "--set", "terrain.seed=0"};
+    std::vector<std::string> storage{"terrain",
+                                     "--config",
+                                     path.string(),
+                                     "--terrain-heightfield",
+                                     "named-heightfield",
+                                     "--set",
+                                     "terrain.heightfield=set-heightfield",
+                                     "--set",
+                                     "terrain.seed=0"};
     std::vector<char*> argv;
     for (std::string& argument : storage) {
         argv.push_back(argument.data());
@@ -190,12 +224,10 @@ void test_template_scope_and_retired_rejection() {
                    "retired weathering options should be unknown");
     require_throws([&] { schema.set("smoke.injectors", "2"); },
                    "unrelated project options should be unknown");
-    require_throws(
-        [&] { parse({"--terrain-preset", "mountain"}); },
-        "retired terrain CLI options should be rejected by the typed parser");
-    require_throws(
-        [&] { parse({"--terrain-camera-preset", "ground"}); },
-        "non-product terrain camera presets should be rejected");
+    require_throws([&] { parse({"--terrain-preset", "mountain"}); },
+                   "retired terrain CLI options should be rejected by the typed parser");
+    require_throws([&] { parse({"--terrain-camera-preset", "ground"}); },
+                   "non-product terrain camera presets should be rejected");
 }
 
 void test_shared_environment_validation_and_defaults() {
@@ -205,14 +237,14 @@ void test_shared_environment_validation_and_defaults() {
                    "terrain atmosphere range should reject invalid sun elevation");
     require_throws([&] { schema.set("clouds.view_samples", "5"); },
                    "terrain cloud range should reject five view samples");
-    require_throws(
-        [&] { parse({"--time-of-day-mode", "solar", "--sun-elevation", "20"}); },
-        "terrain parser should retain atmosphere manual/solar conflict validation");
+    require_throws([&] { parse({"--time-of-day-mode", "solar", "--sun-elevation", "20"}); },
+                   "terrain parser should retain atmosphere manual/solar conflict validation");
     require_throws([&] { parse({"--cloud-view-samples", "3"}); },
                    "terrain parser should retain shared cloud validation");
 
     const cubey::AtmosphereEnvironmentOptions defaults;
-    const auto atmosphere = cubey::projects::terrain::terrain_atmosphere_state_from_options(defaults);
+    const auto atmosphere =
+        cubey::projects::terrain::terrain_atmosphere_state_from_options(defaults);
     require(atmosphere.solar_time_enabled &&
                 std::abs(atmosphere.environment.time_of_day.time_hours - 9.0F) < 0.0001F,
             "terrain atmosphere defaults should use the nine-hour solar review time");
@@ -275,6 +307,28 @@ void test_runtime_validation_and_diagnostics() {
 
 } // namespace
 
+void test_captured_water_options() {
+    const auto defaults = parse({});
+    require(!defaults.water_capture_path && defaults.captured_water_visible &&
+                defaults.captured_water_animate && defaults.water_capture_camera == "overview",
+            "normal backdrop remains the default; capture is opt-in");
+    const auto capture =
+        parse({"--terrain-water-capture", "/tmp/water-capture.json",
+               "--terrain-water-capture-camera", "lake", "--terrain-water-capture-view", "backdrop",
+               "--terrain-water-animation-seconds", "12.5", "--no-terrain-water-visible",
+               "--no-terrain-water-animate", "--terrain-water-audit"});
+    require(capture.water_capture_path == "/tmp/water-capture.json" &&
+                capture.water_capture_camera == "lake" &&
+                capture.water_capture_view == "backdrop" &&
+                capture.captured_water_animation_s == 12.5 && capture.captured_water_audit &&
+                !capture.captured_water_visible && !capture.captured_water_animate,
+            "captured controls must remain independent of hydraulic state");
+    require_throws([] { (void)parse({"--terrain-water-capture-camera", "invalid"}); },
+                   "unknown capture framing rejected");
+    require_throws([] { (void)parse({"--terrain-water-animation-seconds", "-1"}); },
+                   "negative animation clock rejected");
+}
+
 int main() {
     try {
         test_defaults_and_explicit_default_paths();
@@ -283,6 +337,7 @@ int main() {
         test_template_scope_and_retired_rejection();
         test_shared_environment_validation_and_defaults();
         test_runtime_validation_and_diagnostics();
+        test_captured_water_options();
         std::cout << "terrain config tests passed\n";
         return EXIT_SUCCESS;
     } catch (const std::exception& error) {

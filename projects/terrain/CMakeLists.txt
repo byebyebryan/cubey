@@ -239,6 +239,8 @@ cubey_cloud_layer_shader_depends(CUBEY_TERRAIN_CLOUD_SHADER_DEPENDS)
 cubey_forward_pbr_shader_depends(CUBEY_TERRAIN_FORWARD_PBR_SHADER_DEPENDS)
 cubey_terrain_backdrop_shader_sources(CUBEY_TERRAIN_BACKDROP_SHADERS)
 cubey_terrain_backdrop_shader_depends(CUBEY_TERRAIN_BACKDROP_SHADER_DEPENDS)
+cubey_terrain_surface_patch_shader_sources(CUBEY_TERRAIN_PATCH_SHADERS)
+cubey_terrain_surface_patch_shader_depends(CUBEY_TERRAIN_PATCH_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_terrain
@@ -248,11 +250,13 @@ cubey_add_app_target(
         main.cpp
         terrain_app.cpp
     SHADERS
+        ${CUBEY_TERRAIN_PATCH_SHADERS}
         ${CUBEY_TERRAIN_BACKDROP_SHADERS}
         shaders/terrain_stage_proxy.vert
         shaders/terrain_stage_proxy.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
         ${CUBEY_TERRAIN_CLOUD_SHADERS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -260,6 +264,7 @@ cubey_add_app_target(
         "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        ${CUBEY_TERRAIN_PATCH_SHADER_DEPENDS}
         ${CUBEY_TERRAIN_BACKDROP_SHADER_DEPENDS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere_common.glsl"

@@ -1,5 +1,6 @@
 #include "fluid_25d_scenic.h"
 #include "fluid_25d_motion_markers.h"
+#include <cubey/engine/terrain_surface_patch_scene.h>
 
 namespace cubey::projects::fluid::fluid_25d {
 namespace {
@@ -22,7 +23,7 @@ render::TerrainSurfacePatchOptions options(const Fluid25DCatchmentRenderOptions&
 }
 } // namespace
 struct Fluid25DScenic::State {
-    render::TerrainSurfacePatchScene scene{CUBEY_FLUID_25D_SHADER_DIR};
+    ::cubey::TerrainSurfacePatchScene scene{CUBEY_FLUID_25D_SHADER_DIR};
 };
 Fluid25DScenic::Fluid25DScenic() = default;
 Fluid25DScenic::~Fluid25DScenic() = default;

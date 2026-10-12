@@ -2,9 +2,22 @@
 #include <cmath>
 #include <cstddef>
 #include <cubey/render/terrain_surface_patch.h>
+#include <cubey/render/terrain_surface_patch_scene.h>
 #include <glm/gtc/matrix_inverse.hpp>
 
 namespace cubey::render {
+AtmosphereEnvironmentConfig terrain_surface_patch_fixed_daylight() {
+    AtmosphereEnvironmentConfig result;
+    const auto sun = glm::normalize(math::Vec3{-0.35F, 0.42F, 0.84F});
+    result.sun_elevation_degrees = glm::degrees(std::asin(sun.y));
+    result.sun_azimuth_degrees = glm::degrees(std::atan2(sun.x, -sun.z));
+    result.reference_geometry_enabled = false;
+    result.render_celestial_content = false;
+    result.render_night_sky = false;
+    result.render_moon_disk = false;
+    result.moon.enabled = false;
+    return result;
+}
 TerrainSurfacePatchMaterial terrain_surface_patch_macro_material() {
     TerrainSurfacePatchMaterial m;
     m.wet_roughness = 0.78F;

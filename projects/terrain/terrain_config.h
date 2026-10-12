@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <optional>
+#include <string>
 #include <string_view>
 
 namespace cubey::projects::terrain {
@@ -80,25 +81,26 @@ struct TerrainRuntimeConfig {
 
 void validate_terrain_runtime_config(const TerrainRuntimeConfig& config);
 
-[[nodiscard]] TerrainRuntimeConfig terrain_runtime_config_from_options(
-    const TerrainStartupOptions& options, TerrainDebugView debug_view,
-    const std::filesystem::path& default_heightfield_path,
-    const std::filesystem::path& default_surface_fields_path = {});
+[[nodiscard]] TerrainRuntimeConfig
+terrain_runtime_config_from_options(const TerrainStartupOptions& options,
+                                    TerrainDebugView debug_view,
+                                    const std::filesystem::path& default_heightfield_path,
+                                    const std::filesystem::path& default_surface_fields_path = {});
 
-[[nodiscard]] inline TerrainRuntimeConfig terrain_runtime_config_from_options(
-    const TerrainStartupOptions& options, const std::filesystem::path& default_heightfield_path,
-    const std::filesystem::path& default_surface_fields_path = {}) {
-    return terrain_runtime_config_from_options(options, TerrainDebugView::Surface,
-                                               default_heightfield_path,
-                                               default_surface_fields_path);
+[[nodiscard]] inline TerrainRuntimeConfig
+terrain_runtime_config_from_options(const TerrainStartupOptions& options,
+                                    const std::filesystem::path& default_heightfield_path,
+                                    const std::filesystem::path& default_surface_fields_path = {}) {
+    return terrain_runtime_config_from_options(
+        options, TerrainDebugView::Surface, default_heightfield_path, default_surface_fields_path);
 }
 
 [[nodiscard]] cubey::AtmosphereEnvironmentRunState
 terrain_atmosphere_state_from_options(const cubey::AtmosphereEnvironmentOptions& atmosphere);
 
-[[nodiscard]] cubey::CloudEnvironmentConfig terrain_cloud_config_from_options(
-    const cubey::CloudEnvironmentOptions& clouds,
-    const cubey::render::AtmosphereEnvironmentConfig& atmosphere);
+[[nodiscard]] cubey::CloudEnvironmentConfig
+terrain_cloud_config_from_options(const cubey::CloudEnvironmentOptions& clouds,
+                                  const cubey::render::AtmosphereEnvironmentConfig& atmosphere);
 
 struct TerrainProjectConfig {
     cubey::host::CommonRunConfig common{};
@@ -107,11 +109,19 @@ struct TerrainProjectConfig {
     cubey::AtmosphereEnvironmentOptions atmosphere{};
     cubey::CloudEnvironmentOptions clouds{};
     TerrainRuntimeConfig runtime{};
+    std::optional<std::filesystem::path> water_capture_path{};
+    std::string water_capture_view = "captured-patch";
+    std::string water_capture_camera = "overview";
+    bool captured_water_visible = true;
+    bool captured_water_animate = true;
+    bool captured_water_audit = false;
+    bool captured_water_transition_smoke = false;
+    double captured_water_animation_s = 0.0;
 };
 
 [[nodiscard]] cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config);
-[[nodiscard]] TerrainProjectConfig parse_terrain_project_config(
-    int argc, char** argv, cubey::config::ParseResult* result = nullptr);
+[[nodiscard]] TerrainProjectConfig
+parse_terrain_project_config(int argc, char** argv, cubey::config::ParseResult* result = nullptr);
 
 void resolve_terrain_project_config(TerrainProjectConfig& config,
                                     const std::filesystem::path& default_heightfield_path,

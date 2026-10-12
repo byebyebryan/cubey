@@ -463,6 +463,48 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
         cubey::host::common_run_config_schema(config.common));
     bind_debug_view(builder, config);
     builder
+        .bind(option("terrain.water_capture", "--terrain-water-capture", "Captured Water",
+                     "Terrain",
+                     "Solver-neutral rain-fed paired patch. Requires its matching heightfield.",
+                     ValueType::Path),
+              config.water_capture_path)
+        .bind(option("terrain.water_capture_view", "--terrain-water-capture-view", "Capture View",
+                     "Terrain",
+                     "Captured patch or unchanged backdrop; surfaces are never overlaid.",
+                     ValueType::Enum, {}, {"captured-patch", "backdrop"}),
+              config.water_capture_view)
+        .bind(option("terrain.water_capture_camera", "--terrain-water-capture-camera",
+                     "Capture Camera", "Terrain",
+                     "Observation-only framing for the Mountain rain-fed capture.", ValueType::Enum,
+                     {}, {"overview", "stream", "lake"}),
+              config.water_capture_camera)
+        .bind(option("terrain.captured_water_animation_s", "--terrain-water-animation-seconds",
+                     "Animation Clock", "Terrain",
+                     "Render-only clock offset; never advances captured water fields.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = 0.0, .max = 86400.0}),
+              config.captured_water_animation_s)
+        .bind(option("terrain.captured_water_audit", "--terrain-water-audit", "Capture Audit",
+                     "Terrain",
+                     "Read back immutable GPU fields once at shutdown, outside profiling.",
+                     ValueType::Bool),
+              config.captured_water_audit);
+    builder.bind(option("terrain.captured_water_transition_smoke",
+                        "--terrain-water-transition-smoke", "Capture Transition Smoke", "Terrain",
+                        "Headless render-only study: exercise patch/backdrop and water toggles.",
+                        ValueType::Bool),
+                 config.captured_water_transition_smoke);
+    auto water_visible = option(
+        "terrain.captured_water_visible", "--terrain-water-visible", "Water Visible", "Terrain",
+        "Draw captured water without changing the stored state.", ValueType::Bool);
+    water_visible.negative_cli_name = "--no-terrain-water-visible";
+    builder.bind(std::move(water_visible), config.captured_water_visible);
+    auto water_animate =
+        option("terrain.captured_water_animate", "--terrain-water-animate", "Animate Surface",
+               "Terrain", "Animate shading and flecks, not hydrology.", ValueType::Bool);
+    water_animate.negative_cli_name = "--no-terrain-water-animate";
+    builder.bind(std::move(water_animate), config.captured_water_animate);
+    builder
         .bind(option("terrain.heightfield", "--terrain-heightfield", "Heightfield", "Terrain",
                      "Runtime raster heightfield manifest or directory.", ValueType::Path),
               config.terrain.heightfield_path)

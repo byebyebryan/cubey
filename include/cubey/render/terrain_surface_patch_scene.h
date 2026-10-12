@@ -62,41 +62,4 @@ struct TerrainSurfacePatchWhitewaterSeed {
     float weight = 1.0F, padding = 0.0F;
 };
 
-// Complete paired-patch scene: sky, matched shadow/ground/water, render-only
-// motion, HDR display. Not a terrain backdrop, weather service or simulation.
-class TerrainSurfacePatchScene {
-  public:
-    explicit TerrainSurfacePatchScene(std::filesystem::path shader_directory);
-    ~TerrainSurfacePatchScene();
-    bool ensure_resources(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                          std::uint32_t slots, ColorTargetView target,
-                          const TerrainSurfacePatchGrid& grid, std::span<const float> bed,
-                          const TerrainSurfacePatchFields& fields,
-                          bool integrated_terrain_diffuse = false,
-                          const TerrainSurfacePatchSurface* surface = nullptr,
-                          bool captured_daylight = false);
-    void destroy_swapchain_resources();
-    void destroy();
-    [[nodiscard]] const GeneratedPbrEnvironment& fallback_environment() const;
-    [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
-    void record(const vulkan::Device& device, VkCommandBuffer commands,
-                RenderGraphFrameExecutor& executor, FrameSlot slot, ColorTargetView target,
-                bool present, const TerrainSurfacePatchFields& fields,
-                const TerrainSurfacePatchGrid& grid, const TerrainSurfacePatchCamera& camera,
-                TerrainSurfacePatchOptions options, double visual_clock_s,
-                const TerrainSurfacePatchMaterial& material,
-                const std::function<void(const vulkan::CommandRecorder&)>& display_overlay = {},
-                bool profile = false, bool reset_visual_flow = false, unsigned terrain_view = 0U,
-                unsigned water_view = 0U, unsigned surface_mode = 0U,
-                const TerrainSurfacePatchEnvironment* environment = nullptr,
-                TerrainSurfacePatchRain rain = {},
-                std::span<const TerrainSurfacePatchWhitewaterSeed> whitewater_seeds = {},
-                std::uint64_t whitewater_generation = 0U);
-
-  private:
-    struct State;
-    std::unique_ptr<State> state_;
-    std::filesystem::path shader_directory_;
-    [[nodiscard]] std::filesystem::path shader(const char* name) const;
-};
 } // namespace cubey::render
