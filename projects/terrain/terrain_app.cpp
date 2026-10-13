@@ -1,5 +1,6 @@
 #include "terrain_app.h"
 
+#include "terrain_capture_preparation.h"
 #include "terrain_config.h"
 #include "terrain_product_adapter.h"
 #include "terrain_source_catalog.h"
@@ -602,37 +603,9 @@ class TerrainApp {
                         config_.landscape_startup_notice.c_str());
         if (config_.water_capture_path || config_.terrain_site) {
             try {
-                if (config_.terrain_site && config_.water_capture_path)
-                    capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
-                        *config_.terrain_site, *config_.water_capture_path,
-                        CUBEY_TERRAIN_SHADER_DIR);
-                else if (config_.terrain_site)
-                    capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
-                        *config_.terrain_site, CUBEY_TERRAIN_SHADER_DIR);
-                else
-                    capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
-                        *config_.water_capture_path, runtime_config_.heightfield_path,
-                        CUBEY_TERRAIN_SHADER_DIR);
+                capture_runtime_ = prepare_terrain_capture(config_, CUBEY_TERRAIN_SHADER_DIR);
                 capture_active_ = config_.water_capture_view == "captured-patch";
                 capture_animation_s_ = config_.captured_water_animation_s;
-                capture_runtime_->set_terrain_readability(
-                    config_.terrain_readability == "refined"      ? 2U
-                    : config_.terrain_readability == "detail-off" ? 1U
-                                                                  : 0U);
-                if (config_.captured_water_context)
-                    capture_runtime_->prepare_context(
-                        config_.captured_water_context_source.value_or(std::filesystem::path{}),
-                        config_.terrain_context_max_spacing_m);
-                if (config_.captured_water_detail != "uniform")
-                    capture_runtime_->prepare_fixed_lod(
-                        config_.captured_water_detail_focus_x_m
-                            ? cubey::math::Vec2{*config_.captured_water_detail_focus_x_m,
-                                                *config_.captured_water_detail_focus_z_m}
-                        : config_.captured_water_focus_x_m
-                            ? cubey::math::Vec2{*config_.captured_water_focus_x_m,
-                                                *config_.captured_water_focus_z_m}
-                            : capture_runtime_->capture().grid.center_xz_m(),
-                        config_.captured_water_detail_span_m, config_.captured_water_vertex_budget);
                 configure_capture_camera();
             } catch (const std::exception& error) {
                 // Explicit headless requests fail loudly; interactive users can
@@ -1003,30 +976,7 @@ class TerrainApp {
             cubey::asset::probe_terrain_landscape(preset, config_.landscape_cache_root);
         if (probe.availability != cubey::asset::TerrainLandscapeAvailability::Available)
             throw std::runtime_error(probe.reason);
-        TerrainProjectConfig next = config_;
-        next.landscape = id;
-        next.active_landscape_id.clear();
-        next.landscape_startup_notice.clear();
-        next.terrain_site.reset();
-        next.terrain_site_path.reset();
-        next.site_water_binding_path.reset();
-        next.water_capture_path.reset();
-        next.terrain.heightfield_path.reset();
-        next.terrain.surface_fields_path.reset();
-        next.terrain.seed.reset();
-        next.captured_water_context_source.reset();
-        next.captured_water_focus_x_m.reset();
-        next.captured_water_focus_z_m.reset();
-        next.captured_water_focus_height_m.reset();
-        next.captured_water_detail_focus_x_m.reset();
-        next.captured_water_detail_focus_z_m.reset();
-        next.captured_water_span_m.reset();
-        next.captured_water_yaw_rad.reset();
-        next.captured_water_pitch_rad.reset();
-        next.water_capture_view = "captured-patch";
-        next.captured_water_visible = true;
-        next.captured_water_animate = true;
-        next.captured_water_animation_s = 0;
+        TerrainProjectConfig next = terrain_landscape_request_config(config_, id);
         const auto target = cubey::render::ColorTargetView{.extent = terrain_target_info_->extent,
                                                            .format = capture_color_format_};
         const auto slots = std::uint32_t(capture_profile_slots_.size());
@@ -1037,21 +987,7 @@ class TerrainApp {
                 next = resolve_terrain_app_config(std::move(next));
                 LandscapeBuild build{
                     .config = std::move(next), .runtime = {}, .observed_install_heap_bytes = 0};
-                if (build.config.water_capture_path)
-                    build.runtime = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
-                        *build.config.terrain_site, *build.config.water_capture_path,
-                        CUBEY_TERRAIN_SHADER_DIR);
-                else
-                    build.runtime = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
-                        *build.config.terrain_site, CUBEY_TERRAIN_SHADER_DIR);
-                build.runtime->set_terrain_readability(
-                    build.config.terrain_readability == "refined"      ? 2U
-                    : build.config.terrain_readability == "detail-off" ? 1U
-                                                                       : 0U);
-                build.runtime->prepare_context({}, build.config.terrain_context_max_spacing_m);
-                build.runtime->prepare_fixed_lod(build.config.terrain_site->center_xz_m,
-                                                 build.config.captured_water_detail_span_m,
-                                                 build.config.captured_water_vertex_budget);
+                build.runtime = prepare_terrain_capture(build.config, CUBEY_TERRAIN_SHADER_DIR);
                 return build;
             },
             [this, target, slots](cubey::vulkan::GpuOwnerContext& owner,

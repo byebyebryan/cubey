@@ -152,4 +152,9 @@ void resolve_terrain_project_config(TerrainProjectConfig& config,
                                     const std::filesystem::path& default_heightfield_path,
                                     const std::filesystem::path& default_surface_fields_path = {});
 
+// A deliberate UI selection replaces source/legacy product ownership, while
+// explicit capture rendering options remain sticky across Apply/reset.
+[[nodiscard]] TerrainProjectConfig
+terrain_landscape_request_config(const TerrainProjectConfig& current, const std::string& id);
+
 } // namespace cubey::projects::terrain

@@ -199,6 +199,7 @@ cubey_add_terrain_source_preset_target(rolling-lowland-1)
 
 add_library(cubey_project_terrain_runtime STATIC
     terrain_config.cpp
+    terrain_capture_preparation.cpp
     terrain_source_catalog.cpp
 )
 target_include_directories(
@@ -315,6 +316,13 @@ if (BUILD_TESTING)
         PRIVATE cubey_project_terrain_runtime cubey_project_warnings
     )
     add_test(NAME terrain_config_tests COMMAND cubey_project_terrain_config_tests)
+    add_executable(cubey_project_terrain_capture_preparation_tests terrain_capture_preparation_tests.cpp)
+    target_link_libraries(cubey_project_terrain_capture_preparation_tests PRIVATE
+        cubey_project_terrain_runtime cubey_project_warnings)
+    target_compile_definitions(cubey_project_terrain_capture_preparation_tests PRIVATE
+        CUBEY_TEST_HEIGHTFIELD="${CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET}/heightfield.json")
+    add_test(NAME terrain_capture_preparation_cpu COMMAND cubey_project_terrain_capture_preparation_tests)
+    set_tests_properties(terrain_capture_preparation_cpu PROPERTIES LABELS "terrain;water;unit")
 
     add_executable(
         cubey_project_terrain_raster_climate_source_tests

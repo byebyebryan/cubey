@@ -22,6 +22,23 @@ using cubey::config::ValueType;
 
 inline constexpr float kTerrainDefaultTimeHours = 9.0F;
 
+bool has_legacy_product_options(const TerrainProjectConfig& config) {
+    const auto& t = config.terrain;
+    // Captured landscapes retain their qualified atmosphere and disabled
+    // clouds. Explicit legacy environment controls must not be ignored.
+    for (const auto& path : config.assigned_paths) {
+        if (path == "clouds.enabled" && config.clouds.enabled == false)
+            continue;
+        if (path.starts_with("atmosphere.") || path.starts_with("clouds."))
+            return true;
+    }
+    return config.debug_view || t.heightfield_path || t.surface_fields_path || t.seed ||
+           t.placement || t.placement_index || t.foreground_height_m || t.camera_preset ||
+           t.surface_detail || t.aerial_perspective_strength || t.shadows || t.render_stride ||
+           t.backdrop_azimuth_degrees || t.backdrop_orbit_radius_m ||
+           t.backdrop_elevation_degrees || t.surface_model;
+}
+
 [[nodiscard]] OptionSpec option(std::string path, std::string cli_name, std::string label,
                                 std::string group_path, std::string help, ValueType type,
                                 cubey::config::Range range = {},
@@ -710,6 +727,10 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
     if (config.landscape != "legacy" && config.landscape != "auto" && direct_source)
         throw std::runtime_error(
             "named landscape owns its site/source; do not combine direct source overrides");
+    if (config.landscape != "legacy" && config.landscape != "auto" &&
+        has_legacy_product_options(config))
+        throw std::runtime_error("named landscape does not support legacy terrain options; use "
+                                 "legacy or capture-specific options");
     if (!config.landscape_smoke_sequence.empty() && !config.common.headless)
         throw std::runtime_error("landscape lifecycle study requires headless mode");
     cubey::validate_atmosphere_environment_options(config.atmosphere);
@@ -747,7 +768,16 @@ void resolve_terrain_project_config(TerrainProjectConfig& config,
     const bool direct_source = config.terrain_site_path || config.water_capture_path ||
                                config.terrain.heightfield_path ||
                                config.captured_water_context_source;
-    if (config.landscape != "legacy" && !direct_source) {
+    const bool legacy_options = has_legacy_product_options(config);
+    const bool named = config.landscape != "legacy" && config.landscape != "auto";
+    if (named && config.active_landscape_id.empty() && (direct_source || legacy_options))
+        throw std::runtime_error(
+            "named landscape owns its site/source and does not support legacy terrain options");
+    if (config.landscape == "auto" && config.active_landscape_id.empty() &&
+        (direct_source || legacy_options))
+        config.landscape_startup_notice =
+            "Explicit terrain options preserved; automatic landscape selection bypassed.";
+    if (config.landscape != "legacy" && !direct_source && !legacy_options) {
         config.landscape_catalog =
             cubey::asset::load_terrain_landscape_catalog(config.landscape_catalog_path);
         const auto& preset = cubey::asset::terrain_landscape_preset(
@@ -801,6 +831,49 @@ void resolve_terrain_project_config(TerrainProjectConfig& config,
     config.runtime = terrain_runtime_config_from_options(
         config.terrain, config.debug_view.value_or(TerrainDebugView::Surface),
         default_heightfield_path, default_surface_fields_path);
+}
+
+TerrainProjectConfig terrain_landscape_request_config(const TerrainProjectConfig& current,
+                                                      const std::string& id) {
+    auto next = current;
+    next.landscape = id;
+    next.active_landscape_id.clear();
+    next.landscape_startup_notice.clear();
+    next.terrain_site.reset();
+    next.terrain_site_path.reset();
+    next.site_water_binding_path.reset();
+    next.water_capture_path.reset();
+    next.terrain = {};
+    next.debug_view.reset();
+    next.atmosphere = {};
+    next.clouds = {};
+    std::erase_if(next.assigned_paths, [](const auto& path) {
+        return path.starts_with("atmosphere.") || path.starts_with("clouds.");
+    });
+    next.captured_water_context_source.reset();
+    const auto clear_unassigned = [&](auto& value, const char* path) {
+        if (!next.assigned_paths.contains(path))
+            value.reset();
+    };
+    clear_unassigned(next.captured_water_focus_x_m, "terrain.captured_water_focus_x_m");
+    clear_unassigned(next.captured_water_focus_z_m, "terrain.captured_water_focus_z_m");
+    clear_unassigned(next.captured_water_focus_height_m, "terrain.captured_water_focus_height_m");
+    clear_unassigned(next.captured_water_detail_focus_x_m,
+                     "terrain.captured_water_detail_focus_x_m");
+    clear_unassigned(next.captured_water_detail_focus_z_m,
+                     "terrain.captured_water_detail_focus_z_m");
+    clear_unassigned(next.captured_water_span_m, "terrain.captured_water_span_m");
+    clear_unassigned(next.captured_water_yaw_rad, "terrain.captured_water_yaw_rad");
+    clear_unassigned(next.captured_water_pitch_rad, "terrain.captured_water_pitch_rad");
+    // Apply explicitly chooses the prepared landscape view, not the former
+    // startup facade. Its camera/controller is reset on installation.
+    next.water_capture_view = "captured-patch";
+    if (!next.assigned_paths.contains("terrain.captured_water_visible"))
+        next.captured_water_visible = true;
+    if (!next.assigned_paths.contains("terrain.captured_water_animate"))
+        next.captured_water_animate = true;
+    next.captured_water_animation_s = 0;
+    return next;
 }
 
 } // namespace cubey::projects::terrain

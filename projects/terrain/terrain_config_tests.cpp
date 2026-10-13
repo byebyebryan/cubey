@@ -222,13 +222,94 @@ void test_supported_overrides_and_aliases() {
             "terrain resolver should convert supported camera overrides");
 }
 
+void test_landscape_compatibility_and_reselection() {
+    for (const auto& [name, value] : std::vector<std::pair<std::string, std::string>>{
+             {"--terrain-surface-fields", "manual-climate.json"},
+             {"--terrain-seed", "0"},
+             {"--terrain-placement", "raw-sample"},
+             {"--terrain-placement-index", "0"},
+             {"--terrain-foreground-height", "300"},
+             {"--terrain-camera-preset", "backdrop"},
+             {"--terrain-surface-detail", "filtered-detail"},
+             {"--terrain-surface-model", "mineral-control"},
+             {"--terrain-render-stride", "1"},
+             {"--terrain-aerial-perspective", "0.5"},
+             {"--terrain-backdrop-azimuth", "20"},
+             {"--terrain-backdrop-orbit-radius", "500"},
+             {"--terrain-backdrop-elevation", "15"},
+             {"--debug-view", "slope"},
+             {"--sun-elevation", "30"},
+             {"--cloud-weather-preset", "storm"}}) {
+        auto automatic = parse({"--terrain-landscape", "auto", name, value,
+                                "--terrain-landscape-catalog", "/tmp/no-catalog-needed.json"});
+        cubey::projects::terrain::resolve_terrain_project_config(automatic, "/tmp/default");
+        require(!automatic.terrain_site && automatic.active_landscape_id.empty() &&
+                    automatic.landscape_startup_notice.find("bypassed") != std::string::npos,
+                "auto ignored explicit legacy product option");
+        require_throws([&] { (void)parse({"--terrain-landscape", "mountain-local", name, value}); },
+                       "named landscape silently ignored legacy product option");
+    }
+    auto shadows = parse({"--terrain-landscape", "auto", "--no-terrain-shadows",
+                          "--terrain-landscape-catalog", "/tmp/no-catalog-needed.json"});
+    cubey::projects::terrain::resolve_terrain_project_config(shadows, "/tmp/default");
+    require(!shadows.runtime.shadows && !shadows.terrain_site, "explicit false legacy option lost");
+    require(parse({"--terrain-landscape", "mountain-local", "--no-clouds"}).clouds.enabled == false,
+            "matching captured no-clouds request rejected");
+    auto layered = parse({"--terrain-landscape", "auto", "--set", "terrain.seed=0",
+                          "--terrain-landscape-catalog", "/tmp/no-catalog-needed.json"});
+    cubey::projects::terrain::resolve_terrain_project_config(layered, "/tmp/default");
+    require(layered.runtime.expected_seed == 0 && !layered.terrain_site,
+            "set/seed-zero ownership lost");
+    auto current = parse({"--terrain-heightfield",
+                          "manual.json",
+                          "--terrain-placement",
+                          "raw-sample",
+                          "--terrain-water-detail",
+                          "uniform",
+                          "--terrain-water-vertex-budget",
+                          "2000000",
+                          "--terrain-water-detail-focus-x",
+                          "16",
+                          "--terrain-water-detail-focus-z",
+                          "16",
+                          "--terrain-water-span",
+                          "4000",
+                          "--terrain-water-yaw",
+                          "0.2",
+                          "--no-terrain-water-context",
+                          "--no-terrain-water-visible",
+                          "--no-terrain-water-animate",
+                          "--terrain-readability",
+                          "detail-off"});
+    auto next =
+        cubey::projects::terrain::terrain_landscape_request_config(current, "mountain-wide");
+    require(!next.terrain.heightfield_path && !next.terrain.placement &&
+                next.landscape == "mountain-wide",
+            "explicit Apply did not release previous source/legacy ownership");
+    require(next.captured_water_detail == "uniform" &&
+                next.captured_water_vertex_budget == 2000000 &&
+                next.captured_water_detail_focus_x_m == 16 &&
+                next.captured_water_detail_focus_z_m == 16 && next.captured_water_span_m == 4000 &&
+                next.captured_water_yaw_rad == .2F && !next.captured_water_context &&
+                !next.captured_water_visible && !next.captured_water_animate &&
+                next.terrain_readability == "detail-off",
+            "Apply dropped explicit capture overrides");
+    current = parse({});
+    current.captured_water_focus_x_m = 123;
+    current.captured_water_focus_z_m = 456;
+    current.captured_water_span_m = 45000;
+    next = cubey::projects::terrain::terrain_landscape_request_config(current, "mountain-local");
+    require(!next.captured_water_focus_x_m && !next.captured_water_span_m,
+            "default site-owned camera values did not reset on Apply");
+}
+
 void test_file_named_set_layering_and_seed_semantics() {
     const std::filesystem::path path =
         std::filesystem::temp_directory_path() / "cubey-terrain-config-v2-layering.json";
     {
         std::ofstream file(path);
         file
-            << R"({"terrain":{"heightfield":"file-heightfield","foreground_height_m":100,"seed":0},"atmosphere":{"time_hours":7}})";
+            << R"({"terrain":{"landscape":"auto","heightfield":"file-heightfield","foreground_height_m":100,"seed":0},"atmosphere":{"time_hours":7}})";
     }
     std::vector<std::string> storage{"terrain",
                                      "--config",
@@ -256,6 +337,12 @@ void test_file_named_set_layering_and_seed_semantics() {
         "/tmp/default-surface");
     require(resolved.expected_seed.has_value() && resolved.expected_seed.value() == 0U,
             "terrain seed zero should remain an explicit expected seed");
+    auto automatic = parsed;
+    cubey::projects::terrain::resolve_terrain_project_config(automatic, "/tmp/default",
+                                                             "/tmp/default-surface");
+    require(!automatic.terrain_site && automatic.runtime.heightfield_path == "set-heightfield" &&
+                automatic.atmosphere.time_hours == 7.F,
+            "file/named/set legacy layering lost under auto");
 }
 
 void test_template_scope_and_retired_rejection() {
@@ -421,6 +508,7 @@ int main() {
     try {
         test_defaults_and_explicit_default_paths();
         test_supported_overrides_and_aliases();
+        test_landscape_compatibility_and_reselection();
         test_file_named_set_layering_and_seed_semantics();
         test_template_scope_and_retired_rejection();
         test_shared_environment_validation_and_defaults();
