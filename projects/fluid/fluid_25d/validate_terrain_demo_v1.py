@@ -57,6 +57,14 @@ def uninterrupted_run(actions):
             and isinstance(actions[0], dict) and actions[0].get("kind") == "resume")
 
 
+def csv_rows(path):
+    """Very short interrupted runs may end before profile warmup completes."""
+    if not path.is_file():
+        return []
+    with path.open() as file:
+        return list(csv.DictReader(file))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--study", type=Path, required=True)
@@ -135,9 +143,8 @@ def main():
         pace = ((running[-1]["physical_s"] - running[0]["physical_s"]) /
                 (running[-1]["wall_s"] - running[0]["wall_s"]))
     by_frame = {}
-    with (trial / "profile.metrics.csv").open() as file:
-        for row in csv.DictReader(file):
-            by_frame.setdefault(row["frame_index"], {})[row["category"] + "." + row["name"]] = float(row["value"])
+    for row in csv_rows(trial / "profile.metrics.csv"):
+        by_frame.setdefault(row["frame_index"], {})[row["category"] + "." + row["name"]] = float(row["value"])
     indices = {index for index, values in by_frame.items()
                if values.get("fluid_25d.external.lifecycle_code") == 1
                and values.get("fluid_25d.external.physical_time_s", 0) > 0
@@ -146,12 +153,12 @@ def main():
     for index in indices:
         for key, value in by_frame[index].items():
             metrics.setdefault(key, []).append(value)
-    with (trial / "profile.passes.csv").open() as file:
-        for row in csv.DictReader(file):
-            if row["frame_index"] in indices:
-                passes.setdefault(row["kind"] + ":" + row["label"], []).append(float(row["duration_ms"]))
-    with (trial / "profile.frames.csv").open() as file:
-        frames = [row for row in csv.DictReader(file) if row["frame_index"] in indices]
+    for row in csv_rows(trial / "profile.passes.csv"):
+        if row["frame_index"] in indices:
+            passes.setdefault(row["kind"] + ":" + row["label"], []).append(float(row["duration_ms"]))
+    frames = [row for row in csv_rows(trial / "profile.frames.csv") if row["frame_index"] in indices]
+    if continuous and not frames:
+        errors.append("no measured running frames for throughput trial")
     result = {"command": command, "app_sha256": receipt["app_sha256"], "headless_only": True,
         "returncode": process.returncode, "errors": errors, "samples": samples, "events": events,
         "cleanup": receipt["cleanup"], "physical_wall_ratio": pace,
@@ -161,6 +168,8 @@ def main():
         "frame_ms": percentiles([float(row["delta_ms"]) for row in frames]),
         "viewport": sorted({(int(row["width"]), int(row["height"])) for row in frames}),
         "warmup_seconds": args.warmup,
+        "profile_files_available": all((trial / f"profile.{kind}.csv").is_file()
+                                       for kind in ("metrics", "passes", "frames")),
         "uninterrupted_throughput_trial": continuous,
         "profile_scope": "Running lifecycle only; mixed-grid switch trials are not steady-state performance comparisons",
         "scope": "Offscreen Vulkan with live CUDA worker; no GUI, presentation, scanout or per-process GPU accounting"}

@@ -1,6 +1,7 @@
 # Prepared-world Terrain Water V1
 
-Status: integration/validation in progress. No default replacement or push.
+Status: package/live-backdrop implementation committed; hydraulic, visual and
+performance qualification in progress. No default replacement or push.
 
 Connect the existing shared world/site packages to the managed native rainfall
 demo and solver-neutral captured-water consumer. Keep immutable elevations,
@@ -36,3 +37,34 @@ intervals include intentional waiting and are reported separately.
 Generated cases, fields and evidence stay ignored under cache/outputs. Capture
 time, live simulation time and decorative motion must remain distinctly labelled.
 Native GUI/human acceptance is separate from automated headless validation.
+
+## Reproduction
+
+Use the existing optional native IO Python environment for case preparation and
+the study harness; the MIT live launcher/validator use ordinary Python. No
+environment is installed automatically. Prepare `all` sites/configurations with
+`prepare_live_perf_terrain_v1.py --site-catalogue terrain_water_world_sites.json`
+into a fresh study's `cases` directory, then run
+`study_world_water_v1.py freeze|pilot|confirm|audit|capture|lifecycle|interrupt|performance|report STUDY`.
+Only the performance phase must run without concurrent hydraulic/renderer/test
+traffic. It preconditions live trials to twelve physical hours; its soak begins
+at six hours to fit the existing twenty-hour worker horizon.
+
+Launch the explicit collection with:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
+  --study outputs/fluid/world-water-20261012-Ck824g \
+  --site-catalogue projects/fluid/fluid_25d/terrain_water_world_sites.json
+```
+
+Add `--headless --run-seconds N` for the offscreen path. Wider ground is available
+only for validated world bindings with B-spline reconstruction. The render-only
+UI checkbox and `--fluid25d-native-terrain-context off` retain the core-only
+control. Exterior wetness is not rebuilt from live fields. Each replacement
+prepares/uploads its immutable context once and retires it with the scene.
+
+The initial 2-second interruption correctly stopped before action acknowledgement
+and cleaned up, but exposed a collector assumption that profiling files already
+exist. The collector now retains cleanup/error evidence even before profile
+warmup finishes; such attempts remain incomplete, never timing/switching passes.

@@ -147,8 +147,38 @@ def performance(out):
     write(target / "soak-selection.json", {"site":worst, "policy":"maximum repeated combined GPU p95"})
 
 
+def interrupted_loading(out, attempt=0):
+    actions = {"schema":terrain.managed.SCHEMA, "actions":[
+        {"kind":"switch", "case_id":"mountain-patch-2048-8m", "after_s":.1,
+         "rain_mm_per_hour":512, "pacing":60}]}
+    script = out / "interrupt-actions.json"
+    if not script.exists():
+        write(script, actions)
+    elif json.loads(script.read_bytes()) != actions:
+        raise ValueError("interruption script changed")
+    suffix = f"-repeat-{attempt}" if attempt else ""
+    target = out / ("interrupted-loading" + suffix)
+    command = ["rtk", "proxy", sys.executable, str(terrain.HERE / "validate_terrain_demo_v1.py"),
+               "--study", str(out), "--out", str(target), "--script", str(out / "interrupt-actions.json"),
+               "--seconds", "2", "--warmup", "0", "--site-catalogue", str(WORLD_CATALOGUE)]
+    with (out / f"interrupt-controller{suffix}.log").open("x") as log:
+        result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=200)
+    receipt = json.loads((target / "validation.json").read_bytes())
+    raw = (target / "trial/viewer.log").read_text(errors="replace")
+    if (result.returncode == 0 or "before all actions were acknowledged" not in raw.lower() or
+            any(c.get("active_group_remaining") != [] for c in receipt["cleanup"]) or
+            "VUID-" in raw or "Validation Error" in raw):
+        raise ValueError("interrupted-loading expected failure/clean shutdown not demonstrated")
+    write(out / "interrupted-loading-receipt.json", {"expected_incomplete_attempt":True,
+          "clean_owned_shutdown":True, "not_a_successful_switch":True, "command":command})
+
+
 def report(out):
     frozen = verify(out)
+    if len(json.loads((out / "field-audit.json").read_bytes())["cases"]) != 6:
+        raise ValueError("all three pilots and confirmations require field audits")
+    if json.loads((out / "lifecycle/validation.json").read_bytes())["errors"]:
+        raise ValueError("managed lifecycle validation failed")
     from review_offscreen_perf_v2 import measure
     performance_rows = []
     gates = []
@@ -187,6 +217,8 @@ def report(out):
     page += '<style>body{background:#17212a;color:#e4edf2;font:16px/1.6 system-ui;margin:0}main{max-width:1280px;margin:auto;padding:24px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img,video{width:100%;display:block}section{margin:36px 0}a{color:#94d2e8}th,td{text-align:left;padding:8px;border-bottom:1px solid #45505c}@media(max-width:760px){.pair{grid-template-columns:1fr}}</style><main><a href="/">All reports</a><h1>World Terrain Water V1</h1>'
     page += '<p>One shared prepared world, three immutable sites, the existing external solver and shared Terrain/Fluid renderer. Uniform 512 mm/h demonstration rain, dry start, open perimeter; not ordinary rainfall or calibrated hydrology.</p>'
     page += '<p>The atlas locates sites, native 30 m terrain supplies elevations, the default 1k/16 m grid simulates only the central region, and exterior terrain supplies context. Captured views animate appearance, not hydraulic state. No terrain generation, solver port, GUI launch or default replacement.</p>'
+    page += '<p><a href="/terrain/readability-20261012-a1/">Shared world atlas and approved material study</a>. The existing six-site collection remains the default; this is a separate prepared-world collection.</p>'
+    page += '<p><strong>Important boundary:</strong> wider ground does not continue the water. Pools and streams meeting the simulation perimeter are truncated observations, not complete lakes or evidence that the exterior is dry. The valley case deliberately retains this limitation instead of hiding its wet rectangle.</p>'
     page += '<table><tr><th>Site</th><th>Captured time</th><th>Stored water</th><th>Wet speed P95</th></tr>'+''.join(rows)+'</table>'+''.join(cards)
     page += '<section><h2>Current live and held-state costs</h2><p>Two isolated 90-second repeats per site, 1080p/60Hz, 20s warmup excluded. Live cases are preconditioned to twelve physical rain-on hours. A separate ten-minute live soak begins at six hours to remain inside the finite twenty-hour worker horizon. Held states and live states are not an isolated bridge-overhead comparison.</p><div style="overflow:auto"><table><tr><th>Trial</th><th>Physical/wall ×</th><th>GPU p95 ms</th><th>CPU service p95 ms</th><th>Advancing-state age p95 s</th><th>Target</th></tr>'+''.join(performance_rows)+'</table></div><p>Targets: GPU ≤8ms, CPU service ≤4ms, live pace ≥54×, advancing-state age ≤1s. Paced loop intervals include deliberate waits and are reported in raw receipts. <a href="performance-gates.json">All measured repeats</a>.</p></section>'
     page += '<p><a href="field-audit.json">Field sanity audit</a> · <a href="frozen.json">Frozen inputs/runtime</a> · <a href="lifecycle/validation.json">Selection/reset checks</a>. Native GUI and human acceptance remain separate.</p></main>'
@@ -196,8 +228,10 @@ def report(out):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("phase", choices=("freeze", "pilot", "confirm", "audit", "capture", "lifecycle", "performance", "report"))
+    p.add_argument("phase", choices=("freeze", "pilot", "confirm", "audit", "capture", "lifecycle", "interrupt", "performance", "report"))
     p.add_argument("out", type=Path)
+    p.add_argument("--attempt", type=int, choices=(0, 1, 2), default=0,
+                   help="explicit fresh interrupted-loading repeat; previous attempts retained")
     a = p.parse_args()
     out = a.out.resolve(strict=True)
     if out.parent != terrain.demo.ref.OUTPUT_ROOT.resolve() or not out.name.startswith("world-water-") or a.out.is_symlink():
@@ -221,6 +255,8 @@ def main():
         lifecycle(out)
     elif a.phase == "performance":
         performance(out)
+    elif a.phase == "interrupt":
+        interrupted_loading(out, a.attempt)
     else:
         report(out)
     verify(out)
