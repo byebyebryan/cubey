@@ -505,6 +505,12 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                      ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 256, .max = 65536}),
               config.captured_water_detail_span_m)
+        .bind(option("terrain.captured_water_vertex_budget", "--terrain-water-vertex-budget",
+                     "Paired Mesh Vertex Budget", "Terrain",
+                     "Explicit wider-capture budget; retained outer spacing stays at most 64 m.",
+                     ValueType::UInt32,
+                     {.has_min = true, .has_max = true, .min = 2000000, .max = 5000000}),
+              config.captured_water_vertex_budget)
         .bind(option("terrain.captured_water_detail_focus_x_m", "--terrain-water-detail-focus-x",
                      "Detail Focus X", "Terrain",
                      "Fixed source-world topology focus independent of camera focus; requires "

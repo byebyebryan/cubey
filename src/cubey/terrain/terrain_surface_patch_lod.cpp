@@ -8,12 +8,14 @@
 
 namespace cubey::terrain {
 TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterCaptureGrid& grid,
-                                                      math::Vec2 focus, float span) {
+                                                      math::Vec2 focus, float span,
+                                                      std::uint32_t maximum_vertices) {
     if (grid.width < 2 || grid.height < 2 || grid.width > 16384 || grid.height > 16384 ||
         !std::isfinite(grid.cell_size_m) || grid.cell_size_m < 2 || grid.cell_size_m > 256 ||
         !std::isfinite(grid.sample_origin_xz_m.x) || !std::isfinite(grid.sample_origin_xz_m.y) ||
         !std::isfinite(focus.x) || !std::isfinite(focus.y) || !std::isfinite(span) ||
-        span < grid.cell_size_m || span > 65536)
+        span < grid.cell_size_m || span > 65536 || maximum_vertices < 2000000U ||
+        maximum_vertices > 5000000U)
         throw std::runtime_error("invalid fixed paired terrain topology request");
     const auto lower = grid.sample_origin_xz_m;
     const auto upper = lower + math::Vec2{grid.width - 1U, grid.height - 1U} * grid.cell_size_m;
@@ -28,7 +30,7 @@ TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterC
     std::unordered_map<std::uint64_t, std::uint32_t> boundary_vertices;
     const auto nx = std::uint32_t(std::ceil((hi.x - lo.x) / fine));
     const auto nz = std::uint32_t(std::ceil((hi.y - lo.y) / fine));
-    if (std::uint64_t(nx + 1) * (nz + 1) > 2000000)
+    if (std::uint64_t(nx + 1) * (nz + 1) > maximum_vertices)
         throw std::runtime_error("fixed topology fine region exceeds vertex budget");
     const auto vertex = [&](math::Vec2 p) {
         const auto coordinate = glm::clamp((p - lower) / grid.cell_size_m, math::Vec2{0},
@@ -43,7 +45,7 @@ TerrainSurfacePatchLod make_terrain_surface_patch_lod(const asset::TerrainWaterC
             if (found != boundary_vertices.end())
                 return found->second;
         }
-        if (result.coordinates.size() >= 2000000)
+        if (result.coordinates.size() >= maximum_vertices)
             throw std::runtime_error("fixed topology exceeds vertex budget");
         result.coordinates.push_back(coordinate);
         const auto id = std::uint32_t(result.coordinates.size() - 1);

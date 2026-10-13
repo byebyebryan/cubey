@@ -312,12 +312,14 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
                    &environment, {0U, seconds, seconds, s.capture.rain_mm_per_hour},
                    s.whitewater.seeds, 0U, context ? &*context : nullptr);
 }
-void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span) {
+void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span,
+                                                   std::uint32_t maximum_vertices) {
     auto& s = *state_;
     if (s.fixed_mesh)
         return;
     const auto started = std::chrono::steady_clock::now();
-    s.fixed_mesh.emplace(terrain::make_terrain_surface_patch_lod(s.capture.grid, focus, span));
+    s.fixed_mesh.emplace(
+        terrain::make_terrain_surface_patch_lod(s.capture.grid, focus, span, maximum_vertices));
     std::printf(
         "terrain_fixed_lod: CPU once; build_ms=%.3f fine_span_m=%.3f focus_world=(%.3f,%.3f)\n",
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)

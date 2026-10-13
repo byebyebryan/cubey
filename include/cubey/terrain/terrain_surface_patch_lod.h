@@ -12,5 +12,6 @@ struct TerrainSurfacePatchLod {
 };
 [[nodiscard]] TerrainSurfacePatchLod
 make_terrain_surface_patch_lod(const asset::TerrainWaterCaptureGrid& grid, math::Vec2 focus_world,
-                               float fine_span_m = 16368.0F);
+                               float fine_span_m = 16368.0F,
+                               std::uint32_t maximum_vertices = 2000000U);
 } // namespace cubey::terrain

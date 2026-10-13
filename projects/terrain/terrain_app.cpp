@@ -606,7 +606,7 @@ class TerrainApp {
                             ? cubey::math::Vec2{*config_.captured_water_focus_x_m,
                                                 *config_.captured_water_focus_z_m}
                             : capture_runtime_->capture().grid.center_xz_m(),
-                        config_.captured_water_detail_span_m);
+                        config_.captured_water_detail_span_m, config_.captured_water_vertex_budget);
                 configure_capture_camera();
             } catch (const std::exception& error) {
                 // Explicit headless requests fail loudly; interactive users can

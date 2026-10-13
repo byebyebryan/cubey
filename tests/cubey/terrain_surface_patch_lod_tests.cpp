@@ -59,10 +59,11 @@ int main() {
         }
         if (std::abs(wide_area - 1912.0 * 1912.0) > .01)
             throw std::runtime_error("wide topology area mismatch");
-        for (unsigned fixture = 0; fixture < 4; ++fixture) {
+        for (unsigned fixture = 0; fixture < 6; ++fixture) {
             asset::TerrainWaterCaptureGrid bad{65, 49, 16, {-512, -384}};
             math::Vec2 focus{0};
             float span = 256;
+            std::uint32_t budget = 2000000U;
             if (fixture == 0)
                 bad.cell_size_m = 0;
             if (fixture == 1)
@@ -71,9 +72,13 @@ int main() {
                 focus.x = 1024;
             if (fixture == 3)
                 span = std::numeric_limits<float>::infinity();
+            if (fixture == 4)
+                budget = 1999999U;
+            if (fixture == 5)
+                budget = 5000001U;
             bool rejected = false;
             try {
-                (void)terrain::make_terrain_surface_patch_lod(bad, focus, span);
+                (void)terrain::make_terrain_surface_patch_lod(bad, focus, span, budget);
             } catch (const std::exception&) {
                 rejected = true;
             }

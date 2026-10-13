@@ -120,6 +120,7 @@ struct TerrainProjectConfig {
     std::optional<float> captured_water_yaw_rad{}, captured_water_pitch_rad{};
     std::string captured_water_detail = "uniform";
     float captured_water_detail_span_m = 16368.0F;
+    std::uint32_t captured_water_vertex_budget = 2000000U;
     std::optional<float> captured_water_detail_focus_x_m{}, captured_water_detail_focus_z_m{};
     bool captured_water_visible = true;
     bool captured_water_context = false;
