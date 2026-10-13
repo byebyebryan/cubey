@@ -1,4 +1,5 @@
 #include "terrain_config.h"
+#include <cubey/asset/terrain_site_water.h>
 
 #include <cubey/engine/atmosphere_environment_schema.h>
 #include <cubey/engine/cloud_environment_schema.h>
@@ -472,6 +473,10 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                      "Load a validated world/site package for terrain-only inspection.",
                      ValueType::Path),
               config.terrain_site_path)
+        .bind(option("terrain.site_water", "--terrain-site-water", "Prepared Site Water", "Terrain",
+                     "Optional solver-neutral binding; requires its pinned --terrain-site.",
+                     ValueType::Path),
+              config.site_water_binding_path)
         .bind(option("terrain.water_context_source", "--terrain-water-context-source",
                      "Wider World Source", "Terrain",
                      "Explicit same-world extension for captured water's ground backdrop; bed "
@@ -680,6 +685,8 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
                                      config.captured_water_context_source))
         throw std::runtime_error(
             "prepared site owns its source; do not combine with capture/source overrides");
+    if (config.site_water_binding_path && !config.terrain_site_path)
+        throw std::runtime_error("site water requires --terrain-site");
     if (config.captured_water_context_source &&
         (!config.water_capture_path || !config.captured_water_context))
         throw std::runtime_error(
@@ -704,8 +711,13 @@ void resolve_terrain_project_config(TerrainProjectConfig& config,
         config.terrain_site = cubey::asset::load_terrain_site(*config.terrain_site_path);
         config.terrain.heightfield_path = config.terrain_site->heightfield;
         config.terrain.surface_fields_path = config.terrain_site->surface_fields;
-        config.captured_water_visible = false;
-        config.captured_water_animate = false;
+        if (config.site_water_binding_path)
+            config.water_capture_path = cubey::asset::load_terrain_site_water_binding(
+                *config.site_water_binding_path, *config.terrain_site_path, *config.terrain_site);
+        else {
+            config.captured_water_visible = false;
+            config.captured_water_animate = false;
+        }
         config.captured_water_context = true;
         config.water_capture_camera = "landscape";
         config.captured_water_detail = "fixed";

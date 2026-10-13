@@ -56,6 +56,18 @@ void test_defaults_and_explicit_default_paths() {
     require(!parsed.captured_water_context, "wider context must remain opt-in");
     require(!parsed.terrain_site_path && !parsed.captured_water_context_source,
             "world/site foundation must remain opt-in");
+    require(!parsed.site_water_binding_path && parsed.captured_water_vertex_budget == 2000000U,
+            "site water and wider mesh budget must remain opt-in");
+    require(parse({"--terrain-site", "site.json", "--terrain-site-water", "water-binding.json"})
+                .site_water_binding_path.has_value(),
+            "site water CLI missing");
+    require_throws([] { (void)parse({"--terrain-site-water", "water-binding.json"}); },
+                   "unbound site water accepted");
+    require(parse({"--terrain-water-vertex-budget", "4500000"}).captured_water_vertex_budget ==
+                4500000U,
+            "explicit wider vertex budget missing");
+    require_throws([] { (void)parse({"--terrain-water-vertex-budget", "5000001"}); },
+                   "unbounded wider vertex budget accepted");
     require(parse({"--terrain-site", "site.json"}).terrain_site_path.has_value(),
             "site CLI missing");
     require_throws(

@@ -580,7 +580,11 @@ class TerrainApp {
         edit_source_choice_index_ = source_choice_index_;
         if (config_.water_capture_path || config_.terrain_site) {
             try {
-                if (config_.terrain_site)
+                if (config_.terrain_site && config_.water_capture_path)
+                    capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+                        *config_.terrain_site, *config_.water_capture_path,
+                        CUBEY_TERRAIN_SHADER_DIR);
+                else if (config_.terrain_site)
                     capture_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
                         *config_.terrain_site, CUBEY_TERRAIN_SHADER_DIR);
                 else
@@ -906,12 +910,18 @@ class TerrainApp {
                 const auto& capture = capture_runtime_->capture();
                 if (config_.terrain_site) {
                     ImGui::TextWrapped(
-                        "Prepared terrain-only site; no water simulation or recording.");
+                        config_.site_water_binding_path
+                            ? "Prepared site with rain-fed captured water. Fixed hydraulic state; "
+                              "no solver running."
+                            : "Prepared terrain-only site; no water simulation or recording.");
                     ImGui::Text("Site: %s / world %.12s", config_.terrain_site->id.c_str(),
                                 config_.terrain_site->world_id.c_str());
                     ImGui::Text("Detail / backdrop: %.2f / %.2f km",
                                 config_.terrain_site->level_spans_m[0] * .001F,
                                 config_.terrain_site->level_spans_m[3] * .001F);
+                    if (config_.site_water_binding_path)
+                        ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
+                                    capture.rain_mm_per_hour);
                 } else {
                     ImGui::TextWrapped("Animated rain-fed capture; fixed bed, depth and velocity. "
                                        "No solver running.");

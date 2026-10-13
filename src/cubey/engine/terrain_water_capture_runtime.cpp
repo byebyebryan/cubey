@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cubey/asset/file_digest.h>
+#include <cubey/asset/terrain_site_water.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/engine/terrain_surface_context_resources.h>
 #include <cubey/engine/terrain_surface_patch_scene.h>
@@ -110,6 +111,14 @@ struct TerrainWaterCaptureRuntime::State {
         terrain_only = true;
         initialize_surface();
     }
+    State(const asset::TerrainSite& site, const std::filesystem::path& capture_path,
+          std::filesystem::path directory)
+        : source(site.heightfield), capture(asset::load_terrain_water_capture(capture_path)),
+          shaders(std::move(directory)), scene(shaders) {
+        asset::validate_terrain_site_water_capture(capture, site);
+        asset::validate_terrain_water_capture_source(capture, source);
+        initialize_surface();
+    }
     void initialize_surface() {
         const auto center = capture.grid.center_xz_m();
         material.terrain_world_x_m = center.x;
@@ -162,6 +171,16 @@ TerrainWaterCaptureRuntime::TerrainWaterCaptureRuntime(const std::filesystem::pa
             .count());
 }
 TerrainWaterCaptureRuntime::~TerrainWaterCaptureRuntime() = default;
+TerrainWaterCaptureRuntime::TerrainWaterCaptureRuntime(const asset::TerrainSite& site,
+                                                       const std::filesystem::path& capture,
+                                                       std::filesystem::path shaders) {
+    state_ = std::make_unique<State>(site, capture, std::move(shaders));
+    std::printf("terrain_site_water: %s world=%.12s; captured %.3f h, %ux%u / %.0f m; "
+                "hydraulic_dispatches=0\n",
+                site.id.c_str(), site.world_id.c_str(), state_->capture.capture_time_s / 3600.0,
+                state_->capture.grid.width, state_->capture.grid.height,
+                state_->capture.grid.cell_size_m);
+}
 TerrainWaterCaptureRuntime::TerrainWaterCaptureRuntime(const asset::TerrainSite& site,
                                                        std::filesystem::path shaders) {
     state_ = std::make_unique<State>(site, std::move(shaders));

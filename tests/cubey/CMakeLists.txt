@@ -288,6 +288,10 @@ add_executable(cubey_terrain_world_water_lod_preflight terrain_world_water_lod_p
 target_link_libraries(cubey_terrain_world_water_lod_preflight PRIVATE cubey::terrain cubey_project_warnings)
 add_test(NAME terrain_world_water_lod_cpu COMMAND cubey_terrain_world_water_lod_preflight)
 set_tests_properties(terrain_world_water_lod_cpu PROPERTIES LABELS "terrain;water;unit" TIMEOUT 60)
+add_executable(cubey_terrain_site_water_tests terrain_site_water_tests.cpp)
+target_link_libraries(cubey_terrain_site_water_tests PRIVATE cubey::asset cubey_project_warnings)
+add_test(NAME terrain_site_water_cpu COMMAND cubey_terrain_site_water_tests)
+set_tests_properties(terrain_site_water_cpu PROPERTIES LABELS "terrain;water;asset;unit")
 target_link_libraries(cubey_terrain_surface_context_tests PRIVATE cubey::terrain cubey_project_warnings)
 target_compile_definitions(cubey_terrain_surface_context_tests PRIVATE
     CUBEY_TEST_ASSET_DIR="${PROJECT_SOURCE_DIR}/tests/assets")

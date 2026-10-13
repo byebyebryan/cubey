@@ -17,6 +17,8 @@ class TerrainWaterCaptureRuntime {
     // Reuse the surface renderer with sampled bed and zero water, not a fake
     // recorded simulation. The site/world package owns terrain coverage.
     TerrainWaterCaptureRuntime(const asset::TerrainSite& site, std::filesystem::path shaders);
+    TerrainWaterCaptureRuntime(const asset::TerrainSite& site, const std::filesystem::path& capture,
+                               std::filesystem::path shaders);
     ~TerrainWaterCaptureRuntime();
     void ensure_resources(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                           std::uint32_t slots, render::ColorTargetView target);
