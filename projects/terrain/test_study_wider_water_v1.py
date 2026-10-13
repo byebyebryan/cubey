@@ -24,6 +24,15 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(sorted(set(study.MILESTONES)), list(study.MILESTONES))
         self.assertEqual(study.MILESTONES[-1], 72000)
 
+    def test_prepared_world_geometry_keeps_pinned_center_and_cell_budget(self):
+        candidates = {"coarse": (1024, 128), "wide": (2048, 64), "fallback": (2048, 32)}
+        for name in candidates:
+            g = study.geometry(name, candidates, (15375, -30705))
+            self.assertEqual(g["center_xz_m"], [15375, -30705])
+            self.assertLessEqual(g["cells"], 4194304)
+            self.assertEqual(g["sample_origin_xz_m"],
+                             [v-g["drawn_span_m"]/2 for v in g["center_xz_m"]])
+
     def test_bounded_outputs(self):
         self.assertEqual(study.owned_root(study.ROOT / "outputs/terrain/wider-water-unit"),
                          study.ROOT / "outputs/terrain/wider-water-unit")

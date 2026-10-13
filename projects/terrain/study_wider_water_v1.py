@@ -35,11 +35,11 @@ def write(path, value):
     temporary.replace(path)
 
 
-def geometry(candidate):
-    n, spacing = CANDIDATES[candidate]
+def geometry(candidate, candidates=None, center=(0, 0)):
+    n, spacing = (CANDIDATES if candidates is None else candidates)[candidate]
     half = (n - 1) * spacing / 2
     return {"width": n, "height": n, "spacing_m": spacing,
-            "sample_origin_xz_m": [-half, -half], "center_xz_m": [0, 0],
+            "sample_origin_xz_m": [v-half for v in center], "center_xz_m": list(center),
             "drawn_span_m": 2 * half, "cells": n * n}
 
 
@@ -55,33 +55,37 @@ def old_identity():
     return {p.name: digest(p) for p in OLD_CAPTURE.parent.iterdir() if p.is_file()}
 
 
-def freeze(out):
+def freeze(out, *, source=SOURCE, candidates=None, center=(0, 0), terrain_site=None,
+           milestones=MILESTONES, wall_limit=1800):
     if out.exists():
         raise ValueError("study root already exists")
     sys.path.insert(0, str(FLUID))
     import run_mountain_rain_demo as demo
     if digest(demo.EXTENSION) != demo.EXTENSION_SHA:
         raise ValueError("optional solver extension differs from its accepted pin")
-    source = json.loads(SOURCE.read_text())
-    elevation = SOURCE.parent / source["files"]["elevation"]["path"]
-    if digest(elevation) != source["files"]["elevation"]["sha256"]:
+    source = Path(source).resolve(strict=True)
+    manifest = json.loads(source.read_text())
+    elevation = source.parent / manifest["files"]["elevation"]["path"]
+    if digest(elevation) != manifest["files"]["elevation"]["sha256"]:
         raise ValueError("terrain payload differs from manifest")
     out.mkdir()
     for folder in ("cases", "runs", "captures"):
         (out / folder).mkdir()
     protocol = {"schema": "cubey.terrain.wider-water-study.v1",
-                "source": str(SOURCE), "source_sha256": digest(SOURCE),
+                "source": str(source), "source_sha256": digest(source),
                 "source_elevation_sha256": digest(elevation),
-                "climate_manifest_sha256": digest(SOURCE.parent / "surface-fields.json"),
+                "climate_manifest_sha256": digest(source.parent / "surface-fields.json"),
                 "old_capture_identity": old_identity(),
                 "native_extension": str(demo.EXTENSION), "native_extension_sha256": demo.EXTENSION_SHA,
                 "python": str(demo.LIVE_PYTHON), "runner_sha256": digest(__file__),
                 "worker_sha256": digest(FLUID / "external_synxflow/session_worker.py"),
-                "grids": {name: geometry(name) for name in CANDIDATES},
+                "grids": {name: geometry(name, candidates, center)
+                          for name in (CANDIDATES if candidates is None else candidates)},
+                "terrain_site": terrain_site,
                 "rain_mm_per_hour": 512, "manning_n": .05, "boundary": "fall",
-                "initial_depth_m": 0, "milestones_s": MILESTONES,
-                "wall_limit_s_per_run": 1800,
-                "camera_envelope": {"focus_world_xz_m": [11520, 19200],
+                "initial_depth_m": 0, "milestones_s": list(milestones),
+                "wall_limit_s_per_run": wall_limit,
+                "camera_envelope": {"focus_world_xz_m": list(center) if terrain_site else [11520, 19200],
                     "orbit_yaws_rad": [i * 3.141592653589793 / 4 for i in range(8)],
                     "landscape_span_m": [11457.6, 8192],
                     "target_offsets_xz_m": [[0, 0], [-1000, 0], [1000, 0], [0, -1000], [0, 1000]],
@@ -93,15 +97,27 @@ def freeze(out):
 
 def check_frozen(out):
     p = json.loads((out / "protocol.json").read_text())
-    if (digest(__file__) != p["runner_sha256"] or digest(SOURCE) != p["source_sha256"] or
+    source = Path(p["source"])
+    if (digest(__file__) != p["runner_sha256"] or digest(source) != p["source_sha256"] or
             old_identity() != p["old_capture_identity"] or
             digest(Path(p["native_extension"])) != p["native_extension_sha256"] or
             digest(FLUID / "external_synxflow/session_worker.py") != p["worker_sha256"] or
-            digest(SOURCE.parent / "surface-fields.json") != p["climate_manifest_sha256"]):
+            digest(source.parent / "surface-fields.json") != p["climate_manifest_sha256"]):
         raise ValueError("frozen study input or runner changed")
-    elevation = json.loads(SOURCE.read_text())["files"]["elevation"]["path"]
-    if digest(SOURCE.parent / elevation) != p["source_elevation_sha256"]:
+    elevation = json.loads(source.read_text())["files"]["elevation"]["path"]
+    if digest(source.parent / elevation) != p["source_elevation_sha256"]:
         raise ValueError("source elevation changed")
+    if p.get("terrain_site"):
+        sys.path.insert(0, str(ROOT / "projects/terrain/tools"))
+        from terrain_site_package import load_site
+        binding = p["terrain_site"]
+        path = Path(binding["manifest_path"])
+        if digest(path) != binding["manifest_sha256"]:
+            raise ValueError("pinned site changed")
+        package = load_site(path)
+        if (package["heightfield"] != source or package["site"]["world_id"] != binding["world_id"] or
+                any(g["center_xz_m"] != package["site"]["center_xz_m"] for g in p["grids"].values())):
+            raise ValueError("site/source/world placement changed")
     return p
 
 
@@ -114,28 +130,35 @@ def prepare(out, candidate):
     case = out / "cases" / candidate
     if case.exists():
         raise ValueError("refusing to overwrite prepared case")
-    manifest, raw = sampling.load_source(SOURCE)
+    source = Path(p["source"])
+    manifest, raw = sampling.load_source(source)
     g = manifest["grid"]
-    cg = json.loads((SOURCE.parent / "surface-fields.json").read_text())["grid"]
+    cg = json.loads((source.parent / "surface-fields.json").read_text())["grid"]
     bounds = (max(g["sample_origin_x_m"], cg["sample_origin_x_m"]),
               max(g["sample_origin_z_m"], cg["sample_origin_z_m"]),
               min(g["sample_origin_x_m"] + (g["width"]-1)*g["sample_spacing_m"],
                   cg["sample_origin_x_m"] + (cg["width"]-1)*cg["sample_spacing_m"]),
               min(g["sample_origin_z_m"] + (g["height"]-1)*g["sample_spacing_m"],
                   cg["sample_origin_z_m"] + (cg["height"]-1)*cg["sample_spacing_m"]))
-    n, spacing = CANDIDATES[candidate]
-    target = sampling.grid_geometry(n, n, spacing, (0, 0), bounds)
-    if target["center_xz_m"] != [0, 0] or target["sample_origin_xz_m"] != geometry(candidate)["sample_origin_xz_m"]:
+    planned = p["grids"][candidate]
+    n, spacing = planned["width"], planned["spacing_m"]
+    target = sampling.grid_geometry(n, n, spacing, planned["center_xz_m"], bounds)
+    if (target["center_xz_m"] != planned["center_xz_m"] or
+            target["sample_origin_xz_m"] != planned["sample_origin_xz_m"]):
         raise ValueError("frozen common extent cannot be admitted without shifting")
     case.mkdir()
     bed = sampling.sample_grid(manifest, raw, target)
     bed.tofile(case / "source-bed.f32")
-    identity = {"schema": "cubey.terrain.sampled-source.v1", "manifest_path": str(SOURCE),
+    identity = {"schema": "cubey.terrain.sampled-source.v1", "manifest_path": str(source),
                 "manifest_sha256": p["source_sha256"], "elevation_sha256": p["source_elevation_sha256"],
                 "source_grid": g, "target_grid": target, "source_bed_path": "source-bed.f32",
                 "source_bed_sha256": digest(case / "source-bed.f32"), "interpolated": True,
                 "terrain_modified": False}
-    spec = {"name": candidate, "family": "live-perf-terrain-v1", "site": "mountain",
+    if p.get("terrain_site"):
+        identity["terrain_site"] = p["terrain_site"]
+    site_id = (Path(p["terrain_site"]["manifest_path"]).parent.name
+               if p.get("terrain_site") else "mountain")
+    spec = {"name": candidate, "family": "live-perf-terrain-v1", "site": site_id,
             "configuration": candidate, "rows": n, "cols": n, "dx_m": spacing,
             "initial_depth_m": 0, "boundary": "fall", "manning_n": .05,
             "duration_s": 72000, "rain_history_end_s": 72000, "output_interval_s": 7200,
@@ -159,6 +182,7 @@ def prepare(out, candidate):
 
 def execute(out, candidate):
     p = check_frozen(out)
+    milestones = p["milestones_s"]
     sys.path.insert(0, str(FLUID))
     import run_live_perf_terrain_v1 as helpers
     import run_terrain_rain_demo as terrain
@@ -188,13 +212,13 @@ def execute(out, candidate):
                 elapsed = time.monotonic() - compute_started
                 write(run / "progress.json", {"physical_time_s": physical, "compute_wall_s": elapsed,
                     "physical_wall_ratio": physical / max(elapsed, .001), "lifecycle": state["frame"]["lifecycle"]})
-                terminal = physical >= MILESTONES[-1] or elapsed >= p["wall_limit_s_per_run"]
-                if (next_milestone < len(MILESTONES) and physical >= MILESTONES[next_milestone]) or terminal:
+                terminal = physical >= milestones[-1] or elapsed >= p["wall_limit_s_per_run"]
+                if (next_milestone < len(milestones) and physical >= milestones[next_milestone]) or terminal:
                     final = helpers.snapshot(session)
                     actual = final[0]["frame"]["physical_time_s"]
                     recording = helpers.save_recording(case, session, initial, final,
                         run / f"snapshot-{len(result['milestones'])}")
-                    row = {"target_physical_s": MILESTONES[min(next_milestone, len(MILESTONES)-1)],
+                    row = {"target_physical_s": milestones[min(next_milestone, len(milestones)-1)],
                            "physical_s": actual, "wall_s": elapsed, "recording": str(recording),
                            "stats": helpers.field_stats(final[1], identity["spec"]["dx_m"])}
                     result["milestones"].append(row)
@@ -202,7 +226,7 @@ def execute(out, candidate):
                     write(run / "result.json", result)
                     print(json.dumps(row), flush=True)
                 if terminal:
-                    result["status"] = "completed" if physical >= MILESTONES[-1] else "bounded-partial"
+                    result["status"] = "completed" if physical >= milestones[-1] else "bounded-partial"
                     break
                 if worker.poll() is not None or state["frame"]["lifecycle"] == "failed":
                     raise RuntimeError("external worker failed before a complete milestone")
