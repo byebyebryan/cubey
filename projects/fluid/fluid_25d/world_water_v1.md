@@ -109,3 +109,28 @@ case by at most 0.02002m; this is not bit-exact old hydraulic-state parity.
 Source terrain, old case/capture payloads and rendering defaults stay intact.
 Native GUI/layout/frame-delivery acceptance, 2k steady-state requalification,
 far-context shadows and broader water coverage remain separate follow-ups.
+
+## Post-loop review
+
+The controller wrapper had a timeout-only cleanup gap: `subprocess.run` could
+kill its immediate proxy while separately launched GPU children remained alive.
+Supervised Python controllers now run directly, receive an interrupt to unwind
+their existing cleanup blocks, and retain a bounded owned-group cleanup receipt.
+The validator likewise waits for its whole launcher group rather than just the
+proxy parent. A real subprocess regression exercises timeout cleanup of an
+independently owned child; this is CPU/process evidence, not another solver or
+performance qualification. Renderer binaries, shaders and numerical inputs are
+unchanged by this review fix.
+Performance children now also receive the frozen absolute app path, so starting
+the harness from a different working directory cannot select a relative binary.
+
+Review evidence is under
+`outputs/fluid/world-water-review-20261012-Yiorms/`: actual managed and live
+performance controllers were deliberately timed out headlessly after 12 seconds.
+Their three and two independently owned child groups respectively exited without
+escalation; interrupted performance remains a failed/incomplete receipt. The first
+performance check failed before launching GPU work because of the relative app
+path; its log is retained, and the explicit-absolute-path repeat passed cleanup.
+All 26 focused CTest groups passed again, and the original 34 input/95 runtime
+hashes and 13 accepted timing receipts still verify unchanged. Native GUI review
+and wider hydraulic coverage remain deferred.

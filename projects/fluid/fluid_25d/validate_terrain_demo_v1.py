@@ -10,9 +10,7 @@ import argparse
 import csv
 import json
 import math
-import os
 from pathlib import Path
-import signal
 import subprocess
 import time
 
@@ -89,7 +87,9 @@ def main():
     out = demo.demo.fresh_output(args.out)
     out.mkdir()
     trial = out / "trial"
-    command = ["rtk", "proxy", "python3", str(demo.HERE / "run_terrain_rain_demo.py"),
+    # Supervise Python directly so proxy signal interception cannot bypass its
+    # finally block; the launcher still owns/tracks each worker and viewer group.
+    command = ["python3", str(demo.HERE / "run_terrain_rain_demo.py"),
         "--study", str(args.study.resolve()), "--out", str(trial), "--headless",
         "--run-seconds", str(args.seconds), "--width", str(args.width), "--height", str(args.height),
         "--switch-script", str(args.script.resolve()), "--profile-output", str(trial / "profile")]
@@ -124,8 +124,7 @@ def main():
                 errors.append(f"launcher returned {process.returncode}")
         except BaseException:
             # Only the group launched above; its handler closes its owned workers.
-            os.killpg(process.pid, signal.SIGTERM)
-            process.wait(timeout=30)
+            demo.demo.stop_owned(process, grace_s=60)
             raise
     receipt = json.loads((trial / "launch.json").read_bytes())
     if not all(item.get("active_group_remaining") == [] for item in receipt["cleanup"]):

@@ -7,10 +7,13 @@ Run phases explicitly. Old cases/captures and prepared worlds stay immutable.
 import argparse
 import html
 import json
+import os
 from pathlib import Path
+import signal
 import subprocess
 import shutil
 import sys
+import time
 
 import run_terrain_rain_demo as terrain
 from terrain_water_sites import WORLD_CATALOGUE, load_sites
@@ -23,6 +26,40 @@ EXPORT_APP = ROOT / "build/release/projects/fluid/fluid_25d/cubey_project_fluid_
 
 def write(path, doc):
     path.write_text(json.dumps(doc, indent=2, sort_keys=True, allow_nan=False) + "\n")
+
+
+def run_controller(command, log_path, timeout, check=True):
+    """Let a timed-out controller unwind its independently owned GPU children.
+
+    subprocess.run(timeout=...) kills only its immediate child (often rtk),
+    bypassing the Python controller's finally blocks. Launch supervised Python
+    directly: the proxy can intercept SIGINT and terminate Python before it
+    unwinds. SIGINT then unwinds the performance runner/managed validator, while
+    the existing owned-group helper bounds final escalation.
+    """
+    actual_command = command[2:] if command[:2] == ["rtk", "proxy"] else command
+    with log_path.open("x") as log:
+        process = subprocess.Popen(actual_command, stdout=log, stderr=subprocess.STDOUT,
+                                   start_new_session=True)
+        try:
+            returncode = process.wait(timeout=timeout)
+        except BaseException:
+            try:
+                os.killpg(process.pid, signal.SIGINT)
+            except ProcessLookupError:
+                pass
+            deadline = time.monotonic() + 90
+            while terrain.demo.active_owned_group(process.pid) and time.monotonic() < deadline:
+                process.poll()
+                time.sleep(.05)
+            raise
+        finally:
+            cleanup = terrain.demo.stop_owned(process, grace_s=15)
+            cleanup["controller_command"] = actual_command
+            write(log_path.with_suffix(".cleanup.json"), cleanup)
+        if check and returncode:
+            raise subprocess.CalledProcessError(returncode, command)
+        return subprocess.CompletedProcess(command, returncode)
 
 
 def protected_inputs():
@@ -110,8 +147,7 @@ def lifecycle(out):
     command = ["rtk", "proxy", sys.executable, str(terrain.HERE / "validate_terrain_demo_v1.py"),
                "--study", str(out), "--out", str(out / "lifecycle"), "--script", str(out / "switch-actions.json"),
                "--seconds", "600", "--site-catalogue", str(WORLD_CATALOGUE)]
-    with (out / "lifecycle-controller.log").open("x") as log:
-        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=800)
+    run_controller(command, out / "lifecycle-controller.log", timeout=800)
 
 
 def performance(out):
@@ -126,11 +162,11 @@ def performance(out):
         # Held-state plus concurrent live: separate costs, same accepted presentation.
         command = ["rtk", "proxy", str(terrain.demo.LIVE_PYTHON), str(terrain.HERE / "run_offscreen_perf_v2.py"),
                    "--study", str(out), "--case", name, "--out", str(target / sid),
+                   "--app", str(terrain.RELEASE_APP),
                    "--host", "offscreen", "--modes", "renderer-only", "live", "--recording", str(recording),
                    "--wall", "90", "--warmup", "20", "--prewarm", "43200", "--prewarm-timeout", "1200",
                    "--repeats", "2", "--render-fps", "60", "--surface", "correlated", "--shadow-projection", "scene"]
-        with (target / f"{sid}.log").open("x") as log:
-            subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=3000)
+        run_controller(command, target / f"{sid}.log", timeout=3000)
     # Most demanding site's measured combined GPU p95 chooses the soak, not aesthetics.
     results = {sid: json.loads((target / sid / "results.json").read_bytes())["trials"]
                for sid in load_sites(WORLD_CATALOGUE)}
@@ -140,11 +176,11 @@ def performance(out):
     worst = max(results, key=cost)
     command = ["rtk", "proxy", str(terrain.demo.LIVE_PYTHON), str(terrain.HERE / "run_offscreen_perf_v2.py"),
                "--study", str(out), "--case", f"{worst}-patch-1024-16m", "--out", str(target / "soak"),
+               "--app", str(terrain.RELEASE_APP),
                "--host", "offscreen", "--modes", "live", "--wall", "600", "--warmup", "20",
                "--prewarm", "21600", "--prewarm-timeout", "1200", "--repeats", "1", "--render-fps", "60",
                "--surface", "correlated", "--shadow-projection", "scene"]
-    with (target / "soak.log").open("x") as log:
-        subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1900)
+    run_controller(command, target / "soak.log", timeout=1900)
     write(target / "soak-selection.json", {"site":worst, "policy":"maximum repeated combined GPU p95"})
 
 
@@ -162,8 +198,8 @@ def interrupted_loading(out, attempt=0):
     command = ["rtk", "proxy", sys.executable, str(terrain.HERE / "validate_terrain_demo_v1.py"),
                "--study", str(out), "--out", str(target), "--script", str(out / "interrupt-actions.json"),
                "--seconds", "2", "--warmup", "0", "--site-catalogue", str(WORLD_CATALOGUE)]
-    with (out / f"interrupt-controller{suffix}.log").open("x") as log:
-        result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=200)
+    result = run_controller(command, out / f"interrupt-controller{suffix}.log", timeout=200,
+                            check=False)
     receipt = json.loads((target / "validation.json").read_bytes())
     raw = (target / "trial/viewer.log").read_text(errors="replace")
     if (result.returncode == 0 or "before all actions were acknowledged" not in raw.lower() or
