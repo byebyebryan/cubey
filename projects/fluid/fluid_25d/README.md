@@ -69,6 +69,27 @@ rainfall runs, Vulkan overview/flow clips and preparation/lifecycle receipts.
 The older `live-perf-terrain-20261010-Dd6K3h` study remains usable; new cases are
 disabled there rather than silently prepared or substituted.
 
+### Prepared-world collection (explicit)
+
+The shared world/site packages also work in the managed live demo, with the
+same selection + Apply & restart controls. This separate collection keeps the
+original six-site default intact and adds seam-matched exterior ground around
+the simulated rectangle; it does not simulate water across the backdrop.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
+  --study outputs/fluid/world-water-20261012-Ck824g \
+  --site-catalogue projects/fluid/fluid_25d/terrain_water_world_sites.json
+```
+
+All three sites have the five existing grid presets. Start remains dry/paused;
+the default grid remains 1k/16m. Wider terrain is available for validated world
+bindings with B-spline rendering and has a render-only off control. Actual rain
+and hydraulic state cover only the selected simulation rectangle. See the
+[integration and qualification record](world_water_v1.md) and
+[formation/capture report](http://starship:8801/fluid/world-water-20261012-Ck824g/).
+The report labels incomplete performance qualification explicitly.
+
 ### Historical Mountain Rain Demo V1
 
 The earlier launcher remains available for the historical mountain scene and

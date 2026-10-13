@@ -206,6 +206,14 @@ and every native anchor sample. The original capture hash/rounded-bed check
 remains unchanged; raw water fields are not replaced. Wider ground is not wider
 water coverage.
 
+The same prepared packages now feed an explicit Fluid live rainfall collection,
+using shared site admission, source sampling and exterior-ground resources.
+Its rain-on states export through the existing solver-neutral water contract
+and load in Terrain without CUDA or a running solver. See
+[Prepared-world Terrain Water](../fluid/fluid_25d/world_water_v1.md) for launch
+commands, finite-water coverage and headless qualification. This does not add
+water to the terrain-only `--terrain-site` view or promote a new default scene.
+
 The low-frequency-only export was rejected: its p95 difference from filtered
 native terrain was about 216 m. V1 instead generates native tiles for selected
 backdrops, then filters them. Runtime currently retains that native raster and
