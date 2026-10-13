@@ -234,6 +234,84 @@ No solver or native GUI is launched by the review tools. No default is promoted.
 
 ### Prepared-world wider saved water (opt-in)
 
+#### Named prepared landscapes and Apply/reset
+
+The shared asset layer now exposes a pinned landscape catalog and admission API.
+Terrain consumes it through the committed `terrain_landscape_presets.json`:
+four saved-water presets and three terrain-only choices. This does not promote
+a new startup default; no-argument startup remains the canonical legacy product.
+
+```sh
+rtk proxy build/release/projects/terrain/terrain --terrain-landscape mountain-local
+rtk proxy build/release/projects/terrain/terrain --terrain-landscape mountain-wide
+rtk proxy build/release/projects/terrain/terrain --terrain-landscape mountain-interior-wide
+rtk proxy build/release/projects/terrain/terrain --terrain-landscape valley-interior-wide
+# Same prepared site, without loading a hydraulic capture:
+rtk proxy build/release/projects/terrain/terrain --terrain-landscape mountain-dry
+# Explicit proposed-default trial; never implicitly selected at startup yet:
+rtk proxy build/release/projects/terrain/terrain --terrain-landscape auto
+```
+
+`mountain-local` uses 2048² / 32 m water over nominal 65.536 km, plus the full
+131.072 km terrain backdrop. The three `*-wide` presets use 2048² / 64 m water
+over nominal 131.072 km. Both are independent twelve-hour storm states, not
+nested water LOD levels. The preset automatically supplies the bounded 4.5M
+mesh budget unless explicitly overridden. Direct site/source/capture arguments
+retain their existing behavior; they override `auto` and conflict with a named
+preset. Configuration-file and CLI assignments retain precedence for rendering
+options. `--terrain-landscape-cache-root` supports another explicitly prepared
+cache without recompiling or mutating packages.
+
+The native UI exposes Site / Water state / Selected / Showing / Apply landscape
+above either view. Apply prepares and validates asynchronously, uploads through
+the GPU owner, resets the camera, and defers old resident destruction until its
+submitted work completes. Preparation failure keeps the current scene. Only one
+replacement is allowed at a time; temporary old/new CPU and GPU overlap is a
+measured cost. Availability is checked at startup or explicit Refresh, not by
+hashing payloads each UI frame. Show water and Surface motion do not reload
+assets. Local/Wider framing and Reset camera remain independent of asset selection.
+Native GUI layout and manual acceptance are deferred; headless lifecycle controls
+exercise the same Apply path, including extent rebuild and pending-load shutdown.
+
+Normal build, test and startup never run Terrain Diffusion or SynxFlow. To verify
+installed packages, or explicitly install the exact retained study bundles:
+
+```sh
+rtk proxy python3 -B projects/terrain/tools/prepare_terrain_landscapes.py
+rtk proxy python3 -B projects/terrain/tools/prepare_terrain_landscapes.py \
+  --from-terrain-study outputs/terrain/world-sites-20261012-a1 \
+  --from-water-study outputs/terrain/wider-water-world-20261012-gqeluh
+```
+
+The installer validates payload hashes, reuses complete matching packages and
+refuses to overwrite changed/incomplete packages. Use `--cache-root` for a fresh
+destination and `--preset` for a bounded subset. The source study bundles must
+already exist; they are not downloaded or committed. A new hydraulic bake may
+produce different recording/provenance metadata and requires a reviewed catalog
+revision rather than pretending to recreate the pinned asset.
+
+Explicit missing/invalid selections fail. `auto` selects the proposed mountain
+local preset only when available, otherwise missing/incomplete metadata falls
+back to canonical terrain with a notice. Changed pins or invalid payloads are
+errors, not silent fallback. Fixed saved fields and decorative motion are labelled
+in the UI; there is no adjustable live rainfall in this consumer.
+
+Review: <http://starship:8801/terrain/prepared-landscapes-20261013-zYn3Vs/>.
+Final default promotion remains pending joint review. The live Fluid demo,
+solver equations, existing material defaults and generated data are unchanged.
+
+V1 qualification: 37 selected regression groups passed with no skips; four old
+locked-camera wet frames and the fresh-cache mountain/local reload are pixel-exact.
+All eight 1080p headless render-only repeats pass the 8 ms whole-scene GPU / 4 ms
+CPU-service gates: GPU p95 3.578–4.161 ms and CPU p95 at most 0.228 ms, with no
+solver, encoding or image readback during timing. Steady device-local heap
+observations peak at 759.06 MiB. Wet Apply preparation is about 1.39–1.45 s plus
+0.50–0.57 s GPU installation; the diagnostic replacement sequence peaks at
+1292 MiB process RSS. The largest post-install GPU heap observation before old
+resident retirement is 815.56 MiB, not a continuously sampled peak or hard limit.
+An asynchronous headless Apply completes while 304 frames render over six seconds;
+this is lifecycle evidence, not seamless loading or native-window FPS acceptance.
+
 The same wider-water pipeline now covers all three prepared world sites with
 coherent 2048²/64 m rain-on states (131.008 km sampled span). The original
 mountain also has a 2048²/32 m alternative (65.504 km) for sharper local views.

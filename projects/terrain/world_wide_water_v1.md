@@ -1,6 +1,6 @@
 # Prepared-world wider water V1
 
-Status: in progress. Shared Terrain captures first; the live Fluid demo is unchanged.
+Status: validated opt-in. Shared Terrain captures are integrated; the live Fluid demo is unchanged.
 
 Extend the established wider-water bake/export and fixed paired terrain/water
 topology to the three pinned prepared TerrainSite packages. Preserve elevations,
