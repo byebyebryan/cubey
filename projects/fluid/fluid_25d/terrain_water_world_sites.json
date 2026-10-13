@@ -1,0 +1,9 @@
+{
+  "schema": "cubey.fluid25d.world-sites.v1",
+  "default_site": "mountain",
+  "sites": [
+    {"id":"mountain","label":"World · Original mountain","manifest":"cache/terrain/worlds/v1/f12244a1ff943e37/sites/mountain-original/heightfield.json","elevation_sha256":"f772ff5ec468726528cf3f3926669027a05d58d3d4d30e3a03e8b2714e3b2e6f","center_xz_m":[11520,19200],"terrain_site":"cache/terrain/worlds/v1/f12244a1ff943e37/sites/mountain-original/site.json","terrain_site_sha256":"aa32e807562d543647d827134cf4c7205006954386d0402b5f832036a54dbfa0","world_id":"f12244a1ff943e37c94a957fc543581eed46c8476151124f95fd64d64a545e30"},
+    {"id":"mountain-interior","label":"World · Interior mountain","manifest":"cache/terrain/worlds/v1/f12244a1ff943e37/sites/mountain-interior/heightfield.json","elevation_sha256":"e9c27b88162781ff79f4d0fba688560aba79380ac7dc7132f91ae8454d922a0c","center_xz_m":[15375,-30705],"terrain_site":"cache/terrain/worlds/v1/f12244a1ff943e37/sites/mountain-interior/site.json","terrain_site_sha256":"d927b94c90aad064423e86d0ba47e8e80e16b234caf1937d4ef7d3e6b74fa901","world_id":"f12244a1ff943e37c94a957fc543581eed46c8476151124f95fd64d64a545e30"},
+    {"id":"valley-interior","label":"World · Interior valley","manifest":"cache/terrain/worlds/v1/f12244a1ff943e37/sites/valley-interior/heightfield.json","elevation_sha256":"614fd66407b8e5c4e1944c2eddc374dce6028cff33b4d0df0ef14ddc8ec3a031","center_xz_m":[-7665,61455],"terrain_site":"cache/terrain/worlds/v1/f12244a1ff943e37/sites/valley-interior/site.json","terrain_site_sha256":"5fd37f20663dd176c061935c5bd2d78b57da21e113ab388e6afbb812c8a38b2a","world_id":"f12244a1ff943e37c94a957fc543581eed46c8476151124f95fd64d64a545e30"}
+  ]
+}

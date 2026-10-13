@@ -14,14 +14,16 @@ from pathlib import Path
 import shlex
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 
 import run_mountain_rain_demo as demo
 import terrain_demo_session as managed
-from terrain_water_sites import DEFAULT_CATALOGUE, load_sites
+from terrain_water_sites import DEFAULT_CATALOGUE, load_sites, validate_world_site
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(demo.ref.ROOT / "projects/terrain/tools"))
 SITES = tuple(load_sites())
 CONFIGS = ("patch-512-32m", "patch-1024-16m", "patch-2048-8m", "small-512-16m", "large-2048-16m")
 RELEASE_APP = demo.ref.ROOT / "build/release/projects/fluid/fluid_25d/fluid_25d"
@@ -46,6 +48,17 @@ def case_identity(case):
     binding = json.loads((case / "surface-grid.json").read_bytes())
     if binding != protocol["terrain_source_identity"]:
         raise ValueError("world-coordinate source binding changed")
+    site = binding.get("terrain_site")
+    if site:
+        from terrain_site_package import load_site
+        path = Path(site["manifest_path"])
+        if demo.ref.sha256_file(path) != site["manifest_sha256"]:
+            raise ValueError("prepared terrain site changed")
+        package = load_site(path)
+        if (str(package["heightfield"]) != binding["manifest_path"] or
+                package["site"]["world_id"] != site["world_id"] or
+                package["site"]["center_xz_m"] != binding["target_grid"]["center_xz_m"]):
+            raise ValueError("prepared site/source/grid mismatch")
     for key, path in (("manifest_sha256", Path(binding["manifest_path"])),
                       ("source_bed_sha256", case / "source-bed.f32"),
                       ("solver_bed_sha256", case / "solver-bed.f32")):
@@ -79,9 +92,12 @@ def catalogue(study, sites=None):
                      "climate_manifest_sha256": "", "duration_s": 72000,
                      "rain_mm_per_hour": 512}
             try:
+                world_site = validate_world_site(recipe)
                 identity = case_identity(case)
                 spec = identity["spec"]
                 binding = spec["terrain_source_identity"]
+                if binding.get("terrain_site") != world_site:
+                    raise ValueError("case does not match its prepared world site")
                 if (Path(binding["manifest_path"]) != (demo.ref.ROOT / recipe["manifest"]).resolve() or
                         binding["elevation_sha256"] != recipe["elevation_sha256"]):
                     raise ValueError("prepared case does not match its catalogued terrain source")

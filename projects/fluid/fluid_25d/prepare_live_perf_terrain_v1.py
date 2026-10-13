@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "projects/terrain/tools"))
 from terrain_grid_sampling import grid_geometry, load_source, sample_grid, sha256
 
-from terrain_water_sites import DEFAULT_CATALOGUE, load_sites
+from terrain_water_sites import DEFAULT_CATALOGUE, load_sites, validate_world_site
 
 SITES = load_sites()
 CONFIGS = {"patch-512-32m": (512, 32), "patch-1024-16m": (1024, 16),
@@ -42,6 +42,7 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512, sites=None
     if config == HISTORICAL_CONFIG and site != "mountain":
         raise ValueError("historical control exists only for the original mountain site")
     recipe = sites[site]
+    site_identity = validate_world_site(recipe)
     source = ROOT / recipe["manifest"]
     manifest, raw = load_source(source)
     if manifest["files"]["elevation"]["sha256"] != recipe["elevation_sha256"]:
@@ -57,6 +58,8 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512, sites=None
     center = tuple(recipe["center_xz_m"])
     n, spacing = (512, 30) if config == HISTORICAL_CONFIG else CONFIGS[config]
     grid = grid_geometry(n, n, spacing, center, bounds)
+    if site_identity and grid["center_xz_m"] != list(center):
+        raise ValueError("prepared world site crop cannot be shifted")
     bed = sample_grid(manifest, raw, grid)
     out.mkdir()
     bed.tofile(out / "source-bed.f32")
@@ -66,6 +69,8 @@ def prepare(site: str, config: str, out: Path, rainfall: float = 512, sites=None
                        "source_grid": g, "target_grid": grid,
                        "source_bed_path": "source-bed.f32", "source_bed_sha256": sha256(out / "source-bed.f32"),
                        "interpolated": True, "terrain_modified": False}
+    if site_identity:
+        source_identity["terrain_site"] = site_identity
     write_json(out / "surface-grid.json", source_identity)
     spec = {"name": f"{site}-{config}-rain{int(rainfall)}", "family": "live-perf-terrain-v1",
             "rows": n, "cols": n, "dx_m": spacing, "initial_depth_m": 0., "boundary": "fall",

@@ -367,6 +367,9 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_world_coverage.py"
     )
     set_tests_properties(terrain_world_coverage_tests PROPERTIES LABELS terrain)
+    add_test(NAME terrain_site_package_helpers COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_site_package.py")
+    set_tests_properties(terrain_site_package_helpers PROPERTIES LABELS terrain)
     add_test(NAME terrain_world_study_helpers COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_CURRENT_SOURCE_DIR}/test_study_terrain_world_v1.py")
     add_test(NAME terrain_world_review_helpers COMMAND "${Python3_EXECUTABLE}" -B

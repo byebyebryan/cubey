@@ -4,10 +4,31 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from terrain_water_sites import DEFAULT_CATALOGUE, load_sites
+from terrain_water_sites import DEFAULT_CATALOGUE, WORLD_CATALOGUE, load_sites
 
 
 class SiteCatalogue(unittest.TestCase):
+    def test_world_collection_is_separate_and_bounded(self):
+        sites = load_sites(WORLD_CATALOGUE)
+        self.assertEqual(list(sites), ["mountain", "mountain-interior", "valley-interior"])
+        self.assertEqual(len({s["world_id"] for s in sites.values()}), 1)
+        self.assertEqual(len(load_sites()), 6)
+
+    def test_world_recipe_rejects_missing_binding_and_escaping_paths(self):
+        original = json.loads(WORLD_CATALOGUE.read_text())
+        mutations = [lambda d: d["sites"][0].pop("terrain_site"),
+                     lambda d: d["sites"][0].update(terrain_site="/outside/site.json"),
+                     lambda d: d["sites"][0].update(world_id="bad"),
+                     lambda d: d["sites"][0].update(manifest="cache/terrain/sources/v1/a/heightfield.json")]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "catalogue.json"
+            for mutate in mutations:
+                doc = copy.deepcopy(original)
+                mutate(doc)
+                path.write_text(json.dumps(doc))
+                with self.assertRaises(ValueError):
+                    load_sites(path)
+
     def test_original_recipes_and_default_are_preserved(self):
         sites = load_sites()
         self.assertEqual(list(sites)[:3], ["mountain", "alpine", "rolling"])
