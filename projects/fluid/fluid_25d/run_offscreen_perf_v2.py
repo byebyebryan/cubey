@@ -120,7 +120,7 @@ def run_trial(case, out, args, mode, repeat):
             initial = v1.snapshot(session)
             if args.prewarm:
                 result["controls"].append(v1.command(session, "resume"))
-                deadline = time.monotonic() + 600
+                deadline = time.monotonic() + getattr(args, "prewarm_timeout", 600)
                 while v1.read_state(session)["frame"]["physical_time_s"] < args.prewarm:
                     if worker.poll() is not None or time.monotonic() > deadline:
                         raise TimeoutError("bounded worker prewarm did not reach target")
@@ -248,6 +248,8 @@ def main():
     p.add_argument("--wall", type=float, default=45)
     p.add_argument("--warmup", type=float, default=5)
     p.add_argument("--prewarm", type=float, default=1800)
+    p.add_argument("--prewarm-timeout", type=float, default=600,
+                   help="bounded native preconditioning wall limit; default unchanged")
     p.add_argument("--repeats", type=int, default=3)
     p.add_argument("--repeat-offset", type=int, default=0,
                    help="Keep the original repetition label for an explicitly retained replacement")
@@ -260,7 +262,8 @@ def main():
     p.add_argument("--shadow-extent", type=int, choices=(2048, 4096), default=2048)
     p.add_argument("--exercise-controls", action="store_true", help="validation trial, not steady-state performance")
     a = p.parse_args()
-    if not (1 <= a.wall <= 600 and 0 <= a.warmup <= 30 and 0 <= a.prewarm <= 7200 and 1 <= a.repeats <= 3 and 0 <= a.repeat_offset <= 2 and a.repeat_offset + a.repeats <= 3 and 320 <= a.width <= 3840 and 240 <= a.height <= 2160):
+    if not (1 <= a.wall <= 600 and 0 <= a.warmup <= 30 and 0 <= a.prewarm <= 43200 and
+            1 <= a.prewarm_timeout <= 1800 and 1 <= a.repeats <= 3 and 0 <= a.repeat_offset <= 2 and a.repeat_offset + a.repeats <= 3 and 320 <= a.width <= 3840 and 240 <= a.height <= 2160):
         p.error("outside approved bounds")
     if a.exercise_controls and (a.modes != ["live"] or a.repeats != 1):
         p.error("control exercise is one separate live validation trial")

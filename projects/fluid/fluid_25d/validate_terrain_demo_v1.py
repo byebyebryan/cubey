@@ -60,6 +60,9 @@ def uninterrupted_run(actions):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--study", type=Path, required=True)
+    parser.add_argument("--site-catalogue", type=Path)
+    parser.add_argument("--site", default="mountain")
+    parser.add_argument("--configuration", choices=demo.CONFIGS, default="patch-1024-16m")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--script", type=Path, required=True)
     parser.add_argument("--seconds", type=float, default=120)
@@ -82,6 +85,9 @@ def main():
         "--study", str(args.study.resolve()), "--out", str(trial), "--headless",
         "--run-seconds", str(args.seconds), "--width", str(args.width), "--height", str(args.height),
         "--switch-script", str(args.script.resolve()), "--profile-output", str(trial / "profile")]
+    command += ["--site", args.site, "--configuration", args.configuration]
+    if args.site_catalogue:
+        command += ["--site-catalogue", str(args.site_catalogue.resolve(strict=True))]
     if args.no_validation:
         command.append("--no-validation")
     samples, errors = [], []
