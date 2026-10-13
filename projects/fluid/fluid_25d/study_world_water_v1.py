@@ -124,7 +124,7 @@ def performance(out):
         if not recording.is_file():
             raise ValueError("developed-state controls need completed confirmations")
         # Held-state plus concurrent live: separate costs, same accepted presentation.
-        command = ["rtk", "proxy", sys.executable, str(terrain.HERE / "run_offscreen_perf_v2.py"),
+        command = ["rtk", "proxy", str(terrain.demo.LIVE_PYTHON), str(terrain.HERE / "run_offscreen_perf_v2.py"),
                    "--study", str(out), "--case", name, "--out", str(target / sid),
                    "--host", "offscreen", "--modes", "renderer-only", "live", "--recording", str(recording),
                    "--wall", "90", "--warmup", "20", "--prewarm", "43200", "--prewarm-timeout", "1200",
@@ -138,7 +138,7 @@ def performance(out):
         return max(r["profile"]["passes_ms"]["gpu:fluid_25d native presentation total"]["p95"]
                    for r in results[sid] if r["mode"] == "live")
     worst = max(results, key=cost)
-    command = ["rtk", "proxy", sys.executable, str(terrain.HERE / "run_offscreen_perf_v2.py"),
+    command = ["rtk", "proxy", str(terrain.demo.LIVE_PYTHON), str(terrain.HERE / "run_offscreen_perf_v2.py"),
                "--study", str(out), "--case", f"{worst}-patch-1024-16m", "--out", str(target / "soak"),
                "--host", "offscreen", "--modes", "live", "--wall", "600", "--warmup", "20",
                "--prewarm", "21600", "--prewarm-timeout", "1200", "--repeats", "1", "--render-fps", "60",
@@ -218,7 +218,8 @@ def report(out):
                                     f'<td>{fmt(m["pace_x"])}</td><td>{fmt(m["gpu_p95_ms"])}</td>'
                                     f'<td>{fmt(m["service_p95_ms"])}</td><td>{fmt(m["advancing_age_p95_s"])}</td>'
                                     f'<td>{"pass" if passed else "measured limitation"}</td></tr>')
-    write(out / "performance-gates.json", {"trials":gates, "all_pass":len(gates)==13 and all(g["passed"] for g in gates),
+    write(out / "performance-gates.json", {"trials":gates, "status":"complete" if len(gates)==13 else "pending",
+          "all_pass":len(gates)==13 and all(g["passed"] for g in gates),
           "scope":"Headless Vulkan, no readback/encoding; live CUDA work shares GPU. Not displayed monitor FPS."})
     rows, cards = [], []
     for sid, recipe in load_sites(WORLD_CATALOGUE).items():
@@ -238,6 +239,8 @@ def report(out):
     page = '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>World Terrain Water V1</title>'
     page += '<style>body{background:#17212a;color:#e4edf2;font:16px/1.6 system-ui;margin:0}main{max-width:1280px;margin:auto;padding:24px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}img,video{width:100%;display:block}section{margin:36px 0}a{color:#94d2e8}th,td{text-align:left;padding:8px;border-bottom:1px solid #45505c}@media(max-width:760px){.pair{grid-template-columns:1fr}}</style><main><a href="/">All reports</a><h1>World Terrain Water V1</h1>'
     page += '<p>One shared prepared world, three immutable sites, the existing external solver and shared Terrain/Fluid renderer. Uniform 512 mm/h demonstration rain, dry start, open perimeter; not ordinary rainfall or calibrated hydrology.</p>'
+    if len(gates) < 13:
+        page += '<p><strong>Preview:</strong> source, hydraulic, capture and managed lifecycle checks are complete. The isolated live performance campaign is still pending; no performance acceptance is claimed yet.</p>'
     page += '<p>The atlas locates sites, native 30 m terrain supplies elevations, the default 1k/16 m grid simulates only the central region, and exterior terrain supplies context. Captured views animate appearance, not hydraulic state. No terrain generation, solver port, GUI launch or default replacement.</p>'
     page += '<p><a href="/terrain/readability-20261012-a1/">Shared world atlas and approved material study</a>. The existing six-site collection remains the default; this is a separate prepared-world collection.</p>'
     page += '<p><strong>Important boundary:</strong> wider ground does not continue the water. Pools and streams meeting the simulation perimeter are truncated observations, not complete lakes or evidence that the exterior is dry. The valley case deliberately retains this limitation instead of hiding its wet rectangle.</p>'
