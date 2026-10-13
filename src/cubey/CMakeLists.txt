@@ -119,6 +119,7 @@ target_link_libraries(
 
 add_library(cubey_asset STATIC
     asset/file_digest.cpp
+    asset/terrain_landscape_catalog.cpp
     asset/terrain_site_water.cpp
     asset/gltf_asset.cpp
     asset/gltf_asset_animation.cpp

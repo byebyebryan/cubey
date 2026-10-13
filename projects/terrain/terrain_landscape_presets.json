@@ -1,0 +1,95 @@
+{
+  "schema": "cubey.terrain.landscape-catalog.v1",
+  "proposed_default": "mountain-local",
+  "presets": [
+    {
+      "id": "mountain-local",
+      "label": "Original mountain",
+      "site_id": "mountain-original",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/mountain-original/site.json",
+        "sha256": "aa32e807562d543647d827134cf4c7205006954386d0402b5f832036a54dbfa0"
+      },
+      "water_label": "Sharper water · 65 km / 32 m",
+      "water": {
+        "path": "water/v1/world-wide/mountain-fallback-32m-f7354d3640d1fec7/water-binding.json",
+        "sha256": "f7354d3640d1fec7c9c90da71e9f85c47ae51c129d592b72d5229e8763724dc9"
+      }
+    },
+    {
+      "id": "mountain-wide",
+      "label": "Original mountain",
+      "site_id": "mountain-original",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/mountain-original/site.json",
+        "sha256": "aa32e807562d543647d827134cf4c7205006954386d0402b5f832036a54dbfa0"
+      },
+      "water_label": "Wider water · 131 km / 64 m",
+      "water": {
+        "path": "water/v1/world-wide/mountain-wide-64m-fafdc295546d3381/water-binding.json",
+        "sha256": "fafdc295546d3381f8725db5ff1c2c0369a9e77a959bc8a37821dc435e4d892e"
+      }
+    },
+    {
+      "id": "mountain-dry",
+      "label": "Original mountain",
+      "site_id": "mountain-original",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/mountain-original/site.json",
+        "sha256": "aa32e807562d543647d827134cf4c7205006954386d0402b5f832036a54dbfa0"
+      },
+      "water_label": "Terrain only",
+      "water": null
+    },
+    {
+      "id": "mountain-interior-wide",
+      "label": "Interior mountain",
+      "site_id": "mountain-interior",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/mountain-interior/site.json",
+        "sha256": "d927b94c90aad064423e86d0ba47e8e80e16b234caf1937d4ef7d3e6b74fa901"
+      },
+      "water_label": "Wider water · 131 km / 64 m",
+      "water": {
+        "path": "water/v1/world-wide/mountain-interior-wide-64m-cc300fd6a2358d79/water-binding.json",
+        "sha256": "cc300fd6a2358d7943bc4a7ab3b7e8f65569e743b0be30fb8095eb58f1b148bb"
+      }
+    },
+    {
+      "id": "mountain-interior-dry",
+      "label": "Interior mountain",
+      "site_id": "mountain-interior",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/mountain-interior/site.json",
+        "sha256": "d927b94c90aad064423e86d0ba47e8e80e16b234caf1937d4ef7d3e6b74fa901"
+      },
+      "water_label": "Terrain only",
+      "water": null
+    },
+    {
+      "id": "valley-interior-wide",
+      "label": "Interior valley",
+      "site_id": "valley-interior",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/valley-interior/site.json",
+        "sha256": "5fd37f20663dd176c061935c5bd2d78b57da21e113ab388e6afbb812c8a38b2a"
+      },
+      "water_label": "Wider water · 131 km / 64 m",
+      "water": {
+        "path": "water/v1/world-wide/valley-interior-wide-64m-8386f520d55b629d/water-binding.json",
+        "sha256": "8386f520d55b629d5f4a3ad8101ca458fdd5e8cf65cc4d16489872597c5b9fcb"
+      }
+    },
+    {
+      "id": "valley-interior-dry",
+      "label": "Interior valley",
+      "site_id": "valley-interior",
+      "site": {
+        "path": "worlds/v1/f12244a1ff943e37/sites/valley-interior/site.json",
+        "sha256": "5fd37f20663dd176c061935c5bd2d78b57da21e113ab388e6afbb812c8a38b2a"
+      },
+      "water_label": "Terrain only",
+      "water": null
+    }
+  ]
+}

@@ -48,6 +48,9 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/terrain_source_presets.json"
     CACHE FILEPATH "Committed terrain source preset recipe catalog"
 )
+set(CUBEY_TERRAIN_LANDSCAPE_CATALOG
+    "${CMAKE_CURRENT_SOURCE_DIR}/terrain_landscape_presets.json"
+    CACHE FILEPATH "Pinned prepared landscape catalog")
 set(
     CUBEY_TERRAIN_OPTIONAL_PRESET_ASSET_DIR
     "${CUBEY_TERRAIN_CACHE_ROOT}/sources/v1/presets"
@@ -203,6 +206,9 @@ target_include_directories(
     PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
 )
+target_compile_definitions(cubey_project_terrain_runtime PRIVATE
+    CUBEY_TERRAIN_LANDSCAPE_CATALOG="${CUBEY_TERRAIN_LANDSCAPE_CATALOG}"
+    CUBEY_TERRAIN_LANDSCAPE_CACHE_ROOT="${CUBEY_TERRAIN_CACHE_ROOT}")
 target_link_libraries(
     cubey_project_terrain_runtime
     PUBLIC

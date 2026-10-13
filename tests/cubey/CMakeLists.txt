@@ -276,6 +276,10 @@ set_tests_properties(
 )
 add_executable(cubey_terrain_surface_patch_gap_tests terrain_surface_patch_gap_tests.cpp)
 add_executable(cubey_terrain_site_tests terrain_site_tests.cpp)
+add_executable(cubey_terrain_landscape_catalog_tests terrain_landscape_catalog_tests.cpp)
+target_link_libraries(cubey_terrain_landscape_catalog_tests PRIVATE cubey::asset cubey_project_warnings)
+add_test(NAME terrain_landscape_catalog_cpu COMMAND cubey_terrain_landscape_catalog_tests)
+set_tests_properties(terrain_landscape_catalog_cpu PROPERTIES LABELS "terrain;water;asset;unit")
 target_link_libraries(cubey_terrain_site_tests PRIVATE cubey::asset cubey_project_warnings)
 add_test(NAME terrain_site_cpu COMMAND cubey_terrain_site_tests)
 

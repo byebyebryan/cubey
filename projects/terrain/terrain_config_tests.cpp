@@ -53,6 +53,32 @@ TerrainProjectConfig parse(std::initializer_list<std::string> arguments) {
 
 void test_defaults_and_explicit_default_paths() {
     const TerrainProjectConfig parsed = parse({});
+    require(parsed.landscape == "legacy", "landscape default promoted before review");
+    require(
+        parse({"--terrain-landscape", "auto", "--terrain-heightfield", "manual.json"}).landscape ==
+            "auto",
+        "auto should allow explicit source precedence");
+    require_throws(
+        [] {
+            (void)parse({"--terrain-landscape", "mountain-local", "--terrain-site", "manual.json"});
+        },
+        "named preset/source conflict accepted");
+    require_throws([] { (void)parse({"--terrain-landscape-smoke-sequence", "mountain-local"}); },
+                   "GUI lifecycle study accepted");
+    TerrainProjectConfig auto_missing =
+        parse({"--terrain-landscape", "auto", "--terrain-landscape-cache-root",
+               "/tmp/cubey-landscape-no-assets"});
+    cubey::projects::terrain::resolve_terrain_project_config(auto_missing, "/tmp/default");
+    require(!auto_missing.terrain_site && !auto_missing.landscape_startup_notice.empty(),
+            "auto missing-cache fallback not explicit");
+    require_throws(
+        [] {
+            auto missing =
+                parse({"--terrain-landscape", "mountain-local", "--terrain-landscape-cache-root",
+                       "/tmp/cubey-landscape-no-assets"});
+            cubey::projects::terrain::resolve_terrain_project_config(missing, "/tmp/default");
+        },
+        "explicit missing preset silently fell back");
     require(!parsed.captured_water_context, "wider context must remain opt-in");
     require(!parsed.terrain_site_path && !parsed.captured_water_context_source,
             "world/site foundation must remain opt-in");

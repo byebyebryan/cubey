@@ -469,6 +469,27 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
         cubey::host::common_run_config_schema(config.common));
     bind_debug_view(builder, config);
     builder
+        .bind(option("terrain.landscape", "--terrain-landscape", "Prepared Landscape", "Terrain",
+                     "legacy (default), auto (proposed default with missing-cache fallback), or a "
+                     "pinned preset id.",
+                     ValueType::String),
+              config.landscape)
+        .bind(option("terrain.landscape_catalog", "--terrain-landscape-catalog",
+                     "Landscape Catalog", "Terrain",
+                     "Pinned prepared-landscape catalog; no assets are generated.",
+                     ValueType::Path),
+              config.landscape_catalog_path)
+        .bind(option("terrain.landscape_cache_root", "--terrain-landscape-cache-root",
+                     "Landscape Cache", "Terrain",
+                     "Root containing prepared world and water packages.", ValueType::Path),
+              config.landscape_cache_root)
+        .bind(
+            option(
+                "terrain.landscape_smoke_sequence", "--terrain-landscape-smoke-sequence",
+                "Landscape Lifecycle Study", "Terrain",
+                "Headless only: comma-separated preset ids applied through the same loading path.",
+                ValueType::String),
+            config.landscape_smoke_sequence)
         .bind(option("terrain.site", "--terrain-site", "Prepared World Site", "Terrain",
                      "Load a validated world/site package for terrain-only inspection.",
                      ValueType::Path),
@@ -677,8 +698,20 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
 
 TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
                                                   cubey::config::ParseResult* result) {
+    cubey::config::ParseResult parsed;
     TerrainProjectConfig config = cubey::host::parse_configured_app<TerrainProjectConfig>(
-        argc, argv, terrain_project_config_schema, result);
+        argc, argv, terrain_project_config_schema, &parsed);
+    config.assigned_paths = parsed.assigned_paths;
+    if (result)
+        *result = parsed;
+    const bool direct_source = config.terrain_site_path || config.water_capture_path ||
+                               config.terrain.heightfield_path ||
+                               config.captured_water_context_source;
+    if (config.landscape != "legacy" && config.landscape != "auto" && direct_source)
+        throw std::runtime_error(
+            "named landscape owns its site/source; do not combine direct source overrides");
+    if (!config.landscape_smoke_sequence.empty() && !config.common.headless)
+        throw std::runtime_error("landscape lifecycle study requires headless mode");
     cubey::validate_atmosphere_environment_options(config.atmosphere);
     cubey::validate_cloud_environment_options(config.clouds);
     if (config.terrain_site_path && (config.water_capture_path || config.terrain.heightfield_path ||
@@ -707,6 +740,38 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
 void resolve_terrain_project_config(TerrainProjectConfig& config,
                                     const std::filesystem::path& default_heightfield_path,
                                     const std::filesystem::path& default_surface_fields_path) {
+    const bool direct_source = config.terrain_site_path || config.water_capture_path ||
+                               config.terrain.heightfield_path ||
+                               config.captured_water_context_source;
+    if (config.landscape != "legacy" && !direct_source) {
+        if (config.landscape_catalog_path.empty())
+            config.landscape_catalog_path = CUBEY_TERRAIN_LANDSCAPE_CATALOG;
+        if (config.landscape_cache_root.empty())
+            config.landscape_cache_root = CUBEY_TERRAIN_LANDSCAPE_CACHE_ROOT;
+        config.landscape_catalog =
+            cubey::asset::load_terrain_landscape_catalog(config.landscape_catalog_path);
+        const auto& preset = cubey::asset::terrain_landscape_preset(
+            *config.landscape_catalog, config.landscape == "auto"
+                                           ? config.landscape_catalog->proposed_default
+                                           : config.landscape);
+        const auto probe =
+            cubey::asset::probe_terrain_landscape(preset, config.landscape_cache_root);
+        if (probe.availability != cubey::asset::TerrainLandscapeAvailability::Available) {
+            if (config.landscape != "auto" ||
+                probe.availability == cubey::asset::TerrainLandscapeAvailability::Invalid)
+                throw std::runtime_error("landscape " + preset.id + ": " + probe.reason);
+            config.landscape_startup_notice =
+                "Prepared landscape unavailable; showing legacy terrain. " + probe.reason;
+        } else {
+            const auto selected =
+                cubey::asset::resolve_terrain_landscape(preset, config.landscape_cache_root);
+            config.terrain_site_path = selected.site_manifest;
+            config.site_water_binding_path = selected.water_binding;
+            config.active_landscape_id = preset.id;
+            if (!config.assigned_paths.contains("terrain.captured_water_vertex_budget"))
+                config.captured_water_vertex_budget = preset.water ? 4500000U : 2000000U;
+        }
+    }
     if (config.terrain_site_path) {
         config.terrain_site = cubey::asset::load_terrain_site(*config.terrain_site_path);
         config.terrain.heightfield_path = config.terrain_site->heightfield;

@@ -10,11 +10,13 @@
 #include <cubey/terrain/terrain_placement_mode.h>
 
 #include <cstdint>
+#include <cubey/asset/terrain_landscape_catalog.h>
 #include <cubey/asset/terrain_site.h>
 #include <filesystem>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 namespace cubey::projects::terrain {
 
@@ -110,6 +112,13 @@ struct TerrainProjectConfig {
     cubey::AtmosphereEnvironmentOptions atmosphere{};
     cubey::CloudEnvironmentOptions clouds{};
     TerrainRuntimeConfig runtime{};
+    // Final promotion is deferred: auto is an explicit candidate, not startup default.
+    std::string landscape = "legacy";
+    std::filesystem::path landscape_catalog_path{}, landscape_cache_root{};
+    std::optional<cubey::asset::TerrainLandscapeCatalog> landscape_catalog;
+    std::string active_landscape_id{}, landscape_startup_notice{};
+    std::unordered_set<std::string> assigned_paths;
+    std::string landscape_smoke_sequence{};
     std::optional<std::filesystem::path> water_capture_path{};
     std::optional<std::filesystem::path> terrain_site_path{}, site_water_binding_path{},
         captured_water_context_source{};
