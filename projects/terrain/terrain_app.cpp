@@ -3,6 +3,7 @@
 #include "terrain_config.h"
 #include "terrain_product_adapter.h"
 #include "terrain_source_catalog.h"
+#include <cubey/asset/terrain_landscape_catalog.h>
 
 #include <cubey/asset/terrain_raster_height_source.h>
 #include <cubey/core/jobs.h>
@@ -53,6 +54,7 @@
 #include <numbers>
 #include <optional>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -552,12 +554,18 @@ terrain_stage_proxy_mesh_data() {
 }
 
 class TerrainApp {
+    struct LandscapeBuild {
+        TerrainProjectConfig config;
+        std::unique_ptr<cubey::TerrainWaterCaptureRuntime> runtime;
+    };
+
   public:
     explicit TerrainApp(TerrainProjectConfig config)
         : config_(resolve_terrain_app_config(std::move(config))), runtime_config_(config_.runtime),
           startup_runtime_config_(runtime_config_),
           product_cache_({.root = cubey::procedural::default_procedural_artifact_cache_root()}),
-          product_builds_(product_jobs_), placement_stage_(loading_placement_stage()),
+          product_builds_(product_jobs_), landscape_builds_(product_jobs_),
+          placement_stage_(loading_placement_stage()),
           orbit_controller_(cubey::OrbitControllerConfig{
               .min_pitch = -kTerrainInspectionPitchLimitRadians,
               .max_pitch = kTerrainInspectionPitchLimitRadians,
@@ -578,6 +586,19 @@ class TerrainApp {
         edit_placement_index_ = runtime_config_.placement_index;
         edit_surface_model_ = runtime_config_.surface_model;
         edit_source_choice_index_ = source_choice_index_;
+        try {
+            landscape_catalog_ = config_.landscape_catalog.value_or(
+                cubey::asset::load_terrain_landscape_catalog(config_.landscape_catalog_path));
+            refresh_landscape_availability();
+            for (std::size_t i = 0; i < landscape_catalog_->presets.size(); ++i)
+                if (landscape_catalog_->presets[i].id == config_.active_landscape_id)
+                    edit_landscape_index_ = i;
+        } catch (const std::exception& error) {
+            landscape_error_ = error.what();
+        }
+        if (!config_.landscape_startup_notice.empty())
+            std::printf("terrain_landscape_startup: %s\n",
+                        config_.landscape_startup_notice.c_str());
         if (config_.water_capture_path || config_.terrain_site) {
             try {
                 if (config_.terrain_site && config_.water_capture_path)
@@ -615,7 +636,7 @@ class TerrainApp {
             } catch (const std::exception& error) {
                 // Explicit headless requests fail loudly; interactive users can
                 // still use the normal source picker/backdrop after rejection.
-                if (config_.common.headless)
+                if (config_.common.headless || !config_.active_landscape_id.empty())
                     throw;
                 capture_runtime_.reset();
                 capture_active_ = false;
@@ -731,6 +752,7 @@ class TerrainApp {
             const cubey::vulkan::GpuSubmissionTicket retire_after =
                 context.frame_resources().latest_submitted_ticket();
             poll_product_build(context.device(), context.gpu(), retire_after);
+            poll_landscape_build(context.device(), context.gpu(), retire_after);
             poll_atmosphere_atlases(context.device(), context.gpu(), context.frame_resources(),
                                     retire_after);
             prepare_capture_context(context.device(), context.gpu());
@@ -825,6 +847,62 @@ class TerrainApp {
         callbacks.before_frame = [this, backdrop_before_frame, context_transition_study](
                                      cubey::host::HeadlessPngContext& context,
                                      const cubey::host::HeadlessCaptureFrame& frame) {
+            if (!config_.landscape_smoke_sequence.empty()) {
+                if (landscape_smoke_ids_.empty()) {
+                    std::istringstream input(config_.landscape_smoke_sequence);
+                    for (std::string id; std::getline(input, id, ',');) {
+                        if (id.empty() || landscape_smoke_ids_.size() >= 32)
+                            throw std::runtime_error("invalid landscape smoke sequence");
+                        landscape_smoke_ids_.push_back(id);
+                    }
+                }
+                if (frame.index < landscape_smoke_ids_.size()) {
+                    const auto before = config_.active_landscape_id;
+                    const auto& id = landscape_smoke_ids_[frame.index];
+                    context.gpu().wait_queue_idle("landscape lifecycle frame boundary");
+                    if (capture_runtime_ && config_.captured_water_audit)
+                        capture_runtime_->verify_immutable_fields(context.gpu());
+                    const bool expected_failure = id.starts_with("!");
+                    const bool leave_pending = id.starts_with("~");
+                    bool rejected = false;
+                    try {
+                        request_landscape(expected_failure || leave_pending ? id.substr(1) : id);
+                        if (!leave_pending) {
+                            landscape_builds_.finish(context.gpu());
+                            poll_landscape_build(context.device(), context.gpu(), {});
+                        }
+                    } catch (const std::exception& error) {
+                        if (!expected_failure || config_.active_landscape_id != before)
+                            throw;
+                        rejected = true;
+                        std::printf("terrain_landscape_rejected: frame=%u requested=%s showing=%s "
+                                    "reason=%s\n",
+                                    frame.index, id.c_str(), before.c_str(), error.what());
+                    }
+                    if (expected_failure && !rejected)
+                        throw std::runtime_error("expected landscape rejection did not occur");
+                    // Exercise target rebuild while loaded; no new asset/state.
+                    if (frame.index == 2U && capture_runtime_) {
+                        capture_runtime_->destroy_target_resources();
+                        capture_runtime_->ensure_resources(
+                            context.device(), context.gpu(),
+                            std::uint32_t(capture_profile_slots_.size()),
+                            {.extent = {800, 450}, .format = context.render_target().format});
+                        capture_runtime_->destroy_target_resources();
+                        capture_runtime_->ensure_resources(
+                            context.device(), context.gpu(),
+                            std::uint32_t(capture_profile_slots_.size()),
+                            {.extent = context.render_target().extent,
+                             .format = context.render_target().format});
+                        std::printf("terrain_landscape_target_rebuild: frame=2 alternate=800x450 "
+                                    "restored=%ux%u\n",
+                                    context.render_target().extent.width,
+                                    context.render_target().extent.height);
+                    }
+                    std::printf("terrain_landscape_smoke: frame=%u showing=%s\n", frame.index,
+                                config_.active_landscape_id.c_str());
+                }
+            }
             if (config_.captured_water_transition_smoke && frame.index < 8U) {
                 capture_active_ = frame.index != 3U && frame.index != 5U;
                 config_.captured_water_visible = frame.index != 1U;
@@ -893,15 +971,218 @@ class TerrainApp {
         }
     }
 
+    void refresh_landscape_availability() {
+        landscape_availability_.clear();
+        if (!landscape_catalog_)
+            return;
+        for (const auto& preset : landscape_catalog_->presets)
+            landscape_availability_.push_back(
+                cubey::asset::probe_terrain_landscape(preset, config_.landscape_cache_root));
+    }
+
+    void request_landscape(const std::string& id) {
+        if (!landscape_catalog_ || !terrain_target_info_)
+            throw std::runtime_error("landscape catalog or render target is not ready");
+        if (landscape_builds_.busy() || product_builds_.busy())
+            throw std::runtime_error("terrain or landscape Apply is already loading");
+        const auto preset = cubey::asset::terrain_landscape_preset(*landscape_catalog_, id);
+        const auto probe =
+            cubey::asset::probe_terrain_landscape(preset, config_.landscape_cache_root);
+        if (probe.availability != cubey::asset::TerrainLandscapeAvailability::Available)
+            throw std::runtime_error(probe.reason);
+        TerrainProjectConfig next = config_;
+        next.landscape = id;
+        next.active_landscape_id.clear();
+        next.landscape_startup_notice.clear();
+        next.terrain_site.reset();
+        next.terrain_site_path.reset();
+        next.site_water_binding_path.reset();
+        next.water_capture_path.reset();
+        next.terrain.heightfield_path.reset();
+        next.terrain.surface_fields_path.reset();
+        next.terrain.seed.reset();
+        next.captured_water_context_source.reset();
+        next.captured_water_focus_x_m.reset();
+        next.captured_water_focus_z_m.reset();
+        next.captured_water_focus_height_m.reset();
+        next.captured_water_detail_focus_x_m.reset();
+        next.captured_water_detail_focus_z_m.reset();
+        next.captured_water_span_m.reset();
+        next.captured_water_yaw_rad.reset();
+        next.captured_water_pitch_rad.reset();
+        next.water_capture_view = "captured-patch";
+        next.captured_water_visible = true;
+        next.captured_water_animate = true;
+        next.captured_water_animation_s = 0;
+        const auto target = cubey::render::ColorTargetView{.extent = terrain_target_info_->extent,
+                                                           .format = capture_color_format_};
+        const auto slots = std::uint32_t(capture_profile_slots_.size());
+        landscape_error_.clear();
+        static_cast<void>(landscape_builds_.request(
+            id,
+            [next = std::move(next)]() mutable {
+                next = resolve_terrain_app_config(std::move(next));
+                LandscapeBuild build{.config = std::move(next), .runtime = {}};
+                if (build.config.water_capture_path)
+                    build.runtime = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+                        *build.config.terrain_site, *build.config.water_capture_path,
+                        CUBEY_TERRAIN_SHADER_DIR);
+                else
+                    build.runtime = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+                        *build.config.terrain_site, CUBEY_TERRAIN_SHADER_DIR);
+                build.runtime->set_terrain_readability(
+                    build.config.terrain_readability == "refined"      ? 2U
+                    : build.config.terrain_readability == "detail-off" ? 1U
+                                                                       : 0U);
+                build.runtime->prepare_context({}, build.config.terrain_context_max_spacing_m);
+                build.runtime->prepare_fixed_lod(build.config.terrain_site->center_xz_m,
+                                                 build.config.captured_water_detail_span_m,
+                                                 build.config.captured_water_vertex_budget);
+                return build;
+            },
+            [this, target, slots](cubey::vulkan::GpuOwnerContext& owner,
+                                  LandscapeBuild&& prepared) {
+                prepared.runtime->ensure_resources(owner.device(), *gpu_, slots, target);
+                return std::move(prepared);
+            }));
+    }
+
+    void poll_landscape_build(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                              cubey::vulkan::GpuSubmissionTicket retire_after) {
+        static_cast<void>(landscape_builds_.poll(gpu));
+        const auto& status = landscape_builds_.status();
+        if (status.phase == cubey::StagedResourcePhase::Failed)
+            landscape_error_ = status.error;
+        if (!landscape_builds_.ready() || !terrain_target_info_)
+            return;
+        auto ready = landscape_builds_.take_ready();
+        auto& next = ready.resident;
+        // A resize during preparation is allowed. Rebuild only the new resident's
+        // targets before installing it; the old resident remains untouched.
+        try {
+            next.runtime->ensure_resources(
+                device, gpu, std::uint32_t(capture_profile_slots_.size()),
+                {.extent = terrain_target_info_->extent, .format = capture_color_format_});
+        } catch (const std::exception& error) {
+            landscape_error_ = error.what();
+            return;
+        }
+        auto retired = std::make_shared<std::unique_ptr<cubey::TerrainWaterCaptureRuntime>>();
+        *retired = std::move(capture_runtime_);
+        try {
+            gpu.defer_destruction_after(retire_after, [retired] { retired->reset(); });
+        } catch (const std::exception& error) {
+            capture_runtime_ = std::move(*retired);
+            landscape_error_ = error.what();
+            return;
+        }
+        capture_runtime_ = std::move(next.runtime);
+        config_ = std::move(next.config);
+        runtime_config_ = config_.runtime;
+        capture_active_ = true;
+        capture_animation_s_ = capture_review_s_ = 0;
+        std::fill(capture_profile_slots_.begin(), capture_profile_slots_.end(), false);
+        configure_capture_camera();
+        for (std::size_t i = 0; i < landscape_catalog_->presets.size(); ++i)
+            if (landscape_catalog_->presets[i].id == config_.active_landscape_id)
+                edit_landscape_index_ = i;
+        source_choices_ = terrain_source_choices(runtime_config_, preset_catalog_error_);
+        source_choice_availability_.resize(source_choices_.size());
+        source_choice_climate_available_.resize(source_choices_.size());
+        refresh_source_choice_availability();
+        source_choice_index_ = edit_source_choice_index_ = 0;
+        backdrop_requested_ = false;
+        std::printf("terrain_landscape_applied: id=%s prepare_ms=%.3f install_ms=%.3f water=%u "
+                    "deferred=%zu\n",
+                    config_.active_landscape_id.c_str(), ready.prepare_milliseconds,
+                    ready.install_milliseconds, config_.site_water_binding_path ? 1U : 0U,
+                    gpu.deferred_destruction_count());
+    }
+
+    void draw_landscape_selector() {
+        ImGui::SeparatorText("Prepared landscape");
+        if (!config_.landscape_startup_notice.empty())
+            ImGui::TextWrapped("%s", config_.landscape_startup_notice.c_str());
+        ImGui::Text("Showing: %s", config_.active_landscape_id.empty()
+                                       ? (config_.terrain_site ? config_.terrain_site->id.c_str()
+                                                               : "Legacy / custom source")
+                                       : config_.active_landscape_id.c_str());
+        if (!landscape_catalog_) {
+            ImGui::TextWrapped("Catalog unavailable: %s", landscape_error_.c_str());
+            return;
+        }
+        const auto& presets = landscape_catalog_->presets;
+        const bool busy = landscape_builds_.busy() || product_builds_.busy();
+        ImGui::BeginDisabled(busy);
+        if (ImGui::BeginCombo("Site", presets.at(edit_landscape_index_).label.c_str())) {
+            std::string previous;
+            for (std::size_t i = 0; i < presets.size(); ++i) {
+                if (presets[i].site_id == previous)
+                    continue;
+                previous = presets[i].site_id;
+                if (ImGui::Selectable(presets[i].label.c_str(),
+                                      presets[i].site_id == presets[edit_landscape_index_].site_id))
+                    edit_landscape_index_ = i;
+            }
+            ImGui::EndCombo();
+        }
+        if (ImGui::BeginCombo("Water state",
+                              presets.at(edit_landscape_index_).water_label.c_str())) {
+            for (std::size_t i = 0; i < presets.size(); ++i) {
+                if (presets[i].site_id != presets[edit_landscape_index_].site_id)
+                    continue;
+                const auto& probe = landscape_availability_.at(i);
+                const auto label = presets[i].water_label + " (" +
+                                   std::string(cubey::asset::terrain_landscape_availability_name(
+                                       probe.availability)) +
+                                   ")";
+                if (ImGui::Selectable(label.c_str(), i == edit_landscape_index_))
+                    edit_landscape_index_ = i;
+            }
+            ImGui::EndCombo();
+        }
+        const auto& selected = presets.at(edit_landscape_index_);
+        const auto& probe = landscape_availability_.at(edit_landscape_index_);
+        ImGui::Text("Selected: %s", selected.id.c_str());
+        ImGui::TextWrapped("%s", probe.reason.c_str());
+        ImGui::BeginDisabled(probe.availability !=
+                                 cubey::asset::TerrainLandscapeAvailability::Available ||
+                             selected.id == config_.active_landscape_id);
+        if (ImGui::Button("Apply landscape")) {
+            try {
+                request_landscape(selected.id);
+            } catch (const std::exception& error) {
+                landscape_error_ = error.what();
+            }
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button("Refresh availability"))
+            refresh_landscape_availability();
+        ImGui::EndDisabled();
+        const auto& status = landscape_builds_.status();
+        if (busy)
+            ImGui::Text("Loading %s: %s", status.generation.label.c_str(),
+                        cubey::staged_resource_phase_name(status.phase).data());
+        if (status.prepare_milliseconds > 0 || status.install_milliseconds > 0)
+            ImGui::Text("Prepare / upload: %.1f / %.1f ms", status.prepare_milliseconds,
+                        status.install_milliseconds);
+        if (!landscape_error_.empty())
+            ImGui::TextWrapped("Load failed; current scene kept: %s", landscape_error_.c_str());
+        ImGui::TextDisabled("Selection + Apply/reset; never starts a solver or generator.");
+    }
+
     void draw_ui(cubey::host::WindowedAppContext& context) {
         if (!cubey::host::begin_control_panel("Terrain", {.width = 410.0F})) {
             ImGui::End();
             return;
         }
 
+        draw_landscape_selector();
+
         if (capture_runtime_) {
             int mode = capture_active_ ? 1 : 0;
-            if (ImGui::Combo("View", &mode, "Backdrop\0Captured patch\0")) {
+            if (ImGui::Combo("View", &mode, "Legacy backdrop\0Prepared landscape\0")) {
                 capture_active_ = mode == 1;
                 if (!capture_active_ && !backdrop_requested_)
                     request_product_build(runtime_config_, source_choice_index_);
@@ -928,27 +1209,43 @@ class TerrainApp {
                     ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
                                 capture.rain_mm_per_hour);
                 }
-                ImGui::Text("Coverage: %u x %u / %.0f m", capture.grid.width, capture.grid.height,
-                            capture.grid.cell_size_m);
-                ImGui::Text("Source: %s", capture_runtime_->source_label().c_str());
-                ImGui::Text("Elevation hash: %.12s", capture.source_elevation_sha256.c_str());
-                ImGui::Text("Footprint: %.3f x %.3f km (cell centers)",
-                            float(capture.grid.width - 1U) * capture.grid.cell_size_m * 0.001F,
-                            float(capture.grid.height - 1U) * capture.grid.cell_size_m * 0.001F);
-                ImGui::Text("Source origin: %.0f, %.0f m", capture.grid.sample_origin_xz_m.x,
-                            capture.grid.sample_origin_xz_m.y);
-                ImGui::Text("Render detail: %s", config_.captured_water_detail.c_str());
-                if (config_.captured_water_detail != "uniform")
-                    ImGui::TextDisabled("Fixed fine region %.2f km; no camera-following LOD. Far "
-                                        "shadows unqualified.",
-                                        config_.captured_water_detail_span_m * .001F);
+                ImGui::Text("%s: %.2f km / %.0f m cells (%u x %u)",
+                            config_.terrain_site && !config_.site_water_binding_path
+                                ? "Terrain inspection"
+                                : "Water",
+                            float(capture.grid.width - 1U) * capture.grid.cell_size_m * .001F,
+                            capture.grid.cell_size_m, capture.grid.width, capture.grid.height);
+                if (ImGui::TreeNode("Asset / rendering diagnostics")) {
+                    ImGui::Text("Source: %s", capture_runtime_->source_label().c_str());
+                    ImGui::Text("Elevation hash: %.12s", capture.source_elevation_sha256.c_str());
+                    ImGui::Text("Footprint: %.3f x %.3f km (cell centers)",
+                                float(capture.grid.width - 1U) * capture.grid.cell_size_m * 0.001F,
+                                float(capture.grid.height - 1U) * capture.grid.cell_size_m *
+                                    0.001F);
+                    ImGui::Text("Source origin: %.0f, %.0f m", capture.grid.sample_origin_xz_m.x,
+                                capture.grid.sample_origin_xz_m.y);
+                    ImGui::Text("Render detail: %s", config_.captured_water_detail.c_str());
+                    if (config_.captured_water_detail != "uniform")
+                        ImGui::TextDisabled(
+                            "Fixed fine region %.2f km; no camera-following LOD. Far "
+                            "shadows unqualified.",
+                            config_.captured_water_detail_span_m * .001F);
+                    ImGui::TreePop();
+                }
                 int view = config_.water_capture_camera == "overview"    ? 0
                            : config_.water_capture_camera == "stream"    ? 1
                            : config_.water_capture_camera == "lake"      ? 2
                            : config_.water_capture_camera == "landscape" ? 3
                                                                          : 4;
-                if (ImGui::Combo("Camera", &view,
-                                 "Overview\0Stream\0Lake\0Landscape\0Boundary audit\0")) {
+                if (config_.terrain_site) {
+                    int framing = config_.captured_water_span_m.value_or(11457.6F) > 20000 ? 1 : 0;
+                    if (ImGui::Combo("Framing", &framing, "Local detail\0Wider landscape\0")) {
+                        config_.water_capture_camera = "landscape";
+                        config_.captured_water_span_m = framing == 0 ? 11457.6F : 45000.F;
+                        configure_capture_camera();
+                    }
+                } else if (ImGui::Combo("Camera", &view,
+                                        "Overview\0Stream\0Lake\0Landscape\0Boundary audit\0")) {
                     config_.water_capture_camera = view == 0   ? "overview"
                                                    : view == 1 ? "stream"
                                                    : view == 2 ? "lake"
@@ -956,7 +1253,9 @@ class TerrainApp {
                                                                : "boundary";
                     configure_capture_camera();
                 }
-                ImGui::Checkbox("Water visible", &config_.captured_water_visible);
+                ImGui::BeginDisabled(config_.terrain_site && !config_.site_water_binding_path);
+                ImGui::Checkbox("Show water", &config_.captured_water_visible);
+                ImGui::EndDisabled();
                 int readability = config_.terrain_readability == "refined"      ? 2
                                   : config_.terrain_readability == "detail-off" ? 1
                                                                                 : 0;
@@ -990,7 +1289,12 @@ class TerrainApp {
                     ImGui::TextDisabled(
                         "Core-focused 4096 shadow; far-context shadows unqualified.");
                 }
-                ImGui::Checkbox("Animate surface (not hydrology)", &config_.captured_water_animate);
+                ImGui::BeginDisabled(config_.terrain_site && !config_.site_water_binding_path);
+                ImGui::Checkbox("Surface motion (saved flow cues)",
+                                &config_.captured_water_animate);
+                ImGui::EndDisabled();
+                if (ImGui::Button("Reset landscape camera"))
+                    configure_capture_camera();
                 ImGui::TextDisabled(
                     "Clouds disabled: composed water has no cloud-consumable depth.");
                 ImGui::TextDisabled("No radial terrain or radial shadow casters in this view.");
@@ -1674,6 +1978,7 @@ class TerrainApp {
     }
 
     void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
+        landscape_builds_.shutdown(gpu);
         product_builds_.shutdown(gpu);
         if (capture_runtime_ && config_.captured_water_audit)
             capture_runtime_->verify_immutable_fields(gpu);
@@ -2353,6 +2658,12 @@ class TerrainApp {
     cubey::jobs::JobSystem product_jobs_{1U};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
     cubey::StagedResource<TerrainProductBuild, TerrainResidentBuild> product_builds_;
+    cubey::StagedResource<LandscapeBuild, LandscapeBuild> landscape_builds_;
+    std::optional<cubey::asset::TerrainLandscapeCatalog> landscape_catalog_;
+    std::vector<cubey::asset::TerrainLandscapeProbe> landscape_availability_;
+    std::size_t edit_landscape_index_ = 0;
+    std::vector<std::string> landscape_smoke_ids_;
+    std::string landscape_error_;
     std::optional<TerrainRasterHeightSource> source_{};
     std::optional<TerrainRasterClimateSource> climate_source_{};
     TerrainBackdropPlacementPlan placement_stage_{};

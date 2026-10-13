@@ -740,14 +740,14 @@ TerrainProjectConfig parse_terrain_project_config(int argc, char** argv,
 void resolve_terrain_project_config(TerrainProjectConfig& config,
                                     const std::filesystem::path& default_heightfield_path,
                                     const std::filesystem::path& default_surface_fields_path) {
+    if (config.landscape_catalog_path.empty())
+        config.landscape_catalog_path = CUBEY_TERRAIN_LANDSCAPE_CATALOG;
+    if (config.landscape_cache_root.empty())
+        config.landscape_cache_root = CUBEY_TERRAIN_LANDSCAPE_CACHE_ROOT;
     const bool direct_source = config.terrain_site_path || config.water_capture_path ||
                                config.terrain.heightfield_path ||
                                config.captured_water_context_source;
     if (config.landscape != "legacy" && !direct_source) {
-        if (config.landscape_catalog_path.empty())
-            config.landscape_catalog_path = CUBEY_TERRAIN_LANDSCAPE_CATALOG;
-        if (config.landscape_cache_root.empty())
-            config.landscape_cache_root = CUBEY_TERRAIN_LANDSCAPE_CACHE_ROOT;
         config.landscape_catalog =
             cubey::asset::load_terrain_landscape_catalog(config.landscape_catalog_path);
         const auto& preset = cubey::asset::terrain_landscape_preset(
@@ -783,10 +783,14 @@ void resolve_terrain_project_config(TerrainProjectConfig& config,
             config.captured_water_visible = false;
             config.captured_water_animate = false;
         }
-        config.captured_water_context = true;
-        config.water_capture_camera = "landscape";
-        config.captured_water_detail = "fixed";
-        config.captured_water_detail_span_m = config.terrain_site->level_spans_m[0];
+        if (!config.assigned_paths.contains("terrain.captured_water_context"))
+            config.captured_water_context = true;
+        if (!config.assigned_paths.contains("terrain.water_capture_camera"))
+            config.water_capture_camera = "landscape";
+        if (!config.assigned_paths.contains("terrain.captured_water_detail"))
+            config.captured_water_detail = "fixed";
+        if (!config.assigned_paths.contains("terrain.captured_water_detail_span_m"))
+            config.captured_water_detail_span_m = config.terrain_site->level_spans_m[0];
         if (!config.captured_water_focus_x_m) {
             config.captured_water_focus_x_m = config.terrain_site->center_xz_m.x;
             config.captured_water_focus_z_m = config.terrain_site->center_xz_m.y;
