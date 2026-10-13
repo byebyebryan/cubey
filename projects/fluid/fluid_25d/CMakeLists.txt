@@ -36,6 +36,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
@@ -93,6 +95,8 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_body.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_material_readability.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl"

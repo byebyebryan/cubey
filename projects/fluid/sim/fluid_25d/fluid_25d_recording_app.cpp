@@ -1131,9 +1131,18 @@ class RecordingApp {
         orbit_.set_pitch_limits(-0.38F, 0.38F);
         orbit_.set_home_distance(home);
         orbit_.reset();
-        const float far = fluid_25d_catchment_far_plane(
-            maximum_distance, {-0.5F * width, *lo * scale, -0.5F * height},
-            {0.5F * width, (*hi + 100.0F) * scale, 0.5F * height}, target_);
+        math::Vec3 scene_minimum{-0.5F * width, *lo * scale, -0.5F * height};
+        math::Vec3 scene_maximum{0.5F * width, (*hi + 100.0F) * scale, 0.5F * height};
+        if (terrain_surface_ && terrain_surface_->context) {
+            auto minimum = terrain_surface_->context->minimum;
+            auto maximum = terrain_surface_->context->maximum;
+            minimum.y *= scale;
+            maximum.y *= scale;
+            scene_minimum = glm::min(scene_minimum, minimum);
+            scene_maximum = glm::max(scene_maximum, maximum);
+        }
+        const float far =
+            fluid_25d_catchment_far_plane(maximum_distance, scene_minimum, scene_maximum, target_);
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, std::max(8.0F, framing * 0.10F),
                                far);
         std::printf("fluid_25d_camera_recipe: target=(%.6f,%.6f,%.6f) span=%.6f "
@@ -1309,7 +1318,8 @@ class RecordingApp {
                            fluid_25d_scenic_water_view(config_.native_scenic_water_view),
                            fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode),
                            environment ? &*environment : nullptr, rain_visual_frame(),
-                           whitewater_selection_.seeds, whitewater_generation_);
+                           whitewater_selection_.seeds, whitewater_generation_,
+                           config_.native_terrain_context == "on");
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1675,6 +1685,17 @@ class RecordingApp {
                 report_scenic_material();
             }
             ImGui::EndDisabled();
+            if (terrain_surface_ && terrain_surface_->site) {
+                bool context = config_.native_terrain_context == "on";
+                if (ImGui::Checkbox("Wider terrain (ground only)", &context))
+                    config_.native_terrain_context = context ? "on" : "off";
+                ImGui::TextWrapped("World site: %s. Rain and water cover only the %.3f km "
+                                   "simulation square; exterior terrain is unmodelled, not dry. "
+                                   "Far-context shadows remain unqualified.",
+                                   terrain_surface_->site->id.c_str(),
+                                   float(simulation_.grid_width) * simulation_.cell_size_m /
+                                       1000.0F);
+            }
             ImGui::TextWrapped(terrain_surface_
                                    ? "Climate is a long-term material prior, not current rain or "
                                      "wetness. Masks are "
@@ -2286,7 +2307,8 @@ class RecordingApp {
         }
         if (ImGui::CollapsingHeader("How to read this")) {
             ImGui::TextWrapped(
-                "Rain supplies the whole map. Water follows slopes, collects in depressions and "
+                "Rain supplies the simulation rectangle, not the wider backdrop. Water follows "
+                "slopes, collects in depressions and "
                 "can leave through the open perimeter. There is no authored source/drain here.");
             ImGui::TextWrapped(
                 "Rain off stops new supply; existing water still flows. Small streams can appear "

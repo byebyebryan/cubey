@@ -174,6 +174,68 @@ void test_source_binding() {
                         field.sample({10.F + 5.F * float(x), 10.F + 5.F * float(z)}),
                     "derived grid diverges from shared Terrain material field");
     auto wrong_native = derived_bed;
+    {
+        auto world_hm = hm;
+        const std::string world_id(64, 'a');
+        world_hm["grid"]["axis_mapping"] = {{"world_x", "model_j"}, {"world_z", "model_i"}};
+        world_hm["provenance"] = {{"world_id", world_id},
+                                  {"model_native_origin", {{"i", 0}, {"j", 0}}}};
+        const auto world_hm_text = world_hm.dump();
+        write(root / "heightfield.json", std::span(world_hm_text));
+        nlohmann::json world{
+            {"schema", "cubey.terrain.world-recipe.v1"},
+            {"world_id", world_id},
+            {"seed", hm["seed"]},
+            {"producer", hm["source"]},
+            {"height_transform", hm["height"]},
+            {"survey_bounds", {{"minimum", {-100, -100}}, {"maximum", {100, 100}}}},
+            {"coordinate_mapping",
+             {{"native_spacing_m", 10},
+              {"world_origin_xz_m", {0, 0}},
+              {"model_origin_ij", {0, 0}}}}};
+        const auto world_text = world.dump();
+        write(root / "world-recipe.json", std::span(world_text));
+        nlohmann::json site{{"schema", "cubey.terrain.site-coverage.v1"},
+                            {"site_id", "fixture"},
+                            {"world_id", world_id},
+                            {"admitted", true},
+                            {"rejection_reason", nullptr},
+                            {"center_xz_m", {17.5, 15.0}},
+                            {"camera_margin_m", 1},
+                            {"sampling_margin_m", .25},
+                            {"heightfield", "heightfield.json"},
+                            {"surface_fields", "surface-fields.json"}};
+        for (float span : {2.F, 4.F, 8.F, 16.F})
+            site["levels"].push_back({{"span_m", span},
+                                      {"bounds",
+                                       {{"minimum", {17.5F - span * .5F, 15.F - span * .5F}},
+                                        {"maximum", {17.5F + span * .5F, 15.F + span * .5F}}}}});
+        const auto site_text = site.dump();
+        write(root / "site.json", std::span(site_text));
+        auto binding = sampled;
+        binding["manifest_sha256"] =
+            cubey::asset::sha256_hex(std::as_bytes(std::span(world_hm_text)));
+        binding["terrain_site"] = {
+            {"manifest_path", (root / "site.json").string()},
+            {"manifest_sha256", cubey::asset::sha256_hex(std::as_bytes(std::span(site_text)))},
+            {"world_id", world_id}};
+        const auto prepared = load_sampled(binding, derived_bed);
+        require(prepared.site && prepared.context && !prepared.context->vertices.empty(),
+                "valid world site must prepare shared exterior ground");
+        require(prepared.correlated == derived.correlated, "context changed inner material masks");
+        auto bad_binding = binding;
+        bad_binding["terrain_site"]["world_id"] = std::string(64, 'b');
+        rejects([&] { (void)load_sampled(bad_binding, derived_bed); });
+        bad_binding = binding;
+        bad_binding["terrain_site"]["manifest_sha256"] = std::string(64, 'b');
+        rejects([&] { (void)load_sampled(bad_binding, derived_bed); });
+        write(root / "heightfield.json", std::span(hm_text));
+    }
+    auto bad_site = sampled;
+    bad_site["terrain_site"] = {{"manifest_path", (root / "missing-site.json").string()},
+                                {"manifest_sha256", std::string(64, '0')},
+                                {"world_id", std::string(64, '0')}};
+    rejects([&] { (void)load_sampled(bad_site, derived_bed); });
     wrong_native[0] += 1;
     rejects([&] { (void)load_sampled(sampled, wrong_native); });
     auto wrong_origin = sampled;

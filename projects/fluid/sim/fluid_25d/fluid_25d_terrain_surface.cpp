@@ -263,6 +263,26 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
     asset::validate_terrain_climate_binding(source, climate);
     if (source.provenance().elevation_sha256 != id.at("elevation_sha256").get<std::string>())
         throw std::runtime_error("sampled terrain source elevation changed");
+    std::optional<asset::TerrainSite> site;
+    if (id.contains("terrain_site")) {
+        const auto& binding = id.at("terrain_site");
+        const std::filesystem::path path = binding.at("manifest_path").get<std::string>();
+        if (std::filesystem::is_symlink(path) || !std::filesystem::is_regular_file(path) ||
+            std::filesystem::file_size(path) > 65536)
+            throw std::runtime_error("invalid prepared terrain site path");
+        std::ifstream stream(path, std::ios::binary);
+        const std::string bytes{std::istreambuf_iterator<char>(stream), {}};
+        if (asset::sha256_hex(std::as_bytes(std::span(bytes))) !=
+            binding.at("manifest_sha256").get<std::string>())
+            throw std::runtime_error("prepared terrain site changed");
+        site = asset::load_terrain_site(path);
+        const auto center = math::Vec2{origin[0], origin[1]} +
+                            math::Vec2{float(width - 1), float(height - 1)} * spacing_m * .5F;
+        if (site->world_id != binding.at("world_id").get<std::string>() ||
+            site->heightfield != std::filesystem::canonical(heightfield) ||
+            glm::any(glm::greaterThan(glm::abs(site->center_xz_m - center), math::Vec2{.001F})))
+            throw std::runtime_error("prepared terrain site/source/crop mismatch");
+    }
     const auto relative = std::filesystem::path(id.at("source_bed_path").get<std::string>());
     if (relative.has_parent_path() || relative.empty() || relative.is_absolute())
         throw std::runtime_error("unsafe sampled source-bed path");
@@ -304,6 +324,11 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
     result.source_center_xz_m =
         point(0, 0) + math::Vec2(float(width - 1), float(height - 1)) * spacing_m * 0.5F;
     const auto field = terrain::make_terrain_surface_field(source, source.bounds(), &climate);
+    if (site) {
+        result.site = std::move(site);
+        result.context = terrain::make_terrain_surface_context(
+            {{width, height, spacing_m, {origin[0], origin[1]}}, bed, {}}, source, field);
+    }
     result.correlated.reserve(bed.size());
     for (unsigned z = 0; z < height; ++z)
         for (unsigned x = 0; x < width; ++x)
@@ -313,6 +338,14 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
     receipt["material_world_center_xz_m"] = {result.source_center_xz_m.x,
                                              result.source_center_xz_m.y};
     receipt["source_sample_max_abs_error_m"] = maximum_error;
+    if (result.site) {
+        receipt["world_id"] = result.site->world_id;
+        receipt["site_id"] = result.site->id;
+        receipt["context_vertices"] = result.context->vertices.size();
+        receipt["context_triangles"] = result.context->indices.size() / 3;
+        receipt["context_ground_only"] = true;
+        receipt["context_build_policy"] = "once-per-site-grid; no live exterior wetness";
+    }
     receipt["climate_sha256"] = climate.metadata().climate_sha256;
     receipt["correlated_formula"] = terrain::kTerrainSurfaceFieldFormula;
     receipt["correlated_crop_independent"] = true;

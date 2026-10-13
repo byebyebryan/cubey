@@ -82,6 +82,8 @@ struct Fluid25DProjectConfig {
     std::string native_water_sampling = "triangular";
     std::uint32_t native_surface_subdivision = 2U;
     std::string native_shadow_projection = "legacy";
+    std::string native_terrain_context =
+        "on"; // Only source-bound world packages have exterior ground.
     std::uint32_t native_shadow_extent = 2048U;
     std::optional<std::filesystem::path> native_display_coverage_path{};
     std::optional<std::string> native_bank_view{};
@@ -710,6 +712,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 128.0, .max = 32768.0}),
               config.native_camera_span_m)
+        .bind(option("fluid25d.native_terrain_context", "--fluid25d-native-terrain-context",
+                     "Native Terrain Context",
+                     "Prepared-world exterior ground only; no outer water.", ValueType::Enum, {},
+                     {"on", "off"}),
+              config.native_terrain_context)
         .bind(option("fluid25d.native_shadow_projection", "--fluid25d-native-shadow-projection",
                      "Native Shadow Projection", "Whole-scene light-space fit or legacy bounds.",
                      ValueType::Enum, {}, {"legacy", "scene"}),
@@ -1023,6 +1030,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.native_camera_target_z") ||
          parsed.path_was_assigned("fluid25d.native_camera_span_m") ||
          parsed.path_was_assigned("fluid25d.native_shadow_projection") ||
+         parsed.path_was_assigned("fluid25d.native_terrain_context") ||
          parsed.path_was_assigned("fluid25d.native_shadow_extent")) &&
         !project_config.recording_path && !project_config.stream_path && !service_session)
         throw std::runtime_error("native presentation requires a recording or external source");
@@ -1039,6 +1047,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         project_config.native_scenic_terrain_view != "shaded")
         throw std::runtime_error("water component diagnostics require shaded terrain");
     if ((parsed.path_was_assigned("fluid25d.native_shadow_projection") ||
+         parsed.path_was_assigned("fluid25d.native_terrain_context") ||
          parsed.path_was_assigned("fluid25d.native_shadow_extent")) &&
         project_config.native_presentation != "scenic")
         throw std::runtime_error("shadow controls require Scenic");

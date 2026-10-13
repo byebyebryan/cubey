@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cubey/asset/file_digest.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/engine/terrain_surface_context_resources.h>
 #include <cubey/engine/terrain_surface_patch_scene.h>
 #include <cubey/engine/terrain_water_capture_runtime.h>
 #include <cubey/render/material_instance.h>
@@ -87,8 +88,7 @@ struct TerrainWaterCaptureRuntime::State {
     std::optional<render::AtmosphereBackgroundAtlasResources> atlases;
     std::optional<vulkan::Buffer> bed, depth, velocity, zeros, coverage;
     std::optional<terrain::TerrainSurfaceContextProduct> context;
-    std::optional<vulkan::Buffer> context_vertices, context_indices;
-    std::optional<vulkan::DescriptorSetBundle> context_fields;
+    std::unique_ptr<TerrainSurfaceContextResources> context_resources;
     std::optional<terrain::TerrainSurfacePatchLod> fixed_mesh;
     std::optional<vulkan::Buffer> mesh_coordinates, mesh_indices;
     std::optional<vulkan::DescriptorSetBundle> mesh_fields;
@@ -236,30 +236,9 @@ void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
             static_cast<unsigned long long>(s.mesh_coordinates->size() + s.mesh_indices->size()),
             s.fixed_mesh->coordinates.size(), s.fixed_mesh->indices.size() / 3);
     }
-    if (s.context && !s.context_fields) {
-        static_assert(sizeof(terrain::TerrainSurfaceContextVertex) == 48U);
-        const auto started = std::chrono::steady_clock::now();
-        s.context_vertices.emplace(vulkan::upload_device_buffer(
-            gpu, s.context->vertices.data(),
-            s.context->vertices.size() * sizeof(terrain::TerrainSurfaceContextVertex),
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        s.context_indices.emplace(vulkan::upload_device_buffer(
-            gpu, s.context->indices.data(), s.context->indices.size() * sizeof(std::uint32_t),
-            VK_BUFFER_USAGE_INDEX_BUFFER_BIT));
-        const std::array bindings{
-            vulkan::DescriptorSetBindingConfig{.binding = 0,
-                                               .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                               .stage_flags = VK_SHADER_STAGE_VERTEX_BIT}};
-        s.context_fields.emplace(device, vulkan::DescriptorSetInfo(bindings));
-        render::MaterialDescriptorWriter(s.context_fields->set())
-            .storage_buffer(0, s.context_vertices->handle(), s.context_vertices->size())
-            .update(device);
-        std::printf(
-            "terrain_context_upload: once; bytes=%llu wall_ms=%.3f\n",
-            static_cast<unsigned long long>(s.context_vertices->size() + s.context_indices->size()),
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
-                .count());
-    }
+    if (s.context && !s.context_resources)
+        s.context_resources =
+            std::make_unique<TerrainSurfaceContextResources>(device, gpu, *s.context);
     const render::TerrainSurfacePatchSurface surface{
         s.capture.grid.width, s.capture.grid.height, {}, {}, s.weights};
     s.scene.ensure_resources(device, gpu, slots, target, s.grid(), s.capture.bed_m, s.field_view(),
@@ -302,12 +281,9 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
         render::atmosphere_environment_frame_uniforms(s.daylight.environment(), {})};
     std::optional<render::TerrainSurfaceContextDraw> context;
     if (context_visible) {
-        if (!s.context_fields)
+        if (!s.context_resources)
             throw std::runtime_error("terrain context not prepared before recording");
-        context.emplace(render::TerrainSurfaceContextDraw{
-            &*s.context_vertices, &*s.context_indices, s.context_fields->set(),
-            s.context_fields->layout(), std::uint32_t(s.context->indices.size()),
-            s.context->minimum, s.context->maximum});
+        context = s.context_resources->draw();
     }
     std::optional<render::TerrainSurfacePatchMeshDraw> mesh;
     if (s.fixed_mesh) {
