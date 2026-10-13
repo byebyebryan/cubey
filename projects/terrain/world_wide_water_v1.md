@@ -39,3 +39,38 @@ orbit views and deliberately exposed outer boundaries must be reviewed separatel
 
 Evidence root: `outputs/terrain/wider-water-world-20261012-gqeluh/`.
 Validated checkpoints are committed; no push or default promotion.
+
+## Integration and review controls
+
+`--terrain-site SITE/site.json --terrain-site-water ASSET/water-binding.json`
+loads a coherent saved state through the shared Terrain capture consumer. The
+separate binding pins site, world recipe, heightfield and capture metadata; capture
+payload/source/centre/coverage validation remains mandatory. `--terrain-site`
+alone stays dry, and the old capture/source override restrictions stay in force.
+Use `--terrain-water-vertex-budget 4500000` explicitly for the 131 km topology;
+the default remains 2000000. Field uploads and topology/context builds are once
+per loaded state. Surface animation is not hydraulic advancement.
+
+`study_world_wide_water_v1.py init|geometry|prepare|run|export|publish STUDY`
+reuses the legacy bake helpers. Preparation and field audits need the existing
+optional native IO Python; the launcher/review controls use ordinary Python.
+`review_world_wide_water_v1.py freeze|capture|lifecycle|negative|orbit|performance|report STUDY`
+pins the renderer, locks the retained local camera, and keeps all performance
+controls separate from hydraulic traffic. No missing cache triggers generation.
+
+The initial geometry preflight passed coverage/winding for all candidates. The
+131 km / 64 m topology has 4,409,905 vertices and 8,803,432 triangles, using
+140,920,424 mesh bytes. The 128 m pilot is visibly too smooth near the site, so
+it is retained as a coarse control, not a replacement for the detailed core.
+The 64 m confirmations improve stream/terrain structure and continue water past
+the old inner rectangle. Their twelve-hour field states include very deep basins
+and broad sheet flooding under exaggerated rainfall; these are not labelled
+normal lakes or a common global equilibrium.
+
+Headless validation has passed 31 focused CPU/GPU test groups, four additional
+preflight/helper groups, nine legacy/default capture checks (all referenced images
+exact; cross-frontend rounding <=1/255), mismatched-site/world admission failures,
+and per-site backdrop/water/context transitions with exact immutable GPU fields.
+The existing Fluid executable and all shaders/exporter are byte-identical to the
+previous qualification; only Terrain's executable changes. Native GUI acceptance
+and water-default promotion remain deferred.
