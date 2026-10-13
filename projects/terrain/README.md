@@ -232,6 +232,43 @@ Review commands use `review_terrain_world_v1.py OUTPUT --phase capture|performan
 the report/maps phase needs the existing optional NumPy/Matplotlib environment.
 No solver or native GUI is launched by the review tools. No default is promoted.
 
+### Prepared-world wider saved water (opt-in)
+
+The same wider-water pipeline now covers all three prepared world sites with
+coherent 2048²/64 m rain-on states (131.008 km sampled span). The original
+mountain also has a 2048²/32 m alternative (65.504 km) for sharper local views.
+These are independent saved states, not an outer-water splice around live Fluid.
+The live 1k/16 m Fluid default and the terrain-only site path remain unchanged.
+
+Use the exact paths in
+`outputs/terrain/wider-water-world-20261012-gqeluh/SITE/published-wide-64m.json`
+(or `mountain/published-fallback-32m.json`) with:
+
+```sh
+rtk proxy build/release/projects/terrain/terrain \
+  --terrain-site PATH/site.json \
+  --terrain-site-water PATH/water-binding.json \
+  --terrain-water-vertex-budget 4500000
+```
+
+The optional sidecar pins site/world recipe/source/capture identities without
+modifying the site package. Capture source, centre, coverage and binary fields
+are validated before drawing. The saved fields do not evolve; surface animation
+is decorative. Missing or mismatched assets fail admission, never trigger a bake.
+The unchanged default topology budget is 2M vertices; this explicit wider mode
+retains at most 64 m exterior draw spacing with a bounded 4.5M budget.
+
+The 128 m pilots are coarse controls. The 64 m states remove the old inner wet
+rectangle, but lose some local detail; the 32 m alternative improves detail while
+retaining a nearer water boundary. Huge localized pools, sheet flooding, bright
+sun-facing reflective films and the finite outer terrain remain documented limits
+under the deliberately exaggerated 512 mm/h rain. No default promotion or wider
+live-solver/native-GUI performance claim follows.
+
+Report: <http://starship:8801/terrain/wider-water-world-20261012-gqeluh/>.
+See [world-wide water integration](world_wide_water_v1.md) for the bake/review
+contract, measured costs, retained stress views and immutable-field evidence.
+
 ### Captured-water landscape context (opt-in study)
 
 Add `--terrain-water-context --terrain-water-capture-camera landscape` to the

@@ -191,6 +191,27 @@ def complete_performance(result):
             {(r["view"],r["repeat"]) for r in rows}==expected and all(r["pass"] for r in rows))
 
 
+def cache_reload(out):
+    verify(out)
+    folder = out / "cache-reload"
+    folder.mkdir()
+    rows = []
+    for sid, candidate in (("mountain","wide-64m"),("mountain-interior","wide-64m"),
+                            ("valley-interior","wide-64m"),("mountain","fallback-32m")):
+        published = json.loads((out/sid/f"published-{candidate}.json").read_bytes())
+        args = command(out,sid,candidate)
+        args[args.index("--terrain-site-water")+1] = published["water_binding"]
+        image = folder/f"{sid}-{candidate}.png"
+        args += ["--frames","1","--width","1280","--height","720","--terrain-water-audit","--output",str(image)]
+        receipt = render.run(args,image.with_suffix(".log"))
+        difference = render.pixel_difference(image,out/sid/"visual"/candidate/"local-water.png")
+        if difference["max_abs_8bit"]:
+            raise ValueError("published cache reload changed pixels")
+        rows.append({"site":sid,"candidate":candidate,"pixel_difference":difference,**receipt})
+    study.bake.write(folder/"receipt.json", {"rows":rows,"all_exact":True})
+    verify(out)
+
+
 def report(out):
     verify(out)
     cards, bake_rows, perf_rows = [], [], []
@@ -210,8 +231,19 @@ def report(out):
         cards.append(f'<section id="{sid}"><h2>{html.escape(recipe["label"])}</h2>{images}'
                      f'<details><summary>128 m pilot and ground control</summary><div class="pair">'
                      f'<img src="{prefix}pilot-128m/local-water.png" alt="Coarse pilot">'
-                     f'<img src="{prefix}pilot-128m/overview-water.png" alt="Coarse overview"></div>'
-                     '</details></section>')
+                     f'<img src="{prefix}pilot-128m/overview-water.png" alt="Coarse overview">'
+                     + (f'<img src="{prefix}wide-64m/local-ground.png" alt="Wider local ground control">'
+                        f'<img src="{prefix}wide-64m/overview-ground.png" alt="Wider overview ground control">'
+                        if visual.exists() else '') + '</div>'
+                     '</details>'
+                     + (f'<details><summary>Retained orbit stress views — not full-orbit visual acceptance</summary>'
+                        f'<div class="pair"><img src="{sid}/orbit/wide-64m/0.png" alt="Orbit direction zero">'
+                        f'<img src="{sid}/orbit/wide-64m/4.png" alt="Sun-facing orbit direction"></div>'
+                        '<p>Finite outer terrain remains exposed. Some sun-facing headings produce bright '
+                        'reflective sheets on widespread shallow floodwater; primary-view success does not '
+                        'qualify every heading or free flight.</p></details>'
+                        if (out/sid/"orbit/wide-64m/receipt.json").exists() else '')
+                     + '</section>')
         for path in sorted((out / sid / "runs").glob("*/result.json")):
             result = json.loads(path.read_bytes())
             milestone = result["milestones"][-1] if result["milestones"] else None
@@ -244,6 +276,17 @@ def report(out):
             '<img src="mountain/visual/fallback-32m/local-water.png" alt="32m middle coverage"></div>'
             '<p>64 m / 131 km versus 32 m / 65 km. Both resolution and catchment extent change; '
             'this is not a resolution-only accuracy comparison or a spliced LOD simulation.</p></section>')
+        path = out/"mountain/performance/fallback-32m/results.json"
+        if path.exists():
+            result = json.loads(path.read_bytes())
+            if result["runtime"] != render.runtime() or result["inputs"] != input_identity(out,"mountain","fallback-32m"):
+                raise ValueError("fallback timing runtime/input identity changed")
+            cards.append('<section><h2>Finer alternative render costs</h2><div class="scroll"><table>'
+                '<tr><th>View/repeat</th><th>GPU p95 ms</th><th>CPU service p95 ms</th><th>Target</th></tr>'
+                + ''.join(f'<tr><td>{r["view"]} · {r["repeat"]}</td><td>{r["whole_gpu_p95_ms"]:.3f}</td>'
+                          f'<td>{r["cpu_service_p95_ms"]:.3f}</td><td>{"pass" if r["pass"] else "measured limitation"}</td></tr>'
+                          for r in result["rows"])
+                + '</table></div><p>Additional matched water/ground controls, separate from the twelve full-coverage rows.</p></section>')
     page = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>World water — wider coverage</title><style>body{margin:0;background:#15212b;color:#e8eef2;font:16px/1.6 system-ui}main{max-width:1280px;margin:auto;padding:24px}a{color:#9dd9e7}.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px}img,video{width:100%;display:block}figure{margin:16px 0}section{margin:40px 0}figcaption{color:#b7c9d3}th,td{text-align:left;padding:8px;border-bottom:1px solid #485763}.scroll{overflow:auto}@media(max-width:760px){.pair{grid-template-columns:1fr}}</style><main><a href="/">All reports</a><h1>Wider water on the prepared world</h1>
 <p>Existing SynxFlow bake + solver-neutral export + shared fixed paired Terrain/water renderer. No solver port, new terrain, live-core splice or default promotion.</p>
@@ -265,7 +308,7 @@ def report(out):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase", choices=("freeze", "capture", "performance", "lifecycle", "negative", "orbit", "report"))
+    parser.add_argument("phase", choices=("freeze", "capture", "performance", "lifecycle", "negative", "orbit", "report", "cache-reload"))
     parser.add_argument("out", type=Path)
     parser.add_argument("--site", choices=tuple(study.load_sites(study.WORLD_CATALOGUE)), default="mountain")
     parser.add_argument("--candidate", choices=tuple(study.CANDIDATES)+("core-16m",), default="pilot-128m")
@@ -287,6 +330,8 @@ def main():
         orbit(out, args.site, args.candidate)
     elif args.phase == "report":
         report(out)
+    elif args.phase == "cache-reload":
+        cache_reload(out)
     else:
         performance(out, args.site, args.candidate)
 

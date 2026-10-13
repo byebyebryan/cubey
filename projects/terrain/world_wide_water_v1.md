@@ -74,3 +74,50 @@ and per-site backdrop/water/context transitions with exact immutable GPU fields.
 The existing Fluid executable and all shaders/exporter are byte-identical to the
 previous qualification; only Terrain's executable changes. Native GUI acceptance
 and water-default promotion remain deferred.
+
+## Final qualification
+
+All seven bakes reached twelve physical hours within the 30-minute execution
+bound: three 128 m pilots, three 64 m confirmations, and the original mountain's
+32 m / 65 km alternative. Observed total wall times were about 2.48 minutes for
+each pilot; 12.66 / 13.74 / 9.33 minutes for the full mountain/interior/valley
+confirmations; and 18.18 minutes for the finer alternative. These include startup,
+teardown and concurrent preparation/correctness/capture work and are not isolated
+maximum-throughput benchmarks. The worker's requested cap remains 300x.
+
+Seven field/hash/native-completion/rain-supply/export audits passed with no
+nonfinite fields, negative depth, dry momentum or leftover owned groups. Three
+milestones per case retain 2/6/12-hour states. These are sanity and byte-parity
+checks, not a complete boundary-flux conservation ledger or calibrated hydrology.
+
+The twelve full-coverage water-on timing rows and their ground controls passed
+at 1080p/60 Hz: GPU scene p95 3.881–4.018 ms, CPU service p95 <=0.334 ms.
+Device-local heap usage peaked at 759.06 MiB; per-run peak process RSS was
+703.84 MiB. Water/ground p95 differences were 1.847–1.970 ms, not isolated pass
+attribution. The four finer-alternative rows also passed: GPU 3.029–3.364 ms and
+CPU <=0.349 ms. All 32 matched runs exclude warmup, image readback and encoding;
+the solver was stopped. No wider-live combined-GPU or native-window FPS claim.
+
+Verdict: useful opt-in landscape-water assets and a reusable shared-site
+attachment contract. The 32 m / 65 km alternative is sharper in the locked local
+view; 64 m / 131 km provides wider coherent coverage at a modest rendering cost.
+Keep both independent options. Neither is a nested/coupled solver or a depth
+splice, and changing extent changes the contributing catchment as well as detail.
+
+The inner 16 km wet rectangle is removed, but the outer world remains finite.
+Some sun-facing orbit headings expose bright reflective sheets over widespread
+thin floodwater; the complete orbit/free-flight envelope is not visually accepted.
+Full-size states retain maximum depths of 180.56–533.51 m in localized generated
+basins under the exaggerated storm. No permanent-lake/equilibrium claim or hidden
+per-site forcing adjustment is made. Native GUI review and default promotion are
+still deferred; the live Fluid launcher/solver and its binaries/shaders remain
+unchanged.
+
+Report: <http://starship:8801/terrain/wider-water-world-20261012-gqeluh/>.
+Content-identified optional bindings/captures are published under
+`cache/terrain/water/v1/world-wide/`; each site's `published-*.json` receipt gives
+its exact matching `--terrain-site` and `--terrain-site-water` paths.
+All four published-cache reloads reproduce the reviewed local captures exactly.
+The report's 38 linked resources returned HTTP 200; all ten held-state clips
+validate as 1280x720, 120-frame media. This is HTTP/media evidence, not browser
+layout, native GUI or human visual acceptance.
