@@ -9,12 +9,12 @@ import html
 import json
 from pathlib import Path
 import subprocess
+import shutil
 import sys
 
 import run_terrain_rain_demo as terrain
-import survey_terrain_sites_v1 as survey
 from terrain_water_sites import WORLD_CATALOGUE, load_sites
-from terrain_grid_sampling import sha256
+sha256 = terrain.demo.ref.sha256_file
 
 ROOT = terrain.demo.ref.ROOT
 TERRAIN_APP = ROOT / "build/release/projects/terrain/terrain"
@@ -49,6 +49,7 @@ def verify(out):
 
 
 def capture(out):
+    import survey_terrain_sites_v1 as survey
     from run_offscreen_perf_v2 import environment
     for sid in load_sites(WORLD_CATALOGUE):
         name = f"{sid}-patch-1024-16m"
@@ -173,6 +174,27 @@ def interrupted_loading(out, attempt=0):
           "clean_owned_shutdown":True, "not_a_successful_switch":True, "command":command})
 
 
+def publish_captures(out):
+    """Publish opt-in content-identified neutral assets; never overwrite a bundle."""
+    assets = []
+    for sid, recipe in load_sites(WORLD_CATALOGUE).items():
+        source = out / "visual" / sid / "capture"
+        manifest = source / "water-capture.json"
+        identity = sha256(manifest)
+        destination = ROOT / "cache/terrain/water/v1/world-sites" / f"{sid}-{identity[:16]}"
+        expected = {p.name:sha256(p) for p in source.iterdir() if p.is_file()}
+        if destination.exists():
+            if destination.is_symlink() or {p.name:sha256(p) for p in destination.iterdir() if p.is_file()} != expected:
+                raise ValueError("published captured-water bundle changed")
+        else:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(source, destination)
+        assets.append({"site":sid, "manifest":str(destination / "water-capture.json"),
+                       "sha256":identity, "heightfield":str(ROOT / recipe["manifest"]),
+                       "opt_in":True, "finite_water_coverage":True})
+    write(out / "consumer-assets.json", {"assets":assets})
+
+
 def report(out):
     frozen = verify(out)
     if len(json.loads((out / "field-audit.json").read_bytes())["cases"]) != 6:
@@ -228,7 +250,7 @@ def report(out):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("phase", choices=("freeze", "pilot", "confirm", "audit", "capture", "lifecycle", "interrupt", "performance", "report"))
+    p.add_argument("phase", choices=("freeze", "pilot", "confirm", "audit", "capture", "lifecycle", "interrupt", "performance", "publish", "report"))
     p.add_argument("out", type=Path)
     p.add_argument("--attempt", type=int, choices=(0, 1, 2), default=0,
                    help="explicit fresh interrupted-loading repeat; previous attempts retained")
@@ -245,9 +267,11 @@ def main():
         return
     verify(out)
     if a.phase in ("pilot", "confirm"):
+        import survey_terrain_sites_v1 as survey
         survey.run(out, WORLD_CATALOGUE, "all", "patch-512-32m" if a.phase == "pilot" else "patch-1024-16m",
                    21600 if a.phase == "pilot" else 43200, 900 if a.phase == "pilot" else 1800)
     elif a.phase == "audit":
+        import survey_terrain_sites_v1 as survey
         survey.audit(out)
     elif a.phase == "capture":
         capture(out)
@@ -257,6 +281,8 @@ def main():
         performance(out)
     elif a.phase == "interrupt":
         interrupted_loading(out, a.attempt)
+    elif a.phase == "publish":
+        publish_captures(out)
     else:
         report(out)
     verify(out)
