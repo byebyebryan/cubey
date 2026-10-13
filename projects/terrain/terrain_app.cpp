@@ -557,6 +557,7 @@ class TerrainApp {
     struct LandscapeBuild {
         TerrainProjectConfig config;
         std::unique_ptr<cubey::TerrainWaterCaptureRuntime> runtime;
+        VkDeviceSize observed_install_heap_bytes = 0;
     };
 
   public:
@@ -864,10 +865,12 @@ class TerrainApp {
                         capture_runtime_->verify_immutable_fields(context.gpu());
                     const bool expected_failure = id.starts_with("!");
                     const bool leave_pending = id.starts_with("~");
+                    const bool asynchronous = id.starts_with("+");
                     bool rejected = false;
                     try {
-                        request_landscape(expected_failure || leave_pending ? id.substr(1) : id);
-                        if (!leave_pending) {
+                        request_landscape(
+                            expected_failure || leave_pending || asynchronous ? id.substr(1) : id);
+                        if (!leave_pending && !asynchronous) {
                             landscape_builds_.finish(context.gpu());
                             poll_landscape_build(context.device(), context.gpu(), {});
                         }
@@ -901,6 +904,16 @@ class TerrainApp {
                     }
                     std::printf("terrain_landscape_smoke: frame=%u showing=%s\n", frame.index,
                                 config_.active_landscape_id.c_str());
+                }
+                if (landscape_builds_.busy() && !landscape_smoke_ids_.empty() &&
+                    landscape_smoke_ids_.back().starts_with("+")) {
+                    cubey::vulkan::GpuSubmissionTicket latest;
+                    (void)context.gpu().submit_and_wait(
+                        {.label = "landscape asynchronous retirement ticket",
+                         .work = [&latest](cubey::vulkan::GpuOwnerContext& owner) {
+                             latest = owner.submission().last_submitted();
+                         }});
+                    poll_landscape_build(context.device(), context.gpu(), latest);
                 }
             }
             if (config_.captured_water_transition_smoke && frame.index < 8U) {
@@ -1022,7 +1035,8 @@ class TerrainApp {
             id,
             [next = std::move(next)]() mutable {
                 next = resolve_terrain_app_config(std::move(next));
-                LandscapeBuild build{.config = std::move(next), .runtime = {}};
+                LandscapeBuild build{
+                    .config = std::move(next), .runtime = {}, .observed_install_heap_bytes = 0};
                 if (build.config.water_capture_path)
                     build.runtime = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
                         *build.config.terrain_site, *build.config.water_capture_path,
@@ -1043,6 +1057,9 @@ class TerrainApp {
             [this, target, slots](cubey::vulkan::GpuOwnerContext& owner,
                                   LandscapeBuild&& prepared) {
                 prepared.runtime->ensure_resources(owner.device(), *gpu_, slots, target);
+                const auto budget = owner.device().device_memory_budget();
+                prepared.observed_install_heap_bytes =
+                    budget.available ? budget.device_local_usage : 0;
                 return std::move(prepared);
             }));
     }
@@ -1093,17 +1110,19 @@ class TerrainApp {
         source_choice_index_ = edit_source_choice_index_ = 0;
         backdrop_requested_ = false;
         std::printf("terrain_landscape_applied: id=%s prepare_ms=%.3f install_ms=%.3f water=%u "
-                    "deferred=%zu\n",
+                    "deferred=%zu observed_install_heap_mib=%.3f\n",
                     config_.active_landscape_id.c_str(), ready.prepare_milliseconds,
                     ready.install_milliseconds, config_.site_water_binding_path ? 1U : 0U,
-                    gpu.deferred_destruction_count());
+                    gpu.deferred_destruction_count(),
+                    double(next.observed_install_heap_bytes) / (1024.0 * 1024.0));
     }
 
     void draw_landscape_selector() {
         ImGui::SeparatorText("Prepared landscape");
         if (!config_.landscape_startup_notice.empty())
             ImGui::TextWrapped("%s", config_.landscape_startup_notice.c_str());
-        ImGui::Text("Showing: %s", config_.active_landscape_id.empty()
+        ImGui::Text("Showing: %s", !capture_active_ ? "Legacy backdrop"
+                                   : config_.active_landscape_id.empty()
                                        ? (config_.terrain_site ? config_.terrain_site->id.c_str()
                                                                : "Legacy / custom source")
                                        : config_.active_landscape_id.c_str());

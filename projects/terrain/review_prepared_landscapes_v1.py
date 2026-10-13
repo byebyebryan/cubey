@@ -123,8 +123,17 @@ def lifecycle(out):
         raise ValueError("failed preparation did not preserve old scene")
     toggles = checked(command("mountain-wide") + ["--headless-render-only", "--width", "640", "--height", "360",
         "--frames", "8", "--render-fps", "0", "--terrain-water-audit", "--terrain-water-transition-smoke"], out / "toggles.log")
+    asynchronous = checked(command("mountain-local") + ["--headless-render-only", "--width", "640", "--height", "360",
+        "--run-seconds", "6", "--render-fps", "60", "--terrain-water-audit", "--terrain-landscape-smoke-sequence", "+mountain-wide"], out / "asynchronous-apply.log")
+    asynchronous_text = (out / "asynchronous-apply.log").read_text()
+    if "terrain_landscape_applied: id=mountain-wide" not in asynchronous_text:
+        raise ValueError("asynchronous Apply never installed")
+    heap = [float(value) for value in re.findall(r"observed_install_heap_mib=(\S+)", text + asynchronous_text)]
+    if len(heap) != 6 or not all(value > 0 for value in heap):
+        raise ValueError("GPU install-overlap observations missing")
     write(out / "lifecycle.json", {"sequence": receipt, "applies": applies,
           "failed_prepare_kept_dry": failure, "water_context_backdrop_toggles": toggles,
+          "asynchronous_apply": asynchronous, "observed_install_heap_mib_max": max(heap),
           "scope": "Headless same Apply path; target extent rebuild, not native-window resize acceptance"})
     verify(out)
 
@@ -198,7 +207,7 @@ def report(out):
 <p>Water is a held twelve-hour state under deliberately exaggerated 512 mm/h rain. Surface motion is decorative; changing resolution/extent selects a different complete saved state, not a coupled LOD simulation.</p>
 <section><h2>Proposed default: original mountain, 32m water</h2><video controls loop muted preload="metadata" src="mountain-local-motion.mp4"></video><p>Motion on immutable depth/velocity fields, not advancing hydraulics.</p></section>
 {''.join(cards)}<details><summary>Terrain-only alternatives</summary>{''.join(f'<h3>{id}</h3><img src="{id}-local.png">' for id in DRY)}</details>
-<section><h2>Integration checks</h2><p>{len(tests)} regression groups passed. All four old locked water frames remain pixel-exact. Auto selects the proposed default exactly when explicitly requested. Missing/conflicting/unknown selections fail before GPU startup. Headless replacement tests retain the old scene after preparation failure, rebuild targets, and shut down with a pending load.</p><p>Measured Apply preparation/upload:</p><ul>{''.join(f'<li>{r["id"]}: {r["prepare_ms"]:.0f} + {r["install_ms"]:.0f} ms</li>' for r in life["applies"])}</ul><p>Lifecycle run peak RSS: {life["sequence"]["peak_process_rss_kib"]/1024:.0f} MiB. Temporary old/new overlap is retained, not hidden.</p></section>
+<section><h2>Integration checks</h2><p>{len(tests)} regression groups passed. All four old locked water frames remain pixel-exact. Auto selects the proposed default exactly when explicitly requested. Missing/conflicting/unknown selections fail before GPU startup. Headless replacement tests retain the old scene after preparation failure, rebuild targets, and shut down with a pending load. An asynchronous Apply also installs while headless frames continue, using the actual submitted retirement ticket.</p><p>Measured Apply preparation/upload:</p><ul>{''.join(f'<li>{r["id"]}: {r["prepare_ms"]:.0f} + {r["install_ms"]:.0f} ms</li>' for r in life["applies"])}</ul><p>Lifecycle run peak RSS: {life["sequence"]["peak_process_rss_kib"]/1024:.0f} MiB. Highest GPU heap observation immediately after installation, before retiring the old resident: {life["observed_install_heap_mib_max"]:.0f} MiB. This is an overlap observation, not continuous peak instrumentation. Temporary old/new overlap is retained, not hidden.</p></section>
 <section><h2>Render-only performance</h2><p>1080p headless Vulkan on RTX 5070 Ti; solver stopped, no video/readback, 120 warmup frames excluded. Gates: whole GPU scene ≤8ms; CPU service ≤4ms.</p><table><tr><th>Preset / repeat</th><th>GPU p95 ms</th><th>CPU p95 ms</th><th>Peak RSS MiB</th></tr>{table}</table></section>
 <section><h2>Boundaries and handoff</h2><p>No-argument startup is still legacy. Try <code>--terrain-landscape mountain-local</code>, <code>mountain-wide</code>, or explicit <code>auto</code>. Site and water selectors are visible in the native GUI, but native GUI/layout acceptance is deferred; headless tests exercise their shared loading path.</p><p>Finite edges, unqualified far shadows, bright reflective films and excessive localized storm pools remain. This loop does not change materials, solver math, generated terrain, live Fluid defaults, or add sparse/free-flight streaming. Final default promotion waits for user review.</p><p><a href="protocol.json">Frozen protocol</a> · <a href="capture.json">Visual/parity</a> · <a href="lifecycle.json">Lifecycle</a> · <a href="negative.json">Failures/auto</a> · <a href="performance.json">Performance</a> · <a href="regression-tests.xml">Tests</a> · <a href="../wider-water-world-20261012-gqeluh/">Previous coverage/stress study</a></p></section>
 </main></body></html>'''
