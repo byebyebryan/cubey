@@ -25,6 +25,22 @@ class StudyContracts(unittest.TestCase):
             with self.assertRaises(ValueError):
                 study.lifecycle(Path("/not-created"))
 
+    def test_publish_reuses_exact_bundle_but_never_overwrites_changed_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            out = root / "outputs"
+            source = out / "visual/one/capture"
+            source.mkdir(parents=True)
+            (source / "water-capture.json").write_bytes(b"trusted exporter fixture")
+            with patch.object(study, "ROOT", root), \
+                    patch.object(study, "load_sites", return_value={"one":{"manifest":"source.json"}}):
+                study.publish_captures(out)
+                study.publish_captures(out)
+                asset = json.loads((out / "consumer-assets.json").read_bytes())["assets"][0]
+                Path(asset["manifest"]).write_bytes(b"changed")
+                with self.assertRaises(ValueError):
+                    study.publish_captures(out)
+
 
 if __name__ == "__main__":
     unittest.main()

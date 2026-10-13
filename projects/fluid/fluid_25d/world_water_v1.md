@@ -1,7 +1,7 @@
 # Prepared-world Terrain Water V1
 
-Status: package/live-backdrop implementation committed; hydraulic, visual and
-performance qualification in progress. No default replacement or push.
+Status: implemented and headlessly qualified on 2026-10-12 Starship. The
+prepared-world collection remains explicit; no default replacement or push.
 
 Connect the existing shared world/site packages to the managed native rainfall
 demo and solver-neutral captured-water consumer. Keep immutable elevations,
@@ -68,3 +68,44 @@ The initial 2-second interruption correctly stopped before action acknowledgemen
 and cleaned up, but exposed a collector assumption that profiling files already
 exist. The collector now retains cleanup/error evidence even before profile
 warmup finishes; such attempts remain incomplete, never timing/switching passes.
+
+## Final qualification
+
+Report: <http://starship:8801/fluid/world-water-20261012-Ck824g/>.
+
+- All 15 prepared world cases admitted. The original collection still admits
+  all 30 cases. Managed switching acknowledged 51 scripted actions, installed
+  21 replacements plus the initial scene, and passed 22 bit-exact GPU field
+  audits. Every new installation starts dry/paused. Owned shutdown is clean.
+- All three 512²/32m pilots reached six physical hours; all three 1k/16m
+  confirmations reached twelve hours under the same 512 mm/h rain, roughness
+  and open boundary. Six field/hash/timeline/supply sanity audits passed; these
+  are not flux-conservation or calibrated-hydrology proofs.
+- Three rain-on exports preserve exact bed/depth and decoded velocity and load
+  in Terrain with matching wider ground. Content-identified opt-in bundles are
+  under `cache/terrain/water/v1/world-sites/`; the report's `consumer-assets.json`
+  supplies their exact matching source paths. No original capture is rebound.
+- 24 focused CPU/GPU regressions passed, none skipped, plus portable study and
+  collector helper checks. Approved terrain/water/material references remain
+  pixel-exact; cross-frontend attachment rounding remains at most 1/255.
+- Thirteen isolated 1080p/60Hz timing slots passed the proposed targets. The
+  six developed live repeats achieved 59.93–60.07x, GPU scene p95 5.21–5.56ms,
+  CPU service p95 2.69–2.78ms and advancing-field age p95 0.140–0.144s.
+- The selected original-mountain ten-minute soak achieved 59.99x, GPU p95
+  5.53ms, CPU service p95 2.72ms and field age p95 0.141s. Worker RSS medians
+  stayed 611.75MiB; viewer early/late medians rose 6.19MiB, peaking at 496.34MiB.
+  The increase is retained without an allocation/leak attribution; arbitrary
+  duration leak freedom is not established. Freshness did not accumulate lag.
+  Renderer/worker groups exited without escalation or leftovers.
+
+Verdict: the shared prepared world now has a practical live 1k water consumer
+and a reusable solver-free Terrain capture consumer. The original mountain is
+the fast-runoff control; the interior mountain adds collections; the valley is
+pooling-heavy but exposes a conspicuous truncated wet rectangle. These are
+useful demo/coverage comparisons, not complete lakes or permanent rivers.
+
+The independently derived original-world numerical bed differs from the legacy
+case by at most 0.02002m; this is not bit-exact old hydraulic-state parity.
+Source terrain, old case/capture payloads and rendering defaults stay intact.
+Native GUI/layout/frame-delivery acceptance, 2k steady-state requalification,
+far-context shadows and broader water coverage remain separate follow-ups.

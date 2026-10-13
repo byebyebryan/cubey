@@ -88,7 +88,9 @@ bindings with B-spline rendering and has a render-only off control. Actual rain
 and hydraulic state cover only the selected simulation rectangle. See the
 [integration and qualification record](world_water_v1.md) and
 [formation/capture report](http://starship:8801/fluid/world-water-20261012-Ck824g/).
-The report labels incomplete performance qualification explicitly.
+The completed report includes all thirteen passing headless timing slots and
+the retained finite-domain/resource-growth limitations; native GUI acceptance
+remains separate.
 
 ### Historical Mountain Rain Demo V1
 

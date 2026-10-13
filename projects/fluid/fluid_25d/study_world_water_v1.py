@@ -202,6 +202,7 @@ def report(out):
     if json.loads((out / "lifecycle/validation.json").read_bytes())["errors"]:
         raise ValueError("managed lifecycle validation failed")
     from review_offscreen_perf_v2 import measure
+    from analyze_live_perf_terrain_v1 import resource_trend, display_age_trend
     performance_rows = []
     gates = []
     for path in sorted((out / "performance").glob("*/results.json")):
@@ -244,9 +245,19 @@ def report(out):
     page += '<p>The atlas locates sites, native 30 m terrain supplies elevations, the default 1k/16 m grid simulates only the central region, and exterior terrain supplies context. Captured views animate appearance, not hydraulic state. No terrain generation, solver port, GUI launch or default replacement.</p>'
     page += '<p><a href="/terrain/readability-20261012-a1/">Shared world atlas and approved material study</a>. The existing six-site collection remains the default; this is a separate prepared-world collection.</p>'
     page += '<p><strong>Important boundary:</strong> wider ground does not continue the water. Pools and streams meeting the simulation perimeter are truncated observations, not complete lakes or evidence that the exterior is dry. The valley case deliberately retains this limitation instead of hiding its wet rectangle.</p>'
+    page += '<p>The original-location world case is independently sampled from its wider package, not a bit-exact reuse of the legacy simulation grid. The measured numerical-bed difference is at most 0.02002 m. Legacy cases/captures and approved images remain unchanged. <a href="original-grid-comparison.json">Grid comparison</a> · <a href="legacy-admission.json">All 30 original cases still admitted</a>.</p>'
     page += '<table><tr><th>Site</th><th>Captured time</th><th>Stored water</th><th>Wet speed P95</th></tr>'+''.join(rows)+'</table>'+''.join(cards)
     page += '<section><h2>Current live and held-state costs</h2><p>Two isolated 90-second repeats per site, 1080p/60Hz, 20s warmup excluded. Live cases are preconditioned to twelve physical rain-on hours. A separate ten-minute live soak begins at six hours to remain inside the finite twenty-hour worker horizon. Held states and live states are not an isolated bridge-overhead comparison.</p><div style="overflow:auto"><table><tr><th>Trial</th><th>Physical/wall ×</th><th>GPU p95 ms</th><th>CPU service p95 ms</th><th>Advancing-state age p95 s</th><th>Target</th></tr>'+''.join(performance_rows)+'</table></div><p>Targets: GPU ≤8ms, CPU service ≤4ms, live pace ≥54×, advancing-state age ≤1s. Paced loop intervals include deliberate waits and are reported in raw receipts. <a href="performance-gates.json">All measured repeats</a>.</p></section>'
-    page += '<p><a href="field-audit.json">Field sanity audit</a> · <a href="frozen.json">Frozen inputs/runtime</a> · <a href="lifecycle/validation.json">Selection/reset checks</a>. Native GUI and human acceptance remain separate.</p></main>'
+    soak_result = out / "performance/soak/results.json"
+    if soak_result.exists():
+        soak = json.loads(soak_result.read_bytes())["trials"][0]
+        trend = resource_trend(soak)
+        ages = display_age_trend(out / "performance/soak/live-0", soak)
+        write(out / "soak-trends.json", {"resources":trend, "ages":ages, "cleanup":soak["cleanup"],
+              "scope":"Finite ten-minute evidence, not a guarantee of no leaks over arbitrary operation"})
+        change = trend["viewer_rss_mib"]["median_change"]
+        page += f'<section><h2>Ten-minute resource/freshness check</h2><p>Worker early/late median RSS stayed {trend["worker_rss_mib"]["early"]["median"]:.2f} MiB. Viewer median RSS increased by {change:.2f} MiB, with peak {trend["viewer_rss_mib"]["peak"]:.2f} MiB; this measured increase is retained, not attributed or called leak-free. Display freshness stayed stable across the early/late windows. All owned worker/viewer groups exited. <a href="soak-trends.json">Full trends and cleanup</a>.</p></section>'
+    page += '<p><a href="field-audit.json">Field sanity audit</a> · <a href="frozen.json">Frozen inputs/runtime</a> · <a href="lifecycle/validation.json">Selection/reset checks</a> · <a href="regression-tests.xml">24 CPU/GPU regressions</a> · <a href="consumer-assets.json">Reusable neutral captures</a>. Native GUI and human acceptance remain separate.</p></main>'
     (out / "index.html").write_text(page)
     write(out / "report-receipt.json", {"page_sha256": sha256(out / "index.html"), "runtime": frozen["runtime"]})
 
