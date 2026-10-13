@@ -15,6 +15,8 @@ std::string read(const std::filesystem::path& path, std::uint64_t limit = 65536)
         std::filesystem::file_size(path) > limit)
         throw std::runtime_error("invalid landscape metadata path or size: " + path.string());
     std::ifstream stream(path, std::ios::binary);
+    if (!stream)
+        throw std::runtime_error("unreadable landscape metadata: " + path.string());
     return {std::istreambuf_iterator<char>{stream}, {}};
 }
 Json parse(const std::string& raw) {
@@ -57,6 +59,19 @@ std::filesystem::path contained(const std::filesystem::path& root,
                                 const std::filesystem::path& relative) {
     relative_path(relative);
     const auto base = std::filesystem::weakly_canonical(root);
+    auto current = base;
+    for (const auto& component : relative) {
+        current /= component;
+        std::error_code error;
+        const auto status = std::filesystem::symlink_status(current, error);
+        if (error && error != std::errc::no_such_file_or_directory)
+            throw std::filesystem::filesystem_error("unable to inspect landscape path", current,
+                                                    error);
+        // Reject dangling links too: weakly_canonical alone can leave an
+        // unresolved final symlink looking like an ordinary missing payload.
+        if (std::filesystem::is_symlink(status))
+            throw std::runtime_error("landscape package symlink rejected: " + current.string());
+    }
     const auto candidate = std::filesystem::weakly_canonical(base / relative);
     const auto local = candidate.lexically_relative(base);
     if (local.empty() || *local.begin() == "..")
@@ -71,17 +86,30 @@ std::filesystem::path pinned(const std::filesystem::path& root,
         throw std::runtime_error("landscape reference hash mismatch: " + ref.path.string());
     return path;
 }
-void payloads(const std::filesystem::path& root, const std::filesystem::path& manifest,
-              const char* collection) {
+bool present(const std::filesystem::path& path, std::vector<std::string>& missing) {
+    std::error_code error;
+    const auto status = std::filesystem::status(path, error);
+    if (error && error != std::errc::no_such_file_or_directory)
+        throw std::filesystem::filesystem_error("unable to inspect landscape asset", path, error);
+    if (!std::filesystem::exists(status)) {
+        missing.push_back(path.string());
+        return false;
+    }
+    return true;
+}
+void payloads(const std::filesystem::path& manifest, const char* collection,
+              std::vector<std::string>& missing) {
     const auto doc = parse(read(manifest, 1048576));
+    if (!doc.at(collection).is_object() || doc.at(collection).empty())
+        throw std::runtime_error("empty landscape payload collection");
     for (const auto& [name, field] : doc.at(collection).items()) {
         const std::filesystem::path relative = field.at("path").get<std::string>();
-        relative_path(relative);
-        const auto path =
-            contained(root, (manifest.parent_path() / relative).lexically_relative(root));
+        const auto path = contained(manifest.parent_path(), relative);
+        if (!present(path, missing))
+            continue;
         if (!std::filesystem::is_regular_file(path) ||
             std::filesystem::file_size(path) != field.at("byte_count").get<std::uint64_t>())
-            throw std::runtime_error("landscape payload missing or wrong size: " + path.string());
+            throw std::runtime_error("landscape payload invalid or wrong size: " + path.string());
     }
 }
 } // namespace
@@ -143,23 +171,83 @@ TerrainLandscapeProbe probe_terrain_landscape(const TerrainLandscapePreset& pres
                                               const std::filesystem::path& cache_root) {
     bool any = false;
     try {
+        std::vector<std::string> missing;
         const auto site = contained(cache_root, preset.site.path);
         any = std::filesystem::exists(site.parent_path());
-        if (!std::filesystem::exists(site))
-            return {any ? TerrainLandscapeAvailability::Incomplete
-                        : TerrainLandscapeAvailability::Missing,
-                    "Prepared site is not installed"};
+        const bool site_present = present(site, missing);
+        bool metadata_complete = site_present;
+        std::optional<std::filesystem::path> source_manifest;
+        if (site_present) {
+            // Check every present pin before reporting absence. An absent water
+            // package must not mask a changed site manifest (or vice versa).
+            const auto doc = parse(read(pinned(cache_root, preset.site)));
+            if (doc.at("site_id") != preset.site_id ||
+                doc.at("schema") != "cubey.terrain.site-coverage.v1" ||
+                !doc.at("admitted").get<bool>() || !doc.at("rejection_reason").is_null())
+                throw std::runtime_error("landscape site identity/admission mismatch");
+            source_manifest =
+                contained(site.parent_path(), doc.at("heightfield").get<std::string>());
+            for (const auto& name :
+                 {std::string("world-recipe.json"), doc.at("heightfield").get<std::string>(),
+                  doc.at("surface_fields").get<std::string>()}) {
+                const auto path = contained(site.parent_path(), name);
+                if (!present(path, missing)) {
+                    metadata_complete = false;
+                    continue;
+                }
+                if (name == "world-recipe.json")
+                    (void)parse(read(path));
+                else
+                    payloads(path, "files", missing);
+            }
+        }
         if (preset.water) {
             const auto water = contained(cache_root, preset.water->path);
-            if (!std::filesystem::exists(water))
-                return {TerrainLandscapeAvailability::Incomplete, "Saved water is not installed"};
+            any = any || std::filesystem::exists(water.parent_path());
+            if (!present(water, missing)) {
+                metadata_complete = false;
+            } else {
+                const auto doc = parse(read(pinned(cache_root, *preset.water)));
+                keys(doc, {"schema", "site_id", "world_id", "site_manifest_sha256",
+                           "world_recipe_sha256", "heightfield_manifest_sha256", "capture"});
+                if (doc.at("schema") != "cubey.terrain.site-water-binding.v1" ||
+                    doc.at("site_id") != preset.site_id)
+                    throw std::runtime_error("landscape water identity/schema mismatch");
+                const auto check_present_pin = [&](const char* key,
+                                                   const std::filesystem::path& path) {
+                    const auto expected = doc.at(key).get<std::string>();
+                    if (!is_sha256_hex(expected))
+                        throw std::runtime_error("invalid landscape source digest");
+                    if (std::filesystem::exists(path)) {
+                        const auto raw = read(path);
+                        if (sha256_hex(std::as_bytes(std::span{raw})) != expected)
+                            throw std::runtime_error("landscape present source hash mismatch: " +
+                                                     path.string());
+                    }
+                };
+                check_present_pin("site_manifest_sha256", site);
+                check_present_pin("world_recipe_sha256",
+                                  contained(site.parent_path(), "world-recipe.json"));
+                if (source_manifest)
+                    check_present_pin("heightfield_manifest_sha256", *source_manifest);
+                const auto ref = reference(doc.at("capture"));
+                if (ref.path.has_parent_path())
+                    throw std::runtime_error("landscape capture must be package-local");
+                const auto capture = contained(water.parent_path(), ref.path);
+                if (!present(capture, missing))
+                    metadata_complete = false;
+                else
+                    payloads(pinned(water.parent_path(), ref), "fields", missing);
+            }
         }
-        const auto selected = resolve_terrain_landscape(preset, cache_root);
-        const auto base = std::filesystem::weakly_canonical(cache_root);
-        payloads(base, selected.site.heightfield, "files");
-        payloads(base, selected.site.surface_fields, "files");
-        if (selected.capture)
-            payloads(base, *selected.capture, "fields");
+        // Full small-metadata admission still runs when only binary payloads
+        // are missing, so source/site/world mismatches remain errors.
+        if (metadata_complete)
+            (void)resolve_terrain_landscape(preset, cache_root);
+        if (!missing.empty())
+            return {any ? TerrainLandscapeAvailability::Incomplete
+                        : TerrainLandscapeAvailability::Missing,
+                    "Prepared asset is not installed: " + missing.front()};
         return {TerrainLandscapeAvailability::Available,
                 "Metadata pinned; payloads checked on Apply"};
     } catch (const std::exception& error) {

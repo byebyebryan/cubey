@@ -173,6 +173,55 @@ int main(int argc, char** argv) {
         require(probe_terrain_landscape(wet, root / "cache").availability ==
                     TerrainLandscapeAvailability::Available,
                 "valid wet metadata unavailable");
+        const auto probe_wet = [&] {
+            return probe_terrain_landscape(wet, root / "cache").availability;
+        };
+        for (const std::string name :
+             {"elevation.f32", "climate.f32", "depth.f32", "world-recipe.json", "heightfield.json",
+              "surface-fields.json", "capture.json", "binding.json", "site.json"}) {
+            const auto original = site_root / name;
+            const auto retained = site_root / (name + ".retained");
+            std::filesystem::rename(original, retained);
+            require(probe_wet() == TerrainLandscapeAvailability::Incomplete,
+                    "missing component not incomplete");
+            std::filesystem::rename(retained, original);
+        }
+        // Present corruption wins over another missing component.
+        std::filesystem::rename(site_root / "binding.json", site_root / "binding.retained");
+        write(site_root / "site.json", "changed");
+        require(probe_wet() == TerrainLandscapeAvailability::Invalid,
+                "absent water masked changed site pin");
+        write(site_root / "site.json", site.dump());
+        std::filesystem::rename(site_root / "binding.retained", site_root / "binding.json");
+        std::filesystem::rename(site_root / "elevation.f32", site_root / "elevation.retained");
+        write(site_root / "depth.f32", "bad-size");
+        require(probe_wet() == TerrainLandscapeAvailability::Invalid,
+                "absent terrain masked wrong water size");
+        write(site_root / "depth.f32", "1234");
+        std::filesystem::rename(site_root / "elevation.retained", site_root / "elevation.f32");
+        // Unsafe dangling links are invalid, not missing-cache fallback.
+        std::filesystem::remove(site_root / "depth.f32");
+        std::filesystem::create_symlink(root / "outside-missing", site_root / "depth.f32");
+        require(probe_wet() == TerrainLandscapeAvailability::Invalid,
+                "unsafe dangling link classified incomplete");
+        std::filesystem::remove(site_root / "depth.f32");
+        write(site_root / "depth.f32", "1234");
+        const auto permissions =
+            std::filesystem::status(site_root / "surface-fields.json").permissions();
+        std::filesystem::permissions(site_root / "surface-fields.json",
+                                     std::filesystem::perms::none);
+        if (!std::ifstream(site_root / "surface-fields.json"))
+            require(probe_wet() == TerrainLandscapeAvailability::Invalid,
+                    "unreadable metadata classified incomplete");
+        std::filesystem::permissions(site_root / "surface-fields.json", permissions);
+        std::filesystem::rename(site_root / "world-recipe.json", site_root / "world.retained");
+        auto changed_field = field;
+        changed_field["extra"] = true;
+        write(site_root / "heightfield.json", changed_field.dump());
+        require(probe_wet() == TerrainLandscapeAvailability::Invalid,
+                "absent world masked changed source manifest");
+        write(site_root / "heightfield.json", field.dump());
+        std::filesystem::rename(site_root / "world.retained", site_root / "world-recipe.json");
         write(site_root / "depth.f32", "bad-size");
         require(probe_terrain_landscape(wet, root / "cache").availability ==
                     TerrainLandscapeAvailability::Invalid,
