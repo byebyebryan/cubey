@@ -25,6 +25,23 @@ layout(set=1,binding=10) uniform samplerCube terrain_diffuse_irradiance;
 layout(set=1,binding=11) uniform sampler2D terrain_landform_surface;
 layout(set=1,binding=12) uniform sampler2D terrain_climate_surface;
 layout(set=1,binding=13) uniform sampler2D terrain_correlated_surface;
+#ifndef CUBEY_TERRAIN_SURFACE_CONTEXT
+// Bounded lighting-only experiment, not a height mip or changed geometry.
+// Bilinear bed reads and a wider central difference reduce distant slope
+// variation; near pixels and the capture/context seam retain original normals.
+float terrain_study_bed(vec2 p, uvec2 grid) {
+    vec2 q=clamp(p,vec2(0),vec2(grid-uvec2(1)));
+    uvec2 a=uvec2(floor(q)), b=min(a+uvec2(1),grid-uvec2(1));
+    vec2 t=fract(q);
+    return mix(mix(terrain.values[a.y*grid.x+a.x],terrain.values[a.y*grid.x+b.x],t.x),
+               mix(terrain.values[b.y*grid.x+a.x],terrain.values[b.y*grid.x+b.x],t.x),t.y);
+}
+vec3 terrain_study_normal(vec2 p, uvec2 grid, float radius) {
+    float x=terrain_study_bed(p+vec2(radius,0),grid)-terrain_study_bed(p-vec2(radius,0),grid);
+    float z=terrain_study_bed(p+vec2(0,radius),grid)-terrain_study_bed(p-vec2(0,radius),grid);
+    return normalize(vec3(-x*params.grid_cell.w,2.0*radius*params.grid_cell.z,-z*params.grid_cell.w));
+}
+#endif
 vec3 terrain_linear(vec3 c) {
     return mix(pow((c+0.055)/1.055,vec3(2.4)),c/12.92,lessThanEqual(c,vec3(0.04045)));
 }
@@ -140,6 +157,21 @@ void main() {
             normal_strength*fluid25d_detail_fade(footprint)*surface_detail_scale);
     }
     if (terrain_view == 10 || terrain_view == 16) n = base_normal;
+#ifndef CUBEY_TERRAIN_SURFACE_CONTEXT
+    if (scenic.terrain_readability.z>2.5) {
+        uvec2 grid=uvec2(params.grid_cell.xy);
+        vec2 p=world_xz/params.grid_cell.z+0.5*(params.grid_cell.xy-1.0);
+        float cells=footprint/params.grid_cell.z;
+        float radius=clamp(cells*0.75,1.0,8.0);
+        vec2 edge=min(p,params.grid_cell.xy-1.0-p);
+        float blend=smoothstep(1.0,3.0,cells)*smoothstep(radius+1.0,2.0*(radius+1.0),min(edge.x,edge.y));
+        if (blend>0.0) {
+            vec3 filtered=terrain_study_normal(p,grid,radius);
+            n=normalize(mix(n,filtered,blend));
+            base_normal=normalize(mix(base_normal,filtered,blend));
+        }
+    }
+#endif
 #ifdef CUBEY_TERRAIN_SURFACE_CONTEXT
     float wet = clamp(context_wet,0.0,1.0);
 #else

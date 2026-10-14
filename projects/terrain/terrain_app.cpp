@@ -1233,13 +1233,15 @@ class TerrainApp {
                 if (ImGui::Button("Reset landscape camera"))
                     configure_capture_camera();
                 if (ImGui::TreeNode("Appearance & coverage options")) {
-                    int readability = config_.terrain_readability == "refined"      ? 2
-                                      : config_.terrain_readability == "detail-off" ? 1
-                                                                                    : 0;
-                    if (ImGui::Combo(
-                            "Terrain material", &readability,
-                            "Previous reference\0Periodic detail off\0Refined (default)\0")) {
-                        config_.terrain_readability = readability == 2   ? "refined"
+                    int readability = config_.terrain_readability == "filtered-study" ? 3
+                                      : config_.terrain_readability == "refined"      ? 2
+                                      : config_.terrain_readability == "detail-off"   ? 1
+                                                                                      : 0;
+                    if (ImGui::Combo("Terrain material", &readability,
+                                     "Previous reference\0Periodic detail off\0Refined "
+                                     "(default)\0Filtered lighting (study)\0")) {
+                        config_.terrain_readability = readability == 3   ? "filtered-study"
+                                                      : readability == 2 ? "refined"
                                                       : readability == 1 ? "detail-off"
                                                                          : "current";
                         capture_runtime_->set_terrain_readability(unsigned(readability));

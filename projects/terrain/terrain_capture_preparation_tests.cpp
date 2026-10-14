@@ -62,6 +62,8 @@ int main() {
         require(uniform->capture().depth_m == capture.depth_m, "preparation changed depth");
         uniform->set_shadow_strength(0);
         uniform->set_shadow_strength(1);
+        uniform->set_terrain_readability(3);
+        rejects([&] { uniform->set_terrain_readability(4); });
         rejects([&] { uniform->set_shadow_strength(-1); });
         rejects([&] { uniform->set_shadow_strength(std::numeric_limits<float>::quiet_NaN()); });
         auto shadow_config = config;

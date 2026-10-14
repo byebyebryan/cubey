@@ -347,7 +347,7 @@ void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span,
         span, focus.x, focus.y);
 }
 void TerrainWaterCaptureRuntime::set_terrain_readability(unsigned mode) {
-    if (mode > 2U)
+    if (mode > 3U)
         throw std::runtime_error("invalid terrain readability mode");
     auto& s = *state_;
     s.material.terrain_readability = float(mode);

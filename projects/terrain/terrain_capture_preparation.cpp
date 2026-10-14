@@ -36,9 +36,10 @@ prepare_terrain_capture(const TerrainProjectConfig& config, const std::filesyste
             sample.x > float(grid.width - 1U) || sample.y > float(grid.height - 1U))
             throw std::runtime_error("capture camera focus is outside the captured domain");
     }
-    runtime->set_terrain_readability(config.terrain_readability == "refined"      ? 2U
-                                     : config.terrain_readability == "detail-off" ? 1U
-                                                                                  : 0U);
+    runtime->set_terrain_readability(config.terrain_readability == "filtered-study" ? 3U
+                                     : config.terrain_readability == "refined"      ? 2U
+                                     : config.terrain_readability == "detail-off"   ? 1U
+                                                                                    : 0U);
     if (config.captured_water_shadow_strength)
         runtime->set_shadow_strength(*config.captured_water_shadow_strength);
     if (config.captured_water_context)

@@ -631,8 +631,9 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                  config.captured_water_ground_view);
     builder.bind(
         option("terrain.readability", "--terrain-readability", "Terrain Readability", "Terrain",
-               "Shared shading: refined default, current reference, detail-off diagnostic.",
-               ValueType::Enum, {}, {"current", "detail-off", "refined"}),
+               "Shared shading: refined default, current reference, detail-off diagnostic; "
+               "filtered-study tests distant paired-ground lighting only.",
+               ValueType::Enum, {}, {"current", "detail-off", "refined", "filtered-study"}),
         config.terrain_readability);
     builder.bind(option("terrain.captured_water_shadow_strength", "--terrain-water-shadow-strength",
                         "Capture Shadow Study", "Terrain",

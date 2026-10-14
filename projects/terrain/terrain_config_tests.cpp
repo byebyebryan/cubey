@@ -515,6 +515,9 @@ int main() {
         test_runtime_validation_and_diagnostics();
         test_captured_water_options();
         require(parse({}).terrain_readability == "refined", "accepted readability must be default");
+        require(parse({"--terrain-readability", "filtered-study"}).terrain_readability ==
+                    "filtered-study",
+                "lighting filter trial is explicit only");
         require(!parse({}).captured_water_shadow_strength, "shadow study changed default recipe");
         require(
             parse({"--terrain-landscape", "mountain-local", "--terrain-water-shadow-strength", "0"})
