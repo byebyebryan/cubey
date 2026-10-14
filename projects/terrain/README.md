@@ -442,6 +442,24 @@ selection while retaining missing-cache fallback and explicit legacy options.
 Until then, no-argument startup remains legacy. This pass launches no native
 GUI and does not promote a scene or push commits.
 
+#### Wide-view rendering study (opt-in lighting trial)
+
+The follow-up [wide-view study](../../docs/terrain-wide-view-study-v1.md)
+separates distant terrain grain, actual saved storm flooding and finite coverage.
+One inexpensive paired-ground lighting filter is retained as
+`--terrain-readability filtered-study`; `refined` and startup defaults are unchanged.
+It reduces distant normal peppering without changing geometry/water fields, but
+does not remove shallow water sheets, extend water coverage or qualify far shadows.
+
+Matched browser controls:
+<http://starship:8787/reports/55f06e5da5dce2a094a9b5004154524074f6915b96ac0b34929cc317e77c9b85/>.
+All 42 selected regression groups pass. Current/filtered render-only scenes stay
+within the 8ms GPU / 4ms CPU-service gates; observed paired GPU p95 differences
+are +0.026–0.041ms. Denser uniform geometry costs 8.748–8.773ms and is not promoted.
+The close pair, raw statistics and deliberately wet finite edge remain visible.
+Native GUI and default review are deferred; the next bounded study is distant
+water coverage/shading, not a new solver or terrain bake.
+
 ### Captured-water landscape context (opt-in study)
 
 Add `--terrain-water-context --terrain-water-capture-camera landscape` to the
