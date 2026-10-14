@@ -2,6 +2,7 @@
 
 #include "terrain_capture_preparation.h"
 #include "terrain_config.h"
+#include "terrain_landscape_presentation.h"
 #include "terrain_product_adapter.h"
 #include "terrain_source_catalog.h"
 #include <cubey/asset/terrain_landscape_catalog.h>
@@ -607,6 +608,7 @@ class TerrainApp {
                 capture_active_ = config_.water_capture_view == "captured-patch";
                 capture_animation_s_ = config_.captured_water_animation_s;
                 configure_capture_camera();
+                log_landscape_presentation();
             } catch (const std::exception& error) {
                 // Explicit headless requests fail loudly; interactive users can
                 // still use the normal source picker/backdrop after rejection.
@@ -1051,17 +1053,27 @@ class TerrainApp {
                     ready.install_milliseconds, config_.site_water_binding_path ? 1U : 0U,
                     gpu.deferred_destruction_count(),
                     double(next.observed_install_heap_bytes) / (1024.0 * 1024.0));
+        log_landscape_presentation();
+    }
+
+    void log_landscape_presentation() const {
+        if (!capture_runtime_)
+            return;
+        const auto summary = terrain_landscape_presentation(config_, capture_runtime_->capture());
+        std::printf("terrain_landscape_summary: %s; showing=%s; %s; %s; history=%s\n",
+                    summary.mode.c_str(), summary.title.c_str(), summary.water_coverage.c_str(),
+                    summary.terrain_coverage.c_str(), summary.provenance.c_str());
     }
 
     void draw_landscape_selector() {
-        ImGui::SeparatorText("Prepared landscape");
+        ImGui::SeparatorText("Landscape");
         if (!config_.landscape_startup_notice.empty())
             ImGui::TextWrapped("%s", config_.landscape_startup_notice.c_str());
-        ImGui::Text("Showing: %s", !capture_active_ ? "Legacy backdrop"
-                                   : config_.active_landscape_id.empty()
-                                       ? (config_.terrain_site ? config_.terrain_site->id.c_str()
-                                                               : "Legacy / custom source")
-                                       : config_.active_landscape_id.c_str());
+        const auto showing =
+            capture_active_ && capture_runtime_
+                ? terrain_landscape_presentation(config_, capture_runtime_->capture()).title
+                : std::string("Legacy backdrop");
+        ImGui::TextWrapped("Showing: %s", showing.c_str());
         if (!landscape_catalog_) {
             ImGui::TextWrapped("Catalog unavailable: %s", landscape_error_.c_str());
             return;
@@ -1098,8 +1110,11 @@ class TerrainApp {
         }
         const auto& selected = presets.at(edit_landscape_index_);
         const auto& probe = landscape_availability_.at(edit_landscape_index_);
-        ImGui::Text("Selected: %s", selected.id.c_str());
-        ImGui::TextWrapped("%s", probe.reason.c_str());
+        ImGui::TextWrapped("Selected: %s", terrain_landscape_selection_label(selected).c_str());
+        if (probe.availability != cubey::asset::TerrainLandscapeAvailability::Available)
+            ImGui::TextWrapped("Unavailable: %s", probe.reason.c_str());
+        else if (selected.id != config_.active_landscape_id)
+            ImGui::TextDisabled("Ready. Apply loads this selection and resets the camera.");
         ImGui::BeginDisabled(probe.availability !=
                                  cubey::asset::TerrainLandscapeAvailability::Available ||
                              selected.id == config_.active_landscape_id);
@@ -1116,15 +1131,28 @@ class TerrainApp {
             refresh_landscape_availability();
         ImGui::EndDisabled();
         const auto& status = landscape_builds_.status();
-        if (busy)
-            ImGui::Text("Loading %s: %s", status.generation.label.c_str(),
-                        cubey::staged_resource_phase_name(status.phase).data());
-        if (status.prepare_milliseconds > 0 || status.install_milliseconds > 0)
-            ImGui::Text("Prepare / upload: %.1f / %.1f ms", status.prepare_milliseconds,
-                        status.install_milliseconds);
+        if (landscape_builds_.busy()) {
+            const auto& loading = cubey::asset::terrain_landscape_preset(*landscape_catalog_,
+                                                                         status.generation.label);
+            ImGui::TextWrapped("Loading: %s (%s)",
+                               terrain_landscape_selection_label(loading).c_str(),
+                               cubey::staged_resource_phase_name(status.phase).data());
+            ImGui::TextWrapped(
+                "Current landscape is kept until ready. Upload may briefly pause rendering.");
+        } else if (product_builds_.busy())
+            ImGui::TextWrapped("Loading legacy terrain; current landscape is kept until ready.");
         if (!landscape_error_.empty())
-            ImGui::TextWrapped("Load failed; current scene kept: %s", landscape_error_.c_str());
-        ImGui::TextDisabled("Selection + Apply/reset; never starts a solver or generator.");
+            ImGui::TextWrapped("Last load failed; previous landscape kept: %s",
+                               landscape_error_.c_str());
+        ImGui::TextWrapped(
+            "Selection changes only after Apply. No solver or terrain generator is started.");
+        if (ImGui::TreeNode("Loading diagnostics")) {
+            ImGui::Text("Selected ID: %s", selected.id.c_str());
+            ImGui::Text("Showing ID: %s", config_.active_landscape_id.c_str());
+            ImGui::Text("Last prepare / upload: %.1f / %.1f ms", status.prepare_milliseconds,
+                        status.install_milliseconds);
+            ImGui::TreePop();
+        }
     }
 
     void draw_ui(cubey::host::WindowedAppContext& context) {
@@ -1144,33 +1172,19 @@ class TerrainApp {
             }
             if (capture_active_) {
                 const auto& capture = capture_runtime_->capture();
-                if (config_.terrain_site) {
-                    ImGui::TextWrapped(
-                        config_.site_water_binding_path
-                            ? "Prepared site with rain-fed captured water. Fixed hydraulic state; "
-                              "no solver running."
-                            : "Prepared terrain-only site; no water simulation or recording.");
-                    ImGui::Text("Site: %s / world %.12s", config_.terrain_site->id.c_str(),
-                                config_.terrain_site->world_id.c_str());
-                    ImGui::Text("Detail / backdrop: %.2f / %.2f km",
-                                config_.terrain_site->level_spans_m[0] * .001F,
-                                config_.terrain_site->level_spans_m[3] * .001F);
-                    if (config_.site_water_binding_path)
-                        ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
-                                    capture.rain_mm_per_hour);
-                } else {
-                    ImGui::TextWrapped("Animated rain-fed capture; fixed bed, depth and velocity. "
-                                       "No solver running.");
-                    ImGui::Text("Capture: %.2f h at %.0f mm/h", capture.capture_time_s / 3600.0,
-                                capture.rain_mm_per_hour);
-                }
-                ImGui::Text("%s: %.2f km / %.0f m cells (%u x %u)",
-                            config_.terrain_site && !config_.site_water_binding_path
-                                ? "Terrain inspection"
-                                : "Water",
-                            float(capture.grid.width - 1U) * capture.grid.cell_size_m * .001F,
-                            capture.grid.cell_size_m, capture.grid.width, capture.grid.height);
+                const auto summary = terrain_landscape_presentation(config_, capture);
+                ImGui::SeparatorText(summary.mode.c_str());
+                ImGui::TextWrapped("%s", summary.water_coverage.c_str());
+                ImGui::TextWrapped("%s", summary.terrain_coverage.c_str());
+                ImGui::TextWrapped("%s", summary.provenance.c_str());
+                if (summary.has_water)
+                    ImGui::TextWrapped("Rain is capture history, not current weather. Rainfall "
+                                       "cannot be edited here.");
                 if (ImGui::TreeNode("Asset / rendering diagnostics")) {
+                    if (config_.terrain_site)
+                        ImGui::Text("Site: %s / world %.12s", config_.terrain_site->id.c_str(),
+                                    config_.terrain_site->world_id.c_str());
+                    ImGui::Text("Grid: %u x %u", capture.grid.width, capture.grid.height);
                     ImGui::Text("Source: %s", capture_runtime_->source_label().c_str());
                     ImGui::Text("Elevation hash: %.12s", capture.source_elevation_sha256.c_str());
                     ImGui::Text("Footprint: %.3f x %.3f km (cell centers)",
@@ -1187,6 +1201,7 @@ class TerrainApp {
                             config_.captured_water_detail_span_m * .001F);
                     ImGui::TreePop();
                 }
+                ImGui::SeparatorText("Explore landscape");
                 int view = config_.water_capture_camera == "overview"    ? 0
                            : config_.water_capture_camera == "stream"    ? 1
                            : config_.water_capture_camera == "lake"      ? 2
@@ -1210,49 +1225,54 @@ class TerrainApp {
                 }
                 ImGui::BeginDisabled(config_.terrain_site && !config_.site_water_binding_path);
                 ImGui::Checkbox("Show water", &config_.captured_water_visible);
+                ImGui::Checkbox("Animate saved flow cues", &config_.captured_water_animate);
                 ImGui::EndDisabled();
-                int readability = config_.terrain_readability == "refined"      ? 2
-                                  : config_.terrain_readability == "detail-off" ? 1
-                                                                                : 0;
-                if (ImGui::Combo("Terrain material", &readability,
-                                 "Previous reference\0Periodic detail off\0Refined (default)\0")) {
-                    config_.terrain_readability = readability == 2   ? "refined"
-                                                  : readability == 1 ? "detail-off"
-                                                                     : "current";
-                    capture_runtime_->set_terrain_readability(unsigned(readability));
-                }
-                int ground_view = config_.captured_water_ground_view == "shaded"       ? 0
-                                  : config_.captured_water_ground_view == "normal"     ? 1
-                                  : config_.captured_water_ground_view == "clay"       ? 2
-                                  : config_.captured_water_ground_view == "ownership"  ? 3
-                                  : config_.captured_water_ground_view == "clay-clean" ? 4
-                                                                                       : 5;
-                if (ImGui::Combo("Ground diagnostic (hides water)", &ground_view,
-                                 "Shaded\0Normals\0Clay\0Ownership\0Clean clay\0Albedo\0"))
-                    config_.captured_water_ground_view = ground_view == 0   ? "shaded"
-                                                         : ground_view == 1 ? "normal"
-                                                         : ground_view == 2 ? "clay"
-                                                         : ground_view == 3 ? "ownership"
-                                                         : ground_view == 4 ? "clay-clean"
-                                                                            : "albedo";
-                if (ImGui::Checkbox("Wider ground context (no added water)",
-                                    &config_.captured_water_context))
-                    configure_capture_camera();
-                if (config_.captured_water_context) {
-                    ImGui::TextWrapped("Water stops at its recorded rectangle. Exterior ground is "
-                                       "uncomputed water coverage, not proven dry terrain.");
-                    ImGui::TextDisabled(
-                        "Core-focused 4096 shadow; far-context shadows unqualified.");
-                }
-                ImGui::BeginDisabled(config_.terrain_site && !config_.site_water_binding_path);
-                ImGui::Checkbox("Surface motion (saved flow cues)",
-                                &config_.captured_water_animate);
-                ImGui::EndDisabled();
+                if (summary.has_water)
+                    ImGui::TextWrapped("Animation changes surface appearance only; water levels "
+                                       "and distribution stay fixed.");
                 if (ImGui::Button("Reset landscape camera"))
                     configure_capture_camera();
-                ImGui::TextDisabled(
-                    "Clouds disabled: composed water has no cloud-consumable depth.");
-                ImGui::TextDisabled("No radial terrain or radial shadow casters in this view.");
+                if (ImGui::TreeNode("Appearance & coverage options")) {
+                    int readability = config_.terrain_readability == "refined"      ? 2
+                                      : config_.terrain_readability == "detail-off" ? 1
+                                                                                    : 0;
+                    if (ImGui::Combo(
+                            "Terrain material", &readability,
+                            "Previous reference\0Periodic detail off\0Refined (default)\0")) {
+                        config_.terrain_readability = readability == 2   ? "refined"
+                                                      : readability == 1 ? "detail-off"
+                                                                         : "current";
+                        capture_runtime_->set_terrain_readability(unsigned(readability));
+                    }
+                    int ground_view = config_.captured_water_ground_view == "shaded"       ? 0
+                                      : config_.captured_water_ground_view == "normal"     ? 1
+                                      : config_.captured_water_ground_view == "clay"       ? 2
+                                      : config_.captured_water_ground_view == "ownership"  ? 3
+                                      : config_.captured_water_ground_view == "clay-clean" ? 4
+                                                                                           : 5;
+                    if (ImGui::Combo("Ground diagnostic (hides water)", &ground_view,
+                                     "Shaded\0Normals\0Clay\0Ownership\0Clean clay\0Albedo\0"))
+                        config_.captured_water_ground_view = ground_view == 0   ? "shaded"
+                                                             : ground_view == 1 ? "normal"
+                                                             : ground_view == 2 ? "clay"
+                                                             : ground_view == 3 ? "ownership"
+                                                             : ground_view == 4 ? "clay-clean"
+                                                                                : "albedo";
+                    if (ImGui::Checkbox("Wider ground context (no added water)",
+                                        &config_.captured_water_context))
+                        configure_capture_camera();
+                    if (config_.captured_water_context) {
+                        ImGui::TextWrapped(
+                            "Water stops at its recorded rectangle. Exterior ground is "
+                            "uncomputed water coverage, not proven dry terrain.");
+                        ImGui::TextDisabled(
+                            "Core-focused 4096 shadow; far-context shadows unqualified.");
+                    }
+                    ImGui::TextDisabled(
+                        "Clouds disabled: composed water has no cloud-consumable depth.");
+                    ImGui::TextDisabled("No radial terrain or radial shadow casters in this view.");
+                    ImGui::TreePop();
+                }
                 ImGui::End();
                 return;
             }
