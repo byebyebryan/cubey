@@ -258,9 +258,13 @@ over nominal 131.072 km. Both are independent twelve-hour storm states, not
 nested water LOD levels. The preset automatically supplies the bounded 4.5M
 mesh budget unless explicitly overridden. Direct site/source/capture arguments
 retain their existing behavior; they override `auto` and conflict with a named
-preset. Configuration-file and CLI assignments retain precedence for rendering
-options. `--terrain-landscape-cache-root` supports another explicitly prepared
-cache without recompiling or mutating packages.
+preset. Explicit legacy terrain/environment controls (including zero and false
+assignments) also bypass `auto`, rather than being ignored by the saved-landscape
+renderer. A named landscape rejects incompatible legacy controls; use `legacy`
+or the capture-specific controls instead. `--no-clouds` is compatible with a
+prepared landscape. Configuration-file and CLI assignments retain precedence
+for rendering options. `--terrain-landscape-cache-root` supports another
+explicitly prepared cache without recompiling or mutating packages.
 
 The native UI exposes Site / Water state / Selected / Showing / Apply landscape
 above either view. Apply prepares and validates asynchronously, uploads through
@@ -272,6 +276,13 @@ hashing payloads each UI frame. Show water and Surface motion do not reload
 assets. Local/Wider framing and Reset camera remain independent of asset selection.
 Native GUI layout and manual acceptance are deferred; headless lifecycle controls
 exercise the same Apply path, including extent rebuild and pending-load shutdown.
+Startup and Apply use one preparation routine. Uniform detail does not allocate
+fixed topology, and context-off does not allocate the terrain exterior. Explicit
+capture detail/budget/focus/span/material/visibility/motion settings survive
+Apply; unassigned camera defaults reset for the newly selected site. A sticky
+camera focus outside the new capture fails during CPU preparation, retaining the
+old scene. Explicit Apply chooses the prepared view and releases the previous
+legacy source/environment ownership.
 
 Normal build, test and startup never run Terrain Diffusion or SynxFlow. To verify
 installed packages, or explicitly install the exact retained study bundles:
@@ -291,10 +302,15 @@ produce different recording/provenance metadata and requires a reviewed catalog
 revision rather than pretending to recreate the pinned asset.
 
 Explicit missing/invalid selections fail. `auto` selects the proposed mountain
-local preset only when available, otherwise missing/incomplete metadata falls
-back to canonical terrain with a notice. Changed pins or invalid payloads are
-errors, not silent fallback. Fixed saved fields and decorative motion are labelled
-in the UI; there is no adjustable live rainfall in this consumer.
+local preset only when available, otherwise missing/incomplete metadata or
+payloads fall back to canonical terrain with a notice. Changed pins or invalid payloads are
+errors, not silent fallback. The availability probe validates present metadata,
+confined paths and payload sizes even when another file is missing; missing files
+do not mask a changed pin, wrong-size payload, unsafe link or unreadable metadata.
+All symlinks below the selected cache root are rejected, including dangling links.
+Full payload hashes/numerical validation run when loading an available selection,
+not on every availability query. Fixed saved fields and decorative motion are
+labelled in the UI; there is no adjustable live rainfall in this consumer.
 
 Review: <http://starship:8801/terrain/prepared-landscapes-20261013-zYn3Vs/>.
 Final default promotion remains pending joint review. The live Fluid demo,
@@ -318,6 +334,35 @@ mountain also has a 2048²/32 m alternative (65.504 km) for sharper local views.
 These are independent saved states, not an outer-water splice around live Fluid.
 The live 1k/16 m Fluid default and the terrain-only site path remain unchanged.
 
+##### Workflow hardening qualification (2026-10-13)
+
+Review: <http://starship:8801/terrain/landscape-hardening-qualified-20261013-m9s7qd/>.
+The frozen release build passes 39 selected regression groups without skips,
+ten headless compatibility/error controls, all four historical locked-camera
+comparisons, and exact `auto` / mountain-local parity. Partial-cache fallback,
+explicit legacy options, uniform Apply and custom-focus fixed Apply each match
+their corresponding startup/control frame pixel-for-pixel. GPU audits confirm
+unchanged bed/depth/decoded velocity and zero hydraulic dispatches.
+
+All eight 1080p render-only repeats pass the unchanged 8 ms GPU / 4 ms CPU-service
+gates: whole-scene GPU p95 3.508–4.076 ms, CPU service p95 at most 0.318 ms.
+Steady device-local heap observations peak at 759.06 MiB. This is hardware
+headless Vulkan with the solver stopped and no encoding/readback, not a native
+window or live-solver FPS qualification. Timing differences from the previous
+qualification are not claimed as a rendering speedup.
+
+The full replacement sequence retains old/new overlap: 1292 MiB peak process
+RSS, with a largest post-install GPU heap observation of 815.56 MiB (not a
+continuously sampled peak). Wet CPU preparation takes 1.38–1.45 s followed by
+0.51–0.54 s installation. Asynchronous Apply completes while 303 frames render
+over six seconds; loading is not instantaneous or guaranteed hitch-free.
+
+The original mountain / 32 m scene remains the recommended starting candidate.
+Wider states remain useful coverage/stress alternatives, not finer local water.
+The remaining promotion gate is joint native GUI/visual review: Site / Water
+selection, Selected versus Showing, loading/failure feedback, Apply/reset and
+visibility/motion/framing controls. No-argument startup still selects legacy;
+default promotion and push were deliberately not part of this hardening pass.
 Use the exact paths in
 `outputs/terrain/wider-water-world-20261012-gqeluh/SITE/published-wide-64m.json`
 (or `mountain/published-fallback-32m.json`) with:
