@@ -308,6 +308,9 @@ if (BUILD_TESTING)
     add_test(NAME terrain_landscape_hardening_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_CURRENT_SOURCE_DIR}/test_review_landscape_hardening_v1.py")
     set_tests_properties(terrain_landscape_hardening_review_helpers PROPERTIES LABELS "terrain;water;unit")
+    add_test(NAME terrain_landscape_first_use_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_landscape_first_use_v1.py")
+    set_tests_properties(terrain_landscape_first_use_review_helpers PROPERTIES LABELS "terrain;water;unit")
 
     set(
         CUBEY_TERRAIN_BACKDROP_SMOKE_ASSET
