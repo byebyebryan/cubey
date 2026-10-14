@@ -7,6 +7,16 @@ import run_terrain_rain_demo as terrain
 
 
 class Commands(unittest.TestCase):
+    def test_explicit_worker_paths_preserve_venv_and_qualified_policy(self):
+        args = terrain.parser().parse_args(['--study','/study','--native-python','/venv/bin/python',
+                                          '--extension','/build/flood.so'])
+        command = terrain.worker_command(Path('/case'),Path('/session'),30,
+                                         native_python=args.native_python,extension=args.extension)
+        self.assertEqual(command[:3],['rtk','proxy','/venv/bin/python'])
+        self.assertEqual(command[command.index('--extension')+1],'/build/flood.so')
+        self.assertEqual(command[command.index('--speed')+1],'30')
+        self.assertIn('--paused',command)
+
     def test_default_launch_is_live_1k_release_and_paced(self):
         args = terrain.parser().parse_args(["--study", "/study"])
         self.assertEqual(args.mode, "live")

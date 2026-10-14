@@ -33,6 +33,14 @@ class Presentation(unittest.TestCase):
             with self.assertRaises(ValueError):
                 present.recipe('bad','runoff',*arguments)
 
+    def test_selected_story_never_reverses_physical_time(self):
+        shots=present.story()
+        self.assertEqual(sum(s['frames'] for s in shots),2160)
+        self.assertTrue(all(a['end_s']<=b['start_s'] for a,b in zip(shots,shots[1:])))
+        self.assertTrue(all(not shot['dots'] for shot in shots))
+        self.assertEqual(present.hero()[0]['easing'],'eased')
+        self.assertLess(present.hero()[0]['end_s'],7200)
+
 
 if __name__ == '__main__':
     unittest.main()

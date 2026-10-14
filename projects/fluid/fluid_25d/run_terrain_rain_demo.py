@@ -146,9 +146,9 @@ def validate_catalogue_case(case, entries):
     return identity
 
 
-def worker_command(case, session, speed=60):
-    return ["rtk", "proxy", str(demo.LIVE_PYTHON), "-u", str(HERE / "external_synxflow/session_worker.py"),
-            "--extension", str(demo.EXTENSION), "--case", str(case), "--out", str(session),
+def worker_command(case, session, speed=60, *, native_python=None, extension=None):
+    return ["rtk", "proxy", str(native_python or demo.LIVE_PYTHON), "-u", str(HERE / "external_synxflow/session_worker.py"),
+            "--extension", str(extension or demo.EXTENSION), "--case", str(case), "--out", str(session),
             "--speed", str(speed), "--publish-interval", ".1", "--paused", "--telemetry"]
 
 
@@ -251,6 +251,10 @@ def parser():
     p.add_argument("--height", type=int, default=1080)
     p.add_argument("--app", type=Path, default=RELEASE_APP,
                    help="existing renderer artifact; default measured Release build, no build/fallback")
+    p.add_argument("--native-python", type=Path,
+                   help="explicit existing worker environment; no installation or native import in launcher")
+    p.add_argument("--extension", type=Path,
+                   help="explicit existing service extension; must match the qualified binary hash")
     p.add_argument("--render-fps", type=int, default=60,
                    help="render pacing only: default 60 Hz; 0 unpaced, independent of solver speed")
     p.add_argument("--surface-subdivision", type=int, choices=(1, 2), default=2,
@@ -284,8 +288,11 @@ def main(argv=None):
     app_sha256 = demo.ref.sha256_file(a.app)
     case = (a.study / "cases" / f"{a.site}-{a.configuration}").resolve(strict=True)
     identity = case_identity(case)
+    # Do not resolve the interpreter symlink: its venv path selects sys.prefix.
+    native_python = (a.native_python or demo.LIVE_PYTHON).absolute()
+    extension = (a.extension or demo.EXTENSION).absolute()
     if a.mode == "live":
-        if not demo.LIVE_PYTHON.is_file() or demo.ref.sha256_file(demo.EXTENSION) != demo.EXTENSION_SHA:
+        if not native_python.is_file() or not extension.is_file() or demo.ref.sha256_file(extension) != demo.EXTENSION_SHA:
             raise ValueError("audited optional native runtime missing/changed; no build attempted")
         if a.recording:
             p.error("live cannot use a recording")
@@ -313,7 +320,7 @@ def main(argv=None):
                                          switch_script=a.switch_script, no_validation=a.no_validation,
                                          **environment_options(a))}
     if a.mode == "live":
-        commands["worker"] = worker_command(case, session)
+        commands["worker"] = worker_command(case, session, native_python=native_python, extension=extension)
     print(json.dumps(identity, indent=2))
     for name, command in commands.items():
         print(name + ": " + shlex.join(command), flush=True)
@@ -334,7 +341,9 @@ def main(argv=None):
         with (out / "viewer.log").open("wb") as vlog:
             if a.mode == "live":
                 supervisor = managed.ManagedTerrainDemo(out, entries, case.name,
-                    lambda path: validate_catalogue_case(path, entries), worker_command, demo.stop_owned)
+                    lambda path: validate_catalogue_case(path, entries),
+                    lambda path, session, speed: worker_command(path, session, speed,
+                        native_python=native_python, extension=extension), demo.stop_owned)
                 supervisor.start_initial()
                 while not interrupted[0] and supervisor.state["phase"] not in ("active", "error"):
                     supervisor.poll()
@@ -383,6 +392,8 @@ def main(argv=None):
             "mode": a.mode, "site": a.site, "configuration": a.configuration,
             "acceptance": "human review not automated", "surface": a.surface,
             "app": str(a.app), "app_sha256": app_sha256,
+            "worker_runtime": {"python": str(native_python), "extension": str(extension),
+                "extension_sha256": demo.EXTENSION_SHA} if a.mode == "live" else None,
             "surface_subdivision": a.surface_subdivision, "camera": a.camera,
             "render_fps": a.render_fps, "headless": a.headless,
             "managed": supervisor is not None, "final_demo_state": supervisor.state if supervisor else None})

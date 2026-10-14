@@ -74,6 +74,11 @@ def story():
                    caption="RAIN OFF / STREAMS RETREAT"),target=[.76,.60,1800],pitch=-1.10)]
 
 
+def hero():
+    return [dict(recipe("fluid-25d", "runoff", 2400, 6600, 8, sweep=.35, easing="eased"),
+                 target=[.76,.60,1800],pitch=-1.10)]
+
+
 def command(case, recording, shot, output, *, app=demo.RELEASE_APP):
     argv = demo.viewer_command(case, recording, "Fluid 2.5D presentation", 1280, 720,
         live=False, start=shot["start_s"], camera=shot["camera"], app=app)
@@ -225,7 +230,7 @@ def capture(a):
             print("captured",shot["name"],flush=True)
         write(out/"captures.json",rows)
         return
-    shots = auditions() if a.mode == "audition" else story()
+    shots = auditions() if a.mode == "audition" else hero() if a.mode == "hero" else story()
     rows = []
     for shot in shots:
         print("capturing", shot["name"], flush=True)
@@ -237,13 +242,59 @@ def capture(a):
     report(out, rows, "Fluid 2.5D — cinematic " + a.mode)
 
 
+def assemble(a):
+    out = a.out.resolve(strict=True)
+    rows = read(out/"captures.json")
+    if len(rows)!=4 or [row["shot"]["name"] for row in rows] != [shot["name"] for shot in story()]:
+        raise ValueError("need the four qualified story segments")
+    for row in rows:
+        if digest(out/row["path"])!=row["sha256"]:
+            raise ValueError("qualified segment changed")
+        check_video(probe(out/row["path"]),row["shot"]["frames"],row["shot"]["seconds"])
+    if any(left["last_saved_s"] > right["first_saved_s"]+.001 for left,right in zip(rows,rows[1:])):
+        raise ValueError("story reverses native physical time across a cut")
+    publication = out/"fluid-25d-story.mp4"
+    argv = ["rtk","proxy","ffmpeg","-v","error"]
+    for row in rows:
+        argv += ["-i",str(out/row["path"])]
+    filters=[]
+    for index,row in enumerate(rows):
+        title=row["shot"]["caption"]
+        filters.append(f"[{index}:v]drawbox=x=0:y=0:w=iw:h=88:color=black@0.38:t=fill:enable='lt(t,3)',"
+            f"drawtext=text='{title}':x=24:y=16:fontcolor=white:fontsize=24:enable='lt(t,3)',"
+            "drawtext=text='Recorded native water / accelerated physical time':x=24:y=52:fontcolor=white:fontsize=17:enable='lt(t,3)'"
+            f"[v{index}]")
+    filters.append("".join(f"[v{i}]" for i in range(4))+"concat=n=4:v=1:a=0[v]")
+    argv += ["-filter_complex",";".join(filters),"-map","[v]","-an","-r","60","-fps_mode","cfr",
+             "-c:v","libx264","-preset","medium","-crf","24","-pix_fmt","yuv420p",
+             "-movflags","+faststart",str(publication)]
+    subprocess.run(argv,check=True,timeout=300)
+    stream=probe(publication)
+    check_video(stream,2160,36)
+    poster=out/"fluid-25d-story.png"
+    subprocess.run(["rtk","proxy","ffmpeg","-v","error","-ss","18","-i",str(publication),
+                    "-frames:v","1","-vf","format=rgb24",str(poster)],check=True,timeout=60)
+    write(out/"story-edit.json",dict(command=argv,path=publication.name,poster=poster.name,
+                                    sha256=digest(publication),probe=stream,segments=rows))
+    shutil.copy2(publication,out/"export"/publication.name)
+    shutil.copy2(poster,out/"export"/poster.name)
+    # Assemble a focused, reproducible review page; comparisons stay in the audition report.
+    page=out/"export"/"index.html"
+    content=page.read_text()
+    heading='<h1>Fluid 2.5D — cinematic story</h1>'
+    player='<section><h2>Complete 36-second project film</h2><video controls muted playsinline preload="metadata" poster="fluid-25d-story.png" src="fluid-25d-story.mp4"></video><p>Rain → streams → basin collection → retreat. Four purposeful cuts; no hydraulic interpolation.</p></section>'
+    page.write_text(content.replace(heading,heading+player))
+    print("qualified complete story",stream["nb_read_frames"],flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("audition", "story", "framing"))
+    parser.add_argument("mode", choices=("audition", "story", "framing", "hero", "assemble"))
     parser.add_argument("--study", type=Path, required=True)
     parser.add_argument("--recording", type=Path, required=True, help="qualified sealed rain-response study root")
     parser.add_argument("--out", type=Path, required=True)
-    capture(parser.parse_args())
+    args=parser.parse_args()
+    assemble(args) if args.mode=="assemble" else capture(args)
 
 
 if __name__ == "__main__":
