@@ -124,7 +124,7 @@ def motion(out):
             pairs=[(a,b) for a,b in zip(meta["frames"],meta["frames"][1:]) if b["time_s"]-a["time_s"]>frames]
             args[args.index("--fluid25d-recording-time-seconds")+1]=str(pairs[-1][0]["time_s"])
         receipt=checked(args+["--capture","video","--frames",str(frames),"--fps",str(fps),
-            "--fluid25d-recording-frame-interval-seconds","0" if cycle else "1",
+            "--fluid25d-recording-frame-interval-seconds","1",
             "--output",str(out/(name+".mp4"))],out/(name+".log"))
         raw=(out/(name+".log")).read_text()
         saved=re.findall(r"fluid_25d_recording_capture:.*saved_s=(\S+)",raw)
