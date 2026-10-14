@@ -333,23 +333,35 @@ fluid_25d_load_terrain_demo_script(const std::filesystem::path& path) {
     for (const auto& item : document.at("actions")) {
         Fluid25DTerrainDemoAction action;
         action.kind = string(item, "kind");
-        action.after_s = number(item, "after_s", 0, 3600);
+        if (item.contains("after_s") == item.contains("at_physical_s"))
+            invalid("script action requires exactly one wall or physical time trigger");
+        const char* timing = item.contains("at_physical_s") ? "at_physical_s" : "after_s";
+        if (item.contains("at_physical_s"))
+            action.at_physical_s = number(item, timing, 0, 72000);
+        else
+            action.after_s = number(item, timing, 0, 3600);
         if (action.kind == "switch") {
-            keys(item, {"kind", "after_s", "case_id", "rain_mm_per_hour", "pacing"});
+            keys(item, {"kind", timing, "case_id", "rain_mm_per_hour", "pacing"});
             action.case_id = string(item, "case_id");
             action.rain_mm_per_hour = number(item, "rain_mm_per_hour", 0, 36000);
             action.pacing = number(item, "pacing", .125, 300);
         } else if (action.kind == "set-rain" || action.kind == "set-time-scale") {
-            keys(item, {"kind", "after_s", "value"});
+            keys(item, {"kind", timing, "value"});
             action.value = number(item, "value", action.kind == "set-rain" ? 0 : .125,
                                   action.kind == "set-rain" ? 36000 : 300);
         } else if (action.kind == "resume" || action.kind == "pause" || action.kind == "reset") {
-            keys(item, {"kind", "after_s"});
+            keys(item, {"kind", timing});
         } else
             invalid("unsupported script action");
         actions.push_back(std::move(action));
     }
     return actions;
+}
+
+bool fluid_25d_demo_action_due(const Fluid25DTerrainDemoAction& action, double elapsed_wall_s,
+                               double physical_s) {
+    return action.at_physical_s ? std::isfinite(physical_s) && physical_s >= *action.at_physical_s
+                                : std::isfinite(elapsed_wall_s) && elapsed_wall_s >= action.after_s;
 }
 
 std::string fluid_25d_demo_time_label(double seconds) {

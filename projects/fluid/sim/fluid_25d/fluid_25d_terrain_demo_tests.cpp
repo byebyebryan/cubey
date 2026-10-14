@@ -183,6 +183,26 @@ void helpers(const std::filesystem::path& root) {
     script["actions"][0]["after_s"] = -1;
     write(root / "script.json", script);
     throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
+    script["actions"][0]["after_s"] = 0;
+    script["actions"][2].erase("after_s");
+    script["actions"][2]["at_physical_s"] = 7200;
+    write(root / "script.json", script);
+    const auto physical = fluid_25d_load_terrain_demo_script(root / "script.json");
+    require(!fluid_25d_demo_action_due(physical[2], 9999, 7199),
+            "physical trigger fired from elapsed wall time");
+    require(fluid_25d_demo_action_due(physical[2], 0, 7200), "physical trigger missed");
+    require(!fluid_25d_demo_action_due(physical[1], .5, 9999),
+            "wall trigger fired from physical time");
+    script["actions"][2]["after_s"] = 0;
+    write(root / "script.json", script);
+    throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
+    script["actions"][2].erase("after_s");
+    script["actions"][2]["at_physical_s"] = 72001;
+    write(root / "script.json", script);
+    throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
+    script["actions"][2].erase("at_physical_s");
+    write(root / "script.json", script);
+    throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
 }
 } // namespace
 

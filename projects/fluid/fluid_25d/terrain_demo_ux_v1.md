@@ -126,6 +126,12 @@ Example script (time is wall time after prior action acknowledgement):
 ```
 
 Other actions are `set-rain` (mm/h `value`) and `set-time-scale` (pace `value`).
+Each action requires exactly one timing key: `after_s` is wall time after the
+previous acknowledgement; `at_physical_s` is an absolute simulated timestamp
+in the current session, bounded to the prepared 20-hour horizon. For example,
+`{"kind":"set-rain","at_physical_s":7200,"value":0}` stops supply at the
+first eligible synchronized boundary after two simulated hours, without
+pausing flow. Cold setup and slower solver pace cannot fire this trigger early.
 Scripts must finish and receive every acknowledgement before the bounded run
 ends; an incomplete script fails explicitly. This is useful for shutdown tests
 but is never a successful switching trial. Performance summaries filter running

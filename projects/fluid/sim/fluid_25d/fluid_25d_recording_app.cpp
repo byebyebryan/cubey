@@ -3099,7 +3099,9 @@ void ManagedSceneReload::run_script() {
     if (action_index_ >= script_.size())
         return;
     const auto& action = script_[action_index_];
-    if (std::chrono::duration<double>(now - action_started_).count() < action.after_s)
+    if (!fluid_25d_demo_action_due(action,
+                                   std::chrono::duration<double>(now - action_started_).count(),
+                                   active_->shown_->time_s))
         return;
     if (action.kind == "switch") {
         control_->request(action.case_id, action.rain_mm_per_hour, action.pacing);
