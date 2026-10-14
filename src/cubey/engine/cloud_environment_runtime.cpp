@@ -228,7 +228,7 @@ render::PbrEnvironmentTextureBindings CloudEnvironmentRuntime::pbr_environment_b
     render::validate_pbr_environment_texture_bindings(fallback);
     render::PbrEnvironmentTextureBindings bindings = fallback;
     const render::CloudEnvironmentProbeSnapshot environment = snapshot();
-    if (!environment.valid) {
+    if (!environment.valid || !config_.enabled) {
         return bindings;
     }
 

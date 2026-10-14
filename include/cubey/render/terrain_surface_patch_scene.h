@@ -20,6 +20,9 @@ struct TerrainSurfacePatchEnvironment {
     VkSampler sky_radiance_sampler = VK_NULL_HANDLE;
     VkImageView sky_radiance_view = VK_NULL_HANDLE;
     AtmosphereEnvironmentFrameUniforms atmosphere_frame{};
+    VkBuffer irradiance_buffer = VK_NULL_HANDLE;
+    VkDeviceSize irradiance_bytes = 0U;
+    bool dynamic = false;
 };
 struct TerrainSurfacePatchGrid {
     std::uint32_t grid_width = 0U, grid_height = 0U;

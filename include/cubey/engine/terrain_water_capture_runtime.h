@@ -1,6 +1,7 @@
 #pragma once
 #include <cubey/asset/terrain_site.h>
 #include <cubey/asset/terrain_water_capture.h>
+#include <cubey/engine/terrain_surface_environment.h>
 #include <cubey/render/terrain_surface_patch_scene.h>
 #include <cubey/terrain/terrain_surface_context.h>
 #include <cubey/terrain/terrain_surface_patch_lod.h>
@@ -30,6 +31,10 @@ class TerrainWaterCaptureRuntime {
     // Rendering-study control for existing shared sun visibility, not a new
     // shadow fit or hydraulic setting. Omitted preserves the Macro recipe.
     void set_shadow_strength(float strength);
+    void enable_environment(TerrainSurfaceEnvironmentSettings settings);
+    [[nodiscard]] TerrainSurfaceEnvironment* environment();
+    [[nodiscard]] bool& environment_enabled();
+    void advance_environment(double wall_delta_s);
     void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F,
                            std::uint32_t maximum_vertices = 2000000U);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;

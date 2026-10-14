@@ -4,6 +4,7 @@
 #include <cubey/vulkan/gpu_timestamps.h>
 #include <functional>
 namespace cubey {
+struct TerrainSurfaceWeatherFrame;
 // Optional application composition for the narrow shared render stage: fixed
 // sky, paired surfaces and one HDR display transform. Apps own this facade;
 // TerrainSurfacePatchRenderer itself owns neither sky nor display composition.
@@ -37,7 +38,8 @@ class TerrainSurfacePatchScene {
                 render::TerrainSurfacePatchRain rain = {},
                 std::span<const render::TerrainSurfacePatchWhitewaterSeed> whitewater_seeds = {},
                 std::uint64_t whitewater_generation = 0U,
-                const render::TerrainSurfaceContextDraw* context = nullptr);
+                const render::TerrainSurfaceContextDraw* context = nullptr,
+                const TerrainSurfaceWeatherFrame* weather = nullptr);
 
   private:
     struct State;

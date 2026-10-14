@@ -87,6 +87,9 @@ struct TerrainWaterCaptureRuntime::State {
     TerrainSurfacePatchScene scene;
     render::RenderGraphFrameExecutor graph;
     AtmosphereEnvironmentRuntime daylight;
+    std::unique_ptr<TerrainSurfaceEnvironment> weather;
+    bool weather_enabled = false;
+    vulkan::GpuRuntime* gpu = nullptr;
     std::optional<render::AtmosphereBackgroundAtlasResources> atlases;
     std::optional<vulkan::Buffer> bed, depth, velocity, zeros, coverage;
     std::optional<terrain::TerrainSurfaceContextProduct> context;
@@ -263,7 +266,10 @@ void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
         s.capture.grid.width, s.capture.grid.height, {}, {}, s.weights};
     s.scene.ensure_resources(device, gpu, slots, target, s.grid(), s.capture.bed_m, s.field_view(),
                              true, &surface, true);
-    if (!s.daylight.resources_created()) {
+    s.gpu = &gpu;
+    if (s.weather && s.weather_enabled)
+        s.weather->ensure_resources(device, gpu, slots, target, s.shaders);
+    else if (!s.daylight.resources_created()) {
         s.atlases.emplace(render::create_atmosphere_background_placeholder_textures(device, gpu));
         s.daylight.create_resources(device, {.reflection_extent = 64U,
                                              .reflection_mip_levels = 5U,
@@ -291,14 +297,24 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
         profiler->begin_frame(commands, slot.index);
     vulkan::GpuTimestampScope whole_scene(profiler, commands, slot.index,
                                           "terrain captured patch whole scene");
-    s.daylight.record_pending_update(vulkan::CommandRecorder(commands), slot);
-    const render::TerrainSurfacePatchEnvironment environment{
-        s.daylight.pbr_environment_bindings(s.scene.fallback_environment()),
-        s.daylight.lighting(),
-        s.material.daylight_exposure,
-        s.daylight.reflection_probe().sky_radiance_cube().sampler().handle(),
-        s.daylight.reflection_probe().sky_radiance_cube().view(),
-        render::atmosphere_environment_frame_uniforms(s.daylight.environment(), {})};
+    std::optional<TerrainSurfaceWeatherFrame> weather;
+    render::TerrainSurfacePatchEnvironment environment;
+    if (s.weather && s.weather_enabled) {
+        s.weather->ensure_resources(device, *s.gpu, slot.count, target, s.shaders);
+        weather = s.weather->frame(device, *s.gpu, vulkan::CommandRecorder(commands), slot, target,
+                                   camera, s.scene.fallback_environment());
+        environment = weather->environment;
+    } else {
+        // A UI toggle may enter the reference path after shared-only startup.
+        ensure_resources(device, *s.gpu, slot.count, target);
+        s.daylight.record_pending_update(vulkan::CommandRecorder(commands), slot);
+        environment = {s.daylight.pbr_environment_bindings(s.scene.fallback_environment()),
+                       s.daylight.lighting(),
+                       s.material.daylight_exposure,
+                       s.daylight.reflection_probe().sky_radiance_cube().sampler().handle(),
+                       s.daylight.reflection_probe().sky_radiance_cube().view(),
+                       render::atmosphere_environment_frame_uniforms(s.daylight.environment(), {})};
+    }
     std::optional<render::TerrainSurfaceContextDraw> context;
     if (context_visible) {
         if (!s.context_resources)
@@ -321,16 +337,31 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
     }
     if (fixed_lod && !mesh)
         throw std::runtime_error("fixed paired mesh not prepared");
-    s.scene.record(device, commands, s.graph, slot, target, present, s.field_view(), s.grid(),
-                   camera,
-                   {.terrain_thin_water_composite = true,
-                    .native_shadow_extent = context_visible || mesh ? 4096U : 2048U,
-                    .water_visible = water,
-                    .fixed_mesh = fixed_lod ? &*mesh : nullptr,
-                    .fixed_shadow_region = mesh ? &*mesh : nullptr},
-                   seconds * 0.03, s.material, {}, profile, false, ground_view, 0U, 3U,
-                   &environment, {0U, seconds, seconds, s.capture.rain_mm_per_hour},
-                   s.whitewater.seeds, 0U, context ? &*context : nullptr);
+    s.scene.record(
+        device, commands, s.graph, slot, target, present, s.field_view(), s.grid(), camera,
+        {.terrain_thin_water_composite = true,
+         .native_shadow_extent = context_visible || mesh ? 4096U : 2048U,
+         .water_visible = water,
+         .fixed_mesh = fixed_lod ? &*mesh : nullptr,
+         .fixed_shadow_region = mesh ? &*mesh : nullptr},
+        seconds * 0.03, s.material, {}, profile, false, ground_view, 0U, 3U, &environment,
+        {0U, seconds, seconds, s.capture.rain_mm_per_hour}, s.whitewater.seeds, 0U,
+        context ? &*context : nullptr, weather ? &*weather : nullptr);
+}
+void TerrainWaterCaptureRuntime::enable_environment(TerrainSurfaceEnvironmentSettings settings) {
+    if (!state_->weather)
+        state_->weather = std::make_unique<TerrainSurfaceEnvironment>(std::move(settings));
+    state_->weather_enabled = true;
+}
+bool& TerrainWaterCaptureRuntime::environment_enabled() {
+    return state_->weather_enabled;
+}
+TerrainSurfaceEnvironment* TerrainWaterCaptureRuntime::environment() {
+    return state_->weather.get();
+}
+void TerrainWaterCaptureRuntime::advance_environment(double delta) {
+    if (state_->weather && state_->weather_enabled)
+        state_->weather->advance(delta);
 }
 void TerrainWaterCaptureRuntime::prepare_fixed_lod(math::Vec2 focus, float span,
                                                    std::uint32_t maximum_vertices) {

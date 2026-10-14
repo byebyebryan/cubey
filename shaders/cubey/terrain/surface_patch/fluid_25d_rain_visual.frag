@@ -35,5 +35,9 @@ void main() {
     // rain from a pale sky. No sky tint/exposure/storm lighting is changed.
     vec3 light=clamp(scenic_irradiance_at(vec3(0,1,0))*0.35,vec3(0.3),vec3(1.4));
     if(scene_z>=1.0) light=vec3(0.045);
+    if(scenic.environment_transition.x>0.5) {
+        light=clamp(scenic_irradiance_at(vec3(0,1,0))*0.35,vec3(0),vec3(1.4));
+        if(scene_z>=1.0) light*=0.15;
+    }
     out_color=vec4(light*alpha,alpha);
 }

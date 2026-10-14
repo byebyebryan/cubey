@@ -214,7 +214,7 @@ AtmosphereEnvironmentRuntimeFrame AtmosphereEnvironmentRuntime::frame_from_celes
 }
 
 render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environment_bindings(
-    const render::GeneratedPbrEnvironment& fallback) const {
+    const render::GeneratedPbrEnvironment& fallback, bool include_clouds) const {
     if (!resources_created()) {
         throw std::runtime_error("atmosphere environment runtime resources are not initialized");
     }
@@ -230,7 +230,7 @@ render::PbrEnvironmentTextureBindings AtmosphereEnvironmentRuntime::pbr_environm
         bindings.prefiltered_mip_levels = atmosphere.current->mip_levels();
         bindings.prefiltered_blend = atmosphere.blend;
     }
-    if (clouds_.resources_created()) {
+    if (include_clouds && clouds_.resources_created()) {
         return clouds_.pbr_environment_bindings(bindings);
     }
     return bindings;

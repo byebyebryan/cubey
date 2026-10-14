@@ -323,6 +323,7 @@ add_library(cubey_engine STATIC
     engine/terrain_backdrop_runtime.cpp
     engine/terrain_water_capture_runtime.cpp
     engine/terrain_surface_patch_scene.cpp
+    engine/terrain_surface_environment.cpp
     engine/terrain_surface_context_resources.cpp
     engine/upload_queue.cpp
     engine/video_encoder.cpp

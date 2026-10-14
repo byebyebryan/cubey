@@ -272,6 +272,7 @@ function(cubey_terrain_surface_patch_shader_sources out_var)
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_flow.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_environment.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_sky.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_copy.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_display.frag"

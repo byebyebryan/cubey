@@ -1,3 +1,4 @@
+#include <cubey/engine/terrain_surface_environment.h>
 #include <cubey/engine/terrain_surface_patch_scene.h>
 
 #include <cubey/render/generated_ibl.h>
@@ -60,7 +61,7 @@ struct DaylightPush {
 };
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 416U);
+static_assert(sizeof(Uniforms) == 464U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
@@ -377,7 +378,8 @@ void TerrainSurfacePatchScene::record(
     bool reset_visual_flow, unsigned terrain_view, unsigned water_view, unsigned surface_mode,
     const TerrainSurfacePatchEnvironment* environment, TerrainSurfacePatchRain rain,
     std::span<const TerrainSurfacePatchWhitewaterSeed> whitewater_seeds,
-    std::uint64_t whitewater_generation, const render::TerrainSurfaceContextDraw* context) {
+    std::uint64_t whitewater_generation, const render::TerrainSurfaceContextDraw* context,
+    const TerrainSurfaceWeatherFrame* weather) {
     auto& s = *state_;
     const auto* fixed = options.fixed_mesh;
     if (fixed) {
@@ -406,7 +408,7 @@ void TerrainSurfacePatchScene::record(
         s.context_profile_slots.at(slot.index) = context_profiler != nullptr;
     if (context_profiler)
         context_profiler->begin_frame(commands, slot.index);
-    if (environment && !s.daylight_initialized) {
+    if (environment && !environment->dynamic && !s.daylight_initialized) {
         if (!s.captured_daylight || !s.daylight_pipeline ||
             environment->sky_radiance_sampler == VK_NULL_HANDLE ||
             environment->sky_radiance_view == VK_NULL_HANDLE)
@@ -562,38 +564,52 @@ void TerrainSurfacePatchScene::record(
                float((options.native_bilinear_water ? 8U : 0U) +
                      (bspline ? 16U + (subdivision << 5U) : 0U) +
                      (options.native_display_coverage ? 512U : 0U))}};
-    s.frame->upload(
-        slot,
-        render::terrain_surface_patch_uniforms(
-            {.view_projection = camera.view_projection,
-             .shadow_view_projection = s.shadow_matrix,
-             .light_direction = direction,
-             .light_color = sun,
-             .exposure = environment ? environment->exposure : 0.4F,
-             .prefiltered_mip_levels = env.prefiltered_mip_levels,
-             .extent = target.extent,
-             .target_format = target.format,
-             .visual_clock_s = visual_clock_s,
-             .rain_clock_s = rain.clock_s,
-             .rain_response =
-                 (rain.applied_mm_per_hour
-                      ? float(std::clamp(std::sqrt(*rain.applied_mm_per_hour / 1024.0), 0.0, 1.0))
-                      : 0.0F),
-             .width = config.grid_width,
-             .height = config.grid_height,
-             .water_view = water_view,
-             .surface_mode = surface_mode,
-             .daylight = environment != nullptr,
-             .shadow_base_bias =
-                 options.native_shadow_scene_fit
-                     ? 0.5F * shadow_span / float(shadow_extent.width) / shadow_depth_span
-                     : 0.0F,
-             .shadow_slope_bias =
-                 options.native_shadow_scene_fit
-                     ? 2.0F * shadow_span / float(shadow_extent.width) / shadow_depth_span
-                     : 0.0F},
-            material));
+    auto uniforms = render::terrain_surface_patch_uniforms(
+        {.view_projection = camera.view_projection,
+         .shadow_view_projection = s.shadow_matrix,
+         .light_direction = direction,
+         .light_color = sun,
+         .exposure = environment ? environment->exposure : 0.4F,
+         .prefiltered_mip_levels = env.prefiltered_mip_levels,
+         .extent = target.extent,
+         .target_format = target.format,
+         .visual_clock_s = visual_clock_s,
+         .rain_clock_s = rain.clock_s,
+         .rain_response =
+             (rain.applied_mm_per_hour
+                  ? float(std::clamp(std::sqrt(*rain.applied_mm_per_hour / 1024.0), 0.0, 1.0))
+                  : 0.0F),
+         .width = config.grid_width,
+         .height = config.grid_height,
+         .water_view = water_view,
+         .surface_mode = surface_mode,
+         .daylight = environment != nullptr,
+         .shadow_base_bias =
+             options.native_shadow_scene_fit
+                 ? 0.5F * shadow_span / float(shadow_extent.width) / shadow_depth_span
+                 : 0.0F,
+         .shadow_slope_bias =
+             options.native_shadow_scene_fit
+                 ? 2.0F * shadow_span / float(shadow_extent.width) / shadow_depth_span
+                 : 0.0F,
+         .dynamic_environment = environment && environment->dynamic,
+         .environment_blend = env.prefiltered_blend},
+        material);
     render::RenderGraphBuilder graph;
+    std::optional<render::CloudLayerShadowProduct> cloud_shadow;
+    if (weather && weather->clouds && weather->cloud_frame && weather->shadow_strength > 0.0F) {
+        const float half = .5F * s.domain_m;
+        cloud_shadow = weather->clouds->declare_shadow_product(
+            graph, slot,
+            {.receiver_center = shadow_center,
+             .half_extent_m = half,
+             .direct_light_direction = direction,
+             .direct_light_intensity = environment->lighting.primary_light_intensity});
+        uniforms.environment_transition.z = weather->shadow_strength;
+        uniforms.cloud_world_to_uv_x = cloud_shadow->world_to_uv_x;
+        uniforms.cloud_world_to_uv_y = cloud_shadow->world_to_uv_y;
+    }
+    s.frame->upload(slot, uniforms);
     const auto final_state = present ? render::render_graph_present_texture_state()
                                      : render::render_graph_color_attachment_texture_state();
     const auto back =
@@ -723,10 +739,20 @@ void TerrainSurfacePatchScene::record(
                 {.color = vulkan::clear_store_attachment_ops(),
                  .depth = vulkan::clear_store_attachment_ops()},
                 [&](const auto& r) {
-                    r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->pipeline());
-                    r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->layout(), 1U,
-                                          set);
-                    r.draw(3U);
+                    if (weather && weather->background) {
+                        const auto& background = *weather->background;
+                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                        background.pipeline().pipeline());
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                              background.pipeline().layout(), 0U,
+                                              background.material().set(slot));
+                        r.draw(3U);
+                    } else {
+                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->pipeline());
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, s.sky->layout(), 1U,
+                                              set);
+                        r.draw(3U);
+                    }
                     if (fixed)
                         s.patch->fixed_lod(r, fields, set, fixed->descriptor_set, push,
                                            fixed->indices->handle(), fixed->index_count, 0);
@@ -744,6 +770,18 @@ void TerrainSurfacePatchScene::record(
         opaque_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
     if (fixed)
         opaque_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
+    if (cloud_shadow)
+        opaque_pass.read_texture(cloud_shadow->transmittance);
+    auto refraction_source = opaque;
+    std::optional<render::CloudLayerRuntimeFrame> cloud_product;
+    if (weather && weather->clouds && weather->cloud_frame && weather->cloud_background) {
+        cloud_product =
+            weather->clouds->declare_surface_product(graph, slot, *weather->cloud_frame);
+        refraction_source = graph.create_texture(
+            texture("scenic cloudy background HDR", target.extent, kHdrFormat));
+        weather->clouds->declare_surface_composite(graph, refraction_source, *cloud_product, slot,
+                                                   opaque, depth);
+    }
     auto water_pass = graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics);
     if (fixed)
         water_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
@@ -753,7 +791,7 @@ void TerrainSurfacePatchScene::record(
         .read_storage_buffer(mask)
         .read_storage_buffer(flow)
         .read_texture(shadow_depth)
-        .read_texture(opaque)
+        .read_texture(refraction_source)
         .read_texture(depth)
         .write_color(composed)
         .execute([&, push, fields, set, vertices, composed, bspline](const auto& ctx) {
@@ -776,6 +814,8 @@ void TerrainSurfacePatchScene::record(
                     }
                 });
         });
+    if (cloud_shadow)
+        water_pass.read_texture(cloud_shadow->transmittance);
     // Render-only whitewater. OFF adds no pipeline, pass, target or native write.
     if (options.water_visible && material.water_whitewater_strength > 0.0F &&
         !whitewater_seeds.empty() && terrain_view == 0U && full_water_shading) {
@@ -960,12 +1000,35 @@ void TerrainSurfacePatchScene::record(
         compiled, [&](const render::RenderGraphResourceSet& images) {
             render::MaterialDescriptorWriter writer(set);
             writer.combined_image_sampler(1U, env.prefiltered_sampler, env.prefiltered_view)
+                .combined_image_sampler(
+                    15U,
+                    env.previous_prefiltered_sampler ? env.previous_prefiltered_sampler
+                                                     : env.prefiltered_sampler,
+                    env.previous_prefiltered_view ? env.previous_prefiltered_view
+                                                  : env.prefiltered_view)
                 .combined_image_sampler(2U, env.irradiance_sampler, env.irradiance_view)
                 .combined_image_sampler(3U, env.brdf_lut_sampler, env.brdf_lut_view)
                 .combined_image_sampler(4U, s.detail->sampler().handle(), s.detail->view());
             writer.storage_buffer(9U, s.visual_flow->handle(), s.visual_flow->size());
             const auto& daylight = s.captured_daylight ? *s.captured_daylight : *s.visual_flow;
-            writer.storage_buffer(14U, daylight.handle(), daylight.size());
+            writer.storage_buffer(
+                14U,
+                environment && environment->dynamic ? environment->irradiance_buffer
+                                                    : daylight.handle(),
+                environment && environment->dynamic ? environment->irradiance_bytes
+                                                    : daylight.size());
+            if (cloud_shadow) {
+                weather->clouds->update_shadow_descriptors(device, slot, compiled, images,
+                                                           *cloud_shadow);
+                const auto image = render::resolved_sampled_texture_view(
+                    compiled, images, cloud_shadow->transmittance);
+                writer.combined_image_sampler(16U, weather->clouds->shadow_sampler().handle(),
+                                              image.view, image.layout);
+            } else
+                writer.combined_image_sampler(16U, s.detail->sampler().handle(), s.detail->view());
+            if (cloud_product)
+                weather->clouds->update_surface_descriptors(device, slot, compiled, images,
+                                                            *cloud_product, opaque, depth);
             writer.combined_image_sampler(
                 10U,
                 s.terrain_diffuse ? s.terrain_diffuse->sampler().handle() : env.irradiance_sampler,
@@ -979,7 +1042,7 @@ void TerrainSurfacePatchScene::record(
                                               surface->view());
             for (const auto& [binding, handle] :
                  std::array<std::pair<std::uint32_t, render::RenderGraphTextureHandle>, 4>{
-                     {{5U, shadow_depth}, {6U, opaque}, {7U, depth}, {8U, composed}}}) {
+                     {{5U, shadow_depth}, {6U, refraction_source}, {7U, depth}, {8U, composed}}}) {
                 const auto image = render::resolved_sampled_texture_view(compiled, images, handle);
                 writer.combined_image_sampler(binding,
                                               (binding == 5U || binding == 7U)
@@ -989,5 +1052,7 @@ void TerrainSurfacePatchScene::record(
             }
             writer.update(device);
         });
+    if (cloud_product)
+        weather->clouds->complete_surface_frame(slot, *cloud_product);
 }
 } // namespace cubey

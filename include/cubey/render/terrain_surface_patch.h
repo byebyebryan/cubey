@@ -22,6 +22,7 @@ struct TerrainSurfacePatchUniforms {
     math::Vec4 terrain_macro, water_film, water_view, terrain_surface, environment_mode;
     math::Vec4 water_shallow_optics, water_agitation, water_rapids, water_stream_foam, water_bank;
     math::Vec4 terrain_readability; // absolute material XZ origin, mode, reserved
+    math::Vec4 environment_transition, cloud_world_to_uv_x, cloud_world_to_uv_y;
 };
 struct TerrainSurfacePatchFrame {
     math::Mat4 view_projection{1.0F}, shadow_view_projection{1.0F};
@@ -35,6 +36,9 @@ struct TerrainSurfacePatchFrame {
     std::uint32_t width = 0U, height = 0U, water_view = 0U, surface_mode = 0U;
     bool daylight = false;
     float shadow_base_bias = 0.0F, shadow_slope_bias = 0.0F;
+    bool dynamic_environment = false;
+    float environment_blend = 1.0F, cloud_shadow_strength = 0.0F;
+    math::Vec4 cloud_world_to_uv_x{}, cloud_world_to_uv_y{};
 };
 [[nodiscard]] TerrainSurfacePatchUniforms
 terrain_surface_patch_uniforms(const TerrainSurfacePatchFrame& frame,

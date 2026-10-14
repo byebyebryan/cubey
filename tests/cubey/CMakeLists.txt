@@ -106,6 +106,10 @@ add_executable(cubey_core_tests
     vulkan_buffer_tests.cpp
     windowed_host_tests.cpp
 )
+add_executable(cubey_terrain_surface_environment_tests terrain_surface_environment_tests.cpp)
+target_link_libraries(cubey_terrain_surface_environment_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
+add_test(NAME terrain_surface_environment_cpu COMMAND cubey_terrain_surface_environment_tests)
+set_tests_properties(terrain_surface_environment_cpu PROPERTIES LABELS "unit;terrain;environment")
 
 target_link_libraries(
     cubey_core_tests

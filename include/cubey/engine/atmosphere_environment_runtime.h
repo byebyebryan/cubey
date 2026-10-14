@@ -83,7 +83,8 @@ class AtmosphereEnvironmentRuntime {
     [[nodiscard]] AtmosphereEnvironmentRuntimeFrame
     frame_from_celestial(const AtmosphereEnvironmentRuntimeCelestialFrameInfo& info) const;
     [[nodiscard]] render::PbrEnvironmentTextureBindings
-    pbr_environment_bindings(const render::GeneratedPbrEnvironment& fallback) const;
+    pbr_environment_bindings(const render::GeneratedPbrEnvironment& fallback,
+                             bool include_clouds = true) const;
     [[nodiscard]] const render::AtmosphereReflectionProbe& reflection_probe() const;
     [[nodiscard]] CloudEnvironmentRuntime& clouds() noexcept;
     [[nodiscard]] const CloudEnvironmentRuntime& clouds() const noexcept;

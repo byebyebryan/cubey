@@ -325,7 +325,8 @@ void main() {
         vec3 source_light = scenic_irradiance_at(n)+
             scenic_sun_radiance()*max(dot(n,scenic.light_direction_exposure.xyz),0.0)*
             sun_visibility/CUBEY_PBR_PI;
-        scattering *= mix(vec3(1.0),source_light,scenic.water_optics.w);
+        scattering *= mix(vec3(1.0),source_light,
+            scenic.environment_transition.x>0.5 ? 1.0 : scenic.water_optics.w);
     }
     vec3 transmitted = background*transmittance+scattering*(1.0-transmittance);
     if (scenic.art_direction.x>0.0 && water_view!=6u) {
@@ -337,8 +338,8 @@ void main() {
     }
     float ndotv = max(dot(n,view),0.0);
     vec3 fresnel = cubey_pbr_fresnel_schlick(ndotv,vec3(0.02037));
-    vec3 reflection = textureLod(scenic_environment,reflect(-view,n),
-                                  roughness*(scenic.light_color_mips.w-1.0)).rgb;
+    vec3 reflection = scenic_environment_at(reflect(-view,n),
+                                  roughness*(scenic.light_color_mips.w-1.0));
     vec3 l = scenic.light_direction_exposure.xyz;
     vec3 half_vector = view+l;
     float half_length = dot(half_vector,half_vector);

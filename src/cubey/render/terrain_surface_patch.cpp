@@ -52,7 +52,7 @@ TerrainSurfacePatchMaterial terrain_surface_patch_macro_material() {
     return m;
 }
 static_assert(sizeof(TerrainSurfacePatchPush) == 128U);
-static_assert(sizeof(TerrainSurfacePatchUniforms) == 416U);
+static_assert(sizeof(TerrainSurfacePatchUniforms) == 464U);
 static_assert(offsetof(TerrainSurfacePatchUniforms, terrain_macro) == 240U);
 static_assert(offsetof(TerrainSurfacePatchUniforms, water_bank) == 384U);
 
@@ -88,7 +88,10 @@ TerrainSurfacePatchUniforms terrain_surface_patch_uniforms(const TerrainSurfaceP
          m.water_stream_foam_brightness, 0.0F},
         {m.water_bank_irregularity_m, m.water_bank_motion_m, m.water_bank_scale_m,
          m.water_bank_band_m},
-        {m.terrain_world_x_m, m.terrain_world_z_m, m.terrain_readability, 0.0F}};
+        {m.terrain_world_x_m, m.terrain_world_z_m, m.terrain_readability, 0.0F},
+        {f.dynamic_environment ? 1.0F : 0.0F, f.environment_blend, f.cloud_shadow_strength, 0.0F},
+        f.cloud_world_to_uv_x,
+        f.cloud_world_to_uv_y};
 }
 MaterialPassInfo terrain_surface_patch_frame_material() {
     MaterialPassInfo result{.label = "terrain.surface_patch.frame"};
@@ -97,7 +100,7 @@ MaterialPassInfo terrain_surface_patch_frame_material() {
     b.push_back({.binding = 0U,
                  .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                  .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT});
-    for (std::uint32_t i = 1U; i <= 14U; ++i) {
+    for (std::uint32_t i = 1U; i <= 16U; ++i) {
         const bool storage = i == 9U || i == 14U;
         b.push_back({.binding = i,
                      .type = storage ? VK_DESCRIPTOR_TYPE_STORAGE_BUFFER

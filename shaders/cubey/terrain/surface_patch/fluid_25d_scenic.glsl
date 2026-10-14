@@ -23,6 +23,8 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 water_stream_foam; // strength, patchiness, brightness, reserved; no extra water coverage
     vec4 water_bank; // fixed inset m, flow-linked variation m, noise scale m, edge band m
     vec4 terrain_readability; // material world XZ origin, study mode, reserved
+    vec4 environment_transition; // dynamic, reflection blend, cloud shadow strength, reserved
+    vec4 cloud_world_to_uv_x, cloud_world_to_uv_y;
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;
@@ -32,6 +34,8 @@ layout(set=1,binding=5) uniform sampler2D scenic_shadow;
 layout(set=1,binding=6) uniform sampler2D scenic_opaque;
 layout(set=1,binding=7) uniform sampler2D scenic_depth;
 layout(set=1,binding=8) uniform sampler2D scenic_composed;
+layout(set=1,binding=15) uniform samplerCube scenic_previous_environment;
+layout(set=1,binding=16) uniform sampler2D scenic_cloud_shadow;
 layout(set=1,binding=14,std430) readonly buffer CapturedDaylight {
     vec4 coefficients[10];
 } captured_daylight;
@@ -53,6 +57,22 @@ vec3 scenic_sun_radiance() {
                                          scenic.environment_mode.y
                                         : scenic.light_color_mips.rgb;
 }
+vec3 scenic_environment_at(vec3 direction,float lod) {
+    vec3 current=textureLod(scenic_environment,direction,lod).rgb;
+    if(scenic.environment_transition.x>0.5)
+        return mix(textureLod(scenic_previous_environment,direction,lod).rgb,
+                   current,scenic.environment_transition.y);
+    return current;
+}
+float scenic_cloud_visibility(vec3 p) {
+    if(scenic.environment_transition.z<=0.0) return 1.0;
+    vec4 position=vec4(p,1);
+    vec2 uv=vec2(dot(scenic.cloud_world_to_uv_x,position),dot(scenic.cloud_world_to_uv_y,position));
+    if(any(lessThan(uv,vec2(0)))||any(greaterThan(uv,vec2(1)))) return 1.0;
+    float edge=min(min(uv.x,uv.y),min(1.0-uv.x,1.0-uv.y));
+    return mix(1.0,texture(scenic_cloud_shadow,uv).r,
+        scenic.environment_transition.z*smoothstep(0.0,0.05,edge));
+}
 float scenic_sun_visibility(vec3 p, vec3 n) {
     vec4 clip = scenic.shadow_view_projection * vec4(p,1.0);
     vec3 q = clip.xyz / clip.w;
@@ -63,7 +83,7 @@ float scenic_sun_visibility(vec3 p, vec3 n) {
     // Explicit legacy projection retains its original shader behavior for A/B.
     if (scenic.environment_mode.z<=0.0) gradient=clamp(gradient,vec2(-1),vec2(1));
     if (any(lessThan(uv,vec2(0))) || any(greaterThan(uv,vec2(1))) || q.z < 0 || q.z > 1)
-        return 1.0;
+        return scenic_cloud_visibility(p);
     // Fixed 2x2 PCF, no temporal stochastic sampling. Bias is shadow-only.
     vec2 texel = 1.0/vec2(textureSize(scenic_shadow,0));
     float ndotl = max(dot(n,scenic.light_direction_exposure.xyz),0.0);
@@ -96,10 +116,10 @@ float scenic_sun_visibility(vec3 p, vec3 n) {
                          fluid25d_shadow_tent(float(y)-fraction.y)/16.0;
             visibility+=receiver<=texelFetch(scenic_shadow,cell,0).r ? weight : 0.0;
         }
-        return mix(1.0,visibility,scenic.surface_material.y);
+        return mix(1.0,visibility,scenic.surface_material.y)*scenic_cloud_visibility(p);
     }
     for (int y=0;y<2;++y) for (int x=0;x<2;++x)
         visibility += q.z-bias <= texture(scenic_shadow,uv+(vec2(x,y)-0.5)*texel).r ? 0.25 : 0.0;
-    return mix(1.0,visibility,scenic.surface_material.y);
+    return mix(1.0,visibility,scenic.surface_material.y)*scenic_cloud_visibility(p);
 }
 #endif
