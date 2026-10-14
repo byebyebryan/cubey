@@ -1142,6 +1142,11 @@ class RecordingApp {
                     target_.x, target_.y, target_.z, framing, home,
                     config_.native_camera_yaw_radians, config_.native_camera_pitch_radians,
                     explicit_target ? 1U : 0U);
+        std::printf("fluid_25d_patch_scene: grid=%ux%u spacing_m=%.3f sampled_span=(%.3f,%.3f) "
+                    "display_subdivision=%u bounds=simulation_patch exterior_mesh_vertices=0 "
+                    "exterior_draws=0\n",
+                    simulation_.grid_width, simulation_.grid_height, simulation_.cell_size_m, width,
+                    height, render_.native_surface_subdivision);
     }
 
     Fluid25DRenderCamera camera(VkExtent2D extent, std::uint64_t frame_index = 0U) const {
@@ -2145,7 +2150,8 @@ class RecordingApp {
             const auto& current = control->case_by_id(demo->current_case_id());
             ImGui::Text("%s | %u x %u | %.0f m cells", current.site_label.c_str(), current.width,
                         current.height, current.spacing_m);
-            ImGui::Text("Coverage %.3f km square", current.width * current.spacing_m / 1000);
+            ImGui::Text("Simulation patch %.3f km square",
+                        current.width * current.spacing_m / 1000);
             ImGui::Text("Simulated: %s / %s", fluid_25d_demo_time_label(shown_->time_s).c_str(),
                         fluid_25d_demo_time_label(current.duration_s).c_str());
         } else {
@@ -2173,7 +2179,7 @@ class RecordingApp {
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
-        if (ImGui::Button("Fit overview")) {
+        if (ImGui::Button("Fit simulation patch")) {
             select_camera("overview");
         }
         if (loading)
@@ -2277,7 +2283,9 @@ class RecordingApp {
             // the mountain crop. Do not pretend they identify another site's basin.
             if (!control || control->case_by_id(demo->current_case_id()).site == "mountain") {
                 for (const char* camera : {"overview", "runoff", "collection"}) {
-                    if (ImGui::RadioButton(camera, config_.recording_camera == camera)) {
+                    if (ImGui::RadioButton(camera == std::string_view("overview") ? "Full patch"
+                                                                                  : camera,
+                                           config_.recording_camera == camera)) {
                         select_camera(camera);
                     }
                     ImGui::SameLine();
@@ -2295,7 +2303,8 @@ class RecordingApp {
         }
         if (ImGui::CollapsingHeader("How to read this")) {
             ImGui::TextWrapped(
-                "Rain supplies the simulation rectangle, not the wider backdrop. Water follows "
+                "Only the full-resolution simulation patch is rendered. Rain supplies that "
+                "rectangle. Water follows "
                 "slopes, collects in depressions and "
                 "can leave through the open perimeter. There is no authored source/drain here.");
             ImGui::TextWrapped(
@@ -2550,7 +2559,8 @@ class RecordingApp {
                 recording_->protocol().value("output_interval_s", 0.0));
             ImGui::Separator();
             for (const char* name : {"overview", "runoff", "collection"}) {
-                if (ImGui::RadioButton(name, config_.recording_camera == name)) {
+                if (ImGui::RadioButton(name == std::string_view("overview") ? "Full patch" : name,
+                                       config_.recording_camera == name)) {
                     select_camera(name);
                 }
                 ImGui::SameLine();

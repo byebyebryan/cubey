@@ -167,7 +167,8 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
                "--fluid25d-motion-markers", "--fluid25d-rain-visuals",
                "--fluid25d-scenic-surface-grid", str(case / "surface-grid.json"),
                "--fluid25d-scenic-surface-mode", surface,
-               "--fluid25d-native-shadow-projection", shadow_projection]
+               "--fluid25d-native-shadow-projection", shadow_projection,
+               "--fluid25d-native-terrain-context", "off"]
     # Existing study/capture callers retain their timing unless explicitly paced.
     if render_fps is not None:
         if not 0 <= render_fps <= 0xFFFFFFFF:

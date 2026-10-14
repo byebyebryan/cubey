@@ -19,6 +19,7 @@ class Commands(unittest.TestCase):
                                          app=args.app, render_fps=args.render_fps)
         self.assertEqual(command[2], str(terrain.RELEASE_APP))
         self.assertEqual(command[command.index("--render-fps") + 1], "60")
+        self.assertEqual(command[command.index("--fluid25d-native-terrain-context") + 1], "off")
 
     def test_replay_finer_grid_and_pacing_overrides_remain_explicit(self):
         args = terrain.parser().parse_args(["replay", "--study", "/study",
@@ -32,6 +33,7 @@ class Commands(unittest.TestCase):
                                          live=False, render_fps=args.render_fps)
         self.assertEqual(command[command.index("--render-fps") + 1], "0")
         self.assertIn("--fluid25d-recording", command)
+        self.assertEqual(command[command.index("--fluid25d-native-terrain-context") + 1], "off")
         self.assertNotIn("--fluid25d-external-session", command)
         for fps in (-1, 0x100000000):
             with self.assertRaises(ValueError):
