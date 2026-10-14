@@ -411,6 +411,9 @@ if (BUILD_TESTING)
     add_test(NAME terrain_readability_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_CURRENT_SOURCE_DIR}/test_review_terrain_readability_v1.py")
     set_tests_properties(terrain_readability_review_helpers PROPERTIES LABELS terrain)
+    add_test(NAME terrain_wide_view_study_helpers COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_study_wide_view_v1.py")
+    set_tests_properties(terrain_wide_view_study_helpers PROPERTIES LABELS "terrain;water;unit")
     add_test(NAME terrain_world_wide_water_study_helpers COMMAND "${Python3_EXECUTABLE}" -B
         "${CMAKE_CURRENT_SOURCE_DIR}/test_study_world_wide_water_v1.py")
     set_tests_properties(terrain_world_wide_water_study_helpers PROPERTIES LABELS "terrain;water;unit")

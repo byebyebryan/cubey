@@ -634,6 +634,12 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
                "Shared shading: refined default, current reference, detail-off diagnostic.",
                ValueType::Enum, {}, {"current", "detail-off", "refined"}),
         config.terrain_readability);
+    builder.bind(option("terrain.captured_water_shadow_strength", "--terrain-water-shadow-strength",
+                        "Capture Shadow Study", "Terrain",
+                        "Render-only sun-shadow strength; 0 isolates lighting without shadows. "
+                        "Omitted retains the shared Macro recipe and still renders the shadow map.",
+                        ValueType::Float, {.has_min = true, .has_max = true, .min = 0, .max = 1}),
+                 config.captured_water_shadow_strength);
     builder.bind(option("terrain.review_orbit_rad_per_s", "--terrain-review-orbit-speed",
                         "Review Orbit", "Terrain", "Render-only camera motion, radians per second.",
                         ValueType::Float,

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cubey/asset/file_digest.h>
 #include <cubey/asset/terrain_site_water.h>
@@ -353,6 +354,11 @@ void TerrainWaterCaptureRuntime::set_terrain_readability(unsigned mode) {
     const auto center = s.capture.grid.center_xz_m();
     s.material.terrain_world_x_m = center.x;
     s.material.terrain_world_z_m = center.y;
+}
+void TerrainWaterCaptureRuntime::set_shadow_strength(float strength) {
+    if (!std::isfinite(strength) || strength < 0 || strength > 1)
+        throw std::runtime_error("capture shadow strength must be in [0,1]");
+    state_->material.shadow_strength = strength;
 }
 void TerrainWaterCaptureRuntime::prepare_context(const std::filesystem::path& extension,
                                                  float maximum_spacing) {

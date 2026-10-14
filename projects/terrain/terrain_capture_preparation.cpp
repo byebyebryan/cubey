@@ -39,6 +39,8 @@ prepare_terrain_capture(const TerrainProjectConfig& config, const std::filesyste
     runtime->set_terrain_readability(config.terrain_readability == "refined"      ? 2U
                                      : config.terrain_readability == "detail-off" ? 1U
                                                                                   : 0U);
+    if (config.captured_water_shadow_strength)
+        runtime->set_shadow_strength(*config.captured_water_shadow_strength);
     if (config.captured_water_context)
         runtime->prepare_context(
             config.captured_water_context_source.value_or(std::filesystem::path{}),

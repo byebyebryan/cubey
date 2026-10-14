@@ -60,6 +60,16 @@ int main() {
         auto uniform = prepare_terrain_capture(config, root / "unused-shaders");
         require(uniform->context_product() == nullptr, "context-off allocated exterior terrain");
         require(uniform->capture().depth_m == capture.depth_m, "preparation changed depth");
+        uniform->set_shadow_strength(0);
+        uniform->set_shadow_strength(1);
+        rejects([&] { uniform->set_shadow_strength(-1); });
+        rejects([&] { uniform->set_shadow_strength(std::numeric_limits<float>::quiet_NaN()); });
+        auto shadow_config = config;
+        shadow_config.captured_water_shadow_strength = 0;
+        require(
+            prepare_terrain_capture(shadow_config, root / "unused-shaders")->capture().depth_m ==
+                capture.depth_m,
+            "shadow ablation changed hydraulic depth");
         auto camera_config = config;
         camera_config.captured_water_focus_x_m = 16;
         camera_config.captured_water_focus_z_m = 16;

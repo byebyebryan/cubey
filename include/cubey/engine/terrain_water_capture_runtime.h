@@ -27,6 +27,9 @@ class TerrainWaterCaptureRuntime {
     void prepare_context(const std::filesystem::path& extension = {},
                          float maximum_spacing_m = 0.0F);
     void set_terrain_readability(unsigned mode);
+    // Rendering-study control for existing shared sun visibility, not a new
+    // shadow fit or hydraulic setting. Omitted preserves the Macro recipe.
+    void set_shadow_strength(float strength);
     void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F,
                            std::uint32_t maximum_vertices = 2000000U);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;

@@ -515,6 +515,15 @@ int main() {
         test_runtime_validation_and_diagnostics();
         test_captured_water_options();
         require(parse({}).terrain_readability == "refined", "accepted readability must be default");
+        require(!parse({}).captured_water_shadow_strength, "shadow study changed default recipe");
+        require(
+            parse({"--terrain-landscape", "mountain-local", "--terrain-water-shadow-strength", "0"})
+                    .captured_water_shadow_strength == 0,
+            "zero capture shadow strength lost");
+        require_throws([] { (void)parse({"--terrain-water-shadow-strength", "2"}); },
+                       "out-of-range shadow study accepted");
+        require_throws([] { (void)parse({"--terrain-water-shadow-strength", "nan"}); },
+                       "nonfinite shadow study accepted");
         require(parse({"--terrain-readability", "current"}).terrain_readability == "current",
                 "retained material reference remains selectable");
         require(parse({}).terrain_context_max_spacing_m == 0.0F,
