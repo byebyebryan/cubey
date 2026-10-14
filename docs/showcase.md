@@ -6,6 +6,9 @@ highlights are now creatively locked and packaged as committed media. The
 remaining seven storyboard cards are future editorial work; GitHub attachment
 publication for the current four is complete and recorded in the [showcase
 manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
+Fluid 2.5D is now the fifth packaged candidate, selected through headless
+cinematic auditions; owner creative review and attachment publication remain
+pending. It does not alter the four published clips or select a suite hero.
 
 The showcase is a set of small project stories whose render inputs and capture
 recipes can be reproduced. It is not a single merged reel and it is not a
@@ -15,7 +18,7 @@ clip at README size.
 
 ## Scope
 
-The first public-facing set contains these eleven active projects:
+The public-facing storyboard set contains these twelve active projects:
 
 | Project | Public role | Story family |
 | --- | --- | --- |
@@ -27,6 +30,7 @@ The first public-facing set contains these eleven active projects:
 | `smoke_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
+| `fluid_25d` | Packaged fifth candidate; creative review and attachment publication pending | Simulation-led |
 | `fire_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
 | `explosion_3d` | Root-gallery candidate; hero eligibility deferred | Simulation-led |
 | `fractal_2d` | Supporting project gallery; root inclusion after editorial review | Camera-led |
@@ -50,7 +54,6 @@ status change:
   than the project gallery;
 - retained terrain studies under `studies/terrain/reference` and
   `studies/terrain/shadertoy`;
-- `fluid_25d`, which is a design-first River V0 CPU contract without a runtime;
 - archived or retired applications and studies.
 
 The active/reference inventory remains documented in the [root
@@ -475,6 +478,31 @@ unjustified subsystem or produce an unreadable intermediate state.
   generic cinematic path is implied.
 
 ## Media and provenance contract
+
+### Fluid 2.5D — rain becomes a landscape
+
+- **Takeaway:** Continuous rain on unmodified generated mountain terrain forms
+  downhill streams and basin collections; streams retreat after supply stops.
+- **Highlight:** Eight seconds, native-rendered 720p/60, water-only stream network
+  with a restrained 20-degree eased arc at fixed distance. The tighter interior
+  framing avoids the finite patch edge visible in the first wider audition.
+- **Project film:** Thirty-six seconds: six seconds of terrain/rain, ten of
+  downhill runoff, eight of collection across rain shutoff, twelve of retreat.
+  Purposeful camera cuts never reverse physical time; brief phase captions
+  distinguish recorded timelapse from live operation.
+- **Conditions:** The accepted Mountain 1024²/16m patch and rendering defaults,
+  fixed daylight, 512 mm/h demo storm, rain off after two simulated hours.
+  No new terrain, solver, asset, water shader, backdrop or cloud work.
+- **Motion policy:** Camera supports changing native water. Dots/trails are
+  retained in the live demo and audition, not the selected showcase clip.
+- **Capture boundary:** Actual SynxFlow snapshots held between original saves,
+  never physically interpolated. Sixty FPS describes rendered/encoded frames,
+  not hydraulic update rate or native scanout/solver performance.
+- **Status:** Packaged and agent-reviewed; owner creative approval and GitHub
+  attachment publication are pending. The existing four clips are untouched.
+- **Authority:** [Recipe](media/showcase/fluid-25d-recipe.json),
+  [presentation qualification](../projects/fluid/fluid_25d/presentation_v1.md),
+  and [project quickstart](../projects/fluid/fluid_25d/README.md).
 
 ### Locked root-gallery capture standard
 

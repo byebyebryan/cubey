@@ -1,11 +1,14 @@
 # Cubey showcase media
 
-This directory keeps the four published highlights reproducible and independent
-of GitHub's presentation layer. The root README uses native video players;
+This directory keeps four published highlights and the packaged Fluid 2.5D
+candidate reproducible and independent of GitHub's presentation layer. The
+published root highlights use native video players;
 these committed MP4s, generated posters, and the manifest are the durable,
 hashable source of truth.
 
-The gallery order is Ocean, glTF + Terrain, Water 3D, and Fire 3D. Each poster
+The published gallery order is Ocean, glTF + Terrain, Water 3D, and Fire 3D.
+Fluid 2.5D is the fifth packaged candidate, with owner creative review and native
+attachment publication still pending. Each poster
 is extracted from its corresponding committed MP4; click one to open the clip:
 
 | Highlight | Poster / committed MP4 |
@@ -14,8 +17,15 @@ is extracted from its corresponding committed MP4; click one to open the clip:
 | glTF + Terrain | [![glTF + Terrain](gltf-terrain.png)](gltf-terrain.mp4) |
 | Water 3D | [![Water 3D](water-3d.png)](water-3d.mp4) |
 | Fire 3D | [![Fire 3D](fire-3d.png)](fire-3d.mp4) |
+| Fluid 2.5D (packaged, not uploaded) | [![Fluid 2.5D](fluid-25d.png)](fluid-25d.mp4) |
 
-The four clips are silent, fast-start H.264 High publications at 1280x720 and
+Fluid's supporting [36-second project film](fluid-25d-story.mp4) shows rain,
+stream formation, collection and retreat. Its [complete recipe](fluid-25d-recipe.json)
+records native state cadence, timelapse intervals and provenance. Both films
+render real saved states; they are not live-FPS demonstrations or interpolated
+hydraulic fields. Existing four media files and attachment receipts are unchanged.
+
+The highlights are silent, fast-start H.264 High publications at 1280x720 and
 exactly 60 FPS. `manifest.json` records their byte hashes, poster timestamps,
 capture recipes, source revisions, capture-time dirty-diff provenance,
 attachment URLs, and licensing.

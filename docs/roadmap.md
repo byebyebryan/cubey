@@ -106,13 +106,15 @@ Current stable foundation pieces:
   tests audit those package dependencies.
 
 The public visual showcase has a separate design checkpoint in [Showcase
-Storyboard and Capture Plan](showcase.md). Its eleven shot cards and
+Storyboard and Capture Plan](showcase.md). Its twelve shot cards and
 provenance rules remain the storyboard authority. Four highlights are now
 creatively locked and packaged as committed poster-linked MP4s in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
 Water 3D, and Fire 3D. GitHub native-player attachments for these four are
-published and recorded in the package manifest; the remaining seven cards are
-future editorial work.
+published and recorded in the package manifest. Fluid 2.5D now has a fifth
+packaged candidate and a 36-second explanatory film; owner creative review and
+attachment publication remain pending. The remaining seven cards are future
+editorial work. Existing published media are unchanged.
 
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, terrain products, and glTF Viewer

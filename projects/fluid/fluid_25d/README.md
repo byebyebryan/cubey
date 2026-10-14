@@ -4,6 +4,19 @@ A macro-scale terrain-water demo: rain supplies an unmodified generated heightfi
 water forms downhill streams, gathers in basins, and retreats when supply stops.
 Cubey renders the changing water surface, wet banks, rain and flow cues.
 
+[![Rain-fed streams: 8-second cinematic highlight](../../../docs/media/showcase/fluid-25d.png)](../../../docs/media/showcase/fluid-25d.mp4)
+
+[8-second showcase highlight](../../../docs/media/showcase/fluid-25d.mp4) ·
+[36-second project film](../../../docs/media/showcase/fluid-25d-story.mp4) ·
+[Recipe and provenance](../../../docs/media/showcase/fluid-25d-recipe.json) ·
+[Browser review](http://starship:8787/reports/c3198c8ff67fa60e7997d396a5a6fee6e1aae6081f97f22ca928ea83e6b9b803/)
+
+These are native-rendered 720p/60 FPS recorded timelapses, not live performance
+captures. The longer film explains rain, runoff, collection and rain-off retreat.
+Water fields are held between original saves; rain/foam remain visual cues.
+Owner creative review and GitHub attachment publication are separate pending gates.
+See [presentation reproduction and validation](presentation_v1.md).
+
 The preferred demo runs **SynxFlow in a separate CUDA worker**, streaming native
 depth and momentum into Cubey's Vulkan renderer. The simpler builtin solvers and
 recorded playback remain explicit alternatives; they are not silent fallbacks.

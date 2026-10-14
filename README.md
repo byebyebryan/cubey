@@ -15,9 +15,11 @@ PBR, profiling, and deterministic headless capture.
 
 ## Showcase
 
-These four short captures show the current range of the workbench. Each is a
-continuous eight-second, 720p/60 FPS project story rather than a segment from a
-combined reel.
+Four published highlights and a newly packaged Fluid 2.5D candidate show the
+workbench's range. Each highlight is an independent eight-second, 720p/60 FPS
+project story rather than a segment from a combined reel. Fluid's native-player
+attachment publication is still pending; its committed clip and project film
+are available below.
 
 ### Ocean
 
@@ -58,6 +60,18 @@ lets combustion, turbulence, flame shaping, and smoke structure carry the
 motion.
 
 [Project](projects/fluid/fire_3d/README.md) · [Committed MP4](docs/media/showcase/fire-3d.mp4) · [Poster](docs/media/showcase/fire-3d.png)
+
+### Fluid 2.5D — terrain rain
+
+[![Fluid 2.5D: rain-fed streams](docs/media/showcase/fluid-25d.png)](docs/media/showcase/fluid-25d.mp4)
+
+Rain forms downhill streams and basin collections across unmodified generated
+mountain terrain. A restrained eased camera arc keeps the developing water in
+view. This is recorded SynxFlow timelapse rendered in Vulkan, not a live-FPS
+claim; native water states are held between saves. Owner creative review and
+GitHub attachment publication remain pending.
+
+[Project](projects/fluid/fluid_25d/README.md) · [8-second MP4](docs/media/showcase/fluid-25d.mp4) · [36-second project film](docs/media/showcase/fluid-25d-story.mp4) · [Recipe and provenance](docs/media/showcase/fluid-25d-recipe.json)
 
 The [showcase package](docs/media/showcase/README.md) preserves the exact media,
 posters, capture recipes, hashes, attachment mapping, and license boundaries.
