@@ -1,5 +1,6 @@
 #include "terrain_capture_preparation.h"
 #include "terrain_config.h"
+#include <cmath>
 #include <cstdio>
 #include <stdexcept>
 
@@ -23,6 +24,18 @@ prepare_terrain_capture(const TerrainProjectConfig& config, const std::filesyste
             *config.water_capture_path, config.runtime.heightfield_path, shaders);
     else
         throw std::runtime_error("capture preparation requires a resolved site or capture");
+    // Validate before GPU staging/old-resident retirement, including uniform
+    // mode where fixed topology would not otherwise validate a sticky focus.
+    if (config.captured_water_focus_x_m) {
+        const auto& grid = runtime->capture().grid;
+        const auto sample =
+            (cubey::math::Vec2{*config.captured_water_focus_x_m, *config.captured_water_focus_z_m} -
+             grid.sample_origin_xz_m) /
+            grid.cell_size_m;
+        if (!std::isfinite(sample.x) || !std::isfinite(sample.y) || sample.x < 0 || sample.y < 0 ||
+            sample.x > float(grid.width - 1U) || sample.y > float(grid.height - 1U))
+            throw std::runtime_error("capture camera focus is outside the captured domain");
+    }
     runtime->set_terrain_readability(config.terrain_readability == "refined"      ? 2U
                                      : config.terrain_readability == "detail-off" ? 1U
                                                                                   : 0U);

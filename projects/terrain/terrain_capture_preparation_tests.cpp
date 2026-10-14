@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cubey/asset/terrain_water_capture.h>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 
 namespace {
@@ -59,6 +60,16 @@ int main() {
         auto uniform = prepare_terrain_capture(config, root / "unused-shaders");
         require(uniform->context_product() == nullptr, "context-off allocated exterior terrain");
         require(uniform->capture().depth_m == capture.depth_m, "preparation changed depth");
+        auto camera_config = config;
+        camera_config.captured_water_focus_x_m = 16;
+        camera_config.captured_water_focus_z_m = 16;
+        (void)prepare_terrain_capture(camera_config, root / "unused-shaders");
+        camera_config.captured_water_focus_x_m = 10000;
+        rejects([&] { (void)prepare_terrain_capture(camera_config, root / "unused-shaders"); });
+        camera_config.captured_water_focus_x_m = std::numeric_limits<float>::quiet_NaN();
+        rejects([&] { (void)prepare_terrain_capture(camera_config, root / "unused-shaders"); });
+        camera_config.captured_water_focus_z_m.reset();
+        rejects([&] { (void)prepare_terrain_capture(camera_config, root / "unused-shaders"); });
         auto fixed_config = config;
         fixed_config.captured_water_detail = "fixed";
         rejects([&] { (void)prepare_terrain_capture(fixed_config, root / "unused-shaders"); });
