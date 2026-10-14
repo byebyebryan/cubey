@@ -1145,7 +1145,7 @@ class TerrainApp {
             ImGui::TextWrapped("Last load failed; previous landscape kept: %s",
                                landscape_error_.c_str());
         ImGui::TextWrapped(
-            "Selection changes only after Apply. No solver or terrain generator is started.");
+            "Scene changes only after Apply. No solver or terrain generator is started.");
         if (ImGui::TreeNode("Loading diagnostics")) {
             ImGui::Text("Selected ID: %s", selected.id.c_str());
             ImGui::Text("Showing ID: %s", config_.active_landscape_id.c_str());

@@ -392,6 +392,56 @@ Report: <http://starship:8801/terrain/wider-water-world-20261012-gqeluh/>.
 See [world-wide water integration](world_wide_water_v1.md) for the bake/review
 contract, measured costs, retained stress views and immutable-field evidence.
 
+#### Prepared-landscape first use (promotion-ready)
+
+The Terrain panel now uses human-readable Showing / Selected labels and an
+explicit **Saved water - no solver running** or **Terrain only - no water loaded**
+summary. Water coverage comes from the sampled capture grid; terrain-backdrop
+coverage comes from the admitted site. Capture time and rainfall are labelled as
+history, not current weather or editable rain. Surface animation changes saved
+flow cues, never water levels or distribution.
+
+Framing, Show water, Animate saved flow cues and Reset landscape camera remain
+prominent. Loading identifies the requested landscape and retains the previous
+scene until ready; upload may briefly pause rendering. Technical identities,
+load timings, material diagnostics and coverage options are collapsible. The
+menus update Selected immediately; Showing changes only after Apply succeeds.
+Existing Apply/reset semantics and CLI/config ownership are unchanged.
+
+Compact review: <http://starship:8787/reports/ebb9d3fb17214c5a8d6e4a25e44f9fcc0b722c3e9fbf631ef067f1e5d8388df2/>.
+The existing report hub also serves the authoring export at
+<http://starship:8801/terrain/landscape-first-use-qualified-20261013-1SCoIc/export/>.
+The HTML-report publisher stores an immutable snapshot of the intended report
+assets only. HTTP bytes and its actual view/visibility/video controls were
+checked from Starship in a private headless browser; desktop/mobile screenshots
+and a no-script fallback check are retained under the study root. This is browser
+report evidence, not native Cubey GUI or Snap-network acceptance.
+
+Frozen first-use qualification passes 41 selected regression groups, without
+skips, the ten retained hardening controls, the no-argument legacy comparison,
+foreign-working-directory launch, incompatible legacy-control rejection and
+replacement lifecycle checks. The opening frame and all four historical wet
+frames remain pixel-exact. Saved bed/depth/decoded velocity are audited unchanged
+with zero hydraulic dispatches. The two ten-second clips compare animated flow
+cues with a held presentation clock on identical hydraulic fields/camera;
+compressed video frames are not an exact-pixel reference.
+
+Four representative 32m/64m, 1080p render-only repeats pass the unchanged 8ms GPU
+and 4ms CPU-service gates: GPU p95 3.384–4.071ms; CPU service p95 at most 0.326ms.
+The solver is stopped, and timing excludes encoding/readback and 120 warmup
+frames. These are headless scene timings, not native FPS, GUI cost, or a claimed
+rendering speedup. Assets, shaders, solver, live Fluid defaults and lighting/
+materials remain unchanged. Earlier diagnostic attempts are retained separately.
+
+Joint native review is still required: opening framing/panel readability;
+saved-versus-live explanation; Selected/Showing and loading/failure feedback;
+wet/dry switching; water/motion controls; Local/Wider framing and camera reset.
+Personal checkboxes in the browser checklist do not acknowledge approval.
+After explicit approval, a separate default change can make `auto` the starting
+selection while retaining missing-cache fallback and explicit legacy options.
+Until then, no-argument startup remains legacy. This pass launches no native
+GUI and does not promote a scene or push commits.
+
 ### Captured-water landscape context (opt-in study)
 
 Add `--terrain-water-context --terrain-water-capture-camera landscape` to the
