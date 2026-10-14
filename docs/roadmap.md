@@ -46,6 +46,13 @@ stage metrics backed by a repeatable release-profile corpus.
 
 Current stable foundation pieces:
 
+- active Fluid 2.5D terrain-rain demo: Vulkan surface/bank rendering, a separately
+  prepared live SynxFlow worker, acknowledged rain/pace and site/reset controls,
+  recorded capture, retained builtin alternatives, and a measured Mountain rain
+  response. It renders only the selected detail patch; the shared Terrain
+  foundation owns wider ground/LOD and the opt-in saved-water consumer. Setup
+  dependencies and native GUI acceptance remain explicit rather than implied;
+
 - shared windowed/headless host flow, queued capture/video encoding,
   GPU-owner submission, deferred destruction vocabulary, and project runtime
   services;
@@ -726,6 +733,10 @@ Project checkpoints:
   fire/explosion products. Each has windowed interaction, deterministic
   headless PNG/MP4 output, project-owned solver policy, and graph-declared
   compute/render boundaries where that contract is useful.
+- Fluid 2.5D is now an active terrain-water demo, not a design-only River V0
+  CPU contract. Its external worker, recorded viewer and builtin GPU solvers
+  have distinct capabilities. The preferred Mountain demo has guided and
+  Manual entry, continuous rain/runoff/collection and explicit finite horizon.
 - `projects/atmosphere` now hosts the active surface cloud/weather layer.
   The shared `CloudLayerRuntime` keeps the texture-backed coherent density path,
   generated 3D base/detail noise, generated 2D weather map, spherical-shell

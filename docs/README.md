@@ -98,6 +98,7 @@ Active projects:
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
 - [Water 2D](../projects/fluid/water_2d/README.md)
 - [Water 3D](../projects/fluid/water_3d/README.md)
+- [Fluid 2.5D terrain-rain demo](../projects/fluid/fluid_25d/README.md)
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [glTF Viewer](../projects/gltf_viewer/README.md)
@@ -110,10 +111,9 @@ Reference projects:
 - [Terrain Ref](../studies/terrain/reference/README.md)
 - [Terrain ShaderToy Study](../studies/terrain/shadertoy/README.md)
 
-Paused labs and design-only projects:
+Paused labs:
 
 - [Terrain Hydrology Lab](../studies/terrain/hydrology/README.md)
-- [Fluid 2.5D design and CPU contract](../projects/fluid/fluid_25d/README.md)
 
 Legacy material:
 

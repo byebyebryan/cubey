@@ -93,6 +93,7 @@ than hidden extensions of those products.
 | [Smoke 2D](projects/fluid/smoke_2d/README.md) | GPU dye/velocity field with MacCormack advection, vorticity, and pressure projection. |
 | [Water 2D](projects/fluid/water_2d/README.md) | APIC free-surface liquid with PIC/FLIP fallback, obstacles, hose/drain flow, and surface diagnostics. |
 | [Water 3D](projects/fluid/water_3d/README.md) | APIC liquid, sorted particle-grid transfers, screen-space surface reconstruction, and whitewater. |
+| [Fluid 2.5D](projects/fluid/fluid_25d/README.md) | Terrain rain, downhill streams and basin collection; optional live SynxFlow streaming, recorded playback, and a simpler builtin solver. |
 | [Fire 3D](projects/fluid/fire_3d/README.md) | Dense volumetric combustion, projection, vorticity, shadow volume, and raymarching. |
 | [Explosion 3D](projects/fluid/explosion_3d/README.md) | The shared pyro solver presented as repeated impulses with explosion-specific timing and controls. |
 
@@ -109,8 +110,6 @@ white-furnace validation target, not a public demo.
 
 ### Studies and retained references
 
-- [Fluid 2.5D](projects/fluid/fluid_25d/README.md) is a design-first direction for
-  terrain-bound rivers, flooding, sources, and sinks.
 - [Terrain Hydrology](studies/terrain/hydrology/README.md) is a paused snapshot
   of the earlier regional terrain and landscape-evolution work.
 - [Cloud Ref](projects/cloud_ref/README.md), [Terrain Ref](studies/terrain/reference/README.md),

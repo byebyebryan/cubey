@@ -1,0 +1,2436 @@
+# Fluid 2.5D development record
+
+Historical snapshot retained during the presentation promotion on 2026-10-14.
+This is an indexed development/evidence record, **not the current quickstart or
+an authority for today's defaults**. Start with [the current demo README](README.md).
+Commands below intentionally retain their original study inputs and dated output
+paths. Their original acceptance, failure and limitation notes remain intact.
+
+Source snapshot: `7f5d670a`; original README SHA-256
+`b4c5d245b035442eeca2373833e4f726cd70174dbf163742c68c329b7ca965ab`.
+
+The render-only surface organization supports
+`--fluid25d-scenic-surface-mode correlated` with a SHA-matching
+`--fluid25d-scenic-surface-source`. The GUI labels this **Source-aligned masks
+(study)**. It samples `cubey::terrain::TerrainSurfaceField`, the same full-source
+descriptor as Terrain, rather than normalizing/filtering only the recording crop.
+The existing three modes and numerical defaults are unchanged. Source-aligned
+organization also works with provenance-matched `--fluid25d-scenic-surface-grid`
+bindings in the prepared live/replay terrain demo; it never changes rainfall/bed data.
+Its attempted new material recipe was rejected and removed; the existing Scenic
+material consumes the diagnostic masks. See
+`outputs/terrain/correlated-surface-v1-20261008-b2` for prototype versus final proof.
+
+`fluid_25d` is Cubey's terrain-water project: a 2D shallow-water simulation
+over a heightfield terrain. Water should flow downhill, pool in basins, follow
+an authored channel, and drain through an explicit sink without requiring a
+full 3D fluid volume.
+
+The broader technique map lives in
+[`docs/architecture/fluid-simulation.md`](../../../docs/architecture/fluid-simulation.md).
+
+## Status
+
+### Terrain Rain Demo: start here
+
+The prepared terrain launcher now defaults to **live SynxFlow streaming,
+mountain terrain at 1024² / 16 m, the Release renderer, and a 60 Hz render cap**.
+It retains Scenic Macro/daylight, B-spline 2x, visible rain and dots/trails.
+Scenic Macro now defaults to the approved shared footprint-filtered terrain
+material, with validated source-world texture placement. The previous ground
+remains available in **Terrain detail**; water/rain/bank/grid defaults are unchanged.
+Terrain organization now defaults to the shared **source-aligned masks**, with
+a **whole-scene fitted 2048² shadow** and corrected steep receiver-plane filtering.
+This is the owner-reviewed, accepted demo default; no appearance flags are needed.
+`--surface legacy` retains the uniform-material control. The GUI's Terrain
+organization selector retains all four existing modes; Whole-scene shadow fit
+can be disabled for the original shadow reference. The direct app retains its
+legacy projection default for older studies. See [terrain presentation review](terrain_presentation_v1.md).
+This is a demo-launch preset, not a change to Cubey's builtin solver, numerical
+method, terrain or rainfall. The optional runtime and prepared cases must
+already exist; nothing is installed, generated or silently substituted.
+
+For the current prepared study:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
+  --study outputs/fluid/site-expansion-20261011-jtIA3s
+```
+
+Live starts dry and paused. On the validated Mountain 1k/16m case,
+**Start demo / Space** defaults to the guided rain response; **Manual** retains
+ordinary continuous simulation with your selected rain, pace and camera.
+Other sites and grids retain ordinary Start/Resume. The managed
+**Terrain Water** panel now supports prepared site/grid selection followed by
+Apply & restart in the same window. Rain, pace and appearance are retained;
+water starts dry/paused again. Closing this launcher stops its owned worker.
+Fluid displays **only the complete selected simulation patch**, at its configured
+full grid resolution and B-spline display subdivision. There is no surrounding
+terrain or outer LOD, including for prepared-world sites. “Fit simulation patch”
+and “Whole patch” describe that boundary; wider backdrops belong to the shared
+Terrain foundation. See the [patch-only qualification](patch_only_v1.md).
+See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Guided Start
+follows wet-up, downhill runoff, basin collection and rain-off drainage. Its
+six-hour narrative ends with the solver still running; manual controls leave
+the guide and select Manual. No startup autoplay is added, and headless scripts
+using `resume` remain manual. See [rain-response study](rain_response_v1.md).
+Use `--print-command` remotely for a read-only preflight without opening a GUI.
+`--render-fps 0` restores unpaced rendering; other positive values select a
+custom cap. `--configuration patch-2048-8m` selects the finer, slower-live grid.
+Explicit `replay --recording <recording.json>` holds a saved state and starts
+no solver. `--app` retains the existing-artifact override; no automatic build
+or fallback is attempted. See the [performance verdict](offscreen_perf_v2.md)
+for the headless measurements and deferred native-FPS confirmation.
+
+### Shared clear-sky day/night (optional)
+
+The native Scenic viewer and Terrain's saved-water consumer now share
+`cubey::TerrainSurfaceEnvironment`: the existing atmosphere runtime,
+coherent previous/current probes, per-frame-slot diffuse/direct lighting and
+clear-sky background and reflections. Fixed daylight/clear remains the startup default.
+The GUI's **Environment (render only)** section offers daylight/noon/sunset/night,
+and time/cycle speed. Clouds are excluded from this elevated patch-view demo:
+the existing surface cloud model is not a qualified aerial/cloud-top solution.
+Its wall clock survives managed site/grid resets and advances while water is held;
+it never changes rainfall or solver pace.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
+  --study outputs/fluid/site-expansion-20261011-jtIA3s \
+  --environment shared --environment-time-hours 12 \
+  --environment-cycle-speed .5
+```
+
+For direct native invocation, use `--fluid25d-environment shared` plus the
+existing atmosphere flags. Cloud controls, projected cloud shadows, cloud
+composition, cached cloudy probes and the Fluid cloud shader package have been
+removed from this integration. Shared day/night requires a native Scenic recording or
+external-session viewer; the builtin solver path is unchanged.
+
+The earlier cloud-enabled study and its measured GPU-budget miss remain as
+historical evidence, not current capability. The post-removal headless controls
+retain pixel-exact fixed daylight and all four shared clear-sky time presets;
+native bed/depth/velocity imports remain exact. Existing cloud systems in Ocean,
+Water3D, Atmosphere and Terrain's normal backdrop are untouched.
+See [current status and historical measurements](shared_environment_v1.md) and the
+[earlier browser report](http://starship:8787/reports/a9e51f964348adf9f3963655b4dfe06061b3fc0c88c4717e436d537c9bc76bb0/).
+
+The [cached-site expansion](site_expansion_v1.md) adds **Upland basins**, **Joining
+valleys** and **Steep ridges** alongside the original three sites. Selection is
+catalogue-driven, with pinned existing Terrain sources/crop coordinates and no
+terrain edits or per-site forcing. The report contains matched six-hour native
+rainfall runs, Vulkan overview/flow clips and preparation/lifecycle receipts.
+The older `live-perf-terrain-20261010-Dd6K3h` study remains usable; new cases are
+disabled there rather than silently prepared or substituted.
+
+### Prepared-world collection (explicit)
+
+The shared world/site packages also work in the managed live demo, with the
+same selection + Apply & restart controls. This separate collection keeps the
+original six-site default intact. Its world/site package validates placement and
+feeds the shared source-aligned surface masks, but Fluid renders only the selected
+simulation rectangle. The Terrain foundation retains wider ground/LOD support.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
+  --study outputs/fluid/world-water-20261012-Ck824g \
+  --site-catalogue projects/fluid/fluid_25d/terrain_water_world_sites.json
+```
+
+All three sites have the five existing grid presets. Start remains dry/paused;
+the default grid remains 1k/16m. Actual rain and hydraulic state cover only the
+selected simulation rectangle. Legacy context `off` requests remain valid;
+`--fluid25d-native-terrain-context on` now rejects before GPU startup with
+guidance to use Terrain. See the current [patch-only contract](patch_only_v1.md),
+the historical
+[integration and qualification record](world_water_v1.md) and
+[formation/capture report](http://starship:8801/fluid/world-water-20261012-Ck824g/).
+The completed report includes all thirteen passing headless timing slots and
+the retained finite-domain/resource-growth limitations; native GUI acceptance
+remains separate.
+
+### Historical Mountain Rain Demo V1
+
+The earlier launcher remains available for the historical mountain scene and
+bank studies. It defaults to
+**Scenic with the accepted shared daylight, balanced 512 mm/h rainfall,
+triangular reference banks, dots/trails on and procedural highlights off**.
+These are mountain-demo defaults, not a replacement of the built-in solver or
+its fixtures. Scenic color is optical/lighting color, not a depth palette;
+dots/trails show approximate velocity, not native water parcels or conserved dye.
+
+Start the mountain presentation normally, or explicitly select Readable for
+depth/flow inspection:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style readable
+```
+
+The [live performance and terrain-options study](live_perf_terrain_v1.md)
+supplies prepared cases for `run_terrain_rain_demo.py` across existing
+mountain, alpine and rolling terrain at power-of-two spacings and footprints.
+It distinguishes a real running worker from an explicitly held captured state,
+and pins B-spline 2x for its study views without replacing this launcher's bank,
+terrain or solver defaults. Cases and the review report remain under `outputs`;
+the study document gives launch commands and measurement boundaries.
+
+The [corrected Vulkan performance loop](offscreen_perf_v2.md) uses the shared
+offscreen host without a virtual display, readback or encoding, alongside
+verified native Wayland controls. `--headless --headless-render-only --frames 0
+--run-seconds 30 --render-fps 60` is an opt-in bounded continuous loop; it does
+not start a solver by itself. External-session runs advance actual worker
+fields; recording runs hold their saved state. Continuous offscreen shares
+the GUI's bounded asynchronous whitewater classification, while PNG/video
+captures retain deterministic synchronous classification. No numerical,
+material or launcher defaults are promoted by the performance study.
+
+In the native viewer, `V` switches Readable/Scenic while retaining the camera
+and dots. Scenic uses lit ground/rock materials, directional shadows, HDR
+environment reflection, absorption and guarded refraction. Its blue/green color
+is **not the Readable depth palette**; use raw maps for depth. Normal motion is
+decorative, driven by held native velocities; pause freezes it. Banks and dots
+remain independent. Raw maps, water debugging and inspection views retain the
+diagnostic renderer. Readable is the explicit diagnostic alternative and the builtin
+solver frontend is unchanged. See [Scenic rendering](scenic_rendering_v1.md)
+for implementation boundaries, verification and known tradeoffs. Scenic's
+render-only material selector retains V1 and a refined preset with quieter wet
+ground, clearer shallow streams and light-responsive pool color. This does not
+enlarge the wet area or smooth the bank mesh; Readable/raw maps remain the depth
+reference.
+
+The water-rendering reuse study adds bounded controls inside **Scenic materials
+→ Water appearance and daylight**, or in the existing material-v2 tuning JSON:
+`water_wet_normal` (0–1), `water_ripple_strength` (0–0.3 slope),
+`water_ripple_scale_m` (8–128 m), and `daylight_environment` (exactly 0 or 1).
+The mountain `macro` preset uses the reviewed wet-only normals, restrained wind
+detail and shared daylight; V1/refined/terrain retain these off. Wet-only normal support ignores high dry
+bank samples; wind detail is normal-only and fades from resolved waves to
+roughness, independently of flow speed. It does not change surface height,
+coverage, storage, velocity, or the accepted shallow-film treatment.
+
+The surface-agitation study adds `water_flow_agitation` and
+`water_rain_agitation` (each 0–1) in the same GUI group/material-v2 JSON.
+Both default to **1 in the mountain `macro` preset**, the reviewed rougher
+setting; V1/refined/terrain retain 0. Keep either strength adjustable in the GUI
+or JSON; setting both to 0 restores the previous smoother appearance.
+Flow uses filtered speed and surface slope
+as an artistic activity proxy, not measured turbulence. Rain uses the **applied**
+recording/live rainfall rate, including when streaks are hidden; unknown/off
+weather adds none. Streak visibility, density and falling speed do not control
+water agitation. Fine normals hand off to roughness at distance; thin wet-ground
+films retain their accepted shading. `--fluid25d-scenic-water-view roughness`
+shows effective roughness (black low, white high), and `no-detail` suppresses
+decorative normals and agitation. The agitation clock is presentation wall time:
+pause holds it, seek/reset restarts it, and physical playback acceleration does
+not accelerate it. This adds no geometry, water, solver work or foam.
+
+The mountain **Macro** material now also defaults to the accepted moving-water
+appearance: cascade strength 1, whitewater fleck strength 1, fleck travel speed
+2, gentle stream foam strength 0.3, patchiness 1 and brightness 0.55. Flecks retain
+their 3 m radius and 1.5 m lift. The restrained, irregular foam was accepted in
+the [subtle-foam review](../../../outputs/fluid/subtle-foam-20261009-9wsMvA/index.html).
+All controls remain adjustable under Scenic materials; setting
+`water_cascade_strength`, `water_whitewater_strength` and
+`water_stream_foam_strength` to zero restores the previous flow appearance.
+V1/refined/terrain retain these cues off. Older comparison reports describe their
+historical opt-in checkpoint; comparison tools now pin those controls explicitly
+instead of assuming that an omitted override means off. These are artistic,
+render-only motion cues, not a turbulence solver or accelerated hydraulic flow.
+The [default-promotion review](../../../outputs/fluid/whitewater-publish-20261009-uAwBCC/index.html)
+includes no-tuning default/approved pixel-equality checks and fresh comparisons
+with the existing B-spline bank option.
+
+Bank smoothing already has separate alternatives in **Banks [S]**:
+`--fluid25d-native-bank-view bspline-2x` rounds the displayed terrain/water without
+sidecars, but may widen streams or join narrow gaps. Marching-squares coverage
+requires `--fluid25d-native-bank-view marching-squares` and an exact
+recording/time-matched `--fluid25d-native-display-coverage` manifest; it smooths
+the displayed shoreline coverage, not the triangular height mesh, and is not a
+live-backend option. The triangular reference remains the default: promoting
+flow appearance does not select a bank reconstruction or change numerical
+terrain. See the bank comparison sections below for their different tradeoffs.
+
+The water-edge spike adds four **opt-in** material-v2 controls under
+Scenic materials → Water appearance and daylight:
+`water_bank_irregularity_m` (0–24 m), `water_bank_motion_m` (0–12 m),
+`water_bank_scale_m` (8–128 m, initially 48), and `water_bank_band_m`
+(1–64 m, initially 12). Both strengths remain zero in every preset. Fixed
+world-space noise and weaker flow-linked variation trim only displayed water
+coverage; terrain, water surface heights, native depth/velocity, optics and
+solver dispatches are unchanged. The displayed rain-film opacity transition is
+included beside deeper water; isolated shallow films and all-deep interiors
+are excluded. Insets are capped and unresolved detail fades out.
+
+In B-spline mode the corrected edge band, support estimate and cap use the
+existing cubic display-depth reconstruction and its analytic gradient, not
+native-quad minimum/maximum gates or per-triangle slopes. Displayed coverage
+blends toward that reconstructed depth in the edge band before trimming. The
+depth used for coverage cannot exceed the original displayed depth, so it
+cannot introduce water outside the baseline wet area. This avoids reintroducing
+native cell patches into the smoothed bank. The off path is unchanged; enabling
+the effect adds a 16-sample cubic lookup in B-spline shading, with no new pass or
+resource. Reference geometry remains triangular.
+
+B-spline Scenic terrain wetness now uses the same continuous cubic depth
+reconstruction for both colour and roughness. Previously it used native
+triangle depth even below the smoothed display surface, revealing cell-shaped
+grey rain-film patches beside shallow pools. The existing film thresholds and
+material settings are retained; this correction is automatic within B-spline
+mode, not a new knob or promotion of B-spline/noisy banks. Both terrain material
+paths share the helper. Reference rendering, simulation fields, water coverage
+and the 2× display mesh remain unchanged. The
+[wet-ground comparison](../../../outputs/fluid/bspline-wet-ground-20261010-3haWIL/index.html)
+includes the marked stream crop, colour/roughness isolation, lake and overview.
+Small blue-pool faceting remains a separate finite-mesh issue. Reproduce in a
+fresh `outputs/fluid/bspline-wet-ground-*` leaf with
+`review_bspline_wet_ground_v1.py capture --phase before|after --out <leaf>`
+around the build change, then `report --out <leaf>` after saving focused CTest
+results as `tests.xml`. Rendering times in this study are noisy; a negative
+before/after delta is not a speedup claim or a strict cost guarantee.
+
+`--fluid25d-scenic-water-view bank-edge` shows local eligibility;
+`no-bank-edge` is a full-shading ablation retaining the existing flecks/rain.
+Raw/component views bypass the new effect. The new motion reuses the
+pause-aware presentation clock, not solver time or erosion. The original quiet
+matched captures showed very small changes at the close lake/stream cameras and none at
+the overview: this is not a replacement for B-spline geometry smoothing or a
+general stepped-bank fix. See the
+[study note](../../../docs/notes/fluid25d-bank-edge-v1.md) and
+[remote still/motion comparison](../../../outputs/fluid/bank-edge-v1-20261009-GLWoCh/index.html).
+Reproduce the study in a fresh output leaf with
+`review_bank_edge_v1.py --out <fresh-directory>`; `--mode motion|advancing|profile`
+selects held-field animation, advancing saved-field replay, or render-only timing.
+No solver is launched by this tool, and no default is promoted.
+
+The subsequent pronounced comparison uses 24 m fixed / 12 m moving requests
+with a 64 m edge band and 128 m noise scale. Above the old 8/3 m limits, the
+inset cap relaxes progressively to at most 45% of a native cell / 60% of local
+supported depth estimate. A smooth reshaping preserves noise instead of clipping
+a large request into a uniform inset. Large requests can visibly retreat or
+break narrow displayed channels and are not a
+fidelity setting. See the
+[stronger comparison](../../../outputs/fluid/bank-edge-bold-20261010-en2A9T/index.html).
+That version exposed cell-shaped cutouts; it is superseded by the
+[reconstructed-field fix comparison](../../../outputs/fluid/bank-edge-continuous-20261010-YG9GRH/index.html).
+The corrected field applies at quiet strengths too, without changing defaults.
+Following owner review, retain this as an optional visual treatment, not a
+default promotion or replacement for the existing bank reconstruction choices.
+The GUI labels it off by default and offers **Disable bank-edge treatment** to
+zero both strengths without changing the selected reconstruction or other
+water materials. Remaining coarse-edge and channel-width tradeoffs are explicit.
+
+Optional shallow-water treatments retain the accepted defaults. Existing
+`film_end_m` / `film_ground_mix` can extend the wet-ground appearance to 30 or
+60 cm without code changes. Independent `water_shallow_coverage_strength`
+(0–1, default 0) and `water_shallow_coverage_end_m` (0.05–1 m, default 0.30)
+fade displayed shallow water toward existing wet terrain with one depth-only
+smoothstep. GUI controls are in Scenic materials beside the film controls.
+At/above the chosen full depth, coverage is unchanged. The fade affects shaded
+water and its coverage diagnostic; raw depth, film-weight and component views
+ignore it. This is artistic opacity, not narrower simulated channels, removed
+mass, subgrid terrain reconstruction, or a new temporal mask. It adds no pass,
+texture or mesh. `review_shallow_ribbons_v1.py` compares both approaches against
+held stream/lake recordings; stronger 60 cm probes are not new defaults.
+These options soften shallow margins; they do not resolve the continuous,
+bright downhill ribbons on steep terrain.
+
+Fixed daylight reuses Water3D's shared `AtmosphereEnvironmentRuntime`, owned by
+the native frontend. Scenic projects nine diffuse SH coefficients from the
+**actual captured sky** once on the GPU (2048 sphere samples, normalized E/pi),
+instead of using the runtime's separate approximate CPU sky gradient. A tenth
+value supplies direct sun attenuation using the shared atmosphere coefficients,
+optical-depth helper and renderer-unit solar source. The sky capture omits the
+sun disk, so it is not counted twice. No clouds or time-of-day animation are added.
+These remain demo renderer units, not photometrically calibrated lux.
+
+`daylight_exposure` (−6 to +4 EV) and `daylight_sun_scale` (0–2) tune this lighting
+without changing the generated fallback. The mountain preset uses 0 EV and 0.45;
+legacy presets retain +0.4 EV and 1 with shared daylight off.
+Exposure is applied once to the composed linear HDR scene, before the existing
+display transform. Sun strength affects terrain and water together. The backdrop
+alone reuses the shared below-horizon remapping; reflected radiance and diffuse
+integration retain their original directions. Shared mode uses continuous tent
+PCF with receiver-plane correction and a bounded curvature bias; the retained
+controls-off shadow path is unchanged. The fixed-lighting buffer is 160 bytes,
+requires no CPU readback and survives pause/seek/restart and viewport resizing.
+
+Existing generated lighting remains the fallback. Pause freezes decorative
+detail; restart/seek reset it. This path is available to the common native
+recording/stream/service frontend. The original lighting study used immutable
+recordings; the follow-up default demo review also checks the actual live path.
+
+See the [overall lighting integration review](../../../outputs/fluid/lighting-integration-v1-20261008-VKBfi2/index.html)
+for matched before/after views, rejected lighting/shadow trials, GPU controls,
+rendering cost and immutable-input evidence. The restrained lighting uses 0 EV,
+sun strength 0.45, terrain ambient 2 and terrain direct 1. It is now the mountain
+`macro` material, selected by the launcher.
+The owner accepted this combined lighting/water presentation on 2026-10-08.
+The linked report retains its pre-review acceptance label as historical evidence;
+the older gallery's preset/default statements describe that earlier checkpoint.
+Built-in numerical defaults remain unchanged.
+
+The earlier [default and darker-stream review](../../../outputs/fluid/mountain-defaults-streams-v1-20261008-65Rz9q/index.html)
+uses the existing `water_clarity=0` and `water_extinction_scale=4` controls in the
+mountain material: no pale shallow-bed tint, and less bed transmission. Reflection,
+wind detail, wet-ground film policy and bank coverage are retained. This is artistic
+demo optics, not simulated sediment/turbidity. It improved streams but made larger
+bodies too uniformly dark. Experimental bed-darkening code was tested, rejected
+for grey painted strips, and removed; that earlier pass retained no new shader
+branch or property. The GUI labels the old clarity
+control **Shallow bed tint**, since it was never a physical transparency control.
+
+The accepted [depth-limited water treatment](../../../outputs/fluid/shallow-optics-v1-20261008-ZMA8tp/index.html)
+is now the mountain `macro` preset: base absorption 1, shallow boost 3, fading out
+smoothly at 16 m physical depth, with the pale bed tint still off. Most stronger
+stream contrast survives while deeper lake interiors regain colour variation.
+The owner accepted this rendering-only compromise on 2026-10-08. Depth is not
+body width: broad shallow pools still darken and deep narrow channels lighten.
+The original comparison page keeps its pre-acceptance opt-in labels as historical
+evidence. V1/refined/terrain are unchanged; setting the boost to zero in the
+existing material-v2 JSON disables it. No new texture, pass or simulation work is
+required. See [the promotion review](../../../outputs/fluid/water-default-review-20261008-kVycqb/index.html)
+for default-versus-approved capture checks and commit validation.
+
+See the [water reuse results](../../../outputs/fluid/water-rendering-reuse-v1-20261008-6s1idD/index.html)
+for independent ablations, macro/lower/reverse views, motion and GPU timings.
+The published-reference SSR spike was tested and **removed from the renderer**:
+almost no contribution at normal cameras, patchy low-angle bank hits. Its source
+and captures remain in that output leaf. No extra reflection pass, water preset,
+or solver dependency is retained. The earlier water-only candidate is a historical
+comparison; owner approval above applies to the combined lighting treatment.
+Cell-scale bank geometry is not fixed by normal detail.
+
+The opt-in [climate-informed surface study](../../../docs/notes/fluid25d-climate-surface-v1.md)
+reuses Terrain Diffusion's climate companion and the Terrain project's existing
+landform classifier to organize procedural bare-ground materials. It improves
+macro placement, not close-up realism. It currently requires a completed native
+recording plus its provenance-matched heightfield; live streaming and launcher
+defaults remain unchanged. See the [remote comparison](../../../outputs/fluid/climate-surface-v1-20261008/index.html).
+
+The historical [Scenic material V2 remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
+has two eight-second V1/V2 comparisons and one no-dots Readable/V1/V2 still
+sheet. Refined Scenic improves stream/ground separation in primary-agent review,
+with unchanged numerical inputs and raw diagnostics; owner visual acceptance is
+deferred. The 720p/1080p standalone GPU p95 is 0.542/1.814 ms. Cell-scale bank
+steps and a paused live-control heartbeat limitation remain explicit in its
+[results](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/RESULTS.md).
+
+From the repository root, with a local graphical session:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live
+rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py banks
+```
+
+- `replay`: retained balanced dry-start recording, 150x viewing. Rain is 512 mm/h
+  through 6750 physical seconds, tapers to zero by 6764.0625 s, then recedes through
+  21150 s. Space pauses viewing; R rewinds. No solver runs. Nonzero `--start`
+  starts paused and must match a saved 225-second state. The taper has no intermediate
+  saved field. `--rain-preset rapid-fill` selects the 1024 mm/h recording, ending at
+  17775 s. `--rain-preset baseline` retains the old 120 mm/h, 60-second-cadence story;
+  `--rain-case rain-on` is available only with that explicit baseline.
+- `live`: audited optional SynxFlow worker, continuous and initially paused at
+  dry start, 60x producer pacing and continuous 512 mm/h supply. Space pauses/resumes computation; GUI rain
+  controls can turn uniform rain off/on without resetting water. R fully resets
+  native dynamic fields in a new generation and restores the selected startup rain rate.
+  `--rain-preset baseline|balanced|rapid-fill` selects 120/512/1024 mm/h; it is not
+  a clock multiplier. Every launch copies the pinned native inputs to its own case
+  and changes only the rainfall table plus descriptive case metadata. Terrain,
+  initial fields, solver parameters, released worker and extension are unchanged.
+  Live rain remains constant until edited; it does not adopt replay's finite storm.
+  Closing/Esc detaches the viewer; the **foreground launcher remains the worker
+  owner**. Reattach using its printed viewer command. Ctrl-C in that launcher
+  gracefully stops only its own process groups. Do not background/disown it.
+- `banks`: separate bounded, baseline-120 prerecorded coverage comparison, initially paused,
+  60x viewing. S cycles triangular reference, experimental B-spline 2x and
+  prerecorded marching-squares coverage; W toggles dots. End holds the last
+  baked state, not the end of a simulation. `--loop` deliberately loops that
+  recorded window. Marching squares is not available in live/full-story replay.
+
+`--print-command` performs read-only input/extension preflight without creating
+an output leaf, window or producer. `--camera overview|runoff|collection`,
+`--speed`, `--bank reference|bspline-2x`, `--no-dots`, and `--width/--height`
+are explicit overrides. Bank mode also permits `--bank marching-squares`.
+Live mode rejects recorded-case/start options instead of silently ignoring them.
+Bank comparison rejects higher-rate presets: its frozen masks do not match those fields.
+Every actual launch gets a fresh leaf under `outputs/fluid`, isolated ImGui
+settings, commands/pins, logs and an owned-cleanup receipt. An explicit `--out`
+must be fresh below an existing parent there.
+Foreground log files accumulate with runtime; the worker's bounded three slots
+and control history are not a claim of bounded log retention. This launcher is
+not an unattended daemon or a log-rotation service.
+
+Replay/banks do not need CUDA, but require the retained local recording/mask
+artifacts and an explicitly built dev application. Live additionally requires
+the retained native Python environment and audited hooked extension. The
+launcher never installs dependencies, builds CUDA, imports the GPL worker into
+Cubey or silently falls back to a different producer. `--native-python` and
+`--extension` may relocate those dependencies; the audited extension hash is
+still required. Missing/mismatched prerequisites fail clearly.
+
+For remote review (no desktop window or solver):
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/review_mountain_rain_demo_v1.py \
+  --out ./outputs/fluid/my-fresh-mountain-review
+```
+
+This writes one page with a 96.1-second full story at 150x, a 25-second flow
+detail at 50x, and a matched 23.9-second rain-off/on pair at 300x, plus six
+labelled stills. Actual held field times, requested times, rain phase/rate and
+pacing are labelled. Raw fields remain held at saved 60-second intervals;
+visual cues are approximate, with no hydraulic temporal interpolation. The
+rain ramp has no intermediate saved field. Diagnostics and provenance sit
+under a disclosure instead of another large comparison matrix. Standalone
+GPU presentation and capture/encoding wall costs are separated; no solver
+throughput or concurrent CUDA performance is inferred from replay pacing.
+
+`probe_mountain_rain_demo.py` is an explicitly invoked private-Xvfb UI/ownership
+smoke, not an ordinary native/CUDA test or desktop/user acceptance. The older
+`run_hillside_flow_demo.py` remains the built-in, simpler hillside alternative:
+it is a **different simulation/forcing example**, not equivalent native rain
+results. No solver port, new terrain or live contour reconstruction is involved.
+
+#### October 7 results and verdict
+
+The technical consolidation is accepted as Mountain Rain Demo V1; owner visual
+acceptance remains deferred. Start with the short rain-off/on comparison in the
+[compact remote handoff](../../../outputs/fluid/mountain-rain-demo-v1-20261007-8SHHgs/index.html).
+The rain-off side visibly loses small tributaries while the rain-on side keeps
+feeding them. The full overview provides terrain context, but fine streams are
+small at whole-map scale; the closer flow clip is the better motion reading.
+This is a useful rainfall-response visual demo, not calibrated hydrology or
+proof of calm lake formation.
+
+All 164 dev tests passed in the final gate, including 13 new CPU-only launcher
+and media-helper checks. Final-executable private-Xvfb replay/bank controls
+passed. The bounded native smoke exercised GUI resume/pause, detach without
+worker termination, a rain edit through the MIT client while detached,
+reattachment, continued zero-rain computation, GUI full reset, and foreground
+launcher shutdown. Reset restored initial depth/momentum bytes exactly in
+generation 2; inputs remained unchanged, three slots and zero native output
+files were retained, and no forced-kill escalation or owned-process leak was
+observed. The longer service soak/parity evidence remains separate and was not
+replaced by this short control smoke.
+
+Two ordinary readable-reference PNGs remain byte-identical to the prior bank
+checkpoint. Numerical sources/defaults, compiled shaders and recording inputs
+were preserved; this pass changed launching, UI labels/layout and review tools.
+The original native-cue no-reset structural test is retained with its updated
+compact label. Its first failing full-gate log and the earlier buffered-stdout
+GUI-readiness attempt remain in the evidence leaf; neither was hidden or
+accepted. Media was regenerated after the direct/nested review-link fix.
+
+Standalone 960x540 reference/dots GPU presentation median was 0.147 ms and p95
+0.381 ms (108 samples after 12 warmup). The 96.1-second story's raw capture
+took 14.43 wall seconds including rendering/readback/encoding; its caption
+encoding took 0.52 seconds separately. No solver ran for these captures.
+These are not total GUI-frame or concurrent-CUDA measurements; the accepted
+shared-GPU slowdown remains a live-mode limitation.
+
+Recommendation: retain the reference/dots preset and optional bank views.
+Reference banks remain angular; experimental B-spline can alter apparent
+width/connectivity, and marching-squares coverage remains prerecorded and
+faceted in height. This pass does not promote a universal bank fix or reopen
+solver/terrain research. The next useful gate is owner review of this concise
+handoff, then a specifically chosen visual refinement if needed.
+
+### Retained numerical and integration evidence
+
+The October 4 integration adds an optional, interactive external SynxFlow
+service alongside the unchanged built-in default and recorded fallback. Cubey
+shares a project-local scene/session contract across these paths; CUDA remains
+in a separately launched GPL worker, not in the Vulkan application. See the
+backend/service sections below for controls, acceptance evidence and limits.
+
+River V0 has a project-local GPU checkpoint. `fluid_25d` is a windowed and
+headless Vulkan application with a GPU-resident virtual-pipes default and an
+opt-in GPU finite-volume comparison solve, plus a
+deterministic oblique terrain-and-water catchment presentation. Top-down
+diagnostics remain explicitly selectable. The default Composite catchment
+view preserves the original terrain-and-water shading; Water Isolation
+quiets the bed to expose the wet edge, Flow Inspection adds a fixed-grid
+velocity-arrow field, and Transport Inspection adds an opt-in conservative dye
+pulse to eligible finite-volume source/outlet and terrain studies. It has deterministic
+dry-bed, lake-at-rest, and river source/sink fixtures; headless oracle lanes compare
+virtual-pipes depth/face-flux/velocity/ledger and finite-volume
+depth/momentum/velocity/ledger against their corresponding CPU oracle.
+
+Terrain-Water Audition V1 adds an opt-in, terrain-case-only discovery boundary:
+an immutable `cubey.terrain.heightfield.v1` crop receives either a uniform rain
+pulse or a uniform sheet release, and every outward perimeter face drains. The
+same parameters must be used for every crop. These protocols are not a
+hydrology generator, a water table, or product selection; they are a way to
+observe solver response before humans choose a case.
+
+The Config V2 product default is a bounded `256x128` catchment. Focused
+CPU/GPU oracle fixtures intentionally set smaller dimensions so their evidence
+stays quick and inspectable.
+
+The project-local GPU timing lane records one aggregate `fluid_25d solver`
+span per profiled simulation frame and reuses the common `--profile-output` and
+`--profile-warmup-frames` options. The dated Release artifact and evidence
+boundary are recorded in
+[`docs/notes/fluid-25d-river-v0-checkpoint.md`](../../../docs/notes/fluid-25d-river-v0-checkpoint.md).
+
+The CPU target remains a reference for the GPU implementation, not a shared
+fluid framework and not a claim of scientific Saint-Venant fidelity.
+
+Terrain-Water Audition V1 met the numerical-replacement trigger: untouched
+30 m relief made the virtual-pipes positivity limiter look like grid-scale,
+multi-cell transport rather than a credible wetting front. An isolated,
+opt-in finite-volume Saint-Venant CPU/GPU comparison now exists to evaluate
+that decision. It has no product claim: `virtual-pipes` remains the default,
+and neither solver has selected or tuned a terrain case.
+
+## Product boundary
+
+### Backend selection
+
+`--fluid25d-backend builtin|external|recording` makes the producer explicit.
+Omitting it preserves the existing default and legacy path flags. `builtin`
+uses the existing GPU solver (`--fluid25d-solver virtual-pipes|finite-volume`);
+`external` requires `--fluid25d-external-session` (interactive service) or
+`--fluid25d-stream` (retained viewing-only bridge); `recording` requires
+`--fluid25d-recording`. Conflicting selections fail before startup: there is
+no silent fallback or numerical-state transfer between solvers. The stock
+external stream remains viewing-only; it does not support solver pause or
+rainfall edits. Built-in controls operate on the GPU simulation. Neither
+built-in method is being promoted as equivalent to the tested mountain solver.
+
+### Project-local backend contract
+
+`fluid_25d_backend_contract.h` defines the project-local, versioned scene/grid
+identity, field availability, session lifecycle, frame header and command/ack
+envelopes. Solver controls and viewer playback controls are separate capabilities;
+unsupported fields or controls are never inferred from the backend name. The
+guard rejects stale generations, regressing clocks/frames and duplicate acks,
+with at most one outstanding command. This is not a universal fluid framework,
+and backends are selected at startup rather than hot-swapped.
+
+Each application now emits `fluid_25d_backend_startup_metadata:` once and shows
+the adapter/input fingerprints under **Backend details**. Built-in descriptors
+hash the actual initial bed/depth/source/sink/boundary arrays and numerical
+settings; recording/stream descriptors use immutable input provenance and
+exclude the growing output prefix or producer status. Solver-bed hashes cover
+the exact row-major little-endian float32 bytes. A live viewer owns a separate
+logical playback session, not the producer's lifecycle. The in-process adapters
+now publish runtime frame headers and boundary acknowledgements through the same
+guard. Built-in completion uses a separate 16-byte GPU observer at 10 Hz and on
+controls/final capture, never full hydraulic-field readback. It counts accepted
+substeps; rejected FV candidates cannot advance the reported clock. The observer
+does not write solver fields or alter any existing numerical shader. Pause,
+resume, reset, stop and pacing affect the built-in producer. Generic numeric
+rain editing and single-step commands remain unavailable there; existing narrow
+scene controls remain distinct.
+
+Recording/stock-bridge headers describe the logical viewer playhead, not native
+computation. Saved field time is separately displayed. Navigation loads the
+selected state before announcing a new generation; late asynchronous loads
+cannot replace another requested frame or viewer generation. Playback pause/rate/seek/restart never
+change the recorded or external producer's hydraulics.
+
+### Bounded external-service transport and viewer
+
+The separate `fluid_25d_external_session` client defines a bounded local binary
+transport for the new service: immutable contract metadata and solver bed,
+three replaceable depth/qx/qz slots, and an atomic state publication carrying
+the current lifecycle plus any command acknowledgement. The reader checks
+identity, generation, precision, size and SHA-256 before accepting fields.
+An overtaken display slot may be retried; persistent corruption fails closed.
+POSIX file locking permits one controller, with one outstanding command.
+Stop's final fields and its acknowledgement are accepted atomically; ordinary
+frames cannot follow a terminal state. On Linux, attach the draw-only Cubey viewer
+to an explicitly launched worker:
+
+```sh
+# These are explicit, separate foreground processes; use a fresh session leaf.
+python projects/fluid/fluid_25d/external_synxflow/session_worker.py \
+  --extension /absolute/path/to/audited/flood.so \
+  --case /absolute/path/to/retained-case --out ./outputs/fluid/new-session --paused
+
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-backend external --fluid25d-external-session ./outputs/fluid/new-session
+```
+
+The Python process needs the retained native/NumPy environment. Cubey does not
+build or launch it implicitly. The viewer exposes acknowledged solver
+pause/resume/reset/step/stop, uniform rain override in mm/h, and host pacing;
+Space/R address the solver, not playback. Closing the viewer only detaches.
+Typed edits survive heartbeats. A publication delay is explicit; after three
+seconds without a changed valid publication the viewer freezes cues, disables
+controls and returns nonzero on exit. Failed service state also returns nonzero;
+normal stopped/completed states remain viewable without polling a dead producer.
+
+### Optional source-build audit
+
+`build_synxflow_source_v1.py` builds an explicitly pinned SynxFlow 1.0.1 archive in
+a fresh private directory using an explicitly supplied CUDA toolkit and CPython
+3.11. It does not install anything or add CUDA to Cubey. The default `legacy11`
+lane leaves every upstream source file unchanged; `blackwell13` changes only
+the two build-system files for current CUDA compatibility. The archive checksum,
+commands, extension checksum and logs are retained in the output directory.
+The default `--source-pin pypi-1.0.1` retains the original sdist diagnostic;
+`--source-pin github-1.0.1` selects upstream commit
+`8a9781504204a7b41217b483db4190c1f6f340bc`. These equal version labels do not
+identify equal numerical source. Both pins require their exact archive checksum
+before toolkit inspection or output creation.
+
+`check_synxflow_source_correspondence_v1.py` runs that extension on fresh,
+byte-identical copies of retained case inputs, using a predeclared protocol.
+It compares every exported depth/momentum timestamp and the original analytic
+controls, stops after a failed case, and never edits the reference inputs or
+loosens the comparison gates. Its unit tests require the study's NumPy environment
+and do not run the solver.
+
+The initial October 4 PyPI-source audit did **not** pass the promotion gate. Both builds
+matched all nine small controls exactly. On the mountain case, aggregate depth
+and momentum differences stayed within the frozen tolerances, but localized
+momentum differences did not. A fresh run of the released wheel matched all
+723 reference field files exactly. A source audit then found semantic differences
+in 11 of 125 numerical files between that sdist and the upstream release tag.
+The unmodified tag, built with the same retained CUDA 11.7/GCC 11.4 toolchain,
+passed all nine controls and both 14,400-second mountain rain/recession cases
+under the unchanged frozen gates. See `source-tag-verdict.json` alongside the
+retained failed `source-build-verdict.json` under
+`outputs/fluid/backend-integration-v2-20261004-wlELKz/`.
+This clears the source-build prerequisite, not the later interactive-service
+acceptance gates. The released wheel and stock live viewer remain available.
+
+### Optional GPL external service worker
+
+`external_synxflow/` is a separately licensed GPL-3.0-only worker/build slice.
+Its explicit build helper pins the correspondence-passing upstream tag and adds
+host-boundary hooks to the native application, leaving all solver-library files
+and the stock `run()` function unchanged. Nothing builds, installs or runs CUDA
+from Cubey's normal configure/build/test workflow. Private build trees are
+ignored; use a fresh leaf under `outputs/fluid/` for new builds and experiments.
+
+The modified stock API and no-op service hook both passed all eleven retained
+cases: all 3,690 exported field comparisons were exact; service timestep logs
+were byte-identical. The direct binary snapshots retained native float32
+precision and passed the predeclared six-decimal ASC quantization checks.
+Source and parity evidence is in `service-parity-verdict.json` under the same
+October 4 evidence directory. Native output clipping's scheduled zero-duration
+bookkeeping pass is preserved, not removed or treated as an unexpected stall.
+
+`session_worker.py --extension PATH --case RETAINED_CASE --out FRESH_DIR` is an
+explicit foreground process, separate from Cubey. Its default is continuous
+stateful operation at 60 physical seconds per wall second; `--finite` is an
+explicit diagnostic option. Host pacing never scales the numerical timestep.
+The worker publishes the three-slot binary transport, holds commands at checked
+CUDA boundaries, and rebuilds the complete native state for reset. Rain changes
+are uniform full-map rates (0..0.01 m/s); pacing supports 0.125..300x. Step waits
+for one positive physical advance, preserving any intervening scheduled zero
+pass. Immutable inputs are not rewritten. The latest 64 control records are
+retained, not an indefinitely growing command log. Worker float-clock stalls
+remain explicit failures; continuous does not promise unlimited time precision.
+
+`run_external_service_controls_v1.py` explicitly exercises the native worker
+through the same MIT C++ client used by Cubey. The October 4 study passed:
+paused planes held byte-exact, rain edits preserved water, reset restored the
+initial planes byte-exact in a new generation, and twenty warm acknowledgements
+had p95 106.7 ms. The first attempt's wire-command spelling failure remains
+retained beside the successful retry; canonical command spellings now have a
+dedicated unit test. This is real control evidence, not render freshness,
+long-running storage or human GUI acceptance. See
+`native-controls-service-2/result.json` in the October 4 evidence directory.
+The stock V1 bridge and recordings remain the retained fallback.
+
+### Continuous-service acceptance and limits
+
+`run_external_service_lifetime_v1.py` is an explicitly invoked native/GUI study,
+not a default test. It requires the audited extension, native case/environment,
+MIT probe, viewer, fresh output leaf and a protocol frozen before candidate
+execution. The retained October 4 retry passed 600 wall seconds of continuous
+stateful simulation and rendering on the unchanged 512x512, 30 m mountain input.
+Native time reached 36,007 seconds before the final control sequence. Rain-off/on
+edits and twenty warm pause/resume acknowledgements passed; acknowledgement p95
+was 101.6 ms. The worker stopped/reaped normally, with three fixed slots, at most
+64 control records, zero native output files and unchanged reference inputs.
+Worker RSS varied by only 0.024 MiB after the first 60 seconds.
+
+At the compositor's actual 1280x1432 extent (larger than the requested 960x640),
+concurrent rendering p95 was 0.914 ms against a frozen 16.7 ms budget. The matched
+paused/idle-GPU observation was 0.619 ms: a 47.6% relative slowdown remains an
+accepted shared-GPU limitation, not an interop-free performance claim.
+Publication-to-CPU-side-render-command freshness p95 was 0.184 seconds (maximum
+0.973 seconds), against a 1-second p95 gate. This is not physical scanout timing.
+The first completed soak was not accepted because its harness interrupted a
+large profile export at shutdown; the retry allowed 120 seconds for export
+without changing the simulation or measurement gates. Full uncapped profiling
+is an explicit diagnostic that grows viewer memory/files; it is not the normal
+viewer/worker storage policy.
+
+`run_external_service_failure_v1.py` separately passed real GUI Space/R
+resume/pause/full-reset controls, detach/reattach without producer termination,
+3-second heartbeat-loss fail-closed behavior, and native callback-error unwind
+and reaping. The harness requires an explicit keyboard driver using physical
+evdev scancodes: stock `wtype`'s sequential virtual map did not reach GLFW's
+physical-key shortcuts. The retained private wtype study build changed only
+that diagnostic driver, not Cubey, the installed tool or the solver.
+
+`run_local_backend_lifecycle_v1.py` additionally passed real GUI pause/resume/
+reset for both built-in methods on tiny dry fixtures, and Completed-to-Reset
+navigation on a synthetic recording with its fixture bytes unchanged. These
+are application lifecycle checks, not new terrain/numerical acceptance.
+The final dev repository gate passed 153 CTest cases with zero failures;
+20 opt-in windowed cases were skipped. The default Python host test's optional
+NumPy case was skipped there, then all six host cases passed separately in the
+retained NumPy environment. See `final-regression-2.log`,
+`final-regression-2.xml` and `local-gui-lifecycle/result.json`.
+
+Evidence is under `outputs/fluid/backend-integration-v2-20261004-wlELKz/`:
+`native-continuous-soak-2/result.json`, `native-gui-failure-3/result.json`, and the
+successor `integration-verdict.json`. Earlier failed audits/runs and the earlier
+incomplete `protocol.json` checkpoint are retained, not rewritten as successes.
+Static overview/collection PNGs validate bit-exact bed/depth/velocity uploads
+with zero hydraulic dispatches in Cubey. Automated captures do not replace the
+deferred human GUI review, and extreme uniform study rainfall is not calibrated
+hydrology. Neither native conserved tracer nor a complete native flux ledger
+is published. Switching backends requires a new session; numerical states are
+not transferred between methods.
+
+### Opt-in live external SynxFlow viewing V1
+
+`--fluid25d-stream` reads an atomically published growing prefix from a separate
+foreground launcher. Cubey remains a Vulkan-only presentation application: it
+does not link CUDA, dispatch hydraulics, or share GPU allocations with SynxFlow.
+The installed pinned solver is unchanged; this is live viewing of finite runs,
+not interactive rainfall control or indefinite simulation.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/live_synxflow_session_v1.py \
+  --baseline-case outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/cases/mountain-rain-on-14400s \
+  --out outputs/fluid/my-new-live-session \
+  --python outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python
+```
+
+After its first `stream.json` appears, attach in another terminal:
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-stream outputs/fluid/my-new-live-session \
+  --fluid25d-recording-camera overview
+```
+
+The default is paced viewing at 60 physical seconds per wall second. Optional
+`--fluid25d-stream-follow-latest` follows the latest complete imported state and
+may skip saved states. The GUI distinguishes native computation, publisher
+lifecycle, newest native/available times, displayed time, and import lag.
+Space pauses **viewing only**. Seeking/restart affects only the viewing timeline.
+Closing the GUI detaches; cancel the foreground launcher to stop only its owned
+child. When the finite run finishes, it holds the last state without looping.
+
+The launcher clones audited inputs into a fresh directory without copying old
+outputs/results as evidence of the new run. It preserves terrain, forcing,
+friction, boundaries and native output cadence. A successor-export barrier
+prevents reading an unfinished `h`/`hUx`/`hUy` triple; the last frame is withheld
+until successful child exit. Payloads are written before the atomic stream
+manifest, hashed, and immutable once published. The consumer rejects changed
+session identity, revision regression, altered metadata/history, and corrupt
+payloads. An early failure before frame0 retains `session-result.json` instead
+of fabricating a frame or weakening the nonempty-prefix contract.
+
+Static PNG snapshots can read a live prefix; live headless video is rejected.
+Convert the finalized `case/` with the existing converter for portable recorded
+playback/video. Partial/failing session evidence remains available but is not
+marked as completed-case acceptance. No global installation is performed.
+
+`run_live_view_acceptance_v1.py --out <fresh-directory>` is an explicit native
+and windowed acceptance runner, not part of ordinary tests. It retains failures,
+compares native fields to the frozen mountain reference and binary frames to
+the unchanged converter, and measures actual run overlap, publication latency,
+and matched/concurrent viewer profiles. Automated command-record timing and
+scoped window captures do not imply human visual acceptance or monitor scanout.
+
+V1 native evidence is retained at
+`outputs/fluid/native-live-view-v1-20261003-0612Z`: both unchanged 512x512,
+30 m, four-hour mountain cases and a paced rain-on repeat match all 723 native
+field files and all 241 independent-converter payloads per run. The two
+follow-latest views displayed 86/82 nonzero-time states during actual native
+calls; publication-to-command-record p95 was 0.160/0.162 seconds. Frame0
+initialization is separate, and paced viewing intentionally shows older states.
+
+Matched completed-prefix live/recorded p95 frame time was 1.010x. Concurrent
+CUDA raised the paced viewer from 0.653 ms on an idle GPU to 1.116 ms, failing
+the frozen 1.2x idle-GPU gate (`acceptance-failure.json` remains unchanged).
+The user explicitly accepted V1 with this shared-GPU limitation retained;
+do not describe the original matrix as all-gates-passed. ASCII publication
+also queued up to 16.9 seconds behind an observed successor export. These are
+local RTX5070Ti observations, not a release or calibrated-hydrology benchmark.
+Human GUI acceptance remains a separate review.
+
+The matched CUDA control is retained at
+`outputs/fluid/native-live-view-gpu-control-v1-20261003-0632Z`: recorded p95
+was 1.120 ms versus live 1.116 ms (0.997x), supporting a shared-workload
+explanation rather than large bridge overhead. Its 172-frame prefix ended
+`cancelled`, with the stock native call already returned normally and all
+723 native fields still matching the baseline. Earlier failed controls remain
+retained; do not reuse them as terminal-state acceptance.
+
+`run_live_view_gpu_control_v1.py` is an additional opt-in, finite diagnostic:
+it views the recorded fields with the same stock CUDA/publisher workload.
+It closes only its own window after ten wall seconds and cancels its importer
+only after the normal native call returns. A cancelled partial stream in that
+control is not completed-stream acceptance; native fields, captures, timings,
+and any failed attempts are retained. Cancellation preserves the last
+published prefix immediately rather than draining a backlog first.
+
+### Recorded playback contract
+
+`--fluid25d-recording` selects a separate presentation-only application path.
+It displays saved SynxFlow depth and depth-integrated momentum over the exact
+numerical bed used by that run. It does not create or dispatch hydraulic reset,
+forcing, CFL, or solve pipelines. Existing virtual-pipes and finite-volume
+modes/defaults remain unchanged. This is **recorded playback**, not a live
+external backend, solver port, calibrated hydrology, or native conservation
+certificate.
+
+Convert a completed case without importing SynxFlow or requiring CUDA:
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/convert_synxflow_recording_v1.py \
+  --case path/to/completed-native-case --out outputs/fluid/new-recording
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-recording outputs/fluid/new-recording \
+  --fluid25d-recording-speed 60 --fluid25d-motion-markers
+```
+
+The converter refuses an existing destination. It requires matching case spec,
+frozen protocol, case-result input audit, original `DEM.asc`, native `z.dat`,
+and a complete regular `h`/`hUx`/`hUy` ASC series. It supports the audited
+native `fall` bed-boundary serialization, not arbitrary SynxFlow exports.
+Portable `recording.json` uses versioned, hashed, relative-path planar
+little-endian float32 payloads: `h`, `qx`, and world-Z `qz=-hUy` retain raster
+row order. Displayed velocity is `q/h`, not momentum mistaken for velocity.
+Invalid/nonfinite/negative states, zero-depth nonzero momentum, bad cadence,
+and integrity/path failures reject. The reader caches at most three frames
+and loads windowed states off the UI thread; I/O waits hold the playhead.
+
+Optional `protocol.rainfall_history` contains strictly increasing
+`[time_s, rate_m_per_s]` knots from zero to the recording duration. Conversion
+requires agreement with the case protocol, pre-solver audit and hashed native
+rainfall input. Older constant-rain recordings remain supported. The UI reports
+On/Tapering/Off, rate and cumulative **scheduled** rain at the actual displayed
+saved state, not a pending requested time. Rain-event seek buttons pause and
+reset visual history; they do not change physics. A canonical terminal
+`h_max_<duration>.asc` is hashed auxiliary provenance, never a playback frame.
+
+The bounded rain-recession study is retained in
+`outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/index.html`. Both four-hour
+runs exactly reproduce the accepted 120 mm/h first two hours. One then tapers
+to zero in one minute; the other keeps raining. After shutoff, total storage
+falls about 51% while fixed B20 storage grows about 17% as upstream water
+arrives. None of the three frozen depression masks meets the persistent quiet,
+near-level patch criterion: recession and moving collection, not a verified
+calm lake. The gallery includes matched recorded clips, rain-event captions,
+raw-state review and local launch commands. Human GUI review is separate.
+
+The original DEM is retained separately. Rendering uses the native numerical
+bed because `%g` serialization differs from original terrain by up to about
+5 mm in the reviewed mountain. There is no terrain smoothing, channel carving,
+water amplification, or physical-field interpolation. Samples are cell centers
+centered in world X/Z; cell-area domain size is `width*dx`, whereas the mesh
+sample-to-sample span is `(width-1)*dx`.
+
+Space plays/pauses. Seeking, previous/next, and R restart pause and clear visual
+history. The end holds the last state without looping. The GUI shows requested
+playhead and actual saved time, explicit recorded labels, and fixed scales.
+Fields are held between saves. `overview`, `runoff`, and `collection` cameras
+are observation targets for the reviewed mountain (collection is previously
+surveyed B20), not sources/sinks. Rain supplies the entire map; native edge
+`fall` conditions are distinct from Cubey's legacy boundary model.
+
+Composite attenuates thin rain film; Water Isolation reveals all wet cells.
+3D depth uses a logarithmic `0.01..10 m` palette; the 2D depth map is brighter
+for deeper water on the same scale and preserves physical X/Z aspect. The
+speed map spans `0..15 m/s`. Arrows use fixed-grid wet-aware neighborhood
+velocities with color/length spanning `0.025..4 m/s`, saturated above 4; maximum
+saved speed is also reported numerically. Optional dots/trails and scalar cues
+are approximate visual advection in held saved velocities, not native parcels
+or conserved dye. Sparse video intervals cap only visual catch-up at 60 seconds
+per output frame, without changing saved physical fields.
+
+Exact saved-time stills and indexed video have independent controls:
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d --headless \
+  --fluid25d-recording outputs/fluid/new-recording \
+  --fluid25d-recording-time-seconds 7200 \
+  --fluid25d-recording-camera collection \
+  --fluid25d-recording-gpu-validation --output outputs/fluid/recorded-final.png
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d --headless \
+  --fluid25d-recording outputs/fluid/new-recording \
+  --capture video --frames 121 --fps 8 \
+  --fluid25d-recording-frame-interval-seconds 60 \
+  --output outputs/fluid/recorded-playback.mp4
+```
+
+GPU validation checks bed, both depth buffers and derived velocity bit-for-bit
+after presentation, not native conservation/CFL. Hydraulic/legacy controls
+reject instead of silently doing nothing. Automated coverage includes
+converter orientation, reader integrity/bounded cache, playback/end behavior,
+CLI separation, dry/signed-asymmetric GPU states, and multi-slot video updates.
+Generated local review evidence is under
+`outputs/fluid/native-recording-viewer-v1-20261003-EWKAhM`; its gallery,
+captures, clips and launch command retain provenance. Human GUI acceptance
+remains pending.
+
+### Native presentation review V1
+
+`--fluid25d-native-presentation original|motion|readable` is an opt-in for
+recordings, stock streams and external services only. `original` remains the
+default. `motion` keeps the reference camera/material and uses 6/3-cell
+advected cue scales instead of 23/11 cells; `readable` also improves framing,
+terrain/water contrast and modest wet-edge coverage. Neither changes terrain,
+depth, velocity, rain or solver configuration. The GUI selector resets only
+visual history, not the producer or logical playback session.
+
+For headless motion/readable video, the approximate visual clock advances
+between requested render times while native fields remain held between their
+saved knots. It starts at zero, stops at the recording end and caps sparse
+catch-up at 60 physical seconds per output frame. This fixes burst/hold cue
+updates without inventing interpolated hydraulic fields. Native cue advection
+uses wet-normalized support and freezes unsupported half-cell-plus
+displacements instead of bridging banks. Resting velocities and pause freeze
+the cue. Optional local dots/trails retain their separate existing integrator;
+neither cue is a native conserved tracer or a simulated floating object.
+
+The 30 m shoreline geometry is still visible. Coverage changes are not
+sub-grid river reconstruction, and collection is not a claim of a quiet lake.
+Water isolation and raw depth/speed/wetness maps remain available; Composite
+attenuates shallow rainfall film and its depth tint remains the fixed
+0.01/0.1/1/10 m logarithmic scale, saturated above 10 m.
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-recording outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/recordings/rain-off \
+  --fluid25d-native-presentation readable --fluid25d-motion-markers
+```
+
+`run_native_presentation_v1.py` creates a fresh remote-review evidence gallery
+with matched original/motion/readable views and native rain-on/off recordings.
+Its artifact receipts distinguish actual saved time from the render playhead,
+retain executable/SPIR-V/input identities, validate media timing and report
+matched rendering costs. In motion/readable mode, headless recording upload
+validation additionally runs isolated GPU cue controls for rest/pause, wet
+support, uniform flow, failure freezing and deterministic reset. Main imported
+bed/depth/velocity buffers remain separately checked bit-for-bit. Clip-based
+human readability review remains separate from automated gates.
+
+The October 5 evidence is in
+[`outputs/fluid/presentation-v1-20261005-2c14bc0d/review/index.html`](../../../outputs/fluid/presentation-v1-20261005-2c14bc0d/review/index.html).
+Start with the three readable story clips, then compare original/motion and
+the optional dots/trails. All 18 matched original stills and 602 decoded mature
+video frames exactly match the pre-change captures. At 960x540 and 150x recorded
+playback, the GPU upload/cue/draw scope measured about 0.092/0.601 ms median/p95
+for original and 0.144/0.378 ms for readable plus markers. This excludes native
+solver work, video export and GUI overhead. The full repository gate passed
+154 tests with 20 opt-in windowed skips; detailed logs are in the evidence's
+`gates` directory. Readability is pending human clip review, and stepped banks
+and dark triangle artifacts remain unresolved. Original stays the default.
+
+### Native water/bank display V1
+
+Dots/trails remain a supported optional motion/diagnostic view. The separate
+`--fluid25d-native-water-sampling triangular|bilinear` switch keeps `triangular`
+as the default. `bilinear` reconstructs **displayed depth/coverage**, not surface
+geometry: four neighboring saved cell-center depths replace the fixed-diagonal
+material interpolation. A strict majority of interpolated native wet support
+prevents joining opposite wet corners through a dry diagonal. All-dry patches
+stay dry, and wet native sample depths remain exact. This footprint is a
+conservative visual interpretation, not a volume or finer hydrology estimate.
+
+Terrain/water triangles, free-surface heights, normals, depth bias, physical
+depth palette and numerical inputs are unchanged. Marker display wetness uses
+the same helper, while marker height still follows the actual triangle mesh;
+marker advection/trajectories are untouched. The GUI has a visual-only toggle.
+This changes contours but is **not an accepted improvement**: matched close-ups
+show more pronounced scallops/sawteeth in some banks. It cannot create channel
+detail missing from the 30 m recording. Dark collection water can be real depth
+color, and sub-centimetre rain film remains attenuated only in Composite.
+
+`--fluid25d-native-water-debug shaded|solid|unlit|normals|wireframe|wet-mask`
+isolates those readings. Solid/normals/wireframe keep Composite's film coverage;
+wet-mask intentionally shows the full numerical mask (cyan = native and display
+wet, yellow = native only, magenta = display only). These modes use the normal
+terrain depth test, so they alone cannot separate occlusion from true dry holes.
+All controls reject built-in-only scenes and never select/change a solver.
+
+```sh
+rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-recording outputs/fluid/native-rain-recession-v1-20261003-1ZMqTJ/recordings/rain-off \
+  --fluid25d-native-presentation readable --fluid25d-native-water-sampling bilinear \
+  --fluid25d-motion-markers
+```
+
+`run_native_bank_render_v1.py` stages baseline/diagnosis/candidate/profile/review
+in fresh evidence leaves. It produces just three principal before/after clips:
+junction with markers, rain-off collection and continued-rain comparison, with
+executable/shader/source/input fingerprints and explicit saved/render clocks.
+GPU controls exercise the production sampling helper on scratch fields;
+imported fields are separately bit-exact checked. Stationary saved fields also
+have an image determinism check. The matched replay GPU p95 budget is 1 ms at
+960x540, excluding native solver/encoding/GUI cost. Human visual acceptance is
+separate; no automatic default promotion follows from this pass.
+
+The October 5 bank display results are in
+[`outputs/fluid/bank-render-v1-20261005-review/review/index.html`](../../../outputs/fluid/bank-render-v1-20261005-review/review/index.html)
+and [`RESULTS.md`](../../../outputs/fluid/bank-render-v1-20261005-review/RESULTS.md).
+The original "modest improvement" verdict was retracted after the owner's
+review and a matched 1080p check. Bilinear depth is C0, not a smooth-gradient
+bank reconstruction, and the representative frames are wet in every cell:
+their visible banks largely follow film opacity, not the dry-support mask. Matched
+GPU p95 with markers is about 0.382 ms versus 0.381 ms for triangular sampling.
+Numerical field preservation and stationary-image gates pass. Two stills and
+both marker-free reference clips are byte-exact; the marker reference clip has a
+minuscule encoded-image difference, so all-frame byte parity is not claimed.
+Human review and residual 30 m geometry/speckle limits remain explicit.
+The final repository gate passed 155 tests, with 20 opt-in windowed skips and
+zero failures; logs are retained in the same evidence leaf's `gates` directory.
+
+### Native matched-surface study V2 (experimental)
+
+`--fluid25d-native-water-sampling bspline` reconstructs displayed terrain and
+depth with the same positive, clamped 4x4 uniform cubic B-spline approximation.
+`--fluid25d-native-surface-subdivision 1|2|4` selects display triangles only;
+2x/4x means 15/7.5 m display spacing for the native 30 m recording, **not more
+hydraulic resolution**. This approximation changes native sample heights in
+the display, spreads depth contours and can alter thin-stream footprints. The
+numerical bed, h, momentum, rainfall, solver and defaults are unchanged.
+
+Using the same basis for bed and depth preserves a fully wet level stage over
+an uneven bed (within float precision), unlike smoothing depth alone atop the
+old triangle bed. This is not a partial-dry shoreline or exact-volume claim.
+Fragment opacity reads the actual displayed triangle depth; native wet-majority
+support still fences genuinely dry gaps. Marker height follows those same
+subdivided triangles, without changing trajectories. A separate experimental
+vertex pipeline retains the reference geometry path.
+
+Additional `--fluid25d-native-water-debug no-occlusion|contours` modes distinguish
+depth-testing effects from physical depth contours. `no-occlusion` disables
+water depth testing **only for diagnosis**; it is never a production remedy.
+`contours` displays fixed 2/10/26/50 mm bands without the film-opacity fade.
+
+`run_native_bank_reconstruction_v2.py` captures all five reconstruction modes,
+two small matched motion/recession clips, 1080p close-ups and paired occlusion
+diagnostics under fresh `outputs/fluid/bank-reconstruction-v2-*` leaves. Its
+profile reports the existing 1 ms playback GPU gate without hiding failures.
+This is a bounded study, not default promotion or final human visual acceptance.
+The regular-grid filter is established, not new fluid mathematics: see
+[Cornel et al. (2019)](https://www.cg.tuwien.ac.at/research/publications/2019/CORNEL-2019-IVF/CORNEL-2019-IVF-Paper.pdf)
+and [GPU Gems 2, third-order filtering](https://developer.nvidia.com/gpugems/gpugems2/part-iii-high-quality-rendering/chapter-20-fast-third-order-texture-filtering).
+This small prototype does **not** implement the paper's full dry-stage extension,
+wall handling or adaptive renderer. Smooth analytic fields are approximated by
+display triangles; neither perfect shorelines nor whole-paper parity is claimed.
+
+The completed October 5 study is in
+[`outputs/fluid/bank-reconstruction-v2-20261005-zA0Fye/review/index.html`](../../../outputs/fluid/bank-reconstruction-v2-20261005-zA0Fye/review/index.html)
+and [`RESULTS.md`](../../../outputs/fluid/bank-reconstruction-v2-20261005-zA0Fye/RESULTS.md).
+The candidate is **rejected for promotion**: sampled 4x views have rounder banks,
+but positive-film controls falsely join streams and a partially dry lake shifts
+its near-shore stage by up to 4.63 mm. Its collection view has 34.3% more screen
+pixels in the >=26 mm bands; this is not a physical water-area/volume measure.
+The approximation also changes displayed bed heights (0.70 m median absolute
+departure at native centres), without changing numerical elevation. GPU p95
+at 960x540 with markers is 0.380 ms reference, 0.682 ms at 2x and 1.606 ms at 4x;
+4x misses the existing 1 ms presentation budget. The independent GPU/CPU
+sampling controls pass, but that is not a rasterized shoreline or human visual
+acceptance certificate. The final dev gate executed 156 tests with zero failures;
+20 opt-in windowed cases are excluded by the preset. Triangular remains default.
+
+### Independent native surface highlights and quiet bank review V4
+
+`--fluid25d-native-surface-highlights auto|on|off` controls only the sparse
+procedural surface-color highlights, independently of optional dots/trails.
+`auto` (default) keeps the legacy effect in Original and Motion, and disables
+it in Readable. `on` restores that legacy effect in Readable; `off` disables it
+in any native style. These are approximate flow cues, **not simulated foam**.
+The shared recording/external viewer has the same three-choice control.
+Changing the highlight policy does not reset playback, cue/marker history,
+camera or backend. Cue compute/status updates continue even while highlights
+are hidden, so markers and later toggling remain independent.
+
+The change does not alter native h/momentum/terrain, geometry, normals, depth
+palette, film opacity or reconstruction. Built-in scenes reject this option;
+their solver and rendering defaults are unchanged. Triangular remains the
+native reconstruction default. The experimental B-spline candidate remains
+unpromoted: smoother-looking banks alone do not justify widened streams,
+false positive-film connections or partial-dry lake-stage departures.
+
+`run_native_bank_presentation_v4.py` stages `capture`, `profile`, `shoreline`
+and `review` in fresh `outputs/fluid/bank-presentation-v4-*` leaves. It checks
+exact image parity against the pinned V3 On/Off ablations, Readable Auto/Off
+equality, immutable uploads, a small quiet reconstruction matrix and the same
+1 ms native-presentation GPU budget (960x540 with markers; not live CUDA cost).
+The review has three before/after pairs, short runoff/recession clips retaining
+dots, and diagnostic truth. Human visual acceptance remains separate.
+
+`run_native_shoreline_raster_v1.py --target <fluid_25d executable>` renders
+synthetic one-cell streams, a junction, a positive-film gap, recession and
+fully/partly wet lakes through the shared native viewer. Opaque depth bands
+give a >=26 mm screen mask after rasterization/depth test. Four-neighbor
+components and recession-subset checks supplement the existing independent
+GPU/CPU sampling controls. Screen pixels are not physical area/volume, and
+lake-stage precision is measured by probes, **not inferred from PNGs**.
+The harness succeeds by detecting the known B-spline film-gap and partially
+dry stage counterexamples; its separate reconstruction-promotion verdict
+remains rejected. Both host helpers and the GPU harness are in the dev gate.
+
+```sh
+rtk proxy python3 projects/fluid/fluid_25d/run_native_bank_presentation_v4.py capture \
+  --out outputs/fluid/bank-presentation-v4-<fresh-id>
+```
+
+### Native rain-intensity comparison
+
+`run_native_rain_intensity_v1.py` is a separate, frozen-input experiment on the
+same unchanged 512x512, 30 m mountain. It reuses the sealed two-hour 12 mm/h
+baseline and prepares continuous 48 and 120 mm/h dry-start cases. Native
+serialized inputs must match the baseline byte-for-byte except the rain
+schedule, before the released SynxFlow solver can run. `--prepare --phase all`
+does not run hydraulics; `--run --phase all --go` requires the pinned existing
+native Python environment and stops before 120 mm/h if the 48 mm/h case fails.
+Existing solvers, defaults and terrain are unchanged.
+
+Protocol, retained native cases, independent saved-field checks, matched Cubey
+playback and launch commands are under
+`outputs/fluid/native-rain-intensity-v1-20261003-bXgHXx/`. Its `index.html` is
+the review entry point. Rain-normalized concentration distinguishes runoff
+from direct rain film; storage alone is not proof of a quiet lake. This is
+uncalibrated forcing sensitivity, not storm forecasting, a live Cubey backend
+or a native face-flux conservation certificate. Human GUI review is separate.
+
+This runner is retained as historical, protocol-bound study tooling. Its frozen
+converter hash predates the current rainfall-history adapter, so its workspace
+check now fails closed with the current converter. Replaying that experiment
+requires its archived matching sources; do not relax the frozen identity checks
+or treat its historical test counts as current validation. Optional study suites
+also require their own scientific Python dependencies, unlike the standard-library
+converter and live-publisher tests registered in CTest.
+
+### River V0
+
+The first numerical fixture is an authored upland catchment:
+
+```text
+source -> terrain-guided channel/basin -> explicit downstream sink
+```
+
+River V0 includes:
+
+- deterministic terrain and scenario generation;
+- explicit `terrain-case` ingestion from an immutable
+  `cubey.terrain.heightfield.v1` raster crop;
+- opt-in, uniform `rain-pulse` and `sheet-release` terrain-case forcing for
+  matched discovery auditions;
+- one or more depth-field sources and sinks;
+- explicit closed or outflow-only perimeter faces, with boundary discharge
+  recorded separately from explicit sinks;
+- virtual-pipes shallow-water evolution;
+- water depth, surface height, outgoing face flux, velocity, and wet/dry state;
+- explicit source/sink/boundary-outflow volume accounting;
+- a GPU-resident steady-state solve with no per-frame readback in normal use;
+- an implicit oblique grid (no uploaded mesh) with opaque terrain, translucent
+  premultiplied-alpha water, depth testing, restrained lighting, and a
+  deterministic render-only advected flow cue;
+- a Flow Inspection-only, fixed-grid GPU quiver field. Arrow angle shows
+  local downstream velocity, while restrained length and brightness show
+  speed; the arrows are samples, not waves, foam, water mass, or particles;
+- an opt-in Transport Inspection surface for eligible finite-volume demos.
+  A one-scalar conservative dye pulse enters at SOURCE and moves with accepted
+  water face flux. Source-outlet cases remove dye at their sink; the hillside
+  has no prescribed drain and can export only through crop edges. This is a
+  reading aid, not a particle system or a general tracer framework;
+- top-down terrain, depth, surface, flow magnitude/direction, and wet/dry
+  diagnostics as an explicit alternate presentation mode;
+- opt-in headless CPU/GPU fixtures that read back only at their final evidence
+  point;
+- opt-in headless profile diagnostics at the requested common diagnostic interval,
+  including hydraulic-state fingerprints and an optional independent committed
+  water/tracer arithmetic audit for finite-volume investigations.
+
+It deliberately excludes erosion, sediment, interactive editing, spray,
+breaking waves, periodic or inflow-capable outer boundaries, water-table or
+infiltration state, and high-order flood modeling claims. Uniform audition
+rainfall is a bounded source-field protocol, not climate or a flooding product.
+Outflow-only perimeter faces are a bounded numerical primitive, not a flooding
+product. Flooding and an interactive terrain/water toy are later products, not
+hidden requirements of River V0.
+
+The windowed visual cue is a project-local ping-pong scalar field at the
+fluid-grid resolution. Reset restores the same broad seeded field; an accepted
+outer fixed step backtraces it with the final physical velocity after all
+solver substeps, while a rejected finite-volume status leaves it unchanged. It
+is not solver state and never enters depth, momentum, CFL, ledgers, or
+oracle/diagnostic readback. Pausing performs no cue update; calm water uses
+the stable base shade rather than a time-driven pattern.
+
+Flow Inspection has a separate project-local quiver-state buffer. Every state
+element owns one deterministic, fixed anchor in a regular 96 by 48 lattice on
+the default 256 by 128 product grid and the 128 by 64 source-to-outlet demo;
+the compact demo therefore has about 1.3 cells between anchors, while the
+product grid has about 2.7. Small fixtures reduce that count rather than
+producing duplicate anchors. A three-by-three wet/finite-aware neighborhood
+average samples the published physical velocity around each anchor after an
+accepted outer fixed step. Direction, strength, and opacity smooth in
+simulation time, but anchor coordinates never advect, reseed, or retire.
+`0.025 m/s` is the visibility threshold, intentionally above the retained
+initial terrain-sheet maximum, so the dry bed, lake at rest, and honest initial
+terrain state remain arrow-free. Arrow silhouette length follows local lattice
+pitch (about 58--72% of the pitch), while blue-to-yellow color and length use
+the fixed `0.025..0.80 m/s` physical range; this keeps the dense demo field
+readable without making larger-grid arrows disappear. Current dry or
+nonfinite data hides an arrow immediately; calm valid water fades it through
+the same presentation-only state. Reset samples the current parity-selected
+field, allowing an established paused flow to be read without a host readback.
+A sticky finite-volume status is a strict no-write boundary for reset and
+update. This state never enters solver descriptors, wet/dry policy,
+diagnostics, profiler diagnostics, or CPU/GPU oracle readback.
+Composite, Water Isolation, and top-down Diagnostics never dispatch or draw
+the quiver. Flow Inspection suppresses Composite's broad scalar-cue highlight
+so its fixed arrows are the only direction language. Windowed Flow Inspection
+includes optional work in the existing presentation command span; explicitly
+selected headless Flow Inspection updates after each solver record, outside
+the solver-only timestamp/oracle lane. Its initial reset is recorded before
+the first headless solver step, so the first capture remains the truthful
+unanimated initial state; this changes only presentation state and does not
+change solver dispatches or timestamps.
+
+### Source/drain cell highlights
+
+The explanatory catchment scenes use translucent cubes instead of location
+rings. Each positive source/sink-rate cell gets one cell-wide cube centered
+at its own terrain height: green input, amber explicit removal. Cube size is
+fixed in render metres; terrain height scaling moves the center but does not
+stretch the cube. Terrain depth testing hides buried portions. Cube height
+is a visual region marker, not water depth or a physical emitter volume.
+Overlapping sides between adjacent same-kind cubes are omitted, retaining
+only exposed height steps. Markers remain static across pause/reset and never
+enter hydraulic descriptors or state. Default River V0 is unchanged.
+
+Open crop boundaries and expected-exit observation windows are not sinks and
+do not get amber cubes. Retained older captures/study notes still show rings;
+those remain historical evidence, not captures of this renderer.
+
+### Opt-in source-to-outlet scene
+
+`source-outlet-demo` is a separate authored explanation scene, not a change to
+the River V0 virtual-pipes fixture or its default camera. It is meaningful only
+when launched explicitly with the opt-in finite-volume solver. On the
+one-metre `128x64` grid, green SOURCE and amber DRAIN cube patches cover the
+forcing strips near columns `14` and `110`. The channel has two broad S-bends, variable width,
+and one constriction. Its bed falls `0.45 m` over the 96 m route, while the
+selected lower bank crest is about `3.00 m` above the centerline bed. Broad
+smoothstep banks avoid a near-vertical trench. Initial water is seeded within
+the discrete bank span with its surface `0.30 m` below the lower crest, so the
+river is deep and near-bankfull at reset without claiming that source water
+has already traveled to the outlet.
+
+This is deliberately stylized authored relief, not an imported real-world DEM.
+The scene-only height/slope tint and render-only relief scale make the dry
+banks legible without changing numerical heights. The source and sink each have
+a four-column forcing strip confined to already-wet, in-bank cells; each strip
+is normalized to `2.00 m3/s` of physical throughput. Actual removal is still
+limited by available water and should be read from the ledger. The short tan
+shoulders behind the markers rise `3.00 m` upstream and `3.30 m` downstream
+over four cells to contain the deep-water closed-domain tails. They are
+stylized end caps, not physical intake structures or a stage-controlled open
+boundary. The home camera frames both endpoints; user orbit and zoom remain
+available. Ring words live in the control-panel legend.
+
+Use the compact one-metre `128x64` presentation grid and select the finite-
+volume solver explicitly; this does not alter the global `river-catchment` or
+virtual-pipes defaults:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --grid-width 128 --grid-height 64 \
+  --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume
+```
+
+Append `--fluid25d-catchment-view flow-inspection` to use the optional
+fixed-grid velocity-field reading mode. The arrows show local velocity, not
+the path of one parcel. For transport, inject a half-open dye pulse while the
+hydraulic source stays active. This command advances 2,400 simulated seconds in
+2,400 frames and encodes them as a 40-second video:
+
+```sh
+mkdir -p outputs/fluid/source-outlet-review
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --capture video \
+  --frames 2400 --fps 60 --width 1280 --height 720 \
+  --grid-width 128 --grid-height 64 \
+  --fluid25d-scenario source-outlet-demo --fluid25d-solver finite-volume \
+  --fluid25d-catchment-view transport-inspection \
+  --fluid25d-fixed-delta-seconds 1 --fluid25d-substeps 32 \
+  --fluid25d-dye-pulse-start-seconds 300 \
+  --fluid25d-dye-pulse-duration-seconds 60 \
+  --profile-output outputs/fluid/source-outlet-review/profile \
+  --profile-diagnostics --profile-diagnostic-interval 1 \
+  --output outputs/fluid/source-outlet-review/transport.mp4
+```
+
+Read the magenta packet alongside the profile CSVs, not as stand-alone proof
+of flow. `fluid_25d.river_cross_section` reports actual discrete bank crests,
+wet widths, depth, approximate cell-centred discharge, and local velocity at
+five stations. `fluid_25d.river_spatial` partitions every cell into before
+SOURCE, in-bank route, off-bank route, or after OUTLET; it distinguishes a
+small closed-domain endpoint tail from lateral overbank flow.
+It also reports route-wide representative freeboard and centerline-depth
+min/mean/max values across all 97 source-to-outlet columns, helping reveal
+gaps that the five named stations may miss.
+`fluid_25d.water` and `fluid_25d.tracer` provide source/sink/boundary ledgers
+and conservation residuals. The diagnostic `0.01` dye-concentration threshold
+marks a material visible front; it is not the injected concentration. Capture
+frame `fN` is the state after `N` simulated seconds: `f300` precedes dye,
+`f301` is the first dyed step, and `f360` is the last.
+
+The [reviewed deep-channel run](../../../outputs/fluid/deep-river-v1-20260923/report.md)
+has zero status flags, boundary loss, and route off-bank water across all
+2,400 frames. At `f900`, all 97 route sections are wet with 0.181–0.499 m
+representative freeboard and 2.500–2.819 m centerline depth; interior section
+discharge remains about `2 m3/s`. Before-SOURCE and after-OUTLET water settle
+to `31.275` and `37.720 m3`. Material dye passes the OUTLET marker at `f1384`,
+and the explicit sink has captured `118.420 m3` (`98.68%`) of the `119.999 m3`
+pulse by `f2400`. The reported water conservation residual is `+4.375 m3`
+against `2806.518 m3` stored water at `f2400`; the full report leaves this
+ledger discrepancy visible rather than assigning a cause. The larger section
+slows the dye compared with the historical shallow scene, so `f900` is no
+longer a sufficient transport horizon.
+
+`run_transport_readability_v1.sh` and its linked V1 note preserve an earlier
+historical protocol and thresholds; use the command above for this current
+scene, not the V1 runner as an acceptance gate.
+
+### Opt-in sustained-headwaters control
+
+`sustained-headwaters-demo` is a separate, authored finite-volume control for
+dynamic flow rather than a pre-filled river. Its 65×33 grid has 4 m cells and
+starts completely dry. Two marked 3×3 headwater patches each supply 0.25 m³/s
+continuously; their banked reaches join into one trunk. Only a three-face east
+aperture is open, with outflow-only boundary behavior. There is no explicit
+water sink. Green cube patches mark both inputs; the open east edge is not
+highlighted as a drain. The 4× visible relief and terrain tint are render-only.
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --grid-width 65 --grid-height 33 --fluid25d-cell-size-m 4 \
+  --fluid25d-scenario sustained-headwaters-demo --fluid25d-solver finite-volume \
+  --fluid25d-fixed-delta-seconds 1 --fluid25d-substeps 32
+```
+
+The [V1 result note](../../../docs/notes/fluid-25d-sustained-headwaters-v1.md)
+shows the two wet fronts joining, measured late outlet discharge, station
+velocities, a passive dye packet crossing the same route, and the remaining
+natural-terrain resolution boundary. Run
+`projects/fluid/fluid_25d/run_sustained_headwaters_demo.sh` for the two
+dry-to-mature videos, dye-transport video, stills, profiles, and GPU/CPU
+comparison. The control remains a shallow stream scene, not a near-bankfull
+or naturally discovered river.
+
+The opt-in resolution study keeps the same 256×128 m physical reach and
+0.25 m³/s per source while allowing `129x65` at 2 m and `257x129` at 1 m in
+this scenario only. The original 4 m arrays and the project defaults are
+unchanged. Run `python3 projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py
+--mode resolution` to compare the three grids, or replace the mode with
+`--mode damping --damping-grid-m 1 --video`
+to compare 0.15, 0.075, and 0.05/s momentum damping at 1 m. The
+[resolution and speed note](../../../docs/notes/fluid-25d-headwaters-resolution-speed-v1.md)
+links the captures, timing and ledger evidence, and the current validation
+boundary. These are study controls, not calibrated flow settings.
+
+An additional headwaters-only `--fluid25d-headwaters-source-scale` multiplies
+both continuous source rates while leaving their footprint, terrain, and
+outflow aperture unchanged. The default `1` preserves the original scene.
+The [supply and speed study](../../../docs/notes/fluid-25d-headwaters-supply-speed-v1.md)
+compares 1×/2×/4×/8× supply on the 1 m grid and one combined lower-damping
+case. Source rate makes the channel fuller and its initial front earlier, but
+does little for dye travel speed on its own. Use `python3
+projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py --mode
+supply --source-scales 1 2 4` for the bounded first sweep; these opt-in
+controls do not change the project defaults.
+
+The [bankfull and spill study](../../../docs/notes/fluid-25d-headwaters-bankfull-v1.md)
+adds local sampled bank/freeboard sections and a separate whole-grid authored-
+corridor spill indicator. With the same 1 m terrain and 0.05/s damping, 24×
+supply is the fullest tested no-indicated-spill opt-in review point; 28×
+already spills near the outlet while the branches remain below bankfull.
+This is a bounded authored-scene result, not a default or general containment
+certificate.
+
+### Opt-in immutable mountain source/outlet scene
+
+`mountain-source-outlet-demo` is a separate finite-volume-only product
+demonstration on one pinned, immutable `mountain-valley-1` crop. It does not
+promote the neutral `terrain-case` audition protocol, alter River V0, or edit
+the imported elevation. Its 256 by 128 native 30 m crop is pinned at
+`(1536,1664)` by both the input elevation SHA-256
+`2a919b516d8ae4fb8c193cdd8db1a8ba055ba702e5cbd1ff50ad2b7fc6ab3c48` and the
+transformed crop SHA-256
+`9bfebfe229886ded533556acaf11de541caddfc4cf8104d864da1232fa8b24c6`.
+
+The green cubes cover the 81-cell source region centred at `(8,60)`, whose total
+configured input is `0.75 m3/s`. Amber cubes cover the actual explicit drain:
+the three reviewed low cells `(232,127)`, `(229,126)`, and `(231,126)` remove a
+total configured `0.75 m3/s`. All outer faces are closed. The route is a
+reviewed, radius-four prewetted initial-water corridor; it makes the whole
+source-to-outlet story readable at reset, but is not a claim that one water
+parcel, a surveyed river, or a provenance record follows that exact path.
+
+The home camera frames the full 6.97 km endpoint route. A mountain-only
+render-space relief scale and elevation/slope palette expose the valley and
+ridges; they do not alter elevation buffers, water state, source/sink masks,
+the finite-volume solve, or any other scene. Composite is the terrain-and-water
+overview, Water Isolation makes the wet corridor easier to see, and Flow
+Inspection overlays the existing fixed 96 by 48 stable velocity samples. The
+small arrows show local direction and speed, not water particles or a tracked
+parcel.
+
+Launch it directly with the pinned source and the recommended 2 s outer step
+and eight solver substeps:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d \
+  --fluid25d-scenario mountain-source-outlet-demo \
+  --fluid25d-solver finite-volume \
+  --terrain-heightfield cache/terrain/sources/v1/presets/mountain-valley-1 \
+  --fluid25d-fixed-delta-seconds 2 --fluid25d-substeps 8
+```
+
+For a reproducible remote-review pack (reset, mature Composite, Water
+Isolation, Flow Inspection, a 120-frame CPU/GPU oracle smoke, and 600-frame
+profiles), run:
+
+```sh
+projects/fluid/fluid_25d/run_mountain_source_outlet_demo.sh \
+  outputs/fluid/mountain-source-outlet-v1-20260921
+```
+
+The 600-frame profile represents 1200 s. Expect zero finite-volume status and
+boundary ledger, late-window source and actual sink removal near `0.75 m3/s`,
+and bounded stored water. The runner writes the exact capture hashes, pinned
+input identity, metrics, and measured late-window rates into its output
+directory; use those results rather than assuming the configured sink rate was
+fully realised.
+
+## Numerical contract
+
+All quantities use physical units:
+
+- terrain height, water depth, and cell size are metres;
+- source and sink fields are depth rates in metres per second;
+- face fluxes are discharge rates in cubic metres per second;
+- the water ledger is cubic metres;
+- `fixed_delta_seconds` is the simulation-frame duration and
+  `simulation_substeps` divides that duration into fixed solver steps;
+- `minimum_wet_depth_m` is a numerical wet/dry threshold: cells at or below it
+  do not retain or originate outgoing flux.
+
+For a cell with depth `h`, bed height `b`, and surface height `eta = b + h`,
+the oracle advances a persistent directed discharge for each neighboring pipe:
+
+```text
+pipe_area  = cell_size * cell_size
+f_next     = max(0, exp(-damping * delta_seconds) * f_previous
+                    + delta_seconds * pipe_area * gravity
+                    * (eta - eta_neighbor) / cell_size)
+```
+
+The four fluxes are owned by the source cell. `pipe_area` is deliberately a
+project-local cell-area choice for this first oracle; it is not a public tuning
+option. A higher neighboring surface decelerates retained directed flux before
+the nonnegative clamp. Before updating depth, total outgoing discharge is
+scaled so that the cell cannot export more than its available volume during the
+current substep. The depth update then applies
+
+```text
+h_next = h + delta_seconds / cell_area * (incoming_flux - outgoing_flux)
+```
+
+with source and sink depth rates converted to volume by multiplying by cell
+area. Outer faces are closed in River V0; the explicit sink is the only
+intentional removal path. The positivity limiter and finite-value checks keep
+the water field nonnegative and finite.
+
+This is a compact virtual-pipes reference scheme. It is retained as the
+product default while the separate well-balanced finite-volume comparison is
+audited on the same immutable scenarios.
+
+### Opt-in finite-volume comparison
+
+The audition trigger above is exercised by a separate CPU/GPU comparison, not
+by a silent change to River V0. It advances the depth-integrated Saint-Venant state
+`U = (h, h*u, h*v)` with a first-order Cartesian local Lax-Friedrichs/Rusanov
+flux. At every face it uses the hydrostatic reconstruction of Audusse et al.,
+"A Fast and Stable Well-Balanced Scheme with Hydrostatic Reconstruction for
+Shallow Water Flows," *SIAM J. Sci. Comput.* 25(6), 2004,
+[doi:10.1137/S1064827503431090](https://doi.org/10.1137/S1064827503431090):
+
+```text
+h*_left  = max(0, h_left - max(0, z_right - z_left))
+h*_right = max(0, h_right - max(0, z_left - z_right))
+U*  = (h*, h* u, h* v)
+F̂   = 1/2 (F(U*_left) + F(U*_right))
+       - 1/2 a (U*_right - U*_left)
+a   = max(|u_n,left| + sqrt(g h*_left), |u_n,right| + sqrt(g h*_right))
+```
+
+Each adjacent cell receives its own hydrostatic pressure correction
+`g/2 * (h² - h*²)` in the face-normal momentum flux. This preserves a
+constant free surface across uneven beds, including a wet/dry shoreline,
+while internal mass flux remains exactly equal and opposite. Closed faces use
+a reflected normal-velocity ghost; an opened P2 face uses a dry ghost at the
+edge cell's bed elevation, cannot add external water, and contributes only its
+outward mass flux to the existing boundary ledger.
+
+Sources and sinks are applied before transport. A source adds no momentum; a
+sink removes the same fraction of local depth-integrated momentum as water.
+After conservative transport, the existing exponential `flow_damping` is an
+explicit linear momentum drag and never changes water mass. Apart from a
+`1e-7 m` final float residue, a non-finite or negative depth fails closed; the
+comparison does not use the virtual-pipes export clamp.
+
+Every finite-volume substep checks the conservative unsplit two-dimensional
+CFL number before mutating persistent state:
+
+```text
+CFL_2D = delta_seconds / cell_size
+         * (max(|u| + sqrt(g h)) + max(|v| + sqrt(g h))) <= 0.45
+```
+
+`0.50` is the hard ceiling for this first-order Cartesian form; the CPU oracle
+rejects any step above the `0.45` target. The GPU path performs the identical
+global-max criterion through a status prepass/finalize/candidate/commit
+sequence. Candidate writes only inactive `h, hu, hv` plus isolated velocity
+and ledger-delta buffers; after the global status barrier, commit accepts all
+candidate cells (leaving candidate `h, hu, hv` in that inactive destination)
+or copies the source `h, hu, hv` into the next parity unchanged, leaving common
+velocity and cumulative ledger untouched.
+Candidate validates each prospective cumulative ledger before commit, so
+commit has no late partial-write error path. Error flags remain sticky until
+explicit solver reset while only the two CFL-max scratch values are cleared per
+substep; GPU-oracle validation and opt-in profile diagnostics reject any
+nonzero flag. Ordinary headless finite-volume capture also reads sticky status
+once at final capture; windowed comparison runs stay GPU-resident and require
+an explicit diagnostic/readback mode to surface a device flag to the host.
+This is comparison evidence, not product-ready evidence: the untouched-terrain
+V2 auditions retain a ranked shortlist, but no case advances until a concrete
+water story and a presentation-validity pass justify promotion.
+
+## Deterministic fixtures
+
+The project-local scenario generator provides three product-facing analytic
+fixtures:
+
+- `dry-bed`: uneven terrain with zero initial water and no rates;
+- `lake-at-rest`: uneven terrain with a constant free-surface height and no
+  source or sink;
+- `river-catchment`: a downhill quadratic channel seeded with a thin water path,
+  one source near the upstream end, and one initially dry downstream sink.
+
+The CPU tests cover deterministic generation, configuration parsing and
+validation, virtual-pipes regression behavior, and finite-volume dry uneven
+beds, wet/dry lake-at-rest preservation, a symmetric flat-bed dam break,
+open-boundary drainage, source/sink/boundary ledger reconciliation, and
+fail-closed CFL rejection.
+
+## Configuration
+
+River V0 uses a project-owned Config V2 facade. It composes the shared 2D grid
+schema and currently exposes:
+
+- `--grid-width`, `--grid-height`, and `--grid-size`;
+- `--fluid25d-view catchment|diagnostics` (top-level surface selector; default:
+  `catchment`);
+- `--fluid25d-catchment-view composite|water-isolation|flow-inspection|transport-inspection`
+  (windowed or headless catchment presentation; default: `composite`; cannot
+  be combined with `--fluid25d-view diagnostics`);
+- `--fluid25d-presentation-time-scale <0.125..8>` (windowed-only; defaults to
+  `1`, with `4` and `8` useful for review playback). Fast requested playback is
+  best-effort: slow or stalled rendering can hit the four-step catch-up cap and
+  drop excess backlog;
+- `--fluid25d-solver virtual-pipes|finite-volume` (default: `virtual-pipes`;
+  finite-volume is an opt-in numerical comparison);
+- `--fluid25d-scenario dry-bed|lake-at-rest|river-catchment|source-outlet-demo|sustained-headwaters-demo|mountain-source-outlet-demo|terrain-case|boundary-drain-fixture`;
+- `--terrain-heightfield <manifest-or-directory>` (required by `terrain-case`);
+- `--fluid25d-terrain-crop-x` and `--fluid25d-terrain-crop-z` (native sample
+  indices; the configured grid dimensions define the crop extent);
+- `--fluid25d-terrain-water-protocol none|rain-pulse|sheet-release` (default:
+  `none`; terrain-case only);
+- `--fluid25d-rainfall-rate-mm-per-hour` and
+  `--fluid25d-source-active-duration-seconds` (required together by
+  `rain-pulse`);
+- `--fluid25d-terrain-thin-water-composite` (terrain-case Composite-only,
+  opt-in render attenuation for water shallower than 5 cm; solver wetness,
+  water mass, diagnostic views, and default rendering are unchanged);
+- `--fluid25d-sheet-depth-m` (required by `sheet-release`);
+- `--fluid25d-cell-size-m`;
+- `--fluid25d-fixed-delta-seconds`;
+- `--fluid25d-substeps`;
+- `--fluid25d-gravity-m-per-s2`;
+- `--fluid25d-flow-damping-per-second`;
+- `--fluid25d-headwaters-source-scale` (positive finite, opt-in for
+  `sustained-headwaters-demo` only);
+- `--fluid25d-minimum-wet-depth-m`;
+- `--fluid25d-dye-pulse-start-seconds` and
+  `--fluid25d-dye-pulse-duration-seconds` (required together for the opt-in
+  finite-volume `source-outlet-demo` or `sustained-headwaters-demo` Transport
+  Inspection surface; the
+  half-open interval is evaluated on completed fixed simulation steps);
+- `--debug-view terrain|depth|surface|flow|direction|wet-dry`;
+- `--profile-output`, `--profile-warmup-frames`, `--profile-diagnostics`, and
+  `--profile-diagnostic-interval` (profile diagnostics are headless-only and
+  deliberately opt into readback); solver rows are not full-frame or FPS
+  measurements;
+- `--fluid25d-gpu-oracle-validation` (headless-only; performs final-state
+  readback against the CPU oracle).
+
+Normal headless capture keeps the simulation GPU-resident. Finite-volume
+capture additionally reads its sticky solver-status word once at final capture
+and fails if the solver rejected a substep:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --width 512 --height 256 --output fluid-25d.png
+```
+
+The normal headless command produces the same static oblique Composite
+catchment framing as the windowed default. To compare the reading aids in
+reproducible captures, select the catchment presentation explicitly:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --fluid25d-catchment-view water-isolation --output fluid-25d-water-isolation.png
+
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --fluid25d-catchment-view flow-inspection --output fluid-25d-flow-inspection.png
+```
+
+Virtual-pipes does not read back simulation state;
+finite-volume reads only its final sticky status. To capture a top-down
+numerical diagnostic instead, select it deliberately:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 8 \
+  --fluid25d-view diagnostics --debug-view flow --output fluid-25d-flow.png
+```
+
+The two focused evidence lanes are intentionally opt-in:
+
+```sh
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 12 \
+  --grid-width 12 --grid-height 8 --fluid25d-scenario lake-at-rest \
+  --fluid25d-gpu-oracle-validation --output fluid-25d-lake.png
+
+build/dev/projects/fluid/fluid_25d/fluid_25d --headless --frames 24 \
+  --grid-width 24 --grid-height 9 --fluid25d-scenario river-catchment \
+  --fluid25d-gpu-oracle-validation --output fluid-25d-river.png
+```
+
+An imported terrain case begins dry with no source or sink rates. Its cell size
+is resolved to the source's native sample spacing unless
+`--fluid25d-cell-size-m` is supplied explicitly; an explicit conflicting value
+is rejected. The application reports a stable identity containing the source
+elevation SHA-256, transformed crop SHA-256, crop coordinates and extent, and
+native spacing. Terrain crops are
+asset inputs only: they do not invoke Python/Torch or the Terrain application,
+and they do not add water-table, candidate-specific boundary policy, erosion,
+or sediment behavior. Terrain-case `none` remains dry and closed. The two
+audition protocols construct complete uniform fields and open every outward
+perimeter face; they never paint a channel, move an outlet, or reshape the
+terrain.
+
+The checked-in V1 runner preserves the frozen virtual-pipes negative baseline:
+
+```sh
+projects/fluid/fluid_25d/run_terrain_water_audition.sh
+```
+
+The separate finite-volume-only V2 runner keeps the same immutable five crops,
+but uses a shared 1,200-second physical-horizon rain/sheet protocol:
+
+```sh
+projects/fluid/fluid_25d/run_terrain_water_audition_v2.sh
+```
+
+Both write ignored evidence under `outputs/fluid`. V2 supports an explicit
+`CASE_FILTER` only for bounded pilots; it cannot change crop transforms,
+forcing, or perimeter policy. Profile metrics include solver status, wet and
+active-flow coverage, stored water, depth, speed, slow/pooled wet fraction,
+cumulative source/sink/outflow ledger totals, and the visible conservation
+residual. “Slow/pooled” means a wet cell at or below `0.02 m/s`; this is a
+reporting threshold, not a solver control. The exact V1/V2 evidence and
+shortlist/no-promotion decision live in
+[`docs/notes/fluid-25d-terrain-water-audition-v2.md`](../../../docs/notes/fluid-25d-terrain-water-audition-v2.md).
+
+The separate finite-volume rain dynamics study compares one neutral and one
+visibility-stress tier across three immutable terrain crops. Its diagnostic
+evidence and no-promotion result live in
+[`docs/notes/fluid-25d-dynamics-study-v1.md`](../../../docs/notes/fluid-25d-dynamics-study-v1.md);
+rerun it with
+`projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh` when refreshing that
+study.
+
+The follow-up [rain catchment study](../../../docs/notes/fluid-25d-rain-catchment-study-v1.md)
+separates render-only thin-water legibility from a pinned natural-catchment
+pilot. For headless RainPulse profiles, `fluid_25d.boundary` now reports the
+existing cumulative perimeter outflow in 16 bins per side plus separate corner
+and non-edge totals; these metrics do not alter the solve. The candidate
+shows distributed runoff, not a promoted single-outlet scene. Its reproducible
+scripts are `terrain_rain_thin_water_ab_v1.py` and
+`terrain_rain_catchment_pilot_v1.py` in this directory.
+
+The [native sustained-flow preflight](../../../docs/notes/fluid-25d-native-sustained-flow-preflight-v1.md)
+audits two unchanged Terrain Diffusion sites before adding a localized continuous
+source. It separates D8 locators from raw cardinal routes, source-footprint
+relief, and derived local depression storage. Neither site is selected for the
+first continuous-stream pilot; the lowland starts inside a large depression and
+the mountain reference is narrow and steep at native 30 m spacing. Reproduce the
+offline audit with `native_sustained_flow_preflight_v1.py` in this directory.
+Its static fill volumes are not required transient water mass. No new Fluid
+protocol, source tuning, default, or promoted scene follows from this audit.
+
+The follow-up [native flow-site survey and pilot](../../../docs/notes/fluid-25d-native-flow-site-survey-v1.md)
+screens 240 reaches in the same 12 cached payloads, then tests two human-reviewed
+sites with a shared 30/60 m³/s continuous source. Its separate opt-in
+`natural-flow-study` scenario requires a hash-pinned recipe, exact native 30 m
+crop, explicit positive `--fluid25d-natural-flow-source-m3-per-s`, and
+`finite-volume`. Terrain starts dry and is never modified. Five face-connected
+source cells receive equal depth-rate input; there is no prescribed source
+momentum, rain, interior sink, or finite source duration. Every perimeter is
+outward-only. The amber expected-exit window measures discharge; it does not
+force drainage there. Existing neutral terrain protocols and defaults remain
+unchanged. All four pilot cases established continuous flow; site A / 30 is
+retained as the visual study, not a promoted product fixture or a natural-river
+prediction. The user subsequently rejected its low-relief presentation as too
+flat/subtle; retain that feedback separately from its numerical success. The
+note contains matched motion/dye evidence and strict-parity
+limits.
+
+The follow-up [macro hillside-flow study](../../../docs/notes/fluid-25d-hillside-flow-study-v1.md)
+uses a separate opt-in `hillside-flow-study` mode on a 256x256 native-30m
+mountain domain. It has continuous upland supply, a dry start, unchanged
+terrain, and no prescribed outlet or interior drain. Only the green source
+marker is shown. Elevation-band observations measure actual downhill wetting,
+not arrival at a chosen exit. The source-only recipe uses the existing
+`--fluid25d-natural-flow-recipe` and source-rate flags with a distinct strict
+schema; an old expected-outlet recipe cannot silently become a hillside case.
+Whole-domain and close-front captures, short 512x512 cost evidence and limits
+are in the note. Defaults and neutral rain/sheet protocols remain unchanged.
+
+For the hillside window, `--fluid25d-hillside-source-context` selects a closer
+render-only source camera. Normal playback is continuous, with the source
+always supplying water; `Space` pauses/resumes it. The optional
+`--fluid25d-hillside-inspection-advance-seconds 1800`
+executes every ordinary solver step from the dry start and then pauses at
+30 simulated minutes. The panel retains ten-minute compute-and-pause under
+Inspection tools, Cancel and physical-time feedback. Its primary advance
+action computes to 55 simulated minutes and resumes continuous playback.
+This is not a larger numerical dt, a
+prefill, or a skipped water evolution, and startup advance is rejected in
+headless mode. Reset restores dry start and cancels pending advance.
+
+For repeatable **continuous** local review, run:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py
+```
+
+This uses the same dry-start 256x256 native-30m terrain and 100 m³/s supply,
+starts at 8x windowed playback with the closer source camera, and runs until
+you close the window. By default it requests neither advance nor timed pause.
+Use `--camera overview`, `--view water-isolation` / `flow-inspection`,
+`--playback 1`, or `--print-command` for presentation-only alternatives.
+The panel displays physical time, supply rate, and continuous/paused status.
+The original launcher remains water-only by default. `--domain 512 --dye
+--view transport-inspection` explicitly selects the wider crop and a conserved
+60-62-minute source pulse; clear water supply remains continuous. See the
+[V3 conservation/transport pass](../../../docs/notes/fluid-25d-hillside-conservation-transport-v3.md)
+for its numerical and presentation gates.
+
+The opt-in [motion/readability V4](../../../docs/notes/fluid-25d-hillside-motion-readability-v4.md)
+adds source-released pale markers and short
+trails, a fixed logarithmic hillside dye scale, and explicit source, branch,
+and overview camera presets. Markers sample the accepted depth-averaged
+velocity; they are presentation state, not simulated floating objects or
+additional hydraulic forcing. They disappear at dry support or crop exits,
+freeze on a rejected hydraulic update, and reset with the dry start. The
+fixed dye legend is 0.1%, 1%, 10%, 100% of injected concentration, with a
+0.01% clear-water floor. It is concentration, not speed or depth.
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py \
+  --domain 512 --markers --dye --view transport-inspection --developed
+```
+
+`--developed` executes ordinary fixed steps to 55 physical minutes with
+visible progress, then continues at 8x. Green cubes mark the upland source tiles;
+there is no selected drain. `--camera branch` frames the downstream split.
+Marker-free launch defaults retain the established camera. These controls
+do not change terrain, source rate, solver dt, or the `virtual-pipes` default.
+`run_hillside_motion_v4.py --phase smoke|profiles|captures|review --out
+<directory>` separates short media QA, exact two-hour V3 numerical comparisons,
+matched videos, and receipt verification. Each phase refuses to overwrite
+existing evidence. Full captures require passing profiles from the same app
+and shader identity; retained V3 strict results are a labelled replay bridge,
+not a claim that strict CPU comparisons were rerun under the V4 app.
+An explicit `--phase profiles --revalidate-profiles` validates complete retained
+executions into a separate receipt, preserving the earlier rejected report and
+all artifacts. It refuses changed inputs, unsuccessful children, or incomplete
+receipts; it does not rerun the simulation or alter numerical tolerances.
+
+The V5 readability/response options stay on this same immutable hillside;
+they do not audition another river site or develop the authored-river demo:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py \
+  --domain 512 --markers --local-markers --depth-cues \
+  --view water-isolation --camera travel --developed
+```
+
+Local dots show movement **here**, not parcels that travelled from the source.
+The bounded 512-marker pool seeds areas at least 1 cm deep on fixed simulation steps;
+active paths are never periodically teleported. The original source-release
+mode remains available by omitting `--local-markers`. The opt-in fixed depth
+palette spans 1 cm / 10 cm / 1 m / 10 m; this is depth, not speed. Its modest
+shoreline coverage smoothing does not reconstruct the native 30 m geometry.
+`--camera collection` frames the observed western collection pocket on the
+512 reference crop; `travel` frames its intervening downhill region. These two
+presets require `--domain 512`, because the smaller crop omits that pocket. The old
+source/branch/overview cameras and launcher defaults remain available.
+
+Add `--response` for a continuous supply experiment: 100 m³/s for 0–60 physical
+minutes, 150 for 60–90, 50 for 90–120, then 100 indefinitely. The first two hours
+inject the same 720,000 m³ as the constant reference. These are actual hydraulic
+changes, unlike marker, camera, or palette switches. Leave dye off for the
+matched forcing comparison. GUI Low/Base/High buttons queue 50/100/150 m³/s for
+the next fixed step; a manual selection overrides the script until Reset.
+Pause preserves that queue and clock; Reset clears both manual and scripted
+progress. Playback speed changes wall-time pacing, not input strength or dt.
+The GUI continues until closed; finite headless captures are evidence windows,
+not a timed simulation stop. `run_hillside_readability_v5.py` separates profile,
+captures, and review phases under a fresh output directory. Human animation and
+live GUI acceptance remain separate from its automated gates. The optional
+`run_hillside_pacing_v5.py --out <fresh-output-root>` records serialized 900-frame
+marker-off/on Xvfb playback runs with an independently checked supply ledger;
+this is offscreen-windowed pacing evidence, not an isolated overhead benchmark.
+The Diagnostics depth map retains its legacy linear palette (brighter cyan is
+deeper, saturated at about 8.3 cm); the 3D log-depth legend does not apply there.
+Use a Python environment with Pillow for the V5 capture/review phases:
+
+```bash
+rtk proxy uv run --python 3.12 --with pillow==12.3.0 python \
+  projects/fluid/fluid_25d/run_hillside_readability_v5.py \
+  --phase captures --out <output-root>
+```
+
+`--profile-workers 3` optionally overlaps the three independent
+correctness jobs; those child wall times are not performance measurements.
+
+The local V5 checkpoint is retained under
+`outputs/fluid/hillside-readability-v5-20261001-o0PsLm/`; start with
+`READING-GUIDE.txt` and `final-local-closure.json`. All three two-hour profiles
+pass their automated gates: constant water matches V3, constant dye matches
+V4, and the response matches the reference until its first supply change.
+At 120 physical minutes, the response's observed collection depth is 7.136 m
+versus 6.580 m, with equal 720,000 m³ input and no boundary export in either run.
+The response is delayed downstream: at 75 minutes, source-region storage and
+mean active speed already differ, but the observed collection depth and
+material-front distance still match. Final stills alone conceal that delay.
+Local-marker coverage in narrow downstream branches and native-grid geometry
+remain readability limits; human animation and live GUI acceptance are pending.
+This checkpoint does not establish calibrated hydrology or change solver defaults.
+
+### Continuous mountain rain study
+
+`hillside-rain-study` is a separate opt-in forcing experiment on the same
+unchanged 512x512 native-30m Terrain Diffusion mountain crop. It starts dry,
+adds uniform surface rainfall continuously, and has no point source, interior
+sink, or chosen outlet. Every outward crop face permits export to a dry
+exterior at that face's own bed elevation. Crop edges are not watershed bounds.
+The virtual-pipes default and previous point-source and timed rain-pulse modes
+are unchanged.
+
+The two predefined cases are `equal-input` (1.52587890625 mm/h, 100 m³/s over
+235.9296 km²) and `main` (12 mm/h, 786.432 m³/s). At two physical hours these
+add 720,000 and 5,662,310.4 m³ respectively. All rainfall becomes surface water:
+there is no infiltration, evaporation, soil, terrain erosion, or hydrological
+calibration. The main case's direct rainfall depth is 24 mm after two hours;
+merely seeing blue across the map is therefore not evidence of stream formation.
+
+For indefinite live playback:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_demo.py
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_demo.py \
+  --case equal-input --camera collection --markers --developed
+```
+
+`--developed` computes the first physical hour using every unchanged fixed
+step, then continues at 8x requested playback. It does not prefill the terrain
+or stop the live simulation. The UI shows physical time, applied mm/h and total
+m³/s, accumulated rain, queued rain On/Off, and continuous/paused/advance state.
+Rain changes apply at the next fixed step; pausing preserves a queued change.
+Reset clears the water and rain clock and restores rain On. It is not a forced
+pause: when running, normal fixed-step playback continues immediately after
+the reset. Pause first to inspect the dry time-zero state. Camera presets are
+absolute terrain locations (`overview`, `travel`, `collection`), not source
+locations. There are no source/drain cubes. Optional pale dots are local motion
+indicators, not rainfall drops or water parcels released from an endpoint.
+
+The bounded study runner is independent of the indefinite launcher:
+
+```bash
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase smoke --out <fresh-output-root>
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase compatibility --out <output-root>
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase profiles --out <output-root>
+rtk proxy python3 projects/fluid/fluid_25d/run_hillside_rain_pacing_v1.py \
+  --out <output-root>
+rtk proxy uv run --python 3.12 --with pillow==12.3.0 python \
+  projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase captures --out <output-root>
+rtk proxy uv run --python 3.12 --with pillow==12.3.0 python \
+  projects/fluid/fluid_25d/run_hillside_rain_v1.py \
+  --phase review --out <output-root>
+```
+
+Profiles check every fixed-step rain integral, solver status, and the unchanged
+water-conservation bound. Observations distinguish direct rainfall from water
+gathered laterally. The two independent correctness profiles may overlap;
+their timings are not an isolated performance measurement. Pacing runs later,
+serially, without those diagnostic readbacks. Three predefined 21x21 regions
+report storage minus their
+own direct rain (a signed net storage measure, not gross inflow). Interior
+D4-connected moving cells at least 1 cm deeper than cumulative direct rain
+describe convergence corridors; span is the component's maximum X/Z extent,
+not a parcel's travel distance. The screening gate requires at least 300 m
+of corridor support for 900 consecutive physical seconds and positive excess
+storage in a fixed region. This does not prove that one identical channel
+persisted throughout, nor does it establish visual acceptance.
+
+If the healthy two-hour main case lacks that support, the predefined extension
+is an uninterrupted four-hour replay from dry start. Its entire two-hour
+non-timing prefix must match exactly; it is not GPU checkpoint restoration.
+Captures include matched two-hour rate comparisons, three labelled main-case
+videos and exact-time stills. Video physical clocks are post-step: frame zero
+is 2 s. Offscreen marker-off/on pacing excludes full-field diagnostics and is
+not an isolated marker-overhead benchmark or desktop acceptance. Receipts bind
+commands, terrain, app, shaders, profiles, media and logs; old evidence is never
+overwritten. Human animation/live GUI acceptance remains a separate review.
+
+The local V1 checkpoint is
+`outputs/fluid/hillside-rain-v1-20261001-EQ9DU6/`. Both two-hour rates passed
+the unchanged numerical gate and the convergence/collection screen, so the
+conditional four-hour extension was not needed. At two hours, the main case
+had a 5,910 m largest connected moving-water corridor span and about 54,004 m³
+of net lateral storage in the collection footprint, whose maximum depth was
+5.98 m. The equal-input case's final corridor span was 1,950 m and its collection
+excess about 1,210 m³. These are observations, not calibrated river forecasts.
+The main water-ledger residual stayed below 0.325 m³ over roughly 5.66 million
+m³ supplied. Short serialized windowed runs achieved 7.91x/7.97x requested-8x
+playback without backlog drops, but are not a desktop performance guarantee.
+138 non-windowed native tests and 208 Python tests passed. Sampled captures
+show terrain-shaped branching runoff and growing collection; the first ten
+minutes remain visually quiet and native 30 m wet-edge steps are exposed in
+oblique views. Sparse temporal samples do not establish flicker-free animation.
+Start with the labelled valley video and `READING-GUIDE.txt`; the sealed local
+closure leaves human animation/live GUI acceptance explicitly pending.
+
+The [Rain V2 camera/transport diagnosis](../../../docs/notes/fluid-25d-hillside-rain-v2-transport-diagnosis.md)
+fixes the far-plane bound for the full legal orbit range and adds an independent
+uniform-sheet incline benchmark. It demonstrates substantial thin-water speed
+underprediction from the existing first-order hydrostatic reconstruction,
+despite safe CFL, depth preservation and CPU/GPU agreement. It does **not**
+change solver defaults or promote a numerical correction. The predefined
+48 mm/h mountain comparison and new live basin observations/cameras are
+deferred behind that failed accuracy gate. Analysis-only depression masks on
+the current immutable crop are not simulated lakes. See the note and the
+sealed V2 evidence root for measurements, reproduction and acceptance limits.
+
+The [Rain V3 CPU correction study](../../../docs/notes/fluid-25d-hillside-rain-v3-cpu-transport-study.md)
+tests two isolated double-state prototypes without linking them into the app.
+The slope-aware candidate passes the straight-incline and continuous-rain
+references, but both candidates fail curved-flow accuracy; the fallback also
+moves a partially wet resting lake. Neither is promoted. Production CPU/GPU
+solvers, defaults, immutable terrain and forcing remain unchanged. Actual
+applied face-transfer evidence and the negative verdict are retained under
+`./outputs`; stronger mountain rainfall and GPU integration remain deferred.
+
+The [sustained hillside V2 pass](../../../docs/notes/fluid-25d-hillside-sustained-flow-v2.md)
+keeps the accepted terrain and forcing fixed over two physical hours. Its new
+`run_hillside_sustained_flow_v2.py` separates hydraulic profiles, matched
+captures, and a stop-on-first-failure strict oracle ladder. It records active
+versus slow material-water volume, shared-face source connectivity, and crop
+edge proximity as observations, without prescribing a route or changing the
+terrain. A same-source 512x512 comparison is allowed only when the current
+256x256 profile actually approaches an edge or exports water. App, compiled
+shader, recipe, manifest, and elevation identities are checked before and
+after each phase. See the note for measurements, evidence, and parity limits.
+At the V2 checkpoint, strict 1/10/30-minute checks passed, but the extended water
+ledger fails its unchanged tolerance after 68.5 minutes. Its later captures
+are explicitly diagnostic, not a promoted two-hour pass; hillside dye also
+was gated by the separately failing long tracer conservation check. Those
+historical failures are retained; V3 diagnoses and corrects the demonstrated
+rounding loss without changing forcing or tolerances.
+
+`native_flow_site_survey_v1.py` reproduces the offline screening.
+`run_natural_flow_pilot_v1.py --phase hydraulics --output-dir <new-directory>`
+runs the frozen four-case matrix; after review, `--phase evidence --winner a:30`
+with that same directory records matched captures and strict oracle checks.
+Failed numerical or strict-oracle checks return a nonzero exit status while
+retaining their reports; the known long-duration dye failure is not waived.
+Output directories must be fresh for hydraulics, and captures are never
+overwritten. Recipe gauges report signed depth–velocity discharge estimates,
+not solver face flux. Separate expected-window/other-edge/corner ledgers retain
+the existing boundary total. See the note for exact `rtk` commands and timing.
+
+Analytic fixtures remain closed by default. `boundary-drain-fixture` exists
+solely to validate the numerical outflow contract: an opened perimeter face
+sees dry exterior at its own bed elevation, permits no external inflow, and
+records its post-limiter discharged volume separately from source and sink
+ledgers. It is not a product scenario or terrain audition policy.
+
+In a window, the compact Fluid 2.5D panel selects the Catchment or Diagnostics
+surface; while Catchment is selected, a second control chooses Composite, Water
+Isolation, Flow Inspection, or Transport Inspection. The catchment choice is
+retained when `A`
+switches to Diagnostics and back. The panel also exposes Pause/Resume, Reset,
+and the supported `0.125..8x` windowed playback speed. The legend reads the
+terrain as the matte bed, bright cyan as shallower water, and darker blue as
+deeper water. The moving highlight is a passive render-only marker advected by
+velocity; it is not waves or a depth cue. Left-drag or scroll orbits/zooms the
+catchment; `Space` pauses, `R` resets the deterministic scenario, and `D`
+cycles diagnostic contents. UI controls only affect presentation/pacing; solver
+fixed delta, headless timing, and numerical evidence remain unchanged.
+
+In Flow Inspection, arrows stay anchored to a uniform grid: angle means local
+flow direction, and length/brightness mean speed. They sample the velocity
+field and are not moving water particles. The source-to-outlet scene retains
+its green SOURCE and amber DRAIN cube patches in this view.
+
+Transport Inspection is separate from Flow Inspection: it hides the quiver and
+render-only directional cue so one visual language remains. Green cubes mark
+input, base blue shows water depth, and magenta/violet shows conservative dyed
+water. The `source-outlet-demo` uses amber cubes for explicit removal;
+the sustained-headwaters control uses two green input patches and an open-edge
+outlet without sink cubes. The natural-flow study's expected exit remains a
+diagnostic observation window, with all perimeter edges open independently. The pulse is
+available only with finite-volume, both dye timing options, and
+`source-outlet-demo`, `sustained-headwaters-demo`, `natural-flow-study`, or
+`hillside-flow-study`. The fixed hydraulic forcing is unchanged by the dye
+schedule. See the demo and hillside sections above for
+their captures and frame semantics; the earlier V1 study remains in
+[`docs/notes/fluid-25d-transport-readability-v1.md`](../../../docs/notes/fluid-25d-transport-readability-v1.md)
+as historical evidence.
+
+## Source layout
+
+- `projects/fluid/fluid_25d`: project-facing CMake and design authority;
+- `projects/fluid/fluid_25d/run_terrain_water_audition.sh`: matched evidence
+  runner for the immutable virtual-pipes V1 baseline;
+- `projects/fluid/fluid_25d/run_terrain_water_audition_v2.sh`: finite-volume
+  physical-horizon audition runner with solver-qualified ignored outputs;
+- `projects/fluid/fluid_25d/run_mountain_source_outlet_demo.sh`: finite-volume
+  review runner for the pinned immutable mountain source/outlet scene;
+- `projects/fluid/fluid_25d/run_sustained_headwaters_demo.sh`: dry-start
+  two-source control and dye-motion evidence runner;
+- `projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh`: matched neutral and
+  visibility-stress finite-volume rain-dynamics study runner;
+- `projects/fluid/fluid_25d/run_transport_readability_v1.sh`: deterministic
+  source/outlet dye-pulse video, profile, checkpoint, and acceptance runner;
+- `projects/fluid/sim/fluid_25d`: project-local config, scenarios, CPU oracle,
+  and focused tests.
+
+The solver is intentionally not coupled to `projects/terrain`, `projects/ocean`,
+`TerrainOceanFieldView`, paused hydrology work, or the shared rendering
+foundation. Those products may become future consumers only after a concrete
+contract is demonstrated.
+
+## Next implementation gate
+
+Review the integrated continuous mountain-rain service in the GUI before any
+presentation/product promotion. Keep the built-in solver as the simpler option,
+the stock bridge/recordings as references, and terrain inputs immutable. No
+solver port, new terrain search or numerical replacement follows implicitly
+from this integration. Shared helpers still require an independent consumer or
+a measured bottleneck.
+
+## Experimental display-only bank coverage
+
+`--fluid25d-native-display-coverage <coverage.json>` attaches an opt-in,
+hash-checked opacity sidecar to a **completed recording with triangular
+geometry**. It is not supported by the live/external or builtin backends.
+Neither hydraulic depth/velocity nor displayed terrain/surface heights are
+modified. Native depth, flow, wet-mask and water diagnostics bypass this mask;
+Composite shading alone uses its reconstructed shallow-water coverage.
+The shared native viewer's bank-view selector is independent of procedural
+highlights and dots/trails and does not reset playback or their histories.
+
+The isolated-environment tool `run_native_bank_refinement_v1.py` bakes
+marching-squares contours with bounded VTK point smoothing. Twelve display
+depth bands approximate the existing 2–50 mm opacity fade, rasterized at 8x
+and node-aligned filtered to a 4x mask. This adds display samples, not simulation
+resolution. The unsmoothed `raw-mask` variant controls for raster/quadrature
+changes. Libraries remain offline tools, not Cubey dependencies.
+
+Sidecars pin the recording manifest and individual source-frame SHA-256s;
+payload size, digest, finite [0,1] coverage, sample budget, path safety and saved
+time are checked before use. Only baked saved times are available: a missing
+time is an explicit error, never stale-mask reuse or invented hydraulic data.
+This is a bounded appearance prototype, not a production live reconstruction.
+
+`--fluid25d-native-camera-pitch <radians>` supplies an observation-only native
+camera angle for matched bank-contact captures; the default remains -0.92.
+All reconstruction modes/defaults remain unchanged. Small display width/area
+changes are acceptable for a visual demo; obvious false connections, invalid
+masks, temporal popping and poor terrain contact still require review.
+
+Current visual-first comparison:
+`outputs/fluid/bank-refinement-v1-20261006-ZmPvk9/review/index.html`.
+The earlier offline boundary study retains its original conservative verdict;
+this pass evaluates actual Cubey filled-water rendering under a different,
+explicit visual-demo acceptance standard.
+Moderate coverage trims visible bank teeth but remains recording-only with a
+costly offline bake and synchronous mask validation. B-spline 2x is the stronger
+demo-facing opt-in candidate under that visual standard, with broader streams
+and approximated displayed terrain; it is not an accepted default. Strong
+coverage is rejected for motion because two recorded states self-intersect.
+See the review's `RESULTS.md` for matched clips, separate costs and limits.
+
+## Recorded three-mode bank comparison
+
+`--fluid25d-native-bank-view reference|bspline-2x|marching-squares` exposes
+three principal presentation choices in the recording/external viewer. Reference
+is the existing triangular reconstruction. B-spline 2x remains experimental:
+it rounds banks but approximates both displayed terrain and water and may widen,
+bead or visually join streams. Marching-squares uses the existing display-only
+coverage sidecar, **not** a live contour mesh or a different solver. It is
+disabled with an explanation when no matching recorded mask exists. The older
+bilinear/subdivision controls remain advanced options outside comparison mode.
+Do not combine the new bank-view option with those legacy sampling options.
+
+For a fair bounded replay, add `--fluid25d-bank-comparison` and
+`--fluid25d-native-display-coverage <coverage.json>` to a completed recording.
+The sidecar must cover 2–16 consecutive native states. Only that window is
+seekable/playable. The final covered state is held until just before the next
+uncovered publication; playback then pauses with an explicit window-end message.
+Space/Replay or Restart intentionally rewinds. `--fluid25d-bank-comparison-loop`
+opts into recorded replay, not a simulation restart. This mode is rejected for
+live streams/external service and builtin sources. With an omitted/zero start,
+playback begins at the first covered state; explicit out-of-window starts reject.
+
+The active window's masks are fully digest/size/range validated before playback,
+retained within a 256 MiB payload budget, and loaded asynchronously for a GUI
+window (headless capture preloads synchronously). Preparation progress/error is
+visible and playback stays held until ready. No per-frame mask file reads occur
+after preparation. GPU upload occurs only when the selected coverage mode needs
+a different saved mask. The budget excludes temporary validation buffers,
+native frames, GPU staging and other process memory.
+
+In the native viewer, **S** cycles the available bank views; **W** independently
+toggles dots/trails when prepared. Bank changes preserve camera, playback time,
+rate/pause state, native inputs and cue histories. Explicit seek/restart/loop
+navigation clears visual history as before. All six raw 2D diagnostics bypass
+bank reconstruction, regardless of the selected 3D bank view. Defaults, solver,
+terrain data and physics remain unchanged.
+
+Headless evidence can use `--fluid25d-bank-comparison-cycle-frames N` to exercise
+real draw transitions; it requires comparison mode and video capture. This is
+an interaction test, not a replacement for separately captured, synchronized
+appearance comparisons.
+
+Current compact review:
+`outputs/fluid/bank-comparison-v1-20261006-DxdrJe/review/index.html`.
+It retains the three tradeoffs, matched growth/recession clips and actual GUI
+captures. Automated private-Xvfb checks do not constitute owner visual acceptance.
+Use `run_native_bank_comparison_v1.py` for capture/profile/review/integrity phases;
+it reuses the previous bounded masks and does not run a solver or bake new ones.
+
+## Pre-existing mountain lake experiment
+
+`run_seeded_lake_v1.py` adds an explicitly initialized lake inside the existing
+B20 depression of the unchanged mountain crop. It uses the installed SynxFlow
+reference, recording converter and Scenic viewer; no solver, material or
+terrain defaults change. This lake already exists when the demonstration starts:
+it is **not** a claimed rain-formed lake or a maintained water-level constraint.
+
+The default level is 90% of the height from basin floor to analytical spill,
+leaving about 6.7 m of spill headroom. Initialization follows the floor-connected
+D4 sublevel set on the entire actual native bed, not a clipped painted mask or
+constant-depth sheet. Initial momentum is zero. The runner first checks 30
+physical minutes without rain, then runs the established 120 mm/h rainfall for
+two physical hours. A failed retention check stops the experiment.
+
+Run with the existing isolated native environment and a fresh output leaf:
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_seeded_lake_v1.py \
+  --out outputs/fluid/seeded-lake-v1-local
+```
+
+The generated `index.html` includes matched initial/held lake captures, rain
+playback, raw depth evidence, provenance and the local GUI replay command. The
+report browser discovers it automatically. `--level-fraction` selects a different
+below-spill initial stage for a new experiment, not a live level control. The
+recordings remain separate from all established dry-start rain recordings.
+Run `test_run_seeded_lake_v1.py` in the same environment for CPU-only geometry
+tests; it does not launch CUDA or a renderer.
+
+## Render-only visible rainfall
+
+The native Scenic replay/live frontend has an opt-in falling-rain layer:
+
+```sh
+rtk proxy python projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --rain-visuals
+rtk proxy python projects/fluid/fluid_25d/run_mountain_rain_demo.py live --rain-visuals
+```
+
+The GUI's **Visible rain (render only)** section controls visibility, density
+strength (0..2), and fall speed (0.25..8x). Direct app flags are
+`--fluid25d-rain-visuals`, `--fluid25d-rain-visual-strength`, and
+`--fluid25d-rain-visual-speed` (also available on the launcher). The speed default
+is 3x; 1x restores the original slower fall. Speed edits integrate continuously
+without jumping the drop phase, independently of simulation/playback speed.
+All columns share one fixed world-space ceiling well above the highest peak;
+their starting heights do not trace the local terrain. A common floor below the
+lowest bed defines recycling, while the actual local bed+h clips each impact.
+Streaks use a wider 1.4-pixel footprint and higher opacity, with a dark neutral
+silhouette against the daylight sky instead of pale-on-pale blending. These are
+artistic readability choices, not physical drop optics. These controls never
+change solver rainfall. Rain is still opt-in; all accepted lighting/water defaults
+and the launcher's numerical rain presets remain unchanged.
+
+Replay streak density follows the forcing schedule at the **playhead**, not the
+last saved water frame. The HUD labels both times; water remains held, never
+interpolated. Live uses the applied snapshot rate, not a typed/pending edit.
+Zero/unknown rain and zero strength draw nothing. Density uses a compressed
+square-root mapping capped at 24,000 fixed-seed world columns. Rate changes
+retain the same prefix instead of re-randomizing the whole scene.
+
+This is an artistic macro-scale weather cue, not physical raindrops, water
+parcels or conserved rainfall. Fall lengths/speeds are deliberately exaggerated
+for kilometre-scale terrain. Motion uses a separate presentation-seconds clock,
+not accelerated runoff time; pause/seek/reset and unhealthy live sessions hold
+or reset it. Headless video samples index/fps independently of physical capture
+intervals. Stills have a deterministic initial phase.
+
+Six-vertex instanced streaks blend into existing linear HDR before display
+encoding. Immutable bed/depth are read-only; rain stops at the displayed bed+h
+triangles (including B-spline subdivision) and samples opaque terrain depth to
+hide behind hills. Water does not write that opaque depth, so terrain depth
+alone would not correctly terminate lake rain. OFF adds no render-graph pass.
+Raw maps, terrain/water component views and diagnostic overlays remain unchanged.
+No splash/ripple particles, fog, cloud model or storm lighting is added.
+
+`fluid_25d_recording_contract` tests the clock/density contract,
+`fluid_25d_tests` tests native options, and `fluid_25d_rain_visuals_gpu` uses
+synthetic frozen fields, upload checks and exact controls (including deterministic
+video and physical-speed independence when video capture is built). It requires
+no archived recordings or solver. Profile category `fluid_25d.rain` records
+presentation time, applied rate and streak count; GPU span `fluid_25d scenic rain`
+measures the extra draw separately.
+
+## Dry-start rain-formed collections
+
+`run_natural_lakes_v1.py` is the paired whole-map experiment: no initial lake,
+zero initial depth/momentum, and uniform rain over the unchanged mountain crop.
+It reuses the same native serializer, released solver, recording adapter and
+Scenic viewer. The bounded schedule is eight physical hours at the established
+heavy 120 mm/h rate, a 60-second taper, then four hours of recession. This is a
+deliberate visual stress case, not a realistic storm or calibrated hydrology.
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_natural_lakes_v1.py \
+  --out outputs/fluid/natural-lakes-v1-local
+```
+
+All terrain-derived depression masks are observed, not just the seeded B20
+reference. The report includes whole-map depth distributions, storage/recession
+history, matched overview and collection captures, and GUI replay instructions.
+It distinguishes retained water patches from proven quiet lakes using measured
+speed and surface-level spread. Native states are saved every five minutes;
+the browser videos are bounded recorded playback, not a live solver.
+The simulation collects water in existing depressions but does not erode or
+create new lake beds, add artificial dams, or maintain a prescribed lake level.
+Existing dry-start and seeded recordings and all product defaults remain intact.
+
+## Equal-total faster rainfall comparison
+
+`run_rain_acceleration_v1.py` tests 240 mm/h for four hours and 480 mm/h for two
+hours against the existing eight-hour 120 mm/h dry-start recording. Main storms
+all supply 960 mm; proportionally shortened tapers add exactly 1 mm each. Every
+case ends four hours after its main storm ends, including the taper. Numerical
+terrain, native solver, Manning coefficient, boundary, initial conditions and
+renderer settings stay fixed. These are extreme visual-demo stress cases, not
+realistic weather, and no higher rate is promoted to a default.
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_rain_acceleration_v1.py \
+  --out outputs/fluid/rain-acceleration-v1-local
+```
+
+The reference must be present at `outputs/fluid/natural-lakes-v1-20261008-a1`.
+The report compares the same physical time, the same total input at storm end,
+and the same recession window. Its frozen formation target is B20 having at
+least 0.5 km² of water at least 1 m deep, bracketed by five-minute saves. It also
+reports flood spread, retained water and native-call runtime, with matched
+Scenic captures, full replays and whole-map depth plots. Higher rainfall changes
+the physics; it is not a simulation-time multiplier. Equal rain input need not
+produce equal retention because the shorter storms allow less drainage time.
+`test_run_rain_acceleration_v1.py` checks the schedules and reporting contract
+without launching CUDA or the renderer.
+
+## Power-of-two rainfall study
+
+`run_rain_power2_v1.py` runs 512 and 1024 mm/h against the unchanged 480 mm/h
+recording from `outputs/fluid/rain-acceleration-v1-20261008-a1`. It keeps the
+same 960 mm main-storm input plus a 1 mm triangular taper, then the same
+four-hour recession window including that taper. Main storms last 112.5 and
+56.25 physical minutes. This tests proposed presets, not a GUI or default change.
+
+```sh
+rtk proxy outputs/fluid/native-runoff-reuse-v1-20261002-trm3Ve/synxflow-setup/env/.venv/bin/python -B \
+  projects/fluid/fluid_25d/run_rain_power2_v1.py \
+  --out outputs/fluid/rain-power2-v1-local
+```
+
+New states save every 225 seconds so both exact storm and recession endpoints
+are recorded; the existing 480 reference remains at its five-minute cadence.
+Matched early views use 45 physical minutes, while every storm is still on.
+The same B20 formation target, whole-map flood spread, retained-water metrics
+and native-input checks are used. Replays share the same 225-second render
+interval, holding reference fields between their original five-minute knots.
+The report browser discovers the generated gallery automatically. Original
+studies, numerical terrain, solver and render defaults remain unchanged.
+Use `test_run_rain_power2_v1.py` for CPU-only schedule and mixed-cadence checks.
+This study re-encodes only its own fresh rainfall input table at round-trip-safe
+precision: the upstream IO writer uses six significant timestamp digits (two
+decimal places at these times), which otherwise changes fractional taper knots
+and fails the strict recording check.
+Installed backend/solver code is untouched; the converter's checks are not
+relaxed. Each new study archives its runner alongside the frozen protocol.
+`--presentation-only` rechecks the sealed numerical source, reference and all
+recording frames before regenerating media; it never runs CUDA. First retain/move
+any existing `media`, `capture-manifest.json` and `index.html` out of their original
+paths. Recapture checks all three targets before writing, never overwrites old
+presentation evidence, and leaves numerical protocols and recordings in place.
+
+The [reviewed 480/512/1024 results](../../../outputs/fluid/rain-power2-v1-20261008-a2/index.html)
+support **512 mm/h as the balanced demo preset candidate**, with **1024 mm/h as
+an optional rapid-fill/stress setting**. B20 reaches the fixed formation target
+in (41.25, 45] physical minutes at 512 and (22.5, 26.25] minutes at 1024, versus
+(40, 45] minutes at 480. The faster case spreads more runoff during rain; final
+whole-map storage after the equal recession window differs by less than 0.04%
+across these three cases. The user accepted this direction, not a weather-realism
+claim or completed visual acceptance. UI presets and product defaults remain
+unchanged; captures and sealed numerical source versions remain in the report.

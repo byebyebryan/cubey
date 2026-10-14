@@ -21,7 +21,11 @@ is a small set of focused projects, each with different scaling assumptions:
   views, and future hooks for wakes and shorelines. It is rendering-first, not a
   fluid solver.
 - `projects/fluid/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
-  basins, sources, sinks, and heightfield-driven water.
+  basins, sources, sinks, and heightfield-driven water. Its featured demo now uses
+  unmodified generated mountain terrain and continuous rain, with a separately
+  prepared SynxFlow CUDA worker streaming depth/momentum into the Vulkan renderer.
+  Recorded viewing and builtin virtual-pipes/finite-volume alternatives remain
+  explicit. This is a visual demo, not a calibrated hydrology or solver-parity claim.
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
   baselines with shared 3D storage textures, compute
   advection/injection/combustion/projection, and fullscreen volume raymarching.
@@ -249,8 +253,10 @@ project is worth the complexity.
 1. Keep `projects/ocean` on the promoted experimental base, but use explicit
    feature-isolation controls and repeatable captures to decide which cascade
    slots, foam, terrain/depth, and diagnostics features are worth their cost.
-2. Continue `fluid_25d` with virtual-pipes shallow water over terrain, then feed
-   depth/shoreline data into the ocean renderer.
+2. Present and maintain the qualified `fluid_25d` terrain-rain demo, its explicit
+   external/builtin/recording boundary, and shared Terrain saved-water consumer.
+   Do not presume a solver port, erosion/hydrology system or ocean shoreline
+   coupling is required to improve its presentation.
 3. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer
    injectors, stronger diagnostics, and a clearer smoke/dye versus
    free-surface-liquid direction.

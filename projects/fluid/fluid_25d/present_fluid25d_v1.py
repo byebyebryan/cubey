@@ -65,7 +65,7 @@ def auditions():
 
 def story():
     return [dict(recipe("story-rain", "overview", 0, 1800, 6, caption="RAIN ACROSS THE TERRAIN"),
-                 target=[.55,.50,6000],pitch=-1.20),
+                 target=[.50,.50,4200],pitch=-1.30),
             dict(recipe("story-runoff", "runoff", 1800, 6600, 10, sweep=.26,
                    easing="eased", caption="DOWNHILL STREAMS"),target=[.76,.60,1800],pitch=-1.10),
             dict(recipe("story-collection", "collection", 6600, 9000, 8,
