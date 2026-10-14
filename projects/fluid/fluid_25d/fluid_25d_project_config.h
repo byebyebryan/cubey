@@ -95,6 +95,7 @@ struct Fluid25DProjectConfig {
     float native_camera_pitch_radians = -0.92F;
     float native_camera_yaw_radians = -0.52F;
     float native_camera_sweep_radians = 0.0F;
+    std::string native_camera_motion = "legacy";
     // Explicit observation recipe for any site; normalized cell-center coordinates.
     std::optional<float> native_camera_target_x{};
     std::optional<float> native_camera_target_z{};
@@ -707,6 +708,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Headless video-only total heading sweep with a mild zoom.", ValueType::Float,
                      {.has_min = true, .has_max = true, .min = 0.0, .max = 0.8}),
               config.native_camera_sweep_radians)
+        .bind(option("fluid25d.native_camera_motion", "--fluid25d-native-camera-motion",
+                     "Native Capture Motion",
+                     "Capture-only eased arc at fixed distance, or legacy sweep/zoom.",
+                     ValueType::Enum, {}, {"legacy", "eased"}),
+              config.native_camera_motion)
         .bind(option("fluid25d.native_camera_target_x", "--fluid25d-native-camera-target-x",
                      "Native Camera Target X", "Observation-only normalized site coordinate.",
                      ValueType::Float, {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
@@ -1046,6 +1052,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.native_camera_pitch") ||
          parsed.path_was_assigned("fluid25d.native_camera_yaw") ||
          parsed.path_was_assigned("fluid25d.native_camera_sweep") ||
+         parsed.path_was_assigned("fluid25d.native_camera_motion") ||
          parsed.path_was_assigned("fluid25d.native_camera_target_x") ||
          parsed.path_was_assigned("fluid25d.native_camera_target_z") ||
          parsed.path_was_assigned("fluid25d.native_camera_span_m") ||
@@ -1100,6 +1107,12 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         (!project_config.recording_path || !project_config.common.headless ||
          project_config.common.capture_mode != CaptureMode::Video))
         throw std::runtime_error("native camera sweep requires a headless recorded video");
+    if (project_config.native_camera_motion != "legacy" &&
+        (project_config.native_camera_sweep_radians <= 0.0F || !project_config.recording_path ||
+         !project_config.common.headless ||
+         project_config.common.capture_mode != CaptureMode::Video))
+        throw std::runtime_error(
+            "eased camera motion requires a positive headless recorded-video sweep");
     const unsigned camera_recipe_fields =
         unsigned(project_config.native_camera_target_x.has_value()) +
         unsigned(project_config.native_camera_target_z.has_value()) +

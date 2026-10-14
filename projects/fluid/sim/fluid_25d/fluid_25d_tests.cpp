@@ -7539,6 +7539,20 @@ void test_scenic_material_contract() {
                 study.native_camera_yaw_radians == 0.2F &&
                 study.native_camera_sweep_radians == 0.0F,
             "terrain diagnostic and heading remain render-only options");
+    require(study.native_camera_motion == "legacy", "legacy capture motion default changed");
+    const auto eased_capture =
+        parse_project({"fluid_25d", "--fluid25d-recording", "fixture", "--headless", "--capture",
+                       "video", "--frames", "480", "--fluid25d-native-camera-sweep", "0.26",
+                       "--fluid25d-native-camera-motion", "eased"});
+    require(eased_capture.native_camera_motion == "eased" &&
+                eased_capture.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "capture easing changed numerical policy");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-native-camera-motion", "eased"});
+        },
+        "eased camera accepted outside video capture");
     const auto camera_recipe = parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
                                               "--fluid25d-native-camera-target-x", "0.25",
                                               "--fluid25d-native-camera-target-z", "0.75",

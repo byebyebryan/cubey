@@ -1204,10 +1204,15 @@ class RecordingApp {
         float distance = orbit_.distance();
         if (config_.native_camera_sweep_radians > 0.0F) {
             const auto count = host::headless_capture_frame_count(config_.common);
+            const bool eased = config_.native_camera_motion == "eased";
             const float progress =
-                std::clamp(float(frame_index) / float(std::max(count, 2U) - 1U), 0.0F, 1.0F);
+                eased
+                    ? host::headless_capture_eased_progress(
+                          {.index = static_cast<std::uint32_t>(frame_index), .count = count})
+                    : std::clamp(float(frame_index) / float(std::max(count, 2U) - 1U), 0.0F, 1.0F);
             yaw += (progress - 0.5F) * config_.native_camera_sweep_radians;
-            distance *= 1.0F + 0.08F * std::sin(progress * std::numbers::pi_v<float>);
+            if (!eased)
+                distance *= 1.0F + 0.08F * std::sin(progress * std::numbers::pi_v<float>);
             std::printf(
                 "fluid_25d_terrain_camera: output_frame=%llu yaw=%.9f pitch=%.9f distance=%.9f\n",
                 static_cast<unsigned long long>(frame_index), yaw,
