@@ -134,6 +134,8 @@ struct TerrainProjectConfig {
     std::optional<float> captured_water_detail_focus_x_m{}, captured_water_detail_focus_z_m{};
     bool captured_water_visible = true;
     bool captured_water_context = false;
+    std::string captured_water_environment = "fixed";
+    float captured_water_cloud_shadow_strength = 0.18F;
     std::string captured_water_ground_view = "shaded";
     std::string terrain_readability = "refined";
     std::optional<float> captured_water_shadow_strength{};

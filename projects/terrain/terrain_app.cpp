@@ -20,6 +20,7 @@
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/imgui_helpers.h>
+#include <cubey/host/terrain_surface_environment_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/procedural/artifact_cache.h>
@@ -733,6 +734,7 @@ class TerrainApp {
                                     retire_after);
             prepare_capture_context(context.device(), context.gpu());
             if (capture_active_) {
+                capture_runtime_->advance_environment(timing.delta_seconds);
                 capture_orbit_.update_from_input(context.filtered_input(), timing.delta_seconds);
                 if (config_.captured_water_animate)
                     capture_animation_s_ += std::clamp(timing.delta_seconds, 0.0, 0.25);
@@ -917,6 +919,13 @@ class TerrainApp {
                     else if (config_.common.headless_render_only)
                         capture_review_s_ += std::clamp(frame.timing.delta_seconds, 0.0, 0.25);
                 }
+                if (frame.index > 0U)
+                    capture_runtime_->advance_environment(
+                        config_.common.headless_render_only
+                            ? frame.timing.delta_seconds
+                            : (config_.common.capture_mode == CaptureMode::Video
+                                   ? 1.0 / double(std::max(1U, config_.common.fps))
+                                   : 0.0));
                 if (config_.captured_water_animate) {
                     if (config_.common.capture_mode == CaptureMode::Video)
                         capture_animation_s_ =
@@ -1271,8 +1280,23 @@ class TerrainApp {
                             "Core-focused 4096 shadow; far-context shadows unqualified.");
                     }
                     ImGui::TextDisabled(
-                        "Clouds disabled: composed water has no cloud-consumable depth.");
+                        "Clouds preserve opaque terrain; no aerial cloud-top rendering.");
                     ImGui::TextDisabled("No radial terrain or radial shadow casters in this view.");
+                    ImGui::TreePop();
+                }
+                if (ImGui::TreeNode("Environment (render only)")) {
+                    if (!capture_runtime_->environment()) {
+                        if (ImGui::Button("Enable shared day/night and weather"))
+                            capture_runtime_->enable_environment(
+                                {config_.atmosphere, config_.clouds,
+                                 config_.captured_water_cloud_shadow_strength});
+                    } else {
+                        ImGui::Checkbox("Shared day/night and weather",
+                                        &capture_runtime_->environment_enabled());
+                        if (capture_runtime_->environment_enabled())
+                            cubey::host::draw_terrain_surface_environment_controls(
+                                *capture_runtime_->environment());
+                    }
                     ImGui::TreePop();
                 }
                 ImGui::End();

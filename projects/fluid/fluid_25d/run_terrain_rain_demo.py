@@ -155,7 +155,12 @@ def worker_command(case, session, speed=60):
 def viewer_command(case, source, title, width=1920, height=1080, profile=None, live=True, start=0,
                    surface="correlated", camera="overview", app=None, surface_subdivision=2,
                    render_fps=None, control=None, headless_seconds=None, switch_script=None,
-                   no_validation=False, shadow_projection="scene"):
+                   no_validation=False, shadow_projection="scene", environment="fixed",
+                   environment_time_hours=None, environment_cycle_speed=0, clouds=False,
+                   cloud_weather="surface-volume", cloud_quality="full", cloud_shadow_strength=.18,
+                   profile_sample_interval=10):
+    if not isinstance(profile_sample_interval, int) or not 1 <= profile_sample_interval <= 12000:
+        raise ValueError("profile sample interval must be an integer in 1..12000")
     if surface_subdivision not in (1, 2):
         raise ValueError("study display subdivision must be 1 or 2")
     if shadow_projection not in ("legacy", "scene"):
@@ -188,7 +193,7 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
                     "--fluid25d-recording-time-seconds", str(start)]
     if profile:
         command += ["--profile-output", str(profile), "--profile-warmup-frames", "120",
-                    "--profile-sample-interval", "10", "--profile-max-frames", "12000"]
+                    "--profile-sample-interval", str(profile_sample_interval), "--profile-max-frames", "12000"]
     if control is not None:
         if not live:
             raise ValueError("managed terrain switching requires live service mode")
@@ -204,7 +209,41 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
         command += ["--fluid25d-recording-gpu-validation"]
     if no_validation:
         command += ["--no-validation"]
+    if environment not in ("fixed","shared"):
+        raise ValueError("unknown environment mode")
+    if not math.isfinite(environment_cycle_speed) or not 0 <= environment_cycle_speed <= 1:
+        raise ValueError("environment cycle speed must be in 0..1 hours per wall second")
+    if environment_time_hours is not None and (not math.isfinite(environment_time_hours) or not 0 <= environment_time_hours <= 24):
+        raise ValueError("environment time must be in 0..24 hours")
+    if not math.isfinite(cloud_shadow_strength) or not 0 <= cloud_shadow_strength <= 1:
+        raise ValueError("cloud shadow strength must be in 0..1")
+    if environment=="fixed" and (clouds or environment_time_hours is not None or environment_cycle_speed):
+        raise ValueError("weather/time options require the shared environment")
+    if environment=="shared":
+        command += ["--fluid25d-environment","shared","--time-speed-hours-per-second",str(environment_cycle_speed),
+            "--set","atmosphere.time_paused="+("false" if environment_cycle_speed else "true"),
+            "--fluid25d-cloud-shadow-strength",str(cloud_shadow_strength)]
+        if environment_time_hours is not None or environment_cycle_speed:
+            command += ["--time-of-day-mode","solar","--time-hours",str(environment_time_hours if environment_time_hours is not None else 12)]
+        if clouds:
+            command += ["--clouds","--cloud-weather-preset",cloud_weather,"--cloud-quality",cloud_quality]
     return command
+
+
+def add_environment_arguments(p):
+    p.add_argument("--environment",choices=("fixed","shared"),default="fixed")
+    p.add_argument("--environment-time-hours",type=float)
+    p.add_argument("--environment-cycle-speed",type=float,default=0,
+                   help="render-only hours per wall second, independent of solver pace")
+    p.add_argument("--clouds",action="store_true")
+    p.add_argument("--cloud-weather",choices=("surface-volume","broken-cumulus","overcast-stratus"),default="surface-volume")
+    p.add_argument("--cloud-quality",choices=("quarter","half","full"),default="full")
+    p.add_argument("--cloud-shadow-strength",type=float,default=.18)
+
+
+def environment_options(args):
+    return {name:getattr(args,name) for name in ("environment","environment_time_hours",
+        "environment_cycle_speed","clouds","cloud_weather","cloud_quality","cloud_shadow_strength")}
 
 
 def parser():
@@ -231,7 +270,10 @@ def parser():
     p.add_argument("--run-seconds", type=float, default=60, help="bounded headless wall duration, default 60 s")
     p.add_argument("--switch-script", type=Path, help="headless-only managed-control regression script")
     p.add_argument("--profile-output", type=Path)
+    p.add_argument("--profile-sample-interval", type=int, default=10,
+                   help="use 1 to include intermittent sky/cloud capture bursts")
     p.add_argument("--no-validation", action="store_true", help="explicit profiling override")
+    add_environment_arguments(p)
     p.add_argument("--out", type=Path, help="fresh owned launcher leaf under outputs/fluid")
     return p
 
@@ -275,9 +317,11 @@ def main(argv=None):
                                          live=a.mode == "live", surface=a.surface, app=a.app,
                                          surface_subdivision=a.surface_subdivision, camera=a.camera,
                                          render_fps=a.render_fps, profile=a.profile_output,
+                                         profile_sample_interval=a.profile_sample_interval,
                                          control=preview / "control" if a.mode == "live" else None,
                                          headless_seconds=a.run_seconds if a.headless else None,
-                                         switch_script=a.switch_script, no_validation=a.no_validation)}
+                                         switch_script=a.switch_script, no_validation=a.no_validation,
+                                         **environment_options(a))}
     if a.mode == "live":
         commands["worker"] = worker_command(case, session)
     print(json.dumps(identity, indent=2))
@@ -319,9 +363,11 @@ def main(argv=None):
                 live=a.mode == "live", start=saved, surface=a.surface, app=a.app,
                 surface_subdivision=a.surface_subdivision, camera=a.camera,
                 render_fps=a.render_fps, profile=a.profile_output,
+                profile_sample_interval=a.profile_sample_interval,
                 control=supervisor.control if supervisor else None,
                 headless_seconds=a.run_seconds if a.headless else None,
-                switch_script=a.switch_script, no_validation=a.no_validation), stdout=vlog,
+                switch_script=a.switch_script, no_validation=a.no_validation,
+                **environment_options(a)), stdout=vlog,
                 stderr=subprocess.STDOUT, start_new_session=True, env=environment)
             owned.append(viewer)
             print("Live starts dry/paused; Start/Space resumes. Closing this managed demo stops its owned worker."

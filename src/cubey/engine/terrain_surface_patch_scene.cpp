@@ -896,37 +896,45 @@ void TerrainSurfacePatchScene::record(
              material.water_whitewater_radius_m, material.water_whitewater_lift_m},
             {float(target.extent.width), float(target.extent.height), push.terrain_palette.w,
              material.water_whitewater_speed}};
-        graph.add_pass("scenic whitewater (render only)", render::RenderGraphQueueDomain::Graphics)
-            .read_storage_buffer(bed)
-            .read_storage_buffer(h)
-            .read_storage_buffer(flow)
-            .read_storage_buffer(u)
-            .read_storage_buffer(mask)
-            .read_storage_buffer(seeds, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)
-            .read_texture(depth)
-            .read_texture(shadow_depth)
-            .read_write_color(composed)
-            .execute([&, whitewater_push, fields, set, composed, seeds_set,
-                      seed_count](const auto& ctx) {
-                vulkan::GpuTimestampScope timing(profiler, commands, slot.index,
-                                                 "fluid_25d scenic whitewater");
-                render::record_render_target_pass(
-                    ctx.recorder(),
-                    render::render_target_view(render::resolved_color_target_view(ctx, composed)),
-                    {}, {.color = vulkan::load_store_attachment_ops()}, [&](const auto& r) {
-                        const auto& p = *s.whitewater;
-                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
-                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U,
-                                              fields);
-                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U, set);
-                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 2U,
-                                              seeds_set);
-                        r.push_constants(p.layout(),
-                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                         0U, whitewater_push);
-                        r.draw(6U, seed_count);
-                    });
-            });
+        auto& whitewater_pass =
+            graph
+                .add_pass("scenic whitewater (render only)",
+                          render::RenderGraphQueueDomain::Graphics)
+                .read_storage_buffer(bed)
+                .read_storage_buffer(h)
+                .read_storage_buffer(flow)
+                .read_storage_buffer(u)
+                .read_storage_buffer(mask)
+                .read_storage_buffer(seeds, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)
+                .read_texture(depth)
+                .read_texture(shadow_depth)
+                .read_write_color(composed)
+                .execute([&, whitewater_push, fields, set, composed, seeds_set,
+                          seed_count](const auto& ctx) {
+                    vulkan::GpuTimestampScope timing(profiler, commands, slot.index,
+                                                     "fluid_25d scenic whitewater");
+                    render::record_render_target_pass(
+                        ctx.recorder(),
+                        render::render_target_view(
+                            render::resolved_color_target_view(ctx, composed)),
+                        {}, {.color = vulkan::load_store_attachment_ops()}, [&](const auto& r) {
+                            const auto& p = *s.whitewater;
+                            r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
+                            r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U,
+                                                  fields);
+                            r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U,
+                                                  set);
+                            r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 2U,
+                                                  seeds_set);
+                            r.push_constants(p.layout(),
+                                             VK_SHADER_STAGE_VERTEX_BIT |
+                                                 VK_SHADER_STAGE_FRAGMENT_BIT,
+                                             0U, whitewater_push);
+                            r.draw(6U, seed_count);
+                        });
+                });
+        if (cloud_shadow)
+            whitewater_pass.read_texture(cloud_shadow->transmittance);
     }
     // Blend into existing linear HDR before the one display transform. Opaque
     // depth is sampled, not attached: water does not write that depth, so the

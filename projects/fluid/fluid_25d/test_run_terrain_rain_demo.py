@@ -80,6 +80,33 @@ class Commands(unittest.TestCase):
         command = terrain.viewer_command(Path("/case"), Path("/session"), "test", camera="collection")
         self.assertEqual(command[command.index("--fluid25d-recording-camera") + 1], "collection")
 
+    def test_environment_is_opt_in_and_independent_of_solver(self):
+        args=terrain.parser().parse_args(["--study","/study"])
+        self.assertEqual(args.environment,"fixed")
+        original=terrain.viewer_command(Path("/case"),Path("/session"),"test")
+        self.assertNotIn("--fluid25d-environment",original)
+        shared=terrain.viewer_command(Path("/case"),Path("/session"),"test",
+            environment="shared",environment_time_hours=12,environment_cycle_speed=.5,
+            clouds=True,cloud_quality="half")
+        self.assertEqual(shared[shared.index("--fluid25d-environment")+1],"shared")
+        self.assertIn("atmosphere.time_paused=false",shared)
+        self.assertIn("--clouds",shared)
+        self.assertNotIn("--fluid25d-rain-rate",shared)
+        worker=terrain.worker_command(Path("/case"),Path("/session"))
+        self.assertFalse(any("environment" in arg or "cloud" in arg for arg in worker))
+        self.assertEqual(worker[worker.index("--speed")+1],"60")
+        for options in ({"clouds":True},{"environment":"shared","environment_cycle_speed":float("nan")},
+                        {"environment":"shared","environment_time_hours":25}):
+            with self.assertRaises(ValueError): terrain.viewer_command(Path("/case"),Path("/session"),"test",**options)
+
+    def test_frame_by_frame_profiling_is_explicit(self):
+        cmd=terrain.viewer_command(Path("/case"),Path("/session"),"test",
+            profile=Path("/profile"),profile_sample_interval=1)
+        self.assertEqual(cmd[cmd.index("--profile-sample-interval")+1],"1")
+        for interval in (0,12001,1.5):
+            with self.assertRaises(ValueError):
+                terrain.viewer_command(Path("/case"),Path("/session"),"test",profile_sample_interval=interval)
+
     def test_managed_headless_commands_are_explicit(self):
         command = terrain.viewer_command(Path("/case"), Path("/session"), "test",
             control=Path("/control"), headless_seconds=120, switch_script=Path("/script.json"))

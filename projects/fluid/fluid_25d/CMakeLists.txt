@@ -1,4 +1,6 @@
 cubey_atmosphere_shader_depends(CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS)
+cubey_cloud_layer_shader_sources(CUBEY_FLUID25D_CLOUD_SHADERS COMPOSITE background-depth)
+cubey_cloud_layer_shader_depends(CUBEY_FLUID25D_CLOUD_DEPENDS)
 # Consume foundation climate and surface semantics, not project-relative sources.
 add_library(cubey_fluid25d_terrain_surface STATIC
     ../sim/fluid_25d/fluid_25d_terrain_surface.cpp)
@@ -36,6 +38,8 @@ cubey_add_app_target(
         ../sim/fluid_25d/fluid_25d_ui.cpp
         main.cpp
     SHADERS
+        ${CUBEY_FLUID25D_CLOUD_SHADERS}
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_environment.comp"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
@@ -87,6 +91,7 @@ cubey_add_app_target(
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
+        ${CUBEY_FLUID25D_CLOUD_DEPENDS}
         ${CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS}
         "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
@@ -275,6 +280,9 @@ if (BUILD_TESTING)
         add_test(NAME fluid_25d_patch_only_review_helpers
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B "${CMAKE_CURRENT_SOURCE_DIR}/test_review_patch_only_v1.py")
         set_tests_properties(fluid_25d_patch_only_review_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
+        add_test(NAME fluid_25d_environment_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B "${CMAKE_CURRENT_SOURCE_DIR}/test_review_environment_v1.py")
+        set_tests_properties(fluid_25d_environment_review_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
         add_test(NAME fluid_25d_terrain_site_catalogue
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_terrain_water_sites.py)

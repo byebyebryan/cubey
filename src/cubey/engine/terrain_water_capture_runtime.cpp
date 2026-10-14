@@ -484,6 +484,7 @@ void TerrainWaterCaptureRuntime::verify_immutable_fields(vulkan::GpuRuntime& gpu
             throw std::runtime_error("captured water immutable GPU fields changed");
     }
     std::printf("terrain_water_capture_immutable: GPU bed/depth/decoded-velocity exact; "
-                "hydraulic_dispatches=0; no radial_ground; clouds_disabled\n");
+                "hydraulic_dispatches=0; no radial_ground; environment=%s\n",
+                s.weather && s.weather_enabled ? "shared" : "fixed");
 }
 } // namespace cubey

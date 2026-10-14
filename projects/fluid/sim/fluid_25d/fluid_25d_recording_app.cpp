@@ -17,8 +17,12 @@
 #include "fluid_25d_terrain_surface.h"
 
 #include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/engine/terrain_surface_environment.h>
+#include <cubey/host/atmosphere_environment_ui.h>
+#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/performance_ui.h>
+#include <cubey/host/terrain_surface_environment_ui.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/scene/camera_3d.h>
@@ -915,6 +919,8 @@ class RecordingApp {
     }
 
     void update_view(double wall_delta_s) {
+        if (weather_ && config_.environment_mode == "shared")
+            weather_->advance(std::max(0.0, wall_delta_s));
         if (managed_held_) {
             visual_delta_ = 0.0;
             pace_meter_.sample(0, shown_->time_s, false);
@@ -1034,7 +1040,7 @@ class RecordingApp {
                                      scenic_material_.daylight_environment > 0.5F) &&
             external_session_)
             external_refresh_after_render_setup_ = true;
-        if (scenic_material_.daylight_environment > 0.5F &&
+        if (scenic_material_.daylight_environment > 0.5F && config_.environment_mode == "fixed" &&
             !daylight_runtime_.resources_created()) {
             const auto setup_started = std::chrono::steady_clock::now();
             // Fixed daytime spike reuses Water3D's shared runtime. No clouds,
@@ -1061,6 +1067,17 @@ class RecordingApp {
                         "probe captured once; no clouds or ongoing updates\n",
                         setup_ms);
             if (external_session_)
+                external_refresh_after_render_setup_ = true;
+        }
+        if (config_.environment_mode == "shared" && !defer_weather_setup_) {
+            if (!weather_)
+                weather_ =
+                    std::make_unique<TerrainSurfaceEnvironment>(TerrainSurfaceEnvironmentSettings{
+                        config_.atmosphere, config_.clouds, config_.cloud_shadow_strength,
+                        config_.cloud_background, config_.cloud_reflections});
+            if (weather_->ensure_resources(device, *scenic_gpu_, scenic_slots_, target,
+                                           CUBEY_FLUID_25D_SHADER_DIR) &&
+                external_session_)
                 external_refresh_after_render_setup_ = true;
         }
     }
@@ -1295,7 +1312,24 @@ class RecordingApp {
             ensure_scenic_resources(device, target);
             prepare_whitewater_sources();
             std::optional<Fluid25DScenicEnvironment> environment;
-            if (scenic_material_.daylight_environment > 0.5F) {
+            std::optional<TerrainSurfaceWeatherFrame> weather_frame;
+            if (config_.environment_mode == "shared") {
+                const auto view = camera(target.extent, frame_index);
+                weather_frame = weather_->frame(
+                    device, *scenic_gpu_, vulkan::CommandRecorder(commands), slot, target,
+                    {view.view_projection, view.position}, scenic_.fallback_environment());
+                environment = weather_frame->environment;
+                if (profile) {
+                    profile->record_metric(frame_index, "fluid_25d.environment", "wall_s",
+                                           weather_frame->elapsed_s);
+                    profile->record_metric(frame_index, "fluid_25d.environment", "time_hours",
+                                           weather_frame->time_hours);
+                    profile->record_metric(frame_index, "fluid_25d.environment", "sky_generation",
+                                           double(weather_frame->sky_generation));
+                    profile->record_metric(frame_index, "fluid_25d.environment", "cloud_generation",
+                                           double(weather_frame->cloud_generation));
+                }
+            } else if (scenic_material_.daylight_environment > 0.5F) {
                 // Fixed sky: capture once, no ongoing updates or transitions.
                 daylight_runtime_.record_pending_update(vulkan::CommandRecorder(commands), slot);
                 environment.emplace(Fluid25DScenicEnvironment{
@@ -1315,7 +1349,8 @@ class RecordingApp {
                            fluid_25d_scenic_water_view(config_.native_scenic_water_view),
                            fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode),
                            environment ? &*environment : nullptr, rain_visual_frame(),
-                           whitewater_selection_.seeds, whitewater_generation_);
+                           whitewater_selection_.seeds, whitewater_generation_,
+                           weather_frame ? &*weather_frame : nullptr);
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1510,6 +1545,8 @@ class RecordingApp {
         graph_.clear();
         scenic_.destroy();
         daylight_runtime_.destroy();
+        if (weather_)
+            weather_->destroy();
         daylight_atlases_.reset();
         native_profiler_.reset();
         coverage_profiler_.reset();
@@ -1609,6 +1646,16 @@ class RecordingApp {
     }
 
     void draw_native_presentation_ui() {
+        if (ImGui::TreeNode("Environment (render only)")) {
+            bool shared = config_.environment_mode == "shared";
+            if (ImGui::Checkbox("Shared day/night and weather", &shared))
+                config_.environment_mode = shared ? "shared" : "fixed";
+            if (shared && weather_)
+                host::draw_terrain_surface_environment_controls(*weather_);
+            if (!shared)
+                ImGui::TextDisabled("Accepted fixed daylight reference. No environment clock.");
+            ImGui::TreePop();
+        }
         int style = static_cast<int>(render_.native_presentation);
         ImGui::SetNextItemWidth(-100.0F);
         if (ImGui::Combo("Style", &style,
@@ -1807,6 +1854,7 @@ class RecordingApp {
                 ImGui::TextWrapped(
                     "Wind ripples are decorative normal detail, not simulated water motion.");
                 bool shared_daylight = scenic_material_.daylight_environment > 0.5F;
+                ImGui::BeginDisabled(config_.environment_mode == "shared");
                 if (ImGui::Checkbox("Shared fixed daylight", &shared_daylight)) {
                     scenic_material_.daylight_environment = shared_daylight ? 1.0F : 0.0F;
                     edited = true;
@@ -1814,7 +1862,12 @@ class RecordingApp {
                 if (shared_daylight) {
                     edited |= ImGui::SliderFloat("Daylight exposure (EV)",
                                                  &scenic_material_.daylight_exposure, -6.0F, 4.0F);
-                    edited |= ImGui::SliderFloat("Daylight sun strength",
+                }
+                ImGui::EndDisabled();
+                if (shared_daylight || config_.environment_mode == "shared") {
+                    edited |= ImGui::SliderFloat(config_.environment_mode == "shared"
+                                                     ? "Direct-light artistic gain"
+                                                     : "Daylight sun strength",
                                                  &scenic_material_.daylight_sun_scale, 0.0F, 2.0F);
                     ImGui::TextWrapped("Sky diffuse and reflections share one captured atmosphere. "
                                        "Sun strength is an artistic balance, not rainfall.");
@@ -2782,6 +2835,8 @@ class RecordingApp {
     void record_headless_frame(host::HeadlessPngContext& context,
                                const host::HeadlessCaptureFrame& frame, VkCommandBuffer commands,
                                const host::HeadlessRenderTarget& target) {
+        if (!config_.common.headless_render_only && weather_ && frame.index > 0U)
+            weather_->advance(1.0 / double(config_.common.fps));
         if (config_.common.headless_render_only) {
             record(context.device(), commands, target, frame.frame_slot,
                    Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(),
@@ -2939,6 +2994,8 @@ class RecordingApp {
     std::optional<Fluid25DTerrainSurface> terrain_surface_;
     Fluid25DScenicMaterial scenic_material_;
     AtmosphereEnvironmentRuntime daylight_runtime_;
+    std::unique_ptr<TerrainSurfaceEnvironment> weather_;
+    bool defer_weather_setup_ = false;
     std::optional<render::AtmosphereBackgroundAtlasResources> daylight_atlases_;
     bool scenic_material_edited_ = false;
     vulkan::GpuRuntime* scenic_gpu_ = nullptr;
@@ -3133,6 +3190,8 @@ void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, s
                 throw std::runtime_error("replacement scene is not the selected dry session");
             replacement->render_ = render;
             replacement->scenic_material_ = material;
+            // Pending GPU uploads must not mutate the active weather runtime.
+            replacement->defer_weather_setup_ = true;
             replacement->view_ = view;
             replacement->catchment_view_ = reading;
             replacement->debug_view_ = debug;
@@ -3178,6 +3237,10 @@ void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, s
                     replacement->target_ = active_->target_;
                 }
                 retirement_started = true;
+                // All active frame submissions have retired; one controller
+                // survives the swap, with no parallel weather descriptor writes.
+                replacement->weather_ = std::move(active_->weather_);
+                replacement->defer_weather_setup_ = false;
                 active_->shutdown(); // Drains reader/whitewater jobs before their bed is released.
                 if (active_->shutdown_failure_) {
                     replacement->shutdown();

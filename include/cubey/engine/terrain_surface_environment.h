@@ -21,6 +21,8 @@ struct TerrainSurfaceWeatherFrame {
     std::optional<CloudEnvironmentRuntimeFrame> cloud_frame;
     float shadow_strength = 0.0F;
     bool cloud_background = true;
+    double elapsed_s = 0.0, time_hours = 0.0;
+    std::uint64_t sky_generation = 0U, cloud_generation = 0U;
 };
 [[nodiscard]] render::ViewRayBasis3D
 terrain_surface_environment_view_rays(const render::TerrainSurfacePatchCamera& camera);

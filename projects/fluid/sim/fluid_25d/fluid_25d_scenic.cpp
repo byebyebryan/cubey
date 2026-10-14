@@ -68,7 +68,7 @@ void Fluid25DScenic::record(
     Fluid25DMotionMarkers* markers, float fraction, bool profile, bool reset, unsigned terrain_view,
     unsigned water_view, unsigned surface_mode, const Fluid25DScenicEnvironment* environment,
     Fluid25DRainVisualFrame rain, std::span<const Fluid25DWhitewaterSeed> seeds,
-    std::uint64_t generation) {
+    std::uint64_t generation, const TerrainSurfaceWeatherFrame* weather) {
     const auto overlay = [&](const vulkan::CommandRecorder& r) {
         if (markers)
             markers->record_draw(r.handle(), f.current_depth_is_a(), camera.view_projection,
@@ -84,6 +84,6 @@ void Fluid25DScenic::record(
         fields(f), grid(c), {camera.view_projection, camera.position}, options(o), clock,
         source_material, overlay, profile, reset, terrain_view, water_view, surface_mode,
         environment, {rain.streak_count, rain.clock_s, rain.motion_s, rain.applied_mm_per_hour},
-        seeds, generation);
+        seeds, generation, nullptr, weather);
 }
 } // namespace cubey::projects::fluid::fluid_25d

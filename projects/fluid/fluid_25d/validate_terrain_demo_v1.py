@@ -78,6 +78,8 @@ def main():
                         help="exclude this many seconds after first running sample from timings")
     parser.add_argument("--no-validation", action="store_true",
                         help="explicit matched profiling override; lifecycle trials retain validation")
+    parser.add_argument("--profile-sample-interval", type=int, default=10)
+    demo.add_environment_arguments(parser)
     args = parser.parse_args()
     if not math.isfinite(args.seconds) or not 1 <= args.seconds <= 3600:
         parser.error("seconds must be 1..3600")
@@ -93,7 +95,14 @@ def main():
         "--study", str(args.study.resolve()), "--out", str(trial), "--headless",
         "--run-seconds", str(args.seconds), "--width", str(args.width), "--height", str(args.height),
         "--switch-script", str(args.script.resolve()), "--profile-output", str(trial / "profile")]
+    command += ["--profile-sample-interval",str(args.profile_sample_interval)]
     command += ["--site", args.site, "--configuration", args.configuration]
+    command += ["--environment",args.environment,"--environment-cycle-speed",str(args.environment_cycle_speed),
+        "--cloud-weather",args.cloud_weather,"--cloud-quality",args.cloud_quality,
+        "--cloud-shadow-strength",str(args.cloud_shadow_strength)]
+    if args.environment_time_hours is not None:
+        command += ["--environment-time-hours",str(args.environment_time_hours)]
+    if args.clouds: command.append("--clouds")
     if args.site_catalogue:
         command += ["--site-catalogue", str(args.site_catalogue.resolve(strict=True))]
     if args.no_validation:

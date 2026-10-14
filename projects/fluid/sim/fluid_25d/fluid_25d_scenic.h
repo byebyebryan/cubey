@@ -5,6 +5,7 @@
 #include "fluid_25d_scenic_material.h"
 #include "fluid_25d_terrain_surface.h"
 #include "fluid_25d_whitewater.h"
+#include <cubey/engine/terrain_surface_environment.h>
 #include <cubey/render/atmosphere_environment.h>
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/terrain_surface_patch_scene.h>
@@ -44,7 +45,8 @@ class Fluid25DScenic {
                 const Fluid25DScenicEnvironment* environment = nullptr,
                 Fluid25DRainVisualFrame rain = {},
                 std::span<const Fluid25DWhitewaterSeed> whitewater_seeds = {},
-                std::uint64_t whitewater_generation = 0U);
+                std::uint64_t whitewater_generation = 0U,
+                const TerrainSurfaceWeatherFrame* weather = nullptr);
 
   private:
     struct State;
