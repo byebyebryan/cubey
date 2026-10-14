@@ -7557,6 +7557,21 @@ void test_scenic_material_contract() {
                 shadow_control.simulation.solver == Fluid25DSolver::VirtualPipes,
             "shadow control changed numerical defaults");
     require(shadow_control.native_terrain_context == "off", "Fluid must default to patch-only");
+    require(shadow_control.environment_mode == "fixed", "environment default changed");
+    const auto daynight = parse_project(
+        {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-presentation", "scenic",
+         "--fluid25d-environment", "shared", "--time-of-day-mode", "solar", "--time-hours", "12"});
+    require(daynight.environment_mode == "shared" && daynight.atmosphere.time_hours == 12.0F,
+            "clear day/night controls were removed with clouds");
+    for (const auto* flag :
+         {"--clouds", "--fluid25d-cloud-background", "--no-fluid25d-cloud-reflections"})
+        require_throws(
+            [&] {
+                (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                     "--fluid25d-native-presentation", "scenic",
+                                     "--fluid25d-environment", "shared", flag});
+            },
+            "retired elevated-view cloud flag accepted");
     require(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
                            "--fluid25d-native-presentation", "scenic",
                            "--fluid25d-native-terrain-context", "off"})

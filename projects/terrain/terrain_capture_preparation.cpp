@@ -43,8 +43,7 @@ prepare_terrain_capture(const TerrainProjectConfig& config, const std::filesyste
     if (config.captured_water_shadow_strength)
         runtime->set_shadow_strength(*config.captured_water_shadow_strength);
     if (config.captured_water_environment == "shared")
-        runtime->enable_environment(
-            {config.atmosphere, config.clouds, config.captured_water_cloud_shadow_strength});
+        runtime->enable_environment({config.atmosphere});
     if (config.captured_water_context)
         runtime->prepare_context(
             config.captured_water_context_source.value_or(std::filesystem::path{}),

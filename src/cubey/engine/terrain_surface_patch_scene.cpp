@@ -61,7 +61,7 @@ struct DaylightPush {
 };
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
-static_assert(sizeof(Uniforms) == 464U);
+static_assert(sizeof(Uniforms) == 432U);
 static_assert(offsetof(Uniforms, terrain_macro) == 240U);
 static_assert(offsetof(Uniforms, water_view) == 272U);
 static_assert(offsetof(Uniforms, terrain_surface) == 288U);
@@ -596,19 +596,6 @@ void TerrainSurfacePatchScene::record(
          .environment_blend = env.prefiltered_blend},
         material);
     render::RenderGraphBuilder graph;
-    std::optional<render::CloudLayerShadowProduct> cloud_shadow;
-    if (weather && weather->clouds && weather->cloud_frame && weather->shadow_strength > 0.0F) {
-        const float half = .5F * s.domain_m;
-        cloud_shadow = weather->clouds->declare_shadow_product(
-            graph, slot,
-            {.receiver_center = shadow_center,
-             .half_extent_m = half,
-             .direct_light_direction = direction,
-             .direct_light_intensity = environment->lighting.primary_light_intensity});
-        uniforms.environment_transition.z = weather->shadow_strength;
-        uniforms.cloud_world_to_uv_x = cloud_shadow->world_to_uv_x;
-        uniforms.cloud_world_to_uv_y = cloud_shadow->world_to_uv_y;
-    }
     s.frame->upload(slot, uniforms);
     const auto final_state = present ? render::render_graph_present_texture_state()
                                      : render::render_graph_color_attachment_texture_state();
@@ -770,18 +757,7 @@ void TerrainSurfacePatchScene::record(
         opaque_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
     if (fixed)
         opaque_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
-    if (cloud_shadow)
-        opaque_pass.read_texture(cloud_shadow->transmittance);
-    auto refraction_source = opaque;
-    std::optional<render::CloudLayerRuntimeFrame> cloud_product;
-    if (weather && weather->clouds && weather->cloud_frame && weather->cloud_background) {
-        cloud_product =
-            weather->clouds->declare_surface_product(graph, slot, *weather->cloud_frame);
-        refraction_source = graph.create_texture(
-            texture("scenic cloudy background HDR", target.extent, kHdrFormat));
-        weather->clouds->declare_surface_composite(graph, refraction_source, *cloud_product, slot,
-                                                   opaque, depth);
-    }
+    const auto refraction_source = opaque;
     auto water_pass = graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics);
     if (fixed)
         water_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
@@ -814,8 +790,6 @@ void TerrainSurfacePatchScene::record(
                     }
                 });
         });
-    if (cloud_shadow)
-        water_pass.read_texture(cloud_shadow->transmittance);
     // Render-only whitewater. OFF adds no pipeline, pass, target or native write.
     if (options.water_visible && material.water_whitewater_strength > 0.0F &&
         !whitewater_seeds.empty() && terrain_view == 0U && full_water_shading) {
@@ -896,45 +870,37 @@ void TerrainSurfacePatchScene::record(
              material.water_whitewater_radius_m, material.water_whitewater_lift_m},
             {float(target.extent.width), float(target.extent.height), push.terrain_palette.w,
              material.water_whitewater_speed}};
-        auto& whitewater_pass =
-            graph
-                .add_pass("scenic whitewater (render only)",
-                          render::RenderGraphQueueDomain::Graphics)
-                .read_storage_buffer(bed)
-                .read_storage_buffer(h)
-                .read_storage_buffer(flow)
-                .read_storage_buffer(u)
-                .read_storage_buffer(mask)
-                .read_storage_buffer(seeds, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)
-                .read_texture(depth)
-                .read_texture(shadow_depth)
-                .read_write_color(composed)
-                .execute([&, whitewater_push, fields, set, composed, seeds_set,
-                          seed_count](const auto& ctx) {
-                    vulkan::GpuTimestampScope timing(profiler, commands, slot.index,
-                                                     "fluid_25d scenic whitewater");
-                    render::record_render_target_pass(
-                        ctx.recorder(),
-                        render::render_target_view(
-                            render::resolved_color_target_view(ctx, composed)),
-                        {}, {.color = vulkan::load_store_attachment_ops()}, [&](const auto& r) {
-                            const auto& p = *s.whitewater;
-                            r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
-                            r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U,
-                                                  fields);
-                            r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U,
-                                                  set);
-                            r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 2U,
-                                                  seeds_set);
-                            r.push_constants(p.layout(),
-                                             VK_SHADER_STAGE_VERTEX_BIT |
-                                                 VK_SHADER_STAGE_FRAGMENT_BIT,
-                                             0U, whitewater_push);
-                            r.draw(6U, seed_count);
-                        });
-                });
-        if (cloud_shadow)
-            whitewater_pass.read_texture(cloud_shadow->transmittance);
+        graph.add_pass("scenic whitewater (render only)", render::RenderGraphQueueDomain::Graphics)
+            .read_storage_buffer(bed)
+            .read_storage_buffer(h)
+            .read_storage_buffer(flow)
+            .read_storage_buffer(u)
+            .read_storage_buffer(mask)
+            .read_storage_buffer(seeds, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)
+            .read_texture(depth)
+            .read_texture(shadow_depth)
+            .read_write_color(composed)
+            .execute([&, whitewater_push, fields, set, composed, seeds_set,
+                      seed_count](const auto& ctx) {
+                vulkan::GpuTimestampScope timing(profiler, commands, slot.index,
+                                                 "fluid_25d scenic whitewater");
+                render::record_render_target_pass(
+                    ctx.recorder(),
+                    render::render_target_view(render::resolved_color_target_view(ctx, composed)),
+                    {}, {.color = vulkan::load_store_attachment_ops()}, [&](const auto& r) {
+                        const auto& p = *s.whitewater;
+                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, p.pipeline());
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 0U,
+                                              fields);
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 1U, set);
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, p.layout(), 2U,
+                                              seeds_set);
+                        r.push_constants(p.layout(),
+                                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0U, whitewater_push);
+                        r.draw(6U, seed_count);
+                    });
+            });
     }
     // Blend into existing linear HDR before the one display transform. Opaque
     // depth is sampled, not attached: water does not write that depth, so the
@@ -1025,18 +991,6 @@ void TerrainSurfacePatchScene::record(
                                                     : daylight.handle(),
                 environment && environment->dynamic ? environment->irradiance_bytes
                                                     : daylight.size());
-            if (cloud_shadow) {
-                weather->clouds->update_shadow_descriptors(device, slot, compiled, images,
-                                                           *cloud_shadow);
-                const auto image = render::resolved_sampled_texture_view(
-                    compiled, images, cloud_shadow->transmittance);
-                writer.combined_image_sampler(16U, weather->clouds->shadow_sampler().handle(),
-                                              image.view, image.layout);
-            } else
-                writer.combined_image_sampler(16U, s.detail->sampler().handle(), s.detail->view());
-            if (cloud_product)
-                weather->clouds->update_surface_descriptors(device, slot, compiled, images,
-                                                            *cloud_product, opaque, depth);
             writer.combined_image_sampler(
                 10U,
                 s.terrain_diffuse ? s.terrain_diffuse->sampler().handle() : env.irradiance_sampler,
@@ -1060,7 +1014,5 @@ void TerrainSurfacePatchScene::record(
             }
             writer.update(device);
         });
-    if (cloud_product)
-        weather->clouds->complete_surface_frame(slot, *cloud_product);
 }
 } // namespace cubey

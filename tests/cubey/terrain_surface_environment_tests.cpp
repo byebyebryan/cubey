@@ -17,7 +17,6 @@ void clocks_and_presets() {
     cubey::TerrainSurfaceEnvironment environment;
     const auto original = cubey::render::terrain_surface_patch_fixed_daylight();
     require(!environment.atmosphere().time_playing, "environment must start paused");
-    require(!environment.clouds().enabled, "clouds must be explicitly enabled");
     close(environment.atmosphere().environment.sun_elevation_degrees,
           original.sun_elevation_degrees, "reference sun changed");
     environment.advance(2.0);

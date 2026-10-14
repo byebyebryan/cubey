@@ -301,8 +301,8 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
     render::TerrainSurfacePatchEnvironment environment;
     if (s.weather && s.weather_enabled) {
         s.weather->ensure_resources(device, *s.gpu, slot.count, target, s.shaders);
-        weather = s.weather->frame(device, *s.gpu, vulkan::CommandRecorder(commands), slot, target,
-                                   camera, s.scene.fallback_environment());
+        weather = s.weather->frame(device, vulkan::CommandRecorder(commands), slot, camera,
+                                   s.scene.fallback_environment());
         environment = weather->environment;
     } else {
         // A UI toggle may enter the reference path after shared-only startup.

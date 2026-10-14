@@ -156,8 +156,7 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
                    surface="correlated", camera="overview", app=None, surface_subdivision=2,
                    render_fps=None, control=None, headless_seconds=None, switch_script=None,
                    no_validation=False, shadow_projection="scene", environment="fixed",
-                   environment_time_hours=None, environment_cycle_speed=0, clouds=False,
-                   cloud_weather="surface-volume", cloud_quality="full", cloud_shadow_strength=.18,
+                   environment_time_hours=None, environment_cycle_speed=0,
                    profile_sample_interval=10):
     if not isinstance(profile_sample_interval, int) or not 1 <= profile_sample_interval <= 12000:
         raise ValueError("profile sample interval must be an integer in 1..12000")
@@ -215,18 +214,13 @@ def viewer_command(case, source, title, width=1920, height=1080, profile=None, l
         raise ValueError("environment cycle speed must be in 0..1 hours per wall second")
     if environment_time_hours is not None and (not math.isfinite(environment_time_hours) or not 0 <= environment_time_hours <= 24):
         raise ValueError("environment time must be in 0..24 hours")
-    if not math.isfinite(cloud_shadow_strength) or not 0 <= cloud_shadow_strength <= 1:
-        raise ValueError("cloud shadow strength must be in 0..1")
-    if environment=="fixed" and (clouds or environment_time_hours is not None or environment_cycle_speed):
-        raise ValueError("weather/time options require the shared environment")
+    if environment=="fixed" and (environment_time_hours is not None or environment_cycle_speed):
+        raise ValueError("time options require the shared environment")
     if environment=="shared":
         command += ["--fluid25d-environment","shared","--time-speed-hours-per-second",str(environment_cycle_speed),
-            "--set","atmosphere.time_paused="+("false" if environment_cycle_speed else "true"),
-            "--fluid25d-cloud-shadow-strength",str(cloud_shadow_strength)]
+            "--set","atmosphere.time_paused="+("false" if environment_cycle_speed else "true")]
         if environment_time_hours is not None or environment_cycle_speed:
             command += ["--time-of-day-mode","solar","--time-hours",str(environment_time_hours if environment_time_hours is not None else 12)]
-        if clouds:
-            command += ["--clouds","--cloud-weather-preset",cloud_weather,"--cloud-quality",cloud_quality]
     return command
 
 
@@ -235,15 +229,11 @@ def add_environment_arguments(p):
     p.add_argument("--environment-time-hours",type=float)
     p.add_argument("--environment-cycle-speed",type=float,default=0,
                    help="render-only hours per wall second, independent of solver pace")
-    p.add_argument("--clouds",action="store_true")
-    p.add_argument("--cloud-weather",choices=("surface-volume","broken-cumulus","overcast-stratus"),default="surface-volume")
-    p.add_argument("--cloud-quality",choices=("quarter","half","full"),default="full")
-    p.add_argument("--cloud-shadow-strength",type=float,default=.18)
 
 
 def environment_options(args):
     return {name:getattr(args,name) for name in ("environment","environment_time_hours",
-        "environment_cycle_speed","clouds","cloud_weather","cloud_quality","cloud_shadow_strength")}
+        "environment_cycle_speed")}
 
 
 def parser():

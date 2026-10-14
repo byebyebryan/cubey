@@ -1,4 +1,38 @@
-# Shared surface environment V1
+# Shared clear-sky day/night
+
+## Current status after review
+
+Cloud integration was removed on 2026-10-14 at the owner's request. The elevated
+Fluid / captured-water camera is not the existing surface cloud model's supported
+viewing case; the occasional lower-oblique cloud view did not justify keeping it.
+There are no cloud controls, cloud target/probe creation, projected shadow passes,
+cloud composition or cloud shader package in Fluid's surface integration. Saved
+Terrain water uses the same clear-only facade. Normal Terrain backdrop, Ocean,
+Water3D and Atmosphere cloud systems remain intact.
+
+Shared clear sky, sun/moon illumination, day/night presets, the independent wall
+clock and coherent previous/current sky reflections remain. The manual reference
+sun is explicitly labelled in the UI; editing solar time switches to solar mode.
+Fixed daylight/clear remains the startup default. No water/terrain/numerical
+defaults change.
+
+Launcher: `--environment shared --environment-time-hours 12
+--environment-cycle-speed .5`. Native Fluid: `--fluid25d-environment shared` plus
+atmosphere options. Saved Terrain: `--terrain-water-environment shared` plus
+atmosphere options. The old Fluid cloud flags now reject instead of silently
+doing nothing.
+
+Post-removal evidence is in `outputs/fluid/cloud-removal-20261014-B5MRy4`:
+fixed daylight and shared daylight/noon/sunset/night are pixel-exact against the
+pre-removal clear controls, with exact native GPU imports. This is correctness
+evidence, not a new full performance or native-GUI qualification.
+
+## Historical cloud-enabled V1 study
+
+The remaining notes, commands and report below describe the pre-removal study.
+They are retained for provenance, not as current cloud support or performance
+claims. Reproducing the cloud-enabled study requires its matching pre-removal
+checkout/binary/shaders; immutable frozen evidence must not be overwritten.
 
 2026-10-14 · optional integration, hardware headless Vulkan only.
 

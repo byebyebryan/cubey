@@ -625,15 +625,9 @@ cubey::config::Schema terrain_project_config_schema(TerrainProjectConfig& config
     builder.bind(std::move(context), config.captured_water_context);
     builder.bind(option("terrain.captured_water_environment", "--terrain-water-environment",
                         "Capture environment", "Terrain",
-                        "Fixed daylight reference or shared render-only day/night and clouds.",
+                        "Fixed daylight reference or shared render-only clear-sky day/night.",
                         ValueType::Enum, {}, {"fixed", "shared"}),
                  config.captured_water_environment);
-    builder.bind(option("terrain.captured_water_cloud_shadow_strength",
-                        "--terrain-water-cloud-shadow-strength", "Cloud shadow", "Terrain",
-                        "Approximate local cloud direct-light transmittance strength.",
-                        ValueType::Float,
-                        {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
-                 config.captured_water_cloud_shadow_strength);
     builder.bind(option("terrain.captured_water_ground_view", "--terrain-water-ground-view",
                         "Ground Diagnostic", "Terrain",
                         "Paired/context ground diagnostic; non-shaded views hide water.",

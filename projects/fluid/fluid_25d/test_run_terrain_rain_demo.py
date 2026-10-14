@@ -86,18 +86,22 @@ class Commands(unittest.TestCase):
         original=terrain.viewer_command(Path("/case"),Path("/session"),"test")
         self.assertNotIn("--fluid25d-environment",original)
         shared=terrain.viewer_command(Path("/case"),Path("/session"),"test",
-            environment="shared",environment_time_hours=12,environment_cycle_speed=.5,
-            clouds=True,cloud_quality="half")
+            environment="shared",environment_time_hours=12,environment_cycle_speed=.5)
         self.assertEqual(shared[shared.index("--fluid25d-environment")+1],"shared")
         self.assertIn("atmosphere.time_paused=false",shared)
-        self.assertIn("--clouds",shared)
+        self.assertFalse(any("cloud" in arg for arg in shared))
         self.assertNotIn("--fluid25d-rain-rate",shared)
         worker=terrain.worker_command(Path("/case"),Path("/session"))
         self.assertFalse(any("environment" in arg or "cloud" in arg for arg in worker))
         self.assertEqual(worker[worker.index("--speed")+1],"60")
-        for options in ({"clouds":True},{"environment":"shared","environment_cycle_speed":float("nan")},
+        for options in ({"environment_time_hours":12},{"environment":"shared","environment_cycle_speed":float("nan")},
                         {"environment":"shared","environment_time_hours":25}):
             with self.assertRaises(ValueError): terrain.viewer_command(Path("/case"),Path("/session"),"test",**options)
+
+    def test_elevated_demo_does_not_offer_cloud_controls(self):
+        parser=terrain.parser()
+        flags={flag for action in parser._actions for flag in action.option_strings}
+        self.assertFalse(any("cloud" in flag for flag in flags))
 
     def test_frame_by_frame_profiling_is_explicit(self):
         cmd=terrain.viewer_command(Path("/case"),Path("/session"),"test",

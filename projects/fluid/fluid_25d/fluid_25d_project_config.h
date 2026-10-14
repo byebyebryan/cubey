@@ -1,6 +1,5 @@
 #pragma once
 #include <cubey/engine/atmosphere_environment_schema.h>
-#include <cubey/engine/cloud_environment_schema.h>
 
 #include "../sim/fluid_25d/fluid_25d_backend_contract.h"
 #include "../sim/fluid_25d/fluid_25d_config.h"
@@ -33,9 +32,6 @@ struct Fluid25DProjectConfig {
     common::FluidGridOptions grid{};
     std::string environment_mode = "fixed";
     cubey::AtmosphereEnvironmentOptions atmosphere{};
-    cubey::CloudEnvironmentOptions clouds{};
-    float cloud_shadow_strength = 0.18F;
-    bool cloud_background = true, cloud_reflections = true;
     std::string view{};
     std::string catchment_view{};
     std::string debug_view{};
@@ -521,27 +517,11 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
     auto builder = config::Schema::builder().compose(host::common_run_config_schema(config.common));
     builder.compose(common::fluid_grid_schema(config.grid, common::FluidGridSchemaMode::TwoD));
     builder.compose(cubey::atmosphere_environment_schema(config.atmosphere));
-    builder.compose(cubey::cloud_environment_schema(config.clouds));
     builder.bind(
         option("fluid25d.environment", "--fluid25d-environment", "Environment",
-               "Fixed daylight reference or shared render-only day/night and cloud environment.",
+               "Fixed daylight reference or shared render-only clear-sky day/night environment.",
                ValueType::Enum, {}, {"fixed", "shared"}),
         config.environment_mode);
-    builder.bind(
-        option("fluid25d.cloud_shadow_strength", "--fluid25d-cloud-shadow-strength", "Cloud shadow",
-               "Render-only approximate cloud direct-light shadow strength.", ValueType::Float,
-               {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
-        config.cloud_shadow_strength);
-    auto cloud_background =
-        option("fluid25d.cloud_background", "--fluid25d-cloud-background", "Cloud background",
-               "Render-only background cloud composition.", ValueType::Bool);
-    cloud_background.negative_cli_name = "--no-fluid25d-cloud-background";
-    builder.bind(std::move(cloud_background), config.cloud_background);
-    auto cloud_reflections =
-        option("fluid25d.cloud_reflections", "--fluid25d-cloud-reflections", "Cloud reflections",
-               "Render-only cached cloud reflections.", ValueType::Bool);
-    cloud_reflections.negative_cli_name = "--no-fluid25d-cloud-reflections";
-    builder.bind(std::move(cloud_reflections), config.cloud_reflections);
     builder
         .bind(option("fluid25d.backend", "--fluid25d-backend", "Water Backend",
                      "Select builtin, external, or recording; the builtin solver option remains "
@@ -992,15 +972,12 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     config::Schema schema = fluid_25d_project_config_schema(project_config);
     config::ParseResult parsed = schema.parse_cli(argc, argv);
     cubey::validate_atmosphere_environment_options(project_config.atmosphere);
-    cubey::validate_cloud_environment_options(project_config.clouds);
     if (project_config.environment_mode == "shared") {
         if ((!project_config.recording_path && !project_config.external_session_path &&
              !project_config.stream_path) ||
             project_config.native_presentation != "scenic")
             throw std::runtime_error("Shared environment requires a native Scenic recording or "
                                      "external-session viewer.");
-        cubey::CloudEnvironmentConfig validated;
-        cubey::apply_cloud_environment_options(validated, project_config.clouds);
     }
     if (project_config.native_terrain_context != "off")
         throw std::runtime_error("Fluid 2.5D renders only the simulation patch; terrain context on "

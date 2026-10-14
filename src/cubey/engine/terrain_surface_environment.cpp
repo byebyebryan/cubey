@@ -33,20 +33,13 @@ terrain_surface_environment_view_rays(const render::TerrainSurfacePatchCamera& c
 }
 struct TerrainSurfaceEnvironment::State {
     AtmosphereEnvironmentRunState atmosphere;
-    CloudEnvironmentConfig clouds;
-    float shadow_strength;
-    bool cloud_background, cloud_reflections;
     double elapsed = 0;
     std::uint64_t reported_sky = std::numeric_limits<std::uint64_t>::max();
-    std::uint64_t reported_cloud = std::numeric_limits<std::uint64_t>::max();
     AtmosphereEnvironmentRuntime runtime;
     std::optional<render::AtmosphereBackgroundAtlasResources> atlases;
     render::AtmosphereBackgroundFrame background;
     VkExtent2D extent{};
     VkFormat format = VK_FORMAT_UNDEFINED;
-    render::CloudLayerQuality target_cloud_quality = render::CloudLayerQuality::Full;
-    bool target_cloud_temporal = false;
-    std::filesystem::path shaders;
     struct Slot {
         std::optional<vulkan::Buffer> coefficients;
         std::unique_ptr<vulkan::DescriptorSetBundle> descriptors;
@@ -55,10 +48,7 @@ struct TerrainSurfaceEnvironment::State {
     };
     std::vector<Slot> slots;
     std::optional<render::ComputePipelineResource> irradiance;
-    explicit State(TerrainSurfaceEnvironmentSettings settings)
-        : shadow_strength(settings.cloud_shadow_strength),
-          cloud_background(settings.cloud_background),
-          cloud_reflections(settings.cloud_reflections) {
+    explicit State(TerrainSurfaceEnvironmentSettings settings) {
         const auto reference = render::terrain_surface_patch_fixed_daylight();
         if (!settings.atmosphere.time_of_day_mode && !settings.atmosphere.time_hours)
             settings.atmosphere.time_of_day_mode = "manual";
@@ -68,10 +58,6 @@ struct TerrainSurfaceEnvironment::State {
             settings.atmosphere, {.sun_elevation_degrees = reference.sun_elevation_degrees,
                                   .sun_azimuth_degrees = reference.sun_azimuth_degrees,
                                   .reference_geometry_enabled = false});
-        clouds.enabled = settings.clouds.enabled.value_or(false);
-        apply_cloud_environment_options(clouds, settings.clouds);
-        if (!std::isfinite(shadow_strength) || shadow_strength < 0 || shadow_strength > 1)
-            throw std::runtime_error("surface cloud shadow strength must be in [0,1]");
     }
 };
 TerrainSurfaceEnvironment::TerrainSurfaceEnvironment(TerrainSurfaceEnvironmentSettings settings)
@@ -96,20 +82,8 @@ void TerrainSurfaceEnvironment::advance(double delta) {
 AtmosphereEnvironmentRunState& TerrainSurfaceEnvironment::atmosphere() noexcept {
     return state_->atmosphere;
 }
-CloudEnvironmentConfig& TerrainSurfaceEnvironment::clouds() noexcept {
-    return state_->clouds;
-}
-float& TerrainSurfaceEnvironment::shadow_strength() noexcept {
-    return state_->shadow_strength;
-}
 double TerrainSurfaceEnvironment::elapsed_seconds() const noexcept {
     return state_->elapsed;
-}
-bool& TerrainSurfaceEnvironment::cloud_background() noexcept {
-    return state_->cloud_background;
-}
-bool& TerrainSurfaceEnvironment::cloud_reflections() noexcept {
-    return state_->cloud_reflections;
 }
 void TerrainSurfaceEnvironment::select_preset(std::string_view preset) {
     auto& state = state_->atmosphere;
@@ -138,19 +112,7 @@ bool TerrainSurfaceEnvironment::ensure_resources(const vulkan::Device& device,
                                                  render::ColorTargetView target,
                                                  const std::filesystem::path& shaders) {
     auto& s = *state_;
-    s.shaders = shaders;
     const bool resources_created = s.runtime.resources_created();
-    bool cloud_created = false;
-    const bool cloud_target_changed = s.runtime.clouds().surface_resources_created() &&
-                                      (s.target_cloud_quality != s.clouds.layer.quality ||
-                                       s.target_cloud_temporal != s.clouds.layer.temporal_enabled);
-    if (cloud_target_changed) {
-        // Structural UI edits are rare. Retire submissions before replacing
-        // target/history pipelines; ordinary frame updates never wait here.
-        gpu.wait_queue_idle("surface environment cloud quality edit");
-        s.runtime.clouds().destroy_surface_target_resources();
-        s.runtime.clouds().set_config(s.clouds);
-    }
     if (!s.runtime.resources_created()) {
         s.atlases.emplace(render::create_atmosphere_background_cached_textures(device, gpu));
         s.runtime.create_resources(
@@ -186,20 +148,6 @@ bool TerrainSurfaceEnvironment::ensure_resources(const vulkan::Device& device,
         s.background.create_materials(
             device, {.frame_slot_count = slots, .textures = s.atlases->bindings()});
     }
-    if (s.clouds.enabled && !s.runtime.clouds().surface_resources_created()) {
-        const auto files = render::cloud_layer_runtime_shader_files(
-            shaders, render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);
-        auto& clouds = s.runtime.clouds();
-        clouds.create_surface_resources(device, gpu, files.generated, s.clouds);
-        clouds.create_resources(device, {.frame_slot_count = slots}, clouds.generated_resources(),
-                                s.runtime.reflection_probe().sky_radiance_cube());
-        clouds.create_pipelines(
-            device,
-            {files.surface_march, render::vertex_shader_file(shaders / "atmosphere.vert.spv"),
-             render::fragment_shader_file(shaders / "cloud_environment_prefilter.frag.spv")});
-        // Resource creation below must run even if the viewport did not change.
-        cloud_created = true;
-    }
     if (s.format != target.format || s.extent.width != target.extent.width ||
         s.extent.height != target.extent.height) {
         const std::array<render::ShaderStageFile, 2> sky{
@@ -210,31 +158,14 @@ bool TerrainSurfaceEnvironment::ensure_resources(const vulkan::Device& device,
                                               .color_format = VK_FORMAT_R16G16B16A16_SFLOAT,
                                               .depth_format = VK_FORMAT_D32_SFLOAT,
                                               .shader_stage_files = sky});
-        if (s.runtime.clouds().surface_resources_created())
-            s.runtime.clouds().create_surface_target_resources(
-                device,
-                render::cloud_layer_runtime_shader_files(
-                    shaders, render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth),
-                render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
-                VK_FORMAT_R16G16B16A16_SFLOAT, target.extent, slots);
         s.format = target.format;
         s.extent = target.extent;
-    } else if (cloud_created || cloud_target_changed) {
-        s.runtime.clouds().create_surface_target_resources(
-            device,
-            render::cloud_layer_runtime_shader_files(
-                shaders, render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth),
-            render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth,
-            VK_FORMAT_R16G16B16A16_SFLOAT, target.extent, slots);
     }
-    s.target_cloud_quality = s.clouds.layer.quality;
-    s.target_cloud_temporal = s.clouds.layer.temporal_enabled;
-    return !resources_created || cloud_created || cloud_target_changed;
+    return !resources_created;
 }
 TerrainSurfaceWeatherFrame
-TerrainSurfaceEnvironment::frame(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
+TerrainSurfaceEnvironment::frame(const vulkan::Device& device,
                                  const vulkan::CommandRecorder& recorder, render::FrameSlot slot,
-                                 render::ColorTargetView target,
                                  const render::TerrainSurfacePatchCamera& camera,
                                  const render::GeneratedPbrEnvironment& fallback) {
     auto& s = *state_;
@@ -297,56 +228,21 @@ TerrainSurfaceEnvironment::frame(const vulkan::Device& device, vulkan::GpuRuntim
     }
     TerrainSurfaceWeatherFrame result;
     result.background = &s.background;
-    if (s.runtime.clouds().surface_resources_created())
-        s.runtime.clouds().set_config(s.clouds);
-    if (s.clouds.enabled) {
-        auto& clouds = s.runtime.clouds();
-        clouds.set_config(s.clouds);
-        clouds.set_elapsed_seconds(s.elapsed);
-        clouds.update_weather_texture(
-            device, gpu,
-            render::cloud_layer_runtime_shader_files(
-                s.shaders, render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth)
-                .generated.weather);
-        const auto right = math::Vec3(rays.right_aspect), up = math::Vec3(rays.up_tan_half_fovy);
-        result.cloud_frame =
-            clouds.frame({.camera_position = camera.position,
-                          .camera_right = glm::normalize(right),
-                          .camera_up = glm::normalize(up),
-                          .camera_forward = math::Vec3(rays.forward),
-                          .tan_half_fovy = glm::length(up),
-                          .target_extent = target.extent,
-                          .scene_depth_mode = render::CloudLayerSceneDepthMode::OpaqueForeground},
-                         s.runtime.lighting());
-        clouds.upload_surface_frame(slot, *result.cloud_frame);
-        if (s.cloud_reflections)
-            (void)clouds.record_pending_update(recorder, slot, *result.cloud_frame);
-        result.clouds = &clouds;
-        result.shadow_strength = s.shadow_strength;
-        result.cloud_background = s.cloud_background;
-    }
-    const auto cloud_generation = s.runtime.clouds().snapshot().generation;
     result.elapsed_s = s.elapsed;
     result.time_hours = s.atmosphere.environment.time_of_day.time_hours;
     result.sky_generation = probe.generation;
-    result.cloud_generation = cloud_generation;
-    if (s.reported_sky != probe.generation || s.reported_cloud != cloud_generation) {
+    if (s.reported_sky != probe.generation) {
         std::printf("terrain_surface_environment: wall_s=%.6f time_hours=%.6f sun_elevation=%.6f "
-                    "sky_generation=%llu cloud_generation=%llu reflection_blend=%.6f clouds=%u "
-                    "background=%u reflections=%u shadow_strength=%.6f primary=%s; render_only=1\n",
+                    "sky_generation=%llu reflection_blend=%.6f clouds=0 "
+                    "primary=%s; render_only=1\n",
                     s.elapsed, double(s.atmosphere.environment.time_of_day.time_hours),
                     double(s.atmosphere.environment.sun_elevation_degrees),
                     static_cast<unsigned long long>(probe.generation),
-                    static_cast<unsigned long long>(cloud_generation),
-                    double(s.runtime.pbr_environment_bindings(fallback, s.cloud_reflections)
-                               .prefiltered_blend),
-                    s.clouds.enabled ? 1U : 0U, s.cloud_background ? 1U : 0U,
-                    s.cloud_reflections ? 1U : 0U, double(result.shadow_strength),
+                    double(s.runtime.pbr_environment_bindings(fallback, false).prefiltered_blend),
                     push.primary_source.w > 0.5F ? "moon" : "sun");
         s.reported_sky = probe.generation;
-        s.reported_cloud = cloud_generation;
     }
-    result.environment = {s.runtime.pbr_environment_bindings(fallback, s.cloud_reflections),
+    result.environment = {s.runtime.pbr_environment_bindings(fallback, false),
                           s.runtime.lighting(),
                           s.atmosphere.resolved_exposure,
                           s.runtime.reflection_probe().sky_radiance_cube().sampler().handle(),

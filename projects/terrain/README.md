@@ -39,15 +39,16 @@ The finite patch is never overlaid with radial ground or radial shadow casters.
 Normal placement selection is deferred until Backdrop is actually requested.
 The capture view retains Fluid's fixed shared daylight and single HDR display
 transform by default. `--terrain-water-environment shared` opts into the same
-render-only day/night controller used by Fluid, with the existing atmosphere/cloud
-CLI controls and a compact **Environment (render only)** panel. Clouds compose
-against opaque terrain depth before water: they are background-only, not fog over
-the water or aerial/cloud-top rendering. `--terrain-water-cloud-shadow-strength`
-controls approximate receiver-plane shadows (default 0.18 when clouds are enabled).
+render-only clear-sky day/night controller used by Fluid, with the existing atmosphere
+CLI controls and a compact **Environment (render only)** panel. Clouds and cloud
+shadows are excluded from this elevated saved-water view: the existing surface
+cloud model is not a qualified aerial/cloud-top solution. Normal Backdrop still
+supports its existing cloud controls; Terrain's global cloud options apply there,
+not to saved water.
 The environment clock is independent of saved-water surface animation; numerical
 fields and geometry/LOD remain unchanged. Terrain's normal backdrop environment
 path is unchanged. This does not promote a new default or claim seamless water
-coverage or fully relief-aware cloud shadows. See the
+coverage. See the
 [shared environment qualification](../fluid/fluid_25d/shared_environment_v1.md).
 
 An invalid requested capture fails explicitly in headless mode. The GUI instead

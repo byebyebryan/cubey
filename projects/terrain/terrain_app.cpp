@@ -1279,19 +1279,17 @@ class TerrainApp {
                         ImGui::TextDisabled(
                             "Core-focused 4096 shadow; far-context shadows unqualified.");
                     }
-                    ImGui::TextDisabled(
-                        "Clouds preserve opaque terrain; no aerial cloud-top rendering.");
+                    ImGui::TextDisabled("Clear sky only; surface-view clouds are excluded from "
+                                        "this elevated view.");
                     ImGui::TextDisabled("No radial terrain or radial shadow casters in this view.");
                     ImGui::TreePop();
                 }
                 if (ImGui::TreeNode("Environment (render only)")) {
                     if (!capture_runtime_->environment()) {
-                        if (ImGui::Button("Enable shared day/night and weather"))
-                            capture_runtime_->enable_environment(
-                                {config_.atmosphere, config_.clouds,
-                                 config_.captured_water_cloud_shadow_strength});
+                        if (ImGui::Button("Enable shared clear sky and day/night"))
+                            capture_runtime_->enable_environment({config_.atmosphere});
                     } else {
-                        ImGui::Checkbox("Shared day/night and weather",
+                        ImGui::Checkbox("Shared clear sky and day/night",
                                         &capture_runtime_->environment_enabled());
                         if (capture_runtime_->environment_enabled())
                             cubey::host::draw_terrain_surface_environment_controls(

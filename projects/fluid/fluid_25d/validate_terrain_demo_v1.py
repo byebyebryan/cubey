@@ -97,12 +97,9 @@ def main():
         "--switch-script", str(args.script.resolve()), "--profile-output", str(trial / "profile")]
     command += ["--profile-sample-interval",str(args.profile_sample_interval)]
     command += ["--site", args.site, "--configuration", args.configuration]
-    command += ["--environment",args.environment,"--environment-cycle-speed",str(args.environment_cycle_speed),
-        "--cloud-weather",args.cloud_weather,"--cloud-quality",args.cloud_quality,
-        "--cloud-shadow-strength",str(args.cloud_shadow_strength)]
+    command += ["--environment",args.environment,"--environment-cycle-speed",str(args.environment_cycle_speed)]
     if args.environment_time_hours is not None:
         command += ["--environment-time-hours",str(args.environment_time_hours)]
-    if args.clouds: command.append("--clouds")
     if args.site_catalogue:
         command += ["--site-catalogue", str(args.site_catalogue.resolve(strict=True))]
     if args.no_validation:

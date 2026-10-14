@@ -19,7 +19,6 @@
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/engine/terrain_surface_environment.h>
 #include <cubey/host/atmosphere_environment_ui.h>
-#include <cubey/host/cloud_environment_ui.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/performance_ui.h>
 #include <cubey/host/terrain_surface_environment_ui.h>
@@ -1071,10 +1070,8 @@ class RecordingApp {
         }
         if (config_.environment_mode == "shared" && !defer_weather_setup_) {
             if (!weather_)
-                weather_ =
-                    std::make_unique<TerrainSurfaceEnvironment>(TerrainSurfaceEnvironmentSettings{
-                        config_.atmosphere, config_.clouds, config_.cloud_shadow_strength,
-                        config_.cloud_background, config_.cloud_reflections});
+                weather_ = std::make_unique<TerrainSurfaceEnvironment>(
+                    TerrainSurfaceEnvironmentSettings{config_.atmosphere});
             if (weather_->ensure_resources(device, *scenic_gpu_, scenic_slots_, target,
                                            CUBEY_FLUID_25D_SHADER_DIR) &&
                 external_session_)
@@ -1315,9 +1312,9 @@ class RecordingApp {
             std::optional<TerrainSurfaceWeatherFrame> weather_frame;
             if (config_.environment_mode == "shared") {
                 const auto view = camera(target.extent, frame_index);
-                weather_frame = weather_->frame(
-                    device, *scenic_gpu_, vulkan::CommandRecorder(commands), slot, target,
-                    {view.view_projection, view.position}, scenic_.fallback_environment());
+                weather_frame = weather_->frame(device, vulkan::CommandRecorder(commands), slot,
+                                                {view.view_projection, view.position},
+                                                scenic_.fallback_environment());
                 environment = weather_frame->environment;
                 if (profile) {
                     profile->record_metric(frame_index, "fluid_25d.environment", "wall_s",
@@ -1326,8 +1323,6 @@ class RecordingApp {
                                            weather_frame->time_hours);
                     profile->record_metric(frame_index, "fluid_25d.environment", "sky_generation",
                                            double(weather_frame->sky_generation));
-                    profile->record_metric(frame_index, "fluid_25d.environment", "cloud_generation",
-                                           double(weather_frame->cloud_generation));
                 }
             } else if (scenic_material_.daylight_environment > 0.5F) {
                 // Fixed sky: capture once, no ongoing updates or transitions.
@@ -1648,7 +1643,7 @@ class RecordingApp {
     void draw_native_presentation_ui() {
         if (ImGui::TreeNode("Environment (render only)")) {
             bool shared = config_.environment_mode == "shared";
-            if (ImGui::Checkbox("Shared day/night and weather", &shared))
+            if (ImGui::Checkbox("Shared clear sky and day/night", &shared))
                 config_.environment_mode = shared ? "shared" : "fixed";
             if (shared && weather_)
                 host::draw_terrain_surface_environment_controls(*weather_);

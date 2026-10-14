@@ -66,14 +66,15 @@ no solver. `--app` retains the existing-artifact override; no automatic build
 or fallback is attempted. See the [performance verdict](offscreen_perf_v2.md)
 for the headless measurements and deferred native-FPS confirmation.
 
-### Shared day/night and clouds (optional)
+### Shared clear-sky day/night (optional)
 
 The native Scenic viewer and Terrain's saved-water consumer now share
-`cubey::TerrainSurfaceEnvironment`: the existing atmosphere/cloud runtimes,
+`cubey::TerrainSurfaceEnvironment`: the existing atmosphere runtime,
 coherent previous/current probes, per-frame-slot diffuse/direct lighting and
-background-only clouds. Fixed daylight/clear remains the startup default.
+clear-sky background and reflections. Fixed daylight/clear remains the startup default.
 The GUI's **Environment (render only)** section offers daylight/noon/sunset/night,
-time/cycle speed, clouds, cached reflections and approximate shadow strength.
+and time/cycle speed. Clouds are excluded from this elevated patch-view demo:
+the existing surface cloud model is not a qualified aerial/cloud-top solution.
 Its wall clock survives managed site/grid resets and advances while water is held;
 it never changes rainfall or solver pace.
 
@@ -81,24 +82,22 @@ it never changes rainfall or solver pace.
 rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
   --study outputs/fluid/site-expansion-20261011-jtIA3s \
   --environment shared --environment-time-hours 12 \
-  --environment-cycle-speed .5 --clouds \
-  --cloud-weather broken-cumulus --cloud-quality half
+  --environment-cycle-speed .5
 ```
 
 For direct native invocation, use `--fluid25d-environment shared` plus the
-existing atmosphere/cloud flags. `--no-fluid25d-cloud-background`,
-`--no-fluid25d-cloud-reflections` and `--fluid25d-cloud-shadow-strength 0`
-isolate the couplings. Shared weather requires a native Scenic recording or
+existing atmosphere flags. Cloud controls, projected cloud shadows, cloud
+composition, cached cloudy probes and the Fluid cloud shader package have been
+removed from this integration. Shared day/night requires a native Scenic recording or
 external-session viewer; the builtin solver path is unchanged.
 
-Headless qualification retains eight pixel-exact fixed controls and 55 passing
-regression groups. Repeated live 1k/16m weather runs kept approximately 60x solver
-pace and 0.141 s advancing-field age p95, but GPU p95 of 8.36–8.42 ms narrowly
-missed the proposed 8 ms gate (CPU service 2.76–2.79 ms passes). Weather remains
-optional, not a new performance-qualified default. Surface-cloud V1 is not an
-aerial/cloud-top solution; its receiver-plane shadows are approximate on relief.
-See [integration, measurements and limits](shared_environment_v1.md) and the
-[matched browser report](http://starship:8787/reports/a9e51f964348adf9f3963655b4dfe06061b3fc0c88c4717e436d537c9bc76bb0/).
+The earlier cloud-enabled study and its measured GPU-budget miss remain as
+historical evidence, not current capability. The post-removal headless controls
+retain pixel-exact fixed daylight and all four shared clear-sky time presets;
+native bed/depth/velocity imports remain exact. Existing cloud systems in Ocean,
+Water3D, Atmosphere and Terrain's normal backdrop are untouched.
+See [current status and historical measurements](shared_environment_v1.md) and the
+[earlier browser report](http://starship:8787/reports/a9e51f964348adf9f3963655b4dfe06061b3fc0c88c4717e436d537c9bc76bb0/).
 
 The [cached-site expansion](site_expansion_v1.md) adds **Upland basins**, **Joining
 valleys** and **Steep ridges** alongside the original three sites. Selection is
