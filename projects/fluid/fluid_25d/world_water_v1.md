@@ -1,5 +1,12 @@
 # Prepared-world Terrain Water V1
 
+Current composition (2026-10-13): Fluid renders **only the full-resolution
+simulation patch**, with no exterior ground or outer LOD. World/site identity
+validation and shared climate/material organization are retained. The shared
+Terrain foundation still owns wider backdrop/LOD support. See
+[patch-only qualification](patch_only_v1.md). The original integration and its
+timings below are historical evidence, not current exterior-rendering behavior.
+
 Status: implemented and headlessly qualified on 2026-10-12 Starship. The
 prepared-world collection remains explicit; no default replacement or push.
 
@@ -58,11 +65,10 @@ rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
   --site-catalogue projects/fluid/fluid_25d/terrain_water_world_sites.json
 ```
 
-Add `--headless --run-seconds N` for the offscreen path. Wider ground is available
-only for validated world bindings with B-spline reconstruction. The render-only
-UI checkbox and `--fluid25d-native-terrain-context off` retain the core-only
-control. Exterior wetness is not rebuilt from live fields. Each replacement
-prepares/uploads its immutable context once and retires it with the scene.
+Add `--headless --run-seconds N` for the offscreen path. Current Fluid launches
+are patch-only for both collections. The old wider-ground checkbox is removed;
+`--fluid25d-native-terrain-context off` remains compatible and `on` rejects before
+GPU startup, directing users to Terrain. No exterior mesh is prepared or uploaded.
 
 The initial 2-second interruption correctly stopped before action acknowledgement
 and cleaned up, but exposed a collector assumption that profiling files already

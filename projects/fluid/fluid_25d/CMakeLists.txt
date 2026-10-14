@@ -272,6 +272,9 @@ if (BUILD_TESTING)
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_terrain_rain_demo.py)
         set_tests_properties(fluid_25d_terrain_demo_launcher PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
+        add_test(NAME fluid_25d_patch_only_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B "${CMAKE_CURRENT_SOURCE_DIR}/test_review_patch_only_v1.py")
+        set_tests_properties(fluid_25d_patch_only_review_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
         add_test(NAME fluid_25d_terrain_site_catalogue
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_terrain_water_sites.py)

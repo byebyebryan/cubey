@@ -18,7 +18,7 @@ rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
   --study outputs/fluid/site-expansion-20261011-jtIA3s
 ```
 
-The **Terrain Water** panel puts Start/Pause, Reset water and Fit overview first.
+The **Terrain Water** panel puts Start/Pause, Reset water and Fit simulation patch first.
 Space starts or pauses the actual worker; R restarts the selected current case
 dry and paused. Closing this *managed launcher* stops its owned worker. A
 standalone `--fluid25d-external-session` viewer still merely detaches on close.
@@ -30,6 +30,9 @@ standalone `--fluid25d-external-session` viewer still merely detaches on close.
   Missing or changed prepared inputs are disabled, never silently substituted.
 - View: Scenic, isolated water, flow interpretation, 2D diagnostics, dots/trails,
   and existing advanced render-only appearance settings.
+- Composition: only the complete selected simulation grid, with no exterior
+  terrain or outer LOD. **Full patch** retains the `overview` ID; `runoff` and
+  `collection` remain the local camera presets.
 - How to read: rain covers the whole terrain, water flows downhill and collects
   in basins, and the outer boundary is open. There is no authored point drain.
 - Diagnostics: native lifecycle, publication age, session identity/hash, command
@@ -78,7 +81,7 @@ One renderer owns the launch-control lock, and one request may be pending.
 4. Drain old submissions and reader/classification jobs before installing the
    new scene. Confirm its exact identity before retiring old session files.
 5. Preserve camera for same-site/same-extent resolution changes; otherwise fit
-   the overview. Keep appearance, actual rain and requested pace.
+   the full simulation patch. Keep appearance, actual rain and requested pace.
 
 Failures after the old worker stops keep a labelled **Held — not live** view.
 An unresolved native command blocks restart while that worker is alive; after
@@ -171,3 +174,16 @@ pause and switching tests are not throughput measurements.
 
 Remaining acceptance: native GUI layout, interaction/camera behaviour and human
 review. No GUI was launched or push performed in this loop.
+
+### Patch-only contract (2026-10-13 follow-up)
+
+Fluid no longer prepares/uploads exterior terrain for world-site bindings, and
+camera bounds/shadows use only the simulation patch. Shared site/source admission
+and climate-derived material organization remain validated; the Terrain
+foundation's wider backdrop and captured-water LOD are unchanged. The wider
+terrain checkbox is removed. Explicit legacy context `off` remains supported;
+`on` fails clearly before GPU startup. All five prepared grid/area presets remain.
+
+The [patch-only review](patch_only_v1.md) records replay parity, managed switching
+and two separate steady live trials. It does not promote a camera, material,
+solver or Terrain startup change. Native panel/layout acceptance remains deferred.

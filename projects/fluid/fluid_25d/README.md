@@ -52,6 +52,11 @@ Live starts dry and paused; Space resumes the actual solver. The managed
 **Terrain Water** panel now supports prepared site/grid selection followed by
 Apply & restart in the same window. Rain, pace and appearance are retained;
 water starts dry/paused again. Closing this launcher stops its owned worker.
+Fluid displays **only the complete selected simulation patch**, at its configured
+full grid resolution and B-spline display subdivision. There is no surrounding
+terrain or outer LOD, including for prepared-world sites. “Fit simulation patch”
+and “Full patch” describe that boundary; wider backdrops belong to the shared
+Terrain foundation. See the [patch-only qualification](patch_only_v1.md).
 See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Use
 `--print-command` remotely for a read-only preflight without opening a GUI.
 `--render-fps 0` restores unpaced rendering; other positive values select a
@@ -73,8 +78,9 @@ disabled there rather than silently prepared or substituted.
 
 The shared world/site packages also work in the managed live demo, with the
 same selection + Apply & restart controls. This separate collection keeps the
-original six-site default intact and adds seam-matched exterior ground around
-the simulated rectangle; it does not simulate water across the backdrop.
+original six-site default intact. Its world/site package validates placement and
+feeds the shared source-aligned surface masks, but Fluid renders only the selected
+simulation rectangle. The Terrain foundation retains wider ground/LOD support.
 
 ```sh
 rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
@@ -83,9 +89,11 @@ rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
 ```
 
 All three sites have the five existing grid presets. Start remains dry/paused;
-the default grid remains 1k/16m. Wider terrain is available for validated world
-bindings with B-spline rendering and has a render-only off control. Actual rain
-and hydraulic state cover only the selected simulation rectangle. See the
+the default grid remains 1k/16m. Actual rain and hydraulic state cover only the
+selected simulation rectangle. Legacy context `off` requests remain valid;
+`--fluid25d-native-terrain-context on` now rejects before GPU startup with
+guidance to use Terrain. See the current [patch-only contract](patch_only_v1.md),
+the historical
 [integration and qualification record](world_water_v1.md) and
 [formation/capture report](http://starship:8801/fluid/world-water-20261012-Ck824g/).
 The completed report includes all thirteen passing headless timing slots and
