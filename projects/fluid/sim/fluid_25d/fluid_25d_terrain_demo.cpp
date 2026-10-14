@@ -355,7 +355,8 @@ fluid_25d_load_terrain_demo_script(const std::filesystem::path& path) {
             if (action.camera != "overview" && action.camera != "runoff" &&
                 action.camera != "collection")
                 invalid("unsupported observation camera");
-        } else if (action.kind == "resume" || action.kind == "pause" || action.kind == "reset" ||
+        } else if (action.kind == "start" || action.kind == "manual-start" ||
+                   action.kind == "resume" || action.kind == "pause" || action.kind == "reset" ||
                    action.kind == "guide-start" || action.kind == "guide-cancel") {
             keys(item, {"kind", timing});
         } else
@@ -401,6 +402,11 @@ bool fluid_25d_rain_guide_site(const Fluid25DTerrainDemoCase& site) {
            site.spacing_m == 16 &&
            site.solver_bed_sha256 ==
                "9bb3399929faee0edf97bb8ed23d7615d777cce89fef69c8fe1b11870ecb65b3";
+}
+
+bool fluid_25d_demo_guided_start(bool preferred, const Fluid25DTerrainDemoCase& site,
+                                 double physical_s, double water_volume_m3) {
+    return preferred && fluid_25d_rain_guide_site(site) && physical_s == 0 && water_volume_m3 == 0;
 }
 
 const char* fluid_25d_rain_guide_caption(double physical_s, bool raining) {

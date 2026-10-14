@@ -88,6 +88,8 @@ bool fluid_25d_demo_action_due(const Fluid25DTerrainDemoAction& action, double e
 std::vector<Fluid25DTerrainDemoAction> fluid_25d_rain_guide_actions();
 const char* fluid_25d_rain_guide_caption(double physical_s, bool raining);
 bool fluid_25d_rain_guide_site(const Fluid25DTerrainDemoCase& site);
+bool fluid_25d_demo_guided_start(bool preferred, const Fluid25DTerrainDemoCase& site,
+                                 double physical_s, double water_volume_m3);
 
 std::string fluid_25d_demo_time_label(double physical_s);
 bool fluid_25d_demo_restart_allowed(bool restart_pending, bool command_pending,

@@ -13,7 +13,7 @@ the observer retains exact depth/momentum packets roughly every 60 physical
 seconds, with explicit acknowledgement and final endpoint observations.
 
 The bounded study explicitly pauses at its six-hour endpoint for capture and
-owned shutdown. That is study automation, not the optional guide's end policy.
+owned shutdown. That is study automation, not the guide's end policy.
 Observer I/O and field archiving are excluded from throughput claims. The
 archive is capped at 512 snapshots (approximately 6 GiB at 1k), with a finite wall
 deadline and cleanup receipts; incomplete horizons fail rather than qualify.
@@ -53,24 +53,28 @@ actual shutoff acknowledgement. Exact field payloads are unchanged; these knots
 are not an exact native source ledger or a conservation certificate. Hydraulic
 states are held between irregular snapshots, never physically interpolated.
 
-## Optional guide (implemented)
+## Default guided entry (promoted)
 
-The guide is offered only for the measured native bed identity, not a different
-crop that happens to reuse the Mountain case name. It uses the same acknowledged
-solver controls and the existing Whole
-patch / Downhill runoff / Basin collection cameras. It starts only from a healthy
+The guide is selected by default only for the measured native bed identity, not
+a different crop that happens to reuse the Mountain case name. It uses the same
+acknowledged solver controls and the existing Whole patch / Downhill runoff /
+Basin collection cameras. It starts only from a healthy
 dry/paused Mountain 1k session, sets 512 mm/h and 60x, and resumes the solver.
 Its camera milestones are 0.5h, 1h, 2.5h and 3h; rain stops at 2h. At 6h it
 finishes its explanation while the solver continues draining. No automatic
 pause, stop, reset or looping is part of the guide. Manual solver control,
-camera selection, orbit/zoom or scene reset exits it without fighting the user.
-Reset retains the acknowledged rainfall. After completing the rain-off guide,
-choose Run demonstration again (which sets 512 mm/h), or explicitly select a
-rain preset before ordinary Start; Start alone does not turn rain back on.
+camera selection or orbit/zoom exits it and selects Manual; reset/replacement
+cancels it while retaining the chosen start mode. Startup remains dry/paused:
+**Start demo / Space** launches the narrative, without autoplay. **Manual** keeps
+ordinary continuous simulation and your selected rain/pace/camera; other sites,
+grids, replay and existing headless `resume` scripts stay unchanged.
+Reset retains acknowledged rainfall. Guided Start explicitly restores 512 mm/h;
+after a rain-off reset, Manual Start needs a rain preset to wet up. Ordinary
+Resume after physical progress never restarts the guide.
 
 ## Qualification and verdict
 
-The final Release renderer (`86015f7af9538171d6f9ebf80bd967830e45ffc26b08e4441220c37394b0714a`)
+The pre-promotion Release renderer (`86015f7af9538171d6f9ebf80bd967830e45ffc26b08e4441220c37394b0714a`)
 passed the complete nine-milestone guide. It completed at 21,600 physical seconds
 with rain off, then continued advancing before the **test fixture's separate**
 pause at 21,729.990 seconds. Manual rain and camera overrides cancelled two
@@ -105,7 +109,21 @@ The browser comparison button, media decoding, measured timeline and layout
 passed review. The initial display taper remains only rainfall-presentation
 metadata; physical water fields are never interpolated or amplified.
 
-Verdict: retain the measured, optional guide and current rendering defaults.
+The promoted entry uses renderer
+`81284d3e4a716d27ebb584544820aae15b5e4f9bb743d0727b20d205aff2eeac`.
+An 80-second headless lifecycle trial exercised the shared Start/Space route:
+one guided start, three applied setup commands, manual rain override to 128 mm/h,
+one cancellation, then a dry reset and ordinary Start retaining 128 mm/h. No
+automatic guide camera fired after the override. Separate 25-second manual-start
+and 20-second idle-start trials started no guide; the idle trial stayed at
+physical time zero. All owned-process cleanup passed, and native GPU import
+audits remained bit-exact. Eleven scoped CPU groups and three hardware GPU
+groups passed. These are entry/lifecycle checks, not a new six-hour hydraulic or
+throughput study; the measured guide sequence, terrain and shaders are unchanged.
+GUI interaction/layout review remains deferred.
+
+Verdict: promote the measured guide to the primary Start action on its qualified
+Mountain site, retaining Manual and current rendering defaults.
 The clearest story is stream formation and retreat, plus delayed basin response;
 do not promote the remaining collection to a certified quiet lake. Ordinary
 live operation, replay, other prepared sites and the builtin solver are retained.
@@ -118,6 +136,10 @@ Local evidence:
 - `outputs/fluid/rain-guide-v1-20261014-final` — frozen final guide trial.
 - `outputs/fluid/rain-guide-v1-20261014-override` — overrides, reset and ordinary resume.
 - `outputs/fluid/rain-guide-v1-20261014-performance` — uninterrupted live performance.
+- `outputs/fluid/rain-guide-promotion-20261014-final` — promoted Start, override/reset,
+  CPU and hardware GPU checks on the final binary.
+- `outputs/fluid/rain-guide-promotion-20261014-manual` — explicit manual Start.
+- `outputs/fluid/rain-guide-promotion-20261014-dry` — idle startup without autoplay.
 - `outputs/fluid/rain-response-review-v1-20261014` — captures, GPU tests, fixed reference,
   browser review receipt and self-contained export. Earlier `full`/`qualified`
   trials are development evidence, not the frozen final binary qualification.

@@ -1,0 +1,11 @@
+{
+  "schema": "cubey.fluid25d.terrain-demo.v1",
+  "actions": [
+    {"kind": "start", "after_s": 0},
+    {"kind": "set-rain", "at_physical_s": 600, "value": 128},
+    {"kind": "pause", "at_physical_s": 1800},
+    {"kind": "reset", "after_s": 1},
+    {"kind": "start", "after_s": 1},
+    {"kind": "pause", "at_physical_s": 600}
+  ]
+}

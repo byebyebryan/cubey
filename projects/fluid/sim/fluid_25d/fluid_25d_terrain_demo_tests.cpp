@@ -214,6 +214,14 @@ void helpers(const std::filesystem::path& root) {
     script["actions"][1]["camera"] = "invented";
     write(root / "script.json", script);
     throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
+    script["actions"] = Json::array(
+        {Json{{"kind", "start"}, {"after_s", 0}}, Json{{"kind", "manual-start"}, {"after_s", 1}}});
+    write(root / "script.json", script);
+    require(fluid_25d_load_terrain_demo_script(root / "script.json").size() == 2,
+            "primary/manual Start actions not decoded");
+    script["actions"][0]["value"] = 512;
+    write(root / "script.json", script);
+    throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
     const auto guide = fluid_25d_rain_guide_actions();
     require(guide.size() == 9 && guide[0].value == 512 && guide[1].value == 60 &&
                 guide[2].kind == "resume" && guide[5].kind == "set-rain" && guide[5].value == 0 &&
@@ -237,9 +245,17 @@ void helpers(const std::filesystem::path& root) {
     measured.spacing_m = 16;
     measured.solver_bed_sha256 = "9bb3399929faee0edf97bb8ed23d7615d777cce89fef69c8fe1b11870ecb65b3";
     require(fluid_25d_rain_guide_site(measured), "measured guide site rejected");
+    require(fluid_25d_demo_guided_start(true, measured, 0, 0),
+            "default Start did not select the measured guide");
+    require(!fluid_25d_demo_guided_start(false, measured, 0, 0), "manual Start selected the guide");
+    require(!fluid_25d_demo_guided_start(true, measured, 1, 0), "Resume restarted the guide");
+    require(!fluid_25d_demo_guided_start(true, measured, 0, 1),
+            "pre-filled water admitted the guide");
     measured.solver_bed_sha256 = std::string(64, 'f');
     require(!fluid_25d_rain_guide_site(measured),
             "guide admitted a different crop with the same name");
+    require(!fluid_25d_demo_guided_start(true, measured, 0, 0),
+            "default Start guided an unqualified bed");
 }
 } // namespace
 

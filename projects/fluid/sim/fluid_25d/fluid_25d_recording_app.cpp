@@ -147,6 +147,13 @@ class ManagedSceneReload {
               render::ColorTargetView target, const std::function<void()>& wait_frames);
     void shutdown(vulkan::GpuRuntime& gpu);
     bool guide_available() const;
+    bool guided_start_selected() const;
+    bool guide_preferred() const {
+        return guide_preferred_;
+    }
+    void set_guide_preferred(bool preferred);
+    void start_or_resume();
+    void manual_control(const char* reason);
     bool guide_active() const {
         return !guide_actions_.empty() && !guide_finished_;
     }
@@ -180,6 +187,7 @@ class ManagedSceneReload {
     std::vector<Fluid25DTerrainDemoAction> guide_actions_;
     std::size_t guide_index_ = 0;
     bool guide_waiting_ = false, guide_finished_ = false;
+    bool guide_preferred_ = true;
     std::chrono::steady_clock::time_point guide_action_started_{};
     std::string guide_note_;
     std::optional<std::uint64_t> action_ack_id_, guide_ack_id_;
@@ -795,7 +803,7 @@ class RecordingApp {
         if (!external_controls_allowed())
             return;
         if (managed_demo_ && !guided)
-            managed_demo_->cancel_guide("Guide stopped; manual solver control now applies.");
+            managed_demo_->manual_control("Guide stopped; manual solver control now applies.");
         const std::uint64_t command_id = external_next_command_id_;
         try {
             external_session_->send(kind, value);
@@ -1116,7 +1124,7 @@ class RecordingApp {
 
     void select_camera(const char* name, bool guided = false) {
         if (managed_demo_ && !guided)
-            managed_demo_->cancel_guide(
+            managed_demo_->manual_control(
                 "Manual camera selection; guide stopped. Solver continues.");
         config_.recording_camera = name;
         config_.native_camera_target_x.reset();
@@ -2235,11 +2243,29 @@ class RecordingApp {
                         simulation_.grid_height, simulation_.cell_size_m,
                         fluid_25d_demo_time_label(shown_->time_s).c_str());
         }
-        ImGui::BeginDisabled(busy);
+        const bool guide_site =
+            control && fluid_25d_rain_guide_site(control->case_by_id(demo->current_case_id()));
+        if (guide_site) {
+            ImGui::BeginDisabled(!demo->guide_available() && !demo->guide_active());
+            if (ImGui::RadioButton("Guided rain response", demo->guide_preferred()))
+                demo->set_guide_preferred(true);
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::RadioButton("Manual", !demo->guide_preferred()))
+                demo->set_guide_preferred(false);
+        }
+        const bool guided_start = demo && demo->guided_start_selected();
+        ImGui::BeginDisabled(busy || (guided_start && !demo->guide_available()));
         if ((lifecycle == Fluid25DLifecycle::Ready || lifecycle == Fluid25DLifecycle::Paused) &&
             backend_metadata_.capabilities.solver.resume &&
-            ImGui::Button(shown_->time_s == 0 ? "Start [Space]" : "Resume [Space]"))
-            send_external_command(Fluid25DCommandKind::Resume);
+            ImGui::Button(guided_start          ? "Start demo [Space]"
+                          : shown_->time_s == 0 ? "Start [Space]"
+                                                : "Resume [Space]")) {
+            if (demo)
+                demo->start_or_resume();
+            else
+                send_external_command(Fluid25DCommandKind::Resume);
+        }
         if (lifecycle == Fluid25DLifecycle::Running &&
             backend_metadata_.capabilities.solver.pause && ImGui::Button("Pause [Space]"))
             send_external_command(Fluid25DCommandKind::Pause);
@@ -2271,7 +2297,11 @@ class RecordingApp {
         else if ((lifecycle == Fluid25DLifecycle::Paused ||
                   lifecycle == Fluid25DLifecycle::Ready) &&
                  shown_->time_s == 0)
-            ImGui::TextWrapped("Dry and paused. Press Start to supply rain across the terrain.");
+            ImGui::TextWrapped(
+                guided_start ? "Dry and paused. Start demo follows rain, runoff and drainage."
+                : external_snapshot_->rain_m_per_s == 0
+                    ? "Dry and paused with rain off. Choose a rain preset, then Start."
+                    : "Dry and paused. Start supplies the selected rainfall across the terrain.");
         if (external_session_->command_pending())
             ImGui::TextDisabled("Applying solver command...");
         if (!external_error_.empty())
@@ -2290,8 +2320,8 @@ class RecordingApp {
             ImGui::Text("Water %.0f m3 | max depth %.2f m", shown_->stats.water_volume_m3,
                         shown_->stats.max_depth_m);
 
-        if (control && fluid_25d_rain_guide_site(control->case_by_id(demo->current_case_id()))) {
-            ImGui::SeparatorText("Rain-response demonstration (optional)");
+        if (guide_site) {
+            ImGui::SeparatorText("Rain-response demonstration");
             if (demo->guide_active()) {
                 ImGui::TextWrapped(
                     "%s",
@@ -2300,19 +2330,16 @@ class RecordingApp {
                                                        external_snapshot_->rain_m_per_s > 0)
                         : "Preparing acknowledged rain/pace settings, then starting the solver.");
                 if (ImGui::Button("Leave guided demonstration"))
-                    demo->cancel_guide(
+                    demo->manual_control(
                         "Guide stopped. Rain/pace stay as acknowledged; solver continues.");
             } else {
-                ImGui::BeginDisabled(!demo->guide_available());
-                if (ImGui::Button("Run rain-response demonstration"))
-                    demo->start_guide();
-                ImGui::EndDisabled();
                 if (!demo->guide_note().empty())
                     ImGui::TextWrapped("%s", demo->guide_note().c_str());
                 else
                     ImGui::TextWrapped(
-                        "Starts from dry/paused: 512 mm/h at 60x, rain off after 2 "
-                        "simulated hours, drainage through 6 hours. About 6 wall minutes.");
+                        "Guided Start: 512 mm/h at 60x, rain off after 2 simulated hours, "
+                        "drainage through 6 hours. About 6 wall minutes. Manual keeps your "
+                        "rain/pace and camera choices, with no scheduled rain shutoff.");
                 if (!demo->guide_available() && !demo->guide_finished())
                     ImGui::TextDisabled(
                         "Reset water to dry/paused first; wait for a healthy worker.");
@@ -2799,7 +2826,7 @@ class RecordingApp {
             (input.scroll_delta().y != 0 ||
              (input.mouse_button_down(input::MouseButton::Left) &&
               (input.cursor_delta().x != 0 || input.cursor_delta().y != 0))))
-            reload->cancel_guide("Manual orbit/zoom; guide stopped. Solver continues.");
+            reload->manual_control("Manual orbit/zoom; guide stopped. Solver continues.");
         orbit_.update_pointer_input(input, timing.delta_seconds);
         if (input.key_pressed(input::Key::S))
             cycle_bank_view();
@@ -2825,7 +2852,7 @@ class RecordingApp {
                          fluid_25d_command_supported(backend_metadata_.capabilities,
                                                      Fluid25DControlDomain::Solver,
                                                      Fluid25DCommandKind::Resume))
-                    send_external_command(Fluid25DCommandKind::Resume);
+                    reload->start_or_resume();
             }
             if (reload->control() && reload->restart_allowed() && input.key_pressed(input::Key::R))
                 reload->request_case(reload->current_case_id());
@@ -3193,7 +3220,22 @@ void ManagedSceneReload::run_sequence(const std::vector<Fluid25DTerrainDemoActio
     if (!fluid_25d_demo_action_due(action, std::chrono::duration<double>(now - started).count(),
                                    active_->shown_->time_s))
         return;
-    if (action.kind == "guide-start") {
+    if (action.kind == "start" || action.kind == "manual-start") {
+        if (!active_->external_controls_allowed())
+            return;
+        if (action.kind == "manual-start")
+            set_guide_preferred(false);
+        const bool starts_guide = guided_start_selected();
+        if (starts_guide && !guide_available())
+            throw std::runtime_error("guided Start requires a healthy dry/paused session");
+        const auto id = active_->external_next_command_id_;
+        start_or_resume();
+        if (!starts_guide) {
+            if (active_->external_pending_command_id_ != id || !active_->external_error_.empty())
+                throw std::runtime_error("manual Start was not submitted");
+            expected_ack = id;
+        }
+    } else if (action.kind == "guide-start") {
         if (!guide_available())
             throw std::runtime_error(
                 "rain guide requires the healthy dry/paused Mountain 1k/16m case");
@@ -3244,9 +3286,36 @@ bool ManagedSceneReload::guide_available() const {
            capabilities.resume && capabilities.set_rain && capabilities.set_time_scale;
 }
 
+bool ManagedSceneReload::guided_start_selected() const {
+    return control_ && fluid_25d_demo_guided_start(
+                           guide_preferred_, control_->case_by_id(current_case_id_),
+                           active_->shown_->time_s, active_->shown_->stats.water_volume_m3);
+}
+
+void ManagedSceneReload::set_guide_preferred(bool preferred) {
+    guide_preferred_ = preferred;
+    if (preferred)
+        guide_note_.clear();
+    else
+        cancel_guide("Manual mode selected. Applied rain/pace and water are retained.");
+}
+
+void ManagedSceneReload::start_or_resume() {
+    if (guided_start_selected())
+        start_guide(); // An unavailable guide never silently falls back to manual Resume.
+    else
+        active_->send_external_command(Fluid25DCommandKind::Resume);
+}
+
+void ManagedSceneReload::manual_control(const char* reason) {
+    guide_preferred_ = false;
+    cancel_guide(reason);
+}
+
 void ManagedSceneReload::start_guide() {
     if (!guide_available())
         return;
+    guide_preferred_ = true;
     guide_actions_ = fluid_25d_rain_guide_actions();
     guide_index_ = 0;
     guide_waiting_ = guide_finished_ = false;

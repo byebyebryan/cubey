@@ -360,7 +360,8 @@ def main(argv=None):
                 **environment_options(a)), stdout=vlog,
                 stderr=subprocess.STDOUT, start_new_session=True, env=environment)
             owned.append(viewer)
-            print("Live starts dry/paused; Start/Space resumes. Closing this managed demo stops its owned worker."
+            print("Live starts dry/paused; Start/Space guides the validated Mountain 1k case, "
+                  "or resumes in Manual/other sites. Closing this managed demo stops its owned worker."
                   if a.mode == "live" else "Recorded view holds the final captured state; no solver is running.", flush=True)
             while not interrupted[0] and viewer.poll() is None:
                 if supervisor:

@@ -48,7 +48,10 @@ rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
   --study outputs/fluid/site-expansion-20261011-jtIA3s
 ```
 
-Live starts dry and paused; Space resumes the actual solver. The managed
+Live starts dry and paused. On the validated Mountain 1k/16m case,
+**Start demo / Space** defaults to the guided rain response; **Manual** retains
+ordinary continuous simulation with your selected rain, pace and camera.
+Other sites and grids retain ordinary Start/Resume. The managed
 **Terrain Water** panel now supports prepared site/grid selection followed by
 Apply & restart in the same window. Rain, pace and appearance are retained;
 water starts dry/paused again. Closing this launcher stops its owned worker.
@@ -57,11 +60,11 @@ full grid resolution and B-spline display subdivision. There is no surrounding
 terrain or outer LOD, including for prepared-world sites. “Fit simulation patch”
 and “Whole patch” describe that boundary; wider backdrops belong to the shared
 Terrain foundation. See the [patch-only qualification](patch_only_v1.md).
-See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Choose
-the optional **Run rain-response demonstration** on dry/paused Mountain 1k/16m
-to follow wet-up, downhill runoff, basin collection and rain-off drainage. Its
+See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Guided Start
+follows wet-up, downhill runoff, basin collection and rain-off drainage. Its
 six-hour narrative ends with the solver still running; manual controls leave
-the guide. See [rain-response study](rain_response_v1.md).
+the guide and select Manual. No startup autoplay is added, and headless scripts
+using `resume` remain manual. See [rain-response study](rain_response_v1.md).
 Use `--print-command` remotely for a read-only preflight without opening a GUI.
 `--render-fps 0` restores unpaced rendering; other positive values select a
 custom cap. `--configuration patch-2048-8m` selects the finer, slower-live grid.

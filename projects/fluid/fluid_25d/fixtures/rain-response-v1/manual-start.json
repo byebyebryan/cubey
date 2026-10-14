@@ -1,0 +1,7 @@
+{
+  "schema": "cubey.fluid25d.terrain-demo.v1",
+  "actions": [
+    {"kind": "manual-start", "after_s": 0},
+    {"kind": "pause", "at_physical_s": 600}
+  ]
+}

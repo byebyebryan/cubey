@@ -19,8 +19,10 @@ rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
 ```
 
 The **Terrain Water** panel puts Start/Pause, Reset water and Fit simulation patch first.
-Space starts or pauses the actual worker; R restarts the selected current case
-dry and paused. Closing this *managed launcher* stops its owned worker. A
+Space starts the guided response on the qualified Mountain 1k case; in Manual,
+or on other sites/grids, it starts/resumes the actual worker normally. While
+running, Space pauses the worker. R restarts the current case dry and paused.
+Closing this *managed launcher* stops its owned worker. A
 standalone `--fluid25d-external-session` viewer still merely detaches on close.
 
 - Simulation: acknowledged rainfall, rain presets/custom amount, requested pace,
@@ -127,8 +129,10 @@ Example script (time is wall time after prior action acknowledgement):
 
 Other actions are `set-rain` (mm/h `value`) and `set-time-scale` (pace `value`).
 `camera` selects `overview`, `runoff` or `collection` on the existing Mountain
-site. `guide-start` and `guide-cancel` exercise the same optional guide methods
-as the GUI, without opening a native window.
+site. `guide-start` and `guide-cancel` exercise the guide methods without opening
+a native window. `start` exercises the primary GUI/Space routing; `manual-start`
+selects Manual and uses the same routing. Existing `resume` scripts remain manual
+and never implicitly run a guide.
 Each action requires exactly one timing key: `after_s` is wall time after the
 previous acknowledgement; `at_physical_s` is an absolute simulated timestamp
 in the current session, bounded to the prepared 20-hour horizon. For example,
@@ -140,20 +144,28 @@ ends; an incomplete script fails explicitly. This is useful for shutdown tests
 but is never a successful switching trial. Performance summaries filter running
 lifecycle; mixed-grid switching trials are not steady-state comparisons.
 
-### Optional rain-response guide
+### Default rain-response guide
 
-On the prepared Mountain / 1024² / 16m case, **Run rain-response demonstration**
-starts only from healthy dry/paused water. It acknowledges 512 mm/h and 60x
+On the measured native bed of the prepared Mountain / 1024² / 16m case,
+**Guided rain response** is selected by default. **Start demo / Space** starts
+only from healthy dry/paused water. It acknowledges 512 mm/h and 60x
 before resuming; follows the existing Whole patch / Downhill runoff / Basin
 collection cameras; turns rainfall off after two simulated hours; and completes
 its explanation at six hours **without pausing the solver**. Startup remains
-dry/paused with no autoplay or forcing change unless this action is chosen.
+dry/paused with no autoplay or forcing change until Start. **Manual** preserves
+the acknowledged rain/pace and your camera, with no scheduled shutoff. Ordinary
+Resume after progress does not restart the narrative. Other sites, resolutions,
+replay and existing headless `resume` scripts keep their prior behaviour.
 
 The guide waits for each matching applied acknowledgement. Camera changes use
 physical time, not renderer FPS or elapsed setup time. Manual solver control,
-camera selection, orbit/zoom, reset or replacement cancels the guide. Leaving it
-retains applied rain/pace and does not rewind water; resetting creates new dry
-water. Scene replacement does not carry an active guide into another terrain.
+camera selection or orbit/zoom cancels the guide and selects Manual. Reset or
+replacement cancels an active guide while retaining the chosen start mode.
+Leaving it retains applied rain/pace and does not rewind water; resetting creates new dry
+water. Choose Guided again on healthy dry/paused Mountain water to repeat the
+narrative; it explicitly restores 512 mm/h. Manual Reset preserves rain, so a
+rain-off reset needs a rain preset before it can wet up. Scene replacement does
+not carry an active guide into another terrain.
 The separate 20-hour prepared solver horizon remains explicit.
 
 See [rain-response evidence and qualification](rain_response_v1.md). The phase
