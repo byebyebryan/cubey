@@ -53,15 +53,71 @@ actual shutoff acknowledgement. Exact field payloads are unchanged; these knots
 are not an exact native source ledger or a conservation certificate. Hydraulic
 states are held between irregular snapshots, never physically interpolated.
 
-## Intended optional guide
+## Optional guide (implemented)
 
-The guide uses the same acknowledged solver controls and the existing Whole
+The guide is offered only for the measured native bed identity, not a different
+crop that happens to reuse the Mountain case name. It uses the same acknowledged
+solver controls and the existing Whole
 patch / Downhill runoff / Basin collection cameras. It starts only from a healthy
 dry/paused Mountain 1k session, sets 512 mm/h and 60x, and resumes the solver.
 Its camera milestones are 0.5h, 1h, 2.5h and 3h; rain stops at 2h. At 6h it
 finishes its explanation while the solver continues draining. No automatic
 pause, stop, reset or looping is part of the guide. Manual solver control,
 camera selection, orbit/zoom or scene reset exits it without fighting the user.
+Reset retains the acknowledged rainfall. After completing the rain-off guide,
+choose Run demonstration again (which sets 512 mm/h), or explicitly select a
+rain preset before ordinary Start; Start alone does not turn rain back on.
 
-Native GUI layout/interaction review remains deferred. Headless qualification,
-matched rain-on captures and fresh performance receipts are separate gates.
+## Qualification and verdict
+
+The final Release renderer (`86015f7af9538171d6f9ebf80bd967830e45ffc26b08e4441220c37394b0714a`)
+passed the complete nine-milestone guide. It completed at 21,600 physical seconds
+with rain off, then continued advancing before the **test fixture's separate**
+pause at 21,729.990 seconds. Manual rain and camera overrides cancelled two
+guides with no subsequent automatic camera changes; two resets installed fresh
+dry sessions and a later ordinary Resume did not start a guide. Native GPU
+bed/depth/decoded-velocity audits passed at all three scene retirements.
+
+An uninterrupted 90-second 1920x1080 headless live trial, excluding the first
+20 seconds of running warmup, measured GPU p95 **5.15 ms**, CPU service p95
+**2.78 ms**, advancing-field age p95 **0.143 s**, and achieved pace **59.999x**.
+It had no capture, encoding or observer field archive. These pass the existing
+8 ms GPU / 4 ms CPU / 1 s age / 54x minimum gates; native display/scanout FPS is
+not inferred from this result. No solver, water/terrain shader or default change
+was made. One fixed-daylight reference capture remained pixel-exact.
+
+Eleven scoped CPU groups and three hardware GPU groups passed. The default
+Python helper group skips its numerical metric test without NumPy; both helper
+tests separately passed in the existing optional NumPy environment. Native GUI
+layout/interaction review remains deferred.
+
+The continuous-rain control retained 338 exact snapshots. At approximately six
+physical hours it stored **93.89 million m³** versus **33.86 million m³** after
+the matched two-hour storm plus four-hour recession. Its collection-camera
+region held 32.33 versus 21.92 million m³. Early checkpoints agree closely but
+are not bit-exact parity claims: the observer records actual solver-boundary
+times, with comparison samples within 75 seconds of requested physical times.
+
+Four 30-second recorded clips show 333 or 336 distinct native hydraulic states
+each, with twelve matched stills. The timelapse is 720x, not a live-FPS capture;
+water fields are held between saves, and foam/dots/rain remain visual cues.
+The browser comparison button, media decoding, measured timeline and layout
+passed review. The initial display taper remains only rainfall-presentation
+metadata; physical water fields are never interpolated or amplified.
+
+Verdict: retain the measured, optional guide and current rendering defaults.
+The clearest story is stream formation and retreat, plus delayed basin response;
+do not promote the remaining collection to a certified quiet lake. Ordinary
+live operation, replay, other prepared sites and the builtin solver are retained.
+
+[Browser review: rain becomes runoff, then drains](http://starship:8787/reports/9072f6efec32e982a19c3cac339e657af57906cd8efb059bdd5e192503fe7817/).
+Local evidence:
+
+- `outputs/fluid/rain-response-v1-20261014-a2` — corrected exact recession recording.
+- `outputs/fluid/rain-response-v1-20261014-rain-on` — continuous-rain control.
+- `outputs/fluid/rain-guide-v1-20261014-final` — frozen final guide trial.
+- `outputs/fluid/rain-guide-v1-20261014-override` — overrides, reset and ordinary resume.
+- `outputs/fluid/rain-guide-v1-20261014-performance` — uninterrupted live performance.
+- `outputs/fluid/rain-response-review-v1-20261014` — captures, GPU tests, fixed reference,
+  browser review receipt and self-contained export. Earlier `full`/`qualified`
+  trials are development evidence, not the frozen final binary qualification.

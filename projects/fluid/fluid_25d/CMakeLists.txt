@@ -261,6 +261,10 @@ if (BUILD_TESTING)
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_run_rain_response_v1.py)
         set_tests_properties(fluid_25d_rain_response_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
+        add_test(NAME fluid_25d_rain_response_review_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_rain_response_v1.py)
+        set_tests_properties(fluid_25d_rain_response_review_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
         add_test(NAME fluid_25d_captured_water_alignment_report
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_report_captured_water_alignment_v1.py)
