@@ -31,7 +31,7 @@ standalone `--fluid25d-external-session` viewer still merely detaches on close.
 - View: Scenic, isolated water, flow interpretation, 2D diagnostics, dots/trails,
   and existing advanced render-only appearance settings.
 - Composition: only the complete selected simulation grid, with no exterior
-  terrain or outer LOD. **Full patch** retains the `overview` ID; `runoff` and
+  terrain or outer LOD. **Whole patch** retains the `overview` ID; `runoff` and
   `collection` remain the local camera presets.
 - How to read: rain covers the whole terrain, water flows downhill and collects
   in basins, and the outer boundary is open. There is no authored point drain.
@@ -126,6 +126,9 @@ Example script (time is wall time after prior action acknowledgement):
 ```
 
 Other actions are `set-rain` (mm/h `value`) and `set-time-scale` (pace `value`).
+`camera` selects `overview`, `runoff` or `collection` on the existing Mountain
+site. `guide-start` and `guide-cancel` exercise the same optional guide methods
+as the GUI, without opening a native window.
 Each action requires exactly one timing key: `after_s` is wall time after the
 previous acknowledgement; `at_physical_s` is an absolute simulated timestamp
 in the current session, bounded to the prepared 20-hour horizon. For example,
@@ -136,6 +139,26 @@ Scripts must finish and receive every acknowledgement before the bounded run
 ends; an incomplete script fails explicitly. This is useful for shutdown tests
 but is never a successful switching trial. Performance summaries filter running
 lifecycle; mixed-grid switching trials are not steady-state comparisons.
+
+### Optional rain-response guide
+
+On the prepared Mountain / 1024² / 16m case, **Run rain-response demonstration**
+starts only from healthy dry/paused water. It acknowledges 512 mm/h and 60x
+before resuming; follows the existing Whole patch / Downhill runoff / Basin
+collection cameras; turns rainfall off after two simulated hours; and completes
+its explanation at six hours **without pausing the solver**. Startup remains
+dry/paused with no autoplay or forcing change unless this action is chosen.
+
+The guide waits for each matching applied acknowledgement. Camera changes use
+physical time, not renderer FPS or elapsed setup time. Manual solver control,
+camera selection, orbit/zoom, reset or replacement cancels the guide. Leaving it
+retains applied rain/pace and does not rewind water; resetting creates new dry
+water. Scene replacement does not carry an active guide into another terrain.
+The separate 20-hour prepared solver horizon remains explicit.
+
+See [rain-response evidence and qualification](rain_response_v1.md). The phase
+captions explain actual rain supply and delayed upstream arrivals; animated
+rain, foam and dots are visual aids, not numerical water parcels.
 
 Evidence/report: `outputs/fluid/terrain-ux-v1-20261010-CJjqek/index.html`, served
 by the existing output report server on port 8801. Automated lifecycle and GPU

@@ -146,9 +146,25 @@ class ManagedSceneReload {
     void poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
               render::ColorTargetView target, const std::function<void()>& wait_frames);
     void shutdown(vulkan::GpuRuntime& gpu);
+    bool guide_available() const;
+    bool guide_active() const {
+        return !guide_actions_.empty() && !guide_finished_;
+    }
+    bool guide_finished() const {
+        return guide_finished_;
+    }
+    const std::string& guide_note() const {
+        return guide_note_;
+    }
+    void start_guide();
+    void cancel_guide(const char* reason);
 
   private:
     void run_script();
+    void run_sequence(const std::vector<Fluid25DTerrainDemoAction>& actions, std::size_t& index,
+                      bool& waiting, std::chrono::steady_clock::time_point& started,
+                      std::optional<std::uint64_t>& expected_ack, bool guided);
+    void run_guide();
     void log(const std::string& event);
     RecordingApp* active_;
     std::unique_ptr<RecordingApp> installed_;
@@ -161,6 +177,12 @@ class ManagedSceneReload {
     std::vector<Fluid25DTerrainDemoAction> script_;
     std::size_t action_index_ = 0;
     bool action_waiting_ = false;
+    std::vector<Fluid25DTerrainDemoAction> guide_actions_;
+    std::size_t guide_index_ = 0;
+    bool guide_waiting_ = false, guide_finished_ = false;
+    std::chrono::steady_clock::time_point guide_action_started_{};
+    std::string guide_note_;
+    std::optional<std::uint64_t> action_ack_id_, guide_ack_id_;
 };
 
 class RecordingApp {
@@ -768,9 +790,12 @@ class RecordingApp {
         }
     }
 
-    void send_external_command(Fluid25DCommandKind kind, std::optional<double> value = {}) {
+    void send_external_command(Fluid25DCommandKind kind, std::optional<double> value = {},
+                               bool guided = false) {
         if (!external_controls_allowed())
             return;
+        if (managed_demo_ && !guided)
+            managed_demo_->cancel_guide("Guide stopped; manual solver control now applies.");
         const std::uint64_t command_id = external_next_command_id_;
         try {
             external_session_->send(kind, value);
@@ -1089,7 +1114,10 @@ class RecordingApp {
             ensure_scenic_resources(device, target);
     }
 
-    void select_camera(const char* name) {
+    void select_camera(const char* name, bool guided = false) {
+        if (managed_demo_ && !guided)
+            managed_demo_->cancel_guide(
+                "Manual camera selection; guide stopped. Solver continues.");
         config_.recording_camera = name;
         config_.native_camera_target_x.reset();
         config_.native_camera_target_z.reset();
@@ -2262,6 +2290,41 @@ class RecordingApp {
             ImGui::Text("Water %.0f m3 | max depth %.2f m", shown_->stats.water_volume_m3,
                         shown_->stats.max_depth_m);
 
+        if (control && fluid_25d_rain_guide_site(control->case_by_id(demo->current_case_id()))) {
+            ImGui::SeparatorText("Rain-response demonstration (optional)");
+            if (demo->guide_active()) {
+                ImGui::TextWrapped(
+                    "%s",
+                    lifecycle == Fluid25DLifecycle::Running
+                        ? fluid_25d_rain_guide_caption(shown_->time_s,
+                                                       external_snapshot_->rain_m_per_s > 0)
+                        : "Preparing acknowledged rain/pace settings, then starting the solver.");
+                if (ImGui::Button("Leave guided demonstration"))
+                    demo->cancel_guide(
+                        "Guide stopped. Rain/pace stay as acknowledged; solver continues.");
+            } else {
+                ImGui::BeginDisabled(!demo->guide_available());
+                if (ImGui::Button("Run rain-response demonstration"))
+                    demo->start_guide();
+                ImGui::EndDisabled();
+                if (!demo->guide_note().empty())
+                    ImGui::TextWrapped("%s", demo->guide_note().c_str());
+                else
+                    ImGui::TextWrapped(
+                        "Starts from dry/paused: 512 mm/h at 60x, rain off after 2 "
+                        "simulated hours, drainage through 6 hours. About 6 wall minutes.");
+                if (!demo->guide_available() && !demo->guide_finished())
+                    ImGui::TextDisabled(
+                        "Reset water to dry/paused first; wait for a healthy worker.");
+            }
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            ImGui::TextWrapped(
+                "Physical-time milestones; manual solver/camera input exits the guide.");
+            ImGui::TextWrapped(
+                "End of guide does not pause the simulation. Rain/foam are visual cues.");
+            ImGui::PopStyleColor();
+        }
+
         if (ImGui::CollapsingHeader("Simulation", ImGuiTreeNodeFlags_DefaultOpen)) {
             draw_external_rain_ui(busy);
             ImGui::Text("Requested pace: %.1fx", external_snapshot_->pacing);
@@ -2331,14 +2394,13 @@ class RecordingApp {
             // the mountain crop. Do not pretend they identify another site's basin.
             if (!control || control->case_by_id(demo->current_case_id()).site == "mountain") {
                 for (const char* camera : {"overview", "runoff", "collection"}) {
-                    if (ImGui::RadioButton(camera == std::string_view("overview") ? "Full patch"
-                                                                                  : camera,
-                                           config_.recording_camera == camera)) {
+                    const char* label = camera == std::string_view("overview") ? "Whole patch"
+                                        : camera == std::string_view("runoff") ? "Downhill runoff"
+                                                                               : "Basin collection";
+                    if (ImGui::RadioButton(label, config_.recording_camera == camera)) {
                         select_camera(camera);
                     }
-                    ImGui::SameLine();
                 }
-                ImGui::NewLine();
             }
             ImGui::BeginDisabled(!markers_available_);
             if (ImGui::Checkbox("Dots / trails [W]", &config_.motion_markers))
@@ -2733,6 +2795,11 @@ class RecordingApp {
             device_memory_budget_ = context.device().device_memory_budget();
         }
         const auto input = context.filtered_input();
+        if (reload->guide_active() &&
+            (input.scroll_delta().y != 0 ||
+             (input.mouse_button_down(input::MouseButton::Left) &&
+              (input.cursor_delta().x != 0 || input.cursor_delta().y != 0))))
+            reload->cancel_guide("Manual orbit/zoom; guide stopped. Solver continues.");
         orbit_.update_pointer_input(input, timing.delta_seconds);
         if (input.key_pressed(input::Key::S))
             cycle_bank_view();
@@ -2923,6 +2990,7 @@ class RecordingApp {
     }
 
     Fluid25DProjectConfig config_;
+    ManagedSceneReload* managed_demo_ = nullptr; // Owned by the host, survives scene replacement.
     std::shared_ptr<Fluid25DRecording> recording_;
     std::unique_ptr<Fluid25DExternalSession> external_session_;
     std::atomic<double> external_read_ms_{0.0};
@@ -3026,6 +3094,7 @@ class RecordingApp {
 };
 
 ManagedSceneReload::ManagedSceneReload(RecordingApp& initial) : active_(&initial) {
+    initial.managed_demo_ = this;
     if (!initial.config_.terrain_demo_control_path)
         return;
     control_ =
@@ -3066,6 +3135,10 @@ bool ManagedSceneReload::restart_allowed() const {
 void ManagedSceneReload::request_case(const std::string& id) {
     if (!restart_allowed())
         return;
+    cancel_guide("Scene reset/replacement; guide stopped.");
+    guide_actions_.clear();
+    guide_finished_ = false;
+    guide_note_.clear();
     control_->request(id, active_->external_snapshot_->rain_m_per_s * 3.6e6,
                       active_->external_snapshot_->pacing);
     selected_case_id = id;
@@ -3084,26 +3157,55 @@ void ManagedSceneReload::run_script() {
         return;
     if (!active_->external_error_.empty())
         throw std::runtime_error("managed regression service failed: " + active_->external_error_);
+    run_sequence(script_, action_index_, action_waiting_, action_started_, action_ack_id_, false);
+}
+
+void ManagedSceneReload::run_sequence(const std::vector<Fluid25DTerrainDemoAction>& actions,
+                                      std::size_t& index, bool& waiting,
+                                      std::chrono::steady_clock::time_point& started,
+                                      std::optional<std::uint64_t>& expected_ack, bool guided) {
+    if (control_->busy() || active_->managed_held_ ||
+        active_->external_session_->command_pending() || !active_->external_error_.empty())
+        return;
     const auto now = std::chrono::steady_clock::now();
-    if (action_started_ == std::chrono::steady_clock::time_point{}) {
-        action_started_ = now; // Cold setup time is not part of an action's delay.
+    if (started == std::chrono::steady_clock::time_point{}) {
+        started = now; // Cold setup time is not part of an action's delay.
         return;
     }
     if (active_->external_refresh_after_render_setup_)
         return; // Let update_view validate a post-setup publication first.
-    if (action_waiting_) {
-        log("action-applied");
-        action_waiting_ = false;
-        action_started_ = now;
+    if (waiting) {
+        if (expected_ack) {
+            const auto& ack = active_->external_snapshot_->acknowledgement;
+            if (!ack || ack->command_id != *expected_ack ||
+                ack->state != Fluid25DAcknowledgementState::Applied)
+                throw std::runtime_error(
+                    "scheduled solver command did not receive its applied acknowledgement");
+            expected_ack.reset();
+        }
+        log(guided ? "guide-applied" : "action-applied");
+        waiting = false;
+        started = now;
     }
-    if (action_index_ >= script_.size())
+    if (index >= actions.size())
         return;
-    const auto& action = script_[action_index_];
-    if (!fluid_25d_demo_action_due(action,
-                                   std::chrono::duration<double>(now - action_started_).count(),
+    const auto& action = actions[index];
+    if (!fluid_25d_demo_action_due(action, std::chrono::duration<double>(now - started).count(),
                                    active_->shown_->time_s))
         return;
-    if (action.kind == "switch") {
+    if (action.kind == "guide-start") {
+        if (!guide_available())
+            throw std::runtime_error(
+                "rain guide requires the healthy dry/paused Mountain 1k/16m case");
+        start_guide();
+    } else if (action.kind == "guide-cancel") {
+        cancel_guide("Guide explicitly stopped. Solver settings are retained.");
+    } else if (action.kind == "camera") {
+        if (control_->case_by_id(current_case_id_).site != "mountain")
+            throw std::runtime_error("observation cameras require the mountain site");
+        active_->select_camera(action.camera.c_str(), guided);
+    } else if (action.kind == "switch") {
+        cancel_guide("Scene replacement; guide stopped.");
         control_->request(action.case_id, action.rain_mm_per_hour, action.pacing);
         selected_case_id = action.case_id;
         active_->managed_held_ = true;
@@ -3120,11 +3222,76 @@ void ManagedSceneReload::run_script() {
             value = *value / 3.6e6;
         if (!active_->external_controls_allowed())
             return; // Health/pending transitions are observed, never bypassed.
-        active_->send_external_command(kind, value);
+        const auto id = active_->external_next_command_id_;
+        active_->send_external_command(kind, value, guided);
+        if (active_->external_pending_command_id_ != id || !active_->external_error_.empty())
+            throw std::runtime_error("scheduled solver command was not submitted");
+        expected_ack = id;
     }
-    log("action-" + action.kind);
-    ++action_index_;
-    action_waiting_ = true;
+    log(std::string(guided ? "guide-" : "action-") + action.kind);
+    ++index;
+    waiting = true;
+}
+
+bool ManagedSceneReload::guide_available() const {
+    if (!control_ || !fluid_25d_rain_guide_site(control_->case_by_id(current_case_id_)) ||
+        guide_active() || active_->shown_->time_s != 0 ||
+        active_->shown_->stats.water_volume_m3 != 0 || !active_->external_controls_allowed())
+        return false;
+    const auto lifecycle = active_->external_snapshot_->header.lifecycle;
+    const auto& capabilities = active_->backend_metadata_.capabilities.solver;
+    return (lifecycle == Fluid25DLifecycle::Ready || lifecycle == Fluid25DLifecycle::Paused) &&
+           capabilities.resume && capabilities.set_rain && capabilities.set_time_scale;
+}
+
+void ManagedSceneReload::start_guide() {
+    if (!guide_available())
+        return;
+    guide_actions_ = fluid_25d_rain_guide_actions();
+    guide_index_ = 0;
+    guide_waiting_ = guide_finished_ = false;
+    guide_action_started_ = {};
+    guide_ack_id_.reset();
+    guide_note_.clear();
+    active_->select_camera("overview", true);
+    log("guide-started");
+}
+
+void ManagedSceneReload::cancel_guide(const char* reason) {
+    if (!guide_active())
+        return;
+    guide_actions_.clear();
+    guide_waiting_ = false;
+    guide_ack_id_.reset();
+    guide_note_ = reason;
+    log("guide-cancelled");
+}
+
+void ManagedSceneReload::run_guide() {
+    if (!guide_active())
+        return;
+    const auto lifecycle = active_->external_snapshot_->header.lifecycle;
+    if (!active_->external_error_.empty() || active_->managed_held_ || control_->busy() ||
+        lifecycle == Fluid25DLifecycle::Completed || lifecycle == Fluid25DLifecycle::Stopped ||
+        lifecycle == Fluid25DLifecycle::Failed) {
+        cancel_guide("Guide stopped: producer is held, failed, replaced or at its horizon.");
+        return;
+    }
+    try {
+        run_sequence(guide_actions_, guide_index_, guide_waiting_, guide_action_started_,
+                     guide_ack_id_, true);
+    } catch (const std::exception& error) {
+        cancel_guide(error.what());
+        return;
+    }
+    if (guide_index_ == guide_actions_.size() && !guide_waiting_) {
+        if (lifecycle != Fluid25DLifecycle::Running ||
+            active_->external_snapshot_->rain_m_per_s != 0)
+            throw std::runtime_error("guide ended without continued rain-off hydraulic evolution");
+        guide_finished_ = true;
+        guide_note_ = "Guide complete. The guide did not pause the solver; Reset water to repeat.";
+        log("guide-complete-running");
+    }
 }
 
 void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
@@ -3252,6 +3419,7 @@ void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, s
                 active_->terrain_surface_.reset();
                 installed_ = std::move(replacement);
                 active_ = installed_.get();
+                active_->managed_demo_ = this;
                 current_case_id_ = selected_case_id = next.id;
                 active_->managed_held_ = true;
                 control_->confirm_installed(true);
@@ -3271,6 +3439,7 @@ void ManagedSceneReload::poll(vulkan::Device& device, vulkan::GpuRuntime& gpu, s
     if (!control_->busy())
         stage_.clear();
     run_script();
+    run_guide();
     static_cast<void>(device); // GPU installation belongs to the shared runtime owner.
 }
 

@@ -203,6 +203,43 @@ void helpers(const std::filesystem::path& root) {
     script["actions"][2].erase("at_physical_s");
     write(root / "script.json", script);
     throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
+
+    script["actions"] =
+        Json::array({Json{{"kind", "guide-start"}, {"after_s", 0}},
+                     Json{{"kind", "camera"}, {"at_physical_s", 1800}, {"camera", "runoff"}},
+                     Json{{"kind", "guide-cancel"}, {"at_physical_s", 2400}}});
+    write(root / "script.json", script);
+    const auto guide_script = fluid_25d_load_terrain_demo_script(root / "script.json");
+    require(guide_script[1].camera == "runoff", "observation camera not decoded");
+    script["actions"][1]["camera"] = "invented";
+    write(root / "script.json", script);
+    throws([&] { fluid_25d_load_terrain_demo_script(root / "script.json"); });
+    const auto guide = fluid_25d_rain_guide_actions();
+    require(guide.size() == 9 && guide[0].value == 512 && guide[1].value == 60 &&
+                guide[2].kind == "resume" && guide[5].kind == "set-rain" && guide[5].value == 0 &&
+                guide[5].at_physical_s == 7200 && guide.back().at_physical_s == 21600,
+            "guide forcing/timeline changed");
+    double previous = 0;
+    for (const auto& action : guide) {
+        require(action.at_physical_s && *action.at_physical_s >= previous,
+                "guide is not physically ordered");
+        require(action.kind != "pause" && action.kind != "stop" && action.kind != "reset",
+                "guide pauses/stops/resets hydraulic evolution");
+        previous = *action.at_physical_s;
+    }
+    require(std::string(fluid_25d_rain_guide_caption(7200, true)).find("Collection") == 0,
+            "guide claimed rain-off before acknowledgement");
+    require(std::string(fluid_25d_rain_guide_caption(7204, false)).find("Rain off") == 0,
+            "acknowledged rain-off not explained");
+    Fluid25DTerrainDemoCase measured;
+    measured.id = "mountain-patch-1024-16m";
+    measured.width = measured.height = 1024;
+    measured.spacing_m = 16;
+    measured.solver_bed_sha256 = "9bb3399929faee0edf97bb8ed23d7615d777cce89fef69c8fe1b11870ecb65b3";
+    require(fluid_25d_rain_guide_site(measured), "measured guide site rejected");
+    measured.solver_bed_sha256 = std::string(64, 'f');
+    require(!fluid_25d_rain_guide_site(measured),
+            "guide admitted a different crop with the same name");
 }
 } // namespace
 

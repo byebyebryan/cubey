@@ -1,0 +1,16 @@
+{
+  "schema": "cubey.fluid25d.terrain-demo.v1",
+  "actions": [
+    {"kind": "guide-start", "after_s": 0},
+    {"kind": "set-rain", "at_physical_s": 600, "value": 128},
+    {"kind": "camera", "at_physical_s": 1800, "camera": "runoff"},
+    {"kind": "pause", "at_physical_s": 2400},
+    {"kind": "reset", "after_s": 1},
+    {"kind": "guide-start", "after_s": 1},
+    {"kind": "camera", "at_physical_s": 600, "camera": "collection"},
+    {"kind": "pause", "at_physical_s": 1800},
+    {"kind": "reset", "after_s": 1},
+    {"kind": "resume", "after_s": 1},
+    {"kind": "pause", "at_physical_s": 1200}
+  ]
+}

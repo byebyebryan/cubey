@@ -1,0 +1,4 @@
+{
+  "schema": "cubey.fluid25d.terrain-demo.v1",
+  "actions": [{"kind": "resume", "after_s": 1}]
+}

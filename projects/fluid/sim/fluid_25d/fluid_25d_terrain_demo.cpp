@@ -349,7 +349,14 @@ fluid_25d_load_terrain_demo_script(const std::filesystem::path& path) {
             keys(item, {"kind", timing, "value"});
             action.value = number(item, "value", action.kind == "set-rain" ? 0 : .125,
                                   action.kind == "set-rain" ? 36000 : 300);
-        } else if (action.kind == "resume" || action.kind == "pause" || action.kind == "reset") {
+        } else if (action.kind == "camera") {
+            keys(item, {"kind", timing, "camera"});
+            action.camera = string(item, "camera");
+            if (action.camera != "overview" && action.camera != "runoff" &&
+                action.camera != "collection")
+                invalid("unsupported observation camera");
+        } else if (action.kind == "resume" || action.kind == "pause" || action.kind == "reset" ||
+                   action.kind == "guide-start" || action.kind == "guide-cancel") {
             keys(item, {"kind", timing});
         } else
             invalid("unsupported script action");
@@ -362,6 +369,51 @@ bool fluid_25d_demo_action_due(const Fluid25DTerrainDemoAction& action, double e
                                double physical_s) {
     return action.at_physical_s ? std::isfinite(physical_s) && physical_s >= *action.at_physical_s
                                 : std::isfinite(elapsed_wall_s) && elapsed_wall_s >= action.after_s;
+}
+
+std::vector<Fluid25DTerrainDemoAction> fluid_25d_rain_guide_actions() {
+    std::vector<Fluid25DTerrainDemoAction> result;
+    const auto add = [&](const char* kind, double time, std::optional<double> value = {},
+                         const char* camera = "") {
+        Fluid25DTerrainDemoAction action;
+        action.kind = kind;
+        action.at_physical_s = time;
+        action.value = value;
+        action.camera = camera;
+        result.push_back(std::move(action));
+    };
+    add("set-rain", 0, 512);
+    add("set-time-scale", 0, 60);
+    add("resume", 0);
+    add("camera", 1800, {}, "runoff");
+    add("camera", 3600, {}, "collection");
+    add("set-rain", 7200, 0);
+    add("camera", 9000, {}, "runoff");
+    add("camera", 10800, {}, "collection");
+    add("camera", 21600, {}, "collection");
+    return result; // No reset, pause, stop or loop at the end.
+}
+
+bool fluid_25d_rain_guide_site(const Fluid25DTerrainDemoCase& site) {
+    // Other prepared collections can reuse the same mountain case name.
+    // Their crops do not share these measured observation points or milestones.
+    return site.id == "mountain-patch-1024-16m" && site.width == 1024 && site.height == 1024 &&
+           site.spacing_m == 16 &&
+           site.solver_bed_sha256 ==
+               "9bb3399929faee0edf97bb8ed23d7615d777cce89fef69c8fe1b11870ecb65b3";
+}
+
+const char* fluid_25d_rain_guide_caption(double physical_s, bool raining) {
+    if (!raining)
+        return physical_s < 10800
+                   ? "Rain off: no new supply. Existing water keeps moving; small streams retreat."
+                   : "Delayed response: upstream runoff can still feed a basin while the whole map "
+                     "drains.";
+    if (physical_s < 1800)
+        return "Wet-up: rain covers the patch. Watch water gather into downhill routes.";
+    if (physical_s < 3600)
+        return "Downhill runoff: connected streams carry water away from the slopes.";
+    return "Collection: streams feed this basin. It is an observation point, not a drain.";
 }
 
 std::string fluid_25d_demo_time_label(double seconds) {

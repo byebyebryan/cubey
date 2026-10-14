@@ -55,10 +55,14 @@ water starts dry/paused again. Closing this launcher stops its owned worker.
 Fluid displays **only the complete selected simulation patch**, at its configured
 full grid resolution and B-spline display subdivision. There is no surrounding
 terrain or outer LOD, including for prepared-world sites. “Fit simulation patch”
-and “Full patch” describe that boundary; wider backdrops belong to the shared
+and “Whole patch” describe that boundary; wider backdrops belong to the shared
 Terrain foundation. See the [patch-only qualification](patch_only_v1.md).
-See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Use
-`--print-command` remotely for a read-only preflight without opening a GUI.
+See [managed demo controls and lifecycle](terrain_demo_ux_v1.md). Choose
+the optional **Run rain-response demonstration** on dry/paused Mountain 1k/16m
+to follow wet-up, downhill runoff, basin collection and rain-off drainage. Its
+six-hour narrative ends with the solver still running; manual controls leave
+the guide. See [rain-response study](rain_response_v1.md).
+Use `--print-command` remotely for a read-only preflight without opening a GUI.
 `--render-fps 0` restores unpaced rendering; other positive values select a
 custom cap. `--configuration patch-2048-8m` selects the finer, slower-live grid.
 Explicit `replay --recording <recording.json>` holds a saved state and starts

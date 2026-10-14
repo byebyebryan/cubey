@@ -73,7 +73,7 @@ class Fluid25DTerrainDemoControl {
 struct Fluid25DTerrainDemoAction {
     double after_s = 0;
     std::optional<double> at_physical_s;
-    std::string kind, case_id;
+    std::string kind, case_id, camera;
     double rain_mm_per_hour = 512, pacing = 60;
     std::optional<double> value;
 };
@@ -83,6 +83,11 @@ fluid_25d_load_terrain_demo_script(const std::filesystem::path& path);
 
 bool fluid_25d_demo_action_due(const Fluid25DTerrainDemoAction& action, double elapsed_wall_s,
                                double physical_s);
+
+// One measured mountain narrative, not a general hydrology or autoplay policy.
+std::vector<Fluid25DTerrainDemoAction> fluid_25d_rain_guide_actions();
+const char* fluid_25d_rain_guide_caption(double physical_s, bool raining);
+bool fluid_25d_rain_guide_site(const Fluid25DTerrainDemoCase& site);
 
 std::string fluid_25d_demo_time_label(double physical_s);
 bool fluid_25d_demo_restart_allowed(bool restart_pending, bool command_pending,
