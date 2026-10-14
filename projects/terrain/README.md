@@ -38,10 +38,17 @@ Surface shading and flecks animate independently of the fixed numerical fields.
 The finite patch is never overlaid with radial ground or radial shadow casters.
 Normal placement selection is deferred until Backdrop is actually requested.
 The capture view retains Fluid's fixed shared daylight and single HDR display
-transform; Terrain's normal solar/cloud controls apply to Backdrop only. Clouds
-are explicitly unsupported/off in the capture view because composed water depth
-is not yet provided to the depth-aware cloud pass. This does not promote a new
-default or claim seamless full-terrain coverage.
+transform by default. `--terrain-water-environment shared` opts into the same
+render-only day/night controller used by Fluid, with the existing atmosphere/cloud
+CLI controls and a compact **Environment (render only)** panel. Clouds compose
+against opaque terrain depth before water: they are background-only, not fog over
+the water or aerial/cloud-top rendering. `--terrain-water-cloud-shadow-strength`
+controls approximate receiver-plane shadows (default 0.18 when clouds are enabled).
+The environment clock is independent of saved-water surface animation; numerical
+fields and geometry/LOD remain unchanged. Terrain's normal backdrop environment
+path is unchanged. This does not promote a new default or claim seamless water
+coverage or fully relief-aware cloud shadows. See the
+[shared environment qualification](../fluid/fluid_25d/shared_environment_v1.md).
 
 An invalid requested capture fails explicitly in headless mode. The GUI instead
 disables it with an error and retains the normal source picker/backdrop path.
