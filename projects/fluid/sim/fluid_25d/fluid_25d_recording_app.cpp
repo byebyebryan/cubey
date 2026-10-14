@@ -1133,14 +1133,6 @@ class RecordingApp {
         orbit_.reset();
         math::Vec3 scene_minimum{-0.5F * width, *lo * scale, -0.5F * height};
         math::Vec3 scene_maximum{0.5F * width, (*hi + 100.0F) * scale, 0.5F * height};
-        if (terrain_surface_ && terrain_surface_->context) {
-            auto minimum = terrain_surface_->context->minimum;
-            auto maximum = terrain_surface_->context->maximum;
-            minimum.y *= scale;
-            maximum.y *= scale;
-            scene_minimum = glm::min(scene_minimum, minimum);
-            scene_maximum = glm::max(scene_maximum, maximum);
-        }
         const float far =
             fluid_25d_catchment_far_plane(maximum_distance, scene_minimum, scene_maximum, target_);
         camera_.set_projection(std::numbers::pi_v<float> / 3.0F, std::max(8.0F, framing * 0.10F),
@@ -1318,8 +1310,7 @@ class RecordingApp {
                            fluid_25d_scenic_water_view(config_.native_scenic_water_view),
                            fluid_25d_terrain_surface_mode(config_.native_scenic_surface_mode),
                            environment ? &*environment : nullptr, rain_visual_frame(),
-                           whitewater_selection_.seeds, whitewater_generation_,
-                           config_.native_terrain_context == "on");
+                           whitewater_selection_.seeds, whitewater_generation_);
             scenic_flow_reset_ = false;
         } else {
             const auto compiled = build_fluid_25d_frame_graph(
@@ -1686,12 +1677,9 @@ class RecordingApp {
             }
             ImGui::EndDisabled();
             if (terrain_surface_ && terrain_surface_->site) {
-                bool context = config_.native_terrain_context == "on";
-                if (ImGui::Checkbox("Wider terrain (ground only)", &context))
-                    config_.native_terrain_context = context ? "on" : "off";
-                ImGui::TextWrapped("World site: %s. Rain and water cover only the %.3f km "
-                                   "simulation square; exterior terrain is unmodelled, not dry. "
-                                   "Far-context shadows remain unqualified.",
+                ImGui::TextWrapped("World site: %s. Patch-only view: rain, water and terrain "
+                                   "cover the %.3f km simulation square. Wider backdrop terrain "
+                                   "belongs to the Terrain application.",
                                    terrain_surface_->site->id.c_str(),
                                    float(simulation_.grid_width) * simulation_.cell_size_m /
                                        1000.0F);

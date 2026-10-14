@@ -220,9 +220,13 @@ void test_source_binding() {
             {"manifest_sha256", cubey::asset::sha256_hex(std::as_bytes(std::span(site_text)))},
             {"world_id", world_id}};
         const auto prepared = load_sampled(binding, derived_bed);
-        require(prepared.site && prepared.context && !prepared.context->vertices.empty(),
-                "valid world site must prepare shared exterior ground");
-        require(prepared.correlated == derived.correlated, "context changed inner material masks");
+        require(prepared.site.has_value(), "valid world site identity must remain attached");
+        const auto receipt = nlohmann::json::parse(prepared.receipt);
+        require(receipt.at("patch_only") == true && receipt.at("context_vertices") == 0 &&
+                    receipt.at("context_triangles") == 0,
+                "Fluid world site must not prepare exterior ground");
+        require(prepared.correlated == derived.correlated,
+                "patch-only world admission changed inner material masks");
         auto bad_binding = binding;
         bad_binding["terrain_site"]["world_id"] = std::string(64, 'b');
         rejects([&] { (void)load_sampled(bad_binding, derived_bed); });

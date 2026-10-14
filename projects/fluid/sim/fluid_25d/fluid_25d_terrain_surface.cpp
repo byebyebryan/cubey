@@ -324,11 +324,7 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
     result.source_center_xz_m =
         point(0, 0) + math::Vec2(float(width - 1), float(height - 1)) * spacing_m * 0.5F;
     const auto field = terrain::make_terrain_surface_field(source, source.bounds(), &climate);
-    if (site) {
-        result.site = std::move(site);
-        result.context = terrain::make_terrain_surface_context(
-            {{width, height, spacing_m, {origin[0], origin[1]}}, bed, {}}, source, field);
-    }
+    result.site = std::move(site);
     result.correlated.reserve(bed.size());
     for (unsigned z = 0; z < height; ++z)
         for (unsigned x = 0; x < width; ++x)
@@ -338,13 +334,13 @@ fluid_25d_load_sampled_terrain_surface(const std::filesystem::path& binding_mani
     receipt["material_world_center_xz_m"] = {result.source_center_xz_m.x,
                                              result.source_center_xz_m.y};
     receipt["source_sample_max_abs_error_m"] = maximum_error;
+    receipt["patch_only"] = true;
+    receipt["context_vertices"] = 0;
+    receipt["context_triangles"] = 0;
     if (result.site) {
         receipt["world_id"] = result.site->world_id;
         receipt["site_id"] = result.site->id;
-        receipt["context_vertices"] = result.context->vertices.size();
-        receipt["context_triangles"] = result.context->indices.size() / 3;
-        receipt["context_ground_only"] = true;
-        receipt["context_build_policy"] = "once-per-site-grid; no live exterior wetness";
+        receipt["context_build_policy"] = "not built; Fluid renders the simulation patch only";
     }
     receipt["climate_sha256"] = climate.metadata().climate_sha256;
     receipt["correlated_formula"] = terrain::kTerrainSurfaceFieldFormula;

@@ -82,8 +82,7 @@ struct Fluid25DProjectConfig {
     std::string native_water_sampling = "triangular";
     std::uint32_t native_surface_subdivision = 2U;
     std::string native_shadow_projection = "legacy";
-    std::string native_terrain_context =
-        "on"; // Only source-bound world packages have exterior ground.
+    std::string native_terrain_context = "off"; // Retired compatibility option; only off accepted.
     std::uint32_t native_shadow_extent = 2048U;
     std::optional<std::filesystem::path> native_display_coverage_path{};
     std::optional<std::string> native_bank_view{};
@@ -714,8 +713,9 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
               config.native_camera_span_m)
         .bind(option("fluid25d.native_terrain_context", "--fluid25d-native-terrain-context",
                      "Native Terrain Context",
-                     "Prepared-world exterior ground only; no outer water.", ValueType::Enum, {},
-                     {"on", "off"}),
+                     "Retired: Fluid is patch-only. Explicit off remains compatible; "
+                     "use the Terrain application for wider backdrop views.",
+                     ValueType::Enum, {}, {"on", "off"}),
               config.native_terrain_context)
         .bind(option("fluid25d.native_shadow_projection", "--fluid25d-native-shadow-projection",
                      "Native Shadow Projection", "Whole-scene light-space fit or legacy bounds.",
@@ -962,6 +962,9 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
     Fluid25DProjectConfig project_config;
     config::Schema schema = fluid_25d_project_config_schema(project_config);
     config::ParseResult parsed = schema.parse_cli(argc, argv);
+    if (project_config.native_terrain_context != "off")
+        throw std::runtime_error("Fluid 2.5D renders only the simulation patch; terrain context on "
+                                 "is retired. Use the Terrain application for wider backdrops.");
     host::normalize_common_run_config(project_config.common,
                                       parsed.path_was_assigned("output") ||
                                           project_config.common.output_path != "cubey-output.png");

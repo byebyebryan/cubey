@@ -44,7 +44,7 @@ class Fluid25DScenic {
                 const Fluid25DScenicEnvironment* environment = nullptr,
                 Fluid25DRainVisualFrame rain = {},
                 std::span<const Fluid25DWhitewaterSeed> whitewater_seeds = {},
-                std::uint64_t whitewater_generation = 0U, bool context_visible = true);
+                std::uint64_t whitewater_generation = 0U);
 
   private:
     struct State;

@@ -7556,6 +7556,19 @@ void test_scenic_material_contract() {
                 shadow_control.native_shadow_extent == 4096U &&
                 shadow_control.simulation.solver == Fluid25DSolver::VirtualPipes,
             "shadow control changed numerical defaults");
+    require(shadow_control.native_terrain_context == "off", "Fluid must default to patch-only");
+    require(parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                           "--fluid25d-native-presentation", "scenic",
+                           "--fluid25d-native-terrain-context", "off"})
+                    .native_terrain_context == "off",
+            "legacy explicit context off must remain compatible");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-native-presentation", "scenic",
+                                 "--fluid25d-native-terrain-context", "on"});
+        },
+        "retired wider Fluid terrain must reject explicitly");
     for (const auto& args : std::vector<std::vector<std::string>>{
              {"fluid_25d", "--fluid25d-native-shadow-projection", "scene"},
              {"fluid_25d", "--fluid25d-recording", "fixture", "--fluid25d-native-shadow-extent",

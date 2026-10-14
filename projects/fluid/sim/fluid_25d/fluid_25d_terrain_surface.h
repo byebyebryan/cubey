@@ -2,7 +2,6 @@
 
 #include <cubey/asset/terrain_site.h>
 #include <cubey/core/math.h>
-#include <cubey/terrain/terrain_surface_context.h>
 #include <nlohmann/json_fwd.hpp>
 #include <optional>
 
@@ -24,7 +23,6 @@ struct Fluid25DTerrainSurface {
     std::string receipt;
     math::Vec2 source_center_xz_m{0.0F}; // validated source frame; zero for synthetic surfaces
     std::optional<asset::TerrainSite> site;
-    std::optional<terrain::TerrainSurfaceContextProduct> context;
 };
 
 // Reuses Terrain's climate classifier; no noise is added to imported climate.

@@ -1,6 +1,5 @@
 #include "fluid_25d_scenic.h"
 #include "fluid_25d_motion_markers.h"
-#include <cubey/engine/terrain_surface_context_resources.h>
 #include <cubey/engine/terrain_surface_patch_scene.h>
 
 namespace cubey::projects::fluid::fluid_25d {
@@ -26,7 +25,6 @@ render::TerrainSurfacePatchOptions options(const Fluid25DCatchmentRenderOptions&
 struct Fluid25DScenic::State {
     ::cubey::TerrainSurfacePatchScene scene{CUBEY_FLUID_25D_SHADER_DIR};
     math::Vec2 material_world_origin_xz{0.0F};
-    std::unique_ptr<::cubey::TerrainSurfaceContextResources> context;
 };
 Fluid25DScenic::Fluid25DScenic() = default;
 Fluid25DScenic::~Fluid25DScenic() = default;
@@ -38,12 +36,6 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     if (!state_)
         state_ = std::make_unique<State>();
     state_->material_world_origin_xz = surface ? surface->source_center_xz_m : math::Vec2{0.0F};
-    bool context_created = false;
-    if (surface && surface->context && !state_->context) {
-        state_->context = std::make_unique<::cubey::TerrainSurfaceContextResources>(
-            device, gpu, *surface->context);
-        context_created = true;
-    }
     std::optional<render::TerrainSurfacePatchSurface> weights;
     if (surface)
         weights = {surface->width, surface->height, surface->landform, surface->climate,
@@ -51,7 +43,7 @@ bool Fluid25DScenic::ensure_resources(vulkan::Device& device, vulkan::GpuRuntime
     const bool scene_created = state_->scene.ensure_resources(
         device, gpu, slots, target, grid(c), scenario.terrain_height_m, fields(f), integrated,
         weights ? &*weights : nullptr, daylight);
-    return scene_created || context_created;
+    return scene_created;
 }
 void Fluid25DScenic::destroy_swapchain_resources() {
     if (state_)
@@ -76,7 +68,7 @@ void Fluid25DScenic::record(
     Fluid25DMotionMarkers* markers, float fraction, bool profile, bool reset, unsigned terrain_view,
     unsigned water_view, unsigned surface_mode, const Fluid25DScenicEnvironment* environment,
     Fluid25DRainVisualFrame rain, std::span<const Fluid25DWhitewaterSeed> seeds,
-    std::uint64_t generation, bool context_visible) {
+    std::uint64_t generation) {
     const auto overlay = [&](const vulkan::CommandRecorder& r) {
         if (markers)
             markers->record_draw(r.handle(), f.current_depth_is_a(), camera.view_projection,
@@ -87,14 +79,11 @@ void Fluid25DScenic::record(
     auto source_material = material;
     source_material.terrain_world_x_m = state_->material_world_origin_xz.x;
     source_material.terrain_world_z_m = state_->material_world_origin_xz.y;
-    std::optional<render::TerrainSurfaceContextDraw> context;
-    if (context_visible && o.native_bspline_surface && state_->context)
-        context = state_->context->draw();
     state_->scene.record(
         device, commands, executor, slot, target, mode == Fluid25DRenderTargetMode::Present,
         fields(f), grid(c), {camera.view_projection, camera.position}, options(o), clock,
         source_material, overlay, profile, reset, terrain_view, water_view, surface_mode,
         environment, {rain.streak_count, rain.clock_s, rain.motion_s, rain.applied_mm_per_hour},
-        seeds, generation, context ? &*context : nullptr);
+        seeds, generation);
 }
 } // namespace cubey::projects::fluid::fluid_25d
