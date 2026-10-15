@@ -532,6 +532,11 @@ ForwardPbrRenderer3DSceneTargetInfo ForwardPbrRenderer3D::scene_target_info() co
     return impl_->scene_target_info();
 }
 
+render::DepthTargetView ForwardPbrRenderer3D::scene_depth_target() const {
+    impl_->require_swapchain_resources();
+    return render::depth_target_view(impl_->depth_attachment());
+}
+
 ForwardPbrRenderer3DSceneTargetInfo ForwardPbrRenderer3D::Impl::scene_target_info() const {
     require_swapchain_resources();
     const VkExtent3D depth_extent = depth_attachment().extent();

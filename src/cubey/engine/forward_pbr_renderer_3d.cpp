@@ -83,6 +83,15 @@ void validate_forward_pbr_renderer_3d_render_request(
     if (request.scene_resources.meshes == nullptr || request.scene_resources.materials == nullptr) {
         throw std::runtime_error("forward PBR render request requires scene resources");
     }
+    if (request.settings.opaque_linear_output &&
+        ((request.target.color_target.format != VK_FORMAT_R16G16B16A16_SFLOAT &&
+          request.target.color_target.format != VK_FORMAT_R32G32B32A32_SFLOAT) ||
+         request.target.color_final_state.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
+         request.settings.debug_view != render::PbrDebugView::Final ||
+         request.settings.atmosphere_clouds || request.settings.terrain_backdrop ||
+         request.settings.ocean_surface))
+        throw std::runtime_error("opaque linear export requires sampled HDR, final shading and no "
+                                 "backdrop/cloud layers");
     if (request.settings.background_mode == ForwardPbrRenderer3DBackgroundMode::Atmosphere &&
         !request.settings.atmosphere_background.has_value()) {
         throw std::runtime_error(

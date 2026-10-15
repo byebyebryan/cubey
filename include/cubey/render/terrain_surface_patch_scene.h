@@ -32,6 +32,20 @@ struct TerrainSurfacePatchCamera {
     math::Mat4 view_projection{1.0F};
     math::Vec3 position{};
 };
+// Already recorded opaque foreground with the SAME view pose/FOV. Linear
+// HDR only, both inputs in sampled layout. Borrowed until this record completes.
+// The landscape merges nearest depth before refraction/water and tonemaps once.
+struct TerrainSurfacePatchOpaqueLayer {
+    ColorTargetView color;
+    DepthTargetView depth;
+    // Perspective Z remap for different near/far ranges. Geometry before the
+    // landscape near plane is clamped to its near depth; the consumer must keep
+    // all landscape geometry beyond that plane (the glTF clearance does this).
+    math::Vec2 depth_scale_bias{1.0F, 0.0F};
+};
+[[nodiscard]] math::Vec2 terrain_surface_patch_depth_scale_bias(float source_near, float source_far,
+                                                                float target_near,
+                                                                float target_far);
 // Borrowed handles only. The scene never uploads or writes these fields.
 struct TerrainSurfacePatchFields {
     const vulkan::Buffer& bed;

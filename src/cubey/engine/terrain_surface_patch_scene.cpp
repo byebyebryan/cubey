@@ -13,6 +13,7 @@
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstddef>
 #include <cstdio>
 #include <filesystem>
@@ -140,11 +141,13 @@ struct TerrainSurfacePatchScene::State {
     double previous_clock_s = 0.0;
     bool flow_initialized = false;
     std::optional<vulkan::Buffer> captured_daylight;
-    std::optional<vulkan::DescriptorSetBundle> daylight_set;
+    std::vector<std::unique_ptr<vulkan::DescriptorSetBundle>> daylight_sets;
     std::optional<render::ComputePipelineResource> daylight_pipeline;
     bool daylight_initialized = false;
     std::unique_ptr<render::TerrainSurfacePatchRenderer> patch;
     std::optional<render::GraphicsPipelineResource> sky, copy, display;
+    std::optional<render::GraphicsPipelineResource> foreground_merge;
+    std::vector<std::unique_ptr<vulkan::DescriptorSetBundle>> foreground_sets;
     std::optional<render::GraphicsPipelineResource> rain;
     std::optional<render::GraphicsPipelineResource> whitewater;
     struct WhitewaterSlot {
@@ -243,14 +246,16 @@ bool TerrainSurfacePatchScene::ensure_resources(
              {.binding = 1U,
               .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
               .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT}}};
-        s.daylight_set.emplace(device, vulkan::DescriptorSetInfo(bindings));
+        for (std::uint32_t i = 0; i < slots; ++i)
+            s.daylight_sets.push_back(std::make_unique<vulkan::DescriptorSetBundle>(
+                device, vulkan::DescriptorSetInfo(bindings)));
         const std::array<VkPushConstantRange, 1> push{{{.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
                                                         .offset = 0U,
                                                         .size = sizeof(DaylightPush)}}};
         render::emplace_single_set_compute_pipeline_resource(
             s.daylight_pipeline, device,
             render::compute_shader_file(shader("fluid_25d_daylight.comp.spv")),
-            s.daylight_set->layout(), push);
+            s.daylight_sets.front()->layout(), push);
         diffuse_created = true;
     }
     if (surface && !s.landform_surface && !s.correlated_surface) {
@@ -339,6 +344,8 @@ void TerrainSurfacePatchScene::destroy_swapchain_resources() {
         return;
     auto& s = *state_;
     s.display.reset();
+    s.foreground_merge.reset();
+    s.foreground_sets.clear();
     s.rain.reset();
     s.whitewater.reset();
     s.copy.reset();
@@ -379,7 +386,8 @@ void TerrainSurfacePatchScene::record(
     const TerrainSurfacePatchEnvironment* environment, TerrainSurfacePatchRain rain,
     std::span<const TerrainSurfacePatchWhitewaterSeed> whitewater_seeds,
     std::uint64_t whitewater_generation, const render::TerrainSurfaceContextDraw* context,
-    const TerrainSurfaceWeatherFrame* weather) {
+    const TerrainSurfaceWeatherFrame* weather,
+    const render::TerrainSurfacePatchOpaqueLayer* foreground) {
     auto& s = *state_;
     const auto* fixed = options.fixed_mesh;
     if (fixed) {
@@ -408,12 +416,16 @@ void TerrainSurfacePatchScene::record(
         s.context_profile_slots.at(slot.index) = context_profiler != nullptr;
     if (context_profiler)
         context_profiler->begin_frame(commands, slot.index);
-    if (environment && !environment->dynamic && !s.daylight_initialized) {
+    if (environment && !environment->dynamic && (!s.daylight_initialized || foreground)) {
         if (!s.captured_daylight || !s.daylight_pipeline ||
             environment->sky_radiance_sampler == VK_NULL_HANDLE ||
             environment->sky_radiance_view == VK_NULL_HANDLE)
             throw std::runtime_error("Scenic captured daylight resources are not initialized");
-        render::MaterialDescriptorWriter writer(s.daylight_set->set());
+        // Caller retires this slot before recording it again. A single set is
+        // unsafe here: movie/render-only frames may still use the previous set
+        // while the next frame refreshes the captured-sky bindings.
+        const auto daylight_set = s.daylight_sets.at(slot.index)->set();
+        render::MaterialDescriptorWriter writer(daylight_set);
         writer
             .combined_image_sampler(0U, environment->sky_radiance_sampler,
                                     environment->sky_radiance_view)
@@ -424,6 +436,15 @@ void TerrainSurfacePatchScene::record(
             a.camera_position_radius, a.radii_ground,      a.rayleigh, a.mie, a.ozone,
             a.sun_direction_radius,   a.atmosphere_options};
         const vulkan::CommandRecorder recorder(commands);
+        if (foreground) {
+            // The externally lit layer may change solar time. Refresh the same
+            // captured-sky SH without racing the previous frame's fragment reads.
+            vulkan::record_memory_barrier(commands,
+                                          {.src_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                           .dst_stage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                           .src_access = VK_ACCESS_SHADER_READ_BIT,
+                                           .dst_access = VK_ACCESS_SHADER_WRITE_BIT});
+        }
         // The probe's final layout is shader-read, but its built-in visibility
         // barrier targets fragment sampling. This one-time consumer is compute.
         const VkMemoryBarrier sky_ready{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -435,7 +456,7 @@ void TerrainSurfacePatchScene::record(
                                   {});
         recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, s.daylight_pipeline->pipeline());
         recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, s.daylight_pipeline->layout(),
-                                     0U, s.daylight_set->set());
+                                     0U, daylight_set);
         recorder.push_constants(s.daylight_pipeline->layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0U,
                                 push);
         recorder.dispatch(1U, 1U, 1U);
@@ -451,9 +472,11 @@ void TerrainSurfacePatchScene::record(
         recorder.pipeline_barrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0U, {}, {&barrier, 1U},
                                   {});
+        if (!s.daylight_initialized)
+            std::printf("fluid_25d_scenic_daylight: captured sky SH E/pi + atmosphere sun; "
+                        "2048 sphere samples; %s; no CPU readback\n",
+                        foreground ? "caller-lit frame refresh" : "once");
         s.daylight_initialized = true;
-        std::printf("fluid_25d_scenic_daylight: captured sky SH E/pi + atmosphere sun; "
-                    "2048 sphere samples; once; no CPU readback\n");
         std::fflush(stdout);
     }
     const bool bspline = options.native_bspline_surface;
@@ -759,6 +782,85 @@ void TerrainSurfacePatchScene::record(
         opaque_pass.read_storage_buffer(*context_vertices).read_index_buffer(*context_indices);
     if (fixed)
         opaque_pass.read_storage_buffer(*mesh_coordinates).read_index_buffer(*mesh_indices);
+    if (foreground) {
+        const auto& color = foreground->color;
+        const auto& z = foreground->depth;
+        if (color.format != kHdrFormat || z.format != VK_FORMAT_D32_SFLOAT ||
+            color.extent.width != target.extent.width ||
+            color.extent.height != target.extent.height || z.extent.width != target.extent.width ||
+            z.extent.height != target.extent.height || !color.image || !color.view || !z.image ||
+            !z.view || !std::isfinite(foreground->depth_scale_bias.x) ||
+            foreground->depth_scale_bias.x <= 0 || !std::isfinite(foreground->depth_scale_bias.y))
+            throw std::runtime_error(
+                "foreground requires matching linear HDR and D32 sampled depth");
+        if (!s.foreground_merge) {
+            const std::array bindings{vulkan::DescriptorSetBindingConfig{
+                                          .binding = 0U,
+                                          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT},
+                                      vulkan::DescriptorSetBindingConfig{
+                                          .binding = 1U,
+                                          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                          .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT}};
+            for (std::uint32_t i = 0; i < slot.count; ++i)
+                s.foreground_sets.push_back(std::make_unique<vulkan::DescriptorSetBundle>(
+                    device, vulkan::DescriptorSetInfo(bindings)));
+            const std::array layouts{s.foreground_sets.front()->layout()};
+            const std::array stages{
+                render::vertex_shader_file(shader("fluid_25d.vert.spv")),
+                render::fragment_shader_file(shader("terrain_surface_foreground.frag.spv"))};
+            s.foreground_merge.emplace(
+                device,
+                render::GraphicsPipelineFileResourceConfig{
+                    .extent = target.extent,
+                    .color_format = kHdrFormat,
+                    .depth_format = VK_FORMAT_D32_SFLOAT,
+                    .shader_stage_files = stages,
+                    .descriptor_set_layouts = layouts,
+                    .material_pass = {.label = "terrain opaque foreground merge",
+                                      .push_constants = {{VK_SHADER_STAGE_FRAGMENT_BIT, 0U, 16U}},
+                                      .depth_test = true,
+                                      .depth_write = true}});
+        }
+        const render::RenderGraphTextureState sampled_hdr{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                          VK_ACCESS_SHADER_READ_BIT,
+                                                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT};
+        const auto input_color =
+            graph.import_color_target("opaque foreground HDR", color, sampled_hdr, sampled_hdr);
+        const auto input_depth = graph.import_depth_target(
+            "opaque foreground depth", z, render::render_graph_sampled_depth_texture_state(),
+            render::render_graph_sampled_depth_texture_state());
+        auto* descriptors = s.foreground_sets.at(slot.index).get();
+        render::MaterialDescriptorWriter(descriptors->set())
+            .combined_image_sampler(0U, s.nearest_sampler->handle(), color.view)
+            .combined_image_sampler(1U, s.nearest_sampler->handle(), z.view,
+                                    VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+            .update(device);
+        const math::Vec4 depth_remap{foreground->depth_scale_bias, 0.0F, 0.0F};
+        graph.add_pass("opaque foreground merge", render::RenderGraphQueueDomain::Graphics)
+            .read_texture(input_color)
+            .read_texture(input_depth)
+            .read_write_color(opaque)
+            .write_depth(depth)
+            .execute([&, opaque, depth, descriptors, depth_remap](const auto& ctx) {
+                render::record_render_target_pass(
+                    ctx.recorder(),
+                    render::render_target_view(render::resolved_color_target_view(ctx, opaque),
+                                               render::resolved_depth_target_view(ctx, depth)),
+                    {},
+                    {.color = vulkan::load_store_attachment_ops(),
+                     .depth = vulkan::load_store_attachment_ops()},
+                    [&](const auto& r) {
+                        r.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                        s.foreground_merge->pipeline());
+                        r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                              s.foreground_merge->layout(), 0U, descriptors->set());
+                        r.push_constants(s.foreground_merge->layout(), VK_SHADER_STAGE_FRAGMENT_BIT,
+                                         0U, depth_remap);
+                        r.draw(3U);
+                    });
+            });
+    }
     const auto refraction_source = opaque;
     auto water_pass = graph.add_pass("scenic water", render::RenderGraphQueueDomain::Graphics);
     if (fixed)

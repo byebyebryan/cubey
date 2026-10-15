@@ -4,8 +4,21 @@
 #include <cubey/render/terrain_surface_patch.h>
 #include <cubey/render/terrain_surface_patch_scene.h>
 #include <glm/gtc/matrix_inverse.hpp>
+#include <stdexcept>
 
 namespace cubey::render {
+math::Vec2 terrain_surface_patch_depth_scale_bias(float sn, float sf, float tn, float tf) {
+    if (!std::isfinite(sn) || !std::isfinite(sf) || !std::isfinite(tn) || !std::isfinite(tf) ||
+        sn <= 0 || sf <= sn || tn <= 0 || tf <= tn)
+        throw std::runtime_error(
+            "perspective depth remap requires finite positive near/far ranges");
+    const double source_a = double(sf) / (double(sf) - sn);
+    const double source_b = -double(sn) * source_a;
+    const double target_a = double(tf) / (double(tf) - tn);
+    const double target_b = -double(tn) * target_a;
+    const double scale = target_b / source_b;
+    return {float(scale), float(target_a - scale * source_a)};
+}
 AtmosphereEnvironmentConfig terrain_surface_patch_fixed_daylight() {
     AtmosphereEnvironmentConfig result;
     const auto sun = glm::normalize(math::Vec3{-0.35F, 0.42F, 0.84F});

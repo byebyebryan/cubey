@@ -256,6 +256,7 @@ endfunction()
 # Solver-neutral paired-surface package, shared by Fluid and Terrain.
 function(cubey_terrain_surface_patch_shader_sources out_var)
     set(patch_sources
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_foreground.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_patch_lod_ground.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_patch_lod_water.vert"

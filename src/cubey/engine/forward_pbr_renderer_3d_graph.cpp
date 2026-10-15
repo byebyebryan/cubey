@@ -82,6 +82,12 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     const ForwardPbrDrawPlan draw_plan = build_forward_pbr_draw_plan(
         frame_plans, metrics != nullptr ? &metrics->draw_plan : nullptr);
+    if (settings.opaque_linear_output &&
+        (target.color_target.format != config_.scene_color_format ||
+         !draw_plan.opaque_layer_compatible())) {
+        throw std::runtime_error("opaque linear export requires scene HDR and opaque/masked "
+                                 "assets, without clouds or transmission");
+    }
     const Clock::time_point draw_plan_end = metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
         metrics->draw_plan_build_milliseconds =
@@ -187,7 +193,8 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
         target.color_target, target.frame_slot, target.color_initial_state,
         target.color_final_state, frame_plans, *resources.meshes, resources.frame_meshes,
         resources.deformation_commands, *resources.materials, settings.debug_view,
-        settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan);
+        settings.background_mode, settings.atmosphere_clouds, terrain, ocean, draw_plan,
+        settings.opaque_linear_output);
     const Clock::time_point render_graph_end =
         metrics != nullptr ? Clock::now() : Clock::time_point{};
     if (metrics != nullptr) {
@@ -209,10 +216,12 @@ void ForwardPbrRenderer3D::Impl::record(const ForwardPbrRenderer3DRenderRequest&
             .metrics = metrics != nullptr ? &metrics->render_graph_frame : nullptr,
         },
         render_graph.graph,
-        [this, device = target.device, frame_slot = target.frame_slot, cloud_runtime,
-         &render_graph](const render::RenderGraphResourceSet& graph_resources) {
-            update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
-                                   render_graph.post_scene_color);
+        [this, device = target.device, frame_slot = target.frame_slot, cloud_runtime, &render_graph,
+         linear =
+             settings.opaque_linear_output](const render::RenderGraphResourceSet& graph_resources) {
+            if (!linear)
+                update_post_descriptor(*device, frame_slot, render_graph.graph, graph_resources,
+                                       render_graph.post_scene_color);
             if (render_graph.has_transmission) {
                 const render::RenderGraphSampledTextureView source =
                     render::resolved_sampled_texture_view(render_graph.graph, graph_resources,
@@ -248,7 +257,7 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const std::optional<ForwardPbrRenderer3DAtmosphereClouds>& clouds,
     const std::optional<ForwardPbrRenderer3DTerrainBackdrop>& terrain,
     const std::optional<ForwardPbrRenderer3DOceanSurface>& ocean,
-    const ForwardPbrDrawPlan& draw_plan) {
+    const ForwardPbrDrawPlan& draw_plan, bool opaque_linear_output) {
     if (frame_plans.shadow == nullptr || frame_plans.scene == nullptr) {
         throw std::runtime_error("forward PBR render graph requires shadow and scene plans");
     }
@@ -259,15 +268,19 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
     const render::RenderGraphTextureHandle backbuffer = graph.import_color_target(
         "backbuffer", color_target, color_initial_state, color_final_state);
     const render::RenderGraphTextureHandle scene_color =
-        graph.create_texture(render::RenderGraphTextureDesc{
-            .label = "scene color",
-            .extent = {color_target.extent.width, color_target.extent.height, 1},
-            .format = config_.scene_color_format,
-            .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
-        });
-    const render::RenderGraphTextureHandle scene_depth =
-        graph.import_depth_target("scene depth", render::depth_target_view(depth_attachment()),
-                                  render::render_graph_undefined_texture_state());
+        opaque_linear_output
+            ? backbuffer
+            : graph.create_texture(render::RenderGraphTextureDesc{
+                  .label = "scene color",
+                  .extent = {color_target.extent.width, color_target.extent.height, 1},
+                  .format = config_.scene_color_format,
+                  .aspects = VK_IMAGE_ASPECT_COLOR_BIT,
+              });
+    const render::RenderGraphTextureHandle scene_depth = graph.import_depth_target(
+        "scene depth", render::depth_target_view(depth_attachment()),
+        render::render_graph_undefined_texture_state(),
+        opaque_linear_output ? std::optional{render::render_graph_sampled_depth_texture_state()}
+                             : std::nullopt);
     render::RenderGraphTextureHandle post_scene_color = scene_color;
     render::RenderGraphTextureHandle cloud_scene_color{};
     render::CloudLayerRuntimeFrame cloud_frame{};
@@ -362,12 +375,13 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
              debug_view, background_mode,
              terrain_runtime = terrain.has_value() ? terrain->runtime : nullptr,
              ocean_runtime = ocean.has_value() ? ocean->runtime : nullptr,
-             clouds_enabled](const render::RenderGraphExecutionContext& context) {
+             preserve_depth = clouds_enabled || opaque_linear_output](
+                const render::RenderGraphExecutionContext& context) {
                 const render::ColorTargetView target =
                     render::resolved_color_target_view(context, scene_color);
                 record_scene_pass(context.recorder(), target, scene_plan, frame_slot, mesh_resolver,
                                   materials, draw_plan, debug_view, background_mode,
-                                  terrain_runtime, ocean_runtime, clouds_enabled);
+                                  terrain_runtime, ocean_runtime, preserve_depth);
             });
     } else {
         auto opaque_pass_builder =
@@ -444,12 +458,13 @@ ForwardPbrRenderer3D::Impl::CompiledGraph ForwardPbrRenderer3D::Impl::current_re
                                         mesh_resolver, materials, draw_plan);
             });
     }
-    graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
-        .read_texture(post_scene_color)
-        .write_color(backbuffer)
-        .material_pass(render::pbr_post_pass_info())
-        .execute(
-            [this, color_target, frame_slot](const render::RenderGraphExecutionContext& context) {
+    if (!opaque_linear_output)
+        graph.add_pass("post", render::RenderGraphQueueDomain::Graphics)
+            .read_texture(post_scene_color)
+            .write_color(backbuffer)
+            .material_pass(render::pbr_post_pass_info())
+            .execute([this, color_target,
+                      frame_slot](const render::RenderGraphExecutionContext& context) {
                 record_post_pass(context.recorder(), color_target, frame_slot);
             });
 

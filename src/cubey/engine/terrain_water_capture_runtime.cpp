@@ -83,6 +83,7 @@ struct TerrainWaterCaptureRuntime::State {
     asset::TerrainRasterHeightSource source;
     asset::TerrainWaterCapture capture;
     bool terrain_only = false;
+    bool externally_lit = false;
     std::filesystem::path shaders;
     TerrainSurfacePatchScene scene;
     render::RenderGraphFrameExecutor graph;
@@ -194,7 +195,8 @@ TerrainWaterCaptureRuntime::TerrainWaterCaptureRuntime(const asset::TerrainSite&
 }
 void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
                                                   vulkan::GpuRuntime& gpu, std::uint32_t slots,
-                                                  render::ColorTargetView target) {
+                                                  render::ColorTargetView target,
+                                                  bool external_environment) {
     auto& s = *state_;
     if (s.graph.frame_slot_count() != slots)
         s.graph.resize(slots);
@@ -267,6 +269,8 @@ void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
     s.scene.ensure_resources(device, gpu, slots, target, s.grid(), s.capture.bed_m, s.field_view(),
                              true, &surface, true);
     s.gpu = &gpu;
+    if (external_environment)
+        return;
     if (s.weather && s.weather_enabled)
         s.weather->ensure_resources(device, gpu, slots, target, s.shaders);
     else if (!s.daylight.resources_created()) {
@@ -284,13 +288,12 @@ void TerrainWaterCaptureRuntime::ensure_resources(const vulkan::Device& device,
         s.daylight.set_environment(render::terrain_surface_patch_fixed_daylight());
     }
 }
-void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandBuffer commands,
-                                        render::FrameSlot slot, render::ColorTargetView target,
-                                        bool present,
-                                        const render::TerrainSurfacePatchCamera& camera,
-                                        double seconds, bool water, bool profile,
-                                        bool context_visible, unsigned ground_view,
-                                        bool fixed_lod) {
+void TerrainWaterCaptureRuntime::record(
+    const vulkan::Device& device, VkCommandBuffer commands, render::FrameSlot slot,
+    render::ColorTargetView target, bool present, const render::TerrainSurfacePatchCamera& camera,
+    double seconds, bool water, bool profile, bool context_visible, unsigned ground_view,
+    bool fixed_lod, const render::TerrainSurfacePatchEnvironment* external_environment,
+    const render::TerrainSurfacePatchOpaqueLayer* foreground) {
     auto& s = *state_;
     auto* profiler = profile ? &*s.whole_scene_profiler : nullptr;
     if (profiler)
@@ -299,12 +302,17 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
                                           "terrain captured patch whole scene");
     std::optional<TerrainSurfaceWeatherFrame> weather;
     render::TerrainSurfacePatchEnvironment environment;
-    if (s.weather && s.weather_enabled) {
+    if (external_environment) {
+        s.externally_lit = true;
+        environment = *external_environment;
+    } else if (s.weather && s.weather_enabled) {
+        s.externally_lit = false;
         s.weather->ensure_resources(device, *s.gpu, slot.count, target, s.shaders);
         weather = s.weather->frame(device, vulkan::CommandRecorder(commands), slot, camera,
                                    s.scene.fallback_environment());
         environment = weather->environment;
     } else {
+        s.externally_lit = false;
         // A UI toggle may enter the reference path after shared-only startup.
         ensure_resources(device, *s.gpu, slot.count, target);
         s.daylight.record_pending_update(vulkan::CommandRecorder(commands), slot);
@@ -346,7 +354,7 @@ void TerrainWaterCaptureRuntime::record(const vulkan::Device& device, VkCommandB
          .fixed_shadow_region = mesh ? &*mesh : nullptr},
         seconds * 0.03, s.material, {}, profile, false, ground_view, 0U, 3U, &environment,
         {0U, seconds, seconds, s.capture.rain_mm_per_hour}, s.whitewater.seeds, 0U,
-        context ? &*context : nullptr, weather ? &*weather : nullptr);
+        context ? &*context : nullptr, weather ? &*weather : nullptr, foreground);
 }
 void TerrainWaterCaptureRuntime::enable_environment(TerrainSurfaceEnvironmentSettings settings) {
     if (!state_->weather)
@@ -485,6 +493,8 @@ void TerrainWaterCaptureRuntime::verify_immutable_fields(vulkan::GpuRuntime& gpu
     }
     std::printf("terrain_water_capture_immutable: GPU bed/depth/decoded-velocity exact; "
                 "hydraulic_dispatches=0; no radial_ground; environment=%s\n",
-                s.weather && s.weather_enabled ? "shared" : "fixed");
+                s.externally_lit                 ? "caller-owned"
+                : s.weather && s.weather_enabled ? "shared"
+                                                 : "fixed");
 }
 } // namespace cubey

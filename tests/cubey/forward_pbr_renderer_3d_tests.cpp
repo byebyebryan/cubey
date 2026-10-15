@@ -455,6 +455,20 @@ void test_forward_pbr_renderer_3d_render_request_validates_required_target_field
     request.target.command_buffer = VK_NULL_HANDLE;
     require_throws([&request] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
                    "forward PBR render request should reject missing command buffer");
+
+    request = valid_render_request();
+    require(!request.settings.opaque_linear_output, "ordinary PBR must retain its display pass");
+    request.settings.opaque_linear_output = true;
+    require_throws([&] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "opaque export must reject display/present targets");
+    request.target.color_target.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+    request.target.color_final_state = {VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                        VK_ACCESS_SHADER_READ_BIT,
+                                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT};
+    cubey::validate_forward_pbr_renderer_3d_render_request(request);
+    request.settings.debug_view = cubey::render::PbrDebugView::Metallic;
+    require_throws([&] { cubey::validate_forward_pbr_renderer_3d_render_request(request); },
+                   "opaque export must not tone/debug transform the layer");
 }
 
 void test_forward_pbr_renderer_3d_render_request_validates_required_view_fields() {
@@ -736,6 +750,7 @@ void test_forward_pbr_draw_plan_retains_transmission_trigger_for_unsupported_rou
 
     require(plan.has_transmission() && metrics.has_transmission,
             "unsupported transmission cull modes should retain the prior graph trigger");
+    require(!plan.opaque_layer_compatible(), "transmission is not an opaque composition layer");
     require(metrics.route_packet_reference_count == 0U &&
                 metrics.visible_scene_unique_material_count == 0U,
             "unsupported cull routes should not enter renderer draw bins");
@@ -759,6 +774,15 @@ void test_forward_pbr_draw_plan_retains_transmission_trigger_for_unsupported_rou
         &opaque_metrics);
     require(!opaque_plan.has_transmission() && !opaque_metrics.has_transmission,
             "ordinary-only scene packets should preserve the direct graph path");
+    require(opaque_plan.opaque_layer_compatible(), "opaque packets can be merged by depth");
+    auto alpha_scene = opaque_scene_plan;
+    alpha_scene.draw_packets.front().material_info.alpha_mode =
+        cubey::render::MaterialAlphaMode::Blend;
+    alpha_scene.draw_packets.front().material_info.blend =
+        cubey::render::MaterialBlendMode::AlphaBlend;
+    const auto alpha_plan = cubey::build_forward_pbr_draw_plan({&shadow_plan, &alpha_scene});
+    require(!alpha_plan.opaque_layer_compatible(),
+            "alpha packets must not silently disappear from opaque export");
 }
 
 void test_forward_pbr_renderer_3d_settings_defaults_to_aces_display_transform() {

@@ -157,6 +157,10 @@ struct ForwardPbrRenderer3DSettings {
     std::optional<ForwardPbrRenderer3DAtmosphereClouds> atmosphere_clouds{};
     std::optional<ForwardPbrRenderer3DTerrainBackdrop> terrain_backdrop{};
     std::optional<ForwardPbrRenderer3DOceanSurface> ocean_surface{};
+    // Narrow opaque-layer export for shared landscape composition. Target must
+    // be linear scene HDR; retains sampled depth and omits the display pass.
+    // Alpha/transmission/cloud composition is deliberately not accepted here.
+    bool opaque_linear_output = false;
 };
 
 // Caller-owned per-frame renderer evidence. The renderer fills this snapshot
@@ -243,6 +247,7 @@ class ForwardPbrRenderer3D {
     void destroy_swapchain_resources();
     void destroy_all_resources();
     [[nodiscard]] ForwardPbrRenderer3DSceneTargetInfo scene_target_info() const;
+    [[nodiscard]] render::DepthTargetView scene_depth_target() const;
     void record(const ForwardPbrRenderer3DRenderRequest& request);
 
   private:

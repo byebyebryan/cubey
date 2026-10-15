@@ -22,7 +22,8 @@ class TerrainWaterCaptureRuntime {
                                std::filesystem::path shaders);
     ~TerrainWaterCaptureRuntime();
     void ensure_resources(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                          std::uint32_t slots, render::ColorTargetView target);
+                          std::uint32_t slots, render::ColorTargetView target,
+                          bool external_environment = false);
     void destroy_target_resources();
     void destroy();
     void prepare_context(const std::filesystem::path& extension = {},
@@ -42,7 +43,9 @@ class TerrainWaterCaptureRuntime {
                 render::ColorTargetView target, bool present,
                 const render::TerrainSurfacePatchCamera& camera, double animation_s,
                 bool water_visible, bool profile, bool context_visible = false,
-                unsigned ground_view = 0U, bool fixed_lod = false);
+                unsigned ground_view = 0U, bool fixed_lod = false,
+                const render::TerrainSurfacePatchEnvironment* external_environment = nullptr,
+                const render::TerrainSurfacePatchOpaqueLayer* foreground = nullptr);
     [[nodiscard]] std::vector<vulkan::GpuPassTiming> collect_timings(std::uint32_t slot);
     // Expensive end-of-study check only, never in a measured frame window.
     void verify_immutable_fields(vulkan::GpuRuntime& gpu) const;
