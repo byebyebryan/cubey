@@ -15,11 +15,11 @@ PBR, profiling, and deterministic headless capture.
 
 ## Showcase
 
-Four published highlights and the locally packaged Fluid 2.5D highlight show the
-workbench's range. Each highlight is an independent eight-second, 720p/60 FPS
-project story rather than a segment from a combined reel. Fluid's native-player
-attachment publication is still pending; its committed gallery copy and 1080p master
-are available below.
+Five published highlights show the workbench's range. Each highlight is an
+independent eight-second, 720p/60 FPS
+project story rather than a segment from a combined reel. Native video players
+are backed by committed media, posters and reproducible recipes; Fluid also
+retains its native 1080p master below.
 
 ### Ocean
 
@@ -63,16 +63,15 @@ motion.
 
 ### Fluid 2.5D — terrain rain
 
-[![Fluid 2.5D: rain-fed streams](docs/media/showcase/fluid-25d.png)](docs/media/showcase/fluid-25d.mp4)
+https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
 
 Rain-fed streams collect into a lake on unmodified Joining valleys terrain.
 A low, eased orbit reveals the relief as afternoon turns to sunset. This is
 recorded SynxFlow timelapse rendered in Vulkan: approximately six physical
 hours, an independent artistic solar clock, and exact water states held between
-saves—not a live-FPS claim. This cut is owner-selected; GitHub attachment
-publication remains pending.
+saves—not a live-FPS claim. This is the owner-selected sunset cut.
 
-[Project](projects/fluid/fluid_25d/README.md) · [8-second gallery MP4](docs/media/showcase/fluid-25d.mp4) · [1080p master](docs/media/showcase/fluid-25d-master-1080p.mp4) · [Recipe and provenance](docs/media/showcase/fluid-25d-recipe.json)
+[Project](projects/fluid/fluid_25d/README.md) · [8-second gallery MP4](docs/media/showcase/fluid-25d.mp4) · [Poster](docs/media/showcase/fluid-25d.png) · [1080p master](docs/media/showcase/fluid-25d-master-1080p.mp4) · [Recipe and provenance](docs/media/showcase/fluid-25d-recipe.json)
 
 The [showcase package](docs/media/showcase/README.md) preserves the exact media,
 posters, capture recipes, hashes, attachment mapping, and license boundaries.

@@ -15,7 +15,8 @@ class Media(unittest.TestCase):
         entry=next(e for e in manifest['entries'] if e['id']=='fluid-25d')
         recipe=json.loads((MEDIA/'fluid-25d-recipe.json').read_bytes())
         self.assertEqual(recipe['schema'],'cubey.fluid25d.presentation.v2')
-        self.assertEqual(entry['publication']['github_attachment_url'],None)
+        self.assertEqual(entry['publication']['github_attachment_url'],
+                         'https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08')
         for descriptor in recipe['media'].values():
             path=ROOT/descriptor['path']
             self.assertEqual(path.stat().st_size,descriptor['bytes'])
@@ -41,6 +42,26 @@ class Media(unittest.TestCase):
         self.assertIn('scale=1280:720:flags=lanczos,setpts=N/(60*TB)',recipe['gallery']['command'])
         self.assertEqual(recipe['gallery']['probe']['width'],1280)
         self.assertEqual(recipe['gallery']['probe']['nb_read_frames'],'480')
+
+    def test_publication_receipt_is_separate_from_capture_history(self):
+        manifest=json.loads((MEDIA/'manifest.json').read_bytes())
+        entry=next(e for e in manifest['entries'] if e['id']=='fluid-25d')
+        receipt=json.loads((ROOT/entry['publication']['receipt']).read_bytes())
+        self.assertEqual(receipt['schema'],'cubey.fluid25d.presentation-publication.v1')
+        self.assertEqual(receipt['github_attachment_url'],entry['publication']['github_attachment_url'])
+        self.assertEqual(receipt['provenance_comment_url'],entry['publication']['provenance_comment_url'])
+        self.assertEqual(receipt['sha256'],entry['publication']['sha256'])
+        self.assertEqual(receipt['bytes'],entry['publication']['bytes'])
+        self.assertEqual(receipt['media_path'],entry['publication']['path'])
+        self.assertEqual(receipt['source_media_commit'],'a53316d9b874d843ab79ad3a3ee5375739423337')
+        with (MEDIA/'fluid-25d-recipe.json').open('rb') as stream:
+            self.assertEqual(hashlib.file_digest(stream,'sha256').hexdigest(),receipt['capture_recipe_sha256'])
+        for key in ('native_player_download','anonymous_public_page_video'):
+            self.assertEqual(receipt['verification'][key]['sha256'],receipt['sha256'])
+            self.assertEqual(receipt['verification'][key]['bytes'],receipt['bytes'])
+        self.assertEqual(receipt['verification']['anonymous_public_page_video']['content_type'],'video/mp4')
+        self.assertIn(receipt['github_attachment_url'],(ROOT/'README.md').read_text())
+        self.assertIn(receipt['github_attachment_url'],(ROOT/'projects/fluid/fluid_25d/README.md').read_text())
 
     def test_native_frames_and_timelines_are_not_live_fps_claims(self):
         recipe=json.loads((MEDIA/'fluid-25d-recipe.json').read_bytes())

@@ -1,14 +1,13 @@
 # Cubey showcase media
 
-This directory keeps four published highlights and the packaged Fluid 2.5D
-highlight reproducible and independent of GitHub's presentation layer. The
+This directory keeps five published highlights
+reproducible and independent of GitHub's presentation layer. The
 published root highlights use native video players;
 these committed MP4s, generated posters, and the manifest are the durable,
 hashable source of truth.
 
-The published gallery order is Ocean, glTF + Terrain, Water 3D, and Fire 3D.
-Fluid 2.5D is the fifth locally packaged highlight: the Joining valleys sunset
-cut is owner-selected, with native attachment publication still pending. Each poster
+The published gallery order is Ocean, glTF + Terrain, Water 3D, Fire 3D, and
+Fluid 2.5D. Joining valleys sunset is the owner-selected Fluid cut. Each poster
 is extracted from its corresponding committed MP4; click one to open the clip:
 
 | Highlight | Poster / committed MP4 |
@@ -17,7 +16,7 @@ is extracted from its corresponding committed MP4; click one to open the clip:
 | glTF + Terrain | [![glTF + Terrain](gltf-terrain.png)](gltf-terrain.mp4) |
 | Water 3D | [![Water 3D](water-3d.png)](water-3d.mp4) |
 | Fire 3D | [![Fire 3D](fire-3d.png)](fire-3d.mp4) |
-| Fluid 2.5D (packaged, not uploaded) | [![Fluid 2.5D](fluid-25d.png)](fluid-25d.mp4) |
+| Fluid 2.5D | [![Fluid 2.5D](fluid-25d.png)](fluid-25d.mp4) |
 
 Fluid's [native 1080p master](fluid-25d-master-1080p.mp4) shows streams collecting
 into a lake under an independent sunset clock. The gallery copy is a Lanczos
@@ -44,11 +43,18 @@ diagnostic media remain ignored editing evidence under `outputs/showcase/`.
 
 ## GitHub attachment publication
 
-The exact committed MP4s were uploaded through GitHub's Markdown attachment
+The original four committed MP4s were uploaded through GitHub's Markdown attachment
 flow and anchored by closed [issue #1](https://github.com/byebyebryan/cubey/issues/1)
 at source commit `e21fdd86ba83049d0d187caf3973b1124163e576`. The same mapping
 is recorded in `manifest.json`. GitHub serves those attachments to the native
 players; the repository copies below remain independently inspectable.
+
+Fluid's exact gallery MP4 was added in a separate
+[provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145)
+on that same closed issue, from media package commit `a53316d9`.
+The [publication receipt](fluid-25d-publication.json) records the returned URL,
+verified downloaded bytes and unchanged capture recipe. The original four
+attachment mappings and issue body were not replaced.
 
 | Highlight | Native player attachment | Committed MP4 | Poster fallback |
 | --- | --- | --- | --- |
@@ -56,8 +62,9 @@ players; the repository copies below remain independently inspectable.
 | glTF + Terrain | https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02 | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
 | Water 3D | https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75 | [MP4](water-3d.mp4) | [Poster](water-3d.png) |
 | Fire 3D | https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0 | [MP4](fire-3d.mp4) | [Poster](fire-3d.png) |
+| Fluid 2.5D | https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08 | [MP4](fluid-25d.mp4) | [Poster](fluid-25d.png) |
 
-Cubey source and the Ocean, Water 3D, and Fire 3D generated media are MIT
+Cubey source and the Ocean, Water 3D, Fire 3D, and Fluid 2.5D generated media are MIT
 licensed. The glTF + Terrain MP4 and poster incorporate the Khronos Damaged
 Helmet asset and are a media-only `CC-BY-NC-4.0` exception. They must be
 attributed to ctxwing (2018 rebuild/conversion) and theblueturtle_ (2016

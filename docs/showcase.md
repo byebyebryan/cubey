@@ -2,13 +2,13 @@
 
 Status: design authority. This document defines what the public visual
 showcase should communicate and the capture work that follows. Four root
-highlights are now creatively locked and packaged as committed media. The
+highlights were creatively locked and packaged as committed media. The
 remaining seven storyboard cards are future editorial work; GitHub attachment
 publication for the current four is complete and recorded in the [showcase
 manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
-Fluid 2.5D is the fifth locally packaged highlight. Its Joining valleys sunset
-cut is owner-selected through headless cinematic auditions; GitHub attachment
-publication remains pending. It does not alter the four published clips or select a suite hero.
+Fluid 2.5D is now the fifth published highlight. Its Joining valleys sunset
+cut is owner-selected through headless cinematic auditions, with a byte-verified
+GitHub native-player attachment. It does not alter the original four clips or select a suite hero.
 
 The showcase is a set of small project stories whose render inputs and capture
 recipes can be reproduced. It is not a single merged reel and it is not a
@@ -30,7 +30,7 @@ The public-facing storyboard set contains these twelve active projects:
 | `smoke_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
-| `fluid_25d` | Owner-selected fifth highlight; packaged locally, attachment publication pending | Simulation-led |
+| `fluid_25d` | Published fifth root-gallery highlight; hero eligibility deferred | Simulation-led |
 | `fire_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
 | `explosion_3d` | Root-gallery candidate; hero eligibility deferred | Simulation-led |
 | `fractal_2d` | Supporting project gallery; root inclusion after editorial review | Camera-led |
@@ -501,8 +501,8 @@ unjustified subsystem or produce an unreadable intermediate state.
 - **Capture boundary:** Actual SynxFlow snapshots held between original saves,
   never physically interpolated. Sixty FPS describes rendered/encoded frames,
   not hydraulic update rate or native scanout/solver performance.
-- **Status:** Owner-selected and packaged locally from clean source; GitHub
-  attachment publication is pending. The existing four clips are untouched.
+- **Status:** Owner-selected, packaged from clean source and published through
+  a byte-verified GitHub attachment. The original four clips are untouched.
 - **Authority:** [Recipe](media/showcase/fluid-25d-recipe.json),
   [presentation qualification](../projects/fluid/fluid_25d/presentation_v1.md),
   and [project quickstart](../projects/fluid/fluid_25d/README.md).
@@ -654,13 +654,20 @@ recipe.
 
 ### 7. GitHub attachment publication and verification (complete)
 
-Each exact committed master was uploaded through GitHub Markdown in the
+Each original committed gallery MP4 was uploaded through GitHub Markdown in the
 locked editorial order and anchored by [issue #1](https://github.com/byebyebryan/cubey/issues/1),
 which is closed with reason `completed`. The native-player URLs are recorded in
 the root and package READMEs and in the [manifest](media/showcase/manifest.json)
-alongside each committed relative reference. The four attachment endpoints
-return `video/mp4` and match the recorded SHA-256 files; technical/internal
-projects remain outside the public gallery.
+alongside each committed relative reference. Fluid 2.5D was subsequently added
+in a separate [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145),
+without changing that closed issue's original body or attachment mappings.
+Its native-player download and anonymous public issue-page media delivery
+both match the committed gallery SHA-256; the latter returns `video/mp4`.
+The [publication receipt](media/showcase/fluid-25d-publication.json) retains
+that readback separately from capture-time provenance. Standalone unauthenticated
+attachment-route requests returned 404; GitHub's public HTML supplies the working
+signed video delivery URL, which is not persisted as a permanent link.
+Technical/internal projects remain outside the public gallery.
 
 Exit gate (met): README players render, relative references resolve, the
 provenance manifest is complete, and local Git state contains only reviewed
@@ -669,6 +676,6 @@ publication changes.
 ## Design boundary
 
 This document records the approved camera and 60 FPS capture/publication
-standard for the current four root-gallery highlights. It does not authorize
+standard for the five published root-gallery highlights. It does not authorize
 future uploads, commits, pushes, timeline APIs, or unrelated capture work;
 future actions remain explicitly authorized.

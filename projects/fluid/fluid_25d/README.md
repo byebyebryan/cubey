@@ -4,9 +4,10 @@ A macro-scale terrain-water demo: rain supplies an unmodified generated heightfi
 water forms downhill streams, gathers in basins, and retreats when supply stops.
 Cubey renders the changing water surface, wet banks, rain and flow cues.
 
-[![Rain-fed streams: 8-second cinematic highlight](../../../docs/media/showcase/fluid-25d.png)](../../../docs/media/showcase/fluid-25d.mp4)
+https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
 
 [8-second showcase highlight](../../../docs/media/showcase/fluid-25d.mp4) ·
+[Poster](../../../docs/media/showcase/fluid-25d.png) ·
 [Native 1080p master](../../../docs/media/showcase/fluid-25d-master-1080p.mp4) ·
 [Recipe and provenance](../../../docs/media/showcase/fluid-25d-recipe.json) ·
 [Browser package review](http://starship:8787/reports/4d2c9b639957b210136f1a88b49838f84fe81e5edf4a2ad762ac4a94f77b0e19/)
@@ -16,8 +17,9 @@ a lake. Its native 1080p/60 master is retained; the gallery copy is an explicit
 720p downsample. Approximately six physical hours become 5.6 active seconds,
 with animated opening/closing holds and an independent afternoon-to-sunset clock.
 All 72 original water states are held between saves; rain/foam remain visual cues.
-This is recorded timelapse, not a live performance capture. GitHub attachment
-publication is still pending. See [reproduction and validation](presentation_v1.md).
+This is recorded timelapse, not a live performance capture. The GitHub player
+serves the exact committed gallery bytes; see [publication receipt](../../../docs/media/showcase/fluid-25d-publication.json)
+and [reproduction and validation](presentation_v1.md).
 
 This showcase selection does not change the interactive Mountain defaults below.
 The [legacy 36-second Mountain rain-off film](../../../docs/media/showcase/fluid-25d-story.mp4)

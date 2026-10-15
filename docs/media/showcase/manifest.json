@@ -191,8 +191,10 @@
         "bytes": 1429568,
         "path": "docs/media/showcase/fluid-25d.mp4",
         "sha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
-        "github_attachment_url": null,
-        "state": "owner-selected sunset; packaged locally; GitHub attachment publication pending"
+        "github_attachment_url": "https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08",
+        "state": "published; owner-selected sunset; attachment bytes verified",
+        "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145",
+        "receipt": "docs/media/showcase/fluid-25d-publication.json"
       },
       "poster": {
         "bytes": 605430,

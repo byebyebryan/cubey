@@ -8,7 +8,10 @@ byte-for-byte (`f35e77792d96e640bcefafad9af2edc2e47b14e62f19fcd67c26555256e76576
 The repository also keeps an explicitly derived 720p/60 CRF 24 gallery copy and
 a formed-lake poster at six seconds. The [V2 recipe](../../../docs/media/showcase/fluid-25d-recipe.json)
 is the current media authority; the [manifest](../../../docs/media/showcase/manifest.json)
-records publication hashes. GitHub attachment upload and push are not performed.
+records publication hashes. GitHub attachment publication is complete; the
+[publication receipt](../../../docs/media/showcase/fluid-25d-publication.json)
+records exact remote bytes and the provenance comment separately from the
+unchanged capture-time recipe.
 
 This changes presentation, not the interactive Mountain/live-worker defaults.
 The original four showcase entries and their media/attachment pins are unchanged.
@@ -324,6 +327,26 @@ HTTP server is reused; the client-side Blob fallback keeps seeking independent
 of HTTP range support. Browser acceptance does not claim native GUI review.
 
 [Final local showcase package](http://starship:8787/reports/4d2c9b639957b210136f1a88b49838f84fe81e5edf4a2ad762ac4a94f77b0e19/)
-contains the same committed master, gallery copy, poster and V2 recipe. Public
-GitHub attachment upload, wiring its returned URL, and push are the remaining
-publication step, not a reason to restart rendering or simulation work.
+contains the same committed master, gallery copy, poster and V2 recipe. It is an
+immutable snapshot of local promotion, so its upload/push-pending wording records
+that earlier boundary, not current publication status.
+
+### GitHub publication (complete)
+
+On October 15 the reviewed checkpoints through media package `a53316d9` were
+pushed to `main`. The exact 1,429,568-byte gallery MP4 was uploaded using the
+normal GitHub Markdown attachment flow and anchored by a
+[comment on the existing closed showcase issue](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145).
+The native player serves SHA-256
+`fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352`,
+matching the committed file. Anonymous delivery from the public issue's video
+source independently returns the same bytes as `video/mp4`. GitHub's standalone
+attachment route returned 404 without page context; expiring signed delivery URLs
+are not committed as player links. The root and project READMEs use GitHub's
+returned permanent attachment URL, and retain committed media/poster/master links.
+
+The separate publication receipt binds the attachment, comment, media-package
+commit and immutable capture-recipe hash. The V2 recipe's local-only publication
+field remains capture-time history, not a claim that upload is still pending.
+No video is recaptured/re-encoded, no other gallery attachment is changed, and
+the original issue remains closed with its four-entry body unchanged.

@@ -1,0 +1,35 @@
+{
+  "schema": "cubey.fluid25d.presentation-publication.v1",
+  "published_at": "2026-10-15T20:04:20Z",
+  "verified_at": "2026-10-15T20:07:24Z",
+  "github_attachment_url": "https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08",
+  "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145",
+  "source_media_commit": "a53316d9b874d843ab79ad3a3ee5375739423337",
+  "media_path": "docs/media/showcase/fluid-25d.mp4",
+  "bytes": 1429568,
+  "sha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+  "capture_recipe": "docs/media/showcase/fluid-25d-recipe.json",
+  "capture_recipe_sha256": "d52f8045526aefb05c75777efeefee15298c95916882995add9837c6faf80d67",
+  "verification": {
+    "native_player_download": {
+      "method": "Browser native-video download from the published GitHub comment",
+      "bytes": 1429568,
+      "sha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+      "width": 1280,
+      "height": 720,
+      "duration_seconds": 8,
+      "media_error": null
+    },
+    "anonymous_public_page_video": {
+      "method": "Unauthenticated public issue HTML, then its rendered video source; no cookies or token supplied",
+      "http_status": 200,
+      "content_type": "video/mp4",
+      "bytes": 1429568,
+      "sha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352"
+    },
+    "standalone_unauthenticated_attachment_route_status": 404,
+    "issue_remains_closed": true,
+    "original_four_attachment_mappings_unchanged": true
+  },
+  "boundary": "Publication of the existing 720p gallery bytes, not a recapture, re-encode, live-performance result or native GUI review. Expiring GitHub CDN delivery URLs are not permanent player links. Capture-time publication status remains unchanged in the V2 recipe."
+}
