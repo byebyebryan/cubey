@@ -261,6 +261,10 @@ if (BUILD_TESTING)
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_present_fluid25d_v1.py)
         set_tests_properties(fluid_25d_presentation_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
+        add_test(NAME fluid_25d_presentation_v2_helpers
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_present_fluid25d_v2.py)
+        set_tests_properties(fluid_25d_presentation_v2_helpers PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
         add_test(NAME fluid_25d_presentation_docs
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_presentation_docs_v1.py)

@@ -208,6 +208,33 @@ owner-selected sunset MP4 byte-for-byte; review evidence is in
 
 ### Promotion plan (not executed)
 
+The supported selected-cut entrypoint is now `present_fluid25d_v2.py`; V1
+commands above remain Mountain-only compatibility tools. The V2 command checks
+the selected archive's protocol/recording/result identities, every retained
+native frame, dry opening, original field audit and numeric/source beds. It
+requires a fully clean Git worktree (including index and untracked files),
+freezes runtime/shader/source identities, and refuses a final master that is
+not byte-identical to the owner-selected sunset. No ignored audition script
+is imported. Use existing optional artifacts explicitly:
+
+```sh
+rtk proxy python3 -B projects/fluid/fluid_25d/present_fluid25d_v2.py capture \
+  --case outputs/fluid/site-expansion-20261011-jtIA3s/cases/joining-valleys-patch-1024-16m \
+  --recording outputs/fluid/site-expansion-20261011-jtIA3s/runs/joining-valleys-patch-1024-16m/recording/recording.json \
+  --audit outputs/fluid/site-expansion-20261011-jtIA3s/field-audit.json \
+  --out outputs/showcase/fluid25d-sunset-production-FRESH
+rtk proxy python3 -B projects/fluid/fluid_25d/present_fluid25d_v2.py package \
+  --capture outputs/showcase/fluid25d-sunset-production-FRESH \
+  --out outputs/showcase/fluid25d-sunset-package-FRESH
+```
+
+Both commands require a fresh output leaf. Packaging rechecks the capture,
+clean-source receipt, full rain/camera/solar/hydraulic timelines and native
+1080p probe, then creates a standalone browser export. It copies the master
+without re-encoding, derives the 720p/60 CRF 24 gallery copy, and extracts its
+formed-water poster at six seconds. It does not overwrite repository media,
+upload, push, run the solver or install dependencies.
+
 1. **Make the selected recipe a supported capture entrypoint.** Accept explicit
    prepared-case and recording paths instead of the current Mountain-only
    rain-response wrapper. Pin Joining valleys, the solar recipe and the tracked

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fluid 2.5D — Joining valleys sunset showcase</title>
+<style>
+body{margin:0;background:#14212a;color:#eef3f6;font:17px/1.55 system-ui}
+main{max-width:1440px;margin:auto;padding:24px}a{color:#a5e1f5}h1{font-size:2.1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:24px}
+article{padding:18px;background:#213640;border-radius:12px}video{width:100%;border-radius:7px}
+button{background:#c2e8ed;color:#152b35;border:0;border-radius:5px;padding:10px 14px;margin:7px 7px 8px 0;cursor:pointer}
+.quiet{color:#b5ccd5;font-size:.93rem}summary{cursor:pointer}details{margin:24px 0}
+</style>
+<main>
+<nav><a href="/reports/#project=cubey">Cubey reports</a> ·
+<a href="http://starship:8787/reports/c40797df0862afd1461f80ad9b11354c1e91b7464902b84d8c7710c465679cde/">Owner-selected sunset versus daylight</a></nav>
+<h1>Rain gathers into a lake — then sunset</h1>
+<p>The selected Joining valleys cut is now the local Fluid 2.5D showcase: a low 15° orbit around streams collecting into a prominent basin. One eight-second highlight, not a mandatory long film.</p>
+<div class="grid">
+<article><h2>Gallery publication · 720p60</h2>
+<video controls muted loop playsinline preload="metadata" src="fluid-25d.mp4" poster="fluid-25d.png"></video>
+<button data-action="play">Play from dry</button><button data-action="formed">Formed lake</button><button data-action="sunset">Sunset</button>
+<p>The exact gallery-size derivative, downsampled from the native 1080p master. CRF 24, 480 frames, silent H.264 High, fast-start MP4.</p></article>
+<article><h2>Native master · 1080p60</h2>
+<video controls muted loop playsinline preload="metadata" src="fluid-25d-master-1080p.mp4" poster="fluid-25d.png"></video>
+<button data-action="play">Play from dry</button><button data-action="formed">Formed lake</button><button data-action="sunset">Sunset</button>
+<p>Clean-source hardware-headless Vulkan capture. Byte-for-byte match to the owner-approved sunset cut; CRF 20 publication master.</p></article>
+</div>
+<p id="status" role="status">Both players show the same creative cut, not different rendering options.</p>
+<h2>How to read it</h2>
+<p>Uniform rain supplies the whole terrain. Narrow streams follow the existing slopes and feed the broad collection. The opening is truly dry; the final water state holds while the camera, rain, foam and solar clock continue moving.</p>
+<p>Screen time: 0.4 s dry opening → 5.6 s accelerated formation → 2 s animated final-state hold. The water spans approximately six simulated hours; afternoon-to-sunset lighting is an independent artistic clock, not a geographic storm reconstruction.</p>
+<h2>Promotion boundary</h2>
+<p>The selected cut, formed-lake poster, recipe and documentation are packaged locally. GitHub attachment publication and push are still deferred. The original four showcase clips and their attachment pins remain untouched; the interactive Mountain/live-solver defaults also remain unchanged.</p>
+<details><summary>Provenance and limits</summary>
+<p><a href="fluid-25d-recipe.json">Complete recipe, clean source revision, commands, media hashes and archive identities</a> ·
+<a href="fluid-25d-master-1080p.mp4">Download native 1080p master</a> · <a href="fluid-25d.mp4">Download 720p gallery copy</a></p>
+<p>Generated Terrain Diffusion elevation, not surveyed terrain. Unmodified 1024² / 16 m simulation patch (16.384 km square), sampled from 30 m elevation; 512 mm/h continuous artistic demo rain, Manning 0.05, open/fall boundaries. All 72 native SynxFlow saves are represented and held between checkpoints, never physically interpolated. Maximum native gap is approximately 315 simulated seconds. This is not a certified calm/permanent lake.</p>
+<p>Every one of the 480 master frames is rendered natively; no cloned padding. Rain and whitewater are cosmetic motion cues. Encoded 60 FPS is not 60 Hz hydraulics or a live performance measurement. Original packet headers are unavailable: retained native payload/bed identity and bit-exact GPU import are checked, without claiming a new conservation certificate.</p>
+<p>The blue outside the finite patch is sky, not an ocean. Foreground cropping and the stylized sunset horizon are accepted framing tradeoffs. No terrain, solver, lighting shader, cloud layer or interactive default was changed by this promotion.</p>
+<p>The old 36-second Mountain rain-off film is a separate legacy study, not the continuous-rain story shown here. Cubey-generated media is MIT; Terrain Diffusion source/model declarations are pinned in the recipe. The GPL-covered SynxFlow worker remains a separate external process and its code is not embedded in the media.</p>
+</details>
+</main>
+<script>
+const loaded=new WeakMap(),status=document.querySelector('#status');
+function local(v){
+ if(!loaded.has(v)){
+  const source=v.getAttribute('src');
+  loaded.set(v,(async()=>{
+   const r=await fetch(source);if(!r.ok)throw new Error('Video download failed');
+   const url=URL.createObjectURL(await r.blob());
+   await new Promise((resolve,reject)=>{
+    v.addEventListener('loadedmetadata',resolve,{once:true});v.addEventListener('error',reject,{once:true});v.src=url;v.load();
+   });
+  })());
+ }
+ return loaded.get(v);
+}
+for(const b of document.querySelectorAll('[data-action]'))b.onclick=async()=>{
+ try{
+  const v=b.closest('article').querySelector('video');await local(v);v.pause();
+  if(b.dataset.action==='play'){v.currentTime=0;await v.play();status.textContent='Playing from the dry opening.'}
+  else{v.currentTime=b.dataset.action==='formed'?6:7.7;status.textContent=b.dataset.action==='formed'?'Formed lake at 6 seconds.':'Sunset at 7.7 seconds.'}
+ }catch(e){status.textContent=e.message}
+};
+</script>
+</html>
