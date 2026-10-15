@@ -68,6 +68,8 @@ struct Fluid25DProjectConfig {
     float recording_speed = 60.0F;
     float recording_time_seconds = 0.0F;
     float recording_frame_interval_seconds = 60.0F;
+    std::uint32_t recording_opening_frames = 0U;
+    std::uint32_t recording_closing_frames = 0U;
     std::string recording_camera = "overview";
     std::string native_presentation = "original";
     std::string native_scenic_material = "refined";
@@ -96,6 +98,7 @@ struct Fluid25DProjectConfig {
     float native_camera_yaw_radians = -0.52F;
     float native_camera_sweep_radians = 0.0F;
     std::string native_camera_motion = "legacy";
+    float native_camera_vertical_shift = 0.0F;
     // Explicit observation recipe for any site; normalized cell-center coordinates.
     std::optional<float> native_camera_target_x{};
     std::optional<float> native_camera_target_z{};
@@ -126,6 +129,16 @@ fluid_25d_selected_backend(const Fluid25DProjectConfig& config) {
 }
 
 namespace fluid_25d_project_config_detail {
+
+// Editorial endpoint holds map output frames to exact recorded-state requests.
+// Camera/weather clocks still use output time; no hydraulic interpolation.
+[[nodiscard]] inline std::uint32_t recording_source_frame(std::uint32_t index, std::uint32_t count,
+                                                          std::uint32_t opening,
+                                                          std::uint32_t closing) {
+    if (count < 2U || opening >= count - 1U || closing >= count - 1U - opening)
+        throw std::runtime_error("recorded endpoint holds require at least two active frames");
+    return std::min(index > opening ? index - opening : 0U, count - opening - closing - 1U);
+}
 
 enum class ExternalSessionHealth : std::uint8_t {
     Healthy,
@@ -570,6 +583,16 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Physical seconds between headless video frames, beginning at recording time.",
                      ValueType::Float, {.has_min = true, .min = 0.0}),
               config.recording_frame_interval_seconds)
+        .bind(option("fluid25d.recording_opening_frames", "--fluid25d-recording-opening-frames",
+                     "Recorded Opening Hold",
+                     "Render an animated dry opening; headless video only.", ValueType::UInt32,
+                     {.has_min = true, .has_max = true, .min = 0, .max = 600}),
+              config.recording_opening_frames)
+        .bind(option("fluid25d.recording_closing_frames", "--fluid25d-recording-closing-frames",
+                     "Recorded Closing Hold",
+                     "Render an animated final-state hold; headless video only.", ValueType::UInt32,
+                     {.has_min = true, .has_max = true, .min = 0, .max = 600}),
+              config.recording_closing_frames)
         .bind(option("fluid25d.recording_camera", "--fluid25d-recording-camera", "Recording Camera",
                      "Presentation-only overview or existing native runoff/collection observation.",
                      ValueType::Enum, {}, {"overview", "runoff", "collection"}),
@@ -697,7 +720,7 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
         .bind(option("fluid25d.native_camera_pitch", "--fluid25d-native-camera-pitch",
                      "Native Camera Pitch", "Observation-only native camera pitch in radians.",
                      ValueType::Float,
-                     {.has_min = true, .has_max = true, .min = -1.45, .max = -0.40}),
+                     {.has_min = true, .has_max = true, .min = -1.45, .max = -0.20}),
               config.native_camera_pitch_radians)
         .bind(option("fluid25d.native_camera_yaw", "--fluid25d-native-camera-yaw",
                      "Native Camera Yaw", "Observation-only heading in radians.", ValueType::Float,
@@ -713,6 +736,12 @@ inline void resolve_fluid_25d_terrain_cell_size(Fluid25DProjectConfig& project_c
                      "Capture-only eased arc at fixed distance, or legacy sweep/zoom.",
                      ValueType::Enum, {}, {"legacy", "eased"}),
               config.native_camera_motion)
+        .bind(option("fluid25d.native_camera_vertical_shift",
+                     "--fluid25d-native-camera-vertical-shift", "Camera Frame Shift",
+                     "Observation-only frame-height shift; positive moves terrain upward.",
+                     ValueType::Float,
+                     {.has_min = true, .has_max = true, .min = -0.15, .max = 0.15}),
+              config.native_camera_vertical_shift)
         .bind(option("fluid25d.native_camera_target_x", "--fluid25d-native-camera-target-x",
                      "Native Camera Target X", "Observation-only normalized site coordinate.",
                      ValueType::Float, {.has_min = true, .has_max = true, .min = 0.0, .max = 1.0}),
@@ -996,6 +1025,17 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
         "fluid25d.recording_frame_interval_seconds", "fluid25d.recording_camera",
         "fluid25d.recording_gpu_validation"};
     const bool service_session = project_config.external_session_path.has_value();
+    if (parsed.path_was_assigned("fluid25d.recording_opening_frames") ||
+        parsed.path_was_assigned("fluid25d.recording_closing_frames")) {
+        if (!project_config.recording_path || project_config.stream_path || service_session ||
+            !project_config.common.headless || project_config.common.headless_render_only ||
+            project_config.common.capture_mode != CaptureMode::Video ||
+            project_config.bank_comparison)
+            throw std::runtime_error("recorded endpoint holds require a headless recording video");
+        (void)fluid_25d_project_config_detail::recording_source_frame(
+            0U, project_config.common.frames, project_config.recording_opening_frames,
+            project_config.recording_closing_frames);
+    }
     if (project_config.terrain_demo_control_path &&
         (!service_session || project_config.terrain_demo_control_path->empty()))
         throw std::runtime_error("managed terrain demo requires an external service session");
@@ -1053,6 +1093,7 @@ parse_fluid_25d_project_config(int argc, char** argv, config::ParseResult* resul
          parsed.path_was_assigned("fluid25d.native_camera_yaw") ||
          parsed.path_was_assigned("fluid25d.native_camera_sweep") ||
          parsed.path_was_assigned("fluid25d.native_camera_motion") ||
+         parsed.path_was_assigned("fluid25d.native_camera_vertical_shift") ||
          parsed.path_was_assigned("fluid25d.native_camera_target_x") ||
          parsed.path_was_assigned("fluid25d.native_camera_target_z") ||
          parsed.path_was_assigned("fluid25d.native_camera_span_m") ||

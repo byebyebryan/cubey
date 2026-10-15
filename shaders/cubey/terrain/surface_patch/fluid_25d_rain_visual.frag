@@ -30,6 +30,21 @@ void main() {
     }
     float alpha=params.volume.w*fade*contact*pow(max(0.0,1.0-abs(streak_uv.x)),1.5)*
                 smoothstep(0.0,0.16,streak_uv.y)*(1.0-smoothstep(0.65,1.0,streak_uv.y));
+    // Macro presentation only: soften the finite weather box rather than
+    // drawing its top and perimeter as a dense wall against the sky.
+    if(scenic.environment_transition.z>0.0) {
+        vec2 span=max((params.grid_cell.xy-1.0)*params.grid_cell.z,vec2(1));
+        vec2 p=world_position.xz/span+0.5;
+        float edge=min(min(p.x,1.0-p.x),min(p.y,1.0-p.y));
+        float altitude=(world_position.y-params.camera_floor.w)/params.volume.x;
+        float domain=max(span.x,span.y);
+        float envelope=smoothstep(0.0,0.075,edge)*
+                       (1.0-smoothstep(0.55,1.0,altitude))*
+                       (1.0-smoothstep(domain*0.65,domain*1.55,
+                                      distance(world_position,params.camera_floor.xyz)));
+        if(scene_z>=1.0) envelope*=0.10;
+        alpha*=mix(1.0,envelope,scenic.environment_transition.z);
+    }
     // Artistic contrast cue: pale over terrain, a neutral silhouette over the
     // bright daylight sky. Increasing density alone cannot distinguish pale
     // rain from a pale sky. No sky tint/exposure/storm lighting is changed.

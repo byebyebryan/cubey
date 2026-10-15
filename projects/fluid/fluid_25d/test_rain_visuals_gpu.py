@@ -35,12 +35,12 @@ def run(out, target, video_controls=False):
         manifests[rate] = manifest
     inputs = {str(p): review.ref.sha256_file(p) for p in (out / "fixtures").rglob("*") if p.is_file()}
 
-    def render(name, rate=512, enabled=False, extra=(), t=0, video=False, interval=.1):
+    def render(name, rate=512, enabled=False, extra=(), t=0, video=False, interval=.1, tuning_path=None):
         path = out / (name + (".mp4" if video else ".png"))
         command = ["rtk", "proxy", str(target.resolve()), "--headless", "--width", "384", "--height", "288",
                    "--fluid25d-recording", str(manifests[rate]), "--fluid25d-recording-time-seconds", str(t),
                    "--fluid25d-recording-gpu-validation", "--fluid25d-native-presentation", "scenic",
-                   "--fluid25d-scenic-material", "macro", "--fluid25d-scenic-tuning", str(tuning),
+                   "--fluid25d-scenic-material", "macro", "--fluid25d-scenic-tuning", str(tuning_path or tuning),
                    "--output", str(path), *extra]
         if enabled:
             command += ["--fluid25d-rain-visuals"]
@@ -82,6 +82,15 @@ def run(out, target, video_controls=False):
     slow_still, _ = render("speed1-initial-phase", enabled=True,
                            extra=("--fluid25d-rain-visual-speed", "1"))
     equal(rain, slow_still)
+    softened=out/"softened.json"
+    review.ref.write_json_exclusive(softened,{**json.loads(tuning.read_bytes()),"rain_macro_softening":1})
+    soft_off,_=render("softened-off",tuning_path=softened)
+    equal(off,soft_off)
+    soft_on,_=render("softened-on",enabled=True,tuning_path=softened)
+    soft_repeat,_=render("softened-repeat",enabled=True,tuning_path=softened)
+    equal(soft_on,soft_repeat)
+    if soft_on.read_bytes() in (off.read_bytes(),rain.read_bytes()):
+        raise ValueError("macro softening must change visible rain without removing it")
     if rain.read_bytes() == off.read_bytes():
         raise ValueError("rain has no visible effect")
     low, lo = render("rate120", rate=120, enabled=True)
@@ -128,6 +137,16 @@ def run(out, target, video_controls=False):
     if decoded and (len(decoded[2]) != 4 * frame_size or
                     decoded[0][-frame_size:] == decoded[2][-frame_size:]):
         raise ValueError("fall speed must preserve initial phase and change future motion")
+    if video_controls:
+        _, held_rain = render("animated-endpoints", enabled=True, video=True, interval=.01,
+                              extra=("--fluid25d-recording-opening-frames", "1",
+                                     "--fluid25d-recording-closing-frames", "1"))
+        raw=(out/"animated-endpoints.log").read_text()
+        requests=re.findall(r"fluid_25d_recording_capture: output_frame=\d+ requested_s=(\S+)",raw)
+        if len(requests)!=4 or any(abs(float(a)-b)>1e-7 for a,b in zip(requests,(0,0,.01,.01))):
+            raise ValueError("animated endpoint source schedule changed")
+        if any(abs(float(row[2])-i/15)>1e-7 for i,row in enumerate(held_rain)):
+            raise ValueError("endpoint holds froze or retimed cosmetic rain")
     if identity != runtime_identity(target):
         raise ValueError("runtime changed during rain GPU controls")
     if inputs != {str(p): review.ref.sha256_file(p) for p in (out / "fixtures").rglob("*") if p.is_file()}:
@@ -136,8 +155,10 @@ def run(out, target, video_controls=False):
         "status": "PASS", "runtime": identity, "rows": rows,
         "scope": "synthetic frozen renderer fixtures; no solver execution or visual acceptance",
         "checks": ["off/zero/zero-strength exact", "repeat exact", "monotone capped density",
-                   "diagnostics exact", "forcing taper/off", "immutable fields/upload parity"],
+                   "diagnostics exact", "forcing taper/off", "immutable fields/upload parity",
+                   "macro softening opt-in/repeat/off exact"],
         "video_controls": "PASS: motion on held fields; physical-speed independence; adjustable fall speed"
+                          "; animated endpoint schedule and cosmetic clock"
                           if video_controls else "not requested"})
 
 

@@ -76,6 +76,7 @@ struct TerrainSurfacePatchMaterial {
     float daylight_environment = 0.0F; // opt-in fixed shared Cubey sky, no weather system
     float daylight_exposure = 0.4F;    // EV bias; shared mode only, no automatic exposure
     float daylight_sun_scale = 1.0F;   // shared direct sun only; 1 matches sky source units
+    float rain_macro_softening = 0.0F; // opt-in sky/distance/volume fade; never changes rainfall
 };
 
 // Accepted macro recipe, shared by the native Fluid frontend and captures.

@@ -88,6 +88,7 @@ constexpr std::array kProperties{
     Property{"daylight_environment", &Fluid25DScenicMaterial::daylight_environment, 0.0, 1.0},
     Property{"daylight_exposure", &Fluid25DScenicMaterial::daylight_exposure, -6.0, 4.0},
     Property{"daylight_sun_scale", &Fluid25DScenicMaterial::daylight_sun_scale, 0.0, 2.0},
+    Property{"rain_macro_softening", &Fluid25DScenicMaterial::rain_macro_softening, 0.0, 1.0},
 };
 [[noreturn]] void invalid(const std::string& message) {
     throw std::runtime_error("fluid 2.5D Scenic material: " + message);

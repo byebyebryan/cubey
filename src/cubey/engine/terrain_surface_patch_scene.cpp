@@ -595,6 +595,8 @@ void TerrainSurfacePatchScene::record(
          .dynamic_environment = environment && environment->dynamic,
          .environment_blend = env.prefiltered_blend},
         material);
+    // Reuse a reserved uniform component; push constants remain within 128 bytes.
+    uniforms.environment_transition.z = material.rain_macro_softening;
     render::RenderGraphBuilder graph;
     s.frame->upload(slot, uniforms);
     const auto final_state = present ? render::render_graph_present_texture_state()

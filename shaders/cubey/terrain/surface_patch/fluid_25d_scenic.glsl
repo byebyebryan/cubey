@@ -23,7 +23,7 @@ layout(set=1,binding=0,std140) uniform ScenicFrame {
     vec4 water_stream_foam; // strength, patchiness, brightness, reserved; no extra water coverage
     vec4 water_bank; // fixed inset m, flow-linked variation m, noise scale m, edge band m
     vec4 terrain_readability; // material world XZ origin, study mode, reserved
-    vec4 environment_transition; // dynamic, reflection blend, reserved, reserved
+    vec4 environment_transition; // dynamic, reflection blend, macro rain softening, reserved
 } scenic;
 layout(set=1,binding=1) uniform samplerCube scenic_environment;
 layout(set=1,binding=2) uniform samplerCube scenic_irradiance;

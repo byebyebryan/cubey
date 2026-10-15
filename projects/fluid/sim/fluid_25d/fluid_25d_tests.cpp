@@ -6638,6 +6638,19 @@ void test_recording_cli_is_separate_from_physics() {
     require(!valid.native_display_coverage_path && valid.native_camera_pitch_radians == -0.92F &&
                 !valid.catchment_render.native_display_coverage,
             "display coverage and observation camera changes must remain opt-in");
+    const auto low_angle = parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                          "--fluid25d-native-camera-pitch", "-0.2617994"});
+    require(low_angle.native_camera_pitch_radians > -0.263F &&
+                low_angle.native_camera_pitch_radians < -0.261F &&
+                low_angle.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "15-degree observation camera must not alter numerical defaults");
+    for (const char* pitch : {"-0.19", "0"})
+        require_throws(
+            [pitch] {
+                (void)parse_project({"fluid_25d", "--fluid25d-recording", "recording.json",
+                                     "--fluid25d-native-camera-pitch", pitch});
+            },
+            "near-horizon and upward observation camera values remain bounded");
     require(
         valid.native_surface_highlights == "auto" &&
             fluid_25d_native_surface_highlights_enabled(
@@ -7113,6 +7126,23 @@ void test_scenic_material_contract() {
     const auto refined = fluid_25d_scenic_material("refined");
     const auto terrain = fluid_25d_scenic_material("terrain");
     const auto macro = fluid_25d_scenic_material("macro");
+    require(macro.rain_macro_softening == 0.0F && refined.rain_macro_softening == 0.0F,
+            "macro rain softening must not silently change accepted views");
+    const auto soft_rain = fluid_25d_parse_scenic_material(
+        R"({"schema":"cubey.fluid25d.scenic-material.v2","rain_macro_softening":1})", macro);
+    require(soft_rain.rain_macro_softening == 1.0F &&
+                soft_rain.water_rain_agitation == macro.water_rain_agitation &&
+                fluid_25d_scenic_material_json(fluid_25d_parse_scenic_material(
+                    fluid_25d_scenic_material_json(soft_rain), macro)) ==
+                    fluid_25d_scenic_material_json(soft_rain),
+            "rain softening must roundtrip without altering surface agitation");
+    require_throws(
+        [&] {
+            (void)fluid_25d_parse_scenic_material(
+                R"({"schema":"cubey.fluid25d.scenic-material.v2","rain_macro_softening":1.1})",
+                macro);
+        },
+        "macro rain softening must remain bounded");
     require(macro.terrain_readability == 2.0F && v1.terrain_readability == 0.0F &&
                 refined.terrain_readability == 0.0F && terrain.terrain_readability == 0.0F,
             "Macro promotes readable ground while older material references stay unchanged");
@@ -7547,6 +7577,49 @@ void test_scenic_material_contract() {
     require(eased_capture.native_camera_motion == "eased" &&
                 eased_capture.simulation.solver == Fluid25DSolver::VirtualPipes,
             "capture easing changed numerical policy");
+    require(eased_capture.recording_opening_frames == 0U &&
+                eased_capture.recording_closing_frames == 0U &&
+                eased_capture.native_camera_vertical_shift == 0.0F,
+            "editorial capture controls must remain opt-in");
+    const auto editorial =
+        parse_project({"fluid_25d", "--fluid25d-recording", "fixture", "--headless", "--capture",
+                       "video", "--frames", "480", "--fluid25d-recording-opening-frames", "24",
+                       "--fluid25d-recording-closing-frames", "120",
+                       "--fluid25d-native-camera-vertical-shift", "0.06"});
+    require(editorial.recording_opening_frames == 24U &&
+                editorial.recording_closing_frames == 120U &&
+                editorial.native_camera_vertical_shift == 0.06F &&
+                editorial.simulation.solver == Fluid25DSolver::VirtualPipes,
+            "endpoint holds and film shift changed numerical defaults");
+    using fluid_25d_project_config_detail::recording_source_frame;
+    for (std::uint32_t i = 0U; i < 480U; ++i) {
+        const auto mapped = recording_source_frame(i, 480U, 24U, 120U);
+        require(mapped == std::min(i > 24U ? i - 24U : 0U, 335U),
+                "editorial source frame mapping must be exact and monotone");
+        require(recording_source_frame(i, 480U, 0U, 0U) == i,
+                "zero holds must preserve the original capture timeline");
+    }
+    require_throws([] { (void)recording_source_frame(0U, 480U, 24U, 455U); },
+                   "endpoint holds cannot remove the active sequence");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-recording-closing-frames", "120"});
+        },
+        "animated holds cannot change normal GUI playback");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-external-session", "fixture",
+                                 "--headless", "--capture", "video", "--frames", "480",
+                                 "--fluid25d-recording-closing-frames", "120"});
+        },
+        "animated holds must not attach to a live solver");
+    require_throws(
+        [] {
+            (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",
+                                 "--fluid25d-native-camera-vertical-shift", "0.16"});
+        },
+        "film shift must be bounded");
     require_throws(
         [] {
             (void)parse_project({"fluid_25d", "--fluid25d-recording", "fixture",

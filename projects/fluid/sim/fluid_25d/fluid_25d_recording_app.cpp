@@ -1223,9 +1223,13 @@ class RecordingApp {
                                     .distance = distance,
                                     .yaw = yaw,
                                     .pitch = config_.native_camera_pitch_radians + orbit_.pitch()});
-        return {camera_.view_projection_matrix(transform, static_cast<float>(extent.width) /
-                                                              static_cast<float>(extent.height)),
-                transform.translation};
+        auto view_projection = camera_.view_projection_matrix(
+            transform, static_cast<float>(extent.width) / static_cast<float>(extent.height));
+        if (config_.native_camera_vertical_shift != 0.0F)
+            for (int column = 0; column < 4; ++column)
+                view_projection[column][1] -=
+                    2.0F * config_.native_camera_vertical_shift * view_projection[column][3];
+        return {view_projection, transform.translation};
     }
 
     void record(vulkan::Device& device, VkCommandBuffer commands, render::ColorTargetView target,
@@ -1342,7 +1346,10 @@ class RecordingApp {
             apply_fluid_25d_bank_view(displayed_render, Fluid25DBankView::Reference, false);
         // Decorative normal clock only. Held native hydraulic samples are never
         // interpolated. Pause keeps this frozen; replay/reset clears it explicitly.
-        scenic_clock_s_ += std::max(0.0, visual_delta_) * 0.03;
+        if (config_.recording_opening_frames || config_.recording_closing_frames)
+            scenic_clock_s_ = double(frame_index) / double(config_.common.fps);
+        else
+            scenic_clock_s_ += std::max(0.0, visual_delta_) * 0.03;
         const bool scenic_active = scenic_material_active();
         if (native_profiler_ && profile)
             native_profile_scenic_[slot.index] = scenic_active;
@@ -2960,10 +2967,18 @@ class RecordingApp {
         // Load by immutable capture index on the GPU-owner callback. The
         // video producer may already be preparing later output frames.
         const bool video = config_.common.capture_mode == CaptureMode::Video;
-        const double unbounded =
-            static_cast<double>(config_.recording_time_seconds) +
-            (video ? static_cast<double>(frame.index) * config_.recording_frame_interval_seconds
-                   : 0.0);
+        const bool editorial = config_.recording_opening_frames || config_.recording_closing_frames;
+        const auto source_frame = [&](std::uint32_t index) {
+            return editorial
+                       ? fluid_25d_project_config_detail::recording_source_frame(
+                             index, host::headless_capture_frame_count(config_.common),
+                             config_.recording_opening_frames, config_.recording_closing_frames)
+                       : index;
+        };
+        const double unbounded = static_cast<double>(config_.recording_time_seconds) +
+                                 (video ? static_cast<double>(source_frame(frame.index)) *
+                                              config_.recording_frame_interval_seconds
+                                        : 0.0);
         const double time =
             comparison_ ? unbounded : std::min(recording_->times_s().back(), unbounded);
         const auto bounded =
@@ -2973,7 +2988,7 @@ class RecordingApp {
         double previous_requested = frame.index == 0U
                                         ? time
                                         : static_cast<double>(config_.recording_time_seconds) +
-                                              static_cast<double>(frame.index - 1U) *
+                                              static_cast<double>(source_frame(frame.index - 1U)) *
                                                   config_.recording_frame_interval_seconds;
         if (comparison_)
             previous_requested = comparison_->map(previous_requested, comparison_loop_).time_s;
@@ -3002,8 +3017,12 @@ class RecordingApp {
                             ? fluid_25d_recorded_visual_delta(previous_requested, presented,
                                                               recording_->times_s().back())
                             : std::clamp(shown_->time_s - previous, 0.0, 60.0);
+        // Optional editorial captures have a wall-time cosmetic clock even
+        // when endpoint hydraulic fields are held. Ordinary replay is unchanged.
+        if (editorial)
+            visual_delta_ = frame.index == 0U ? 0.0 : 1.0 / double(config_.common.fps);
         const double captured_visual_delta = visual_delta_;
-        if (frame.index == 0U || presented > previous_requested)
+        if (editorial || frame.index == 0U || presented > previous_requested)
             rain_clock_.capture(frame.index, config_.common.fps, video, config_.native_rain_speed);
         record(context.device(), commands, target, frame.frame_slot,
                Fluid25DRenderTargetMode::ColorAttachment, context.profile_recorder(), frame.index);
