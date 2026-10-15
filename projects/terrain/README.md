@@ -215,7 +215,9 @@ remains unchanged; raw water fields are not replaced. Wider ground is not wider
 water coverage.
 
 The same prepared packages now feed an explicit Fluid live rainfall collection,
-using shared site admission, source sampling and exterior-ground resources.
+using shared site admission, source sampling and correlated terrain materials.
+Fluid displays only its full-resolution simulation patch; exterior ground and
+backdrop LOD remain Terrain's responsibility, not a wider Fluid view.
 Its rain-on states export through the existing solver-neutral water contract
 and load in Terrain without CUDA or a running solver. See
 [Prepared-world Terrain Water](../fluid/fluid_25d/world_water_v1.md) for launch

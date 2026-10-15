@@ -9,6 +9,10 @@ the detailed foundation notes under `docs/architecture/`.
 
 ## Entries
 
+- [Fluid 2.5D decision/evidence map](../../projects/fluid/fluid_25d/development_map.md):
+  current verdict and navigation across the retained solver, terrain, bank,
+  performance and presentation studies. The early Fluid notes below are
+  historical evidence, not today's defaults or an active implementation backlog.
 - [Working notes](working-notes.md): broad implementation history and lessons
   learned.
 - [Atmosphere rendering research](atmosphere-rendering-research.md): early
@@ -50,14 +54,14 @@ the detailed foundation notes under `docs/architecture/`.
 - [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
   captures and optimization candidates.
 - [Fluid 2.5D Terrain-Water Audition V2](fluid-25d-terrain-water-audition-v2.md):
-  finite-volume real-terrain evidence, retained shortlist, and no-promotion
-  boundary.
+  historical builtin finite-volume real-terrain evidence, retained shortlist,
+  and that study's no-promotion boundary.
 - [Fluid 2.5D Dynamics Study V1](fluid-25d-dynamics-study-v1.md):
-  finite-volume rain dynamics tiers, diagnostic evidence, and no-promotion
-  result.
+  historical builtin finite-volume rain dynamics tiers, diagnostic evidence,
+  and no-promotion result; not a verdict on all shallow-water solvers.
 - [Fluid 2.5D Transport Readability V1](fluid-25d-transport-readability-v1.md):
-  conservative dye-pulse study protocol, source/outlet reading guide, and
-  deterministic video/profile acceptance contract.
+  historical conservative dye-pulse study protocol, source/outlet reading guide,
+  and deterministic video/profile acceptance contract.
 - [Performance profiling](performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset
@@ -104,14 +108,14 @@ the detailed foundation notes under `docs/architecture/`.
   ownership, second-consumer composition, climate boundary, and acceptance
   gates for promoting the fixed-focus backdrop.
 - [Terrain captured water integration plan](terrain-captured-water-v1-plan.md):
-  proposed rain-fed/post-rain assets, shared water rendering, placement gates,
-  and bounded readiness validation without a terrain-owned solver.
+  historical rain-fed/post-rain proposal and placement gates; current accepted
+  rain-on paired-surface consumer is documented in [Terrain](../../projects/terrain/README.md).
 - [Terrain captured water alignment result](terrain-captured-water-alignment-v1.md):
-  first-gate geometry rejection, density/filtering controls, and the required
-  shared ground/water reconstruction decision before further integration.
+  retained first-gate geometry rejection and density/filtering controls that
+  motivated the later shared paired ground/water reconstruction.
 - [Terrain captured water paired surface plan](terrain-captured-water-v2-plan.md):
-  proposed single rain-fed capture, shared paired ground/water rendering, and an
-  explicit Terrain patch view before backdrop stitching or another bake.
+  historical V2 implementation plan for the now-integrated opt-in rain-fed
+  capture consumer; not a second active integration backlog.
 - [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
   hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
 - [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): superseded

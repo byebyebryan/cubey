@@ -1,5 +1,10 @@
 # Offline cell-scale shoreline boundary study
 
+Historical offline checkpoint. Its unpromoted smoothing candidates do not
+describe today's bank choices: paired B-spline is the prepared-demo baseline,
+with recorded marching-squares coverage retained separately. See the
+[current rendering reference](current_reference.md#accepted-rendering-versus-retained-options).
+
 This is a rendering-reconstruction study, not a solver, new terrain product,
 production VTK dependency, or accepted bank fix. Numerical fields, native
 geometry and defaults are unchanged. Pixel antialiasing is outside its scope.

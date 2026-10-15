@@ -1,5 +1,10 @@
 # Native Terrain–Water Rendering
 
+Rendering lineage and dated V1/V2 evidence. The opening material descriptions
+include later promotions; the historical validation sections retain their original
+acceptance status. For the complete current combination (including rough water,
+foam, B-spline and noise off), use the [current reference](current_reference.md#accepted-rendering-versus-retained-options).
+
 The Macro terrain recipe now uses the approved shared footprint-filtered material
 by default. Fine colour/roughness/normal contrast recedes together, with reduced
 flat-ground repetition. Native and sampled terrain bindings provide the material's
@@ -25,7 +30,8 @@ trails remain the easiest way to follow motion; they are display cues, not nativ
 parcels or conserved dye. The decorative flow-normal pattern is not measured
 surface waves. Use the raw depth/velocity/wet-dry maps for numerical readings.
 
-`run_mountain_rain_demo.py` starts Scenic; `--style readable` selects diagnostics. In the native GUI,
+The current `run_terrain_rain_demo.py` starts Scenic Macro. The retained
+`run_mountain_rain_demo.py` study wrapper also offers `--style readable`. In the native GUI,
 `V` switches Readable/Scenic without moving the current orbit or clearing dots.
 The Style selector also retains Original/Motion. Bank selection (`S`) and dots
 (`W`) are independent. Inspection/debug views use the legacy diagnostic shading;
@@ -82,8 +88,9 @@ existing base scale and fades to zero at `water_shallow_extinction_end_m`
 The weight is `(1 - clamp(depth / end, 0, 1))^3`: a smooth local-depth artistic
 adjustment, not a lake/river classifier or simulated sediment. The mountain
 `macro` default uses base scale 1, boost 3, no pale bed tint and a 16 m fade-out.
-Shorter 2 m/4 m trials gave back too much stream contrast. This is a 30 m-grid
-macro flood demo, not a surveyed shallow stream. Broad shallow pools still darken;
+Shorter 2 m/4 m trials gave back too much stream contrast. That material study used
+the earlier 30 m grid, not today's 16 m launcher preset; neither represents a
+surveyed shallow stream. Broad shallow pools still darken;
 deep narrow channels lose the boost. Reflection,
 lighting, wet coverage, film controls and solver fields are held fixed. Deep
 water returns exactly to the base absorption coefficient; boost zero preserves
@@ -109,10 +116,14 @@ are retained separately and are not final evidence. No solver runs for the media
 
 ## Rendering contract and reuse
 
-The native serialized bed remains the geometry owner. The retained triangular
-vertices are reused, or the already existing experimental B-spline vertices if
-explicitly selected. No mesh resampling, terrain generation, field interpolation
-or hydraulic dispatch is added. Marching-squares remains an independent,
+The following describes the original single-layer rendering foundation. Later
+Macro roughness, foam and bank promotions extend it; their current combination
+is summarized in the current reference rather than inferred from V1 exclusions.
+
+The native serialized bed remains the geometry owner. Reference banks retain
+triangular vertices; the prepared launcher selects the paired B-spline display.
+Display reconstruction does not modify native hydraulic fields or generate new
+terrain. Marching-squares remains an independent,
 bounded prerecorded opacity mask; it is not a new 3D shoreline mesh. The same
 minimum wet threshold and Composite thin-film coverage policy are retained.
 
@@ -150,9 +161,12 @@ unresolved detail, and normal variance broadens roughness to reduce shimmer.
 This reuses Water3D's opaque HDR/depth/composite pattern and Ocean's dielectric,
 normal-variance and distance-filtering principles. It does **not** use particle
 thickness/smoothing, FFT waves, clipmaps, ocean wave-breaking foam, SSR, clouds,
-new solver math or a new shoreline reconstruction. Foam is deferred.
+new solver math or a new shoreline reconstruction. Foam was deferred at this V1
+checkpoint; the current Macro preset includes later render-only foam/flecks.
 
-## Validation and limits
+<a id="validation-and-limits"></a>
+
+## Validation and limits — original V1 checkpoint
 
 `review_scenic_water_v1.py` creates exclusive baseline/candidate/profile/media
 leaves from the frozen Mountain Rain recordings. It checks old compiled shaders
@@ -179,7 +193,7 @@ promoted to the default on automated checks alone.
 
 ## Material V2 review — 2026-10-07
 
-The latest [two-clip remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
+The retained [two-clip remote review](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/index.html)
 compares frozen V1 with refined Scenic on identical saved fields. The
 [results](../../../outputs/fluid/scenic-material-v2-20261007-DgG3eP/RESULTS.md)
 include the no-dots Readable/V1/V2 sheet, ablation verdict, effective settings,

@@ -30,6 +30,11 @@ The preferred demo runs **SynxFlow in a separate CUDA worker**, streaming native
 depth and momentum into Cubey's Vulkan renderer. The simpler builtin solvers and
 recorded playback remain explicit alternatives; they are not silent fallbacks.
 
+Read next: [setup](demo_setup_v1.md) · [current behavior and boundaries](current_reference.md) ·
+[decisions and history](development_map.md) · [showcase reproduction](presentation_v1.md).
+“Default” below means the prepared launcher, not the bare builtin application
+or the recorded Joining valleys film.
+
 ## Demo at a glance
 
 - Default prepared site: Mountain, 1024² cells at 16 m, a 16.384 km-square patch.
@@ -136,7 +141,7 @@ See [managed lifecycle and UI](terrain_demo_ux_v1.md) and
 `--fluid25d-backend builtin|external|recording` makes the producer explicit.
 No water-state transfer or silent fallback occurs between these backends.
 The retained stock-file stream bridge is viewing-only, unlike the controlled
-external service. See [backend contracts and retained implementation evidence](README_HISTORY.md#product-boundary).
+external service. See [current backend contracts and ownership](current_reference.md#solver-contract-and-ownership).
 
 Replay explicitly, without CUDA computation:
 
@@ -180,8 +185,9 @@ That backdrop work retains its own wider terrain/LOD ownership.
 
 ## Development and evidence
 
-Current guide and presentation work builds on retained studies; it does not
-rewrite their outcomes. The [development record](README_HISTORY.md) preserves
+The [decision map](development_map.md) explains the river-to-rain, solver,
+rendering and terrain-foundation pivots. Current work does not rewrite their
+outcomes. The [development record](README_HISTORY.md) preserves
 the previous full README, numerical experiments, rejected treatments and dated
 reproduction commands. Defaults described there are historical snapshots.
 

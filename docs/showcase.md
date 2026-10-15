@@ -562,14 +562,18 @@ The provenance shape should follow the compact, explicit precedent in the
 record identity and hashes rather than relying on filenames or an untracked
 capture session.
 
-## Gated action plan
+<a id="gated-action-plan"></a>
 
-The implementation should move through these gates. Each gate produces a
-reviewable artifact before the next cohort begins.
+## Original four-highlight action plan (historical, completed)
+
+The original implementation moved through these gates. Its four-highlight
+wording records that cohort, not today's total. Fluid 2.5D subsequently became
+the fifth published highlight; see its [current production guide](../projects/fluid/fluid_25d/presentation_v1.md).
+The remaining storyboard cards still require their own editorial decisions.
 
 ### 1. Creative lock
 
-The four current root highlights have completed this lock: beat timing, camera
+The original four root highlights completed this lock: beat timing, camera
 intent, scene conditions, publication role, and suite order are recorded in the
 committed media manifest. Keep the remaining seven cards in storyboard form
 until their own editorial decisions are made; do not implement a generic
@@ -579,7 +583,7 @@ Exit gate for the current package: four approved cards in the order Ocean,
 glTF + Terrain, Water 3D, and Fire 3D; exclusions remain explicit and no hero
 is named.
 
-### 2. Minimal shared capture contract (current four complete)
+### 2. Minimal shared capture contract (original four complete)
 
 Specify only shared host concerns:
 
@@ -593,7 +597,7 @@ Project-owned hooks express condition and scene timelines. Shared code must not
 own Ocean sea states, Planet phase semantics, Water scenarios, Pyro impulses,
 asset animation choices, or Fractal destinations.
 
-The current four prove the contract: Ocean and glTF use bounded 30-degree
+The original four prove the contract: Ocean and glTF use bounded 30-degree
 moves, Water uses the same move with a project-owned dam-only recipe, and Fire
 uses a fixed camera with project-owned warm-up and retained-window trimming.
 

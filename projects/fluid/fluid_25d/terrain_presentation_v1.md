@@ -125,9 +125,10 @@ and excluded from acceptance; no failed capture or timing trial was promoted.
 
 The report's 33 local HTTP targets return 200 and its page appears in the
 existing report index. Desktop and narrow HTML layouts were inspected with
-headless Chromium. Cubey was never opened as a native GUI. Owner visual
-acceptance and native scanout remain deferred; finer shadow patterning and
-source-limited surface detail remain explicit limitations.
+headless Chromium. Cubey was never opened as a native GUI. At this automated
+checkpoint, owner visual acceptance was still deferred; the later owner promotion
+is recorded at the top of this document. Native scanout remains unqualified;
+finer shadow patterning and source-limited surface detail remain explicit limitations.
 
 ## Reference and reproduction
 

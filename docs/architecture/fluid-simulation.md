@@ -22,10 +22,14 @@ is a small set of focused projects, each with different scaling assumptions:
   fluid solver.
 - `projects/fluid/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
   basins, sources, sinks, and heightfield-driven water. Its featured demo now uses
-  unmodified generated mountain terrain and continuous rain, with a separately
-  prepared SynxFlow CUDA worker streaming depth/momentum into the Vulkan renderer.
+  unmodified generated mountain terrain and guided rain/runoff/collection, with
+  a separately prepared SynxFlow CUDA worker streaming depth/momentum into the
+  Vulkan renderer.
   Recorded viewing and builtin virtual-pipes/finite-volume alternatives remain
   explicit. This is a visual demo, not a calibrated hydrology or solver-parity claim.
+  Manual mode supports continuous rain; the published Joining valleys film is
+  recorded continuous-rain timelapse. See [current behavior](../../projects/fluid/fluid_25d/current_reference.md)
+  and [decision history](../../projects/fluid/fluid_25d/development_map.md).
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
   baselines with shared 3D storage textures, compute
   advection/injection/combustion/projection, and fullscreen volume raymarching.
@@ -99,8 +103,10 @@ Examples worth deeper later case-study work:
   effect does not need world-scale state.
 - Add detail synthetically with vorticity confinement, turbulence, foam,
   particles, sprites, or shading instead of simulating every scale directly.
-- Keep data GPU-resident. Treat CPU readback as an artifact/debug path, not the
-  core gameplay or rendering loop.
+- Prefer GPU-resident state for in-process solvers. Fluid 2.5D deliberately uses
+  bounded CPU-staged field transport for its separate external worker: a measured
+  integration tradeoff that avoids a solver port and Vulkan–CUDA interop, not a
+  general recommendation to read back every simulation.
 - Bake when the effect does not need live interaction.
 
 ## Visual Leverage
@@ -135,8 +141,8 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 | Level set liquid | Medium | Useful for signed-distance surfaces and collision work, but pure level sets lose mass and are no longer the `water_2d` baseline. |
 | Particle level set | Medium | Corrects level-set mass loss with marker particles; more moving parts. |
 | VOF | Medium | Better mass conservation, harder interface reconstruction. |
-| Shallow water / virtual pipes | High | Best first path for scalable terrain water in `fluid_25d`. |
-| Saint-Venant finite volume | Medium/high later | More rigorous terrain-water experiment after virtual pipes exists. |
+| Shallow water / virtual pipes | Retained simple path | Existing builtin `fluid_25d` diagnostic solver; not equivalent to the featured mountain-rain result. |
+| Saint-Venant finite volume | Active terrain-water path | Separate SynxFlow worker is preferred for the prepared demo; Cubey's builtin finite-volume comparison also exists. No solver port is implied. |
 | SPH / DFSPH | Medium | Good for small particle liquids and splashes; particle-count-bound. |
 | PBF | Medium | Stable real-time interactive liquid toy; less physically rigorous. |
 | FLIP/APIC | High | `water_2d` now uses APIC by default with a PIC/FLIP fallback. Meshing, richer collision, stronger pressure solves, and 3D coupling remain substantial later work. |

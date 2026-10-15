@@ -1,5 +1,10 @@
 # Managed Terrain Water demo V1
 
+Current control/lifecycle reference, with dated validation checkpoints below.
+See [current behavior](current_reference.md) for the combined defaults; statements
+about changes in this integration refer to its original checkpoint, not every
+subsequent rendering or guide promotion.
+
 The prepared terrain launcher owns one external SynxFlow worker and keeps one
 Cubey window open across **selection + Apply & restart**. This is not instant
 terrain deformation or regridding of existing water. Every replacement starts

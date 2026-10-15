@@ -13,7 +13,7 @@ there when implementation boundaries matter.
   repository structure.
 - [Roadmap](roadmap.md): current readiness, completed foundations, and likely
   next work.
-- [Showcase](../README.md#showcase): the four current project highlights.
+- [Showcase](../README.md#showcase): the five published project highlights.
 
 ## Current Design
 
@@ -99,6 +99,8 @@ Active projects:
 - [Water 2D](../projects/fluid/water_2d/README.md)
 - [Water 3D](../projects/fluid/water_3d/README.md)
 - [Fluid 2.5D terrain-rain demo](../projects/fluid/fluid_25d/README.md)
+  — [current behavior](../projects/fluid/fluid_25d/current_reference.md) and
+  [decision/evidence map](../projects/fluid/fluid_25d/development_map.md).
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [glTF Viewer](../projects/gltf_viewer/README.md)

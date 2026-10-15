@@ -3,6 +3,7 @@
 The live terrain-rain demo is an active Cubey application with optional external
 inputs, not a fresh-checkout-only example. Setup is deliberately separate from
 normal build/startup. Nothing below is run automatically by CMake or the launcher.
+For runtime defaults and capabilities, see the [current reference](current_reference.md).
 
 ## What must exist
 
@@ -71,7 +72,7 @@ CPython and C/C++ compilers, then builds into a fresh private directory. See the
 [retained source-build and parity evidence](README_HISTORY.md#optional-gpl-external-service-worker)
 before attempting a new build. Toolkit/compiler/extension setup is **not** a
 portable one-command installation or an accepted arbitrary-build profile today.
-No package/model/toolchain installation is part of this presentation pass.
+Normal demo startup does not install packages, models or toolchains.
 
 `run_terrain_rain_demo.py` now accepts `--native-python` and `--extension` so the
 same qualified artifacts need not be located at a maintainer's dated paths.

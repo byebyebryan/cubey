@@ -16,7 +16,9 @@ Current projects:
 - `fluid_25d`: active macro terrain-water demo with rain, downhill streams and
   collection, Vulkan rendering, a separately prepared live SynxFlow worker,
   recorded playback and simpler retained builtin GPU solvers. See its
-  [quickstart and prerequisites](fluid_25d/README.md).
+  [quickstart and prerequisites](fluid_25d/README.md),
+  [current behavior](fluid_25d/current_reference.md) and
+  [decision history](fluid_25d/development_map.md).
 - `fire_3d`: 3D dense-grid pyro fire simulation.
 - `explosion_3d`: 3D dense-grid pyro explosion simulation.
 

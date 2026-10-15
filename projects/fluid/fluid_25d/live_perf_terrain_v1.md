@@ -1,5 +1,11 @@
 # Live performance and terrain options V1
 
+Historical V1 study, not the current startup guide. Its Xvfb/windowed frame
+measurements are not native desktop FPS; use the [corrected offscreen V2 study](offscreen_perf_v2.md)
+and [current reference](current_reference.md) for the accepted live setup.
+The commands, three-site roster and lifecycle descriptions below record that
+earlier harness, not today's managed launcher or six-site catalogue.
+
 Approved study: three cached Terrain Diffusion sites (mountain/alpine/rolling),
 five power-of-two configurations each, plus the historical 512x512/30m control.
 No native kernel edits, solver port, CUDA interop, source-terrain modifications,
