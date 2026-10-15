@@ -14,6 +14,7 @@ import math
 from pathlib import Path
 import re
 import shutil
+import struct
 import subprocess
 
 import run_terrain_rain_demo as demo
@@ -56,11 +57,86 @@ def framing_shots():
                                       ("collection-interior",.90,.215,1400,-1.18))]
 
 
+def lake_framing_shots():
+    """Observation-only auditions; the packaged highlight stays unchanged."""
+    return [dict(name=name, target=[x,z,span], pitch=pitch, yaw=yaw)
+            for name,x,z,span,pitch,yaw in (
+                ("lake-inward",.88,.22,2200,-.90,1.57),
+                ("lake-catchment",.87,.225,2600,-1.00,1.57),
+                ("lake-oblique",.88,.22,2000,-.85,2.1),
+                ("central-lakes",.64,.48,2800,-1.00,1.57))]
+
+
 def auditions():
     return [dict(recipe("audition-" + name, "runoff", 2400, 7200, 8, dots=dots, sweep=sweep,
                         easing="eased" if sweep else "legacy"),target=[.76,.60,1800],pitch=-1.10)
             for name, dots, sweep in (("fixed-water", False, 0), ("moving-water", False, .35),
                                      ("fixed-dots", True, 0), ("moving-dots", True, .35))]
+
+
+def lake_auditions():
+    return [dict(recipe(name, "collection", 1800, 7200, 8, sweep=sweep,
+                        easing="eased" if sweep else "legacy"),
+                 target=target, pitch=pitch, yaw=2.1)
+            for name,target,pitch,sweep in (
+                ("lake-fixed", [.88,.22,2000], -.85, 0),
+                ("lake-moving", [.88,.22,2000], -.85, .18),
+                ("lake-upstream", [.86,.235,2400], -1.00, .16))]
+
+
+def lake_wide_framing_shots():
+    return [dict(name=name, target=[x,z,span], pitch=pitch, yaw=yaw)
+            for name,x,z,span,pitch,yaw in (
+                ("lake-wide",.85,.29,3200,-.95,2.10),
+                ("lake-landscape",.85,.29,3400,-.90,2.40))]
+
+
+def lake_formation():
+    # Six native-rendered seconds; the review edit adds explicit endpoint holds.
+    return [dict(recipe(name, "collection", 0, end, 6, sweep=.10, easing="eased"),
+                 target=[.825,.315,3200], pitch=-1.02, yaw=1.85)
+            for name,end in (("formation-two-hours",7200),("formation-six-hours",21600))]
+
+
+def patch_framing_shots():
+    # No explicit target: overview centers the full terrain's 3D bounds.
+    return [dict(name=name,camera="overview",pitch=-1.20,yaw=.35,distance_m=distance)
+            for name,distance in (("whole-patch",23000),("whole-patch-loose",25000))]
+
+
+def patch_formation():
+    return [dict(recipe("formation-whole-patch","overview",0,21600,6),
+                 **{key:value for key,value in patch_framing_shots()[0].items() if key not in ("name","camera")})]
+
+
+def patch_orbit():
+    return [dict(recipe("formation-low-orbit","overview",0,21600,6,sweep=.60,easing="eased"),
+                 pitch=-.55,yaw=.60,distance_m=13500)]
+
+
+def patch_orbit_framing_shots():
+    shot=patch_orbit()[0]
+    return [dict(name="orbit-"+name,camera="overview",pitch=shot["pitch"],
+                 yaw=shot["yaw"]+offset,distance_m=shot["distance_m"])
+            for name,offset in (("start",-.30),("middle",0),("end",.30))]
+
+
+def patch_presentation_refinement():
+    """Opt-in eight-second 15-degree audition, not the packaged showcase."""
+    return dict(recipe("joining-refined", "overview", 0, 21600, 8,
+                       sweep=.60, easing="eased"),
+                pitch=-math.radians(15), yaw=.60, distance_m=13500,
+                vertical_shift=.06, opening_frames=24, closing_frames=120,
+                width=1920, height=1080, crf=20, maximum_hold_s=317,
+                tuning=str(Path(__file__).resolve().parent/'fixtures/presentation-v1/soft-rain.json'))
+
+
+def patch_solar_refinement():
+    """Late afternoon to sunset; cosmetic solar time, not hydraulic time."""
+    return dict(patch_presentation_refinement(), name="joining-dusk-1080p",
+                solar_start_hour=15.5, solar_end_hour=18.0,
+                solar_day=80, solar_latitude=45, solar_azimuth_offset=-95,
+                solar_twilight_strength=.18, solar_horizon_warmth=.25)
 
 
 def story():
@@ -80,18 +156,63 @@ def hero():
 
 
 def command(case, recording, shot, output, *, app=demo.RELEASE_APP):
-    argv = demo.viewer_command(case, recording, "Fluid 2.5D presentation", 1280, 720,
-        live=False, start=shot["start_s"], camera=shot["camera"], app=app)
+    solar={}
+    if "solar_start_hour" in shot:
+        if "sun_elevation" in shot:
+            raise ValueError("solar clock and manual sun are separate auditions")
+        start,end=shot["solar_start_hour"],shot["solar_end_hour"]
+        if not 0<=start<end<=24 or shot["frames"]<2:
+            raise ValueError("solar audition requires an ordered same-day interval")
+        solar=dict(environment="shared",environment_time_hours=start,
+                   environment_cycle_speed=(end-start)/((shot["frames"]-1)/shot["fps"]))
+    argv = demo.viewer_command(case, recording, "Fluid 2.5D presentation",
+        shot.get("width",1280), shot.get("height",720),
+        live=False, start=shot["start_s"], camera=shot["camera"], app=app,**solar)
+    if solar:
+        argv += ["--day-of-year",str(shot.get("solar_day",80)),
+                 "--latitude-degrees",str(shot.get("solar_latitude",45)),
+                 "--sun-azimuth-offset",str(shot.get("solar_azimuth_offset",0))]
+        for key,flag in (("solar_twilight_strength","--twilight-strength"),
+                         ("solar_horizon_warmth","--twilight-horizon-warmth")):
+            if key in shot:
+                argv += [flag,str(shot[key])]
     if not shot["dots"]:
         argv.remove("--fluid25d-motion-markers")
     if shot.get("target"):
         for flag,value in zip(("target-x","target-z","span-m"),shot["target"]):
             argv += ["--fluid25d-native-camera-"+flag,str(value)]
+    if "pitch" in shot:
         argv += ["--fluid25d-native-camera-pitch",str(shot["pitch"])]
     if "yaw" in shot:
         argv += ["--fluid25d-native-camera-yaw",str(shot["yaw"])]
+    if "distance_m" in shot:
+        argv += ["--fluid25d-home-camera-distance-m",str(shot["distance_m"])]
+    if "vertical_shift" in shot:
+        argv += ["--fluid25d-native-camera-vertical-shift",str(shot["vertical_shift"])]
+    if "rain_strength" in shot:
+        argv += ["--fluid25d-rain-visual-strength",str(shot["rain_strength"])]
+    if "tuning" in shot:
+        argv += ["--fluid25d-scenic-tuning",str(shot["tuning"])]
+    if "sun_elevation" in shot:
+        argv += ["--fluid25d-environment","shared","--time-of-day-mode","manual",
+                 "--sun-elevation",str(shot["sun_elevation"]),
+                 "--sun-azimuth",str(shot["sun_azimuth"]),"--pause-time"]
     argv[argv.index("--frames")+1] = str(shot["frames"])
-    interval = (shot["end_s"]-shot["start_s"])/(shot["frames"]-1)
+    active=shot["frames"]-shot.get("opening_frames",0)-shot.get("closing_frames",0)
+    if active<2:
+        raise ValueError("endpoint holds require at least two active frames")
+    interval = (shot["end_s"]-shot["start_s"])/(active-1)
+    if shot.get("opening_frames",0) or shot.get("closing_frames",0):
+        # The native CLI stores float32. Round upward only for this opt-in
+        # schedule so its final request reaches (and clamps to) the last save.
+        rounded=struct.unpack('<f',struct.pack('<f',interval))[0]
+        if rounded<interval:
+            bits=struct.unpack('<I',struct.pack('<f',rounded))[0]
+            rounded=struct.unpack('<f',struct.pack('<I',bits+1))[0]
+        interval=rounded
+    for part in ("opening","closing"):
+        if shot.get(part+"_frames",0):
+            argv += ["--fluid25d-recording-"+part+"-frames",str(shot[part+"_frames"])]
     argv += ["--headless", "--capture", "video", "--fps", "60",
              "--fluid25d-recording-frame-interval-seconds", str(interval),
              "--fluid25d-recording-gpu-validation", "--output", str(output)]
@@ -110,19 +231,20 @@ def probe(path):
     return json.loads(output)["streams"][0]
 
 
-def check_video(stream, frames, seconds):
+def check_video(stream, frames, seconds, width=1280, height=720):
     if (stream.get("codec_name") != "h264" or stream.get("pix_fmt") != "yuv420p" or
-        (stream["width"], stream["height"]) != (1280, 720) or
+        (stream["width"], stream["height"]) != (width, height) or
         stream.get("r_frame_rate") != "60/1" or stream.get("avg_frame_rate") != "60/1" or
         stream.get("nb_read_frames") != str(frames) or
+        not math.isfinite(float(stream["duration"])) or
         abs(float(stream["duration"])-seconds) > 1/60):
-        raise ValueError("encoded media does not match native 720p/60 editorial contract")
+        raise ValueError("encoded media does not match native resolution/60fps editorial contract")
 
 
-def encode(source, output):
+def encode(source, output, crf=24):
     argv = ["rtk", "proxy", "ffmpeg", "-v", "error", "-i", str(source), "-an",
             "-vf", "setpts=N/(60*TB)", "-r", "60", "-fps_mode", "cfr", "-c:v", "libx264",
-            "-preset", "medium", "-crf", "24", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output)]
+            "-preset", "medium", "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output)]
     subprocess.run(argv, check=True, timeout=180)
     return argv
 
@@ -132,11 +254,23 @@ def check_timeline(raw, shot):
     if len(matches) != shot["frames"] or [int(v[0]) for v in matches] != list(range(shot["frames"])):
         raise ValueError("capture misses native output frames")
     requested, saved = [float(v[1]) for v in matches], [float(v[2]) for v in matches]
+    if any(not math.isfinite(t) or t<0 for t in (*requested,*saved)):
+        raise ValueError("capture timestamps must be finite and nonnegative")
+    if any(state>time+1e-3 for time,state in zip(requested,saved)):
+        raise ValueError("capture cannot display a future hydraulic state")
     if any(b < a for a, b in zip(saved, saved[1:])) or len(set(saved)) < 10:
         raise ValueError("film does not advance real recorded hydraulic states")
+    opening,closing=shot.get("opening_frames",0),shot.get("closing_frames",0)
+    active=shot["frames"]-opening-closing
+    if active<2:
+        raise ValueError("endpoint holds leave no active sequence")
+    if any(abs(t-(shot["start_s"]+(shot["end_s"]-shot["start_s"])*
+                   min(max(i-opening,0),active-1)/(active-1)))>.02
+           for i,t in enumerate(requested)):
+        raise ValueError("capture does not match the authored frame-to-physical-time schedule")
     if abs(requested[0]-shot["start_s"]) > 1e-3 or abs(requested[-1]-shot["end_s"]) > .01:
         raise ValueError("capture misses authored physical endpoints")
-    if max(a-b for a, b in zip(requested, saved)) > 75:
+    if max(a-b for a, b in zip(requested, saved)) > shot.get("maximum_hold_s",75):
         raise ValueError("recorded state too far behind the requested editorial clock")
     return dict(unique_hydraulic_states=len(set(saved)), first_saved_s=saved[0],
                 last_saved_s=saved[-1], maximum_hold_physical_s=max(a-b for a,b in zip(requested,saved)))
@@ -154,9 +288,9 @@ def render(case, recording, shot, out):
     native_probe = probe(source)
     if native_probe.get("nb_read_frames") != str(shot["frames"]):
         raise ValueError("native renderer did not produce every master frame")
-    encoding = encode(source, path)
+    encoding = encode(source, path, shot.get("crf",24))
     stream = probe(path)
-    check_video(stream, shot["frames"], shot["seconds"])
+    check_video(stream, shot["frames"], shot["seconds"],shot.get("width",1280),shot.get("height",720))
     preview = out/(shot["name"]+"-frames.png")
     # Editorial contact sheet only, extracted from real rendered frames.
     subprocess.run(["rtk", "proxy", "ffmpeg", "-v", "error", "-i", str(path),
@@ -212,25 +346,37 @@ def capture(a):
         shaders={p.name:digest(p) for p in sorted((demo.RELEASE_APP.parent/"shaders").glob("*.spv"))},
         scope="native 720p60 headless recorded-field timelapse, not live solver/scanout performance")
     write(out/"protocol.json", frozen)
-    if a.mode == "framing":
+    framing_modes = {"framing":framing_shots,"lake-framing":lake_framing_shots,
+                     "lake-wide-framing":lake_wide_framing_shots,"patch-framing":patch_framing_shots,
+                     "patch-orbit-framing":patch_orbit_framing_shots}
+    if a.mode in framing_modes:
         rows = []
         saved = closest(manifest["frames"],5400)["time_s"]
-        for shot in framing_shots():
+        for shot in framing_modes[a.mode]():
             path = out/(shot["name"]+".png")
             argv = demo.viewer_command(case,record,"Fluid 2.5D framing",1280,720,
-                                      live=False,start=saved,camera="runoff",app=demo.RELEASE_APP)
+                                      live=False,start=saved,camera=shot.get("camera","runoff"),app=demo.RELEASE_APP)
             argv.remove("--fluid25d-motion-markers")
             argv[argv.index("--frames")+1]="1"
-            for flag,value in zip(("target-x","target-z","span-m"),shot["target"]):
-                argv += ["--fluid25d-native-camera-"+flag,str(value)]
+            if shot.get("target"):
+                for flag,value in zip(("target-x","target-z","span-m"),shot["target"]):
+                    argv += ["--fluid25d-native-camera-"+flag,str(value)]
             argv += ["--fluid25d-native-camera-pitch",str(shot["pitch"]),"--headless",
                      "--fluid25d-recording-gpu-validation","--output",str(path)]
+            if "yaw" in shot:
+                argv += ["--fluid25d-native-camera-yaw",str(shot["yaw"])]
+            if "distance_m" in shot:
+                argv += ["--fluid25d-home-camera-distance-m",str(shot["distance_m"])]
             receipt=run_capture(argv,out/(shot["name"]+".log"))
             rows.append(dict(shot=shot,path=path.name,sha256=digest(path),saved_s=saved,**receipt))
             print("captured",shot["name"],flush=True)
         write(out/"captures.json",rows)
         return
-    shots = auditions() if a.mode == "audition" else hero() if a.mode == "hero" else story()
+    shots = (patch_orbit() if a.mode == "patch-orbit" else
+             patch_formation() if a.mode == "patch-formation" else
+             lake_formation() if a.mode == "lake-formation" else
+             lake_auditions() if a.mode == "lake-audition" else auditions() if a.mode == "audition"
+             else hero() if a.mode == "hero" else story())
     rows = []
     for shot in shots:
         print("capturing", shot["name"], flush=True)
@@ -289,7 +435,7 @@ def assemble(a):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("audition", "story", "framing", "hero", "assemble"))
+    parser.add_argument("mode", choices=("audition", "lake-audition", "lake-formation", "patch-formation", "patch-orbit", "story", "framing", "lake-framing", "lake-wide-framing", "patch-framing", "patch-orbit-framing", "hero", "assemble"))
     parser.add_argument("--study", type=Path, required=True)
     parser.add_argument("--recording", type=Path, required=True, help="qualified sealed rain-response study root")
     parser.add_argument("--out", type=Path, required=True)

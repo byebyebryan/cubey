@@ -128,3 +128,128 @@ Local evidence: `outputs/showcase/fluid25d-audition-20261014-a4`,
 retained separately, not silently overwritten or claimed as final qualification.
 
 [Review the selected films](http://starship:8787/reports/c3198c8ff67fa60e7997d396a5a6fee6e1aae6081f97f22ca928ea83e6b9b803/).
+
+## Selected Joining valleys sunset cut (promotion pending)
+
+The later owner-selected candidate is Joining valleys at a 15° downward view,
+13.5 km distance and 0.60-radian eased orbit. The original Mountain showcase
+files above are still unchanged. `patch_presentation_refinement()` in
+`present_fluid25d_v1.py` describes the opt-in candidate; it does not replace
+`hero()` or alter interactive demo defaults. The owner selected the sunset
+variant below after reviewing the native 1080p comparison; creative selection
+is complete, but the committed gallery still contains the earlier Mountain cut.
+
+The eight-second refinement renders all 480 frames rather than padding a still:
+24 opening frames, 336 advancing frames, and 120 closing frames. Only the
+recorded physical-time requests are held at the endpoints. Camera, rain and
+cosmetic surface clocks continue at presentation time, independently of the
+accelerated approximately six-hour hydraulic timeline. The saved depth and
+momentum planes are neither advanced nor interpolated during the finish.
+
+The native capture-only options are `--fluid25d-recording-opening-frames` and
+`--fluid25d-recording-closing-frames`; both default to zero and require an
+explicit headless recorded video with at least two active frames. The recipe
+rounds the float32 physical frame interval upward so the final request reaches
+the last native save instead of landing just before it. This includes all 72
+saved states of the selected archive; the earlier 15° cut displayed 71.
+
+`--fluid25d-native-camera-vertical-shift 0.06` moves the composition upward by
+six percent of frame height without changing the orbit, camera elevation,
+terrain scale or water fields. A Scenic tuning JSON using schema
+`cubey.fluid25d.scenic-material.v2` and `"rain_macro_softening": 1` enables
+distance, top/perimeter and sky-background rain fades in the shared terrain
+patch renderer. Zero preserves the accepted rain treatment. This changes
+visible streak opacity only, not rainfall rate, coverage or water agitation.
+The reusable refinement recipe includes the tracked
+[soft-rain preset](fixtures/presentation-v1/soft-rain.json), byte-identical to
+the tuning used in the approved capture; ignored output files are not required
+for this setting.
+
+The lighting audition uses the existing shared environment with manual sun
+elevation 22° and azimuth −75°. It emphasizes ridge relief but creates broad
+wet-ground glare, so daylight was retained as the reference for the subsequent
+solar-clock audition rather than selecting this manual side-light setup.
+The baseline cut remains byte-exact with all new controls disabled. This is
+rendering/editorial evidence, not a new live solver or performance study.
+Native inputs, shaders, binaries, capture receipts and audition variants are
+retained in `outputs/showcase/fluid25d-presentation-refinement-20261014-a1`.
+
+### Solar-clock addition
+
+`patch_solar_refinement()` keeps the same 480 water-state requests, orbit,
+framing, rain fades and 1080p output, and adds the existing shared solar clock.
+It moves from 15:30 to 18:00 over the eight-second presentation (day 80,
+latitude 45°, fixed azimuth offset −95° to suit the shot). This is an authored
+lighting interval, independent of the approximately six-hour water recording,
+not a claim about the generated terrain's actual location or storm time.
+
+The clock continues through the animated endpoint hold. Sky, terrain/water
+lighting and reflections follow the shared environment; no video color fade,
+new shader or solver work is introduced. Existing twilight strength 0.18 and
+horizon warmth 0.25 reduce the twilight emphasis. A first trial ending at 18:12
+with default twilight was retained separately because it produced excessive
+horizon color and reduced water readability. The remaining stylized sunset
+horizon is a known visual tradeoff, not a new atmosphere task for promotion.
+No runtime default is changed.
+
+The [owner-selected sunset comparison](http://starship:8787/reports/c40797df0862afd1461f80ad9b11354c1e91b7464902b84d8c7710c465679cde/)
+uses `outputs/showcase/fluid25d-solar-refinement-20261014-a2`: native 1920×1080,
+480 frames / eight seconds / 60 FPS, H.264 High / yuv420p / CRF 20, with all
+72 original hydraulic saves represented. Water requests and the orbit match
+the daylight refinement exactly. Capture-time state/rain/camera receipts,
+renderer/shader/input hashes and owned-process cleanup are retained there.
+
+The October 15 review added the tracked tuning preset and rejection checks for
+non-finite/future capture timestamps and non-finite media duration. All nine
+focused CTest groups and 22 presentation/docs/media unit cases pass. A fresh
+hardware-headless 1080p capture using the tracked preset reproduces the
+owner-selected sunset MP4 byte-for-byte; review evidence is in
+`outputs/showcase/fluid25d-review-20261015-c3egw8`. No packaged media was replaced.
+
+### Promotion plan (not executed)
+
+1. **Make the selected recipe a supported capture entrypoint.** Accept explicit
+   prepared-case and recording paths instead of the current Mountain-only
+   rain-response wrapper. Pin Joining valleys, the solar recipe and the tracked
+   rain preset; retain strict source/bed/frame hashes and archive validation.
+   Do not turn ignored, one-off review scripts into required dependencies.
+   Keep the interactive Mountain demo and existing `hero()` compatibility path
+   unchanged; showcase selection is not a solver/default-site promotion.
+2. **Freeze a clean-source production capture.** Build from the committed
+   renderer/recipe, recheck the existing native archive, then run the same
+   hardware-headless eight-second capture. Require every rendered frame,
+   monotone water requests, the exact final-state hold, moving presentation/
+   solar clocks, bit-exact GPU imports and clean shutdown. Match the approved
+   1080p cut byte-for-byte when using the same runtime/encoder; otherwise stop
+   for a bounded comparison rather than silently accepting a different cut.
+   No solver rerun, terrain generation or native GUI review is needed.
+3. **Package one highlight, not a compulsory highlight/story pair.** Update
+   the packaging interface to support a single qualified cut and its own
+   provenance. Retain the native 1080p master for the project, and derive the
+   eight-second 720p60 / CRF 24 gallery publication to preserve the existing
+   global showcase contract. Label that downsample explicitly. Select a poster
+   with the lake already formed, before the darkest sunset frames. Refresh
+   only Fluid's media, byte hashes, dimensions, recipe and publication status;
+   retain the four other demos' media/attachment pins exactly. The old 36-second
+   Mountain rain-on/off film stays a legacy study/reference, not a required
+   companion or a description of the new continuous-rain scene.
+4. **Reconcile the presentation surfaces.** Update the root README, Fluid
+   README, showcase README/manifest, recipe and this document together. Clearly
+   distinguish recorded native water, accelerated physical time, independent
+   art-directed solar time and cosmetic motion from live solver performance.
+   Preserve source/model/solver provenance and license boundaries using the
+   selected archive's identities, not the old Mountain recipe by assumption.
+   Remove obsolete creative-review-pending copy for the selected cut while
+   leaving public-attachment/push status truthful.
+5. **Validate and publish in separate checkpoints.** Test single-highlight
+   packaging, clean-source/hash failures, media probes, docs links, original
+   showcase pins and default-render regressions; inspect playback/seeking and
+   the gallery-size derivative in the browser. Commit the qualified local
+   media/docs package first. GitHub attachment upload, wiring the real returned
+   URL into the gallery, and a push require an explicit publication request;
+   no public URL should be invented and no other highlight should be replaced.
+
+The promotion pass is complete when the selected dry-to-streams-to-lake sunset
+cut is the one documented/packaged Fluid highlight, with a legible poster,
+reproducible provenance, preserved unrelated gallery media and passing scoped
+checks. Further rendering, terrain, solver and hydrology changes are out of scope.
