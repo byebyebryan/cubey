@@ -86,3 +86,60 @@ explicitly rejects them: it has not qualified cloud/depth ordering for this
 composition. Daylight/afternoon is auditioned separately. No new cloudy/night
 showcase, alpha/refraction implementation, material rewrite or default promotion
 is implied by this V1.
+
+## Final verdict · 2026-10-15
+
+[Indexed review report: low-angle site audition and eight-second proposals](http://starship:8787/reports/33eee7eb4e01f7080efad68e70d4c300bfe8015faae9c47a9310a545ebf4a1a0/).
+
+The lead is **A: original mountain / 32m / morning**, with its lake remaining
+visible to the helmet's right throughout the 20° eased arc. B, the independent
+interior-mountain / 64m state, has a larger foreground pool but more flooded-sheet
+appearance. Neither replaces published media or startup defaults in this pass.
+Keep the current model scale; do not choose a site from the elevated overview
+alone. Afternoon glare washes the lake towards white, so the proposal holds
+morning/noon daylight rather than changing water optics to compensate.
+
+Final qualification is `outputs/showcase/gltf-water-20261015-aPJgeA/final-v3`:
+
+- 24 provisional views across four landscapes; 16 actual glTF shown/hidden,
+  low/oblique and daylight/afternoon captures.
+- Two validated 8s / 480-frame / 60fps native 1920×1080 masters and 1280×720
+  gallery derivatives. Saved fields remain fixed; no forming lake is implied.
+- 26 scoped regression groups pass without skips. Both films and all actual
+  stills audit immutable GPU bed/depth/decoded velocity. The original glTF
+  opening and unchanged shared Terrain control remain pixel-exact.
+- 1080p render-only, two reversed-order repetitions, 120 warmup frames excluded:
+  A wet GPU p95 **3.253 / 7.648ms**; B **9.701 / 9.254ms**. New-case CPU service
+  p95 peaks at **0.392ms**. A meets the declared 8ms GPU / 4ms CPU margin; B misses
+  the GPU margin in both wet repetitions and remains a comparison candidate.
+  All observed GPU p95 values are below the 16.67ms 60Hz GPU budget, not proof of
+  native FPS or end-to-end pacing.
+- Other Python/CUDA work was present at timing-case boundaries. No foreign work
+  was paused or reconfigured. These are as-observed shared-desktop/GPU results;
+  isolated renderer cost and causal attribution of the variance remain unqualified.
+- The report's eight actual comparisons, all 24 provisional selections, both
+  proposal playbacks, native midpoint seeking, 390px stacked layout, no-JavaScript
+  fallback and project-index navigation were browser-checked. Native Cubey
+  GUI/layout acceptance is still deferred.
+
+The failed first profiler attempt and validation-failed V2 movie/timing revision
+remain separate in the output root; neither is used as final qualification.
+No new terrain, hydraulic run, elevation/forcing modification, material promotion, GitHub
+upload or push was needed.
+
+For a new qualification, retain the original output root and choose a **fresh**
+`--qualification-name`; the helper refuses existing receipts. Freeze, film,
+confirm and measure the same binary/shaders/inputs without rebuilding between
+phases. The report builder checks those identities and full evidence matrices:
+
+```sh
+rtk proxy python3 projects/gltf_viewer/review_water_landscape_v1.py OUTPUT --qualification-name NAME --phase final_freeze
+rtk proxy python3 projects/gltf_viewer/review_water_landscape_v1.py OUTPUT --qualification-name NAME --phase films
+rtk proxy python3 projects/gltf_viewer/review_water_landscape_v1.py OUTPUT --qualification-name NAME --phase confirmation
+rtk proxy python3 projects/gltf_viewer/review_water_landscape_v1.py OUTPUT --qualification-name NAME --phase performance
+rtk proxy python3 projects/gltf_viewer/report_water_landscape_v1.py OUTPUT --qualification-name NAME --tests TEST_RESULTS.xml --export-name FRESH_EXPORT_NAME
+```
+
+The report packs raw timing CSVs losslessly as gzip so both native masters and
+all original PNGs fit the shared publisher's 100MiB bundle limit. It does not
+change global hosting limits or recompress the captured images/masters.
