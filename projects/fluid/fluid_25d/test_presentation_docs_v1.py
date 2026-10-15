@@ -13,7 +13,9 @@ def slug(text):
 
 class Documentation(unittest.TestCase):
     def test_current_front_pages_link_to_existing_local_targets(self):
-        for path in (HERE/'README.md',HERE/'demo_setup_v1.md',ROOT/'projects/fluid/README.md'):
+        for path in (HERE/'README.md',HERE/'demo_setup_v1.md',ROOT/'projects/fluid/README.md',
+                     ROOT/'README.md', ROOT/'docs/showcase.md', ROOT/'docs/media/showcase/README.md',
+                     HERE/'presentation_v1.md'):
             source=path.read_text()
             for target in re.findall(r'\]\(([^)]+)\)',source):
                 if '://' in target:
@@ -49,6 +51,15 @@ class Documentation(unittest.TestCase):
         self.assertNotIn('Fluid 2.5D design and CPU contract',docs)
         self.assertNotIn('is a design-first direction',root)
         self.assertIn('Fluid 2.5D terrain-rain demo',docs)
+
+    def test_selected_cut_and_unpublished_attachment_are_distinct(self):
+        for path in (ROOT/'README.md',HERE/'README.md',ROOT/'docs/showcase.md'):
+            source=path.read_text()
+            self.assertIn('Joining valleys',source)
+            self.assertNotIn('Owner creative review and GitHub attachment publication',source)
+        root=(ROOT/'README.md').read_text()
+        self.assertIn('fluid-25d-master-1080p.mp4',root)
+        self.assertNotIn('36-second project film',root)
 
 
 if __name__=='__main__':

@@ -1,7 +1,26 @@
-# Fluid 2.5D presentation promotion V1
+# Fluid 2.5D presentation — selected sunset and retained V1 studies
 
-The active demo is now accompanied by an eight-second cinematic highlight and
-a 36-second project film. They use the accepted Mountain 1024²/16m scene,
+## Current package: Joining valleys sunset
+
+The primary highlight is now the owner-selected eight-second Joining valleys
+15° sunset cut. The clean-source 1080p/60 master matches the approved film
+byte-for-byte (`f35e77792d96e640bcefafad9af2edc2e47b14e62f19fcd67c26555256e76576`).
+The repository also keeps an explicitly derived 720p/60 CRF 24 gallery copy and
+a formed-lake poster at six seconds. The [V2 recipe](../../../docs/media/showcase/fluid-25d-recipe.json)
+is the current media authority; the [manifest](../../../docs/media/showcase/manifest.json)
+records publication hashes. GitHub attachment upload and push are not performed.
+
+This changes presentation, not the interactive Mountain/live-worker defaults.
+The original four showcase entries and their media/attachment pins are unchanged.
+The following Mountain material is retained development history, not a description
+of the current Joining valleys highlight. Its [V1 recipe snapshot](../../../docs/media/showcase/fluid-25d-legacy-v1-recipe.json)
+retains historical media paths/hashes; superseded eight-second bytes are in Git
+history, while the separate 36-second film and poster remain committed unchanged.
+
+## Legacy Mountain package (V1)
+
+The first presentation pass produced an eight-second cinematic highlight and
+a 36-second project film. They used the accepted Mountain 1024²/16m scene,
 unchanged generated elevation, native recorded SynxFlow depth/momentum and the
 current Scenic/B-spline rendering. This is a presentation/documentation pass,
 not another solver, terrain, material, asset, backdrop or hydrology study.
@@ -59,7 +78,7 @@ Raw higher-quality masters and native field archives remain ignored inputs.
 
 Committed files and byte hashes are in the
 [showcase manifest](../../../docs/media/showcase/manifest.json) and
-[full recipe](../../../docs/media/showcase/fluid-25d-recipe.json).
+[historical V1 recipe](../../../docs/media/showcase/fluid-25d-legacy-v1-recipe.json).
 No existing showcase MP4, poster, attachment URL or entry identity was changed.
 No GitHub attachment upload or push was performed. Owner creative approval
 and native GUI interaction/layout acceptance remain distinct pending gates.
@@ -129,15 +148,15 @@ retained separately, not silently overwritten or claimed as final qualification.
 
 [Review the selected films](http://starship:8787/reports/c3198c8ff67fa60e7997d396a5a6fee6e1aae6081f97f22ca928ea83e6b9b803/).
 
-## Selected Joining valleys sunset cut (promotion pending)
+## Selected Joining valleys sunset cut
 
-The later owner-selected candidate is Joining valleys at a 15° downward view,
-13.5 km distance and 0.60-radian eased orbit. The original Mountain showcase
-files above are still unchanged. `patch_presentation_refinement()` in
-`present_fluid25d_v1.py` describes the opt-in candidate; it does not replace
-`hero()` or alter interactive demo defaults. The owner selected the sunset
-variant below after reviewing the native 1080p comparison; creative selection
-is complete, but the committed gallery still contains the earlier Mountain cut.
+The owner-selected highlight is Joining valleys at a 15° downward view,
+13.5 km distance and 0.60-radian eased orbit. It supersedes the Mountain
+eight-second gallery copy, not the retained 36-second study.
+`patch_solar_refinement()` in `present_fluid25d_v1.py` describes the selected
+recipe; the supported V2 entrypoint below verifies the specific native archive.
+Neither the legacy `hero()` compatibility path nor interactive demo defaults
+are changed. The owner selected sunset after reviewing the native 1080p comparison.
 
 The eight-second refinement renders all 480 frames rather than padding a still:
 24 opening frames, 336 advancing frames, and 120 closing frames. Only the
@@ -206,7 +225,7 @@ hardware-headless 1080p capture using the tracked preset reproduces the
 owner-selected sunset MP4 byte-for-byte; review evidence is in
 `outputs/showcase/fluid25d-review-20261015-c3egw8`. No packaged media was replaced.
 
-### Promotion plan (not executed)
+### Supported production capture and packaging
 
 The supported selected-cut entrypoint is now `present_fluid25d_v2.py`; V1
 commands above remain Mountain-only compatibility tools. The V2 command checks
@@ -234,6 +253,8 @@ clean-source receipt, full rain/camera/solar/hydraulic timelines and native
 without re-encoding, derives the 720p/60 CRF 24 gallery copy, and extracts its
 formed-water poster at six seconds. It does not overwrite repository media,
 upload, push, run the solver or install dependencies.
+
+### Promotion checklist (completed locally)
 
 1. **Make the selected recipe a supported capture entrypoint.** Accept explicit
    prepared-case and recording paths instead of the current Mountain-only
@@ -280,3 +301,29 @@ The promotion pass is complete when the selected dry-to-streams-to-lake sunset
 cut is the one documented/packaged Fluid highlight, with a legible poster,
 reproducible provenance, preserved unrelated gallery media and passing scoped
 checks. Further rendering, terrain, solver and hydrology changes are out of scope.
+
+Production evidence: `outputs/showcase/fluid25d-sunset-production-20261015-v2b`
+from clean source `f63a4daf`, packaged by the supported command into
+`outputs/showcase/fluid25d-sunset-package-20261015-v2-final/export`. Both 480-frame
+publications pass full 60 FPS/resolution/duration probes. The gallery SHA-256 is
+`fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352`.
+All 72 native saves appear, with dry/final holds, zero hydraulic dispatches,
+moving cosmetic clocks, matching eased cameras, shared solar receipts,
+bit-exact GPU import and clean owned shutdown. The full 1080p master is copied
+verbatim, not upscaled from the gallery. Legacy/rejected evidence remains in
+separate output directories. No GUI session was launched.
+
+Final scoped validation passes 14 CPU/helper/contract groups and three native
+GPU groups (daylight, recording immutability and backend startup). The 33
+presentation/docs/media unit cases pass, including JSON round-trip, dirty-source,
+archive identity, full timeline/camera/solar checks, legacy film and original
+four gallery pins. The renderer and every shader are unchanged from capture.
+Both report players decode the expected resolution and eight-second duration,
+play from dry, and seek to formed water/sunset without media errors. The existing
+HTTP server is reused; the client-side Blob fallback keeps seeking independent
+of HTTP range support. Browser acceptance does not claim native GUI review.
+
+[Final local showcase package](http://starship:8787/reports/4d2c9b639957b210136f1a88b49838f84fe81e5edf4a2ad762ac4a94f77b0e19/)
+contains the same committed master, gallery copy, poster and V2 recipe. Public
+GitHub attachment upload, wiring its returned URL, and push are the remaining
+publication step, not a reason to restart rendering or simulation work.

@@ -6,9 +6,9 @@ highlights are now creatively locked and packaged as committed media. The
 remaining seven storyboard cards are future editorial work; GitHub attachment
 publication for the current four is complete and recorded in the [showcase
 manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
-Fluid 2.5D is now the fifth packaged candidate, selected through headless
-cinematic auditions; owner creative review and attachment publication remain
-pending. It does not alter the four published clips or select a suite hero.
+Fluid 2.5D is the fifth locally packaged highlight. Its Joining valleys sunset
+cut is owner-selected through headless cinematic auditions; GitHub attachment
+publication remains pending. It does not alter the four published clips or select a suite hero.
 
 The showcase is a set of small project stories whose render inputs and capture
 recipes can be reproduced. It is not a single merged reel and it is not a
@@ -30,7 +30,7 @@ The public-facing storyboard set contains these twelve active projects:
 | `smoke_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
-| `fluid_25d` | Packaged fifth candidate; creative review and attachment publication pending | Simulation-led |
+| `fluid_25d` | Owner-selected fifth highlight; packaged locally, attachment publication pending | Simulation-led |
 | `fire_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
 | `explosion_3d` | Root-gallery candidate; hero eligibility deferred | Simulation-led |
 | `fractal_2d` | Supporting project gallery; root inclusion after editorial review | Camera-led |
@@ -481,25 +481,28 @@ unjustified subsystem or produce an unreadable intermediate state.
 
 ### Fluid 2.5D — rain becomes a landscape
 
-- **Takeaway:** Continuous rain on unmodified generated mountain terrain forms
-  downhill streams and basin collections; streams retreat after supply stops.
-- **Highlight:** Eight seconds, native-rendered 720p/60, water-only stream network
-  with a restrained 20-degree eased arc at fixed distance. The tighter interior
-  framing avoids the finite patch edge visible in the first wider audition.
-- **Project film:** Thirty-six seconds: six seconds of terrain/rain, ten of
-  downhill runoff, eight of collection across rain shutoff, twelve of retreat.
-  Purposeful camera cuts never reverse physical time; brief phase captions
-  distinguish recorded timelapse from live operation.
-- **Conditions:** The accepted Mountain 1024²/16m patch and rendering defaults,
-  fixed daylight, 512 mm/h demo storm, rain off after two simulated hours.
-  No new terrain, solver, asset, water shader, backdrop or cloud work.
+- **Takeaway:** Continuous rain on unmodified Joining valleys terrain forms
+  streams that gather into a prominent lake/basin collection.
+- **Highlight:** Eight seconds, native-rendered 1080p/60 master plus an explicitly
+  derived 720p/60 gallery copy. Water-only, 15° downward pitch, 13.5 km distance,
+  0.60-radian (34°) eased orbit centered on the full patch bounds, 0.06 lens shift.
+  Foreground cropping and the visible finite patch are intentional.
+- **Edit:** 0.4 s dry opening, 5.6 s accelerated formation, 2 s final native-state
+  hold. All 480 frames are rendered; cosmetic motion and camera continue in holds.
+- **Conditions:** Joining valleys 1024²/16m, 512 mm/h continuous demo rain,
+  approximately six physical hours. Shared solar time independently advances
+  15.5–18.0 h, day 80, latitude 45°, azimuth offset −95°, twilight 0.18,
+  horizon warmth 0.25. This is art direction, not a realistic storm/geographic reconstruction.
+  No new terrain, solver, asset, shader, backdrop or cloud work.
+- **Legacy:** The 36-second Mountain rain-off film is a separate retained study,
+  not a required companion. Interactive Mountain/live-worker defaults are unchanged.
 - **Motion policy:** Camera supports changing native water. Dots/trails are
   retained in the live demo and audition, not the selected showcase clip.
 - **Capture boundary:** Actual SynxFlow snapshots held between original saves,
   never physically interpolated. Sixty FPS describes rendered/encoded frames,
   not hydraulic update rate or native scanout/solver performance.
-- **Status:** Packaged and agent-reviewed; owner creative approval and GitHub
-  attachment publication are pending. The existing four clips are untouched.
+- **Status:** Owner-selected and packaged locally from clean source; GitHub
+  attachment publication is pending. The existing four clips are untouched.
 - **Authority:** [Recipe](media/showcase/fluid-25d-recipe.json),
   [presentation qualification](../projects/fluid/fluid_25d/presentation_v1.md),
   and [project quickstart](../projects/fluid/fluid_25d/README.md).
@@ -518,6 +521,11 @@ native capture and publication standard:
   `medium`, CRF 24, exact 60 FPS, and fast-start metadata; and
 - retain the higher-quality capture master beside the publication derivative
   until the committed artifact and provenance record are approved.
+
+Fluid 2.5D retains the same eight-second / 720p60 / CRF 24 gallery contract,
+but its owner-approved master is rendered natively at 1920×1080, encoded at
+CRF 20 and committed too. The 720p copy is explicitly derived from that master;
+there is no claim that it was rendered natively at 720p. No sibling clip is changed.
 
 Ocean, Water 3D, and glTF + Terrain share the reviewed eased 30-degree camera
 arc; Fire remains fixed. A 30 FPS derivative may be produced by deterministic

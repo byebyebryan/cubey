@@ -252,6 +252,9 @@ def package(args):
                             'Approximately six physical hours compressed into 5.6 active seconds, plus animated holds',
                             '512 mm/h artistic demo rainfall, not a realistic storm or certified permanent lake',
                             '60 FPS is encoded cadence, not a live solver or scanout benchmark'],
+                    solver=dict(name='SynxFlow external service worker',
+                                identity_source='selected sealed recording provenance',
+                                extension_sha256=protocol['input']['extension_sha256']),
                     licenses=dict(cubey_source_and_generated_media='MIT', terrain_code_and_model='MIT declarations at pinned revisions',
                                   external_worker='GPL-3.0-only separate process; code not embedded'))
     p.write(export/'fluid-25d-recipe.json', document)

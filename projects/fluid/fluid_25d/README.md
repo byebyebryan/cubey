@@ -7,15 +7,22 @@ Cubey renders the changing water surface, wet banks, rain and flow cues.
 [![Rain-fed streams: 8-second cinematic highlight](../../../docs/media/showcase/fluid-25d.png)](../../../docs/media/showcase/fluid-25d.mp4)
 
 [8-second showcase highlight](../../../docs/media/showcase/fluid-25d.mp4) ·
-[36-second project film](../../../docs/media/showcase/fluid-25d-story.mp4) ·
+[Native 1080p master](../../../docs/media/showcase/fluid-25d-master-1080p.mp4) ·
 [Recipe and provenance](../../../docs/media/showcase/fluid-25d-recipe.json) ·
-[Browser review](http://starship:8787/reports/c3198c8ff67fa60e7997d396a5a6fee6e1aae6081f97f22ca928ea83e6b9b803/)
+[Browser package review](http://starship:8787/reports/4d2c9b639957b210136f1a88b49838f84fe81e5edf4a2ad762ac4a94f77b0e19/)
 
-These are native-rendered 720p/60 FPS recorded timelapses, not live performance
-captures. The longer film explains rain, runoff, collection and rain-off retreat.
-Water fields are held between original saves; rain/foam remain visual cues.
-Owner creative review and GitHub attachment publication are separate pending gates.
-See [presentation reproduction and validation](presentation_v1.md).
+The owner-selected Joining valleys sunset highlight shows streams gathering into
+a lake. Its native 1080p/60 master is retained; the gallery copy is an explicit
+720p downsample. Approximately six physical hours become 5.6 active seconds,
+with animated opening/closing holds and an independent afternoon-to-sunset clock.
+All 72 original water states are held between saves; rain/foam remain visual cues.
+This is recorded timelapse, not a live performance capture. GitHub attachment
+publication is still pending. See [reproduction and validation](presentation_v1.md).
+
+This showcase selection does not change the interactive Mountain defaults below.
+The [legacy 36-second Mountain rain-off film](../../../docs/media/showcase/fluid-25d-story.mp4)
+and [its V1 recipe](../../../docs/media/showcase/fluid-25d-legacy-v1-recipe.json)
+remain separate study references, not companions to the continuous-rain sunset cut.
 
 The preferred demo runs **SynxFlow in a separate CUDA worker**, streaming native
 depth and momentum into Cubey's Vulkan renderer. The simpler builtin solvers and
