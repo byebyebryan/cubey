@@ -1,5 +1,6 @@
 """Selected capture guards without optional archives, a GPU, or ffmpeg."""
 from pathlib import Path
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -77,6 +78,7 @@ class CaptureGuards(unittest.TestCase):
         self.assertTrue(result['all_frames_rendered'])
         self.assertTrue(result['matched_camera'])
         self.assertEqual(result['cloned_frames'],0)
+        self.assertEqual(json.loads(json.dumps(result)),result)
 
     def test_receipt_corruption_is_rejected(self):
         shot, raw = receipts()

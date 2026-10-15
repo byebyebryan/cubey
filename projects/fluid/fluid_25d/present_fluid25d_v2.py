@@ -165,7 +165,7 @@ def editorial_receipts(raw, shot):
     return dict(all_frames_rendered=True, cloned_frames=0, hydraulic_dispatches=0,
                 opening_held_native_frames=24, closing_held_native_frames=120,
                 rain_clock_last_s=float(rain[-1][2]), matched_camera=True,
-                solar_receipts=solar, **timeline)
+                solar_receipts=[list(receipt) for receipt in solar], **timeline)
 
 
 def fresh_output(path):
