@@ -1,4 +1,5 @@
 #include "gltf_viewer_app_internal.h"
+#include <cubey/asset/terrain_landscape_catalog.h>
 
 #include <cubey/host/atmosphere_environment_ui.h>
 #include <cubey/host/cloud_environment_ui.h>
@@ -181,6 +182,33 @@ GltfViewerApp::GltfViewerApp(GltfViewerProjectConfig config)
         ocean_foreground_height_m_ = *config_.ocean.foreground_height_m;
         ocean_foreground_height_explicit_ = true;
     }
+    if (config_.terrain.landscape) {
+        if (!environment_policy_.uses_atmosphere_resources() || clouds_config_.enabled ||
+            terrain_backdrop_enabled() || ocean_backdrop_enabled() ||
+            config_.terrain.surface_detail || config_.terrain.render_stride ||
+            config_.terrain.shadows || debug_view_ != cubey::render::PbrDebugView::Final)
+            throw std::runtime_error("saved landscape V1 requires atmosphere, final PBR, no "
+                                     "clouds/ocean/legacy terrain controls");
+        const auto catalog =
+            cubey::asset::load_terrain_landscape_catalog(CUBEY_GLTF_VIEWER_LANDSCAPE_CATALOG);
+        const auto selected = cubey::asset::resolve_terrain_landscape(
+            cubey::asset::terrain_landscape_preset(catalog, *config_.terrain.landscape),
+            config_.terrain.landscape_cache_root.value_or(CUBEY_GLTF_VIEWER_TERRAIN_CACHE));
+        if (!selected.capture)
+            throw std::runtime_error("saved-water glTF audition requires a wet landscape preset");
+        landscape_runtime_ = std::make_unique<cubey::TerrainWaterCaptureRuntime>(
+            selected.site, *selected.capture, CUBEY_GLTF_VIEWER_SHADER_DIR);
+        landscape_runtime_->prepare_context();
+        landscape_runtime_->prepare_fixed_lod(selected.site.center_xz_m,
+                                              selected.site.level_spans_m[0], 4500000U);
+        landscape_runtime_->set_terrain_readability(2U);
+        const auto& captured = landscape_runtime_->capture();
+        landscape_maximum_surface_m_ = captured.bed_m.front() + captured.depth_m.front();
+        for (std::size_t i = 0; i < captured.bed_m.size(); ++i)
+            landscape_maximum_surface_m_ =
+                std::max(landscape_maximum_surface_m_, captured.bed_m[i] + captured.depth_m[i]);
+        landscape_water_visible_ = config_.terrain.captured_water_visible;
+    }
 }
 
 bool GltfViewerApp::update_atmosphere_time(double delta_seconds) {
@@ -256,7 +284,7 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
                                         "lighting, PBR environment, and exposure."})) {
         refresh_atmosphere_controls();
     }
-    if (environment_policy().shows_atmosphere_controls() &&
+    if (!landscape_runtime_ && environment_policy().shows_atmosphere_controls() &&
         cubey::host::draw_cloud_environment_controls(
             clouds_config_,
             {.label = "Cloud Environment",
@@ -266,6 +294,15 @@ void GltfViewerApp::draw_ui(cubey::host::WindowedAppContext& context) {
              .enabled_help = "Render direct clouds with scene-depth occlusion and include them in "
                              "PBR environment reflections."})) {
         refresh_cloud_controls(context);
+    }
+    if (landscape_runtime_ && ImGui::CollapsingHeader("Saved Landscape")) {
+        ImGui::TextUnformatted("Saved water - no solver running");
+        ImGui::Text("Preset: %s", config_.terrain.landscape->c_str());
+        ImGui::Text("Saved after %.0f h at %.0f mm/h (exaggerated storm)",
+                    landscape_runtime_->capture().capture_time_s / 3600.0,
+                    landscape_runtime_->capture().rain_mm_per_hour);
+        ImGui::Checkbox("Show water (wet ground retained)", &landscape_water_visible_);
+        ImGui::TextUnformatted("Opaque/masked glTF only; clear sky V1");
     }
     if (terrain_backdrop_enabled() && ImGui::CollapsingHeader("Terrain Backdrop")) {
         ImGui::Checkbox("Visible", &terrain_visible_);
@@ -341,7 +378,7 @@ int GltfViewerApp::run_windowed() {
                                           context.frame_slot_count());
     };
     callbacks.create_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
-        create_frame_resources(context.device(), context.swapchain().extent(),
+        create_frame_resources(context.device(), context.gpu(), context.swapchain().extent(),
                                context.swapchain().format(), context.frame_slot_count());
     };
     callbacks.destroy_swapchain_resources = [this](cubey::host::WindowedAppContext& context) {
@@ -385,7 +422,7 @@ int GltfViewerApp::run_windowed() {
             auto span = gltf_viewer_update_profile_span(profile_recorder, timing.frame_index,
                                                         "gltf.camera_update");
             const auto input = context.filtered_input();
-            if (input.key_pressed(cubey::input::Key::D)) {
+            if (!landscape_runtime_ && input.key_pressed(cubey::input::Key::D)) {
                 debug_view_ = render::next_pbr_debug_view(debug_view_);
             }
             orbit_controller_.update_from_input(input, timing.delta_seconds);
@@ -444,13 +481,15 @@ int GltfViewerApp::run_headless() {
         if (environment_policy().uses_atmosphere_resources()) {
             finish_atmosphere_background_atlases(context.device(), context.gpu());
         }
-        create_frame_resources(context.device(), context.render_target().extent,
+        create_frame_resources(context.device(), context.gpu(), context.render_target().extent,
                                context.render_target().format,
                                cubey::host::headless_capture_frame_slot_count(config_.common));
     };
-    if (config_.common.capture_mode == CaptureMode::Video) {
+    if (config_.common.capture_mode == CaptureMode::Video || config_.common.headless_render_only) {
         const bool authored_orbit = config_.capture.video_orbit_degrees.has_value();
-        orbit_controller_.set_auto_rotation_speed(authored_orbit ? 0.0F : kHeadlessVideoOrbitSpeed);
+        orbit_controller_.set_auto_rotation_speed(
+            authored_orbit || config_.common.headless_render_only ? 0.0F
+                                                                  : kHeadlessVideoOrbitSpeed);
         callbacks.before_frame = [this,
                                   authored_orbit](cubey::host::HeadlessPngContext&,
                                                   const cubey::host::HeadlessCaptureFrame& frame) {
@@ -464,7 +503,7 @@ int GltfViewerApp::run_headless() {
             ocean_delta_seconds_ =
                 frame.timing.delta_seconds > 0.0 ? frame.timing.delta_seconds : (1.0 / 60.0);
             ocean_elapsed_seconds_ = frame.timing.elapsed_seconds;
-            if (authored_orbit) {
+            if (authored_orbit && !config_.common.headless_render_only) {
                 capture_orbit_offset_radians_ =
                     config_.capture.video_orbit_degrees.value() *
                     cubey::host::headless_capture_eased_progress(frame) *

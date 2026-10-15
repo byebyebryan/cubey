@@ -22,6 +22,14 @@ class WaterLandscapeAuditionTests(unittest.TestCase):
         off = review.view_command("test", .25, -.26, info, water=False)
         self.assertEqual(off, on + ["--no-terrain-water-visible"])
 
+    def test_actual_camera_and_static_hydraulics(self):
+        args = review.integrated_command("mountain-local")
+        self.assertIn("--no-clouds", args)
+        self.assertEqual(args[args.index("--time-speed-hours-per-second") + 1], "0")
+        self.assertEqual(args[args.index("--capture-camera-distance-scale") + 1], ".70")
+        off = review.integrated_command("mountain-local", water=False)
+        self.assertEqual(off, args + ["--no-terrain-water-visible"])
+
 
 if __name__ == "__main__":
     unittest.main()

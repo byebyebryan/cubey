@@ -77,6 +77,10 @@ struct GltfViewerStartupOptions {
     std::string debug_view{};
 
     struct Terrain {
+        std::optional<std::string> landscape{};
+        std::optional<std::filesystem::path> landscape_cache_root{};
+        bool captured_water_visible = true;
+        bool captured_water_audit = false;
         std::optional<std::filesystem::path> heightfield_path{};
         std::optional<std::uint32_t> render_stride{};
         std::optional<std::string> surface_detail{};
@@ -314,6 +318,24 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
     builder.bind(detail::option("terrain.heightfield", "--terrain-heightfield", "Heightfield",
                                 "Terrain", "Terrain backdrop heightfield.", ValueType::Path),
                  config.terrain.heightfield_path);
+    builder.bind(detail::option("terrain.landscape", "--terrain-landscape", "Saved Landscape",
+                                "Terrain", "Opt-in prepared landscape; saved water, no solver.",
+                                ValueType::String),
+                 config.terrain.landscape);
+    builder.bind(detail::option("terrain.landscape_cache_root", "--terrain-landscape-cache-root",
+                                "Landscape Cache", "Terrain", "Prepared terrain cache root.",
+                                ValueType::Path),
+                 config.terrain.landscape_cache_root);
+    auto captured_water = detail::option(
+        "terrain.captured_water_visible", "--terrain-water-visible", "Show Saved Water", "Terrain",
+        "Hide surface only; retain wet ground and saved fields.", ValueType::Bool);
+    captured_water.negative_cli_name = "--no-terrain-water-visible";
+    builder.bind(std::move(captured_water), config.terrain.captured_water_visible);
+    builder.bind(detail::option("terrain.captured_water_audit", "--terrain-water-audit",
+                                "Audit Saved Fields", "Terrain",
+                                "Read back fields once at shutdown, outside profiling.",
+                                ValueType::Bool),
+                 config.terrain.captured_water_audit);
     builder.bind(detail::option(
                      "terrain.render_stride", "--terrain-render-stride", "Render Stride", "Terrain",
                      "Cached topology stride used for terrain geometry comparison captures.",
@@ -354,6 +376,20 @@ parse_gltf_viewer_project_config(int argc, char** argv, config::ParseResult* res
         argc, argv, gltf_viewer_project_config_schema, result);
     validate_atmosphere_environment_options(config.atmosphere);
     validate_cloud_environment_options(config.clouds);
+    if (config.terrain.landscape) {
+        if (!resolve_gltf_viewer_environment_policy(config.pbr.environment_source)
+                 .uses_atmosphere_resources() ||
+            config.clouds.enabled.value_or(true) || config.terrain.heightfield_path ||
+            config.ocean.backdrop.value_or(false) || config.terrain.surface_detail ||
+            config.terrain.render_stride || config.terrain.shadows ||
+            render::pbr_debug_view_from_name(config.debug_view) != render::PbrDebugView::Final ||
+            resolve_gltf_viewer_pbr_tonemap(config.pbr.tonemap) != render::PbrTonemap::Aces)
+            throw std::runtime_error("saved landscape V1 requires atmosphere, final ACES PBR, no "
+                                     "clouds/ocean/legacy terrain controls");
+    } else if (config.terrain.landscape_cache_root || config.terrain.captured_water_audit ||
+               !config.terrain.captured_water_visible) {
+        throw std::runtime_error("saved-water controls require --terrain-landscape");
+    }
     if (config.profile.upload_owner_cpu_target_milliseconds.has_value() &&
         (!std::isfinite(config.profile.upload_owner_cpu_target_milliseconds.value()) ||
          config.profile.upload_owner_cpu_target_milliseconds.value() <= 0.0)) {

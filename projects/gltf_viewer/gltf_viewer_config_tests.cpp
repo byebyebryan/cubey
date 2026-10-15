@@ -1,4 +1,5 @@
 #include "gltf_viewer_config.h"
+#include <cubey/render/terrain_surface_patch_scene.h>
 
 #include <cstdlib>
 #include <filesystem>
@@ -7,6 +8,7 @@
 #include <numbers>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -74,6 +76,69 @@ void test_defaults_named_flags_and_typed_runtime() {
                 ocean.cloud_reflection_source ==
                     cubey::render::OceanCloudReflectionSource::CachedEnvironment,
             "glTF ocean backdrop should retain final/cached legacy semantics");
+}
+
+void test_saved_landscape_is_explicit_and_bounded() {
+    const auto parse = [](std::vector<std::string> args) {
+        args.insert(args.begin(), "gltf_viewer");
+        std::vector<char*> argv;
+        for (auto& arg : args)
+            argv.push_back(arg.data());
+        return cubey::projects::gltf_viewer::parse_gltf_viewer_project_config(
+            static_cast<int>(argv.size()), argv.data());
+    };
+    const auto defaults = parse({});
+    require(!defaults.terrain.landscape && defaults.terrain.captured_water_visible &&
+                !defaults.terrain.captured_water_audit,
+            "saved landscape must not promote or add a solver to normal startup");
+    const auto selected = parse({"--terrain-landscape", "mountain-local", "--no-clouds",
+                                 "--terrain-landscape-cache-root", "/test/terrain",
+                                 "--no-terrain-water-visible", "--terrain-water-audit"});
+    require(selected.terrain.landscape == "mountain-local" &&
+                selected.terrain.landscape_cache_root == "/test/terrain" &&
+                !selected.terrain.captured_water_visible && selected.terrain.captured_water_audit,
+            "saved landscape options and hidden/audit controls must bind");
+    for (const auto& extra :
+         std::vector<std::vector<std::string>>{{"--clouds"},
+                                               {"--pbr-environment-source", "static"},
+                                               {"--ocean-backdrop"},
+                                               {"--terrain-heightfield", "/legacy"},
+                                               {"--terrain-surface-detail", "flat"},
+                                               {"--terrain-render-stride", "2"},
+                                               {"--terrain-shadows"},
+                                               {"--debug-view", "metallic"},
+                                               {"--pbr-tonemap", "linear"}}) {
+        auto args =
+            std::vector<std::string>{"--terrain-landscape", "mountain-local", "--no-clouds"};
+        args.insert(args.end(), extra.begin(), extra.end());
+        require_throws([&] { (void)parse(args); }, "unsupported landscape composition must reject");
+    }
+    require_throws([&] { (void)parse({"--terrain-landscape", "mountain-local"}); },
+                   "default clouds require an explicit clear-sky selection");
+    require_throws([&] { (void)parse({"--terrain-water-audit"}); },
+                   "orphan saved-water controls must reject");
+    require_throws([&] { (void)parse({"--no-terrain-water-visible"}); },
+                   "orphan water-hidden control must reject");
+}
+
+void test_landscape_perspective_depth_remap() {
+    const auto remap = cubey::render::terrain_surface_patch_depth_scale_bias(.1F, 81920, 8, 81920);
+    const auto depth = [](double distance, double near, double far) {
+        return far / (far - near) - far * near / ((far - near) * distance);
+    };
+    for (double distance : {8., 20., 200., 2000., 12000., 81920.}) {
+        const float source = static_cast<float>(depth(distance, .1F, 81920));
+        const float mapped = std::fma(source, remap.x, remap.y);
+        require(std::abs(mapped - depth(distance, 8, 81920)) < .00001,
+                "range remap must preserve the perspective ray depth");
+    }
+    require(std::fma(static_cast<float>(depth(3, .1F, 81920)), remap.x, remap.y) < 0,
+            "near foreground must explicitly clamp before the background near plane");
+    const auto identity = cubey::render::terrain_surface_patch_depth_scale_bias(1, 5000, 1, 5000);
+    require(identity.x == 1 && identity.y == 0, "matched ranges must remain exact identity");
+    require_throws(
+        [] { (void)cubey::render::terrain_surface_patch_depth_scale_bias(0, 100, 8, 100); },
+        "invalid perspective remap must reject");
 }
 
 void test_set_json_template_and_unknown_scope() {
@@ -300,6 +365,8 @@ void test_environment_source_resolves_one_coherent_policy() {
 int main() {
     try {
         test_defaults_named_flags_and_typed_runtime();
+        test_saved_landscape_is_explicit_and_bounded();
+        test_landscape_perspective_depth_remap();
         test_set_json_template_and_unknown_scope();
         test_shared_schema_validation_and_scope();
         test_capture_orbit_controls();

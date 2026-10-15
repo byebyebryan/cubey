@@ -1,5 +1,7 @@
 #include "gltf_viewer_app_internal.h"
 
+#include <cubey/vulkan/memory_barriers.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <stdexcept>
 #include <vector>
 
@@ -17,7 +19,8 @@ collected_profile_frame_index(std::uint64_t frame_index,
 
 } // namespace
 
-void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
+void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device,
+                                           cubey::vulkan::GpuRuntime& gpu, VkExtent2D extent,
                                            VkFormat color_format, std::uint32_t frame_slot_count) {
     forward_pbr_renderer().create_swapchain_resources(
         device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
@@ -25,6 +28,16 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
                     .color_format = color_format,
                     .materials = &active_generation().import_resources.materials,
                 });
+    if (landscape_runtime_) {
+        landscape_foreground_.emplace(
+            device, cubey::render::Texture2DConfig{
+                        .extent = extent,
+                        .format = VK_FORMAT_R16G16B16A16_SFLOAT,
+                        .usage = cubey::render::Texture2DUsage::ColorAttachmentSampled,
+                        .sampler = {}});
+        landscape_runtime_->ensure_resources(device, gpu, frame_slot_count,
+                                             {.extent = extent, .format = color_format}, true);
+    }
     if (terrain_backdrop_enabled() && active_generation().terrain_surface.has_value() &&
         terrain_runtime_.product_ready()) {
         const cubey::ForwardPbrRenderer3DSceneTargetInfo target =
@@ -75,6 +88,9 @@ void GltfViewerApp::create_frame_resources(const cubey::vulkan::Device& device, 
 }
 
 void GltfViewerApp::destroy_swapchain_resources() {
+    if (landscape_runtime_)
+        landscape_runtime_->destroy_target_resources();
+    landscape_foreground_.reset();
     ocean_runtime_.reset();
     terrain_runtime_.destroy_target_resources();
     terrain_target_info_.reset();
@@ -87,6 +103,13 @@ void GltfViewerApp::destroy_swapchain_resources() {
 void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
     asset_builds_.shutdown(gpu);
     gpu.wait_queue_idle("gltf_viewer generation retirement");
+    if (landscape_runtime_) {
+        if (config_.terrain.captured_water_audit)
+            landscape_runtime_->verify_immutable_fields(gpu);
+        landscape_runtime_->destroy();
+        landscape_runtime_.reset();
+    }
+    landscape_foreground_.reset();
     if (active_generation_) {
         destroy_scene_generation(*active_generation_);
         cubey::destroy_gltf_scene_import(engine_, active_generation_->import_resources,
@@ -99,6 +122,7 @@ void GltfViewerApp::destroy_all_resources(cubey::vulkan::GpuRuntime& gpu) {
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
     gpu_profiler_.reset();
+    whole_scene_profiler_.reset();
     if (environment_policy().uses_atmosphere_resources()) {
         atmosphere_runtime_.destroy();
     }
@@ -136,6 +160,13 @@ void GltfViewerApp::record_viewer_target(
     }
     if (gpu_profiler_.has_value()) {
         gpu_profiler_->begin_frame(command_buffer, frame_slot.index);
+    }
+
+    std::optional<cubey::vulkan::GpuTimestampScope> whole_scene;
+    if (whole_scene_profiler_) {
+        whole_scene_profiler_->begin_frame(command_buffer, frame_slot.index);
+        whole_scene.emplace(&*whole_scene_profiler_, command_buffer, frame_slot.index,
+                            "gltf viewer whole scene");
     }
 
     GltfViewerSceneGeneration& generation = active_generation();
@@ -192,15 +223,36 @@ void GltfViewerApp::record_viewer_target(
     if (ocean_backdrop_enabled() && ocean_visible_) {
         ocean_surface = ocean_surface_frame(scene_view, color_target.extent);
     }
+    auto pbr_target = color_target;
+    auto pbr_initial = color_initial_state;
+    auto pbr_final = color_final_state;
+    if (landscape_runtime_) {
+        // Both retained targets are queue-owned, not per-slot. Complete the
+        // preceding frame's merge reads before overwriting them on this queue.
+        cubey::vulkan::record_memory_barrier(
+            command_buffer, {.src_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                             .dst_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                          VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                             .src_access = VK_ACCESS_SHADER_READ_BIT,
+                             .dst_access = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                           VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT});
+        pbr_target = cubey::render::color_target_view(
+            landscape_foreground_->extent(), landscape_foreground_->format(),
+            landscape_foreground_->handle(), landscape_foreground_->view());
+        pbr_initial = cubey::render::render_graph_undefined_texture_state();
+        pbr_final = {VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT,
+                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT};
+    }
     forward_pbr_renderer().record({
         .target =
             {
                 .device = &device,
                 .command_buffer = command_buffer,
-                .color_target = color_target,
+                .color_target = pbr_target,
                 .frame_slot = frame_slot,
-                .color_initial_state = color_initial_state,
-                .color_final_state = color_final_state,
+                .color_initial_state = pbr_initial,
+                .color_final_state = pbr_final,
                 .command_buffer_label = "vkEndCommandBuffer gltf_viewer",
                 .command_buffer_mode = pbr_command_buffer_mode,
                 .profiler = gpu_profiler_.has_value() ? &*gpu_profiler_ : nullptr,
@@ -233,9 +285,55 @@ void GltfViewerApp::record_viewer_target(
                 .atmosphere_clouds = atmosphere_clouds,
                 .terrain_backdrop = terrain_backdrop,
                 .ocean_surface = ocean_surface,
+                .opaque_linear_output = landscape_runtime_ != nullptr,
             },
         .metrics = metrics,
     });
+    if (landscape_runtime_) {
+        // One rigid translation for the paired ground/water/context. The pivot
+        // stays 200m (or the requested clearance) above the highest saved surface.
+        const auto placement = cubey::render::resolve_backdrop_surface_placement(
+            {.surface = {.nominal_local_height_m = landscape_maximum_surface_m_,
+                         .maximum_local_height_m = landscape_maximum_surface_m_},
+             .foreground = {.anchor_world_height_m = generation.bounds.center.y,
+                            .minimum_local_height_m = -generation.bounds.half_extent.y},
+             .requested_foreground_height_m = terrain_foreground_height_m_,
+             .minimum_clearance_m = .1F});
+        const cubey::math::Vec3 translation{generation.bounds.center.x,
+                                            placement.surface_world_translation_y,
+                                            generation.bounds.center.z};
+        const auto& world = scene_view.transforms3d().world_affine_matrix(
+            scene_view.transforms3d().instance(generation.camera_entity));
+        const auto& asset_camera = scene_view.cameras3d().camera(
+            scene_view.cameras3d().instance(generation.camera_entity));
+        const cubey::Camera3D landscape_camera({.fovy_radians = asset_camera.fovy_radians(),
+                                                .near_z = 8.0F,
+                                                .far_z = asset_camera.far_z()});
+        const float aspect = float(color_target.extent.width) / float(color_target.extent.height);
+        const cubey::render::TerrainSurfacePatchCamera camera{
+            landscape_camera.view_projection_matrix(world, aspect) *
+                glm::translate(cubey::math::Mat4{1}, translation),
+            cubey::math::Vec3{world[3]} - translation};
+        const auto& sky = atmosphere_runtime_.reflection_probe().sky_radiance_cube();
+        const cubey::render::TerrainSurfacePatchEnvironment environment{
+            pbr_environment_bindings(),
+            atmosphere_runtime_.lighting(),
+            display_exposure(),
+            sky.sampler().handle(),
+            sky.view(),
+            *atmosphere_background};
+        const cubey::render::TerrainSurfacePatchOpaqueLayer foreground{
+            pbr_target, forward_pbr_renderer().scene_depth_target(),
+            cubey::render::terrain_surface_patch_depth_scale_bias(
+                asset_camera.near_z(), asset_camera.far_z(), landscape_camera.near_z(),
+                landscape_camera.far_z())};
+        landscape_runtime_->record(device, command_buffer, frame_slot, color_target,
+                                   color_final_state.layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                   camera, ocean_elapsed_seconds_, landscape_water_visible_,
+                                   gpu_profiler_.has_value(), true, 0U, true, &environment,
+                                   &foreground);
+    }
+    whole_scene.reset();
     if (owns_command_buffer) {
         recorder.end("vkEndCommandBuffer gltf_viewer");
     }
@@ -265,6 +363,12 @@ void GltfViewerApp::collect_gpu_timings(cubey::profiling::ProfileRecorder* recor
                                         std::uint64_t frame_index,
                                         cubey::render::FrameSlot frame_slot) {
     const std::uint64_t collected_frame = collected_profile_frame_index(frame_index, frame_slot);
+    if (whole_scene_profiler_) {
+        whole_scene_profiler_->collect(frame_slot.index);
+        if (recorder)
+            for (const auto& timing : whole_scene_profiler_->latest_timings())
+                recorder->record_gpu_span(collected_frame, timing.label, timing.milliseconds);
+    }
     if (gpu_profiler_.has_value()) {
         gpu_profiler_->collect(frame_slot.index);
         if (recorder != nullptr) {
@@ -283,6 +387,12 @@ void GltfViewerApp::collect_gpu_timings(cubey::profiling::ProfileRecorder* recor
                 }
             }
         }
+    }
+    if (landscape_runtime_) {
+        const auto timings = landscape_runtime_->collect_timings(frame_slot.index);
+        if (recorder)
+            for (const auto& timing : timings)
+                recorder->record_gpu_span(collected_frame, timing.label, timing.milliseconds);
     }
 }
 

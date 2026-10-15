@@ -93,12 +93,12 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
                      orbit_controller_.pitch(),
         }),
         cubey::Camera3D({
-            .fovy_radians = gltf_viewer_capture_camera_fovy_radians(
-                config_.capture.camera_fov_y_degrees),
-            .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled()
+            .fovy_radians =
+                gltf_viewer_capture_camera_fovy_radians(config_.capture.camera_fov_y_degrees),
+            .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled() || landscape_runtime_
                           ? 0.1F
                           : std::max(radius * 0.001F, 0.01F),
-            .far_z = terrain_backdrop_enabled() || ocean_backdrop_enabled()
+            .far_z = terrain_backdrop_enabled() || ocean_backdrop_enabled() || landscape_runtime_
                          ? std::max(radius * 12.0F, 16'384.0F * 5.0F)
                          : std::max(radius * 12.0F, 100.0F),
         }));
@@ -278,11 +278,12 @@ GltfViewerApp::atmosphere_background_uniforms(const cubey::SceneReadView& view,
             },
         .forward = {forward.x, forward.y, forward.z, 0.0F},
     };
-    if (terrain_backdrop_enabled() || ocean_backdrop_enabled()) {
+    if (terrain_backdrop_enabled() || ocean_backdrop_enabled() || landscape_runtime_) {
         const cubey::math::Vec3 camera_position{world[3]};
         const float surface_reference_height =
-            terrain_backdrop_enabled() ? generation.bounds.center.y - terrain_foreground_height_m_
-                                       : generation.bounds.center.y - ocean_foreground_height_m_;
+            (terrain_backdrop_enabled() || landscape_runtime_)
+                ? generation.bounds.center.y - terrain_foreground_height_m_
+                : generation.bounds.center.y - ocean_foreground_height_m_;
         return cubey::render::atmosphere_environment_frame_uniforms(
             atmosphere_state_.environment,
             {

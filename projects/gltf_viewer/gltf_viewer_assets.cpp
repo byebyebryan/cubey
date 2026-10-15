@@ -125,6 +125,7 @@ void GltfViewerApp::create_global_resources_if_needed(const cubey::vulkan::Devic
                 });
     if (!config_.common.profile_output_prefix.empty()) {
         gpu_profiler_.emplace(device, frame_slot_count, 16U);
+        whole_scene_profiler_.emplace(device, frame_slot_count, 1U);
     }
     create_terrain_backdrop_resources(device, frame_slot_count);
     global_resources_created_ = true;
@@ -190,9 +191,10 @@ void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
     const std::optional<std::filesystem::path> terrain_path = config_.terrain.heightfield_path;
     const std::uint32_t terrain_stride = config_.terrain.render_stride.value_or(3U);
     const std::string label = input.filename().empty() ? input.string() : input.filename().string();
+    const bool opaque_landscape = landscape_runtime_ != nullptr;
     static_cast<void>(asset_builds_.request(
         label,
-        [input, import_config, capabilities, terrain_path, terrain_stride,
+        [input, import_config, capabilities, terrain_path, terrain_stride, opaque_landscape,
          loading_metrics = std::move(loading_metrics)]() mutable {
             GltfViewerPreparedGeneration prepared;
             prepared.source_path = input;
@@ -200,6 +202,14 @@ void GltfViewerApp::request_imported_asset_build(std::filesystem::path input,
             const Clock::time_point asset_load_started = Clock::now();
             cubey::asset::GltfAssetLoadProfile asset_load_profile;
             prepared.asset = cubey::asset::load_gltf_asset(input, {}, &asset_load_profile);
+            if (opaque_landscape) {
+                for (const auto& material : prepared.asset.materials)
+                    if (material.alpha_mode == cubey::asset::GltfAlphaMode::Blend ||
+                        material.transmission_factor > 0.0F)
+                        throw std::runtime_error(
+                            "saved landscape V1 requires opaque/masked glTF materials; "
+                            "alpha/transmission needs the ordinary viewer");
+            }
             prepared.loading_metrics.gltf_asset_load_milliseconds =
                 elapsed_milliseconds(asset_load_started);
             collect_gltf_viewer_asset_loading_metrics(prepared.loading_metrics, prepared.asset);

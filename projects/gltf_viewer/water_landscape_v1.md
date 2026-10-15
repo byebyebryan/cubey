@@ -40,3 +40,49 @@ rtk proxy python3 -m unittest discover -s projects/gltf_viewer -p test_review_wa
 
 No defaults, root gallery pins, committed media or GitHub attachments change in
 this pass. Keep the old published clip until a separate user promotion review.
+
+## Opt-in composition
+
+`--terrain-landscape NAME --no-clouds` resolves the same pinned catalog and
+site/water binding as Terrain. There is no app-local terrain/water shader fork,
+new solver interface, live hydraulic dispatch, or producer launch. The runtime
+retains immutable bed/depth/velocity, paired fixed-detail geometry, same-source
+ground-only context and the existing material/foam recipe. Outside the finite
+saved-water rectangle there is ground only, not invented water continuation.
+
+Forward PBR exports opaque/masked geometry as **linear HDR plus sampled depth**.
+The shared surface scene merges nearest opaque depth before water refraction,
+flecks and its single ACES display transform. Both use the caller's atmosphere
+sky, primary light and exposure. Shared captured-sky SH is refreshed for the
+caller-lit frame; it is not a second sky/light controller. The foreground's PBR
+environment deliberately does not include rendered terrain or water reflections.
+
+The initial same-near-plane integration revealed substantial water-edge breakup:
+glTF's 0.1m near plane spends depth precision on a metre-scale model, not distant
+water. The qualified path keeps the foreground projection unchanged and uses an
+8m near plane for the kilometre-scale landscape. The merge applies the standard
+perspective depth mapping `target_z = source_z * scale + bias`, derived from the
+two near/far pairs; foreground before the landscape near plane clamps to depth 0.
+The view pose/FOV remain identical. This is a small-range/orbit backdrop with
+foreground clearance, **not a ground-level or underwater composition contract**.
+
+The GPU lifecycle test covers empty-depth image parity, near opaque occlusion of
+water/flecks, rejected far foreground, explicit range remapping, a single
+ACES+sRGB display value, two retired slots, 128/192/128 target replacement and
+immutable numerical fields. It does not substitute for the real glTF clips or
+native GUI acceptance. The viewer validates unsupported alpha/transmission
+materials during CPU preparation, before a new asset can replace the old scene.
+
+Multi-frame validation also found and fixed two integration ownership mistakes:
+the pass profiler cannot nest a whole-scene span, so that span owns a separate
+query pool; and captured-daylight compute descriptors must be frame-slot-owned,
+not updated through one live set. A portable GPU regression now keeps two and
+three frame recordings live, submits them as a batch and reuses retired slots.
+The earlier instrument failure and validation-failed movie/timing revision are
+retained as development attempts, not final qualification evidence.
+
+Clouds remain enabled in the frozen old highlight. The opt-in landscape path
+explicitly rejects them: it has not qualified cloud/depth ordering for this
+composition. Daylight/afternoon is auditioned separately. No new cloudy/night
+showcase, alpha/refraction implementation, material rewrite or default promotion
+is implied by this V1.

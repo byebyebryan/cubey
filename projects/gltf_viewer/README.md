@@ -78,6 +78,31 @@ projects rather than incomplete viewer plumbing.
 
 ## Showcase highlight
 
+The existing published highlight below remains unchanged. An opt-in
+[saved-water landscape audition](water_landscape_v1.md) reuses the shared
+Terrain renderer and prepared captures; it is not a live Fluid simulation:
+
+```sh
+rtk proxy build/release/projects/gltf_viewer/gltf_viewer --terrain-landscape mountain-local --no-clouds --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --time-of-day-mode solar --time-hours 10 --time-speed-hours-per-second 0 --capture-camera-distance-scale .70 --capture-camera-yaw 94.538 --capture-camera-pitch -6.8755 --exposure 0
+```
+
+This requires the existing prepared Terrain cache and a local asset. It never
+downloads, generates terrain, installs SynxFlow, or launches a solver. Named
+landscapes fail clearly if missing; `--terrain-landscape-cache-root` supports an
+alternate prepared cache. `--no-terrain-water-visible` hides the surface while
+retaining wet-ground shading. `--terrain-water-audit` checks immutable fields at
+shutdown, outside profiling. Native GUI/layout acceptance remains deferred.
+
+V1 is a fixed/small-orbit backdrop for **opaque/masked assets and clear-sky
+daylight**, not a general scene compositor. Clouds, alpha/transmission, ocean,
+legacy terrain controls, debug views and non-ACES display are rejected in this
+mode; their ordinary viewer paths remain available without this opt-in.
+The model stays at normal scale above the highest saved surface. A separate
+8m landscape near plane preserves distant water depth precision; the foreground
+depth is remapped before water shading. Do not use this recipe as a ground-level
+or underwater camera. The foreground uses shared sky lighting, not reflections
+of the retained terrain/water. A future gallery replacement still needs review.
+
 [![glTF + Terrain showcase poster](../../docs/media/showcase/gltf-terrain.png)](../../docs/media/showcase/gltf-terrain.mp4)
 
 The highlight stages the Damaged Helmet against Cubey's canonical Terrain V1

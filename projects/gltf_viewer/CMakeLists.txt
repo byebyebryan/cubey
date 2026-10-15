@@ -6,6 +6,8 @@ cubey_terrain_backdrop_shader_sources(CUBEY_GLTF_VIEWER_TERRAIN_SHADERS)
 cubey_terrain_backdrop_shader_depends(CUBEY_GLTF_VIEWER_TERRAIN_SHADER_DEPENDS)
 cubey_ocean_surface_shader_sources(CUBEY_GLTF_VIEWER_OCEAN_SHADERS)
 cubey_ocean_surface_shader_depends(CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS)
+cubey_terrain_surface_patch_shader_sources(CUBEY_GLTF_VIEWER_PATCH_SHADERS)
+cubey_terrain_surface_patch_shader_depends(CUBEY_GLTF_VIEWER_PATCH_SHADER_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_gltf_viewer
@@ -27,6 +29,7 @@ cubey_add_app_target(
         ${CUBEY_GLTF_VIEWER_CLOUD_SHADERS}
         ${CUBEY_GLTF_VIEWER_TERRAIN_SHADERS}
         ${CUBEY_GLTF_VIEWER_OCEAN_SHADERS}
+        ${CUBEY_GLTF_VIEWER_PATCH_SHADERS}
         shaders/gltf_deform.comp
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
@@ -35,7 +38,11 @@ cubey_add_app_target(
         ${CUBEY_GLTF_VIEWER_CLOUD_SHADER_DEPENDS}
         ${CUBEY_GLTF_VIEWER_TERRAIN_SHADER_DEPENDS}
         ${CUBEY_GLTF_VIEWER_OCEAN_SHADER_DEPENDS}
+        ${CUBEY_GLTF_VIEWER_PATCH_SHADER_DEPENDS}
 )
+target_compile_definitions(cubey_project_gltf_viewer PRIVATE
+    CUBEY_GLTF_VIEWER_LANDSCAPE_CATALOG="${CMAKE_SOURCE_DIR}/projects/terrain/terrain_landscape_presets.json"
+    CUBEY_GLTF_VIEWER_TERRAIN_CACHE="${CMAKE_SOURCE_DIR}/cache/terrain")
 
 add_custom_target(cubey_project_gltf_viewer_bilinear_ocean_shader)
 cubey_add_glsl_shaders(
@@ -78,6 +85,20 @@ if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
 endif()
 
 if (BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME gltf_viewer_water_landscape_review_helpers
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_water_landscape_v1.py)
+    set_tests_properties(gltf_viewer_water_landscape_review_helpers PROPERTIES LABELS "gltf;viewer;structural")
+    add_test(NAME gltf_viewer_headless_profiles_scene
+        COMMAND "${CMAKE_COMMAND}" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY
+            $<TARGET_FILE:cubey_project_gltf_viewer> --headless --headless-render-only
+            --frames 8 --width 128 --height 128 --no-clouds --pbr-environment-source static
+            --profile-output "${CMAKE_CURRENT_BINARY_DIR}/profile-smoke")
+    set_tests_properties(gltf_viewer_headless_profiles_scene PROPERTIES
+        LABELS "gltf;viewer;headless;gpu" TIMEOUT 60
+        PASS_REGULAR_EXPRESSION "headless_render_only_complete: frames=8"
+        FAIL_REGULAR_EXPRESSION "vulkan validation error")
     add_executable(cubey_project_gltf_viewer_tests
         gltf_viewer_config_tests.cpp
     )

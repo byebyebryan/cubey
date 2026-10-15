@@ -19,6 +19,7 @@
 #include <cubey/engine/gltf_scene_importer.h>
 #include <cubey/engine/staged_resource.h>
 #include <cubey/engine/terrain_backdrop_runtime.h>
+#include <cubey/engine/terrain_water_capture_runtime.h>
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/host/windowed_app.h>
@@ -136,8 +137,9 @@ class GltfViewerApp {
     void create_global_resources_if_needed(const cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& gpu,
                                            std::uint32_t frame_slot_count);
-    void create_frame_resources(const cubey::vulkan::Device& device, VkExtent2D extent,
-                                VkFormat color_format, std::uint32_t frame_slot_count);
+    void create_frame_resources(const cubey::vulkan::Device& device, cubey::vulkan::GpuRuntime& gpu,
+                                VkExtent2D extent, VkFormat color_format,
+                                std::uint32_t frame_slot_count);
     void destroy_swapchain_resources();
     void destroy_all_resources(cubey::vulkan::GpuRuntime& gpu);
 
@@ -278,10 +280,15 @@ class GltfViewerApp {
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
     cubey::AtmosphereBackgroundAtlasRuntime atmosphere_background_atlases_{};
     cubey::TerrainBackdropRuntime terrain_runtime_{};
+    std::unique_ptr<cubey::TerrainWaterCaptureRuntime> landscape_runtime_;
+    std::optional<cubey::render::Texture2D> landscape_foreground_;
+    bool landscape_water_visible_ = true;
+    float landscape_maximum_surface_m_ = 0.0F;
     std::optional<cubey::TerrainBackdropRuntimeTargetInfo> terrain_target_info_{};
     cubey::OceanSurfaceRuntime ocean_runtime_{};
     cubey::render::OceanSurfaceConfig ocean_config_{};
     std::optional<cubey::vulkan::GpuTimestampProfiler> gpu_profiler_{};
+    std::optional<cubey::vulkan::GpuTimestampProfiler> whole_scene_profiler_{};
     float terrain_foreground_height_m_ = 200.0F;
     float terrain_minimum_foreground_height_m_ = 0.0F;
     bool terrain_visible_ = true;
