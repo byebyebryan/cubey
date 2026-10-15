@@ -5,6 +5,11 @@ inputs, not a fresh-checkout-only example. Setup is deliberately separate from
 normal build/startup. Nothing below is run automatically by CMake or the launcher.
 For runtime defaults and capabilities, see the [current reference](current_reference.md).
 
+For upstream credit, the hash-locked Python environment, explicit source build,
+import checks and new-build qualification gates, use the
+[SynxFlow dependency handoff](external_synxflow/README.md). The stock PyPI package
+supplies IO tooling; it is not a replacement for the controlled service extension.
+
 ## What must exist
 
 | Input | Responsibility / check |
@@ -12,7 +17,7 @@ For runtime defaults and capabilities, see the [current reference](current_refer
 | Vulkan renderer | Normal Release build; video capture additionally needs Cubey's libav/FFmpeg support. |
 | Terrain elevation and climate | Shared Terrain source cache; source hashes and world-coordinate crop are validated. |
 | Prepared native case | Explicit serializer output under a caller-owned study directory; immutable input hashes and native bed identity. |
-| Worker Python environment | Existing CPython 3.11 environment with SynxFlow IO/worker dependencies. Keep the venv interpreter path, not its resolved symlink target. |
+| Worker Python environment | Linux x86_64 / CPython 3.11, glibc >= 2.28; [hash-locked dependencies](external_synxflow/requirements-linux-cp311.lock). Keep the venv interpreter path, not its resolved symlink target. |
 | Service extension | Existing audited SynxFlow service build; SHA-256 must match the qualified artifact. A different build is not admitted merely by supplying a path. |
 | GPU runtime | Compatible NVIDIA CUDA runtime for the external worker, plus Vulkan support for Cubey. These are separate APIs/processes, not Vulkan-CUDA shared-buffer interop. |
 
@@ -73,6 +78,8 @@ CPython and C/C++ compilers, then builds into a fresh private directory. See the
 before attempting a new build. Toolkit/compiler/extension setup is **not** a
 portable one-command installation or an accepted arbitrary-build profile today.
 Normal demo startup does not install packages, models or toolchains.
+The [dependency walkthrough](external_synxflow/README.md#2-restore-a-qualified-service-or-build-a-candidate)
+contains the full explicit build command; `--help` alone is not setup.
 
 `run_terrain_rain_demo.py` now accepts `--native-python` and `--extension` so the
 same qualified artifacts need not be located at a maintainer's dated paths.

@@ -22,7 +22,7 @@ class Documentation(unittest.TestCase):
                      ROOT/'README.md', ROOT/'docs/showcase.md', ROOT/'docs/media/showcase/README.md',
                      HERE/'presentation_v1.md', HERE/'current_reference.md',
                      HERE/'development_map.md', ROOT/'docs/README.md',
-                     ROOT/'docs/architecture/fluid-simulation.md'):
+                     ROOT/'docs/architecture/fluid-simulation.md', HERE/'external_synxflow/README.md'):
             source=path.read_text()
             for target in re.findall(r'\]\(([^)]+)\)',source):
                 if '://' in target:

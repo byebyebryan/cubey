@@ -1,0 +1,31 @@
+{
+  "schema": "cubey.fluid25d.synxflow-runtime-profile.v1",
+  "upstream": {
+    "repository": "https://github.com/SynxFlow/SynxFlow",
+    "documentation": "https://synxflow.readthedocs.io/en/v1.0.1/quickstart.html",
+    "paper": "https://doi.org/10.21105/joss.07586",
+    "tag": "v1.0.1",
+    "commit": "8a9781504204a7b41217b483db4190c1f6f340bc",
+    "archive_url": "https://codeload.github.com/SynxFlow/SynxFlow/tar.gz/8a9781504204a7b41217b483db4190c1f6f340bc",
+    "archive_sha256": "281e84ac6945b7a10c04e11a226dd1bc56673f2fe4deb03f9095671f3ac5f297",
+    "release_license_classifier": "GPL-3.0-or-later"
+  },
+  "python_environment": {
+    "implementation": "CPython",
+    "abi": [3, 11],
+    "tested_patch": "3.11.17",
+    "platform": "Linux x86_64, glibc >= 2.28",
+    "lock": "requirements-linux-cp311.lock",
+    "synxflow_wheel": "synxflow-1.0.1-cp311-cp311-manylinux_2_17_x86_64.whl",
+    "synxflow_wheel_sha256": "31c4f0a94291f929b24e5c6811a0359c4dd94a6da012dcf6be8895f4bdc402e4"
+  },
+  "qualified_service": {
+    "extension_sha256": "251cea1bd0658acdfc5b5129038d93970bf1769d7cac00bbf1edff99a886315f",
+    "cuda_toolkit": "11.7.99",
+    "gcc": "11.4.0",
+    "gxx": "11.4.0",
+    "local_hook_license": "GPL-3.0-only",
+    "admission": "Exact artifact hash; a fresh build is a candidate, not automatically qualified. Launcher pins remain unchanged."
+  },
+  "scope": "Dependency handoff metadata, not a runtime-profile override or cross-platform support promise. No numerical fields or algorithms are changed."
+}

@@ -269,6 +269,10 @@ if (BUILD_TESTING)
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_presentation_docs_v1.py)
         set_tests_properties(fluid_25d_presentation_docs PROPERTIES LABELS "unit;fluid;presentation" TIMEOUT 30)
+        add_test(NAME fluid_25d_dependency_setup_contract
+            COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
+                -s "${CMAKE_CURRENT_SOURCE_DIR}/external_synxflow" -p test_setup_contract.py)
+        set_tests_properties(fluid_25d_dependency_setup_contract PROPERTIES LABELS "unit;fluid;backend" TIMEOUT 30)
         add_test(NAME fluid_25d_presentation_media
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover
                 -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_presentation_media_v1.py)

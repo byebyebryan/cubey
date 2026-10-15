@@ -26,8 +26,9 @@ The [legacy 36-second Mountain rain-off film](../../../docs/media/showcase/fluid
 and [its V1 recipe](../../../docs/media/showcase/fluid-25d-legacy-v1-recipe.json)
 remain separate study references, not companions to the continuous-rain sunset cut.
 
-The preferred demo runs **SynxFlow in a separate CUDA worker**, streaming native
-depth and momentum into Cubey's Vulkan renderer. The simpler builtin solvers and
+The preferred demo runs [SynxFlow](https://github.com/SynxFlow/SynxFlow) in
+a separate CUDA worker, streaming native depth and momentum into Cubey's Vulkan
+renderer. The simpler builtin solvers and
 recorded playback remain explicit alternatives; they are not silent fallbacks.
 
 Read next: [setup](demo_setup_v1.md) · [current behavior and boundaries](current_reference.md) ·
@@ -125,7 +126,8 @@ later; remaining water is not automatically a certified calm or permanent lake.
 Manual rain/pace or camera selection exits the guide and selects Manual.
 Orbit/zoom during an active guide does the same. Guided Start explicitly restores
 512 mm/h; after a rain-off reset, Manual Start needs a rain preset to wet up.
-The prepared 20-hour solver horizon remains finite and explicit.
+Live worker mode is continuous; the prepared 20-hour input horizon applies only
+to explicit finite diagnostics. Continuous does not promise unlimited clock precision.
 
 See [managed lifecycle and UI](terrain_demo_ux_v1.md) and
 [measured rain-response evidence](rain_response_v1.md).
@@ -195,6 +197,8 @@ The broader design map is [Fluid Simulation Direction](../../../docs/architectur
 Cubey's renderer/client remains MIT; the external worker/build slice is separately
 marked GPL-3.0-only in [its license](external_synxflow/LICENSE). It is not compiled
 into the Vulkan application. See the setup document for dependency provenance.
+The [SynxFlow handoff](external_synxflow/README.md) includes upstream credit,
+locked dependencies, build/qualification instructions and builtin backup commands.
 
 <details>
 <summary>Historical section links (previous README anchors)</summary>

@@ -67,9 +67,9 @@ https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
 
 Rain-fed streams collect into a lake on unmodified Joining valleys terrain.
 A low, eased orbit reveals the relief as afternoon turns to sunset. This is
-recorded SynxFlow timelapse rendered in Vulkan: approximately six physical
-hours, an independent artistic solar clock, and exact water states held between
-saves—not a live-FPS claim. This is the owner-selected sunset cut.
+recorded [SynxFlow](https://github.com/SynxFlow/SynxFlow) timelapse rendered in Vulkan:
+approximately six physical hours, an independent artistic solar clock, and exact
+water states held between saves—not a live-FPS claim. This is the owner-selected sunset cut.
 
 [Project](projects/fluid/fluid_25d/README.md) · [8-second gallery MP4](docs/media/showcase/fluid-25d.mp4) · [Poster](docs/media/showcase/fluid-25d.png) · [1080p master](docs/media/showcase/fluid-25d-master-1080p.mp4) · [Recipe and provenance](docs/media/showcase/fluid-25d-recipe.json)
 

@@ -68,8 +68,9 @@ with missing new-site cases disabled.
 
 Source elevation samples are 30 m. Finer simulation grids interpolate that
 heightfield; they do not invent finer terrain detail. A 60x pace request is not
-a promise, particularly at 2k. The prepared native case has a finite 20-physical-
-hour horizon, which is shown as Completed rather than an unexplained pause.
+a promise, particularly at 2k. Prepared files specify 20 physical hours for finite
+diagnostics; normal live worker mode is continuous and does not stop there.
+Explicit finite runs report Completed rather than an unexplained pause.
 
 ## Replacement and failure contract
 
@@ -140,7 +141,8 @@ selects Manual and uses the same routing. Existing `resume` scripts remain manua
 and never implicitly run a guide.
 Each action requires exactly one timing key: `after_s` is wall time after the
 previous acknowledgement; `at_physical_s` is an absolute simulated timestamp
-in the current session, bounded to the prepared 20-hour horizon. For example,
+in the current session. The regression-script parser bounds these triggers to
+0–72,000 seconds; that is not the continuous live solver's stopping condition. For example,
 `{"kind":"set-rain","at_physical_s":7200,"value":0}` stops supply at the
 first eligible synchronized boundary after two simulated hours, without
 pausing flow. Cold setup and slower solver pace cannot fire this trigger early.
@@ -171,7 +173,8 @@ water. Choose Guided again on healthy dry/paused Mountain water to repeat the
 narrative; it explicitly restores 512 mm/h. Manual Reset preserves rain, so a
 rain-off reset needs a rain preset before it can wet up. Scene replacement does
 not carry an active guide into another terrain.
-The separate 20-hour prepared solver horizon remains explicit.
+The prepared 20-hour input horizon applies only to explicit finite diagnostics;
+continuous live operation still retains float-clock/health limits.
 
 See [rain-response evidence and qualification](rain_response_v1.md). The phase
 captions explain actual rain supply and delayed upstream arrivals; animated

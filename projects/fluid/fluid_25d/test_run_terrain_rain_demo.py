@@ -16,6 +16,7 @@ class Commands(unittest.TestCase):
         self.assertEqual(command[command.index('--extension')+1],'/build/flood.so')
         self.assertEqual(command[command.index('--speed')+1],'30')
         self.assertIn('--paused',command)
+        self.assertNotIn('--finite',command)  # Prepared input duration is not a live hard stop.
 
     def test_default_launch_is_live_1k_release_and_paced(self):
         args = terrain.parser().parse_args(["--study", "/study"])

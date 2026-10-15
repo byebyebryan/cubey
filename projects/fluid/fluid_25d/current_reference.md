@@ -36,8 +36,9 @@ Manual rain/pace changes, camera selection or orbit/zoom exit the guide while
 retaining the water. Reset creates dry/paused water and retains the selected mode
 and applied rain/pace. Guided Start restores rain; Manual Start after a rain-off
 reset needs a positive rain preset. Other sites/grids use ordinary Manual start,
-not an unqualified copy of the Mountain script. The prepared solver horizon is
-20 physical hours: continuous interaction is not an infinite simulation.
+not an unqualified copy of the Mountain script. The live worker defaults to
+continuous mode; the prepared 20-hour input horizon applies to explicit `--finite`
+diagnostics, not a live hard stop. Continuous still has finite float-clock precision.
 
 Three clocks must stay distinct:
 
