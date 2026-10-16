@@ -316,6 +316,8 @@ add_library(cubey_engine STATIC
     engine/gltf_scene_resident_builder.cpp
     engine/gltf_scene_upload_session.cpp
     engine/ocean_surface_runtime.cpp
+    engine/ocean_surface_resources.cpp
+    engine/ocean_surface_recording.cpp
     engine/forward_pbr_renderer_3d.cpp
     engine/forward_pbr_renderer_3d_draw_plan.cpp
     engine/forward_pbr_renderer_3d_graph.cpp

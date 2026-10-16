@@ -1337,7 +1337,7 @@ int main() {
         const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
-            read_text_file(engine_source_root / "ocean_surface_runtime.cpp");
+            read_text_file(engine_source_root / "ocean_surface_resources.cpp");
         const std::string gpu_header_source =
             read_text_file(engine_include_root / "ocean_surface_runtime.h");
         const std::string config_header =

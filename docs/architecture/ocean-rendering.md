@@ -7,6 +7,14 @@ The old comparison projects and experimental feature-isolation paths are gone.
 Git history preserves them; active work should extend this renderer through
 normal configuration, diagnostics, and small shared contracts.
 
+The shared `OceanSurfaceRuntime` implementation separates frame/configuration
+planning (`ocean_surface_runtime.cpp`), GPU resource/descriptor lifecycle
+(`ocean_surface_resources.cpp`) and spectrum/surface command recording
+(`ocean_surface_recording.cpp`). Push-constant layouts and the shared field index
+helper remain private. The public API, wave model, quality policy and shaders
+are unchanged by this separation; Ocean and glTF backdrop captures validate the
+shared consumer path.
+
 ## Runtime Shape
 
 The renderer is split into these responsibilities:
