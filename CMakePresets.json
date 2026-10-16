@@ -296,6 +296,22 @@
       "execution": {
         "noTestsAction": "error"
       }
+    },
+    {
+      "name": "dev-foundation",
+      "displayName": "Core, build and foundation policy",
+      "configurePreset": "dev",
+      "filter": {
+        "include": {
+          "name": "^(cubey_core_tests|foundation_.*|project_layout_.*|cmake_app_policy_rules|shader_build_rules)$"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
     }
   ]
 }

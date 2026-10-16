@@ -1,5 +1,6 @@
 """Negative and adapter fixtures for physical foundation include boundaries."""
 import argparse
+import json
 from pathlib import Path
 import sys
 import subprocess
@@ -58,7 +59,7 @@ class FoundationLayerTests(unittest.TestCase):
         self.write("projects/demo/implementation.h")
         self.assertTrue(any("product/study" in e for e in check(self.root)[1]))
 
-    def test_actual_cmake_target_links_cannot_reverse_the_layers(self):
+    def configure_links(self, extra="", configuration="Debug", generator="Ninja"):
         repository = Path(__file__).resolve().parents[2]
         for name in ("core", "vulkan", "render"):
             self.write(f"src/cubey/{name}/example.cpp", f"void {name}_example() {{}}\n")
@@ -72,21 +73,97 @@ foreach(module core vulkan render)
 endforeach()
 target_link_libraries(cubey_vulkan PUBLIC cubey::core)
 target_link_libraries(cubey_render PUBLIC cubey::vulkan)
+{extra}
 cubey_write_foundation_target_graph("${{CMAKE_BINARY_DIR}}/targets.json")
 ''')
-        def configure():
-            result = subprocess.run([CMAKE, "-S", str(self.root), "-B", str(self.root / "build")],
-                                    capture_output=True, text=True, timeout=20)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        configure()
-        graph = self.root / "build/targets.json"
+        build = self.root / ("build-" + generator.replace(" ", "-") + "-" + configuration)
+        result = subprocess.run([CMAKE, "-S", str(self.root), "-B", str(build), "-G", generator,
+                                 "-DCMAKE_BUILD_TYPE=" + configuration,
+                                 "-DCMAKE_CONFIGURATION_TYPES=Debug;Release"],
+                                capture_output=True, text=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return build / "targets.json"
+
+    def test_actual_cmake_target_links_cannot_reverse_the_layers(self):
+        graph = self.configure_links()
         self.assertEqual(check_target_graph(graph), [])
-        # Physical includes stay clean, but this actual configured link is forbidden.
-        cmake.write_text(cmake.read_text().replace("cubey_write_foundation_target_graph(",
-            "target_link_libraries(cubey_core PRIVATE cubey::render)\ncubey_write_foundation_target_graph("))
-        configure()
-        self.assertEqual(check(self.root)[1], [])
-        self.assertTrue(any("core -> render" in e for e in check_target_graph(graph)))
+        for dependency in ("cubey::render", "cubey_render"):
+            for visibility in ("PRIVATE", "PUBLIC", "INTERFACE"):
+                with self.subTest(dependency=dependency, visibility=visibility):
+                    graph = self.configure_links(
+                        f"target_link_libraries(cubey_core {visibility} {dependency})")
+                    self.assertEqual(check(self.root)[1], [])
+                    self.assertTrue(any("core -> render" in e for e in check_target_graph(graph)))
+
+    def test_aliases_and_interface_wrappers_preserve_target_identity(self):
+        for extra in (
+            "add_library(renamed_render ALIAS cubey_render)\n"
+            "target_link_libraries(cubey_core PRIVATE renamed_render)",
+            "add_library(bridge INTERFACE)\n"
+            "target_link_libraries(bridge INTERFACE cubey::render)\n"
+            "target_link_libraries(cubey_core PUBLIC bridge)",
+            "add_library(bridge INTERFACE IMPORTED)\n"
+            "set_property(TARGET bridge PROPERTY INTERFACE_LINK_LIBRARIES cubey::render)\n"
+            "target_link_libraries(cubey_core PRIVATE bridge)",
+            "add_library(bridge_a INTERFACE)\nadd_library(bridge_b INTERFACE)\n"
+            "target_link_libraries(bridge_a INTERFACE bridge_b)\n"
+            "target_link_libraries(bridge_b INTERFACE bridge_a cubey::render)\n"
+            "target_link_libraries(cubey_core PRIVATE bridge_a)",
+        ):
+            with self.subTest(extra=extra):
+                errors = check_target_graph(self.configure_links(extra))
+                self.assertTrue(any("core -> render" in e for e in errors), errors)
+
+    def test_configured_generator_expressions_are_evaluated_by_cmake(self):
+        self.assertEqual(check_target_graph(self.configure_links(configuration="")), [])
+        extra = 'target_link_libraries(cubey_core PRIVATE "$<$<CONFIG:Release>:cubey::render>")'
+        self.assertEqual(check_target_graph(self.configure_links(extra)), [])
+        errors = check_target_graph(self.configure_links(extra, "Release"))
+        self.assertTrue(any("Release: configured target" in e and "core -> render" in e for e in errors))
+        errors = check_target_graph(self.configure_links(extra, generator="Ninja Multi-Config"))
+        self.assertTrue(any("Release:" in e and "core -> render" in e for e in errors))
+        self.assertFalse(any("Debug:" in e for e in errors), errors)
+        self.assertEqual(check_target_graph(self.configure_links(
+            'target_link_libraries(cubey_core INTERFACE "$<INSTALL_INTERFACE:cubey::render>")')), [])
+
+    def test_directory_wrappers_and_allowed_transitive_layers(self):
+        self.write("child/CMakeLists.txt", "target_link_libraries(cubey_core INTERFACE cubey::render)\n")
+        errors = check_target_graph(self.configure_links("add_subdirectory(child)"))
+        self.assertTrue(any("core -> render" in e for e in errors), errors)
+        # Scene -> render -> Vulkan is allowed. Do not reinterpret the lower
+        # library's dependencies as direct edges from the scene layer.
+        self.write("src/cubey/scene/example.cpp", "void scene_example() {}\n")
+        self.assertEqual(check_target_graph(self.configure_links(
+            "add_library(cubey_scene STATIC src/cubey/scene/example.cpp)\n"
+            "add_library(cubey::scene ALIAS cubey_scene)\n"
+            "target_link_libraries(cubey_scene PUBLIC cubey::render)")), [])
+
+    def test_missing_or_unevaluated_link_evidence_fails(self):
+        graph = self.configure_links()
+        manifest = json.loads(graph.read_text())
+        links = graph.parent / manifest["configurations"]["Debug"]["cubey_core"]
+        links.unlink()
+        self.assertTrue(check_target_graph(graph))
+        links.write_text("$<LINK_ONLY:cubey::render>\n\n")
+        self.assertTrue(any("unevaluated" in e for e in check_target_graph(graph)))
+
+    def test_opaque_directory_imports_cannot_silently_bypass_the_guard(self):
+        self.write("child/CMakeLists.txt",
+                   "add_library(hidden INTERFACE IMPORTED)\n"
+                   "set_property(TARGET hidden PROPERTY INTERFACE_LINK_LIBRARIES cubey::render)\n"
+                   "target_link_libraries(cubey_core INTERFACE hidden)\n")
+        errors = check_target_graph(self.configure_links("add_subdirectory(child)"))
+        self.assertTrue(any("cannot inspect directory-local target hidden" in e for e in errors), errors)
+
+    def test_compiled_foreign_library_platform_imports_are_terminal(self):
+        self.write("vendor/CMakeLists.txt",
+                   "project(External LANGUAGES CXX)\n"
+                   "add_library(platform INTERFACE IMPORTED)\n"
+                   "add_library(external STATIC external.cpp)\n"
+                   "target_link_libraries(external PRIVATE platform)\n")
+        self.write("vendor/external.cpp", "void external_example() {}\n")
+        self.assertEqual(check_target_graph(self.configure_links(
+            "add_subdirectory(vendor)\ntarget_link_libraries(cubey_core PRIVATE external)")), [])
 
     def test_procedural_is_part_of_core_and_new_layers_require_policy(self):
         self.write("include/cubey/procedural/example.h", "#include <cubey/core/math.h>\n")

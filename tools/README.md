@@ -29,5 +29,12 @@ Compile configured public headers independently with
 ordinary build and uses each owning library's public usage requirements.
 
 The `foundation_layers` CTest group also checks the configured CMake library
-link graph. To run both checks directly after configuration:
+link graph. CMake evaluates direct and interface link lists for every configured
+build variant. The checker resolves target aliases and follows transparent
+interface/object wrappers, stopping at each independently checked library
+boundary and compiled foreign libraries. Missing or unevaluated evidence fails.
+Directory-local imported targets used on a checked path must be exposed globally
+so they can be inspected.
+To run both checks directly after configuration:
 `python3 -B tools/check_foundation_layers.py --target-graph build/dev/foundation-targets.json`.
+Keep the adjacent generated `.json.links/` directory with that manifest.

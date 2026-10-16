@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the foundation's physical include boundaries, including private adapters."""
+"""Enforce foundation includes and configured links, including private adapters."""
 import argparse
 import json
 from pathlib import Path
@@ -69,19 +69,69 @@ def check(root):
 
 
 def check_target_graph(path):
-    graph = json.loads(path.read_text())
-    errors = []
-    if not graph:
-        errors.append("no configured foundation targets found")
-    for owner, dependencies in graph.items():
-        if owner not in ALLOWED:
-            errors.append(f"unknown configured foundation layer {owner}")
-            continue
-        for dependency in dependencies:
-            if dependency != owner and dependency not in ALLOWED[owner]:
-                errors.append(f"configured target has forbidden dependency {owner} -> {dependency}")
-    return errors
-
+    """Check every configured variant, traversing non-foundation wrappers."""
+    try:
+        graph = json.loads(path.read_text())
+        if graph.get("version") != 2:
+            return ["foundation target graph has no supported configured-link schema"]
+        modules = graph["modules"]
+        aliases = graph["aliases"]
+        unresolved = set(graph["unresolved_targets"])
+        external = set(graph["external_targets"])
+        configurations = graph["configurations"]
+        if not modules or not configurations:
+            return ["no configured foundation targets/configurations found"]
+        errors = []
+        for module in modules.values():
+            if module not in ALLOWED:
+                errors.append(f"unknown configured foundation layer {module}")
+        for configuration, files in configurations.items():
+            links = {}
+            for target, relative in files.items():
+                lines = (path.parent / relative).read_text().splitlines()
+                if len(lines) != 2 or any("$<" in line for line in lines):
+                    errors.append(f"{configuration}: unevaluated/invalid links for {target}")
+                    continue
+                links[target] = list(dict.fromkeys(
+                    name.replace(r"\;", ";") for line in lines
+                    for name in re.split(r"(?<!\\);", line)
+                    if name and not name.startswith("::@")))
+            for target, owner in modules.items():
+                if owner not in ALLOWED:
+                    continue
+                if target not in links:
+                    errors.append(f"{configuration}: missing configured target {target}")
+                    continue
+                pending = [(target, [])]
+                visited = set()
+                while pending:
+                    node, route = pending.pop()
+                    if node in visited:
+                        continue
+                    visited.add(node)
+                    for dependency in links[node]:
+                        actual = aliases.get(dependency, dependency)
+                        layer = modules.get(actual)
+                        if layer is not None:
+                            if layer != owner and layer not in ALLOWED[owner]:
+                                via = " via " + " -> ".join(route) if route else ""
+                                errors.append(f"{configuration}: configured target has forbidden "
+                                              f"dependency {owner} -> {layer}{via}")
+                            # Each foundation boundary is checked independently;
+                            # its permitted lower layers are not direct edges of
+                            # the current owner. Transparent wrappers are.
+                        elif actual in external:
+                            continue
+                        elif actual in links:
+                            pending.append((actual, [*route, actual]))
+                        elif actual in unresolved:
+                            errors.append(f"{configuration}: cannot inspect directory-local target "
+                                          f"{actual}; expose imported foundation dependencies globally")
+                        elif actual.startswith("cubey::"):
+                            errors.append(f"{configuration}: unresolved foundation target {actual}")
+        return sorted(set(errors))
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as error:
+        return [f"invalid configured foundation target graph: {error}"]
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -94,7 +144,8 @@ def main():
     if errors:
         print("\n".join(errors))
         return 1
-    print(f"PASS: foundation include boundaries ({len(files)} source/header files)")
+    boundaries = "include/configured link" if args.target_graph else "include"
+    print(f"PASS: foundation {boundaries} boundaries ({len(files)} source/header files)")
     return 0
 
 

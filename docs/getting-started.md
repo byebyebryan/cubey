@@ -93,6 +93,11 @@ variables, so ordinary local and SSH validation does not depend on X11,
 Wayland, or SDDM. A usable Vulkan device is still required. Cloud, host and terrain
 lifecycle fixtures also require the Khronos validation layer.
 
+For a quick core/build/policy check, use `ctest --preset dev-foundation`. It runs
+the CPU core suite, standalone-header build, dependency guards, shader rebuild
+fixtures and repository layout checks. Lifecycle and consumer GPU checks remain
+in the full `dev` and dedicated synchronization presets.
+
 For the owned-code AddressSanitizer/UBSan gate, configure and build the
 sanitized tree, then run its test preset:
 
