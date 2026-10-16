@@ -1334,7 +1334,14 @@ int main() {
         const std::string pillar_fragment_shader =
             read_text_file(source_root / "shaders/ocean_reference_pillar.frag");
         const std::string mesh_header = read_text_file(render_include_root / "ocean_mesh.h");
-        const std::string app_source = read_text_file(source_root / "ocean_app.cpp");
+        const std::string app_source = [&] {
+            std::string text;
+            for (const char* file : {"ocean_app_internal.h", "ocean_app.cpp", "ocean_app_resources.cpp",
+                                     "ocean_app_frame.cpp", "ocean_app_render.cpp", "ocean_app_support.cpp"}) {
+                text += read_text_file(source_root / file) + "\n";
+            }
+            return text;
+        }();
         const std::string ui_source = read_text_file(source_root / "ocean_ui.cpp");
         const std::string gpu_resources_source =
             read_text_file(engine_source_root / "ocean_surface_resources.cpp");

@@ -15,6 +15,10 @@ cubey_add_app_target(
         128
     SOURCES
         ocean_app.cpp
+        ocean_app_resources.cpp
+        ocean_app_frame.cpp
+        ocean_app_render.cpp
+        ocean_app_support.cpp
         ocean_spectrum_diagnostics.cpp
         ocean_ui.cpp
         main.cpp

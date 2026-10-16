@@ -290,7 +290,7 @@ void test_cloud_scene_depth_consumers_select_explicit_policies() {
     const std::filesystem::path root = source_root_path();
     const std::string gltf =
         read_text_file(root / "projects/gltf_viewer/gltf_viewer_scene.cpp");
-    const std::string ocean = read_text_file(root / "projects/ocean/ocean_app.cpp");
+    const std::string ocean = read_text_file(root / "projects/ocean/ocean_app_frame.cpp");
     const std::string water =
         read_text_file(root / "projects/fluid/sim/water_3d/water_3d_app.cpp");
     constexpr std::string_view opaque = "CloudLayerSceneDepthMode::OpaqueForeground";

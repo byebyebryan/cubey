@@ -158,3 +158,10 @@ sea-state, scale, lighting, and diagnostic comparisons in one manifest.
 See [Surface Ocean V1](../notes/ocean-surface-v1.md),
 [Ocean visual captures](../notes/ocean-visual-captures.md), and
 [Ocean performance](../notes/ocean-performance.md).
+
+The Ocean application keeps its product policy behind `ocean_app_internal.h`.
+`ocean_app.cpp` owns host/update orchestration, `ocean_app_resources.cpp` owns
+resource integration, `ocean_app_frame.cpp` derives project frame/presentation
+inputs, and `ocean_app_render.cpp` records the project graph. Project-local
+camera, geometry and configuration helpers live in `ocean_app_support.cpp`.
+These private modules do not expand the shared library API.
