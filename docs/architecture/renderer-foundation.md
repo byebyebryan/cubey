@@ -54,6 +54,14 @@ The current renderer stack is intentionally split by ownership:
   which renderer or pass helpers to use, which assets/settings to submit, and
   when resources are created or destroyed.
 
+`tools/check_foundation_layers.py` enforces physical include directions across
+public and private foundation files, including relative includes. CPU layers
+cannot include Vulkan/GLFW, public headers cannot import private source headers,
+and library code cannot import projects or studies. The scene recording adapter
+is the sole direct scene-to-Vulkan exception. Negative fixtures exercise these
+boundaries. `foundation_public_headers` compiles every configured public header
+alone with its owning target's public compile requirements.
+
 `cubey::render` owns renderer-facing vocabulary:
 
 - target views: color, depth, extent, format, and image/view handles;

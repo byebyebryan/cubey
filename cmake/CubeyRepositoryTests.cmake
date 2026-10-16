@@ -1,4 +1,5 @@
 include_guard(GLOBAL)
+include("${CMAKE_CURRENT_LIST_DIR}/CubeyFoundationChecks.cmake")
 
 # Derive application coverage from the configured targets, including shared
 # implementation files outside a frontend's source directory. Disabled studies
@@ -38,6 +39,7 @@ endfunction()
 
 function(cubey_add_repository_tests)
     cubey_add_render_app_policy_test()
+    cubey_add_public_header_checks()
 
     file(GLOB_RECURSE capture_scripts CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/projects/capture*.sh"
@@ -60,6 +62,11 @@ function(cubey_add_repository_tests)
 
     find_program(CUBEY_REPOSITORY_PYTHON NAMES python3)
     if (CUBEY_REPOSITORY_PYTHON)
+        add_test(NAME foundation_layers
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_foundation_layers.py")
+        add_test(NAME foundation_layer_rules
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_foundation_layers.py")
+        set_tests_properties(foundation_layers foundation_layer_rules PROPERTIES LABELS "unit;build;policy" TIMEOUT 30)
         add_test(NAME project_layout_hygiene
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_project_layout.py")
         add_test(NAME project_layout_rules

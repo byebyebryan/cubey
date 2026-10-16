@@ -20,3 +20,10 @@ python3 -B tests/tools/test_report_server.py
 ```
 
 Shader incremental-build fixtures: `python3 -B tests/tools/test_shader_build.py`.
+
+Foundation include boundaries: `python3 -B tools/check_foundation_layers.py`.
+Negative fixtures: `python3 -B tests/tools/test_foundation_layers.py`.
+Compile configured public headers independently with
+`cmake --build --preset dev --target cubey_header_checks`, or run the
+`foundation_public_headers` CTest group. The header target is excluded from the
+ordinary build and uses each owning library's public usage requirements.
