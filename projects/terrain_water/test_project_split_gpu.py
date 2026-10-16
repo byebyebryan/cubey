@@ -28,7 +28,9 @@ def main():
         out = args.out.resolve()
         out.mkdir()  # Never overwrite a prior review.
     else:
-        out = Path(tempfile.mkdtemp(prefix="terrain-water-split-", dir=ROOT / "outputs/fluid"))
+        output_root = ROOT / "outputs/fluid"
+        output_root.mkdir(parents=True, exist_ok=True)
+        out = Path(tempfile.mkdtemp(prefix="terrain-water-split-", dir=output_root))
     old, new = args.legacy.resolve(strict=True), args.terrain.resolve(strict=True)
     shaders = list((new.parent / "shaders").glob("*.spv"))
     if not shaders or any(sha(path) != sha(old.parent / "shaders" / path.name) for path in shaders):
