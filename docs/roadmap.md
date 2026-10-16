@@ -28,11 +28,15 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
-The 2026-10 foundation consolidation is in progress: shader incremental build
-correctness, enforceable dependency/header boundaries, cloud resource-lifecycle
-and synchronization-validation evidence, then cohesive cloud/Ocean runtime and
-Ocean/Terrain application modules. Existing renderer math, numerical behavior,
-product defaults, staged activation and GPU retirement remain the baseline.
+The 2026-10 foundation consolidation is complete: compiler-tracked shader
+include dependencies, configured library/include direction checks, standalone
+public-header compilation, a real cloud lifecycle/synchronization-validation
+lane, cohesive cloud/Ocean runtime implementations, and private Ocean/Terrain
+application modules. Renderer math, numerical behavior, product defaults,
+staged activation and GPU retirement are preserved. Closure covered 245 dev
+test groups, seven configure/policy variants, focused ASan/UBSan checks and seven
+byte-identical consumer captures. Eighteen windowed smokes passed on virtual
+X11; physical desktop interaction and human visual acceptance were not assessed.
 See [resource lifecycle contracts](architecture/renderer-foundation.md#resource-lifecycle-contracts).
 
 Planet is paused as of 2026-10-15. Its orbital reboot did not reach the intended

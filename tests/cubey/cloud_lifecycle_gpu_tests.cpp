@@ -153,8 +153,27 @@ void lifecycle(vulkan::Device& device, vulkan::SubmissionCoordinator& submission
     cloud.destroy_swapchain_resources();
     cloud.destroy_generated_resources();
     require(!cloud.generated_resources_created(), "cloud shutdown retained generated resources");
+    // Re-enable the same runtime after a full feature shutdown, including
+    // regenerated products. Old temporal validity must not survive the restart.
+    cloud.create_generated_resources(device, gpu, shaders.generated, config);
+    cloud.create_swapchain_resources(device, shaders,
+                                     render::CloudLayerCompositeMode::ExternalBackground,
+                                     VK_FORMAT_R8G8B8A8_UNORM, {32, 24}, slots, config);
+    require(cloud.generated_resources_created(),
+            "cloud re-enable did not recreate generated products");
+    render::RenderGraphBuilder restarted;
+    const auto fresh = cloud.declare_product(
+        restarted, {32, 24}, config, {0, slots},
+        render::cloud_layer_frame_uniforms(config, {.target_extent = {32, 24}}));
+    const auto restarted_graph = restarted.compile();
+    require(fresh.temporal_pass_enabled, "cloud re-enable did not restore temporal participation");
+    const auto restarted_history = restarted_graph.texture(fresh.history_cloud_read).initial_state;
+    require(restarted_history.has_value() && restarted_history->layout == VK_IMAGE_LAYOUT_UNDEFINED,
+            "cloud re-enable retained stale temporal history");
+    cloud.destroy_swapchain_resources();
+    cloud.destroy_generated_resources();
     std::cout << "cloud lifecycle PASS: " << slots
-              << " slots, reuse/recreate/history/toggle/failure/shutdown\n";
+              << " slots, reuse/recreate/history/toggle/failure/shutdown/re-enable\n";
 }
 } // namespace
 

@@ -86,10 +86,12 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-`dev` includes headless tests but excludes windowed and dedicated synchronization-validation tests. Headless
-PNG and video tests deliberately run without desktop-session environment
+`dev` includes headless tests but excludes windowed and dedicated
+synchronization-validation tests. Headless PNG and video tests deliberately run
+without desktop-session environment
 variables, so ordinary local and SSH validation does not depend on X11,
-Wayland, or SDDM. A usable Vulkan device is still required.
+Wayland, or SDDM. A usable Vulkan device is still required. The cloud lifecycle
+fixture also requires the Khronos validation layer.
 
 For the owned-code AddressSanitizer/UBSan gate, configure and build the
 sanitized tree, then run its test preset:
@@ -115,8 +117,9 @@ cmake --build --preset asan
 ctest --preset asan-gpu
 ```
 
-`asan-gpu` selects headless tests labeled `gpu`, excluding `windowed`, `sync_validation` and
-`sanitizer_external`. It keeps AddressSanitizer invalid-access detection and
+`asan-gpu` selects headless tests labeled `gpu`, excluding `windowed`,
+`sync_validation` and `sanitizer_external`. It keeps AddressSanitizer
+invalid-access detection and
 UBSan fatal, but disables only LeakSanitizer: driver, libdrm, and DBus process-
 lifetime allocations cannot be attributed to Cubey at process exit. Tests skip
 cleanly when no suitable Vulkan device is available. The ordinary `dev` lane
@@ -137,10 +140,10 @@ requires exactly the expected diagnostic with `VK_LAYER_VALIDATE_SYNC=1`.
 The cloud lifecycle test runs separately with synchronization validation enabled
 and fails on any validation error. It exercises real GPU work with one/two frame
 slots, temporal invalidation/toggling, target recreation, failed creation/retry
-and shutdown. Missing capabilities or an empty test selection fail this gate rather than establishing
-coverage. The ordinary dev suite runs the same lifecycle fixture with standard
-validation; dedicated synchronization tests stay outside ordinary and sanitizer
-presets.
+and full shutdown/re-enable. Missing capabilities or an empty test selection fail
+this gate rather than establishing coverage. The ordinary dev suite runs the same
+lifecycle fixture with standard validation; dedicated synchronization tests stay
+outside ordinary and sanitizer presets.
 
 Run the GLFW/swapchain tests only when opening windows is intentional:
 

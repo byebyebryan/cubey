@@ -116,12 +116,20 @@ packets to render/Vulkan recording. Its dependencies do not imply that asset
 loading, terrain products or scene edit/snapshot code may own GPU work.
 Projects retain camera, simulation, site selection and artistic policy.
 
-The 2026-10 foundation consolidation preserves these contracts while tightening
-shader rebuild dependencies, layer/header checks and cloud lifecycle evidence,
-then separating cloud/Ocean runtime and project-local orchestration. Each slice
-needs affected behavior checks before a local checkpoint commit. Final closure
-requires the full dev suite, supported configuration matrix and recorded capture
-comparisons; native windowed and human visual acceptance remain separate.
+The shared cloud and Ocean implementations separate configuration/frame
+planning, generated products, target resources, graph/command recording and
+temporal history where applicable. Ocean and Terrain keep host flow, resource
+integration, controls and rendering in private project modules. These boundaries
+preserve existing APIs and rendering/numerical behavior.
+
+`foundation_layers`, `foundation_public_headers` and `shader_build_rules` guard
+include/link direction, public compile requirements and actual shader rebuilds.
+`cloud_lifecycle_gpu` covers pending slot recordings, target recreation, temporal
+invalidation, failed creation/retry and full shutdown/re-enable.
+`dev-sync-validation` proves enabled synchronization checks with an intentional
+unsubmitted hazard before running the clean lifecycle fixture. Consumer capture
+comparisons and the full dev suite remain integration gates; virtual windowed,
+physical desktop and human visual acceptance are distinct evidence.
 The design precedents are [Vulkan threading](https://docs.vulkan.org/guide/latest/threading.html),
 [Filament's framegraph](https://google.github.io/filament/notes/framegraph.html),
 and [Godot compositor lifetime/threading](https://docs.godotengine.org/en/stable/tutorials/rendering/compositor.html).
