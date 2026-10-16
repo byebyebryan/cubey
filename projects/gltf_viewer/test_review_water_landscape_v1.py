@@ -5,9 +5,55 @@ import tempfile
 from unittest.mock import patch
 import review_water_landscape_v1 as review
 import review_landscape_depth_v1 as depth
+import review_showcase_solar_v1 as solar
 
 
 class WaterLandscapeAuditionTests(unittest.TestCase):
+    def test_solar_recipe_starts_front_on_and_preserves_depth_and_fields(self):
+        args = solar.command(Path("candidate.mp4"), 45)
+        values = {flag: args[args.index(flag) + 1] for flag in (
+            "--time-hours", "--time-speed-hours-per-second", "--capture-camera-yaw",
+            "--capture-video-orbit-degrees", "--terrain-landscape-depth", "--terrain-landscape",
+            "--frames", "--fps", "--width", "--height")}
+        self.assertEqual(values, {"--time-hours": "14.0", "--time-speed-hours-per-second": "0.875",
+            "--capture-camera-yaw": "0.0", "--capture-video-orbit-degrees": "45",
+            "--terrain-landscape-depth": "fitted", "--terrain-landscape": "mountain-local",
+            "--frames": "480", "--fps": "60", "--width": "1920", "--height": "1080"})
+        for flag in ("--headless", "--require-validation", "--terrain-water-audit", "--no-clouds"):
+            self.assertIn(flag, args)
+
+    def test_solar_caption_matches_discrete_eased_endpoints(self):
+        start, end = solar.sample(0, 45), solar.sample(479, 45)
+        self.assertEqual(start["yaw_degrees"], 0)
+        self.assertAlmostEqual(start["solar_hours"], 14.0145833333)
+        self.assertEqual(end["yaw_degrees"], 45)
+        self.assertAlmostEqual(end["solar_hours"], 21)
+        self.assertLess(solar.sample(120, 45)["yaw_degrees"], 45 / 4)
+        with self.assertRaises(ValueError):
+            solar.sample(480, 45)
+
+    def test_refined_solar_reuses_auto_exposure_and_ends_at_night(self):
+        args = solar.command(Path("candidate.mp4"), 45, refined=True)
+        self.assertNotIn("--exposure", args)
+        self.assertEqual(args[args.index("--star-intensity") + 1], "0")
+        self.assertEqual(args[args.index("--time-speed-hours-per-second") + 1], "0.6875")
+        self.assertEqual(solar.sample(479, 45, solar.REFINED_HOURS_PER_SECOND)["solar_hours"], 19.5)
+
+    def test_solar_freeze_refuses_overwrite_and_runtime_drift(self):
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(solar.base, "runtime", return_value={"binary": "frozen"}), \
+             patch.object(solar.base, "identities", return_value={}), \
+             patch.object(solar.base, "digest", return_value="recipe-hash"), \
+             patch.object(solar.subprocess, "check_output", side_effect=[b"", "source-head"]):
+            out = Path(temporary) / "fresh"
+            solar.freeze(out)
+            solar.verify(out)
+            with self.assertRaises(FileExistsError):
+                solar.freeze(out)
+            with patch.object(solar.base, "runtime", return_value={"binary": "changed"}):
+                with self.assertRaisesRegex(ValueError, "runtime or inputs changed"):
+                    solar.verify(out)
+
     def test_bounded_matrix(self):
         self.assertEqual(len(review.OUT_IDS) * len(review.HEADINGS) * len(review.PITCHES), 24)
         self.assertEqual(len(set(review.OUT_IDS)), 4)
