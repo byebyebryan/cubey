@@ -5,7 +5,10 @@ classification or replacement of the published glTF highlight.
 
 **Current status:** Owner accepted A and the fitted-depth correction on
 2026-10-15. A fresh clean-source capture is promoted into the repository gallery,
-with master, recipe and poster. GitHub attachment upload and push are separate.
+with master, recipe and poster. The exact gallery bytes are now pushed and
+published as a GitHub native player; the
+[publication receipt](../../docs/media/showcase/gltf-terrain-publication.json)
+records the separate upload and anonymous download verification.
 The sections below retain the original gated-study history and its limits.
 
 ## Protocol and first gate

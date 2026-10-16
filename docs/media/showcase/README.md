@@ -2,7 +2,7 @@
 
 This directory keeps five selected highlights
 reproducible and independent of GitHub's presentation layer. The
-root highlights use native video players where published, or clickable posters;
+root highlights use five published native video players with poster fallbacks;
 these committed MP4s, generated posters, and the manifest are the durable,
 hashable source of truth.
 
@@ -60,8 +60,12 @@ flow and anchored by closed [issue #1](https://github.com/byebyebryan/cubey/issu
 at source commit `e21fdd86ba83049d0d187caf3973b1124163e576`. The same mapping
 is recorded in `manifest.json`. GitHub serves those attachments to the native
 players. The original dry-terrain glTF URL is historical now: it does not serve
-the new saved-water A film. The current A clip uses its committed poster/MP4
-fallback until a separate attachment upload; no replacement URL is fabricated.
+the new saved-water A film. That film was published from media package commit
+`023af0be` in its own
+[provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357).
+Its [publication receipt](gltf-terrain-publication.json) records the returned
+native-player URL and byte-identical anonymous download, without changing the
+capture recipe or historical attachment.
 
 Fluid's exact gallery MP4 was added in a separate
 [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145)
@@ -73,7 +77,7 @@ attachment mappings and issue body were not replaced.
 | Highlight | Native player attachment | Committed MP4 | Poster fallback |
 | --- | --- | --- | --- |
 | Ocean | https://github.com/user-attachments/assets/dc923c55-1061-402f-92ad-09b7da2e7208 | [MP4](ocean.mp4) | [Poster](ocean.png) |
-| glTF + Terrain | Selected A upload pending; [legacy dry-terrain attachment](https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02) | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
+| glTF + Terrain | https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4 | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
 | Water 3D | https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75 | [MP4](water-3d.mp4) | [Poster](water-3d.png) |
 | Fire 3D | https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0 | [MP4](fire-3d.mp4) | [Poster](fire-3d.png) |
 | Fluid 2.5D | https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08 | [MP4](fluid-25d.mp4) | [Poster](fluid-25d.png) |

@@ -110,14 +110,13 @@ Storyboard and Capture Plan](showcase.md). Its twelve shot cards and
 provenance rules remain the storyboard authority. Five highlights are now
 creatively locked and packaged in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
-Water 3D, Fire 3D, and Fluid 2.5D. Four have current GitHub native players;
-the newly selected saved-water glTF A cut uses a committed-poster fallback
-until its separate attachment upload. Fluid's owner-selected eight-second Joining
+Water 3D, Fire 3D, and Fluid 2.5D. All five have current GitHub native players,
+including the owner-selected saved-water glTF A cut. Fluid's eight-second Joining
 valleys sunset shows recorded streams gathering into a lake; its separate
 36-second Mountain rain-off film remains a legacy study. Attachment identities
-and exact bytes are recorded in the manifest and Fluid publication receipt.
+and exact bytes are recorded in the manifest and the Fluid/glTF publication receipts.
 The remaining seven cards are future editorial work. The original four
-published highlights are unchanged.
+attachment mappings remain unchanged historical provenance.
 
 The bounded progressive-initialization slice is complete for generated
 atmosphere atlases, Planet surface products, terrain products, and glTF Viewer

@@ -71,9 +71,11 @@
         "path": "docs/media/showcase/gltf-terrain.mp4",
         "bytes": 1135650,
         "sha256": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233",
-        "github_attachment_url": null,
-        "state": "owner-approved saved-water A; packaged; GitHub attachment pending",
-        "recipe": "docs/media/showcase/gltf-terrain-recipe.json"
+        "github_attachment_url": "https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4",
+        "state": "published; owner-selected saved-water A; attachment bytes verified",
+        "recipe": "docs/media/showcase/gltf-terrain-recipe.json",
+        "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357",
+        "receipt": "docs/media/showcase/gltf-terrain-publication.json"
       },
       "poster": {
         "path": "docs/media/showcase/gltf-terrain.png",

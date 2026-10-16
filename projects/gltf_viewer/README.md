@@ -109,7 +109,9 @@ or underwater camera. The foreground uses shared sky lighting, not reflections
 of the retained terrain/water. Fitted depth is accepted for this bounded use;
 native Cubey GUI/layout acceptance remains separate from the reviewed film.
 
-[![glTF + Terrain showcase poster](../../docs/media/showcase/gltf-terrain.png)](../../docs/media/showcase/gltf-terrain.mp4)
+https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4
+
+[Committed MP4](../../docs/media/showcase/gltf-terrain.mp4) · [Poster fallback](../../docs/media/showcase/gltf-terrain.png)
 
 The eight-second morning highlight stages the Damaged Helmet above the original
 mountain, with a prominent lake on its right. It uses a held 12-hour saved water
@@ -122,7 +124,9 @@ and [complete recipe](../../docs/media/showcase/gltf-terrain-recipe.json) retain
 the clean source revision, renderer/input hashes, exact command and validation.
 All 480 decoded source frames match the owner-approved depth-fixed film.
 The 720p/60 gallery copy is a Lanczos derivative, not a native 720p capture.
-Its GitHub attachment is a separate upload; the clickable poster is current.
+Its [publication receipt](../../docs/media/showcase/gltf-terrain-publication.json)
+records the exact-byte anonymous download verification and
+[provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357).
 
 The exact native capture uses clear-sky shared lighting, fixed 10:00 solar time,
 distance scale `0.70`, exposure `0`, fitted independent foreground/background

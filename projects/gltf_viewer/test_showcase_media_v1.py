@@ -60,8 +60,7 @@ class ShowcaseMedia(unittest.TestCase):
         self.assertEqual(self.recipe["scene"]["orbit_degrees"], 20)
 
     def test_legacy_publication_is_not_claimed_for_current_bytes(self):
-        self.assertIsNone(self.entry["publication"]["github_attachment_url"])
-        self.assertIn("pending", self.entry["publication"]["state"])
+        self.assertIn("published", self.entry["publication"]["state"])
         legacy = json.loads((ROOT / self.entry["legacy"]["recipe"]).read_bytes())
         self.assertEqual(legacy["entry"]["publication"]["sha256"],
                          "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2")
@@ -69,10 +68,40 @@ class ShowcaseMedia(unittest.TestCase):
                          self.entry["legacy"]["github_attachment_url"])
         root = (ROOT / "README.md").read_text()
         self.assertIn("](docs/media/showcase/gltf-terrain.mp4)", root)
+        self.assertIn("\n" + self.entry["publication"]["github_attachment_url"] + "\n", root)
+        self.assertNotEqual(self.entry["publication"]["github_attachment_url"],
+                            self.entry["legacy"]["github_attachment_url"])
         self.assertNotIn("\n" + self.entry["legacy"]["github_attachment_url"] + "\n", root)
         self.assertEqual(self.entry["license"], legacy["entry"]["license"])
         self.assertEqual(self.recipe["license"], self.entry["license"])
         self.assertEqual(self.entry["license"]["media"], "CC-BY-NC-4.0")
+
+    def test_publication_receipt_matches_current_bytes_and_documents(self):
+        publication = self.entry["publication"]
+        receipt = json.loads((ROOT / publication["receipt"]).read_bytes())
+        self.assertEqual(receipt["schema"], "cubey.gltf.saved-water-publication.v1")
+        self.assertEqual(receipt["source_media_commit"],
+                         "023af0be713403178449606509c25244737be306")
+        for key in ("bytes", "sha256", "github_attachment_url", "provenance_comment_url"):
+            self.assertEqual(receipt[key], publication[key])
+        self.assertEqual(receipt["media_path"], publication["path"])
+        self.assertEqual(receipt["capture_recipe"], publication["recipe"])
+        self.assertEqual(receipt["capture_recipe_sha256"],
+                         hashlib.sha256((ROOT / publication["recipe"]).read_bytes()).hexdigest())
+        verification = receipt["verification"]
+        public = verification["anonymous_public_page_video"]
+        for key in ("bytes", "sha256"):
+            self.assertEqual(public[key], publication[key])
+        self.assertEqual((public["http_status"], public["content_type"]), (200, "video/mp4"))
+        self.assertEqual((public["width"], public["height"], public["frames"], public["fps"],
+                          public["duration_seconds"]), (1280, 720, 480, "60/1", 8))
+        self.assertIsNone(verification["browser_native_player"]["media_error"])
+        for key in ("issue_remains_closed", "original_four_attachment_mappings_unchanged",
+                    "fluid_publication_comment_retained"):
+            self.assertTrue(verification[key])
+        for path in (ROOT / "README.md", ROOT / "projects/gltf_viewer/README.md",
+                     MEDIA / "README.md"):
+            self.assertIn(publication["github_attachment_url"], path.read_text())
 
 
 if __name__ == "__main__":
