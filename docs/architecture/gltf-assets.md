@@ -331,7 +331,7 @@ assets and generated captures stay under the isolated build tree.
 
 Performance evidence is separate from those compatibility and conformance
 checks. The release-only
-`projects/gltf_viewer/profile_gltf_loading.sh` workflow profiles the staged
+`projects/gltf_viewer/tools/profile_gltf_loading.sh` workflow profiles the staged
 metadata probe, asset load, scene preparation, GPU residency, and activation
 boundaries against a pinned five-asset Sample Assets corpus. It emits a
 complete 46-metric `gltf_loading` generation set per observation, including

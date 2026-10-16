@@ -88,11 +88,11 @@ if (BUILD_TESTING)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME gltf_viewer_water_landscape_review_helpers
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
-            -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_water_landscape_v1.py)
+            -s "${CMAKE_SOURCE_DIR}/studies/gltf_viewer" -p test_review_water_landscape_v1.py)
     set_tests_properties(gltf_viewer_water_landscape_review_helpers PROPERTIES LABELS "gltf;viewer;structural")
     add_test(NAME gltf_viewer_showcase_media
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
-            -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_showcase_media_v1.py)
+            -s "${CMAKE_SOURCE_DIR}/studies/gltf_viewer" -p test_showcase_media_v1.py)
     set_tests_properties(gltf_viewer_showcase_media PROPERTIES LABELS "gltf;viewer;structural;media")
     add_test(NAME gltf_viewer_headless_profiles_scene
         COMMAND "${CMAKE_COMMAND}" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY
@@ -178,7 +178,7 @@ if (BUILD_TESTING)
         NAME gltf_viewer_loading_profile_script_tests
         COMMAND
             bash
-            "${CMAKE_CURRENT_SOURCE_DIR}/profile_gltf_loading_tests.sh"
+            "${CMAKE_SOURCE_DIR}/projects/gltf_viewer/tools/profile_gltf_loading_tests.sh"
     )
     set_property(
         TEST gltf_viewer_loading_profile_script_tests

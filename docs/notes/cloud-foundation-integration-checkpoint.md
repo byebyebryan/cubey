@@ -128,7 +128,7 @@ aerial/orbit products remain out of scope.
 Current absorbed-cloud review pack:
 
 ```sh
-projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
+projects/atmosphere/tools/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
 ```
 
 The pack now defaults to 1920x1080 full-quality output and includes a
@@ -163,7 +163,7 @@ The production reboot happens in the shared cloud layer through
 `projects/atmosphere`. Use:
 
 ```sh
-projects/atmosphere/capture_cloud_ref_parity.sh outputs/cloud-ref-parity-current
+projects/atmosphere/tools/capture_cloud_ref_parity.sh outputs/cloud-ref-parity-current
 ```
 
 as the comparison pack before changing shared cloud lighting or horizon
@@ -193,7 +193,7 @@ optical thickness, keep deterministic single-frame sampling, and rely on the
 terrain-post resolve for the final edge cleanup. The current capture pack is:
 
 ```sh
-projects/atmosphere/capture_cloud_ref_parity.sh outputs/cloud-ref-parity-current
+projects/atmosphere/tools/capture_cloud_ref_parity.sh outputs/cloud-ref-parity-current
 ```
 
 Current read:
@@ -224,7 +224,7 @@ far-horizon layer is disabled by `reference-parity`.
 Use this capture pack for future lighting changes:
 
 ```sh
-projects/atmosphere/capture_cloud_lighting_regimes.sh outputs/cloud-lighting-regimes-current
+projects/atmosphere/tools/capture_cloud_lighting_regimes.sh outputs/cloud-lighting-regimes-current
 ```
 
 Current read:
@@ -287,7 +287,7 @@ local march.
 Use this review pack for the surface horizon handoff:
 
 ```sh
-projects/atmosphere/capture_cloud_surface_horizon_regimes.sh outputs/cloud-surface-horizon-handoff
+projects/atmosphere/tools/capture_cloud_surface_horizon_regimes.sh outputs/cloud-surface-horizon-handoff
 ```
 
 The handoff should be visible in `horizon-handoff` and

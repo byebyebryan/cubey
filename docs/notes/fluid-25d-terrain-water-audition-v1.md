@@ -55,11 +55,11 @@ diagnostic-interval path. Slow/pooled means wet and at or below 0.02 m/s; it
 does not alter the solver.
 
 The repeatable runner is
-[run_terrain_water_audition.sh](../../projects/fluid/fluid_25d/run_terrain_water_audition.sh).
+[run_terrain_water_audition.sh](../../studies/fluid_25d/harness/run_terrain_water_audition.sh).
 The live invocation was:
 
 ~~~
-projects/fluid/fluid_25d/run_terrain_water_audition.sh \
+studies/fluid_25d/harness/run_terrain_water_audition.sh \
   /tmp/fluid25d-terrain-water-audition-20260915
 ~~~
 

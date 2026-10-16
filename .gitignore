@@ -4,3 +4,5 @@ cache/
 __pycache__/
 compile_commands.json
 outputs/
+# Qualified private binaries retain their original absolute build/RPATH location.
+/projects/fluid/fluid_25d/external_synxflow/private-builds/

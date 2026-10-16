@@ -38,5 +38,5 @@ Regenerate the pack after building the two applications and `cubey_png_stats`
 and generating the default terrain asset:
 
 ```sh
-projects/terrain/capture_foundation_acceptance.sh
+studies/terrain/landscapes/capture_foundation_acceptance.sh
 ```

@@ -375,6 +375,8 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
         CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/projects/capture*.sh"
         "${CMAKE_SOURCE_DIR}/projects/*/capture*.sh"
+        "${CMAKE_SOURCE_DIR}/projects/*/tools/capture*.sh"
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/capture*.sh"
     )
     add_test(
         NAME capture_review_scripts_use_headless

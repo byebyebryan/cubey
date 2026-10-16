@@ -92,7 +92,7 @@ material output.
 Run:
 
 ```sh
-projects/terrain/capture_climate_calibration_study.sh
+studies/terrain/landscapes/capture_climate_calibration_study.sh
 ```
 
 The pack is written to `outputs/terrain/climate-calibration-v1/`. It contains

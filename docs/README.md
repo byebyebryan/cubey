@@ -101,7 +101,7 @@ Active projects:
 - [Fluid 2.5D builtin shallow water](../projects/fluid/fluid_25d/README.md)
 - [Terrain Water](../projects/terrain_water/README.md)
   — [current behavior](../projects/terrain_water/current_reference.md) and
-  [decision/evidence map](../projects/fluid/fluid_25d/development_map.md).
+  [decision/evidence map](../studies/fluid_25d/notes/development_map.md).
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [glTF Viewer](../projects/gltf_viewer/README.md)
@@ -120,6 +120,8 @@ Paused labs:
 
 Legacy material:
 
+- [Retained study index](../studies/README.md): dated Fluid/Terrain/glTF harnesses,
+  notes and reproduction tools, separated from supported application entry points.
 - [Archived terrain attempts](archive/terrain/legacy-attempts.md)
 - [Retired project snapshot](archive/retired-projects.md)
 - [Terrain-ocean field contract](archive/terrain/terrain-ocean-field-contract.md)

@@ -158,7 +158,7 @@ remain deferred behind the failed transport gate.
 rtk proxy cmake --build build/dev --target cubey_project_fluid_25d_transport_benchmark
 rtk proxy build/dev/projects/fluid/fluid_25d/cubey_project_fluid_25d_transport_benchmark
 rtk proxy build/dev/projects/fluid/fluid_25d/cubey_project_fluid_25d_transport_benchmark --self-test
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/hillside_rain_basins_v2.py --output outputs/fluid/<fresh-basin-reading>
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/hillside_rain_basins_v2.py --output outputs/fluid/<fresh-basin-reading>
 ```
 
 The full matrix exits nonzero for execution/health failures and records failed

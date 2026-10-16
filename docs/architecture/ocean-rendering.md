@@ -139,7 +139,7 @@ reflections, cloud products, direct/ambient light, exposure, and terrain fields.
 Use the canonical matrix for visual changes:
 
 ```sh
-MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-review
+MOTION=0 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-review
 ```
 
 Use `MOTION=1` when temporal stability, foam history, cloud motion, or changing

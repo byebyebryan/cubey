@@ -78,7 +78,7 @@ apply to every crop and both protocols:
 The repeatable full command is:
 
 ~~~sh
-projects/fluid/fluid_25d/run_terrain_water_audition_v2.sh \
+studies/fluid_25d/harness/run_terrain_water_audition_v2.sh \
   /tmp/fluid25d-terrain-water-audition-fv-v2-20260915
 ~~~
 
@@ -86,7 +86,7 @@ For a bounded pilot only, the same runner supports the frozen-list selector:
 
 ~~~sh
 CASE_FILTER=mountain-valley-floodplain,rolling-hills-catchment \
-  projects/fluid/fluid_25d/run_terrain_water_audition_v2.sh \
+  studies/fluid_25d/harness/run_terrain_water_audition_v2.sh \
   /tmp/fluid25d-terrain-water-audition-fv-v2-pilot-20260915
 ~~~
 

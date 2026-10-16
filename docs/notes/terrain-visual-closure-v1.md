@@ -76,9 +76,9 @@ shadows, binary twilight changes, and snow that reads as emissive at night.
 Run:
 
 ```sh
-projects/terrain/capture_visual_closure_review.sh control
-projects/terrain/capture_visual_closure_review.sh candidate
-projects/terrain/capture_visual_closure_review.sh finalize
+studies/terrain/landscapes/capture_visual_closure_review.sh control
+studies/terrain/landscapes/capture_visual_closure_review.sh candidate
+studies/terrain/landscapes/capture_visual_closure_review.sh finalize
 ```
 
 The matched headless pack under `outputs/terrain/visual-closure-v1` includes:

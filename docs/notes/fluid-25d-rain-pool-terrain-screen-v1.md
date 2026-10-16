@@ -18,7 +18,7 @@ terrain analysis, a positive global maximum depth, or a wet-cell count:
 location, connected footprint, time evolution, and presentation must agree.
 
 The reusable
-[`terrain_rain_pool_screen_v1.py`](../../projects/fluid/fluid_25d/terrain_rain_pool_screen_v1.py)
+[`terrain_rain_pool_screen_v1.py`](../../studies/fluid_25d/harness/terrain_rain_pool_screen_v1.py)
 screen reads all 12 pinned 2048x2048 Terrain Diffusion elevation payloads
 directly from their immutable cache manifests and checks the elevation hashes.
 It priority-fills a *derived copy* with map-edge outlets, finds 8-connected
@@ -121,10 +121,10 @@ to overwrite existing evidence):
 
 ```sh
 rtk proxy env PYTHONDONTWRITEBYTECODE=1 uv run --python 3.12 \
-  projects/fluid/fluid_25d/terrain_rain_pool_screen_v1.py \
+  studies/fluid_25d/harness/terrain_rain_pool_screen_v1.py \
   --output-dir outputs/fluid/rain-pool-screen-v1-<new-run>
 rtk proxy env PYTHONDONTWRITEBYTECODE=1 uv run --python 3.12 \
-  projects/fluid/fluid_25d/test_terrain_rain_pool_screen_v1.py
+  studies/fluid_25d/harness/test_terrain_rain_pool_screen_v1.py
 ```
 
 The five focused synthetic tests cover stage volume, clipped donor area,

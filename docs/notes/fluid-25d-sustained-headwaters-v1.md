@@ -97,5 +97,5 @@ an actual appropriately resolved elevation source plus an explicit basin and
 outlet-boundary audit. No terrain was reshaped to force a pass here.
 
 Reproduce the evidence with
-`projects/fluid/fluid_25d/run_sustained_headwaters_demo.sh`; its products go
+`studies/fluid_25d/harness/run_sustained_headwaters_demo.sh`; its products go
 under `outputs/fluid` by default.

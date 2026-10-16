@@ -82,7 +82,7 @@ Saved landscapes reuse the Terrain foundation also used by
 [Terrain Water](../terrain_water/README.md); this viewer runs no hydraulic solver.
 
 The owner-selected **A: original mountain / saved water / face-on solar arc** is
-the current repository highlight. Its [audition and depth-precision study](water_landscape_v1.md)
+the current repository highlight. Its [audition and depth-precision study](../../studies/gltf_viewer/water_landscape_v1.md)
 reuse the shared Terrain renderer and prepared captures; this is not a live
 Fluid simulation. The landscape stays explicitly opt-in at runtime. This fixed
 daylight diagnostic is useful for inspection; the timed film recipe is below:
@@ -148,7 +148,7 @@ The previous dry-terrain/day-to-night cut remains in Git history and at its
 Its [legacy recipe](../../docs/media/showcase/gltf-terrain-legacy-v1-recipe.json)
 is historical metadata, not hashes of the current files.
 
-The [front-facing day-to-night revision](showcase_solar_v1.md) is owner-approved
+The [front-facing day-to-night revision](../../studies/gltf_viewer/showcase_solar_v1.md) is owner-approved
 and promoted. The fixed-morning saved-water cut remains recoverable from its
 [historical recipe](../../docs/media/showcase/gltf-terrain-morning-v1-recipe.json),
 [publication receipt](../../docs/media/showcase/gltf-terrain-morning-v1-publication.json),

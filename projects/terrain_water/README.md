@@ -29,7 +29,7 @@ The live application runs SynxFlow in a separate CUDA worker. Cubey is a Vulkan
 client using bounded CPU-staged depth/momentum publications, not CUDA–Vulkan
 memory interop or a solver port. The worker/build slice is separately marked
 GPL-3.0-only; it is not linked into the MIT renderer. See the retained
-[dependency setup and upstream credits](../fluid/fluid_25d/external_synxflow/README.md).
+[dependency setup and upstream credits](external_synxflow/README.md).
 
 Prepared terrain/climate cases and a qualified worker environment are required
 for live use. A fresh checkout alone is not a complete runnable terrain demo.
@@ -82,7 +82,7 @@ hydrology. Source elevation is 30 m; finer cells interpolate it.
 
 For automation use `--headless --run-seconds 30 --out outputs/fluid/FRESH`.
 Without a control script this remains dry/paused. The tracked lifecycle fixture
-is [headless-controls.json](../fluid/fluid_25d/fixtures/setup-v1/headless-controls.json);
+is [headless-controls.json](tests/fixtures/headless-controls.json);
 it starts, changes rain, pauses and resets, not a performance qualification.
 
 ## Replay and builtin alternatives
@@ -127,11 +127,14 @@ exclusions, compatibility paths and the builtin backup qualification boundary.
   [Terrain](../terrain/README.md) consumes saved landscapes without a running
   solver; [glTF](../gltf_viewer/README.md#showcase-highlight) is an accepted consumer.
 
-Audited native helpers/build artifacts and older studies remain at their original
-paths for compatibility and provenance. The old managed launcher forwards here;
-it does not run a second implementation. Water 3D and Pyro adoption, solver
+Maintained setup/runtime helpers live in [tools](tools/README.md); worker/build
+source and licensing live in [external_synxflow](external_synxflow/README.md).
+Historical notes/runners are [indexed under studies](../../studies/fluid_25d/README.md),
+not imported by normal startup. The qualified ignored native binary stays at its
+original build path/RPATH. The old managed launcher forwards here; it does not
+run a second implementation. Water 3D and Pyro adoption, solver
 research, Terrain default promotion and new media publication are out of scope.
 
 See the current [behavior reference](current_reference.md),
-[decision history](../fluid/fluid_25d/development_map.md) and
-[showcase reproduction](../fluid/fluid_25d/presentation_v1.md).
+[decision history](../../studies/fluid_25d/notes/development_map.md) and
+[showcase reproduction](../../studies/fluid_25d/notes/presentation_v1.md).

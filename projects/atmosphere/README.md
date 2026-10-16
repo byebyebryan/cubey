@@ -69,16 +69,16 @@ Useful runs:
 ./build/dev/projects/atmosphere/atmosphere --headless --atmosphere-preset sunset --output /tmp/cubey-atmosphere-sunset.png
 ./build/dev/projects/atmosphere/atmosphere --headless --time-of-day-mode solar --time-hours 17.8 --output /tmp/cubey-atmosphere-twilight.png
 ./build/dev/projects/atmosphere/atmosphere --headless --capture video --frames 120 --output /tmp/cubey-atmosphere.mp4
-projects/atmosphere/capture_milky_way_layers.sh outputs/atmosphere-milky-way-layers
-projects/atmosphere/capture_star_field_review.sh outputs/atmosphere-star-field-review
-PLACEMENT_REVIEW=1 projects/atmosphere/capture_star_field_review.sh outputs/atmosphere-star-field-review
-projects/atmosphere/profile_star_field.sh outputs/perf-star-field
-projects/atmosphere/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
-projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review
-projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
-projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
-projects/atmosphere/capture_cloud_lighting_regimes.sh outputs/atmosphere-cloud-lighting-regimes
-projects/atmosphere/capture_cloud_surface_horizon_regimes.sh outputs/atmosphere-cloud-surface-horizon
+projects/atmosphere/tools/capture_milky_way_layers.sh outputs/atmosphere-milky-way-layers
+projects/atmosphere/tools/capture_star_field_review.sh outputs/atmosphere-star-field-review
+PLACEMENT_REVIEW=1 projects/atmosphere/tools/capture_star_field_review.sh outputs/atmosphere-star-field-review
+projects/atmosphere/tools/profile_star_field.sh outputs/perf-star-field
+projects/atmosphere/tools/capture_atmosphere_background_horizon.sh outputs/atmosphere-background-horizon
+projects/atmosphere/tools/capture_cloud_review.sh outputs/atmosphere-cloud-review
+projects/atmosphere/tools/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
+projects/atmosphere/tools/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
+projects/atmosphere/tools/capture_cloud_lighting_regimes.sh outputs/atmosphere-cloud-lighting-regimes
+projects/atmosphere/tools/capture_cloud_surface_horizon_regimes.sh outputs/atmosphere-cloud-surface-horizon
 ```
 
 The cloud review script writes a stable set of labeled captures plus

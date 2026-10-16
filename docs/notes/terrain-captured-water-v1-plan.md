@@ -52,7 +52,7 @@ terrain detail.
 The existing recording reader already validates hashes and hydraulic fields,
 and decodes velocity from momentum. It also supports piecewise-linear rainfall
 history. However, the two-state exporter in
-`projects/fluid/fluid_25d/run_live_perf_terrain_v1.py` deliberately assumes
+`studies/fluid_25d/harness/run_live_perf_terrain_v1.py` deliberately assumes
 constant rainfall. Do not bypass that guard or describe rain-off captures as
 constant-rain recordings.
 

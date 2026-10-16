@@ -95,7 +95,7 @@ and wet runoff views. In component views, red=rock, green=cover potential and
 blue=snow potential; they deliberately show classification, not realism.
 Reported channel means are mean weights, **not area percentages**.
 
-The review runner is `projects/fluid/fluid_25d/review_climate_surface_v1.py`.
+The review runner is `studies/fluid_25d/harness/review_climate_surface_v1.py`.
 Its baseline phase must run against the pre-change executable before rebuilding;
 candidate, review, profile and climate-statistics phases use the new executable.
 Use a fresh `climate-surface-*` leaf under `outputs/fluid`; phases refuse to

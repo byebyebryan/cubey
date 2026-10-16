@@ -9,7 +9,7 @@ are protected by SHA-256. Results live under ignored `outputs/terrain/readabilit
 
 ## Display atlas
 
-`projects/terrain/study_terrain_atlas_v1.py` consumes the immutable world package.
+`studies/terrain/landscapes/study_terrain_atlas_v1.py` consumes the immutable world package.
 It first filters cached native 30 m terrain, then requests only missing native
 1024-square tiles with the accepted 64-sample halo and strict producer precision.
 The atlas is a 256 m box integral of piecewise-linear native reconstruction,
@@ -104,18 +104,18 @@ Reproduce using a fresh `outputs/terrain/readability-*` leaf (existing optional
 producer/scientific environment and pinned world cache required):
 
 ```sh
-python3 projects/terrain/study_terrain_atlas_v1.py OUTPUT --phase freeze
-python3 projects/terrain/study_terrain_atlas_v1.py OUTPUT --phase generate
-python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase controls
-python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase refined
-python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase motion
+python3 studies/terrain/landscapes/study_terrain_atlas_v1.py OUTPUT --phase freeze
+python3 studies/terrain/landscapes/study_terrain_atlas_v1.py OUTPUT --phase generate
+python3 studies/terrain/landscapes/review_terrain_readability_v1.py OUTPUT --phase controls
+python3 studies/terrain/landscapes/review_terrain_readability_v1.py OUTPUT --phase refined
+python3 studies/terrain/landscapes/review_terrain_readability_v1.py OUTPUT --phase motion
 # Stop producer/GPU tests/encoding before this phase; freeze binary/shaders.
-python3 projects/terrain/review_terrain_readability_v1.py OUTPUT --phase performance
+python3 studies/terrain/landscapes/review_terrain_readability_v1.py OUTPUT --phase performance
 # Use the installed terrain-diffusion scientific Python for maps and publication.
-cache/terrain/tooling/v1/terrain-diffusion-venv/bin/python projects/terrain/report_terrain_readability_v1.py OUTPUT --phase maps
+cache/terrain/tooling/v1/terrain-diffusion-venv/bin/python studies/terrain/landscapes/report_terrain_readability_v1.py OUTPUT --phase maps
 # Final selected CTest receipt must be OUTPUT/final-tests.xml.
-python3 projects/terrain/report_terrain_readability_v1.py OUTPUT --phase report
-python3 projects/terrain/report_terrain_readability_v1.py OUTPUT --phase http
+python3 studies/terrain/landscapes/report_terrain_readability_v1.py OUTPUT --phase report
+python3 studies/terrain/landscapes/report_terrain_readability_v1.py OUTPUT --phase http
 ```
 
 The original study deferred promotion until visual review (now approved).

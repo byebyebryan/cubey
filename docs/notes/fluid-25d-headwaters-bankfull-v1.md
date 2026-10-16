@@ -99,7 +99,7 @@ include readback, encoding, or interactive presentation cost.
 Reproduce the matched sweep with:
 
 ```sh
-python3 projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py \
+python3 studies/fluid_25d/harness/run_sustained_headwaters_resolution_v1.py \
   --mode supply --supply-damping 0.05 \
   --source-scales 8 16 20 24 32
 ```

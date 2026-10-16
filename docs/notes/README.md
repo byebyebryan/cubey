@@ -9,7 +9,7 @@ the detailed foundation notes under `docs/architecture/`.
 
 ## Entries
 
-- [Fluid 2.5D decision/evidence map](../../projects/fluid/fluid_25d/development_map.md):
+- [Fluid 2.5D decision/evidence map](../../studies/fluid_25d/notes/development_map.md):
   current verdict and navigation across the retained solver, terrain, bank,
   performance and presentation studies. The early Fluid notes below are
   historical evidence, not today's defaults or an active implementation backlog.

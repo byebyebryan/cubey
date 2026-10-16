@@ -59,7 +59,7 @@ this pass.
 ## Continuous GUI review
 
 ```bash
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py \
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_flow_demo.py \
   --domain 512 --markers --dye --view transport-inspection --developed
 ```
 

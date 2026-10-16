@@ -17,7 +17,7 @@ painted into the terrain or solver.
 
 ## Reproducible inputs
 
-The [scan tool](../../projects/fluid/fluid_25d/terrain_site_scan_v1.py) examines
+The [scan tool](../../studies/fluid_25d/harness/terrain_site_scan_v1.py) examines
 the existing cached Terrain Diffusion 30 m payloads at pinned code revision
 `82a0431281f21a6ec3d691a12ee61525de5b0790` and model revision
 `9ef8030cb805b433b98ec25c5dddefbac07a9e26`. It checks source hashes,
@@ -33,7 +33,7 @@ are review artifacts. The earlier scan output was retained under the
 `-superseded` sibling after a junction-counting defect was corrected; use only
 the linked corrected record.
 
-The [frozen recipe](../../projects/fluid/fluid_25d/terrain_site_water_v1_20260923.json)
+The [frozen recipe](../../studies/fluid_25d/harness/terrain_site_water_v1_20260923.json)
 pins full manifests and elevation hashes, crop coordinates, a matching
 512×256 solver grid at 30 m, and the common capture/acceptance rules. Human
 review kept the top three morphology candidates, with rank 1 intentionally a
@@ -54,12 +54,12 @@ visibility-stress tier applies to all three sites. These supply 2 mm and
 not a climate or field-hydrology claim. There is no explicit inlet or drain:
 rain is the source, and the open perimeter is the only outlet.
 
-Run the [study runner](../../projects/fluid/fluid_25d/run_terrain_site_water_v1.py)
+Run the [study runner](../../studies/fluid_25d/harness/run_terrain_site_water_v1.py)
 from the repository root with the pinned local assets and built app present:
 
 ~~~sh
 cache/terrain/tooling/v1/terrain-diffusion-venv/bin/python \
-  projects/fluid/fluid_25d/run_terrain_site_water_v1.py \
+  studies/fluid_25d/harness/run_terrain_site_water_v1.py \
   --output-dir /tmp/fluid25d-terrain-site-water-v1-replay
 ~~~
 

@@ -16,7 +16,7 @@ none of their masks enter the water solver.
 
 ## Presentation isolation
 
-The [render A/B runner](../../projects/fluid/fluid_25d/terrain_presentation_ab_v1.py)
+The [render A/B runner](../../studies/fluid_25d/harness/terrain_presentation_ab_v1.py)
 compares baseline, physical-metre terrain palette, vertical scale, camera
 distance, and their combination on the *same* frozen rank-2 mountain case.
 Opt-in terrain-case flags leave existing defaults intact. The [A/B
@@ -41,7 +41,7 @@ fixed; it must not be read as a hydrology fix.
 ## Native site search
 
 The [final reach scan](../../outputs/fluid/terrain-reach-scan-v1-final-20260923/scan.json)
-uses the [native 30 m scanner](../../projects/fluid/fluid_25d/terrain_reach_scan_v1.py)
+uses the [native 30 m scanner](../../studies/fluid_25d/harness/terrain_reach_scan_v1.py)
 on the pinned cached source corpus: 16 manifests, 12 unique 2048x2048
 elevation payloads. After excluding the older V2 crop overlaps, it examined
 4,409 contexts, checking nested reaches when a context had a long enough
@@ -64,8 +64,8 @@ stage/containment check before any authored endpoint forcing.
 
 ## Shared neutral water pilot
 
-The [frozen recipe](../../projects/fluid/fluid_25d/terrain_reach_neutral_v1_20260923.json)
-and [standalone runner](../../projects/fluid/fluid_25d/run_terrain_reach_neutral_v1.py)
+The [frozen recipe](../../studies/fluid_25d/harness/terrain_reach_neutral_v1_20260923.json)
+and [standalone runner](../../studies/fluid_25d/harness/run_terrain_reach_neutral_v1.py)
 pin both exact transformed crop hashes, the final scan, and one common render
 policy. Both use the existing opt-in finite-volume terrain-case RainPulse:
 dry start, 12 mm/hour uniform rain for 600 s, then 600 s without rain, 30 m

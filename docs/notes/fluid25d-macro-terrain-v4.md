@@ -86,8 +86,8 @@ GUI compatibility, not human approval or indefinite live-solver acceptance.
 ## Reproduce and review
 
 ```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style scenic --material macro --camera runoff --start 6000
-rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py live --style scenic --material macro
+rtk proxy python3 studies/fluid_25d/harness/run_mountain_rain_demo.py replay --style scenic --material macro --camera runoff --start 6000
+rtk proxy python3 studies/fluid_25d/harness/run_mountain_rain_demo.py live --style scenic --material macro
 ```
 
 Replay inspects retained Terrain Diffusion recordings; Live starts a fresh dry,

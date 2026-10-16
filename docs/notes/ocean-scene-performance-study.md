@@ -169,7 +169,7 @@ than the surface path at the accepted 512-half setting.
 Reproduce the full study with:
 
 ```sh
-projects/ocean/profile_scene_ocean_ablation.sh \
+projects/ocean/tools/profile_scene_ocean_ablation.sh \
   outputs/ocean/scene-ablation
 ```
 

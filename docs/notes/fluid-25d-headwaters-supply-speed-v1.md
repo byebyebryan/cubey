@@ -90,7 +90,7 @@ freeboard/overbank measure remain open.
 Reproduce the base sweep with:
 
 ```sh
-python3 projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py \
+python3 studies/fluid_25d/harness/run_sustained_headwaters_resolution_v1.py \
   --mode supply --source-scales 1 2 4
 ```
 

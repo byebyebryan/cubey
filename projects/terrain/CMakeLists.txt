@@ -303,13 +303,13 @@ if (BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_prepare_terrain_landscapes.py")
     set_tests_properties(terrain_landscape_prepare_helpers PROPERTIES LABELS "terrain;water;unit")
     add_test(NAME terrain_prepared_landscape_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_prepared_landscapes_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_review_prepared_landscapes_v1.py")
     set_tests_properties(terrain_prepared_landscape_review_helpers PROPERTIES LABELS "terrain;water;unit")
     add_test(NAME terrain_landscape_hardening_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_landscape_hardening_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_review_landscape_hardening_v1.py")
     set_tests_properties(terrain_landscape_hardening_review_helpers PROPERTIES LABELS "terrain;water;unit")
     add_test(NAME terrain_landscape_first_use_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_landscape_first_use_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_review_landscape_first_use_v1.py")
     set_tests_properties(terrain_landscape_first_use_review_helpers PROPERTIES LABELS "terrain;water;unit")
 
     set(
@@ -403,27 +403,27 @@ if (BUILD_TESTING)
         "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_site_package.py")
     set_tests_properties(terrain_site_package_helpers PROPERTIES LABELS terrain)
     add_test(NAME terrain_world_study_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_study_terrain_world_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_study_terrain_world_v1.py")
     add_test(NAME terrain_world_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_terrain_world_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_review_terrain_world_v1.py")
     set_tests_properties(terrain_world_study_helpers terrain_world_review_helpers
         PROPERTIES LABELS terrain)
     add_test(NAME terrain_readability_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_terrain_readability_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_review_terrain_readability_v1.py")
     set_tests_properties(terrain_readability_review_helpers PROPERTIES LABELS terrain)
     add_test(NAME terrain_wide_view_study_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_study_wide_view_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_study_wide_view_v1.py")
     set_tests_properties(terrain_wide_view_study_helpers PROPERTIES LABELS "terrain;water;unit")
     add_test(NAME terrain_world_wide_water_study_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_study_world_wide_water_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_study_world_wide_water_v1.py")
     set_tests_properties(terrain_world_wide_water_study_helpers PROPERTIES LABELS "terrain;water;unit")
     add_test(NAME terrain_world_wide_water_review_helpers COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_review_world_wide_water_v1.py")
+        "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_review_world_wide_water_v1.py")
     set_tests_properties(terrain_world_wide_water_review_helpers PROPERTIES LABELS "terrain;water;unit")
     if (EXISTS "${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}/bin/python")
         add_test(NAME terrain_atlas_filter_tests
             COMMAND "${CUBEY_TERRAIN_DIFFUSION_ENV_DIR}/bin/python" -B
-                "${CMAKE_CURRENT_SOURCE_DIR}/test_study_terrain_atlas_v1.py")
+                "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/test_study_terrain_atlas_v1.py")
         set_tests_properties(terrain_atlas_filter_tests PROPERTIES LABELS "terrain;optional-scientific")
     endif()
 

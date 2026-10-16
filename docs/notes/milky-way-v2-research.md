@@ -128,7 +128,7 @@ Completed:
    of hand-authored landmark stamps.
 2. The atlas product, shader sampling path, and diagnostic layer names are
    unchanged.
-3. `projects/atmosphere/capture_milky_way_layers.sh` captures the active V2
+3. `projects/atmosphere/tools/capture_milky_way_layers.sh` captures the active V2
    diagnostic layers and procedural variations.
 4. Focused tests cover V2 metadata, deterministic output, variation, layer
    distinctness, and non-empty dust/H II layers.

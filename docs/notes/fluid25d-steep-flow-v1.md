@@ -59,6 +59,6 @@ checks do not replace GUI seek/reset or a rasterized wrap/reversal/dry-out stres
 test; those remain evidence gaps. Render-only presentation p95 increased about
 1.1% on the measured RTX 5070 Ti, not a whole-app or cross-GPU guarantee.
 
-Reusable tools: `projects/fluid/fluid_25d/review_steep_flow_v1.py`,
+Reusable tools: `studies/fluid_25d/harness/review_steep_flow_v1.py`,
 `test_steep_flow_gpu.py`, `test_review_steep_flow_v1.py`. The GPU synthetic test is
 archive-independent and registered as `fluid_25d_steep_flow_gpu`.

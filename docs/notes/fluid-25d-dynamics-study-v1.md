@@ -12,7 +12,7 @@ crop, and does one globally fixed visibility-stress tier make the result more
 readable? This study is an evidence pass, not a product-selection pass.
 
 The reproducible runner is
-[`run_rain_dynamics_study_v1.sh`](../../projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh).
+[`run_rain_dynamics_study_v1.sh`](../../studies/fluid_25d/harness/run_rain_dynamics_study_v1.sh).
 Select exactly one tier with `RAIN_STUDY_TIER=neutral` or
 `RAIN_STUDY_TIER=visibility-stress`; an unknown tier is rejected before any
 output directory is created. The runner independently simulates each
@@ -192,7 +192,7 @@ tier, not climate or hydrology evidence.
 
 ## Validation
 
-- `bash -n projects/fluid/fluid_25d/run_rain_dynamics_study_v1.sh` passed.
+- `bash -n studies/fluid_25d/harness/run_rain_dynamics_study_v1.sh` passed.
 - Invalid tier and invalid executable failure paths return nonzero before
   writing evidence.
 - `git diff --check` passed.

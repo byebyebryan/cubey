@@ -33,7 +33,7 @@ outputs and bounded extreme derivatives.
 ## Controls
 
 ```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_mountain_rain_demo.py replay --style scenic --material terrain
+rtk proxy python3 studies/fluid_25d/harness/run_mountain_rain_demo.py replay --style scenic --material terrain
 ```
 
 The Scenic material panel exposes V1, refined and terrain presets; neutral

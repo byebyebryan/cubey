@@ -118,9 +118,9 @@ percentage-overhead guarantee. The report links full spans and source pins.
 ## Reproduction and evidence interpretation
 
 ```sh
-rtk proxy uv run --with pillow python projects/fluid/fluid_25d/review_bank_edge_v1.py \
+rtk proxy uv run --with pillow python studies/fluid_25d/harness/review_bank_edge_v1.py \
   --out outputs/fluid/bank-edge-<fresh-id>
-rtk proxy uv run --with pillow python projects/fluid/fluid_25d/review_bank_edge_v1.py \
+rtk proxy uv run --with pillow python studies/fluid_25d/harness/review_bank_edge_v1.py \
   --out outputs/fluid/bank-motion-<fresh-id> --mode motion --seconds 16
 ```
 

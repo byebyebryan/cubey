@@ -1006,7 +1006,7 @@ After the standalone cloud project was absorbed into `projects/atmosphere`, the
 current review command is:
 
 ```sh
-projects/atmosphere/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
+projects/atmosphere/tools/capture_cloud_review.sh outputs/atmosphere-cloud-review-current
 ```
 
 The script now captures full-quality 1920x1080 output by default and includes
@@ -1214,7 +1214,7 @@ for A/B comparison. The mode is exposed as `clouds.resolve_mode`,
 Use the focused capture matrix when judging this work:
 
 ```sh
-projects/atmosphere/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
+projects/atmosphere/tools/capture_cloud_edge_resolve.sh outputs/atmosphere-cloud-edge-resolve
 ```
 
 Interpretation:
@@ -1288,7 +1288,7 @@ The far-field handoff batch adds a focused capture matrix and starts separating
 near/overhead cloud rendering from lower-sky grazing rays:
 
 ```sh
-projects/atmosphere/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
+projects/atmosphere/tools/capture_cloud_farfield_handoff.sh outputs/atmosphere-cloud-farfield-handoff
 ```
 
 The production shader now fades local volumetric density and local high
@@ -1370,7 +1370,7 @@ deterministic temporal reconstruction or another cheaper coverage resolve.
 Review helper:
 
 ```text
-projects/atmosphere/capture_cloud_sampling_perf.sh
+projects/atmosphere/tools/capture_cloud_sampling_perf.sh
 ```
 
 The helper is intentionally a PNG review pack, so its default warmup is zero:
@@ -1422,7 +1422,7 @@ changes back to shared `CloudLayer`:
 
 This keeps `raw-final` closer to a cloud-layer diagnostic while leaving final
 presentation free to approximate sun-through-cloud glare. The next review should
-use `projects/cloud_ref/capture_lighting_compare.sh` and inspect
+use `projects/cloud_ref/tools/capture_lighting_compare.sh` and inspect
 `surface-up`, `surface-sun`, and `high-oblique` before deciding whether to copy
 any lighting mechanics into shared atmosphere clouds.
 
@@ -1450,7 +1450,7 @@ edge, and saturation strengths. The local ambient fill samples horizon
 sky/sun radiance near low sun, `surface-volume` adds a bounded optical-edge
 twilight source, and final composite preserves twilight saturation
 separately from day/night brightness. Validate with
-`projects/atmosphere/capture_cloud_lighting_regimes.sh` before treating the
+`projects/atmosphere/tools/capture_cloud_lighting_regimes.sh` before treating the
 defaults as final art direction.
 
 ## Cloud Afterglow Art Direction 2026-07-04

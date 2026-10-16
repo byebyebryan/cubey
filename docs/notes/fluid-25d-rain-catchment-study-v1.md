@@ -62,7 +62,7 @@ site or hydrology promotion.
 Reproduce with:
 
 ```sh
-uv run projects/fluid/fluid_25d/terrain_rain_thin_water_ab_v1.py \
+uv run studies/fluid_25d/harness/terrain_rain_thin_water_ab_v1.py \
   --output-dir outputs/fluid/terrain-rain-thin-water-ab-v1-<new-run>
 ```
 
@@ -106,7 +106,7 @@ outlet. Even the 480 m segment collects only 2.67% of boundary outflow.
 Reproduce with:
 
 ```sh
-uv run projects/fluid/fluid_25d/terrain_rain_catchment_pilot_v1.py \
+uv run studies/fluid_25d/harness/terrain_rain_catchment_pilot_v1.py \
   --output-dir outputs/fluid/terrain-rain-catchment-pilot-v1-<new-run>
 ```
 

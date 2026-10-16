@@ -30,7 +30,7 @@ is a small set of focused projects, each with different scaling assumptions:
   explicit. This is a visual demo, not a calibrated hydrology or solver-parity claim.
   Manual mode supports continuous rain; the published Joining valleys film is
   recorded continuous-rain timelapse. See [current behavior](../../projects/terrain_water/current_reference.md)
-  and [decision history](../../projects/fluid/fluid_25d/development_map.md).
+  and [decision history](../../studies/fluid_25d/notes/development_map.md).
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
   baselines with shared 3D storage textures, compute
   advection/injection/combustion/projection, and fullscreen volume raymarching.

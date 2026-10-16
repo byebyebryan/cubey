@@ -13,14 +13,14 @@ with averaged profile output. The profiling path should record:
 For cloud integration work, start with:
 
 ```bash
-projects/atmosphere/profile_cloud_vs_ref.sh
+projects/atmosphere/tools/profile_cloud_vs_ref.sh
 ```
 
 Useful overrides:
 
 ```bash
 FRAMES=1200 WARMUP_FRAMES=180 REPEATS=5 WIDTH=1280 HEIGHT=720 \
-  projects/atmosphere/profile_cloud_vs_ref.sh
+  projects/atmosphere/tools/profile_cloud_vs_ref.sh
 ```
 
 The script compares:
@@ -104,7 +104,7 @@ later; it is not part of the current cloud integration cleanup.
 
 The glTF viewer has a separate startup profile because its useful evidence is
 asset- and stage-specific rather than steady-state frame throughput. Run
-[`projects/gltf_viewer/profile_gltf_loading.sh`](../../projects/gltf_viewer/profile_gltf_loading.sh)
+[`projects/gltf_viewer/tools/profile_gltf_loading.sh`](../../projects/gltf_viewer/tools/profile_gltf_loading.sh)
 after building the release viewer. It records one named first observation and
 five warm repetitions for five pinned Khronos Sample Assets, with static PBR
 IBL, no clouds or backdrops, one validated PNG per observation, and
@@ -125,7 +125,7 @@ target. Its first observation is not a cold-cache claim. Metric definitions,
 capture environment, and recorded results are in the
 [glTF loading profile note](gltf-loading-profile.md).
 
-Use `projects/gltf_viewer/profile_gltf_windowed_upload_jitter.sh` for a
+Use `projects/gltf_viewer/tools/profile_gltf_windowed_upload_jitter.sh` for a
 windowed upload-jitter comparison. It delays the initial import after warmup and
 summarizes p50/p95/p99/max frame deltas plus host update, GPU-drain, and draw
 spans. It also reports nested glTF update spans for session polling and

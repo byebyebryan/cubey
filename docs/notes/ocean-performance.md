@@ -53,7 +53,7 @@ estimates.
 Reproduce the matrix with:
 
 ```sh
-projects/ocean/profile_ocean_baseline.sh outputs/ocean/performance-baseline
+projects/ocean/tools/profile_ocean_baseline.sh outputs/ocean/performance-baseline
 ```
 
 Raw captures and profiler artifacts remain ignored under `outputs/`. Headless

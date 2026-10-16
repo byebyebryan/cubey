@@ -96,8 +96,8 @@ This validates the reviewed cropped analysis; it is not an independent replay
 of the entire 12-map drainage calculation or a hydraulic solver certificate.
 
 The tracked opt-in recipes are
-[`site-a.json`](../../projects/fluid/fluid_25d/fixtures/native-flow-study-v1/site-a.json)
-and [`site-b.json`](../../projects/fluid/fluid_25d/fixtures/native-flow-study-v1/site-b.json).
+[`site-a.json`](../../studies/fluid_25d/harness/fixtures/native-flow-study-v1/site-a.json)
+and [`site-b.json`](../../studies/fluid_25d/harness/fixtures/native-flow-study-v1/site-b.json).
 Their exact transformed crop SHA-256 values are respectively
 `f9f44245369b2a7dace07063cf2cab2750b60c0e899b51d0d54e3cf7d1d0a613`
 and `5e96f238ffc13d539f8b4f7660177573b94ad8cbd058cc67a50cdaf6f5aee166`.
@@ -263,12 +263,12 @@ while the user is remote.
 Run from the Cubey root (new output directories are intentional):
 
 ```sh
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/native_flow_site_survey_v1.py \
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/native_flow_site_survey_v1.py \
   --output-dir outputs/fluid/native-flow-site-survey-v1-replay
-rtk proxy python projects/fluid/fluid_25d/run_natural_flow_pilot_v1.py \
+rtk proxy python studies/fluid_25d/harness/run_natural_flow_pilot_v1.py \
   --phase hydraulics --output-dir outputs/fluid/native-flow-pilot-v1-replay
 # Review hydraulics.json and final PNGs before selecting the winner.
-rtk proxy python projects/fluid/fluid_25d/run_natural_flow_pilot_v1.py \
+rtk proxy python studies/fluid_25d/harness/run_natural_flow_pilot_v1.py \
   --phase evidence --winner a:30 --output-dir outputs/fluid/native-flow-pilot-v1-replay
 ```
 

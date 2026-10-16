@@ -169,7 +169,7 @@ To reproduce into a new, unused evidence leaf:
 
 ```sh
 rtk proxy cmake --build build/dev --target cubey_project_fluid_25d_geometry_study_benchmark
-rtk proxy python3 projects/fluid/fluid_25d/run_geometry_study_v4.py --mode full --baseline outputs/fluid/hillside-rain-v3-cpu-20261002-CvcIYq/baseline-transport.json --output outputs/fluid/rain-v4-review-new
+rtk proxy python3 studies/fluid_25d/harness/run_geometry_study_v4.py --mode full --baseline outputs/fluid/hillside-rain-v3-cpu-20261002-CvcIYq/baseline-transport.json --output outputs/fluid/rain-v4-review-new
 ```
 
 Expected full-study exit is 2 with valid diagnostics and failed numerical

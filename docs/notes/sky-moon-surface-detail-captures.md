@@ -26,7 +26,7 @@ mkdir -p outputs/sky-moon-sphere-debug-001
 ## Current Moon Review Packs
 
 ```sh
-projects/atmosphere/capture_moon_review.sh outputs/atmosphere-moon-review-latest
+projects/atmosphere/tools/capture_moon_review.sh outputs/atmosphere-moon-review-latest
 projects/planet/capture_moon_review.sh outputs/planet-moon-review-latest
 ```
 

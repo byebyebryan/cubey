@@ -184,8 +184,8 @@ Use the single canonical closure harness after changing waves, foam, LOD,
 lighting, reflection, or environment integration:
 
 ```sh
-MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-review
-MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-review-motion
+MOTION=0 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-review
+MOTION=1 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-review-motion
 ```
 
 It records the source commit, emits a manifest and index, compares all three sea

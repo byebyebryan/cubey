@@ -43,7 +43,7 @@ defaults are covered by inference and config tests.
 Generate the deterministic review pack with:
 
 ```sh
-MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-surface-v1
+MOTION=0 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-surface-v1
 ```
 
 The contact sheet compares Calm, Windy, and Stormy at low, mid, and high camera

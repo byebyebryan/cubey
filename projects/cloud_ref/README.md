@@ -61,9 +61,9 @@ Useful runs:
 ./build/dev/projects/cloud_ref/cloud_ref --debug-view raw-final
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode surface --output outputs/cloud-ref-surface.png
 ./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
-projects/cloud_ref/capture_review.sh outputs/cloud-ref-review
-projects/cloud_ref/capture_sampling_compare.sh outputs/cloud-ref-sampling-compare
-projects/cloud_ref/capture_lighting_compare.sh outputs/cloud-ref-lighting-compare
+projects/cloud_ref/tools/capture_review.sh outputs/cloud-ref-review
+projects/cloud_ref/tools/capture_sampling_compare.sh outputs/cloud-ref-sampling-compare
+projects/cloud_ref/tools/capture_lighting_compare.sh outputs/cloud-ref-lighting-compare
 ```
 
 Reference captures from the original TerrainEngine app are kept in
@@ -135,7 +135,7 @@ the mode is alpha/coverage-aware rather than true metadata-aware: it keeps
 between neighboring pixels, then resolves premultiplied cloud color and coverage
 mostly at transitional cloud edges. It is a diagnostic candidate, not a proven
 replacement for brute-force `s2`. Use
-`projects/cloud_ref/capture_sampling_compare.sh` to compare `s1 terrain-post`,
+`projects/cloud_ref/tools/capture_sampling_compare.sh` to compare `s1 terrain-post`,
 `s1 metadata-bilateral`, and brute-force `s2 terrain-post` from the same views.
 
 The fair-weather and broken-cumulus ceilings are intentionally below the earlier

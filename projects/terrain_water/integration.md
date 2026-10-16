@@ -26,16 +26,21 @@ shading; selecting a terrain-only preset loads no hydraulic state.
 
 - `projects/terrain_water`: dedicated executable/config facade and canonical
   managed launcher/supervisor. Build target `cubey_project_terrain_water`.
-- `projects/fluid/fluid_25d`: builtin facade, retained numerical tests and
-  historical study helpers. Build target `cubey_project_fluid_25d`.
+- `projects/fluid/fluid_25d`: builtin facade and compatibility launcher.
+  Build target `cubey_project_fluid_25d`; numerical tests remain under shared sim.
+- `projects/terrain_water/tools`: maintained stdlib host utilities, input
+  serialization, site catalogues and explicit case preparation. Normal startup
+  imports no study modules. SynxFlow IO is imported only for explicit preparation.
+- `studies/fluid_25d`: indexed historical notes and retained harnesses/tests.
 - `projects/fluid/sim/fluid_25d/Fluid25DApp.cmake`: one shared application source
   list, compiled for each frontend's own shader directory, following the existing
   Fire/Explosion facade pattern. The implementation location is retained to
   avoid an unrelated numerical-code migration during the product split.
 - `include/cubey`, `src/cubey`, `shaders/cubey/terrain`: shared asset, runtime
   and terrain/water rendering foundation, also used by Terrain and glTF.
-- The existing `external_synxflow` slice, qualified native artifact, setup locks
-  and source-build gates retain their paths and separate licensing declarations.
+- `projects/terrain_water/external_synxflow`: separately licensed worker/build
+  source, locks and setup gates. The qualified ignored private binary retains its
+  old absolute build path/RPATH; no artifact is relocated or requalified.
 
 The old Python entry points forward to the canonical Terrain Water modules;
 they do not fork orchestration or start a second worker. Established
@@ -44,8 +49,10 @@ paths, namespaces and frozen recipes remain stable. Renaming all of them is
 not required to establish distinct projects.
 
 The launcher's historical `HERE` attribute still resolves to the retained helper
-directory, so old study/performance tools can locate their worker, validator and
-catalogues. `PROJECT_DIR` names the new canonical frontend directory.
+directory under `studies/fluid_25d/harness`, for retained validators/performance
+tools only. `NATIVE_SUPPORT` names the worker source directory; catalogues live
+under `tools`. `PROJECT_DIR` names the canonical frontend. None of these aliases
+adds archived modules to the live launcher's import path.
 
 The published media retains id `fluid-25d`, its original filenames and exact
 capture/publication receipts. Current gallery metadata names its owner

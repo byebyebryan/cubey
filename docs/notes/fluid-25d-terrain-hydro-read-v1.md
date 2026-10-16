@@ -27,7 +27,7 @@ specified by these maps.
 
 ## Method and gates
 
-The [reader](../../projects/fluid/fluid_25d/terrain_hydro_read_v1.py) loads the
+The [reader](../../studies/fluid_25d/harness/terrain_hydro_read_v1.py) loads the
 exact pinned cache inventory through the previous reach scanner: 16 manifests,
 4 aliases and 12 unique 2048x2048, 30 m elevation payloads. It checks the
 source hashes, applies each manifest's height transform and never writes back
@@ -38,7 +38,7 @@ Positive fill patches are reported as basin/storage *proxies* with area, fill
 volume, maximum fill depth, derived spill elevation and bounding box. Their
 8-connected grouping can merge nested basins.
 
-The [four synthetic controls](../../projects/fluid/fluid_25d/test_terrain_hydro_read_v1.py)
+The [four synthetic controls](../../studies/fluid_25d/harness/test_terrain_hydro_read_v1.py)
 check input rejection, open-slope drainage and unit-area conservation, a closed
 bowl's exact fill storage, and edge-terminal detection. The first pinned
 lowland map then passed the gate: zero interior D8 terminals and exact terminal
@@ -47,7 +47,7 @@ correctness**. A preliminary PySheds flat-resolution D8 route stranded 64.47%
 of unit runoff in interior terminals on this map. Its MFD panel is therefore
 retained only as a visibly labeled sensitivity image, never for ranking.
 
-The independent [real-data control](../../projects/fluid/fluid_25d/terrain_hydro_real_control_v1.py)
+The independent [real-data control](../../studies/fluid_25d/harness/terrain_hydro_real_control_v1.py)
 uses the 450x500, 30 m NED GeoTIFF and `FTYPE=STREAM/RIVER` lines from the
 [published North Carolina sample data](https://grassbook.org/datasets/datasets-3rd-edition/).
 The input archives, extracted selected files and hashes are retained under the
@@ -116,11 +116,11 @@ hydrology validation. No commit or push was requested.
 ## Replay
 
 ```sh
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/test_terrain_hydro_read_v1.py
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/terrain_hydro_read_v1.py --output-dir outputs/fluid/hydro-first-replay
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/terrain_hydro_read_v1.py --all-pinned --output-dir outputs/fluid/hydro-corpus-replay
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/terrain_hydro_overview_v1.py --corpus-dir outputs/fluid/hydro-corpus-replay
-rtk proxy uv run --python 3.12 projects/fluid/fluid_25d/terrain_hydro_real_control_v1.py --output-dir outputs/fluid/hydro-real-control-replay
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/test_terrain_hydro_read_v1.py
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/terrain_hydro_read_v1.py --output-dir outputs/fluid/hydro-first-replay
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/terrain_hydro_read_v1.py --all-pinned --output-dir outputs/fluid/hydro-corpus-replay
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/terrain_hydro_overview_v1.py --corpus-dir outputs/fluid/hydro-corpus-replay
+rtk proxy uv run --python 3.12 studies/fluid_25d/harness/terrain_hydro_real_control_v1.py --output-dir outputs/fluid/hydro-real-control-replay
 ```
 
 The real-control command requires the published GeoTIFF and SHAPE inputs in

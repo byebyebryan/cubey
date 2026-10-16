@@ -22,14 +22,14 @@ The glTF validation work has three separate evidence classes:
 ## Repeatable workflow
 
 The maintained runner is
-[`projects/gltf_viewer/profile_gltf_loading.sh`](../../projects/gltf_viewer/profile_gltf_loading.sh).
+[`projects/gltf_viewer/tools/profile_gltf_loading.sh`](../../projects/gltf_viewer/tools/profile_gltf_loading.sh).
 It uses the release viewer and the existing pinned Sample Assets checkout; it
 does not fetch or copy assets. The default command is:
 
 ```sh
 cmake --preset release
 cmake --build --preset release --target cubey_project_gltf_viewer
-projects/gltf_viewer/profile_gltf_loading.sh
+projects/gltf_viewer/tools/profile_gltf_loading.sh
 ```
 
 The release app must exist at
@@ -80,7 +80,7 @@ The current headless corpus command was:
 ```sh
 cmake --preset release
 cmake --build --preset release --target cubey_project_gltf_viewer
-projects/gltf_viewer/profile_gltf_loading.sh \
+projects/gltf_viewer/tools/profile_gltf_loading.sh \
   outputs/gltf/loading-profile-20260910-incremental-upload
 ```
 
@@ -176,7 +176,7 @@ same session synchronously before frame zero.
 
 ## Windowed upload-jitter comparison
 
-[`projects/gltf_viewer/profile_gltf_windowed_upload_jitter.sh`](../../projects/gltf_viewer/profile_gltf_windowed_upload_jitter.sh)
+[`projects/gltf_viewer/tools/profile_gltf_windowed_upload_jitter.sh`](../../projects/gltf_viewer/tools/profile_gltf_windowed_upload_jitter.sh)
 is the controlled windowed companion. It runs 1280x720 Sponza for 1,200 frames,
 starts the import at frame 120 with `--profile-import-delay-frames`, and records
 raw frames, host update/GPU-drain/draw spans, all loading metrics, the exact

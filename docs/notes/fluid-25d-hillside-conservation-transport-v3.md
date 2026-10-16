@@ -233,7 +233,7 @@ The continuous GUI launcher retains its original water-only 256 default and
 has no timed pause or finite frame limit. The wider pulse is explicit:
 
 ```bash
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py \
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_flow_demo.py \
   --domain 512 --dye --view transport-inspection --camera overview
 ```
 

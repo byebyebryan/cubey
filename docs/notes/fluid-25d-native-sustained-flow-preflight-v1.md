@@ -15,7 +15,7 @@ video, GUI scene, solver tuning, or default change was made in this checkpoint.
 
 ## Frozen audit scope
 
-The [audit helper](../../projects/fluid/fluid_25d/native_sustained_flow_preflight_v1.py)
+The [audit helper](../../studies/fluid_25d/harness/native_sustained_flow_preflight_v1.py)
 reads two existing, unmodified 2048 × 2048 Terrain Diffusion payloads at their
 native **30 m** spacing. No seeds were generated and no terrain was carved,
 smoothed, resampled, or filled for use by the simulation. Depression filling is
@@ -131,9 +131,9 @@ run or extended CPU/GPU parity result in this checkpoint.
 Reproduce without overwriting an existing evidence directory:
 
 ```sh
-rtk proxy uv run projects/fluid/fluid_25d/test_native_sustained_flow_preflight_v1.py
-rtk proxy uv run projects/fluid/fluid_25d/test_terrain_hydro_read_v1.py
-rtk proxy uv run projects/fluid/fluid_25d/native_sustained_flow_preflight_v1.py \
+rtk proxy uv run studies/fluid_25d/harness/test_native_sustained_flow_preflight_v1.py
+rtk proxy uv run studies/fluid_25d/harness/test_terrain_hydro_read_v1.py
+rtk proxy uv run studies/fluid_25d/harness/native_sustained_flow_preflight_v1.py \
   --output-dir outputs/fluid/native-sustained-flow-preflight-v1-replay
 ```
 

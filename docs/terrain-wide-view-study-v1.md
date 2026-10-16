@@ -119,13 +119,13 @@ harness refuses reuse against a changed runtime; the trial driver verifies its
 own binary/SPIR-V/input identities and the baseline PNG identities.
 
 ```sh
-rtk proxy python3 -B projects/terrain/study_wide_view_v1.py BASELINE --phase freeze
-rtk proxy python3 -B projects/terrain/study_wide_view_v1.py BASELINE --phase statistics
-rtk proxy python3 -B projects/terrain/study_wide_view_v1.py BASELINE --phase capture
-rtk proxy python3 -B projects/terrain/review_wide_view_v1.py TRIAL --baseline BASELINE --phase freeze
-rtk proxy python3 -B projects/terrain/review_wide_view_v1.py TRIAL --phase capture
-rtk proxy python3 -B projects/terrain/review_wide_view_v1.py TRIAL --phase performance
-rtk proxy python3 -B projects/terrain/report_wide_view_v1.py TRIAL --phase close
+rtk proxy python3 -B studies/terrain/landscapes/study_wide_view_v1.py BASELINE --phase freeze
+rtk proxy python3 -B studies/terrain/landscapes/study_wide_view_v1.py BASELINE --phase statistics
+rtk proxy python3 -B studies/terrain/landscapes/study_wide_view_v1.py BASELINE --phase capture
+rtk proxy python3 -B studies/terrain/landscapes/review_wide_view_v1.py TRIAL --baseline BASELINE --phase freeze
+rtk proxy python3 -B studies/terrain/landscapes/review_wide_view_v1.py TRIAL --phase capture
+rtk proxy python3 -B studies/terrain/landscapes/review_wide_view_v1.py TRIAL --phase performance
+rtk proxy python3 -B studies/terrain/landscapes/report_wide_view_v1.py TRIAL --phase close
 ```
 
 For report generation, run the exact `REQUIRED_TESTS` set in

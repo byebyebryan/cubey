@@ -91,7 +91,7 @@ or evidence of a large visible water error. The long-run GPU evidence above
 cannot substitute for that CPU/GPU parity gate.
 
 Reproduce with `python3
-projects/fluid/fluid_25d/run_sustained_headwaters_resolution_v1.py`.
+studies/fluid_25d/harness/run_sustained_headwaters_resolution_v1.py`.
 Use `--mode resolution` for the three grids, or `--mode damping
 --damping-grid-m 1 --video` for the speed sweep. Results go under
 `outputs/fluid` by default. The runner's `summary.json` includes the exact

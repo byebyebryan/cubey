@@ -37,7 +37,7 @@ new GPU resource. Milky Way V2 remains the unresolved Galactic background.
 
 ## Review Surface
 
-`projects/atmosphere/capture_star_field_review.sh` owns the focused visual pack.
+`projects/atmosphere/tools/capture_star_field_review.sh` owns the focused visual pack.
 It isolates stars from airglow and Milky Way, sweeps camera yaw, compares human
 and camera response, checks surface pollution and moon washout, and includes
 planet surface/orbit integration. `DEEP=1` also records a slow sidereal-motion
@@ -93,7 +93,7 @@ capture. Review found no directional seam or lattice, the human/camera
 distinction remains controlled, pollution and moon washout suppress the surface
 field, and orbital stars remain round.
 
-`projects/atmosphere/profile_star_field.sh` owns the repeatable isolated timing
+`projects/atmosphere/tools/profile_star_field.sh` owns the repeatable isolated timing
 review. The accepted 1920x1080, 600-frame, three-repeat run is under
 `outputs/perf-star-field-v2-final/` and reports stable median GPU totals:
 

@@ -501,7 +501,7 @@ focused ocean, terrain, asset, or renderer feature work.
 The active Cloud V1 milestone is:
 
 1. Keep atmosphere final/no-cloud/debug captures visually comparable through
-   `projects/atmosphere/capture_cloud_review.sh`.
+   `projects/atmosphere/tools/capture_cloud_review.sh`.
 2. Make full and half-resolution Bayer captures stable enough to diagnose raw
    cloud integration without hiding bands behind stochastic shimmer.
 3. Improve surface horizon blending without regressing the credible overhead

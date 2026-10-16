@@ -55,7 +55,7 @@ The selected-site PNG starts `alternate-parent-selected-temperate-`.
 - Crop `[x,z,width,height]`: `[1280,1536,256,256]`, exact native 30 m.
 - Transformed float32 crop SHA-256:
   `42cc62f823284c41d768bc05b6195cf291879fb4f6f04337a327ab79806ef5d8`.
-- Recipe: `projects/fluid/fluid_25d/fixtures/hillside-flow-study-v1/temperate-upland.json`.
+- Recipe: `studies/fluid_25d/harness/fixtures/hillside-flow-study-v1/temperate-upland.json`.
 - Source centre crop `[85,85]`, full-map `[1365,1621]`; centre plus four
   cardinal neighbours, equal mass input over 4,500 m2.
 - Total source 100 m3/s; dry start; zero sink, rain, source shutoff and dye.
@@ -119,7 +119,7 @@ Launch continuous playback from dry start in a close view:
 rtk proxy build/dev/projects/fluid/fluid_25d/fluid_25d \
   --fluid25d-scenario hillside-flow-study --fluid25d-solver finite-volume \
   --terrain-heightfield cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json \
-  --fluid25d-natural-flow-recipe projects/fluid/fluid_25d/fixtures/hillside-flow-study-v1/temperate-upland.json \
+  --fluid25d-natural-flow-recipe studies/fluid_25d/harness/fixtures/hillside-flow-study-v1/temperate-upland.json \
   --fluid25d-terrain-crop-x 1280 --fluid25d-terrain-crop-z 1536 \
   --grid-width 256 --grid-height 256 --fluid25d-cell-size-m 30 \
   --fluid25d-natural-flow-source-m3-per-s 100 \

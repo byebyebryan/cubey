@@ -7,7 +7,7 @@ one reproducible matrix.
 ## Canonical Review
 
 ```sh
-MOTION=0 projects/ocean/capture_ocean_review.sh outputs/ocean-review
+MOTION=0 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-review
 ```
 
 The default 1280x720 pack records the source commit and generates:
@@ -23,7 +23,7 @@ Use motion when a change affects wave evolution, foam history, cloud motion,
 reflection stability, or time-of-day transitions:
 
 ```sh
-MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-review-motion
+MOTION=1 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-review-motion
 ```
 
 Useful harness overrides:
@@ -31,7 +31,7 @@ Useful harness overrides:
 ```sh
 WIDTH=1920 HEIGHT=1080 FRAMES=120 FOAM_FRAMES=180 \
   MAP_SIZE=512 CLOUD_QUALITY=full MOTION=0 \
-  projects/ocean/capture_ocean_review.sh outputs/ocean-review-full
+  projects/ocean/tools/capture_ocean_review.sh outputs/ocean-review-full
 ```
 
 ## Review Contract
@@ -85,7 +85,7 @@ Cascade selection is diagnostic rather than a separate feature mode:
 Cloud reflection source cost has a separate harness:
 
 ```sh
-projects/ocean/profile_cloud_reflections.sh outputs/ocean-reflection-profile
+projects/ocean/tools/profile_cloud_reflections.sh outputs/ocean-reflection-profile
 ```
 
 It compares cached and planar sources and records component GPU spans. Do not

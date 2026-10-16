@@ -18,22 +18,23 @@ import sys
 import tempfile
 import time
 
-LEGACY_HELPERS = Path(__file__).resolve().parents[1] / "fluid/fluid_25d"
-# Retain audited preparation/native artifact locations and historical helpers;
-# importing this MIT launcher never imports CUDA or runs a producer.
-sys.path.insert(0, str(LEGACY_HELPERS))
-import run_mountain_rain_demo as demo
-import terrain_demo_session as managed
-from terrain_water_sites import DEFAULT_CATALOGUE, load_sites, validate_world_site
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from projects.terrain_water import terrain_demo_session as managed
+from projects.terrain_water.tools import runtime
+from projects.terrain_water.tools.terrain_water_sites import DEFAULT_CATALOGUE, load_sites, validate_world_site
+
+NATIVE_SUPPORT = ROOT / "projects/terrain_water/external_synxflow"
+LEGACY_HELPERS = ROOT / "studies/fluid_25d/harness"
 
 # Historical study/performance tools use HERE as their helper/artifact root.
 # Preserve that API while the canonical launcher lives in a different project.
 PROJECT_DIR = Path(__file__).resolve().parent
 HERE = LEGACY_HELPERS
-sys.path.insert(0, str(demo.ref.ROOT / "projects/terrain/tools"))
+sys.path.insert(0, str(runtime.ROOT / "projects/terrain/tools"))
 SITES = tuple(load_sites())
 CONFIGS = ("patch-512-32m", "patch-1024-16m", "patch-2048-8m", "small-512-16m", "large-2048-16m")
-RELEASE_APP = demo.ref.ROOT / "build/release/projects/terrain_water/terrain_water"
+RELEASE_APP = runtime.ROOT / "build/release/projects/terrain_water/terrain_water"
 SITE_LABELS = {key: value["label"] for key, value in load_sites().items()}
 GRID_PRESETS = {"patch-512-32m": (512, 32, "Coarse", "same"),
                 "patch-1024-16m": (1024, 16, "Default", "same"),
@@ -49,7 +50,7 @@ def check_native_runtime(native_python, extension):
         environment.update(MPLBACKEND="Agg", MPLCONFIGDIR=str(Path(temp) / "matplotlib"),
                            XDG_CACHE_HOME=str(Path(temp) / "cache"))
         result = subprocess.run([str(native_python), "-B",
-            str(LEGACY_HELPERS / "external_synxflow/check_runtime.py"),
+            str(NATIVE_SUPPORT / "check_runtime.py"),
             "--extension", str(extension)], env=environment, text=True,
             capture_output=True, timeout=60, check=False)
         if result.returncode:
@@ -69,7 +70,7 @@ def case_identity(case):
         raise ValueError("case protocol/spec mismatch")
     for relative, expected in protocol["input_hashes"].items():
         path = case / "native/input" / relative
-        if path.is_symlink() or not path.resolve().is_relative_to(case) or demo.ref.sha256_file(path) != expected:
+        if path.is_symlink() or not path.resolve().is_relative_to(case) or runtime.sha256_file(path) != expected:
             raise ValueError("prepared native input changed: " + relative)
     binding = json.loads((case / "surface-grid.json").read_bytes())
     if binding != protocol["terrain_source_identity"]:
@@ -78,7 +79,7 @@ def case_identity(case):
     if site:
         from terrain_site_package import load_site
         path = Path(site["manifest_path"])
-        if demo.ref.sha256_file(path) != site["manifest_sha256"]:
+        if runtime.sha256_file(path) != site["manifest_sha256"]:
             raise ValueError("prepared terrain site changed")
         package = load_site(path)
         if (str(package["heightfield"]) != binding["manifest_path"] or
@@ -88,16 +89,16 @@ def case_identity(case):
     for key, path in (("manifest_sha256", Path(binding["manifest_path"])),
                       ("source_bed_sha256", case / "source-bed.f32"),
                       ("solver_bed_sha256", case / "solver-bed.f32")):
-        if demo.ref.sha256_file(path) != binding[key]:
+        if runtime.sha256_file(path) != binding[key]:
             raise ValueError("prepared/source terrain identity changed")
     manifest_path = Path(binding["manifest_path"])
     manifest = json.loads(manifest_path.read_bytes())
     elevation = manifest_path.parent / manifest["files"]["elevation"]["path"]
-    if demo.ref.sha256_file(elevation) != binding["elevation_sha256"]:
+    if runtime.sha256_file(elevation) != binding["elevation_sha256"]:
         raise ValueError("original elevation payload changed")
-    return {"case": str(case), "spec": spec, "input_sha256": demo.input_tree(case / "native/input"),
-            "protocol_sha256": demo.ref.sha256_file(case / "case-protocol.json"),
-            "climate_manifest_sha256": demo.ref.sha256_file(manifest_path.parent / "surface-fields.json")}
+    return {"case": str(case), "spec": spec, "input_sha256": runtime.input_tree(case / "native/input"),
+            "protocol_sha256": runtime.sha256_file(case / "case-protocol.json"),
+            "climate_manifest_sha256": runtime.sha256_file(manifest_path.parent / "surface-fields.json")}
 
 
 def catalogue(study, sites=None):
@@ -124,7 +125,7 @@ def catalogue(study, sites=None):
                 binding = spec["terrain_source_identity"]
                 if binding.get("terrain_site") != world_site:
                     raise ValueError("case does not match its prepared world site")
-                if (Path(binding["manifest_path"]) != (demo.ref.ROOT / recipe["manifest"]).resolve() or
+                if (Path(binding["manifest_path"]) != (runtime.ROOT / recipe["manifest"]).resolve() or
                         binding["elevation_sha256"] != recipe["elevation_sha256"]):
                     raise ValueError("prepared case does not match its catalogued terrain source")
                 if (spec["site"], spec["configuration"], spec["cols"], spec["rows"], spec["dx_m"]) != (
@@ -148,7 +149,7 @@ def catalogue(study, sites=None):
                     raise ValueError("prepared crop does not match its catalogued world coordinates")
                 protocol = json.loads((case / "case-protocol.json").read_bytes())
                 native_identity = {**protocol["input_hashes"],
-                    "../case-spec.json": demo.ref.sha256_file(case / "case-spec.json"),
+                    "../case-spec.json": runtime.sha256_file(case / "case-spec.json"),
                     "../case-protocol.json": identity["protocol_sha256"]}
                 entry.update(available=True, duration_s=spec["duration_s"],
                     rain_mm_per_hour=spec["rain_rate_mm_per_h"],
@@ -173,8 +174,8 @@ def validate_catalogue_case(case, entries):
 
 
 def worker_command(case, session, speed=60, *, native_python=None, extension=None):
-    return ["rtk", "proxy", str(native_python or demo.LIVE_PYTHON), "-u", str(LEGACY_HELPERS / "external_synxflow/session_worker.py"),
-            "--extension", str(extension or demo.EXTENSION), "--case", str(case), "--out", str(session),
+    return ["rtk", "proxy", str(native_python or runtime.LIVE_PYTHON), "-u", str(NATIVE_SUPPORT / "session_worker.py"),
+            "--extension", str(extension or runtime.EXTENSION), "--case", str(case), "--out", str(session),
             "--speed", str(speed), "--publish-interval", ".1", "--paused", "--telemetry"]
 
 
@@ -315,14 +316,14 @@ def main(argv=None):
     a.app = a.app.resolve(strict=True)
     if not a.app.is_file():
         p.error("renderer artifact must be an existing file")
-    app_sha256 = demo.ref.sha256_file(a.app)
+    app_sha256 = runtime.sha256_file(a.app)
     case = (a.study / "cases" / f"{a.site}-{a.configuration}").resolve(strict=True)
     identity = case_identity(case)
     # Do not resolve the interpreter symlink: its venv path selects sys.prefix.
-    native_python = (a.native_python or demo.LIVE_PYTHON).absolute()
-    extension = (a.extension or demo.EXTENSION).absolute()
+    native_python = (a.native_python or runtime.LIVE_PYTHON).absolute()
+    extension = (a.extension or runtime.EXTENSION).absolute()
     if a.mode == "live":
-        if not native_python.is_file() or not extension.is_file() or demo.ref.sha256_file(extension) != demo.EXTENSION_SHA:
+        if not native_python.is_file() or not extension.is_file() or runtime.sha256_file(extension) != runtime.EXTENSION_SHA:
             raise ValueError("audited optional native runtime missing/changed; no build attempted")
         if a.recording:
             p.error("live cannot use a recording")
@@ -335,7 +336,7 @@ def main(argv=None):
     entries = catalogue(a.study.resolve(strict=True), sites) if a.mode == "live" else []
     if entries and not next(entry for entry in entries if entry["id"] == case.name)["available"]:
         raise ValueError("selected prepared case is unavailable")
-    preview = demo.ref.OUTPUT_ROOT / "terrain-rain-launch-FRESH"
+    preview = runtime.OUTPUT_ROOT / "terrain-rain-launch-FRESH"
     title = f"Cubey Terrain Water | {a.mode.upper()}"
     session = preview / "sessions/generation-00000000000000000000"
     source = session if a.mode == "live" else a.recording.resolve()
@@ -360,7 +361,7 @@ def main(argv=None):
         return 0
     if not a.headless and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
         raise ValueError("no GUI display; use read-only --print-command remotely")
-    out = demo.fresh_output(a.out) if a.out else Path(tempfile.mkdtemp(prefix="terrain-rain-launch-", dir=demo.ref.OUTPUT_ROOT))
+    out = runtime.fresh_output(a.out) if a.out else Path(tempfile.mkdtemp(prefix="terrain-rain-launch-", dir=runtime.OUTPUT_ROOT))
     if a.out:
         out.mkdir()
     owned, cleanup = [], []
@@ -375,7 +376,7 @@ def main(argv=None):
                 supervisor = managed.ManagedTerrainDemo(out, entries, case.name,
                     lambda path: validate_catalogue_case(path, entries),
                     lambda path, session, speed: worker_command(path, session, speed,
-                        native_python=native_python, extension=extension), demo.stop_owned)
+                        native_python=native_python, extension=extension), runtime.stop_owned)
                 supervisor.start_initial()
                 while not interrupted[0] and supervisor.state["phase"] not in ("active", "error"):
                     supervisor.poll()
@@ -414,18 +415,18 @@ def main(argv=None):
         pass
     finally:
         for process in reversed(owned):
-            cleanup.append(demo.stop_owned(process))
+            cleanup.append(runtime.stop_owned(process))
         if supervisor:
             supervisor.close()
             cleanup.extend(supervisor.cleanup)
         for sig, handler in prior.items():
             signal.signal(sig, handler)
-        demo.ref.write_json_exclusive(out / "launch.json", {"identity": identity, "cleanup": cleanup,
+        runtime.write_json_exclusive(out / "launch.json", {"identity": identity, "cleanup": cleanup,
             "mode": a.mode, "site": a.site, "configuration": a.configuration,
             "acceptance": "human review not automated", "surface": a.surface,
             "app": str(a.app), "app_sha256": app_sha256,
             "worker_runtime": {"python": str(native_python), "extension": str(extension),
-                "extension_sha256": demo.EXTENSION_SHA} if a.mode == "live" else None,
+                "extension_sha256": runtime.EXTENSION_SHA} if a.mode == "live" else None,
             "surface_subdivision": a.surface_subdivision, "camera": a.camera,
             "render_fps": a.render_fps, "headless": a.headless,
             "managed": supervisor is not None, "final_demo_state": supervisor.state if supervisor else None})

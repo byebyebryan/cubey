@@ -97,7 +97,7 @@ and keep domain-specific policy local.
 | [Terrain Water](projects/terrain_water/README.md) | Terrain-water integration with live external SynxFlow, recorded fields, and shared terrain/water rendering. |
 | [Planet](projects/planet/README.md) | Orbital-only Earth-like globe with deterministic surface fields and shared celestial composition. |
 | [glTF Viewer](projects/gltf_viewer/README.md) | Staged glTF 2.0 PBR import, animation and deformation, required-use material extensions, procedural or HDR environments, shadows, and optional terrain. |
-| [Fractal 2D](projects/fractal_2d/) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
+| [Fractal 2D](projects/fractal_2d) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
 
 Terrain, Planet, and Ocean deliberately represent different scales: far
 backdrop, orbital body, and local water surface. Surface-scale planet terrain,
@@ -117,13 +117,13 @@ than hidden extensions of those products.
 
 ### Foundation examples
 
-The cube-focused programs under [`examples/`](examples/) isolate reusable
+The cube-focused programs under [`examples/`](examples) isolate reusable
 renderer behavior: transforms and depth, compute-generated textures, render
 graph passes, shadow maps, instance-rate input, material handles, particle
 compute, and no-window capture. They are small foundation tests rather than
 showcase projects.
 
-[`pbr_furnace`](projects/pbr_furnace/) is likewise maintained as an internal
+[`pbr_furnace`](projects/pbr_furnace) is likewise maintained as an internal
 white-furnace validation target, not a public demo.
 
 ### Studies and retained references

@@ -3,7 +3,7 @@
 This is the Terrain Water reference, reconciled against the project split on 2026-10-15.
 The builtin shallow-water demo remains in Fluid 2.5D; this project's preferred
 producer is external SynxFlow. Legacy protocol/flag names remain compatible.
-Start with the [quickstart](README.md); use the [decision map](../fluid/fluid_25d/development_map.md)
+Start with the [quickstart](README.md); use the [decision map](../../studies/fluid_25d/notes/development_map.md)
 to understand why earlier studies describe different defaults. Dated reports are
 evidence for their recorded build and inputs, not automatic current authority.
 
@@ -68,7 +68,7 @@ stream can share the same renderer without being the same execution mode.
 
 ## Sites, spacing and replacement
 
-The default [curated catalogue](../fluid/fluid_25d/terrain_water_sites.json) offers six sites and
+The default [curated catalogue](tools/terrain_water_sites.json) offers six sites and
 five grid presets. Missing or mismatched prepared cases remain disabled; setup
 does not silently generate terrain or prepare a complete batch.
 
@@ -84,7 +84,7 @@ Apply & restart replaces the worker/session identity and starts dry/paused. It i
 selection plus reset, not instantaneous regridding, hot-swapping water between
 solvers, or editing terrain beneath existing water. Elevation is sourced at
 30 m; finer cells improve sampling/simulation/display, not source detail.
-The explicit [prepared-world collection](../fluid/fluid_25d/world_water_v1.md) is separate from
+The explicit [prepared-world collection](../../studies/fluid_25d/notes/world_water_v1.md) is separate from
 the default curated catalogue and retains its own source/coverage admission.
 
 ## Solver contract and ownership
@@ -109,8 +109,8 @@ CPU-staged transport, **not Vulkan–CUDA allocation interop**. It avoids import
 or porting the external solver into Cubey. Managed launcher shutdown reaps its
 owned worker; closing a separately attached standalone viewer only detaches it.
 See [setup and licensing boundaries](demo_setup_v1.md),
-[managed lifecycle](../fluid/fluid_25d/terrain_demo_ux_v1.md) and the
-[retained implementation evidence](../fluid/fluid_25d/README_HISTORY.md#project-local-backend-contract).
+[managed lifecycle](../../studies/fluid_25d/notes/terrain_demo_ux_v1.md) and the
+[retained implementation evidence](../../studies/fluid_25d/harness/README_HISTORY.md#project-local-backend-contract).
 
 ## Accepted rendering versus retained options
 
@@ -131,13 +131,13 @@ raw depth/velocity/wet-dry views remain useful diagnostics; Scenic color is not 
 depth palette. Rain streak strength/fall speed affect appearance, not water input.
 The cinematic soft-rain preset is not a global interactive default.
 
-See [terrain presentation](../fluid/fluid_25d/terrain_presentation_v1.md),
-[water/material lineage](../fluid/fluid_25d/scenic_rendering_v1.md) and the
+See [terrain presentation](../../studies/fluid_25d/notes/terrain_presentation_v1.md),
+[water/material lineage](../../studies/fluid_25d/notes/scenic_rendering_v1.md) and the
 [bank-edge record](../../docs/notes/fluid25d-bank-edge-v1.md).
 
 ## Performance: what was actually established
 
-The corrected [offscreen V2 study](../fluid/fluid_25d/offscreen_perf_v2.md) measured real Vulkan
+The corrected [offscreen V2 study](../../studies/fluid_25d/notes/offscreen_perf_v2.md) measured real Vulkan
 render-only operation without X11/Xvfb, image readback, encoding or presentation.
 Frozen Release/RTX 5070 Ti, 1080p, 60 Hz-cap Mountain measurements included:
 

@@ -14,7 +14,7 @@ if(BUILD_TESTING)
     if(CUBEY_FLUID_RECORDING_PYTHON)
         add_test(NAME terrain_water_project_split_gpu
             COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B
-                "${CMAKE_CURRENT_SOURCE_DIR}/test_project_split_gpu.py"
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_split_gpu.py"
                 --legacy "$<TARGET_FILE:cubey_project_fluid_25d>"
                 --terrain "$<TARGET_FILE:cubey_project_terrain_water>")
         set_tests_properties(terrain_water_project_split_gpu PROPERTIES

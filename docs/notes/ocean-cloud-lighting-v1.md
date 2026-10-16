@@ -82,7 +82,7 @@ attachments.
 Generate the deterministic closure pack with:
 
 ```sh
-MOTION=1 projects/ocean/capture_ocean_review.sh outputs/ocean-cloud-lighting-v1
+MOTION=1 projects/ocean/tools/capture_ocean_review.sh outputs/ocean-cloud-lighting-v1
 ```
 
 The pack covers cloudy noon at multiple scales, dawn/dusk/night lighting,

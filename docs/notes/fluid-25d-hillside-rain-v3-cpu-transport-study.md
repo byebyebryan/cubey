@@ -165,11 +165,11 @@ From the repository root, use fresh output leaves:
 ```bash
 rtk proxy cmake --build build/dev --target cubey_project_fluid_25d_transport_study_benchmark
 rtk proxy build/dev/projects/fluid/fluid_25d/cubey_project_fluid_25d_transport_study_benchmark --self-test
-rtk proxy python3 projects/fluid/fluid_25d/run_transport_study_v3.py \
+rtk proxy python3 studies/fluid_25d/harness/run_transport_study_v3.py \
   --mode full \
   --baseline outputs/fluid/hillside-rain-v3-cpu-20261002-CvcIYq/baseline-transport.json \
   --output outputs/fluid/rain-v3-full-new
-rtk proxy python3 projects/fluid/fluid_25d/run_transport_study_v3.py \
+rtk proxy python3 studies/fluid_25d/harness/run_transport_study_v3.py \
   --mode fallback-probe \
   --baseline outputs/fluid/hillside-rain-v3-cpu-20261002-CvcIYq/baseline-transport.json \
   --output outputs/fluid/rain-v3-fallback-new

@@ -260,7 +260,7 @@ unjustified subsystem or produce an unreadable intermediate state.
 
 Current publication note: the original cloudy day/night card below is retained
 storyboard history. The owner-approved
-[front-facing solar revision](../projects/gltf_viewer/showcase_solar_v1.md) is now
+[front-facing solar revision](../studies/gltf_viewer/showcase_solar_v1.md) is now
 the saved-water A highlight: face-on opening, eased 45° arc, 14:00→19:30 solar
 clock, automatic exposure and clear sky. It supersedes the interim fixed-morning
 cut; the older recipes and attachments remain historical provenance.
@@ -513,7 +513,7 @@ cut; the older recipes and attachments remain historical provenance.
 - **Status:** Owner-selected, packaged from clean source and published through
   a byte-verified GitHub attachment. The original four clips are untouched.
 - **Authority:** [Recipe](media/showcase/fluid-25d-recipe.json),
-  [presentation qualification](../projects/fluid/fluid_25d/presentation_v1.md),
+  [presentation qualification](../studies/fluid_25d/notes/presentation_v1.md),
   and [project quickstart](../projects/terrain_water/README.md).
 
 ### Locked root-gallery capture standard
@@ -577,7 +577,7 @@ capture session.
 
 The original implementation moved through these gates. Its four-highlight
 wording records that cohort, not today's total. Fluid 2.5D subsequently became
-the fifth published highlight; see its [current production guide](../projects/fluid/fluid_25d/presentation_v1.md).
+the fifth published highlight; see its [current production guide](../studies/fluid_25d/notes/presentation_v1.md).
 The remaining storyboard cards still require their own editorial decisions.
 
 ### 1. Creative lock

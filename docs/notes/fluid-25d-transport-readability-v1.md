@@ -13,7 +13,7 @@ camera, and a fixed 900-step trace. It does not select terrain, change the
 River V0 default, or claim that the dye model is a general advection product.
 
 The reproducible runner is
-[`run_transport_readability_v1.sh`](../../projects/fluid/fluid_25d/run_transport_readability_v1.sh).
+[`run_transport_readability_v1.sh`](../../studies/fluid_25d/harness/run_transport_readability_v1.sh).
 It accepts one optional output-directory argument and otherwise creates a
 timestamped root under `outputs/fluid/transport-readability-v1-*`. `SUBSTEPS`
 defaults to `16` and can be overridden for a repeat run (for example,

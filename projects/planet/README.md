@@ -37,7 +37,7 @@ source channels without material or lighting.
 ## Review
 
 ```sh
-projects/planet/capture_orbital_review.sh
+projects/planet/tools/capture_orbital_review.sh
 ```
 
 The script writes the lit, phase, and source-field review pack to

@@ -23,7 +23,7 @@ captures and larger-domain comparisons do not waive the failure gate.
 
 - Manifest: `cache/terrain/sources/v1/landscape-variations/temperate-mountain-valley/heightfield.json`.
 - Elevation SHA-256: `a978ecd435d2a161598d78ecf71221cba53b371e98c3525d18ebeab6665aa737`.
-- Recipe: `projects/fluid/fluid_25d/fixtures/hillside-flow-study-v1/temperate-upland.json`.
+- Recipe: `studies/fluid_25d/harness/fixtures/hillside-flow-study-v1/temperate-upland.json`.
 - Crop `[1280,1536,256,256]`, native 30 m; no vertical exaggeration.
 - Crop SHA-256: `42cc62f823284c41d768bc05b6195cf291879fb4f6f04337a327ab79806ef5d8`.
 - Dry start; five face-connected source cells around full-map `[1365,1621]`.
@@ -155,7 +155,7 @@ performance measurements or an isolated solver benchmark.
 ## Continuous local review
 
 ```bash
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_flow_demo.py
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_flow_demo.py
 ```
 
 The launcher checks the immutable inputs, starts at 8x pacing with the close
@@ -261,19 +261,19 @@ with the same `<fresh>/256` directory. Replace `<fresh>` with your new path
 before running:
 
 ```bash
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_sustained_flow_v2.py \
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_sustained_flow_v2.py \
   --out <fresh>/256 --phase hydraulics
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_sustained_flow_v2.py \
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_sustained_flow_v2.py \
   --out <fresh>/256 --phase oracles
 ```
 
 For this retained ledger-only failure, the explicit diagnostic paths are:
 
 ```bash
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_sustained_flow_v2.py \
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_sustained_flow_v2.py \
   --out <fresh>/512 --domain 512 --phase hydraulics \
   --parent-evidence <fresh>/256/hydraulics.json --diagnostic-unhealthy
-rtk proxy python3 projects/fluid/fluid_25d/run_hillside_sustained_flow_v2.py \
+rtk proxy python3 studies/fluid_25d/harness/run_hillside_sustained_flow_v2.py \
   --out <fresh>/256 --phase captures --diagnostic-unhealthy
 ```
 
