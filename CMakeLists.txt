@@ -391,6 +391,15 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
         APPEND
         PROPERTY LABELS "headless;policy"
     )
+    find_program(CUBEY_LAYOUT_PYTHON NAMES python3)
+    if(CUBEY_LAYOUT_PYTHON AND CUBEY_BUILD_PROJECTS)
+        add_test(NAME project_layout_hygiene
+            COMMAND "${CUBEY_LAYOUT_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_project_layout.py")
+        add_test(NAME project_layout_rules
+            COMMAND "${CUBEY_LAYOUT_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_project_layout.py")
+        set_tests_properties(project_layout_hygiene project_layout_rules
+            PROPERTIES LABELS "unit;docs;policy" TIMEOUT 30)
+    endif()
 endif()
 
 if (CUBEY_FETCH_GLTF_SAMPLE_ASSETS)

@@ -3,6 +3,8 @@
 This directory contains current foundation design notes that are more detailed
 than the root design and roadmap.
 
+- [Project layout and current authority](project-layout.md): supported front doors,
+  tooling/tests, indexed studies and presentation/provenance boundaries.
 - [Host and engine](host-engine.md): GLFW/windowed host, headless host, input,
   frame flow, and project lifecycle direction.
 - [Configuration V2](configuration.md): project-owned typed configuration,
