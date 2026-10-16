@@ -33,6 +33,15 @@ Several historical names may resolve to one final file after successive moves;
 relocation targets must be canonical, not chains through another former name.
 
 `tools/check_project_layout.py` and its tests enforce root script/note placement,
-current navigation, relocation targets, protected narratives and builtin media
-identity. Capture policy still scans relocated helpers. Static checks, numerical
-tests, GPU/headless runs and human/native GUI acceptance remain distinct gates.
+current project and architecture navigation, relocation targets, protected
+narratives and builtin media identity. Markdown code examples are excluded from
+link checks. Repository tools are indexed in [tools/README.md](../../tools/README.md),
+with their regression suites under `tests/tools/` and registered in CTest.
+
+`cubey_add_app_target` records configured application targets. After project and
+study registration, `cmake/CubeyRepositoryTests.cmake` derives dynamic-rendering
+policy coverage from their source directories, including shared implementation
+files outside a frontend directory. Disabled studies do not enter this scan;
+there is no second app roster to maintain. Capture policy still scans relocated
+helpers. Static checks, numerical tests, GPU/headless runs and human/native GUI
+acceptance remain distinct gates.

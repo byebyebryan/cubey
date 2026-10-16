@@ -3,6 +3,7 @@
 
 import hashlib
 import os
+import sys
 import tempfile
 import threading
 import unittest
@@ -10,6 +11,8 @@ from functools import partial
 from http.client import HTTPConnection
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 
 from report_server import ReportHandler, byte_range, discover_reports
 

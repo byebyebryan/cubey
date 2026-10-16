@@ -194,6 +194,8 @@ evidence, and archived work. Good starting points:
   config, JSON serialization, CLI precedence, and validation.
 - [Roadmap](docs/roadmap.md) — current readiness and likely next foundation
   work.
+- [Repository tools](tools/README.md) — current navigation checks, CMake policy
+  fixtures, and the local report browser.
 - [Showcase plan](docs/showcase.md) — shot design, capture contract, and media
   provenance.
 - [Changelog](CHANGELOG.md) — implementation history and release notes.

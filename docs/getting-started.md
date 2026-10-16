@@ -24,7 +24,7 @@ tmux new-session -d -s cubey-reports -c "$PWD" \
 tmux attach -t cubey-reports
 
 # Small HTTP/discovery regression suite (no GPU required):
-python3 -B tools/test_report_server.py
+python3 -B tests/tools/test_report_server.py
 ```
 
 Open `http://127.0.0.1:8001/` for the local-only server, or

@@ -11,6 +11,7 @@ function(cubey_add_app_target target)
     endif()
 
     add_executable(${target} ${CUBEY_APP_SOURCES})
+    set_property(GLOBAL APPEND PROPERTY CUBEY_APP_TARGETS "${target}")
     if (CUBEY_APP_OUTPUT_NAME)
         set_target_properties(${target} PROPERTIES OUTPUT_NAME "${CUBEY_APP_OUTPUT_NAME}")
     endif()

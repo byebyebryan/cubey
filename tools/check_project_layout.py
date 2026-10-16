@@ -24,6 +24,22 @@ def slug(text):
     return re.sub(r"\s", "-", re.sub(r"[^\w\s-]", "", text.lower()))
 
 
+def without_fenced_code(text):
+    """Leave prose and headings, ignoring Markdown's backtick/tilde fences."""
+    lines, fence, length = [], None, 0
+    for line in text.splitlines(keepends=True):
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        if fence:
+            if marker and marker[1][0] == fence and len(marker[1]) >= length and not marker[2].strip():
+                fence = None
+            continue
+        if marker:
+            fence, length = marker[1][0], len(marker[1])
+        else:
+            lines.append(line)
+    return "".join(lines)
+
+
 def project_errors(root, folder):
     errors = []
     if not (folder / "README.md").is_file():
@@ -41,7 +57,9 @@ def project_errors(root, folder):
 
 def link_errors(root, source):
     errors = []
-    for target in re.findall(r"\]\(([^)]+)\)", source.read_text()):
+    prose = without_fenced_code(source.read_text())
+    prose = re.sub(r"(`+)(?!`).*?\1(?!`)", "", prose, flags=re.S)
+    for target in re.findall(r"\]\(([^)]+)\)", prose):
         if re.match(r"[a-zA-Z]+:", target):
             continue
         relative, _, anchor = target.partition("#")
@@ -56,7 +74,7 @@ def link_errors(root, source):
         if not destination.exists():
             errors.append(f"{source.relative_to(root)}: missing link {target}")
         elif anchor and destination.suffix == ".md":
-            text = destination.read_text()
+            text = without_fenced_code(destination.read_text())
             anchors = {slug(h) for h in re.findall(r"^#{1,6} (.+)$", text, re.M)}
             anchors.update(re.findall(r'id="([^"]+)"', text))
             if anchor not in anchors:
@@ -111,8 +129,8 @@ def audit(root):
                      "root_files": len(files),
                      "root_scripts": sum(p.suffix in {".py", ".sh", ".mjs"} for p in files)})
     front_doors.update(root / p for p in (
-        "README.md", "docs/README.md", "docs/architecture/project-layout.md",
-        "docs/architecture/cloud-rendering.md", "docs/architecture/configuration.md",
+        "README.md", "tools/README.md", "docs/README.md", "docs/DESIGN.md",
+        "docs/getting-started.md", "docs/roadmap.md", "docs/showcase.md",
         "studies/cloud/README.md", "studies/cloud/terrainengine/README.md",
         "studies/cloud/terrainengine/tools/README.md",
         "studies/planet/README.md", "studies/planet/design.md",
@@ -124,6 +142,7 @@ def audit(root):
         "projects/terrain_water/demo_setup_v1.md",
         "projects/terrain_water/integration.md",
         "projects/terrain_water/external_synxflow/README.md"))
+    front_doors.update((root / "docs/architecture").glob("*.md"))
     for p in sorted(front_doors):
         if not p.is_file():
             errors.append(f"{p.relative_to(root)}: missing front door")

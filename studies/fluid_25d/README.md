@@ -18,6 +18,10 @@ startup does not import these study harnesses.
 - [Published film reproduction](notes/presentation_v1.md): retained production tooling;
   no new film or changed provenance is implied by this relocation.
 - [Frozen README and presentation history](harness/README.md).
+- [CPU reference adapter](adapters/fluid_25d_external_reference_baseline.cpp):
+  source-only rainfall comparison around the production finite-volume oracle.
+  It has no app or CMake target and does not implement another solver. Explicit
+  compilation needs the current oracle source and its configured include paths.
 
 ## Harnesses and limits
 

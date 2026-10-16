@@ -47,6 +47,38 @@ class LayoutRules(unittest.TestCase):
             source.write_text("[optional](outputs/missing/index.html) [site](https://example.org)")
             self.assertEqual(check.link_errors(root, source), [])
 
+    def test_code_samples_are_not_markdown_links_or_headings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "README.md"
+            source.write_text('''# Real heading
+```cpp
+[](const RenderGraphExecutionContext& ctx) {};
+# Sample heading
+```
+~~~text
+[example](missing.md)
+~~~
+Inline `[](int value) {}` and ``[example](also-missing.md)`` are code.
+[valid](#real-heading) [invalid](#sample-heading)
+''')
+            self.assertEqual(check.link_errors(root, source), [
+                "README.md: missing anchor #sample-heading"])
+
+    def test_longer_fences_and_embedded_backticks_preserve_real_links(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "README.md"
+            source.write_text('''````md
+```cpp
+[not a link](missing.md)
+```
+````
+Inline ``a ` tick`` then [real link](missing.md).
+''')
+            self.assertEqual(check.link_errors(root, source), [
+                "README.md: missing link missing.md"])
+
     def test_launcher_imports_no_studies_or_optional_runtime(self):
         root = Path(__file__).resolve().parents[2]
         code = """import sys

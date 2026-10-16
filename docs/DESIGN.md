@@ -630,6 +630,8 @@ cubey/
   studies/terrain/        -- opt-in algorithm, ShaderToy, and hydrology studies
   tests/
     cubey/                 -- domain-split test registry and focused unit tests
+    tools/                 -- repository policy and local-report HTTP tests
+  tools/                   -- maintained repository checks and report browser
   shaders/                 -- shared GLSL includes (lighting, noise, math)
   third_party/             -- vendored single-header dependencies and notices
   docs/

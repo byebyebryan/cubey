@@ -85,36 +85,3 @@ void test_hostless_cmake_defaults_disable_host_dependent_targets() {
     require_contains(cmake, "set(BUILD_TESTING ${CUBEY_BUILD_HOST}",
                      "hostless builds should default tests off with the host layer");
 }
-
-void test_render_app_dynamic_rendering_scan_covers_built_projects() {
-    const std::filesystem::path root{CUBEY_SOURCE_DIR};
-    const std::string cmake = read_source_file(root / "CMakeLists.txt");
-
-    require_contains(cmake, "NAME render_apps_use_dynamic_rendering",
-                     "dynamic-rendering hygiene test should name examples and projects");
-    require_contains(cmake,
-                     "BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS OR "
-                     "CUBEY_BUILD_CLOUD_STUDIES OR CUBEY_BUILD_PLANET_STUDIES)",
-                     "dynamic-rendering hygiene should register for project-only and "
-                     "cloud-study-only or planet-study-only builds");
-    require_contains(cmake, "CUBEY_DYNAMIC_RENDERING_SCAN_DIRS",
-                     "dynamic-rendering hygiene test should build scan dirs conditionally");
-    require_contains(cmake, "projects/gltf_viewer",
-                     "dynamic-rendering hygiene test should scan the glTF viewer");
-    require_contains(cmake, "projects/ocean",
-                     "dynamic-rendering hygiene test should scan the active ocean project");
-    require_contains(cmake, "projects/terrain",
-                     "dynamic-rendering hygiene test should scan the active terrain project");
-    require_contains(cmake, "studies/cloud/terrainengine",
-                     "dynamic-rendering hygiene should scan the opt-in cloud reference study");
-    require_contains(cmake, "studies/planet",
-                     "dynamic-rendering hygiene should scan the opt-in Planet study");
-    require_not_contains(cmake, "projects/planet",
-                         "Planet should no longer be scanned as a production project");
-    require_not_contains(cmake, "projects/cloud_ref",
-                         "cloud reference should no longer be scanned as a production project");
-    require_not_contains(cmake, "projects/ocean_ref",
-                         "dynamic-rendering hygiene test should not scan removed ocean reference");
-    require_not_contains(cmake, "projects/ocean_legacy",
-                         "dynamic-rendering hygiene test should not scan removed ocean legacy");
-}

@@ -374,5 +374,7 @@
   "projects/terrain/test_study_wider_water_v1.py": "studies/terrain/landscapes/test_study_wider_water_v1.py",
   "projects/terrain/test_study_world_wide_water_v1.py": "studies/terrain/landscapes/test_study_world_wide_water_v1.py",
   "projects/terrain/world_wide_water_v1.md": "studies/terrain/landscapes/world_wide_water_v1.md",
-  "projects/terrain_water/test_project_split_gpu.py": "projects/terrain_water/tests/test_project_split_gpu.py"
+  "projects/terrain_water/test_project_split_gpu.py": "projects/terrain_water/tests/test_project_split_gpu.py",
+  "tools/test_report_server.py": "tests/tools/test_report_server.py",
+  "projects/fluid/sim/fluid_25d/fluid_25d_external_reference_baseline.cpp": "studies/fluid_25d/adapters/fluid_25d_external_reference_baseline.cpp"
 }
