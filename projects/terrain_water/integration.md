@@ -42,10 +42,16 @@ shading; selecting a terrain-only preset loads no hydraulic state.
   source, locks and setup gates. The qualified ignored private binary retains its
   old absolute build path/RPATH; no artifact is relocated or requalified.
 
+The recording/live viewer has project-private session, playback, resource,
+rendering, presentation/control and managed-reload modules. Its private header
+owns application state declarations; both frontends compile the same modules
+through `Fluid25DApp.cmake`. Protocol serialization and numerical oracles retain
+their existing component ownership.
+
 The old Python entry points forward to the canonical Terrain Water modules;
 they do not fork orchestration or start a second worker. Established
 `--fluid25d-*` flags, `cubey.fluid25d.*` schemas, helper import names, outputs
-paths, namespaces and frozen recipes remain stable. Renaming all of them is
+paths, public namespaces and frozen recipes remain stable. Renaming all of them is
 not required to establish distinct projects.
 
 The launcher's historical `HERE` attribute still resolves to the retained helper

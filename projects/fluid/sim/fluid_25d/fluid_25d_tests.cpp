@@ -4930,7 +4930,7 @@ void test_presentation_cue_contract() {
     const std::string ui =
         read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_ui.cpp");
     const std::string recording_app =
-        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_recording_app.cpp");
+        read_shader(std::filesystem::path(__FILE__).parent_path() / "fluid_25d_recording_presentation.cpp");
     const std::string project_config = read_shader(std::filesystem::path(__FILE__).parent_path() /
                                                    "../../fluid_25d/fluid_25d_project_config.h");
     require(reset.find("cue_lattice") != std::string::npos &&
@@ -4983,7 +4983,7 @@ void test_presentation_cue_contract() {
     const std::size_t highlights_ui_end =
         highlights_ui_start == std::string::npos
             ? std::string::npos
-            : recording_app.find("\n        }\n", highlights_ui_start);
+            : recording_app.find("\n    }\n", highlights_ui_start);
     const std::string_view highlights_ui_block =
         highlights_ui_start == std::string::npos || highlights_ui_end == std::string::npos
             ? std::string_view{}
