@@ -13,11 +13,18 @@ include paths, and emits one `.spv` file per entry shader. `glslangValidator`
 is a build-time compiler and validator, not a runtime system, optimizer,
 reflection layer, or shader architecture tool.
 
-Entry shaders should list their non-entry includes in `SHADER_DEPENDS` so
-CMake rebuilds SPIR-V after helper edits. Shared packages such as
-`cubey_forward_pbr_shader_sources` and `cubey_cloud_layer_shader_sources`
-should expose the entry shaders for reusable render features; matching
-dependency helpers should expose the included `.glsl` files.
+The compiler emits a depfile for each SPIR-V output, and CMake/Ninja consumes
+it through `DEPFILE`. Nested and conditional GLSL includes therefore determine
+incremental rebuilds using the actual preprocessor. `glslangValidator` must
+support `--depfile` (11.3 or newer); configuration fails clearly otherwise.
+Explicit `SHADER_DEPENDS` remains available for generated inputs and package
+prerequisites, but is not the sole record of transitive includes.
+
+Shared packages such as `cubey_forward_pbr_shader_sources` and
+`cubey_cloud_layer_shader_sources` expose reusable entry shaders. Their dependency
+helpers remain an explicit package inventory. Real build fixtures under
+`tests/tools/test_shader_build.py` verify nested include edits, removal, spaces,
+inactive includes, selective rebuilds and no-op behavior.
 
 ## Library Ownership
 

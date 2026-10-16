@@ -14,6 +14,20 @@ function(cubey_add_glsl_shaders target)
 
     find_program(GLSLANG_VALIDATOR_EXE glslangValidator REQUIRED)
 
+    # Dependency discovery must follow the compiler's actual preprocessor,
+    # including nested and conditional includes. Validate once per configure.
+    get_property(depfile_compiler GLOBAL PROPERTY CUBEY_GLSLANG_DEPFILE_COMPILER)
+    if (NOT "${depfile_compiler}" STREQUAL "${GLSLANG_VALIDATOR_EXE}")
+        execute_process(COMMAND "${GLSLANG_VALIDATOR_EXE}" --help
+            OUTPUT_VARIABLE glslang_help ERROR_VARIABLE glslang_help_error TIMEOUT 10)
+        string(FIND "${glslang_help}${glslang_help_error}" "--depfile" depfile_option)
+        if (depfile_option EQUAL -1)
+            message(FATAL_ERROR
+                "Cubey requires glslangValidator with --depfile support (11.3 or newer): ${GLSLANG_VALIDATOR_EXE}")
+        endif()
+        set_property(GLOBAL PROPERTY CUBEY_GLSLANG_DEPFILE_COMPILER "${GLSLANG_VALIDATOR_EXE}")
+    endif()
+
     set(shader_include_dirs ${CUBEY_SHADER_INCLUDE_DIRS})
     list(APPEND shader_include_dirs "${CMAKE_SOURCE_DIR}/shaders")
     if (CUBEY_FASTNOISE_LITE_GLSL_DIR)
@@ -44,14 +58,17 @@ function(cubey_add_glsl_shaders target)
         get_filename_component(shader_path "${shader}" ABSOLUTE)
         get_filename_component(shader_name "${shader}" NAME)
         set(shader_output "${CUBEY_SHADER_OUTPUT_DIR}/${shader_name}.spv")
+        set(shader_depfile "${shader_output}.d")
 
         add_custom_command(
             OUTPUT "${shader_output}"
+            BYPRODUCTS "${shader_depfile}"
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${CUBEY_SHADER_OUTPUT_DIR}"
             COMMAND
                 "${GLSLANG_VALIDATOR_EXE}" ${include_args} ${define_args}
-                -V "${shader_path}" -o "${shader_output}"
+                -V "${shader_path}" -o "${shader_output}" --depfile "${shader_depfile}"
             DEPENDS "${shader_path}" ${shader_dependencies}
+            DEPFILE "${shader_depfile}"
             COMMENT "Compiling GLSL shader ${shader_name}"
             VERBATIM
         )

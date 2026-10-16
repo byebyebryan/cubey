@@ -67,6 +67,10 @@ function(cubey_add_repository_tests)
         add_test(NAME cmake_app_policy_rules
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_cmake_app_policy.py"
                 --cmake "${CMAKE_COMMAND}" --ctest "${CMAKE_CTEST_COMMAND}")
+        add_test(NAME shader_build_rules
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_shader_build.py"
+                --cmake "${CMAKE_COMMAND}")
+        set_tests_properties(shader_build_rules PROPERTIES LABELS "unit;build;policy" TIMEOUT 60)
         add_test(NAME report_server_tests
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_report_server.py")
         set_tests_properties(project_layout_hygiene project_layout_rules cmake_app_policy_rules

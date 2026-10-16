@@ -18,3 +18,5 @@ python3 -B tests/tools/test_project_layout.py
 python3 -B tests/tools/test_cmake_app_policy.py
 python3 -B tests/tools/test_report_server.py
 ```
+
+Shader incremental-build fixtures: `python3 -B tests/tools/test_shader_build.py`.
