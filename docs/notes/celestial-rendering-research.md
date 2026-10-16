@@ -1,14 +1,15 @@
 # Celestial Rendering Research
 
 This note captures the design pivot triggered by the planet orbit-view sun disk
-artifact. It is scratch context for the next implementation slice; the stable
-architecture belongs in `docs/architecture/planet-rendering.md`.
+artifact. The orbital design is now retained in the paused
+[Planet study](../../studies/planet/design.md); active sky ownership belongs to
+the shared atmosphere/environment foundation.
 
 Status: this is historical design context. The original recommendation to keep
 `CelestialSystem` project-local has since been superseded; celestial state now
-lives in shared `cubey::render` code and `projects/planet` adapts that shared
-state into planet-scale rendering. The current kickoff map for sky work lives in
-`docs/notes/sky-celestial-current-state.md`.
+lives in shared `cubey::render` code. Planet is paused in `studies/planet`.
+Current sky ownership is described in the
+[cloud architecture](../architecture/cloud-rendering.md) and Atmosphere guide.
 
 ## Original Cubey Problem
 

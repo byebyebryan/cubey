@@ -13,6 +13,10 @@ Their reference default is the `dev-cloud-studies` binary, not a normal project
 build; set `CLOUD_REF_APP` to choose another explicit build. The profiling helper
 opens native windows and is for manual runs only; both capture helpers are headless.
 
+`capture_star_field_review.sh` reviews Atmosphere only. The obsolete Planet
+surface/orbit rows were removed when Planet became a paused study; orbital
+comparison captures belong to the [study tools](../../../studies/planet/tools/README.md).
+
 - [capture_atmosphere_background_horizon.sh](capture_atmosphere_background_horizon.sh)
 - [capture_cloud_edge_resolve.sh](capture_cloud_edge_resolve.sh)
 - [capture_cloud_farfield_handoff.sh](capture_cloud_farfield_handoff.sh)

@@ -4,7 +4,7 @@ This note captures the product and architecture direction for moving
 `projects/ocean` from a large visible water patch toward horizon-scale and
 curved-local rendering. Full planet scale is now treated as a separate
 future planet-surface direction, not the next responsibility of the ocean
-project or the active orbital-only `projects/planet` executable.
+project or the paused orbital-only `studies/planet` executable.
 
 The current renderer is good enough as a wave and material testbed, but it still
 reads as a large square surface when viewed from some angles or distances. The
@@ -318,7 +318,7 @@ Avoid:
 3. Done enough for now: horizon-derived extent, curved far-surface mapping, and
    aerial perspective keep square bounds out of normal ocean views. Deeper mesh
    topology work should wait for a separately scoped planet-surface consumer;
-   the active orbital Planet is not a local-detail host.
+   the paused orbital Planet study is not a local-detail host.
 4. Done as a placeholder: add horizon-aware atmosphere/aerial-perspective
    blending for the far ocean.
 5. Done as a flat seam: introduce local-frame, surface-frame, datum, projection,
@@ -332,7 +332,7 @@ Avoid:
    morphing, persistent topology, cache/streaming contracts, render order, and
    ocean payload attachment before porting any ocean waves.
 
-This keeps ocean product-visible without expanding the active orbital Planet or
+This keeps ocean product-visible without expanding the paused orbital Planet or
 committing Cubey to a planet-surface implementation now.
 
 ## Open Questions

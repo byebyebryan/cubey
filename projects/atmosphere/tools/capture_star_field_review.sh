@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ATMOSPHERE_APP="${ATMOSPHERE_APP:-${ROOT_DIR}/build/dev/projects/atmosphere/atmosphere}"
-PLANET_APP="${PLANET_APP:-${ROOT_DIR}/build/dev/projects/planet/planet}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/atmosphere-star-field-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1920}"
 HEIGHT="${HEIGHT:-1080}"
@@ -39,8 +38,7 @@ printf 'file\ttitle\tgroup\targs\n' >"${MANIFEST}"
     printf '# Star Field Review\n\n'
     printf -- '- Size: %sx%s\n' "${WIDTH}" "${HEIGHT}"
     printf -- '- Frames: %s\n\n' "${FRAMES}"
-    printf 'The atmosphere rows use the isolated `stars` view. Planet rows disable '
-    printf 'clouds, moon, and Milky Way to check final-scene integration.\n\n'
+    printf 'Atmosphere captures use the isolated `stars` view.\n\n'
     printf '| Capture | Group | Args |\n'
     printf '|---|---|---|\n'
 } >"${INDEX}"
@@ -61,10 +59,8 @@ record_capture() {
         >>"${INDEX}"
     CAPTURE_FILES+=("${OUT_DIR}/${name}.png")
     CAPTURE_LABELS+=("${title}")
-    if [[ "${group}" != "integration" ]]; then
-        PLACEMENT_FILES+=("${OUT_DIR}/${name}.png")
-        PLACEMENT_LABELS+=("${title}")
-    fi
+    PLACEMENT_FILES+=("${OUT_DIR}/${name}.png")
+    PLACEMENT_LABELS+=("${title}")
 }
 
 atmosphere_base=(
@@ -94,22 +90,6 @@ for yaw in 0 45 90 135 180; do
         "${atmosphere_base[@]}" --night-sky-mode human --camera-pitch-offset-deg 35 \
         --camera-yaw-offset-deg "${yaw}"
 done
-
-planet_base=(
-    --planet-pause-time
-    --no-clouds
-    --no-moon
-    --milky-way-intensity 0
-    --star-intensity 1.0
-    --star-density 0.65
-)
-record_capture "${PLANET_APP}" planet-surface "Planet surface" integration \
-    "${planet_base[@]}" --planet-camera-mode surface --planet-camera-altitude-m 1200 \
-    --planet-day-of-year 80 --planet-time-hours 12 --planet-camera-surface-look antisun \
-    --planet-camera-surface-pitch-deg 35
-record_capture "${PLANET_APP}" planet-orbit "Planet orbit" integration \
-    "${planet_base[@]}" --planet-camera-mode orbit --planet-camera-altitude-m 14000000 \
-    --planet-day-of-year 80 --planet-time-hours 12
 
 if command -v magick >/dev/null 2>&1; then
     montage_inputs=()

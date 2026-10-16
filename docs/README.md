@@ -62,8 +62,6 @@ Detailed current foundation notes live under
 - [Ocean horizon and curved-local scale](architecture/ocean-horizon-and-planet-scale.md):
   ocean/planet scale boundary, curved far-surface mapping, and local-frame
   handoff direction.
-- [Planet rendering](architecture/planet-rendering.md): orbital planet product,
-  deterministic surface fields, celestial composition, and validation policy.
 - [Terrain reboot direction](architecture/terrain-reboot.md): local terrain
   product generator strategy, previous terrain lessons, reference takeaways,
   product contract, and first vertical slice.
@@ -106,7 +104,6 @@ Active projects:
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [glTF Viewer](../projects/gltf_viewer/README.md)
 - [Ocean](../projects/ocean/README.md)
-- [Planet](../projects/planet/README.md)
 
 Opt-in reference studies:
 
@@ -116,6 +113,8 @@ Opt-in reference studies:
 
 Paused labs:
 
+- [Planet orbital-rendering study](../studies/planet/README.md), with its
+  [retained design](../studies/planet/design.md) and explicit opt-in build.
 - [Terrain Hydrology Lab](../studies/terrain/hydrology/README.md)
 
 Legacy material:

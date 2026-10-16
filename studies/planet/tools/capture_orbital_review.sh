@@ -2,12 +2,14 @@
 set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
-BUILD_DIR=${BUILD_DIR:-"${ROOT_DIR}/build/dev"}
-APP=${APP:-"${BUILD_DIR}/projects/planet/planet"}
+BUILD_DIR=${BUILD_DIR:-"${ROOT_DIR}/build/dev-planet-studies"}
+APP=${APP:-"${BUILD_DIR}/studies/planet/planet"}
 OUT_DIR=${1:-"${ROOT_DIR}/outputs/planet/orbital-v1"}
 
-cmake --build "${BUILD_DIR}" --target cubey_project_planet -j 4
-rm -rf "${OUT_DIR}"
+if [ ! -x "${APP}" ]; then
+    printf 'missing Planet study executable: %s\nBuild it explicitly with the dev-planet-studies preset; see studies/planet/README.md.\n' "${APP}" >&2
+    exit 1
+fi
 mkdir -p "${OUT_DIR}"
 
 capture() {

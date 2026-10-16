@@ -39,7 +39,7 @@ before other terrain sources exist.
   future lake/wetland masks and shoreline/bathymetry adapters.
 - `docs/archive/terrain/terrain-ocean-field-contract.md`: shoreline/ocean
   handoff vocabulary that should remain an adapter target.
-- `docs/architecture/planet-rendering.md`: planet-scale terrain/ocean handoff
-  and water-datum vocabulary.
+- `docs/architecture/ocean-adjacent-systems.md`: deferred planet-surface
+  handoff and water-datum vocabulary. The orbital renderer is a paused study.
 - `docs/notes/ocean-surface-v1.md`: accepted local open-water renderer scope,
   standing-water reuse limits, and the future terrain/ocean composition order.

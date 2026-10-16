@@ -95,12 +95,11 @@ and keep domain-specific policy local.
 | [Ocean](projects/ocean/README.md) | Spectral FFT waves, clipmap LOD, persistent whitecaps, curved local horizon, and atmosphere/cloud lighting. |
 | [Terrain](projects/terrain/README.md) | External-raster far backdrop with cached sector geometry, placement, material detail, and self-shadowing. |
 | [Terrain Water](projects/terrain_water/README.md) | Terrain-water integration with live external SynxFlow, recorded fields, and shared terrain/water rendering. |
-| [Planet](projects/planet/README.md) | Orbital-only Earth-like globe with deterministic surface fields and shared celestial composition. |
 | [glTF Viewer](projects/gltf_viewer/README.md) | Staged glTF 2.0 PBR import, animation and deformation, required-use material extensions, procedural or HDR environments, shadows, and optional terrain. |
 | [Fractal 2D](projects/fractal_2d) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
 
-Terrain, Planet, and Ocean deliberately represent different scales: far
-backdrop, orbital body, and local water surface. Surface-scale planet terrain,
+Terrain and Ocean deliberately represent different scales: far backdrop and
+local water surface. Planet rendering is a paused study. Surface-scale planet terrain,
 shorelines, bathymetry, and shallow-water coupling remain separate work rather
 than hidden extensions of those products.
 
@@ -128,6 +127,8 @@ white-furnace validation target, not a public demo.
 
 ### Studies and retained references
 
+- [Planet](studies/planet/README.md) is a paused orbital-rendering study with an
+  explicit opt-in build; its renderer, design, and review tools are retained.
 - [Terrain Hydrology](studies/terrain/hydrology/README.md) is a paused snapshot
   of the earlier regional terrain and landscape-evolution work.
 - [Cloud reference study](studies/cloud/README.md), [Terrain Ref](studies/terrain/reference/README.md),

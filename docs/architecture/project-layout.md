@@ -15,6 +15,8 @@ Application roots are front doors and runtime source, not chronological work log
   the [cloud reference](../../studies/cloud/README.md) uses
   `CUBEY_BUILD_CLOUD_STUDIES=OFF` by default, not the active project build graph.
   Production cloud work stays in the shared foundation and Atmosphere.
+  The paused [Planet study](../../studies/planet/README.md) likewise uses
+  `CUBEY_BUILD_PLANET_STUDIES=OFF` by default and the `dev-planet-studies` preset.
 - `cache/`, `outputs/`, private native builds: ignored generated inputs/evidence,
   never implicit checkout prerequisites or cleanup targets in a source move.
 

@@ -1,5 +1,5 @@
 {
-  "projects/terrain_water/test_project_split_gpu.py": "projects/terrain_water/tests/test_project_split_gpu.py",
+  "docs/architecture/planet-rendering.md": "studies/planet/design.md",
   "projects/atmosphere/capture_atmosphere_background_horizon.sh": "projects/atmosphere/tools/capture_atmosphere_background_horizon.sh",
   "projects/atmosphere/capture_cloud_edge_resolve.sh": "projects/atmosphere/tools/capture_cloud_edge_resolve.sh",
   "projects/atmosphere/capture_cloud_farfield_handoff.sh": "projects/atmosphere/tools/capture_cloud_farfield_handoff.sh",
@@ -309,7 +309,22 @@
   "projects/ocean/profile_cloud_reflections.sh": "projects/ocean/tools/profile_cloud_reflections.sh",
   "projects/ocean/profile_ocean_baseline.sh": "projects/ocean/tools/profile_ocean_baseline.sh",
   "projects/ocean/profile_scene_ocean_ablation.sh": "projects/ocean/tools/profile_scene_ocean_ablation.sh",
-  "projects/planet/capture_orbital_review.sh": "projects/planet/tools/capture_orbital_review.sh",
+  "projects/planet/CMakeLists.txt": "studies/planet/CMakeLists.txt",
+  "projects/planet/README.md": "studies/planet/README.md",
+  "projects/planet/capture_orbital_review.sh": "studies/planet/tools/capture_orbital_review.sh",
+  "projects/planet/main.cpp": "studies/planet/main.cpp",
+  "projects/planet/planet_app.cpp": "studies/planet/planet_app.cpp",
+  "projects/planet/planet_app.h": "studies/planet/planet_app.h",
+  "projects/planet/planet_config.cpp": "studies/planet/planet_config.cpp",
+  "projects/planet/planet_config.h": "studies/planet/planet_config.h",
+  "projects/planet/planet_config_tests.cpp": "studies/planet/planet_config_tests.cpp",
+  "projects/planet/planet_surface_product.cpp": "studies/planet/planet_surface_product.cpp",
+  "projects/planet/planet_surface_product.h": "studies/planet/planet_surface_product.h",
+  "projects/planet/planet_surface_product_tests.cpp": "studies/planet/planet_surface_product_tests.cpp",
+  "projects/planet/shaders/planet_orbit.frag": "studies/planet/shaders/planet_orbit.frag",
+  "projects/planet/shaders/planet_orbit.vert": "studies/planet/shaders/planet_orbit.vert",
+  "projects/planet/tools/README.md": "studies/planet/tools/README.md",
+  "projects/planet/tools/capture_orbital_review.sh": "studies/planet/tools/capture_orbital_review.sh",
   "projects/terrain/audit_world_wide_water_v1.py": "studies/terrain/landscapes/audit_world_wide_water_v1.py",
   "projects/terrain/capture_climate_calibration_study.sh": "studies/terrain/landscapes/capture_climate_calibration_study.sh",
   "projects/terrain/capture_desert_canyon_study.sh": "studies/terrain/landscapes/capture_desert_canyon_study.sh",
@@ -358,5 +373,6 @@
   "projects/terrain/test_study_wide_view_v1.py": "studies/terrain/landscapes/test_study_wide_view_v1.py",
   "projects/terrain/test_study_wider_water_v1.py": "studies/terrain/landscapes/test_study_wider_water_v1.py",
   "projects/terrain/test_study_world_wide_water_v1.py": "studies/terrain/landscapes/test_study_world_wide_water_v1.py",
-  "projects/terrain/world_wide_water_v1.md": "studies/terrain/landscapes/world_wide_water_v1.md"
+  "projects/terrain/world_wide_water_v1.md": "studies/terrain/landscapes/world_wide_water_v1.md",
+  "projects/terrain_water/test_project_split_gpu.py": "projects/terrain_water/tests/test_project_split_gpu.py"
 }

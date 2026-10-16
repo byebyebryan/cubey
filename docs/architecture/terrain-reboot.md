@@ -41,7 +41,7 @@ The existing terrain-adjacent projects keep distinct roles:
 | --- | --- |
 | Removed terrain lab | Historical R&D evidence for local terrain fields, diagnostics, river hierarchy, and failure modes. |
 | Removed coastal demo | Historical coastal terrain and bathymetry experiment. Its archived shoreline/ocean field contract remains an adapter target. |
-| `planet` | Orbital-only globe and scale reference. It is not the local-terrain host; a future planet-surface product may consume terrain through a separate adapter. |
+| `studies/planet` | Paused orbital globe and scale reference. A future planet-surface product may consume terrain through a separate adapter. |
 | `ocean` | Future consumer of shoreline, bathymetry, wetness, and water-depth products. It should not own terrain generation. |
 | `atmosphere` / `cloud` | Environment and lighting consumers/producers that pressure terrain material, weather, climate, and capture integration later. |
 

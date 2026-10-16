@@ -71,8 +71,6 @@ The current oversized shader pressure points are:
   performance-sensitive and still has rendering research in flight.
 - `shaders/cubey/cloud/surface_cloud_march.comp`: active, about 33 KB, future
   cloud surface-view split candidate after the cloud model settles.
-- `projects/planet/shaders/planet_surface.frag`: active, about 26 KB, future
-  planet surface/rendering split candidate.
 - `projects/fluid/sim/water_3d/shaders/water_3d_diagnostics.comp`: active,
   about 24 KB, future volume diagnostics split candidate.
 - `shaders/cubey/atmosphere/atmosphere_night_sky.glsl`: active, about 21 KB,
@@ -87,6 +85,9 @@ The current oversized shader pressure points are:
   final composition.
 - Retired cloud prototypes are historical evidence; do not recreate or refactor
   them as part of shared shader foundation work.
+- The legacy `planet_surface.frag` was removed with the surface viewer. The
+  later orbital shaders are retained in the paused `studies/planet` and are
+  outside the active shader follow-up queue.
 
 ## Extraction Rules
 
@@ -112,8 +113,6 @@ Near-term shader follow-ups should be cut as separate batches:
   surface/orbit split;
 - split `surface_cloud_march.comp` after the surface-cloud model settles enough
   to separate density, lighting, sampling, and post-resolve ownership;
-- split `planet_surface.frag` into planet surface field, material, atmosphere
-  blend, and debug helpers;
 - split `water_3d_diagnostics.comp` into volume sampling, raymarch, and debug
   output helpers;
 - promote volume/raymarch helpers only after cloud and fluid share real code,

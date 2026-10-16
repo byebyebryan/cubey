@@ -5,12 +5,14 @@ location and test-bed role. The retained comparison now lives in the opt-in
 [TerrainEngine cloud study](../../studies/cloud/terrainengine/README.md).
 Production ownership is described in the [cloud architecture](../architecture/cloud-rendering.md);
 new work belongs in the shared layer through Atmosphere, not the retained port.
+Planet-specific integration below is historical too: the orbital reboot is
+paused in [studies/planet](../../studies/planet/README.md) as of 2026-10-15.
 
 This note checkpoints the integration scope that promoted the former
 `projects/cloud` standalone renderer into a shared weather layer. Current cloud
 tuning happens through `projects/atmosphere`; glTF Viewer, ocean, and Water 3D
-consume the accepted surface-view environment products, while planet remains an
-opt-in scale-pressure target.
+consume the accepted surface-view environment products. Planet is a paused
+study, outside the active cloud-consumer set.
 
 ## Current Status 2026-07-15
 

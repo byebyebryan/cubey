@@ -167,12 +167,13 @@ Applications open an interactive window unless `--headless` is supplied:
 ./build/dev/projects/fluid/water_3d/water_3d
 ./build/dev/projects/fluid/fire_3d/fire_3d
 ./build/dev/projects/atmosphere/atmosphere
-./build/dev/projects/planet/planet
 ./build/dev/projects/gltf_viewer/gltf_viewer --input path/to/model.glb
 ```
 
 Project-local READMEs document their scene-specific controls and useful
 recipes. The [docs index](README.md#project-docs) links the maintained guides.
+The paused [Planet study](../studies/planet/README.md#explicit-build-and-use)
+has its own opt-in build and is excluded from normal project builds.
 
 Windowed `--frames N` runs exit after the requested frame count and print a
 final `windowed_perf` summary. Add `--print-frame-stats` for periodic stdout

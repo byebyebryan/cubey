@@ -1,8 +1,14 @@
-# Planet Rendering Direction
+# Paused Planet Rendering Study
+
+Status: retained design from the orbital reboot, paused on 2026-10-15. The
+renderer did not reach the intended visual quality and is no longer an active
+product. Its original scope and validation targets below are historical design
+intent, not current acceptance claims. See the [study guide](README.md) for
+explicit build/use and the [retirement record](../../docs/archive/retired-projects.md).
 
 ## Product Boundary
 
-`projects/planet` is an orbital-rendering product, not a surface simulation or
+`studies/planet` preserves an orbital-rendering experiment, not a surface simulation or
 planet-scale terrain engine. Its V1 purpose is a convincing, deterministic
 Earth-like globe for whole-disk and high-orbit views that exercises Cubey's
 shared sky, celestial, procedural-cache, and capture foundations.
@@ -11,7 +17,7 @@ The supported camera envelope keeps the disk between 15% and 70% of the
 viewport. The standard view is an illuminated disk around 48% of the viewport.
 There is no surface or low-orbit mode in V1.
 
-## Active Components
+## Retained Components
 
 - fixed smooth sphere geometry sampled by world direction, with no adaptive
   surface LOD or terrain displacement;
@@ -38,7 +44,7 @@ must not be hidden inside the orbital material or cloud shell.
 The previous `projects/planet_legacy` experiments are preserved in the archived
 planet design notes and Git history. They are comparison evidence, not an
 implementation base for this product; the retirement rationale and recovery
-anchor are in [`docs/archive/retired-projects.md`](../archive/retired-projects.md).
+anchor are in [`docs/archive/retired-projects.md`](../../docs/archive/retired-projects.md).
 
 ## Validation Gates
 

@@ -10,6 +10,8 @@ asset promise. No study runs as an implicit build/setup step.
 - [glTF saved-water / depth / cinematic auditions](gltf_viewer/README.md).
 - [Cloud reference](cloud/README.md): explicit opt-in TerrainEngine comparison,
   separate from the production atmosphere-hosted cloud layer.
+- [Planet](planet/README.md): paused orbital globe, retained design and review
+  tooling behind the explicit `dev-planet-studies` build preset.
 - [Terrain hydrology](terrain/hydrology/README.md), [reference](terrain/reference/README.md)
   and [ShaderToy reference](terrain/shadertoy/README.md) remain distinct older labs.
 

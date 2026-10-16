@@ -342,7 +342,7 @@ named explicitly and live in either `examples/` or `projects/`:
   command recording; that split is not automatically Cubey library API.
 - `projects/` - first-class graphics experiments and longer-lived creative
   work, including `atmosphere`, `terrain`, `smoke_2d`, `water_2d`, `water_3d`,
-  `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`, `planet`,
+  `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
   and `pbr_furnace`; retained reference and design-only targets have explicit
   names and status docs, while retired implementations live in Git history.
 - `third_party/` - small vendored dependencies with explicit license notes.
@@ -616,7 +616,6 @@ cubey/
           ocean_unpack.comp -- displacement, normals, and foam from FFT fields
           ocean.vert      -- camera-relative clipmap and cascaded displacement
           ocean.frag      -- water, foam, shared environment lighting, diagnostics
-      planet/             -- orbital globe, cached surface fields, and sky composition
       terrain/            -- raster heightfield backdrop product and review app
       pbr_furnace/
         CMakeLists.txt
@@ -627,6 +626,7 @@ cubey/
         pbr_furnace_render.* -- render request assembly and headless target path
         pbr_furnace_scene.* -- material grid definition and tests
   studies/cloud/terrainengine/ -- opt-in maintenance-only cloud reference port
+  studies/planet/         -- opt-in paused orbital globe and retained design
   studies/terrain/        -- opt-in algorithm, ShaderToy, and hydrology studies
   tests/
     cubey/                 -- domain-split test registry and focused unit tests
@@ -646,7 +646,6 @@ cubey/
       ocean-horizon-and-planet-scale.md
       ocean-rendering.md
       pbr-ibl.md
-      planet-rendering.md
       render-graph.md
       renderer-foundation.md
       threading-and-async.md

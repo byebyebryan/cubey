@@ -28,6 +28,12 @@ async-ready runtime boundary.
 
 ## Current Readiness Checkpoint
 
+Planet is paused as of 2026-10-15. Its orbital reboot did not reach the intended
+visual result and is retained in [studies/planet](../studies/planet/README.md),
+behind an explicit opt-in build. It is outside the active portfolio and
+showcase queue; the earlier scoped closure is historical, not visual acceptance.
+Shared sky, procedural, cache, and staging foundations remain active.
+
 Status: the first glTF Viewer milestone is closed. Its conformance—including
 required-use IOR, specular, clearcoat, anisotropy, iridescence, sheen,
 transmission, volume, and dispersion—plus staged-loading and incremental
@@ -106,7 +112,7 @@ Current stable foundation pieces:
   tests audit those package dependencies.
 
 The public visual showcase has a separate design checkpoint in [Showcase
-Storyboard and Capture Plan](showcase.md). Its thirteen project entries and
+Storyboard and Capture Plan](showcase.md). Its twelve project entries and
 provenance rules remain the storyboard authority. Five highlights are now
 creatively locked and packaged in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
@@ -116,7 +122,7 @@ Terrain Water's eight-second Joining
 valleys sunset shows recorded streams gathering into a lake; its separate
 36-second Mountain rain-off film remains a legacy study. Attachment identities
 and exact bytes are recorded in the manifest and the Fluid/glTF publication receipts.
-The remaining eight project cards are future editorial work. The original four
+The remaining seven project cards are future editorial work. The original four
 attachment mappings remain unchanged historical provenance.
 
 The bounded progressive-initialization slice is complete for generated
@@ -178,7 +184,7 @@ limits remain explicit rather than blocking closure. The pinned snapshot is in
 
 Recommended next feature or foundation streams:
 
-- public visual showcase: maintain the four-highlight package and provenance
+- public visual showcase: maintain the five-highlight package and provenance
   manifest; GitHub attachment publication for these exact committed bytes is
   complete. Complete the remaining seven storyboard cards as bounded editorial
   work;
@@ -199,10 +205,6 @@ Recommended next feature or foundation streams:
 - `projects/terrain`: far-backdrop V1 is closed. Reopen it only for a concrete
   consumer failure or a bounded next product; glTF Viewer already proves the
   shared path. Close terrain and planet-scale terrain remain separate projects.
-- `projects/planet`: the orbital product is closed for its current scope.
-  Surface terrain, local/global morphing, streaming/residency, and ocean
-  handoff require a separately scoped planet-surface product rather than
-  expansion of the active executable by default.
 - `projects/atmosphere`: cloud look-dev and surface horizon polish only when it
   directly improves current surface/ocean views; high/aerial/orbit cloud
   products should stay deferred until a dedicated batch.
@@ -218,7 +220,7 @@ Known non-blockers:
   shaders remain future split targets; the active shader foundation is
   sufficient for current feature work.
 - Planet-surface streaming and planet/ocean composition remain possible future
-  product tracks, not unfinished obligations of the orbital executable or
+  product tracks, not unfinished obligations of the paused orbital study or
   reasons to block ocean or atmosphere iteration.
 - Configuration V2 is complete and has no legacy compatibility layer or dual
   system.
@@ -763,11 +765,11 @@ Project checkpoints:
   validated source/placement, cached CPU products, fixed continuous sectors,
   shared environment lighting, runtime replacement, and glTF consumption. The
   retained terrain studies no longer own runnable viewers.
-- `projects/planet` is the orbital-only planet product. It owns a deterministic
+- `studies/planet` retains the paused orbital-only experiment. It owns a deterministic
   cached direction-domain surface, phase presets, shared sky/celestial
   composition, fixed-sphere rendering, and headless review coverage. Surface
   terrain, patch LOD, streaming, and coast integration belong to future
-  projects rather than the active executable.
+  projects rather than expansion of the paused study.
 - `projects/gltf_viewer` and `pbr_furnace` prove the reusable forward-PBR
   renderer, imported glTF material/animation/deformation paths, HDR or generated
   IBL, graph-owned shadow/HDR/post passes, and optional environment, terrain,

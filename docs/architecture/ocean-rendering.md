@@ -125,7 +125,8 @@ exist; rivers and shallow flow need a separate solver/model.
 The local renderer stops at horizon-scale and curved-local views. Planet-scale
 navigation additionally needs global ocean topology, floating origin, spherical
 patching, global weather, terrain/bathymetry streaming, and aerial/orbit cloud
-products. Those remain `projects/planet` or future shared-adapter concerns.
+products. Those require a future planet-surface product or shared adapter; the
+orbital experiment is paused in `studies/planet`.
 
 The intended planet integration is to host the local ocean surface inside a
 stable planet frame, not to grow this project into a second planet renderer.

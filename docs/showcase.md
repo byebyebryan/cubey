@@ -1,10 +1,10 @@
 # Showcase Storyboard and Capture Plan
 
 Status: design authority. This document defines what the public visual
-showcase should communicate and the capture work that follows. Four root
-highlights were creatively locked and packaged as committed media. The
-remaining eight storyboard cards are future editorial work; GitHub attachment
-publication for the current four is complete and recorded in the [showcase
+showcase should communicate and the capture work that follows. Five root
+highlights are creatively locked and packaged as committed media. The
+remaining seven storyboard cards are future editorial work; GitHub attachment
+publication for the current five is complete and recorded in the [showcase
 manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
 Terrain Water (formerly the featured Fluid 2.5D terrain demo) is the fifth published highlight. Its Joining valleys sunset
 cut is owner-selected through headless cinematic auditions, with a byte-verified
@@ -18,13 +18,12 @@ clip at README size.
 
 ## Scope
 
-The public-facing storyboard set contains these thirteen active projects:
+The public-facing storyboard set contains these twelve active projects:
 
 | Project | Public role | Story family |
 | --- | --- | --- |
 | `atmosphere` | Root-gallery candidate; hero eligibility deferred | Condition-led |
 | `ocean` | Packaged root-gallery highlight; hero eligibility deferred | Condition-led |
-| `planet` | Root-gallery candidate; hero eligibility deferred | Condition-led |
 | `terrain` | Root-gallery candidate; hero eligibility deferred | Camera-led |
 | `gltf_viewer` | Packaged root-gallery highlight; hero eligibility deferred | Camera-led |
 | `smoke_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
@@ -49,6 +48,9 @@ it is not a demo.
 
 The following remain outside this showcase set:
 
+- the paused [Planet study](../studies/planet/README.md), whose
+  [former shot proposal](../studies/planet/showcase-plan.md) is retained without
+  a publication commitment;
 - the opt-in [TerrainEngine cloud reference](../studies/cloud/terrainengine/README.md),
   which is a retained study rather than an active project;
 - `examples/`, which are focused cube and foundation demonstrations rather
@@ -191,37 +193,6 @@ unjustified subsystem or produce an unreadable intermediate state.
 - **Bounded missing controls:** The camera, condition, solar sweep, duration,
   and cadence are locked. Keep spectrum ownership in Ocean; no sea-state
   timeline or wave-morphing system is required for this shot.
-
-### Planet — follow the terminator (`planet`)
-
-- **Takeaway / cinematic verb:** Show the deterministic orbital globe as the
-  terminator moves across its surface, with atmosphere, night sky, and phase
-  doing the explanatory work.
-- **Opening:** A whole-disk globe in a readable lit/terminator composition,
-  with enough surrounding sky to establish scale.
-- **Development:** The phase sweeps from a broad lit face toward the
-  terminator; land/ice/albedo structure remains readable without becoming a
-  surface flyover.
-- **Payoff:** A crescent or night-side view reveals the glow, cloud veil, and
-  celestial composition.
-- **Ending:** Settle on the selected crescent/terminator frame and hold it.
-- **Camera:** Mostly locked whole-disk framing. A small bounded orbital arc is
-  optional only if it clarifies the sphere; phase is the dominant motion.
-- **Condition/config intent:** Use one deterministic terrain seed, standard
-  surface quality, configured disk coverage, and the `lit` → `terminator` →
-  `crescent` semantic range. Keep planet camera mode orbital; surface mode is
-  deliberately out of scope.
-- **Duration/transitions:** 9–11 seconds, continuous phase progression with a
-  gentle settle. Do not cut between unrelated globe seeds.
-- **Publication role:** Root-gallery candidate; hero eligibility deferred.
-- **Current feasibility:** The orbital product has deterministic surface
-  generation, `lit`/`terminator`/`crescent`/`night` views, disk coverage, an
-  orbit controller, and headless video phase advancement
-  ([Planet README](../projects/planet/README.md)).
-  The current headless phase rate is fixed in application code.
-- **Bounded missing controls:** Expose only the shot's starting phase, phase
-  rate, disk coverage, and optional bounded camera delta through a project
-  recipe. Do not broaden the orbital executable into surface terrain or LOD.
 
 ### Terrain — reveal the range (`terrain`)
 
@@ -603,7 +574,7 @@ Specify only shared host concerns:
 - manifest/poster/storyboard metadata.
 
 Project-owned hooks express condition and scene timelines. Shared code must not
-own Ocean sea states, Planet phase semantics, Water scenarios, Pyro impulses,
+own Ocean sea states, Water scenarios, Pyro impulses,
 asset animation choices, or Fractal destinations.
 
 The original four prove the contract: Ocean and glTF use bounded 30-degree
@@ -629,7 +600,7 @@ reviewable as a storyboard, poster, and short video.
 
 Move through cohorts that share creative shape, not merely source directory:
 
-- **Condition-led:** Atmosphere, Ocean, Planet.
+- **Condition-led:** Atmosphere, Ocean.
 - **Camera-led:** Terrain, glTF Viewer, Fractal 2D.
 - **Simulation-led:** Smoke 2D, Water 2D, Water 3D, Fire 3D, Explosion 3D.
 

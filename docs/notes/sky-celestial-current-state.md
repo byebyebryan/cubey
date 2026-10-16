@@ -1,7 +1,13 @@
 # Sky and Celestial Current State
 
+Historical checkpoint: Planet's surface/LOD viewer was retired, and its later
+orbital reboot is paused in [studies/planet](../../studies/planet/README.md) as of
+2026-10-15. Planet-specific ownership, scripts, and captures below describe the
+earlier renderer. Current sky work belongs in the shared foundation through
+[Atmosphere](../../projects/atmosphere/README.md), not a Planet integration lane.
+
 This note records the accepted shared sky/celestial checkpoint after the Moon,
-Milky Way, and Star Field V2 passes. It is the current routing guide for visible
+Milky Way, and Star Field V2 passes. It records the then-current routing for visible
 sky ownership and deferred feature boundaries; historical worktree plans and
 capture reviews remain separate notes.
 

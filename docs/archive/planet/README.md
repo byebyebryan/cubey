@@ -6,5 +6,6 @@ The implementation is frozen as historical design evidence and in Git history.
 The retirement record and recovery anchor are listed in
 [`../retired-projects.md`](../retired-projects.md).
 
-The active orbital renderer and its current scope are documented in
-[`docs/architecture/planet-rendering.md`](../../architecture/planet-rendering.md).
+The later orbital reboot is also paused and retained as an
+[opt-in study](../../../studies/planet/README.md), with its
+[original design](../../../studies/planet/design.md).

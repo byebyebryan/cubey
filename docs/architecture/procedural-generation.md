@@ -183,8 +183,9 @@ through shared primitives where the formulas already matched:
 
 - The removed coastal demo used shared CPU scalar and deterministic FBM helpers
   while preserving its field output.
-- `projects/planet` uses shared deterministic 3D CPU and GLSL FBM for its
-  terrain field while keeping terrain shaping constants project-owned.
+- The paused `studies/planet` orbital reboot uses shared deterministic 3D CPU
+  FBM for its cached surface fields, keeping shaping constants study-owned.
+  Earlier planet-terrain CPU/GLSL migrations remain historical evidence.
 - The removed terrain lab, `projects/ocean`, and `projects/fluid/water_2d`
   consume shared GLSL value-noise helpers for matching shader breakup/noise.
 - `projects/fluid/water_2d` and `projects/fluid/water_3d` consume shared GLSL
@@ -311,7 +312,7 @@ hydrology, materials, and foliage remain outside core.
 
 The non-terrain foundation batches promote named seed domains, semantic sample
 domains, generated artifact metadata, field output metadata, and deterministic
-patch domains after reviewing active atmosphere, cloud, ocean, fluid, planet,
+patch domains after reviewing active atmosphere, cloud, ocean, fluid, retained planet,
 and future terrain needs. This adds reusable address/metadata vocabulary without
 changing project formulas: atmosphere atlases, cloud density/weather volumes,
 ocean foam/detail, fluid jitter/turbulence, and future terrain tiles can share

@@ -74,6 +74,15 @@
       }
     },
     {
+      "name": "dev-planet-studies",
+      "displayName": "Dev Debug + Paused Planet Study",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/dev-planet-studies",
+      "cacheVariables": {
+        "CUBEY_BUILD_PLANET_STUDIES": "ON"
+      }
+    },
+    {
       "name": "dev-terrain-studies",
       "displayName": "Dev Debug + Terrain Studies",
       "inherits": "dev",
@@ -124,6 +133,10 @@
     {
       "name": "dev-gltf-conformance",
       "configurePreset": "dev-gltf-conformance"
+    },
+    {
+      "name": "dev-planet-studies",
+      "configurePreset": "dev-planet-studies"
     }
   ],
   "testPresets": [
@@ -247,6 +260,21 @@
         },
         "exclude": {
           "label": "^windowed$"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-planet-studies",
+      "configurePreset": "dev-planet-studies",
+      "filter": {
+        "include": {
+          "label": "^planet_study$"
+        },
+        "exclude": {
+          "label": "windowed"
         }
       },
       "output": {

@@ -43,7 +43,7 @@ At the V2 migration checkpoint, the clean break migrated 19 executable facades:
   `ocean`, `gltf_viewer`, `smoke_2d`, `water_2d`, `water_3d`, `fire_3d`,
   `explosion_3d`, and `terrain`.
 
-Planet remains a project-owned facade as well. The retained terrain studies
+The paused Planet study retains its own typed facade as well. The retained terrain studies
 were not migrated because their useful algorithm, export, generator, and
 unit-test targets already had no executable configuration dependency.
 
@@ -52,6 +52,8 @@ lives in the opt-in [TerrainEngine cloud study](../../studies/cloud/terrainengin
 and retains its typed facade only for reference comparisons. It is absent from
 normal project builds. Current applications are listed in the
 [portfolio](../../README.md#project-map).
+Planet likewise lives in an [opt-in paused study](../../studies/planet/README.md);
+its facade is retained for explicit study runs.
 
 ## Ownership
 
@@ -144,8 +146,8 @@ Each executable facade is covered in proportion to its behavior:
 
 Repository acceptance requires:
 
-- all 19 executable facades are project-owned and the active Planet facade
-  still passes;
+- executable facades are owned by their applications or explicit opt-in studies;
+  the original migration covered 19 facades plus Planet;
 - `CommonRunConfig` contains only fields directly consumed by the windowed or
   headless host;
 - `RunConfig`, the global registry, and the legacy host conversion are deleted;

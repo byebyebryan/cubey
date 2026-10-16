@@ -14,6 +14,10 @@ ENTRY_SCRIPTS = {
 }
 ROOT_DOCS = {"README.md", "THIRD_PARTY_NOTICES.md", "HISTORY.md",
              "current_reference.md", "demo_setup_v1.md", "integration.md"}
+STUDY_BUILDS = {
+    "cloud_ref": ("studies/cloud/terrainengine", "CUBEY_BUILD_CLOUD_STUDIES"),
+    "planet": ("studies/planet", "CUBEY_BUILD_PLANET_STUDIES"),
+}
 
 
 def slug(text):
@@ -60,20 +64,20 @@ def link_errors(root, source):
     return errors
 
 
-def cloud_reference_errors(root):
-    """The retained port is an explicit study, never a normal project target."""
+def opt_in_study_errors(root, project, source, option):
+    """Retained applications require an explicit study build, never a normal target."""
     errors = []
-    if (root / "projects/cloud_ref/CMakeLists.txt").exists():
-        errors.append("cloud_ref belongs in studies/cloud/terrainengine, not projects")
+    if (root / f"projects/{project}/CMakeLists.txt").exists():
+        errors.append(f"{project} belongs in {source}, not projects")
     projects = (root / "projects/CMakeLists.txt").read_text()
-    if re.search(r"add_subdirectory\(\s*cloud_ref\s*\)", projects):
-        errors.append("normal projects must not register cloud_ref")
+    if re.search(rf"add_subdirectory\(\s*{re.escape(project)}\s*\)", projects):
+        errors.append(f"normal projects must not register {project}")
     cmake = (root / "CMakeLists.txt").read_text()
-    if not re.search(r'option\(\s*CUBEY_BUILD_CLOUD_STUDIES\s*"[^"]*"\s*OFF\s*\)', cmake):
-        errors.append("cloud studies must default OFF")
-    if not re.search(r"if\s*\(\s*CUBEY_BUILD_CLOUD_STUDIES\s*\)\s*"
-                     r"add_subdirectory\(studies/cloud/terrainengine\)\s*endif\(\)", cmake):
-        errors.append("cloud study registration must be gated by CUBEY_BUILD_CLOUD_STUDIES")
+    if not re.search(rf'option\(\s*{option}\s*"[^"]*"\s*OFF\s*\)', cmake):
+        errors.append(f"{project} studies must default OFF")
+    if not re.search(rf"if\s*\(\s*{option}\s*\)\s*"
+                     rf"add_subdirectory\({re.escape(source)}\)\s*endif\(\)", cmake):
+        errors.append(f"{project} study registration must be gated by {option}")
     return errors
 
 
@@ -111,6 +115,8 @@ def audit(root):
         "docs/architecture/cloud-rendering.md", "docs/architecture/configuration.md",
         "studies/cloud/README.md", "studies/cloud/terrainengine/README.md",
         "studies/cloud/terrainengine/tools/README.md",
+        "studies/planet/README.md", "studies/planet/design.md",
+        "studies/planet/showcase-plan.md", "studies/planet/tools/README.md",
         "studies/README.md", "studies/fluid_25d/README.md",
         "studies/fluid_25d/harness/README.md",
         "studies/terrain/landscapes/README.md", "studies/gltf_viewer/README.md",
@@ -123,7 +129,8 @@ def audit(root):
             errors.append(f"{p.relative_to(root)}: missing front door")
         else:
             errors.extend(link_errors(root, p))
-    errors.extend(cloud_reference_errors(root))
+    for project, (source, option) in STUDY_BUILDS.items():
+        errors.extend(opt_in_study_errors(root, project, source, option))
     builtin = root / "projects/fluid/fluid_25d/README.md"
     if builtin.is_file():
         text = builtin.read_text()

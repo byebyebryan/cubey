@@ -83,7 +83,7 @@ cloud app. The current stable path is:
   its HDR scene background without modifying opaque scene pixels before the
   water surface pass, and reuses the same filtered environment through its
   existing PBR bindings;
-- `projects/planet`: orbital-only globe with a project-local restrained cloud
+- `studies/planet`: paused orbital-only globe with a study-local restrained cloud
   veil. It does not instantiate the shared Cloud V1 runtime and is not an
   aerial/orbit pressure consumer.
 
@@ -324,7 +324,7 @@ The production cloud renderer now lives as the shared cloud layer consumed by
 Ocean consumes local shadow, planar reflection, and cached fallback products;
 the glTF viewer validates the cached environment through general PBR materials.
 Planet-scale Cloud V1 high/orbit integration remains a later-version track.
-The active orbital Planet instead owns a deliberately restrained project-local
+The paused orbital Planet study retains a deliberately restrained study-local
 veil and does not consume this shared cloud runtime.
 
 Initial scope:

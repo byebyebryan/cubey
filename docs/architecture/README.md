@@ -22,8 +22,6 @@ than the root design and roadmap.
 - [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
   horizon-scale local ocean, planet-compatible contracts, curved-local
   rendering, and deferred handoff to a future planet-surface product.
-- [Planet rendering](planet-rendering.md): orbital planet product, deterministic
-  surface fields, celestial composition, and validation policy.
 - [Terrain reboot direction](terrain-reboot.md): local terrain product
   generator strategy, previous terrain lessons, reference takeaways, product
   contract, and first vertical slice.
@@ -56,3 +54,6 @@ than the root design and roadmap.
   ownership, and future threading boundaries.
 - [Vulkan abstraction map](vulkan-abstractions.md): reusable Vulkan foundation
   boundaries and planned framework slices.
+
+The [paused Planet design](../../studies/planet/design.md) is retained with its
+study rather than as active architecture direction.

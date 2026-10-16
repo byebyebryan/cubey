@@ -1461,8 +1461,6 @@ int main() {
     const std::string cmake_source = read_text_file(source_root / "CMakeLists.txt");
     const std::string ocean_cmake_source =
         read_text_file(repo_root / "projects/ocean/CMakeLists.txt");
-    const std::string planet_cmake_source =
-        read_text_file(repo_root / "projects/planet/CMakeLists.txt");
     const std::string water_3d_cmake_source =
         read_text_file(repo_root / "projects/fluid/water_3d/CMakeLists.txt");
     const std::string shader_cmake_source = read_text_file(repo_root / "cmake/CubeyShaders.cmake");
@@ -1635,10 +1633,6 @@ int main() {
                      "ocean build should use the shared atmosphere shader dependency package");
     require_contains(ocean_cmake_source, "CUBEY_OCEAN_ATMOSPHERE_SHADER_DEPENDS",
                      "ocean build should track shared atmosphere shader dependencies");
-    require_contains(planet_cmake_source, "cubey_atmosphere_shader_depends",
-                     "planet build should use the shared atmosphere shader dependency package");
-    require_contains(planet_cmake_source, "CUBEY_PLANET_ATMOSPHERE_SHADER_DEPENDS",
-                     "planet build should track shared atmosphere shader dependencies");
     require_contains(water_3d_cmake_source, "cubey_atmosphere_shader_depends",
                      "water 3D build should use the shared atmosphere shader dependency package");
     require_contains(water_3d_cmake_source, "CUBEY_WATER_3D_ATMOSPHERE_SHADER_DEPENDS",

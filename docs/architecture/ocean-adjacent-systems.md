@@ -23,7 +23,7 @@ ocean renderer through small data and shader contracts:
   exported fields, routing, and future shoreline/bathymetry work.
 - `projects/fluid/fluid_25d`: shallow-water simulation over heightfields for rivers,
   flooding, sources, sinks, and later dynamic shoreline coupling.
-- `projects/planet`: orbital-only globe and whole-world visual reference. It
+- `studies/planet`: paused orbital-only globe and whole-world visual reference. It
   does not own surface LOD, a landed frame, or ocean integration; those require
   a separately scoped planet-surface product.
 
@@ -32,7 +32,7 @@ first owner. That keeps the renderer focused on reference-quality water
 presentation while the supporting systems become inspectable in isolation.
 
 For planet scale, `projects/ocean` should stop at horizon-scale and curved-local
-rendering. The active `projects/planet` executable is orbital-only and consumes
+rendering. The opt-in `studies/planet` executable is orbital-only and consumes
 the shared sky/celestial foundation; it does not own a landed frame, surface
 LOD, terrain integration, or local-detail diagnostics. Ocean-as-local-water,
 cube-sphere mapping, persistent topology, and streaming therefore require a
@@ -171,7 +171,7 @@ solver.
 
 A future planet-surface product is the right home for scale and LOD work that
 would otherwise distort the ocean renderer. It should not be inferred from the
-active orbital Planet. Its first useful scope should be deliberately plain:
+paused orbital Planet study. Its first useful scope should be deliberately plain:
 
 - configurable planet radius, including small Kerbal-style scales;
 - camera world position, local tangent frame, horizon, altitude, and far plane;
