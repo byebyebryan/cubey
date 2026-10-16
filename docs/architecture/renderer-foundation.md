@@ -86,6 +86,36 @@ The host layer owns host flow: GLFW, input, timing, swapchain lifecycle, and
 headless output. It may pass `cubey::render` target views to callbacks, but it
 should not become a renderer.
 
+## Resource Lifecycle Contracts
+
+Resource lifetime and execution ownership are separate dimensions. A wrapper's
+C++ lifetime does not establish that submitted work has finished using it.
+
+| Resource or state | Owner and lifetime | Replacement or completion boundary |
+| --- | --- | --- |
+| CPU preparation | Asset/procedural worker; no mutable Engine or Vulkan ownership | Publish an owned prepared generation or a failure. Superseded work cannot activate. |
+| Generated GPU products | Feature runtime; independent of target extent | Install on the GPU owner. Activate a complete generation and retire replaced resources after their last real submission ticket. |
+| Target resources | Renderer/feature runtime; extent, format and frame-slot count | Recreate only after affected work completes. Windowed and offscreen consumers share this contract. |
+| Per-frame resources | Host or renderer, indexed by frame slot | Reuse or replace a slot only after its submitted work completes. Swapchain image identity remains distinct from frame-slot identity. |
+| Temporal history | Feature runtime, imported into the current graph | Track validity per slot; invalidate on incompatible view/configuration or target recreation. Graph-local transient allocation does not own history. |
+| Graph transients | Render-graph frame executor, per frame slot | Reuse compatible allocation signatures; replace only the completed slot. |
+| Presentation | Windowed host and swapchain | Acquire/present synchronization remains host-owned. Offscreen targets have no presentation lifecycle. |
+
+`cubey::scene::render_recording.h` is an explicit adapter from CPU scene draw
+packets to render/Vulkan recording. Its dependencies do not imply that asset
+loading, terrain products or scene edit/snapshot code may own GPU work.
+Projects retain camera, simulation, site selection and artistic policy.
+
+The 2026-10 foundation consolidation preserves these contracts while tightening
+shader rebuild dependencies, layer/header checks and cloud lifecycle evidence,
+then separating cloud/Ocean runtime and project-local orchestration. Each slice
+needs affected behavior checks before a local checkpoint commit. Final closure
+requires the full dev suite, supported configuration matrix and recorded capture
+comparisons; native windowed and human visual acceptance remain separate.
+The design precedents are [Vulkan threading](https://docs.vulkan.org/guide/latest/threading.html),
+[Filament's framegraph](https://google.github.io/filament/notes/framegraph.html),
+and [Godot compositor lifetime/threading](https://docs.godotengine.org/en/stable/tutorials/rendering/compositor.html).
+
 ## Non-Goals For This Slice
 
 - Full scene graph, node update system, or renderer-owned scene traversal.
