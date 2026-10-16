@@ -99,12 +99,15 @@ class ScenicWaterTests(unittest.TestCase):
 
     def test_no_film_selector_in_normal_ui_or_configuration(self):
         root = review.ref.ROOT
-        cpp = (root / review.SIM / "fluid_25d_recording_app.cpp").read_text()
+        source = root / review.SIM
+        cpp = "\n".join(path.read_text() for path in
+                        sorted(source.glob("fluid_25d_recording_*.cpp")))
+        ui = (source / "fluid_25d_recording_presentation.cpp").read_text()
         header = (root / review.LOCAL / "fluid_25d_project_config.h").read_text()
         self.assertNotIn("Water film (opt-in)", cpp)
         self.assertNotIn("native_scenic_water_film", cpp + header)
-        self.assertIn('ImGui::Combo("Water component"', cpp)
-        self.assertIn('"Film ground emphasis"', cpp)
+        self.assertIn('ImGui::Combo("Water component"', ui)
+        self.assertIn('"Film ground emphasis"', ui)
 
 
 if __name__ == "__main__":
