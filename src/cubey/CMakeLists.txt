@@ -220,6 +220,10 @@ add_library(cubey_render STATIC
     render/celestial_body_frame.cpp
     render/cloud_environment_probe.cpp
     render/cloud_layer.cpp
+    render/cloud_layer_generation.cpp
+    render/cloud_layer_resources.cpp
+    render/cloud_layer_graph.cpp
+    render/cloud_layer_history.cpp
     render/cloud_planar_reflection.cpp
     render/forward_pass.cpp
     render/generated_ibl.cpp

@@ -10,6 +10,15 @@ production app.
 The retirement rationale and recovery anchor are recorded in
 [`docs/archive/retired-projects.md`](../archive/retired-projects.md).
 
+The shared C++ implementation separates configuration/view/uniform derivation
+(`cloud_layer.cpp`), generated noise/weather products (`cloud_layer_generation.cpp`),
+target resources and descriptor schemas (`cloud_layer_resources.cpp`), graph and
+command recording (`cloud_layer_graph.cpp`), and per-slot temporal history
+(`cloud_layer_history.cpp`). Private shared shader-layout details live beside
+those files. This separation preserves the public runtime contract and shader
+math. `cloud_lifecycle_gpu` and `dev-sync-validation` cover real target recreation,
+pending slot recordings, temporal invalidation/toggling and controlled cleanup.
+
 ## Decision
 
 Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
