@@ -41,6 +41,8 @@ void test_staged_resource_reports_prepare_and_install_failures();
 void test_staged_resource_shutdown_discards_work_and_rejects_requests();
 void test_headless_capture_frame_helpers_select_png_or_video_timing();
 void test_headless_png_host_validates_capture_shape();
+void test_host_cleanup_finishes_actions_and_preserves_first_failure();
+void test_host_cleanup_retires_admitted_work_after_raw_callback_failure();
 void test_host_frame_stats_publish_window_title_metrics();
 void test_input_state_accumulates_cursor_and_scroll_per_frame();
 void test_filtered_input_frame_masks_captured_ui_channels();
@@ -217,6 +219,8 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_gltf_scene_upload_session_rejects_inconsistent_prepared_deformation),
         CUBEY_TEST(test_gltf_scene_importer_blocking_path_uses_upload_session),
         CUBEY_TEST(test_headless_png_host_validates_capture_shape),
+        CUBEY_TEST(test_host_cleanup_finishes_actions_and_preserves_first_failure),
+        CUBEY_TEST(test_host_cleanup_retires_admitted_work_after_raw_callback_failure),
         CUBEY_TEST(test_headless_capture_frame_helpers_select_png_or_video_timing),
         CUBEY_TEST(test_host_frame_stats_publish_window_title_metrics),
         CUBEY_TEST(test_input_state_tracks_key_and_button_edges),

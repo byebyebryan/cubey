@@ -90,8 +90,8 @@ ctest --preset dev
 synchronization-validation tests. Headless PNG and video tests deliberately run
 without desktop-session environment
 variables, so ordinary local and SSH validation does not depend on X11,
-Wayland, or SDDM. A usable Vulkan device is still required. The cloud lifecycle
-fixture also requires the Khronos validation layer.
+Wayland, or SDDM. A usable Vulkan device is still required. Cloud and host
+lifecycle fixtures also require the Khronos validation layer.
 
 For the owned-code AddressSanitizer/UBSan gate, configure and build the
 sanitized tree, then run its test preset:

@@ -1,5 +1,6 @@
 #include <cubey/host/windowed_host.h>
 
+#include "cleanup.h"
 #include "imgui_overlay.h"
 
 #include <cubey/host/frame_stats.h>
@@ -72,9 +73,6 @@ WindowedHost::WindowedHost(WindowedHostConfig config, WindowedHostCallbacks call
 }
 
 WindowedHost::~WindowedHost() {
-    if (device_.has_value()) {
-        static_cast<void>(vkDeviceWaitIdle(device_->handle()));
-    }
     try {
         destroy_swapchain_resources();
     } catch (const std::exception& error) {
@@ -89,9 +87,9 @@ WindowedHost::~WindowedHost() {
     } catch (...) {
         std::fprintf(stderr, "windowed host shutdown failed\n");
     }
+    gpu_.reset();
     frame_resources_.reset();
     swapchain_.reset();
-    gpu_.reset();
     submission_.reset();
     device_.reset();
     surface_.reset();
@@ -260,10 +258,7 @@ int WindowedHost::run() {
         std::puts(line.c_str());
     }
 
-    cubey::vulkan::check(vkDeviceWaitIdle(device().handle()),
-                         "vkDeviceWaitIdle after windowed host");
     destroy_swapchain_resources();
-    static_cast<void>(gpu().drain());
     shutdown_app_resources();
     write_profile_outputs();
     return 0;
@@ -357,19 +352,30 @@ void WindowedHost::create_swapchain_resources() {
 }
 
 void WindowedHost::destroy_swapchain_resources() {
-    if (gpu_.has_value()) {
-        static_cast<void>(gpu().drain());
-    }
-    if (swapchain_resources_created_ && callbacks_.destroy_swapchain_resources) {
-        WindowedAppContext active_context = context();
-        callbacks_.destroy_swapchain_resources(active_context);
-        static_cast<void>(gpu().drain());
-    }
-    if (imgui_overlay_ != nullptr) {
-        imgui_overlay_->destroy();
-        ui_capture_ = {};
-    }
-    swapchain_resources_created_ = false;
+    const bool created = std::exchange(swapchain_resources_created_, false);
+    detail::cleanup_all(
+        [this] {
+            if (gpu_.has_value()) {
+                detail::wait_for_gpu(gpu(), "before windowed target cleanup");
+            }
+        },
+        [this, created] {
+            if (created && callbacks_.destroy_swapchain_resources) {
+                WindowedAppContext active_context = context();
+                callbacks_.destroy_swapchain_resources(active_context);
+            }
+        },
+        [this] {
+            if (gpu_.has_value()) {
+                detail::wait_for_gpu(gpu(), "after windowed target cleanup");
+            }
+        },
+        [this] {
+            if (imgui_overlay_ != nullptr) {
+                imgui_overlay_->destroy();
+                ui_capture_ = {};
+            }
+        });
 }
 
 void WindowedHost::shutdown_app_resources() {
@@ -384,13 +390,11 @@ void WindowedHost::shutdown_app_resources() {
 
     shutdown_called_ = true;
     WindowedAppContext active_context = context();
-    callbacks_.shutdown(active_context);
-    static_cast<void>(gpu().drain());
+    detail::cleanup_all([&] { callbacks_.shutdown(active_context); },
+                        [this] { detail::wait_for_gpu(gpu(), "after windowed app shutdown"); });
 }
 
 void WindowedHost::recreate_swapchain_resources() {
-    cubey::vulkan::check(vkDeviceWaitIdle(device().handle()),
-                         "vkDeviceWaitIdle before swapchain recreate");
     destroy_swapchain_resources();
     frame_resources_.reset();
     swapchain_.reset();

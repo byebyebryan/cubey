@@ -1,5 +1,7 @@
 #include <cubey/host/headless_png_host.h>
 
+#include "cleanup.h"
+
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/command_pool.h>
 #include <cubey/vulkan/image.h>
@@ -266,8 +268,14 @@ HeadlessPngHost::HeadlessPngHost(HeadlessPngHostConfig config, HeadlessPngHostCa
 }
 
 HeadlessPngHost::~HeadlessPngHost() {
-    if (device_.has_value()) {
-        static_cast<void>(vkDeviceWaitIdle(device_->handle()));
+    try {
+        if (gpu_.has_value()) {
+            detail::wait_for_gpu(gpu(), "headless host destruction");
+        }
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "headless host cleanup failed: %s\n", error.what());
+    } catch (...) {
+        std::fprintf(stderr, "headless host cleanup failed\n");
     }
 }
 
@@ -321,16 +329,13 @@ int HeadlessPngHost::run() {
                 write_png(target);
             }
         }
-        device().wait_idle();
-
-        drain_gpu_work();
+        detail::wait_for_gpu(gpu(), "before headless app shutdown");
         shutdown_resources(context);
         write_profile_outputs();
         return 0;
     } catch (...) {
         try {
-            device().wait_idle();
-            drain_gpu_work();
+            detail::wait_for_gpu(gpu(), "headless failure cleanup");
         } catch (const std::exception& error) {
             std::fprintf(stderr, "headless PNG host idle failed during cleanup: %s\n",
                          error.what());
@@ -731,8 +736,8 @@ void HeadlessPngHost::shutdown_resources(HeadlessPngContext& context) {
 
     shutdown_called_ = true;
     [[maybe_unused]] auto span = profile_span(0, "headless.shutdown");
-    callbacks_.shutdown(context);
-    drain_gpu_work();
+    detail::cleanup_all([&] { callbacks_.shutdown(context); },
+                        [this] { detail::wait_for_gpu(gpu(), "after headless app shutdown"); });
 }
 
 cubey::vulkan::Instance& HeadlessPngHost::instance() {

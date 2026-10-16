@@ -209,6 +209,15 @@ setup before swapchain setup, and callback forwarding.
   and swapchain recreation. It runs the GPU runtime threaded by default and uses
   explicit drain/wait calls at host-owned setup, update, swapchain-resource, and
   shutdown boundaries.
+- Host resource cleanup drains admitted owner work before an owner-side queue
+  idle wait, completion-ticket publication and deferred retirement. A raw
+  device-idle wait before draining cannot cover submissions made by that work.
+  Target and app cleanup callbacks run at most once; work they enqueue is also
+  finished before teardown continues, including when a callback throws. Projects
+  must stop producers before returning from shutdown. Headless and virtual
+  windowed fixtures cover partial setup, callback failures, resize/close and
+  inline/threaded ownership; synchronization validation also runs the headless
+  fixture.
 - `cubey::host::run_windowed_app` is the current convenience layer used by
   examples/projects that need the standard windowed lifecycle without spelling
   every `WindowedHostCallbacks` field directly.

@@ -27,6 +27,7 @@ add_executable(cubey_core_tests
     gltf_scene_importer_animation_tests.cpp
     frame_resources_tests.cpp
     host_headless_png_host_tests.cpp
+    host_cleanup_tests.cpp
     host_frame_stats_tests.cpp
     host_performance_ui_tests.cpp
     hdr_image_tests.cpp
@@ -151,6 +152,22 @@ set_tests_properties(terrain_water_capture_tests PROPERTIES LABELS "unit;terrain
 set_property(TEST cubey_core_tests APPEND PROPERTY LABELS "gltf;core")
 
 add_executable(cubey_headless_failure_gpu_tests headless_failure_gpu_tests.cpp)
+add_executable(cubey_host_lifecycle_gpu_tests host_lifecycle_gpu_tests.cpp)
+target_link_libraries(cubey_host_lifecycle_gpu_tests PRIVATE cubey::cubey cubey::host cubey_project_warnings)
+add_test(NAME host_lifecycle_headless COMMAND "${CMAKE_COMMAND}" -E env
+    --unset=DISPLAY --unset=WAYLAND_DISPLAY --unset=XAUTHORITY --unset=XDG_SESSION_TYPE
+    $<TARGET_FILE:cubey_host_lifecycle_gpu_tests>)
+set_tests_properties(host_lifecycle_headless PROPERTIES LABELS "headless;gpu;core"
+    TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
+add_test(NAME host_lifecycle_sync COMMAND "${CMAKE_COMMAND}" -E env
+    --unset=DISPLAY --unset=WAYLAND_DISPLAY --unset=XAUTHORITY --unset=XDG_SESSION_TYPE
+    $<TARGET_FILE:cubey_host_lifecycle_gpu_tests>)
+set_tests_properties(host_lifecycle_sync PROPERTIES LABELS "headless;gpu;core;sync_validation"
+    ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" TIMEOUT 60
+    FAIL_REGULAR_EXPRESSION "vulkan validation error")
+add_test(NAME host_lifecycle_windowed COMMAND cubey_host_lifecycle_gpu_tests --windowed)
+set_tests_properties(host_lifecycle_windowed PROPERTIES LABELS "windowed;gpu;core;interactive"
+    SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
 target_link_libraries(cubey_headless_failure_gpu_tests PRIVATE cubey::cubey cubey::host)
 add_test(NAME headless_failure_gpu_tests
     COMMAND "${CMAKE_COMMAND}" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY --unset=XAUTHORITY
