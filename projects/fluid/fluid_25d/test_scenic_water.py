@@ -55,15 +55,18 @@ class ScenicWaterTests(unittest.TestCase):
     def test_one_water_fragment_and_pipeline_pair(self):
         root = review.ref.ROOT
         cmake = (root / review.LOCAL / "CMakeLists.txt").read_text()
-        cpp = (root / review.SIM / "fluid_25d_scenic.cpp").read_text()
+        wrapper = (root / review.SIM / "fluid_25d_scenic.cpp").read_text()
+        cpp = (root / "src/cubey/render/terrain_surface_patch.cpp").read_text()
         self.assertNotIn("scenic_water_study", cmake)
         self.assertNotIn("water_bspline_study", cpp)
         self.assertNotIn("water_study", cpp)
+        self.assertIn("TerrainSurfacePatchScene", wrapper)
+        self.assertNotIn('"fluid_25d_scenic_water.frag.spv"', wrapper)
         self.assertEqual(cpp.count('"fluid_25d_scenic_water.frag.spv"'), 2)
         self.assertFalse((root / review.SIM / "shaders/fluid_25d_scenic_water_study.frag").exists())
 
     def test_normal_shader_has_film_and_retained_diagnostics(self):
-        shader = (review.ref.ROOT / review.SIM / "shaders/fluid_25d_scenic_water.frag").read_text()
+        shader = (review.ref.ROOT / "shaders/cubey/terrain/surface_patch/fluid_25d_scenic_water.frag").read_text()
         self.assertIn("fluid25d_film_weight(h,scenic.water_film.x,scenic.water_film.y)", shader)
         self.assertIn("max(roughness,scenic.water_film.z)", shader)
         self.assertIn("film_weight,scenic.water_film.w", shader)
@@ -76,13 +79,17 @@ class ScenicWaterTests(unittest.TestCase):
         self.assertNotIn("study_view", shader)
 
     def test_terrain_wetness_follows_display_reconstruction(self):
-        shaders = review.ref.ROOT / review.SIM / "shaders"
+        shaders = review.ref.ROOT / "shaders/cubey/terrain/surface_patch"
+        shim = (review.ref.ROOT / review.SIM / "shaders/fluid_25d_terrain_wetness.glsl").read_text()
+        self.assertEqual(shim.strip(), '#include "cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"')
         helper = (shaders / "fluid_25d_terrain_wetness.glsl").read_text()
         self.assertIn("if (bspline)", helper)
         self.assertIn("fluid25d_bspline_bed_depth(coordinate,grid).y", helper)
         self.assertIn("fluid25d_triangle_sample", helper)
         self.assertIn("smoothstep(wet_threshold,0.012,h)*(1.0-smoothstep(0.02,0.05,h))", helper)
-        for name in ("fluid_25d_scenic_terrain.frag", "fluid_25d_scenic_terrain_legacy.frag"):
+        self.assertIn('#include "fluid_25d_scenic_terrain_body.glsl"',
+                      (shaders / "fluid_25d_scenic_terrain.frag").read_text())
+        for name in ("fluid_25d_scenic_terrain_body.glsl", "fluid_25d_scenic_terrain_legacy.frag"):
             shader = (shaders / name).read_text()
             self.assertIn('#include "fluid_25d_terrain_wetness.glsl"', shader)
             self.assertIn("fluid25d_terrain_wet_depth", shader)
