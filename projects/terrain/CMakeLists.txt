@@ -257,6 +257,10 @@ cubey_add_app_target(
     SOURCES
         main.cpp
         terrain_app.cpp
+        terrain_app_controls.cpp
+        terrain_app_resources.cpp
+        terrain_app_render.cpp
+        terrain_app_support.cpp
     SHADERS
         ${CUBEY_TERRAIN_PATCH_SHADERS}
         ${CUBEY_TERRAIN_BACKDROP_SHADERS}

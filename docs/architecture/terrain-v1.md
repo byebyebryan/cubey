@@ -468,3 +468,14 @@ See [Terrain Product Promotion](../notes/terrain-product-promotion.md),
 [Terrain Rendering Acceptance V1](../notes/terrain-rendering-acceptance-v1.md),
 [Terrain Project Map](../notes/terrain-project-map.md), and the project
 [README](../../projects/terrain/README.md).
+
+## Application Implementation
+
+Terrain's private `TerrainApp` contract lives in `terrain_app_internal.h`.
+`terrain_app.cpp` owns host and capture orchestration; `terrain_app_controls.cpp`
+owns landscape selection, presentation controls and inspection input;
+`terrain_app_resources.cpp` owns staged product/resource lifecycle; and
+`terrain_app_render.cpp` owns graph recording and profile evidence.
+`terrain_app_support.cpp` holds project-local source, placement and geometry
+helpers. Camera/site/artistic choices stay in the project, and these modules do
+not expand the shared foundation API.
