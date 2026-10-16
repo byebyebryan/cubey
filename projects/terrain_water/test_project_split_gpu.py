@@ -22,6 +22,7 @@ def main():
     p.add_argument("--legacy", type=Path, required=True)
     p.add_argument("--terrain", type=Path, required=True)
     p.add_argument("--out", type=Path)
+    p.add_argument("--study", type=Path, help="optional prepared Joining valleys real-scene parity")
     args = p.parse_args()
     if args.out:
         out = args.out.resolve()
@@ -40,12 +41,25 @@ def main():
                            "--fluid25d-recording-gpu-validation", "--fluid25d-native-presentation", "scenic",
                            "--fluid25d-scenic-material", "macro", "--fluid25d-native-bank-view", "bspline-2x"],
     }
+    if args.study:
+        study = args.study.resolve(strict=True)
+        case = study / "cases/joining-valleys-patch-1024-16m"
+        recording = study / "runs/joining-valleys-patch-1024-16m/recording/recording.json"
+        cases["joining-valleys"] = [
+            "--fluid25d-backend", "recording", "--fluid25d-recording", str(recording),
+            "--fluid25d-recording-time-seconds", "21635.626953125",
+            "--fluid25d-recording-gpu-validation", "--fluid25d-native-presentation", "scenic",
+            "--fluid25d-scenic-material", "macro", "--fluid25d-native-bank-view", "bspline-2x",
+            "--fluid25d-scenic-surface-grid", str(case / "surface-grid.json"),
+            "--fluid25d-scenic-surface-mode", "correlated", "--fluid25d-native-shadow-projection", "scene",
+            "--fluid25d-native-surface-highlights", "off", "--fluid25d-rain-visuals"]
     rows = []
     for name, options in cases.items():
         hashes = []
         for label, app in (("fluid25d", old), ("terrain-water", new)):
             png = out / f"{name}-{label}.png"
-            command = [str(app), "--headless", "--frames", "4", "--width", "384", "--height", "288",
+            width, height = (1280, 720) if name == "joining-valleys" else (384, 288)
+            command = [str(app), "--headless", "--frames", "4", "--width", str(width), "--height", str(height),
                        "--output", str(png), *options]
             run = subprocess.run(command, text=True, capture_output=True, timeout=90)
             log = run.stdout + run.stderr

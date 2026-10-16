@@ -2514,9 +2514,9 @@ class RecordingApp {
             ImVec2(510.0F, std::min(850.0F, ImGui::GetIO().DisplaySize.y - 32.0F)),
             ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowPos(ImVec2(16.0F, 16.0F), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(comparison_           ? "Mountain Rain - BANKS recorded comparison"
-                         : config_.stream_path ? "Live external mountain runoff"
-                                               : "Mountain Rain - REPLAY recorded fields")) {
+        if (ImGui::Begin(comparison_           ? "Terrain Water - BANKS recorded comparison"
+                         : config_.stream_path ? "Terrain Water - external field stream"
+                                               : "Terrain Water - REPLAY recorded fields")) {
             const Fluid25DRecordedRainStatus rain = recording_->rain_status_at(shown_->time_s);
             ImGui::SeparatorText("Rainfall - recorded forcing (read only)");
             ImGui::Text("Saved rain: %s | %.2f mm/h",

@@ -1,12 +1,53 @@
 """CPU-only launcher contracts; no optional native import or GPU."""
 import unittest
+import io
+from contextlib import redirect_stderr
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import run_terrain_rain_demo as terrain
 
 
 class Commands(unittest.TestCase):
+    def test_legacy_helper_root_survives_canonical_launcher_move(self):
+        self.assertEqual(terrain.HERE, terrain.LEGACY_HELPERS)
+        self.assertNotEqual(terrain.HERE, terrain.PROJECT_DIR)
+        for relative in ('run_mountain_rain_demo.py', 'validate_terrain_demo_v1.py',
+                         'run_offscreen_perf_v2.py', 'terrain_water_world_sites.json',
+                         'external_synxflow/session_worker.py'):
+            self.assertTrue((terrain.HERE / relative).is_file(), relative)
+        self.assertEqual(terrain.RELEASE_APP.parent.name, 'terrain_water')
+
+    def test_runtime_preflight_is_explicit_bounded_and_import_only(self):
+        with patch.object(terrain.subprocess, "run",
+                          return_value=SimpleNamespace(returncode=0, stdout='{"passed":true,"solver_executed":false}', stderr="")) as run:
+            report = terrain.check_native_runtime(Path('/venv/bin/python'), Path('/qualified/flood.so'))
+        self.assertTrue(report['passed'])
+        command = run.call_args.args[0]
+        self.assertEqual(command[:2], ['/venv/bin/python', '-B'])
+        self.assertTrue(command[2].endswith('/external_synxflow/check_runtime.py'))
+        self.assertNotIn('session_worker.py', ' '.join(command))
+        self.assertEqual(run.call_args.kwargs['timeout'], 60)
+        self.assertEqual(run.call_args.kwargs['env']['MPLBACKEND'], 'Agg')
+        self.assertFalse(terrain.parser().parse_args(['--study','/study']).check_runtime)
+
+    def test_runtime_preflight_never_accepts_execution_or_failed_imports(self):
+        for result in (SimpleNamespace(returncode=1, stdout='', stderr='missing runtime library'),
+                       SimpleNamespace(returncode=0, stdout='{"passed":true,"solver_executed":true}', stderr='')):
+            with patch.object(terrain.subprocess, 'run', return_value=result), self.assertRaises(ValueError):
+                terrain.check_native_runtime(Path('/venv/bin/python'), Path('/qualified/flood.so'))
+
+    def test_runtime_preflight_requires_explicit_live_print_mode(self):
+        for argv in (['--study','/study','--check-runtime'],
+                     ['replay','--study','/study','--print-command','--check-runtime']):
+            with patch.object(terrain, 'check_native_runtime') as check, \
+                    patch.object(terrain.subprocess, 'Popen') as launch, \
+                    redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                terrain.main(argv)
+            check.assert_not_called()
+            launch.assert_not_called()
+
     def test_explicit_worker_paths_preserve_venv_and_qualified_policy(self):
         args = terrain.parser().parse_args(['--study','/study','--native-python','/venv/bin/python',
                                           '--extension','/build/flood.so'])

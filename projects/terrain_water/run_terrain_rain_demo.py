@@ -26,7 +26,10 @@ import run_mountain_rain_demo as demo
 import terrain_demo_session as managed
 from terrain_water_sites import DEFAULT_CATALOGUE, load_sites, validate_world_site
 
-HERE = Path(__file__).resolve().parent
+# Historical study/performance tools use HERE as their helper/artifact root.
+# Preserve that API while the canonical launcher lives in a different project.
+PROJECT_DIR = Path(__file__).resolve().parent
+HERE = LEGACY_HELPERS
 sys.path.insert(0, str(demo.ref.ROOT / "projects/terrain/tools"))
 SITES = tuple(load_sites())
 CONFIGS = ("patch-512-32m", "patch-1024-16m", "patch-2048-8m", "small-512-16m", "large-2048-16m")
@@ -37,6 +40,25 @@ GRID_PRESETS = {"patch-512-32m": (512, 32, "Coarse", "same"),
                 "patch-2048-8m": (2048, 8, "Fine (slower solver)", "same"),
                 "small-512-16m": (512, 16, "Smaller area", "small"),
                 "large-2048-16m": (2048, 16, "Larger area (slower solver)", "large")}
+
+
+def check_native_runtime(native_python, extension):
+    """Opt-in ABI/import check, never a CUDA execution or lifecycle certificate."""
+    with tempfile.TemporaryDirectory(prefix="cubey-terrain-water-preflight-") as temp:
+        environment = os.environ.copy()
+        environment.update(MPLBACKEND="Agg", MPLCONFIGDIR=str(Path(temp) / "matplotlib"),
+                           XDG_CACHE_HOME=str(Path(temp) / "cache"))
+        result = subprocess.run([str(native_python), "-B",
+            str(LEGACY_HELPERS / "external_synxflow/check_runtime.py"),
+            "--extension", str(extension)], env=environment, text=True,
+            capture_output=True, timeout=60, check=False)
+        if result.returncode:
+            raise ValueError("native runtime import check failed: " +
+                             (result.stdout + result.stderr)[-4000:])
+        report = json.loads(result.stdout)
+        if report.get("passed") is not True or report.get("solver_executed") is not False:
+            raise ValueError("runtime checker did not attest import-only success")
+        return report
 
 
 def case_identity(case):
@@ -264,6 +286,8 @@ def parser():
     p.add_argument("--surface-subdivision", type=int, choices=(1, 2), default=2,
                    help="existing B-spline display density; opt-in 1x does not change simulation resolution")
     p.add_argument("--print-command", action="store_true")
+    p.add_argument("--check-runtime", action="store_true",
+                   help="with live --print-command, verify qualified ABI/imports without running CUDA")
     p.add_argument("--headless", action="store_true", help="Vulkan offscreen render loop; no GUI or display server")
     p.add_argument("--run-seconds", type=float, default=60, help="bounded headless wall duration, default 60 s")
     p.add_argument("--switch-script", type=Path, help="headless-only managed-control regression script")
@@ -279,6 +303,8 @@ def parser():
 def main(argv=None):
     p = parser()
     a = p.parse_args(argv)
+    if a.check_runtime and (not a.print_command or a.mode != "live"):
+        p.error("--check-runtime requires live --print-command; replay never imports the worker")
     sites = load_sites(a.site_catalogue)
     if a.site not in sites:
         p.error("site not in the selected catalogue")
@@ -325,6 +351,8 @@ def main(argv=None):
                                          **environment_options(a))}
     if a.mode == "live":
         commands["worker"] = worker_command(case, session, native_python=native_python, extension=extension)
+    if a.check_runtime:
+        print(json.dumps({"runtime_import_check": check_native_runtime(native_python, extension)}, indent=2))
     print(json.dumps(identity, indent=2))
     for name, command in commands.items():
         print(name + ": " + shlex.join(command), flush=True)
