@@ -18,7 +18,7 @@ class ShowcaseMedia(unittest.TestCase):
         self.recipe = json.loads((ROOT / self.entry["publication"]["recipe"]).read_bytes())
 
     def test_current_media_integrity_and_faststart(self):
-        self.assertEqual(self.recipe["schema"], "cubey.gltf.saved-water-showcase.v1")
+        self.assertEqual(self.recipe["schema"], "cubey.gltf.saved-water-showcase.v2")
         for name, descriptor in self.recipe["media"].items():
             path = ROOT / descriptor["path"]
             self.assertEqual(path.name, name)
@@ -47,7 +47,7 @@ class ShowcaseMedia(unittest.TestCase):
     def test_clean_source_and_approved_all_frame_parity(self):
         protocol = self.recipe["source_protocol"]
         self.assertEqual(protocol["source_status_sha256"], hashlib.sha256(b"").hexdigest())
-        self.assertEqual(self.entry["source"]["revision"], protocol["source_revision"])
+        self.assertEqual(self.entry["source"]["revision"], protocol["source_head"])
         self.assertTrue(self.recipe["approved_frame_parity"]["all_480_frames_exact"])
         self.assertEqual(self.recipe["approved_frame_parity"]["fresh"], self.recipe["approved_frame_parity"]["approved"])
         command = self.recipe["source_capture"]["command"]
@@ -57,7 +57,15 @@ class ShowcaseMedia(unittest.TestCase):
         self.assertEqual(command[command.index("--terrain-landscape-depth") + 1], "fitted")
         self.assertEqual(self.recipe["scene"]["hydraulic_dispatches"], 0)
         self.assertIn("held", self.recipe["scene"]["water_state"])
-        self.assertEqual(self.recipe["scene"]["orbit_degrees"], 20)
+        scene = self.recipe["scene"]
+        self.assertEqual(scene["orbit_degrees"], 45)
+        self.assertEqual(scene["camera_start_yaw_degrees"], 0)
+        self.assertEqual(scene["solar_start_hours"], 14)
+        self.assertEqual(scene["solar_speed_hours_per_second"], .6875)
+        self.assertEqual(scene["solar_last_frame_hours"], 19.5)
+        self.assertTrue(scene["automatic_exposure"])
+        self.assertNotIn("--exposure", command)
+        self.assertEqual(command[command.index("--star-intensity") + 1], "0")
 
     def test_legacy_publication_is_not_claimed_for_current_bytes(self):
         self.assertIn("published", self.entry["publication"]["state"])
@@ -79,9 +87,9 @@ class ShowcaseMedia(unittest.TestCase):
     def test_publication_receipt_matches_current_bytes_and_documents(self):
         publication = self.entry["publication"]
         receipt = json.loads((ROOT / publication["receipt"]).read_bytes())
-        self.assertEqual(receipt["schema"], "cubey.gltf.saved-water-publication.v1")
-        self.assertEqual(receipt["source_media_commit"],
-                         "023af0be713403178449606509c25244737be306")
+        self.assertEqual(receipt["schema"], "cubey.gltf.saved-water-publication.v2")
+        self.assertEqual(receipt["source_render_revision"],
+                         self.recipe["source_protocol"]["source_head"])
         for key in ("bytes", "sha256", "github_attachment_url", "provenance_comment_url"):
             self.assertEqual(receipt[key], publication[key])
         self.assertEqual(receipt["media_path"], publication["path"])
@@ -95,13 +103,34 @@ class ShowcaseMedia(unittest.TestCase):
         self.assertEqual((public["http_status"], public["content_type"]), (200, "video/mp4"))
         self.assertEqual((public["width"], public["height"], public["frames"], public["fps"],
                           public["duration_seconds"]), (1280, 720, 480, "60/1", 8))
-        self.assertIsNone(verification["browser_native_player"]["media_error"])
+        browser = verification["browser_native_player"]
+        self.assertIsNone(browser["media_error"])
+        self.assertEqual(browser["download_bytes"], publication["bytes"])
+        self.assertEqual(browser["download_sha256"], publication["sha256"])
         for key in ("issue_remains_closed", "original_four_attachment_mappings_unchanged",
-                    "fluid_publication_comment_retained"):
+                    "fluid_publication_comment_retained", "morning_publication_comment_retained"):
             self.assertTrue(verification[key])
         for path in (ROOT / "README.md", ROOT / "projects/gltf_viewer/README.md",
                      MEDIA / "README.md"):
             self.assertIn(publication["github_attachment_url"], path.read_text())
+
+    def test_morning_recipe_and_receipt_are_retained_as_exact_history(self):
+        previous = self.entry["previous_saved_water"]
+        for path_key, hash_key in (("recipe", "recipe_sha256"),
+                                   ("publication_receipt", "receipt_sha256")):
+            self.assertEqual(hashlib.sha256((ROOT / previous[path_key]).read_bytes()).hexdigest(),
+                             previous[hash_key])
+        old = json.loads((ROOT / previous["recipe"]).read_bytes())
+        receipt = json.loads((ROOT / previous["publication_receipt"]).read_bytes())
+        self.assertEqual(old["schema"], "cubey.gltf.saved-water-showcase.v1")
+        self.assertEqual(old["scene"]["solar_hours"], 10)
+        self.assertEqual(old["scene"]["orbit_degrees"], 20)
+        self.assertEqual(receipt["sha256"],
+                         "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233")
+        self.assertEqual(previous["github_attachment_url"], receipt["github_attachment_url"])
+        self.assertNotIn("\n" + previous["github_attachment_url"] + "\n",
+                         (ROOT / "README.md").read_text())
+        self.assertEqual(old["license"], self.recipe["license"])
 
 
 if __name__ == "__main__":

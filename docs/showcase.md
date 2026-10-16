@@ -257,6 +257,13 @@ unjustified subsystem or produce an unreadable intermediate state.
 
 ### glTF Viewer — make the asset breathe (`gltf_viewer`)
 
+Current publication note: the original cloudy day/night card below is retained
+storyboard history. The owner-approved
+[front-facing solar revision](../projects/gltf_viewer/showcase_solar_v1.md) is now
+the saved-water A highlight: face-on opening, eased 45° arc, 14:00→19:30 solar
+clock, automatic exposure and clear sky. It supersedes the interim fixed-morning
+cut; the older recipes and attachments remain historical provenance.
+
 - **Takeaway / cinematic verb:** Show a curated animated asset's silhouette,
   deformation, materials, and lighting as one coherent viewer experience.
 - **Opening:** A clean three-quarter frame establishes the complete asset and

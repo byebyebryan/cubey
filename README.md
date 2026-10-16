@@ -33,12 +33,13 @@ cloud reflections, and atmosphere change together.
 
 ### glTF + Terrain
 
-https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4
+https://github.com/user-attachments/assets/961c41fe-1bdf-4c0d-a936-1c7fad251f2f
 
 The Damaged Helmet overlooks mountain streams and a lake on generated Terrain
-Diffusion terrain. A restrained morning orbit combines imported PBR materials
-with the shared captured-water landscape renderer. Water levels are a held
-SynxFlow storm state; only the camera and surface cues animate, not hydrology.
+Diffusion terrain. A face-on opening eases into a 45° orbit as afternoon becomes
+sunset and early night, combining imported PBR materials with the shared
+captured-water landscape renderer. Water levels are a held
+SynxFlow storm state; camera, lighting and surface cues animate, not hydrology.
 
 [Project](projects/gltf_viewer/README.md) · [720p MP4](docs/media/showcase/gltf-terrain.mp4) · [1080p master](docs/media/showcase/gltf-terrain-master-1080p.mp4) · [Poster](docs/media/showcase/gltf-terrain.png) · [Recipe](docs/media/showcase/gltf-terrain-recipe.json)
 

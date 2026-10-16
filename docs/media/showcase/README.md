@@ -27,16 +27,23 @@ independent clocks and provenance. Encoded 60 FPS is not live solver performance
 Ocean, Water 3D, Fire 3D and Fluid's media/attachment receipts are unchanged by
 the glTF promotion.
 
-The owner-selected **glTF A / original mountain / saved water / morning** replaces
-the old dry-terrain glTF gallery clip. Its [native 1080p master](gltf-terrain-master-1080p.mp4)
+The owner-selected **glTF A / original mountain / saved water / face-on solar arc**
+replaces the interim fixed-morning cut. It starts front-on, eases through 45°,
+and advances from afternoon through sunset into early night (14:00→19:30), using
+shared automatic exposure. Point stars are off for this capture only.
+Its [native 1080p master](gltf-terrain-master-1080p.mp4)
 and [recipe](gltf-terrain-recipe.json) retain the clean source revision, exact
-commands, frozen inputs and all-480-decoded-frame parity with the approved film.
+commands, frozen inputs and all-480-decoded-frame parity with an independent repeat.
 The gallery is a Lanczos 720p/60 CRF 24 derivative; the poster is its four-second
 frame. Water is one held 12h SynxFlow storm state with render-only surface cues,
 not live hydrology or a lake-formation timelapse. No solver runs in the consumer.
 The [legacy glTF recipe](gltf-terrain-legacy-v1-recipe.json) describes the previous
 media revision, not hashes of current paths. The old video/poster remain
 recoverable from that Git revision, and its original attachment is unchanged.
+The interim morning cut also retains its exact
+[recipe](gltf-terrain-morning-v1-recipe.json) and
+[publication receipt](gltf-terrain-morning-v1-publication.json). Historical
+hashes describe those earlier revisions, not the current paths.
 
 The [36-second Mountain rain-off film](fluid-25d-story.mp4) and
 [V1 recipe](fluid-25d-legacy-v1-recipe.json) are retained legacy studies. They
@@ -60,12 +67,13 @@ flow and anchored by closed [issue #1](https://github.com/byebyebryan/cubey/issu
 at source commit `e21fdd86ba83049d0d187caf3973b1124163e576`. The same mapping
 is recorded in `manifest.json`. GitHub serves those attachments to the native
 players. The original dry-terrain glTF URL is historical now: it does not serve
-the new saved-water A film. That film was published from media package commit
-`023af0be` in its own
+the current face-on solar film. The interim fixed-morning A cut was published
+from media package commit `023af0be` in its own
 [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357).
-Its [publication receipt](gltf-terrain-publication.json) records the returned
-native-player URL and byte-identical anonymous download, without changing the
-capture recipe or historical attachment.
+Its [historical publication receipt](gltf-terrain-morning-v1-publication.json)
+is retained. The current [publication receipt](gltf-terrain-publication.json)
+records the solar film's separate native-player URL and byte-identical anonymous
+download, without changing the earlier comments or attachments.
 
 Fluid's exact gallery MP4 was added in a separate
 [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145)
@@ -77,7 +85,7 @@ attachment mappings and issue body were not replaced.
 | Highlight | Native player attachment | Committed MP4 | Poster fallback |
 | --- | --- | --- | --- |
 | Ocean | https://github.com/user-attachments/assets/dc923c55-1061-402f-92ad-09b7da2e7208 | [MP4](ocean.mp4) | [Poster](ocean.png) |
-| glTF + Terrain | https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4 | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
+| glTF + Terrain | https://github.com/user-attachments/assets/961c41fe-1bdf-4c0d-a936-1c7fad251f2f | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
 | Water 3D | https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75 | [MP4](water-3d.mp4) | [Poster](water-3d.png) |
 | Fire 3D | https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0 | [MP4](fire-3d.mp4) | [Poster](fire-3d.png) |
 | Fluid 2.5D | https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08 | [MP4](fluid-25d.mp4) | [Poster](fluid-25d.png) |

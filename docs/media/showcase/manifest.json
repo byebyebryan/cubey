@@ -69,13 +69,13 @@
       "title": "glTF + Terrain",
       "publication": {
         "path": "docs/media/showcase/gltf-terrain.mp4",
-        "bytes": 1135650,
-        "sha256": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233",
-        "github_attachment_url": "https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4",
-        "state": "published; owner-selected saved-water A; attachment bytes verified",
+        "bytes": 1854610,
+        "sha256": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909",
+        "github_attachment_url": "https://github.com/user-attachments/assets/961c41fe-1bdf-4c0d-a936-1c7fad251f2f",
+        "state": "published; owner-approved front-facing solar cut; browser and public attachment bytes verified",
         "recipe": "docs/media/showcase/gltf-terrain-recipe.json",
-        "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357",
-        "receipt": "docs/media/showcase/gltf-terrain-publication.json"
+        "receipt": "docs/media/showcase/gltf-terrain-publication.json",
+        "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205885688"
       },
       "poster": {
         "path": "docs/media/showcase/gltf-terrain.png",
@@ -84,23 +84,23 @@
         "colorspace": "RGB",
         "width": 1280,
         "height": 720,
-        "bytes": 656133,
-        "sha256": "d319cd8516a74102bf30c20a9533ce9816820c5f015db24ea7ba5c6fbbdca062"
+        "bytes": 800570,
+        "sha256": "959f212390691e12799739cc3fb19ba8b04186e2905faef974b651677e95b831"
       },
       "source": {
-        "revision": "33351d81e77b9fd5f9a8c4cd37d6e1a3e50bfcf1",
+        "revision": "e38886c309fc9e7240d0ce641f85b515849a74a7",
         "capture_dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "ignored_publication": "outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain.mp4"
+        "ignored_publication": "outputs/showcase/gltf-front-solar-20261015-YcdZBy/package/gltf-terrain.mp4"
       },
       "recipe": {
         "document": "docs/media/showcase/gltf-terrain-recipe.json",
-        "description": "Exact clean-source capture, CFR master/gallery/poster commands, frozen inputs and all-frame parity with the owner-approved A film."
+        "description": "Exact frozen-source capture, owner-approved face-on solar arc, independent all-frame repeat, and CFR master/gallery/poster commands."
       },
       "master": {
         "path": "docs/media/showcase/gltf-terrain-master-1080p.mp4",
-        "bytes": 6410808,
-        "sha256": "94c25fc946c6ab040edff00727d0ea00c3fac63698d65ffdbb33417b1b673534",
-        "role": "native 1080p60 owner-selected saved-water A master"
+        "bytes": 8795936,
+        "sha256": "847f2e2b7461ffe88f4427f3e8a54c0e1c2942d32af4e71f3d465bb8e3a5000c",
+        "role": "native 1080p60 owner-selected face-on solar A master"
       },
       "legacy": {
         "recipe": "docs/media/showcase/gltf-terrain-legacy-v1-recipe.json",
@@ -115,6 +115,15 @@
         "asset_source_revision": "9429648735279342b4c32b8745f7904196607379",
         "asset_sha256": "a1e3b04de97b11de564ce6e53b95f02954a297f0008183ac63a4f5974f6b32d8",
         "notice": "This media-only exception does not relicense Cubey source; glTF media is not permissively reusable."
+      },
+      "previous_saved_water": {
+        "recipe": "docs/media/showcase/gltf-terrain-morning-v1-recipe.json",
+        "publication_receipt": "docs/media/showcase/gltf-terrain-morning-v1-publication.json",
+        "recipe_sha256": "bee7d8d9e060d2ae4de0fefac600e25a999bec432fbee9e72bb943aabdb62dbb",
+        "receipt_sha256": "c370a0dbe314da0f46262e94f9bbb82eb6a7f286a9a827cb0c79865f815f89bc",
+        "repository_revision": "e38886c309fc9e7240d0ce641f85b515849a74a7",
+        "github_attachment_url": "https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4",
+        "scope": "Historical fixed-morning saved-water cut; media recoverable from the recorded Git revision and unchanged attachment."
       }
     },
     {

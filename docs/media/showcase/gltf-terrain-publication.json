@@ -1,40 +1,44 @@
 {
-  "schema": "cubey.gltf.saved-water-publication.v1",
-  "published_at": "2026-10-16T00:25:40Z",
-  "verified_at": "2026-10-16T00:26:33Z",
-  "github_attachment_url": "https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4",
-  "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357",
-  "source_media_commit": "023af0be713403178449606509c25244737be306",
+  "schema": "cubey.gltf.saved-water-publication.v2",
+  "published_at": "2026-10-16T01:24:15Z",
+  "verified_at": "2026-10-16T01:25:22Z",
+  "github_attachment_url": "https://github.com/user-attachments/assets/961c41fe-1bdf-4c0d-a936-1c7fad251f2f",
+  "provenance_comment_url": "https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205885688",
+  "source_render_revision": "e38886c309fc9e7240d0ce641f85b515849a74a7",
+  "source_revision_scope": "Frozen renderer source, not the Git commit that later installs the new gallery media",
   "media_path": "docs/media/showcase/gltf-terrain.mp4",
-  "bytes": 1135650,
-  "sha256": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233",
+  "bytes": 1854610,
+  "sha256": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909",
   "capture_recipe": "docs/media/showcase/gltf-terrain-recipe.json",
-  "capture_recipe_sha256": "bee7d8d9e060d2ae4de0fefac600e25a999bec432fbee9e72bb943aabdb62dbb",
+  "capture_recipe_sha256": "1c2e3024fd5c370e07d0607fc3a8a6af32f759bdca4726504dc3ae0fa09c6763",
   "verification": {
     "anonymous_public_page_video": {
       "method": "Unauthenticated public issue HTML, then its rendered video source; no cookies or token supplied",
       "http_status": 200,
       "content_type": "video/mp4",
-      "bytes": 1135650,
-      "sha256": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233",
+      "bytes": 1854610,
+      "sha256": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909",
       "width": 1280,
       "height": 720,
       "frames": 480,
       "fps": "60/1",
-      "duration_seconds": 8.0
-    },
-    "browser_native_player": {
-      "method": "Published comment player loaded in browser and reached the end of the clip",
-      "width": 1280,
-      "height": 720,
-      "duration_seconds": 8,
-      "media_error": null
+      "duration_seconds": 8
     },
     "standalone_unauthenticated_attachment_route_status": 200,
     "issue_remains_closed": true,
     "original_four_attachment_mappings_unchanged": true,
     "original_issue_body_sha256": "2d7cb3a57f6e1d9f71db2b8925fc42c7ddf5859e5ef0277d94e574d301e82df8",
-    "fluid_publication_comment_retained": true
+    "fluid_publication_comment_retained": true,
+    "morning_publication_comment_retained": true,
+    "browser_native_player": {
+      "method": "Published GitHub native player loaded without a media error; its native-browser media download matched the exact approved bytes",
+      "width": 1280,
+      "height": 720,
+      "duration_seconds": 8,
+      "media_error": null,
+      "download_bytes": 1854610,
+      "download_sha256": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909"
+    }
   },
-  "boundary": "Publication of existing owner-selected gallery bytes, not a recapture, re-encode, live-performance result or native GUI review. Water is a held 12h storm state. Expiring CDN delivery URLs are not permanent player links. Capture-time publication status in the recipe is unchanged. Media-only CC-BY-NC-4.0 Damaged Helmet exception remains; Cubey source is MIT."
+  "boundary": "Publication of exact owner-approved front-facing solar gallery bytes; no recapture or re-encode. Held water, no live solver/performance or native GUI claim. Earlier attachments/recipes/receipts retained. Expiring CDN delivery URLs are not permanent player links. Damaged Helmet media-only CC-BY-NC-4.0 exception remains; Cubey source is MIT."
 }

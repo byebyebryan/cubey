@@ -111,7 +111,8 @@ provenance rules remain the storyboard authority. Five highlights are now
 creatively locked and packaged in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
 Water 3D, Fire 3D, and Fluid 2.5D. All five have current GitHub native players,
-including the owner-selected saved-water glTF A cut. Fluid's eight-second Joining
+including the owner-selected face-on, afternoon-to-night saved-water glTF A cut.
+Fluid's eight-second Joining
 valleys sunset shows recorded streams gathering into a lake; its separate
 36-second Mountain rain-off film remains a legacy study. Attachment identities
 and exact bytes are recorded in the manifest and the Fluid/glTF publication receipts.

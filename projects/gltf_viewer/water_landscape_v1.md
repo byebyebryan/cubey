@@ -9,6 +9,8 @@ with master, recipe and poster. The exact gallery bytes are now pushed and
 published as a GitHub native player; the
 [publication receipt](../../docs/media/showcase/gltf-terrain-publication.json)
 records the separate upload and anonymous download verification.
+The [front-facing solar revision](showcase_solar_v1.md) now supersedes the
+initial fixed-morning film, while retaining A, the held water and fitted depth.
 The sections below retain the original gated-study history and its limits.
 
 ## Protocol and first gate

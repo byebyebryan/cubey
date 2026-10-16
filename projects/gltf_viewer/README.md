@@ -78,10 +78,11 @@ projects rather than incomplete viewer plumbing.
 
 ## Showcase highlight
 
-The owner-selected **A: original mountain / sharper saved water / morning** is
+The owner-selected **A: original mountain / saved water / face-on solar arc** is
 the current repository highlight. Its [audition and depth-precision study](water_landscape_v1.md)
 reuse the shared Terrain renderer and prepared captures; this is not a live
-Fluid simulation. The landscape stays explicitly opt-in at runtime:
+Fluid simulation. The landscape stays explicitly opt-in at runtime. This fixed
+daylight diagnostic is useful for inspection; the timed film recipe is below:
 
 ```sh
 rtk proxy build/release/projects/gltf_viewer/gltf_viewer --terrain-landscape mountain-local --no-clouds --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --time-of-day-mode solar --time-hours 10 --time-speed-hours-per-second 0 --capture-camera-distance-scale .70 --capture-camera-yaw 94.538 --capture-camera-pitch -6.8755 --exposure 0
@@ -94,8 +95,9 @@ alternate prepared cache. `--no-terrain-water-visible` hides the surface while
 retaining wet-ground shading. `--terrain-water-audit` checks immutable fields at
 shutdown, outside profiling. Native GUI/layout acceptance remains deferred.
 
-V1 is a fixed/small-orbit backdrop for **opaque/masked assets and clear-sky
-daylight**, not a general scene compositor. Clouds, alpha/transmission, ocean,
+V1 is a fixed/small-orbit backdrop for **opaque/masked assets and clear sky**,
+not a general scene compositor. Daylight and the reviewed dusk/early-night film
+are qualified; general night-sky quality is not. Clouds, alpha/transmission, ocean,
 legacy terrain controls, debug views and non-ACES display are rejected in this
 mode; their ordinary viewer paths remain available without this opt-in.
 The model stays at normal scale above the highest saved surface. A separate
@@ -109,37 +111,45 @@ or underwater camera. The foreground uses shared sky lighting, not reflections
 of the retained terrain/water. Fitted depth is accepted for this bounded use;
 native Cubey GUI/layout acceptance remains separate from the reviewed film.
 
-https://github.com/user-attachments/assets/66e77272-8da6-4b22-bb86-3626f332dff4
+https://github.com/user-attachments/assets/961c41fe-1bdf-4c0d-a936-1c7fad251f2f
 
 [Committed MP4](../../docs/media/showcase/gltf-terrain.mp4) · [Poster fallback](../../docs/media/showcase/gltf-terrain.png)
 
-The eight-second morning highlight stages the Damaged Helmet above the original
-mountain, with a prominent lake on its right. It uses a held 12-hour saved water
+The eight-second highlight starts facing the Damaged Helmet, then eases through
+a 45° arc as afternoon becomes sunset and early night. The lake opens up on the
+left as the camera turns. It uses a held 12-hour saved water
 state from an exaggerated 512mm/h storm; it does not show lake formation,
 calibrated weather, permanent water, or a live solver. Camera and surface cues
-animate through the 20° eased arc. The normal no-landscape viewer remains unchanged.
+animate alongside the shared solar lighting. The normal no-landscape viewer remains unchanged.
 
 The [native 1080p master](../../docs/media/showcase/gltf-terrain-master-1080p.mp4)
 and [complete recipe](../../docs/media/showcase/gltf-terrain-recipe.json) retain
 the clean source revision, renderer/input hashes, exact command and validation.
-All 480 decoded source frames match the owner-approved depth-fixed film.
+An independent repeat matches all 480 decoded frames of the approved source film.
 The 720p/60 gallery copy is a Lanczos derivative, not a native 720p capture.
 Its [publication receipt](../../docs/media/showcase/gltf-terrain-publication.json)
 records the exact-byte anonymous download verification and
-[provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205165357).
+[provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6205885688).
 
-The exact native capture uses clear-sky shared lighting, fixed 10:00 solar time,
-distance scale `0.70`, exposure `0`, fitted independent foreground/background
-depth ranges, and 480 rendered frames at 60 FPS:
+The exact native capture uses clear-sky shared lighting, a 14:00→19:30 solar
+clock, distance scale `0.70`, existing automatic exposure, fitted independent
+foreground/background depth ranges, and 480 rendered frames at 60 FPS. Point
+stars are off for this capture only to avoid low-resolution sky-cubemap blocks:
 
 ```sh
-./build/release/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1920 --height 1080 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --terrain-landscape mountain-local --terrain-landscape-depth fitted --no-clouds --time-of-day-mode solar --time-hours 10 --time-speed-hours-per-second 0 --capture-camera-distance-scale .70 --capture-camera-yaw 84.53803619658582 --capture-camera-pitch -6.8755 --capture-video-orbit-degrees 20 --exposure 0 --ibl-intensity 1 --require-validation --terrain-water-audit --output outputs/showcase/gltf-landscape-A-source.mp4
+rtk proxy build/release/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1920 --height 1080 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --terrain-landscape mountain-local --terrain-landscape-depth fitted --no-clouds --time-of-day-mode solar --time-hours 14 --time-speed-hours-per-second .6875 --capture-camera-distance-scale .70 --capture-camera-yaw 0 --capture-camera-pitch -6.8755 --capture-video-orbit-degrees 45 --star-intensity 0 --ibl-intensity 1 --require-validation --terrain-water-audit --output outputs/showcase/gltf-landscape-A-solar-source.mp4
 ```
 
 The previous dry-terrain/day-to-night cut remains in Git history and at its
 [original attachment](https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02).
 Its [legacy recipe](../../docs/media/showcase/gltf-terrain-legacy-v1-recipe.json)
 is historical metadata, not hashes of the current files.
+
+The [front-facing day-to-night revision](showcase_solar_v1.md) is owner-approved
+and promoted. The fixed-morning saved-water cut remains recoverable from its
+[historical recipe](../../docs/media/showcase/gltf-terrain-morning-v1-recipe.json),
+[publication receipt](../../docs/media/showcase/gltf-terrain-morning-v1-publication.json),
+and unchanged attachment. These describe previous bytes, not the current files.
 
 The media-only license boundary is important: both MP4s and the poster are
 `CC-BY-NC-4.0`, attributed to ctxwing (2018 rebuild/conversion) and

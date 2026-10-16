@@ -1,8 +1,9 @@
 {
-  "schema": "cubey.gltf.saved-water-showcase.v1",
-  "selection": "Owner-approved A: original mountain, 32m saved water, morning",
+  "schema": "cubey.gltf.saved-water-showcase.v2",
+  "selection": "Owner-approved A: original mountain, saved water, face-on afternoon-to-night",
   "source_protocol": {
-    "source_revision": "33351d81e77b9fd5f9a8c4cd37d6e1a3e50bfcf1",
+    "source_head": "e38886c309fc9e7240d0ce641f85b515849a74a7",
+    "capture_recipe_sha256": "bee7d8d9e060d2ae4de0fefac600e25a999bec432fbee9e72bb943aabdb62dbb",
     "source_status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "runtime": {
       "binary": "f320714af3bd9953b3ae5f4ed0a53cb7adee5507de1c437ccf94dd391af7fadd",
@@ -122,21 +123,74 @@
       "cache/terrain/worlds/v1/f12244a1ff943e37/sites/valley-interior/tier-2.f32": "4f17eaefdfa68cb1ef7d0715747b517459fbb70dd6263d929d18a8ba0a296716",
       "cache/terrain/worlds/v1/f12244a1ff943e37/sites/valley-interior/tier-3.f32": "1e50aa10ab293a124c9a306c0fd47e94a4d53eb07814c618094524fe21d16742",
       "cache/terrain/worlds/v1/f12244a1ff943e37/sites/valley-interior/world-recipe.json": "1a6a8e5446f3956657bf9518a9d084e32e83bc24c06dce9cf8052a705d1ecc7c",
-      "docs/media/showcase/gltf-terrain.mp4": "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2",
-      "docs/media/showcase/gltf-terrain.png": "b4d44e3a05e4fb861694a4b50d88c4542e885f7326906dc5c3f6ebb092419485",
-      "docs/media/showcase/manifest.json": "f4ac77f47da6e8bf053cfffcf1ce0887a2d50b2cf3f2d5539fcfb9e396688067",
+      "docs/media/showcase/gltf-terrain.mp4": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233",
+      "docs/media/showcase/gltf-terrain.png": "d319cd8516a74102bf30c20a9533ce9816820c5f015db24ea7ba5c6fbbdca062",
+      "docs/media/showcase/manifest.json": "5705f2aa678ceb00b3bcc7d43f1ec6ae7c14080689e644105759d7db23a3e9f6",
       "outputs/showcase/audition-2/assets/DamagedHelmet.glb": "a1e3b04de97b11de564ce6e53b95f02954a297f0008183ac63a4f5974f6b32d8",
       "projects/terrain/terrain_landscape_presets.json": "87a58c79b8254ed1e8b65c976c427a1b526fabc3933582be1e09323aa3c61283"
     },
-    "approved_report": "http://starship:8787/reports/372c661105753f4f4a6b92c6845619a64be574571767435b268a685ca29e6571/",
-    "approved_film_sha256": "d411090b8e5ec5be082242e025ee902aedd93d93899b18b87bd133f44dd7a03e",
-    "scope": "Fresh clean-source A capture; same approved held water and 20 degree orbit; no solver, generation or GUI."
+    "scope": "Front-facing orbit and afternoon-to-night capture audition; unchanged held water, no solver, no GUI, no publication replacement."
   },
   "source_capture": {
-    "sha256": "d411090b8e5ec5be082242e025ee902aedd93d93899b18b87bd133f44dd7a03e",
-    "wall_seconds": 17.96659662798629,
-    "peak_process_rss_kib": 1554548,
-    "process_cpu_seconds": 26.189655,
+    "orbit_degrees": 45,
+    "movie": "front-45-refined-1080p.mp4",
+    "sha256": "3ccbff9d499fc940e14bbe8bd1789464c9da3c18bb1a2fbcf75837dd8955ac02",
+    "probe": {
+      "codec_name": "h264",
+      "profile": "High",
+      "pix_fmt": "yuv420p",
+      "width": 1920,
+      "height": 1080,
+      "r_frame_rate": "60/1",
+      "avg_frame_rate": "28800/479",
+      "nb_read_frames": "480",
+      "duration": "7.983333"
+    },
+    "samples": [
+      {
+        "frame": 0,
+        "seconds": 0.0,
+        "solar_hours": 14.011458333333334,
+        "yaw_degrees": 0.0,
+        "image": "front-45-refined-000.png",
+        "sha256": "6b66c91fe9c1da4d6799412a59baeda471f060659ab3862245b6c0ece0eb6118"
+      },
+      {
+        "frame": 120,
+        "seconds": 2.0,
+        "solar_hours": 15.386458333333334,
+        "yaw_degrees": 7.0576906081049,
+        "image": "front-45-refined-120.png",
+        "sha256": "61e266ecc5d01bb01e83e37d1833f07fce66eb0beeda2e12b14c07151748e70a"
+      },
+      {
+        "frame": 240,
+        "seconds": 4.0,
+        "solar_hours": 16.761458333333334,
+        "yaw_degrees": 22.57045918782419,
+        "image": "front-45-refined-240.png",
+        "sha256": "0d3b8369a909377f645c4f76a097d9a30908e9a964a1fc453d37e7d2edc33420"
+      },
+      {
+        "frame": 360,
+        "seconds": 6.0,
+        "solar_hours": 18.136458333333334,
+        "yaw_degrees": 38.04785087226476,
+        "image": "front-45-refined-360.png",
+        "sha256": "88a9cb16ae616c89280dca1e891e25a1853970e21aaf2a764d9b3f5fdbcaaec6"
+      },
+      {
+        "frame": 479,
+        "seconds": 7.983333333333333,
+        "solar_hours": 19.5,
+        "yaw_degrees": 45.0,
+        "image": "front-45-refined-479.png",
+        "sha256": "61ab1297fcf041dbab7fd5a7a0f1565178d70f05d63311f8412da87656cf4e78"
+      }
+    ],
+    "wall_seconds": 16.981455047003692,
+    "peak_process_rss_kib": 1633248,
+    "process_cpu_seconds": 25.91368,
     "command": [
       "rtk",
       "proxy",
@@ -150,19 +204,21 @@
       "--time-of-day-mode",
       "solar",
       "--time-hours",
-      "10",
+      "14.0",
       "--time-speed-hours-per-second",
-      "0",
+      "0.6875",
       "--capture-camera-distance-scale",
       ".70",
       "--capture-camera-yaw",
-      "84.53803619658582",
+      "0.0",
       "--capture-camera-pitch",
       "-6.8755",
-      "--exposure",
-      "0",
       "--ibl-intensity",
       "1",
+      "--star-intensity",
+      "0",
+      "--terrain-landscape-depth",
+      "fitted",
       "--capture",
       "video",
       "--frames",
@@ -174,13 +230,11 @@
       "--height",
       "1080",
       "--capture-video-orbit-degrees",
-      "20",
+      "45",
       "--require-validation",
       "--terrain-water-audit",
       "--output",
-      "outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/source-1080p.mp4",
-      "--terrain-landscape-depth",
-      "fitted"
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/front-45-refined-1080p.mp4"
     ],
     "exit_code": 0
   },
@@ -195,11 +249,69 @@
     "nb_read_frames": "480",
     "duration": "7.983333"
   },
+  "capture_tool_sha256": "2c18311e1f6aad5a491faebf4f73b24549059181d255b9d5f2d93f8eedc87496",
+  "approved_candidate_recipe_sha256": "a813b4632a0b9ad5e592585181e2b5947d6409236e2b748c0b8973d9e6872ae7",
   "approved_frame_parity": {
-    "algorithm": "SHA256 of decoded raw yuv420p frames",
-    "fresh": "SHA256=b5ddc4d16769acf79b50e4980a50978cf7c632240cf47916bfefb1d0cb6bfee4",
-    "approved": "SHA256=b5ddc4d16769acf79b50e4980a50978cf7c632240cf47916bfefb1d0cb6bfee4",
-    "all_480_frames_exact": true
+    "algorithm": "SHA256 of all decoded raw yuv420p frames",
+    "fresh": "SHA256=31923b308915e532fc3008be4ddb8e242acf50ac03cf77c9f9e8fac7211fcccd",
+    "approved": "SHA256=31923b308915e532fc3008be4ddb8e242acf50ac03cf77c9f9e8fac7211fcccd",
+    "all_480_frames_exact": true,
+    "scope": "Independent repeat matched the source of the exact owner-approved gallery film"
+  },
+  "repeat_capture": {
+    "all_480_decoded_frames_exact": true,
+    "source_decoded_sha256": "SHA256=31923b308915e532fc3008be4ddb8e242acf50ac03cf77c9f9e8fac7211fcccd",
+    "repeat_decoded_sha256": "SHA256=31923b308915e532fc3008be4ddb8e242acf50ac03cf77c9f9e8fac7211fcccd",
+    "repeat_file_sha256": "3ccbff9d499fc940e14bbe8bd1789464c9da3c18bb1a2fbcf75837dd8955ac02",
+    "wall_seconds": 16.899965613003587,
+    "peak_process_rss_kib": 1634268,
+    "process_cpu_seconds": 25.852676,
+    "command": [
+      "rtk",
+      "proxy",
+      "/home/bryan/code/cubey/build/release/projects/gltf_viewer/gltf_viewer",
+      "--headless",
+      "--input",
+      "/home/bryan/code/cubey/outputs/showcase/audition-2/assets/DamagedHelmet.glb",
+      "--terrain-landscape",
+      "mountain-local",
+      "--no-clouds",
+      "--time-of-day-mode",
+      "solar",
+      "--time-hours",
+      "14.0",
+      "--time-speed-hours-per-second",
+      "0.6875",
+      "--capture-camera-distance-scale",
+      ".70",
+      "--capture-camera-yaw",
+      "0.0",
+      "--capture-camera-pitch",
+      "-6.8755",
+      "--ibl-intensity",
+      "1",
+      "--star-intensity",
+      "0",
+      "--terrain-landscape-depth",
+      "fitted",
+      "--capture",
+      "video",
+      "--frames",
+      "480",
+      "--fps",
+      "60",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--capture-video-orbit-degrees",
+      "45",
+      "--require-validation",
+      "--terrain-water-audit",
+      "--output",
+      "outputs/showcase/gltf-front-solar-20261015-YcdZBy/front-45-refined-repeat-1080p.mp4"
+    ],
+    "exit_code": 0
   },
   "master": {
     "command": [
@@ -210,7 +322,7 @@
       "error",
       "-n",
       "-i",
-      "/home/bryan/code/cubey/outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/source-1080p.mp4",
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/front-45-refined-1080p.mp4",
       "-an",
       "-vf",
       "setpts=N/(60*TB)",
@@ -230,7 +342,7 @@
       "yuv420p",
       "-movflags",
       "+faststart",
-      "/home/bryan/code/cubey/outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain-master-1080p.mp4"
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/package/gltf-terrain-master-1080p.mp4"
     ],
     "probe": {
       "codec_name": "h264",
@@ -254,7 +366,7 @@
       "error",
       "-n",
       "-i",
-      "/home/bryan/code/cubey/outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain-master-1080p.mp4",
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/package/gltf-terrain-master-1080p.mp4",
       "-an",
       "-vf",
       "scale=1280:720:flags=lanczos,setpts=N/(60*TB)",
@@ -272,7 +384,7 @@
       "yuv420p",
       "-movflags",
       "+faststart",
-      "/home/bryan/code/cubey/outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain.mp4"
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/package/gltf-terrain.mp4"
     ],
     "probe": {
       "codec_name": "h264",
@@ -296,14 +408,14 @@
       "error",
       "-n",
       "-i",
-      "/home/bryan/code/cubey/outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain.mp4",
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/package/gltf-terrain.mp4",
       "-ss",
       "4",
       "-frames:v",
       "1",
       "-vf",
       "format=rgb24",
-      "/home/bryan/code/cubey/outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain.png"
+      "/home/bryan/code/cubey/outputs/showcase/gltf-front-solar-20261015-YcdZBy/package/gltf-terrain.png"
     ],
     "timestamp_seconds": 4
   },
@@ -312,10 +424,17 @@
     "depth": "fitted",
     "water_state": "held 12h capture at 512mm/h storm forcing",
     "hydraulic_dispatches": 0,
-    "animated": "camera and render-only surface cues",
+    "animated": "camera, shared solar lighting, render-only surface cues",
     "clouds": false,
-    "solar_hours": 10,
-    "orbit_degrees": 20
+    "solar_hours": null,
+    "orbit_degrees": 45,
+    "solar_start_hours": 14.0,
+    "solar_speed_hours_per_second": 0.6875,
+    "solar_first_frame_hours": 14.011458333333334,
+    "solar_last_frame_hours": 19.5,
+    "automatic_exposure": true,
+    "star_intensity": 0,
+    "camera_start_yaw_degrees": 0.0
   },
   "license": {
     "source_code": "MIT",
@@ -329,25 +448,39 @@
   "media": {
     "gltf-terrain-master-1080p.mp4": {
       "path": "docs/media/showcase/gltf-terrain-master-1080p.mp4",
-      "bytes": 6410808,
-      "sha256": "94c25fc946c6ab040edff00727d0ea00c3fac63698d65ffdbb33417b1b673534"
+      "bytes": 8795936,
+      "sha256": "847f2e2b7461ffe88f4427f3e8a54c0e1c2942d32af4e71f3d465bb8e3a5000c"
     },
     "gltf-terrain.mp4": {
       "path": "docs/media/showcase/gltf-terrain.mp4",
-      "bytes": 1135650,
-      "sha256": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233"
+      "bytes": 1854610,
+      "sha256": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909"
     },
     "gltf-terrain.png": {
       "path": "docs/media/showcase/gltf-terrain.png",
-      "bytes": 656133,
-      "sha256": "d319cd8516a74102bf30c20a9533ce9816820c5f015db24ea7ba5c6fbbdca062"
+      "bytes": 800570,
+      "sha256": "959f212390691e12799739cc3fb19ba8b04186e2905faef974b651677e95b831"
     }
   },
-  "publication": "Owner approved and packaged locally; GitHub attachment and push are separate actions",
+  "owner_review": {
+    "decision": "Owner accepted the front-facing solar cut and requested publication",
+    "recorded_at": "2026-10-16T01:23:02Z",
+    "report": "http://starship:8787/reports/973972e1e0e1bd8d47f90eab26a386296d0d167cbeff300b993d7d579bb0e8b4/"
+  },
+  "previous_saved_water": {
+    "recipe": "docs/media/showcase/gltf-terrain-morning-v1-recipe.json",
+    "publication_receipt": "docs/media/showcase/gltf-terrain-morning-v1-publication.json",
+    "recipe_sha256": "bee7d8d9e060d2ae4de0fefac600e25a999bec432fbee9e72bb943aabdb62dbb",
+    "receipt_sha256": "c370a0dbe314da0f46262e94f9bbb82eb6a7f286a9a827cb0c79865f815f89bc",
+    "repository_revision": "e38886c309fc9e7240d0ce641f85b515849a74a7"
+  },
+  "publication": "Owner-approved bytes promoted without recapture or re-encoding; attachment delivery is recorded separately in the publication receipt.",
   "limitations": [
     "Fixed/small-orbit opaque/masked foreground above the terrain",
     "Saved state, not live hydrology or lake formation",
     "Encoded 60fps does not assert native GUI performance",
-    "Residual subpixel aliasing is not claimed eliminated"
+    "Residual subpixel aliasing is not claimed eliminated",
+    "Night point stars disabled for this capture because the 64px visible sky cubemap magnifies them",
+    "Dusk/early-night end at 19:30 rather than the legacy 21:00 closing time"
   ]
 }
