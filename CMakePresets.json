@@ -160,7 +160,7 @@
       "configurePreset": "dev",
       "filter": {
         "exclude": {
-          "label": "windowed"
+          "label": "^(windowed|sync_validation)$"
         }
       },
       "output": {
@@ -215,7 +215,7 @@
           "label": "^gpu$"
         },
         "exclude": {
-          "label": "^(windowed|sanitizer_external)$"
+          "label": "^(windowed|sanitizer_external|sync_validation)$"
         }
       },
       "output": {
@@ -243,7 +243,7 @@
       "configurePreset": "dev-terrain-studies",
       "filter": {
         "exclude": {
-          "label": "windowed"
+          "label": "^(windowed|sync_validation)$"
         }
       },
       "output": {
@@ -275,6 +275,19 @@
         },
         "exclude": {
           "label": "windowed"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "dev-sync-validation",
+      "displayName": "Foundation synchronization validation",
+      "configurePreset": "dev",
+      "filter": {
+        "include": {
+          "label": "^sync_validation$"
         }
       },
       "output": {

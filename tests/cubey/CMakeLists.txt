@@ -353,3 +353,24 @@ cubey_add_glsl_shaders(cubey_terrain_water_capture_lifecycle_tests
 add_test(NAME terrain_water_capture_lifecycle_gpu COMMAND cubey_terrain_water_capture_lifecycle_tests)
 set_tests_properties(terrain_water_capture_lifecycle_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
     SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
+
+add_executable(cubey_cloud_lifecycle_tests cloud_lifecycle_gpu_tests.cpp)
+target_link_libraries(cubey_cloud_lifecycle_tests PRIVATE cubey::render cubey_project_warnings)
+target_compile_definitions(cubey_cloud_lifecycle_tests PRIVATE
+    CUBEY_CLOUD_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/cloud-test-shaders")
+cubey_cloud_layer_shader_sources(CUBEY_CLOUD_TEST_SHADERS)
+cubey_add_glsl_shaders(cubey_cloud_lifecycle_tests
+    OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/cloud-test-shaders" SOURCES ${CUBEY_CLOUD_TEST_SHADERS})
+add_test(NAME cloud_lifecycle_gpu COMMAND cubey_cloud_lifecycle_tests)
+set_tests_properties(cloud_lifecycle_gpu PROPERTIES LABELS "cloud;headless;gpu" TIMEOUT 60
+    FAIL_REGULAR_EXPRESSION "vulkan validation error")
+find_program(CUBEY_SYNC_TEST_PYTHON NAMES python3)
+if(CUBEY_SYNC_TEST_PYTHON)
+    add_test(NAME synchronization_validation_probe
+        COMMAND "${CUBEY_SYNC_TEST_PYTHON}" -B "${PROJECT_SOURCE_DIR}/tests/tools/check_sync_validation.py"
+            "$<TARGET_FILE:cubey_cloud_lifecycle_tests>")
+    add_test(NAME cloud_lifecycle_sync COMMAND cubey_cloud_lifecycle_tests)
+    set_tests_properties(synchronization_validation_probe cloud_lifecycle_sync PROPERTIES
+        LABELS "cloud;headless;gpu;sync_validation" ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" TIMEOUT 60)
+    set_tests_properties(cloud_lifecycle_sync PROPERTIES FAIL_REGULAR_EXPRESSION "vulkan validation error")
+endif()

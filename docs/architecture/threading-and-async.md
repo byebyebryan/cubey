@@ -613,3 +613,10 @@ asset generations complete.
 - Should the headless video capture-slot ring become a reusable GPU
   capture/readback session below `HeadlessCaptureHost`, or stay host-local until
   another caller needs multi-frame readback?
+
+The dedicated `dev-sync-validation` preset proves that the validation layer's
+`validate_sync` setting is active with an enabled/disabled missing-barrier
+control, then exercises cloud frame-slot reuse, target recreation, temporal
+invalidation and cleanup with real submissions. The control never submits its
+intentionally invalid recording. See [running the gate](../getting-started.md#configure-build-and-test).
+The setting follows the Khronos [current layer-configuration guidance](https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/updating_from_VK_EXT_validation_features.md).
