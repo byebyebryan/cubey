@@ -122,13 +122,22 @@ temporal history where applicable. Ocean and Terrain keep host flow, resource
 integration, controls and rendering in private project modules. These boundaries
 preserve existing APIs and rendering/numerical behavior.
 
+The paired terrain/water scene also separates private resource construction from
+frame recording. Global, target, optional daylight and surface-texture resources
+publish only after construction succeeds. Failed target replacement retains the
+previous complete target; retry needs no caller-specific partial cleanup. Target
+recreation preserves global products. Changing frame-slot count requires full
+scene teardown, and the caller completes GPU use before replacement or teardown.
+
 `foundation_layers`, `foundation_public_headers` and `shader_build_rules` guard
 include/link direction, public compile requirements and actual shader rebuilds.
 `cloud_lifecycle_gpu` covers pending slot recordings, target recreation, temporal
 invalidation, failed creation/retry and full shutdown/re-enable.
+`terrain_surface_lifecycle_gpu` covers early/middle/late and daylight failures,
+retry, retained targets, pending slot recordings, recreation and re-enable.
 `dev-sync-validation` proves enabled synchronization checks with an intentional
-unsubmitted hazard before running the clean lifecycle fixture. Consumer capture
-comparisons and the full dev suite remain integration gates; virtual windowed,
+unsubmitted hazard and runs clean cloud, host and terrain lifecycle fixtures.
+Consumer capture comparisons and the full dev suite remain integration gates; virtual windowed,
 physical desktop and human visual acceptance are distinct evidence.
 The design precedents are [Vulkan threading](https://docs.vulkan.org/guide/latest/threading.html),
 [Filament's framegraph](https://google.github.io/filament/notes/framegraph.html),

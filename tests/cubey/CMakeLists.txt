@@ -368,6 +368,17 @@ cubey_add_glsl_shaders(cubey_terrain_water_capture_lifecycle_tests
         "${PROJECT_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
     DEPENDS ${CUBEY_TERRAIN_PATCH_TEST_DEPENDS})
 add_test(NAME terrain_water_capture_lifecycle_gpu COMMAND cubey_terrain_water_capture_lifecycle_tests)
+add_executable(cubey_terrain_surface_lifecycle_tests terrain_surface_lifecycle_gpu_tests.cpp)
+target_link_libraries(cubey_terrain_surface_lifecycle_tests PRIVATE cubey::engine cubey_project_warnings)
+target_compile_definitions(cubey_terrain_surface_lifecycle_tests PRIVATE
+    CUBEY_TERRAIN_CAPTURE_TEST_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/capture-test-shaders")
+add_dependencies(cubey_terrain_surface_lifecycle_tests cubey_terrain_water_capture_lifecycle_tests_shaders)
+add_test(NAME terrain_surface_lifecycle_gpu COMMAND cubey_terrain_surface_lifecycle_tests)
+add_test(NAME terrain_surface_lifecycle_sync COMMAND cubey_terrain_surface_lifecycle_tests)
+set_tests_properties(terrain_surface_lifecycle_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
+    TIMEOUT 240 FAIL_REGULAR_EXPRESSION "vulkan validation error")
+set_tests_properties(terrain_surface_lifecycle_sync PROPERTIES LABELS "terrain;water;headless;gpu;sync_validation"
+    ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" TIMEOUT 240 FAIL_REGULAR_EXPRESSION "vulkan validation error")
 set_tests_properties(terrain_water_capture_lifecycle_gpu PROPERTIES LABELS "terrain;water;headless;gpu"
     SKIP_RETURN_CODE 77 TIMEOUT 60 FAIL_REGULAR_EXPRESSION "vulkan validation error")
 
@@ -390,4 +401,10 @@ if(CUBEY_SYNC_TEST_PYTHON)
     set_tests_properties(synchronization_validation_probe cloud_lifecycle_sync PROPERTIES
         LABELS "cloud;headless;gpu;sync_validation" ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" TIMEOUT 60)
     set_tests_properties(cloud_lifecycle_sync PROPERTIES FAIL_REGULAR_EXPRESSION "vulkan validation error")
+else()
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sync_probe_unavailable.cmake"
+        "message(FATAL_ERROR \"Python3 is required to verify synchronization validation\")\n")
+    add_test(NAME synchronization_validation_probe
+        COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/sync_probe_unavailable.cmake")
+    set_tests_properties(synchronization_validation_probe PROPERTIES LABELS "sync_validation")
 endif()

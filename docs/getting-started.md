@@ -90,7 +90,7 @@ ctest --preset dev
 synchronization-validation tests. Headless PNG and video tests deliberately run
 without desktop-session environment
 variables, so ordinary local and SSH validation does not depend on X11,
-Wayland, or SDDM. A usable Vulkan device is still required. Cloud and host
+Wayland, or SDDM. A usable Vulkan device is still required. Cloud, host and terrain
 lifecycle fixtures also require the Khronos validation layer.
 
 For the owned-code AddressSanitizer/UBSan gate, configure and build the
@@ -137,13 +137,14 @@ It requires a Vulkan device and the Khronos validation layer. A negative-control
 probe records one intentional missing-barrier hazard without submitting it,
 verifies no synchronization diagnostic with `VK_LAYER_VALIDATE_SYNC=0`, then
 requires exactly the expected diagnostic with `VK_LAYER_VALIDATE_SYNC=1`.
-The cloud lifecycle test runs separately with synchronization validation enabled
-and fails on any validation error. It exercises real GPU work with one/two frame
-slots, temporal invalidation/toggling, target recreation, failed creation/retry
-and full shutdown/re-enable. Missing capabilities or an empty test selection fail
+Cloud, host and terrain surface lifecycle fixtures then run with synchronization
+validation enabled and fail on any validation error. They cover one/two frame
+slots, temporal invalidation/toggling, admitted work at callback failures,
+transactional resource failure/retry, target recreation and full shutdown/re-enable.
+Missing capabilities, the probe's Python interpreter or an empty selection fail
 this gate rather than establishing coverage. The ordinary dev suite runs the same
-lifecycle fixture with standard validation; dedicated synchronization tests stay
-outside ordinary and sanitizer presets.
+fixtures with standard validation; dedicated synchronization tests stay outside
+ordinary and sanitizer presets.
 
 Run the GLFW/swapchain tests only when opening windows is intentional:
 

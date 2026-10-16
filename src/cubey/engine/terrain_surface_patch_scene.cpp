@@ -1,5 +1,6 @@
 #include <cubey/engine/terrain_surface_environment.h>
-#include <cubey/engine/terrain_surface_patch_scene.h>
+
+#include "terrain_surface_patch_scene_internal.h"
 
 #include <cubey/render/generated_ibl.h>
 #include <cubey/render/generated_texture.h>
@@ -35,7 +36,7 @@ using render::TerrainSurfacePatchRain;
 using render::TerrainSurfacePatchSurface;
 using render::TerrainSurfacePatchWhitewaterSeed;
 namespace {
-constexpr VkFormat kHdrFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
+using terrain_surface_detail::kHdrFormat;
 struct RainVolume {
     float floor_m, height_m;
 };
@@ -56,10 +57,7 @@ struct WhitewaterPush {
 static_assert(sizeof(WhitewaterPush) == 128U);
 static_assert(sizeof(RainPush) == 128U);
 using Uniforms = render::TerrainSurfacePatchUniforms;
-struct DaylightPush {
-    math::Vec4 camera_position_radius, radii_ground, rayleigh, mie, ozone;
-    math::Vec4 sun_direction_radius, atmosphere_options;
-};
+using terrain_surface_detail::DaylightPush;
 static_assert(sizeof(DaylightPush) == 112U);
 static_assert(sizeof(Push) == 128U);
 static_assert(sizeof(Uniforms) == 432U);
@@ -81,280 +79,9 @@ render::RenderGraphTextureDesc texture(const char* name, VkExtent2D extent, VkFo
             .format = format,
             .aspects = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT};
 }
-render::Texture2D upload_surface(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
-                                 std::uint32_t width, std::uint32_t height,
-                                 std::span<const math::Vec4> source_values) {
-    std::vector<math::Vec4> values(source_values.begin(), source_values.end());
-    const VkExtent2D extent{width, height};
-    const auto levels = render::texture_2d_mip_count(extent);
-    std::vector<std::uint8_t> bytes;
-    for (unsigned level = 0; level < levels; ++level) {
-        for (const auto& value : values)
-            for (int c = 0; c < 4; ++c)
-                bytes.push_back(static_cast<std::uint8_t>(
-                    std::lround(std::clamp(value[c], 0.0F, 1.0F) * 255.0F)));
-        if (level + 1U == levels)
-            break;
-        const unsigned next_width = std::max(1U, width / 2U);
-        const unsigned next_height = std::max(1U, height / 2U);
-        std::vector<math::Vec4> next(std::size_t(next_width) * next_height);
-        for (unsigned z = 0; z < next_height; ++z)
-            for (unsigned x = 0; x < next_width; ++x) {
-                math::Vec4 sum{0.0F};
-                // Area average includes the final row/column for odd dimensions.
-                const unsigned x0 = x * width / next_width, x1 = (x + 1U) * width / next_width;
-                const unsigned z0 = z * height / next_height, z1 = (z + 1U) * height / next_height;
-                for (unsigned zz = z0; zz < z1; ++zz)
-                    for (unsigned xx = x0; xx < x1; ++xx)
-                        sum += values[std::size_t(zz) * width + xx];
-                next[std::size_t(z) * next_width + x] = sum / float((x1 - x0) * (z1 - z0));
-            }
-        values = std::move(next);
-        width = next_width;
-        height = next_height;
-    }
-    return render::create_uploaded_texture_2d(
-        device, gpu,
-        {.extent = extent,
-         .mip_levels = levels,
-         .format = VK_FORMAT_R8G8B8A8_UNORM,
-         .bytes = bytes,
-         .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                     .max_lod = float(levels - 1U)}});
-}
+
 } // namespace
 
-struct TerrainSurfacePatchScene::State {
-    std::optional<render::GeneratedPbrEnvironment> environment;
-    std::optional<render::TextureCube> terrain_diffuse;
-    std::optional<render::Texture2D> detail;
-    std::optional<render::Texture2D> landform_surface, climate_surface;
-    std::optional<render::Texture2D> correlated_surface;
-    std::optional<vulkan::Sampler> linear_sampler, nearest_sampler;
-    std::optional<render::FrameUniformMaterialInstance<Uniforms>> frame;
-    std::optional<vulkan::GpuTimestampProfiler> profiler;
-    std::optional<vulkan::GpuTimestampProfiler> context_profiler;
-    std::vector<bool> context_profile_slots;
-    std::optional<vulkan::Buffer> visual_flow;
-    std::optional<vulkan::DescriptorSetBundle> visual_flow_set;
-    std::optional<render::ComputePipelineResource> visual_flow_pipeline;
-    double previous_clock_s = 0.0;
-    bool flow_initialized = false;
-    std::optional<vulkan::Buffer> captured_daylight;
-    std::vector<std::unique_ptr<vulkan::DescriptorSetBundle>> daylight_sets;
-    std::optional<render::ComputePipelineResource> daylight_pipeline;
-    bool daylight_initialized = false;
-    std::unique_ptr<render::TerrainSurfacePatchRenderer> patch;
-    std::optional<render::GraphicsPipelineResource> sky, copy, display;
-    std::optional<render::GraphicsPipelineResource> foreground_merge;
-    std::vector<std::unique_ptr<vulkan::DescriptorSetBundle>> foreground_sets;
-    std::optional<render::GraphicsPipelineResource> rain;
-    std::optional<render::GraphicsPipelineResource> whitewater;
-    struct WhitewaterSlot {
-        std::optional<vulkan::Buffer> buffer;
-        std::unique_ptr<vulkan::DescriptorSetBundle> descriptors;
-        std::uint64_t generation = std::numeric_limits<std::uint64_t>::max();
-    };
-    std::vector<WhitewaterSlot> whitewater_slots;
-    math::Mat4 shadow_matrix{1.0F};
-    math::Mat4 reported_shadow_matrix{0.0F};
-    std::uint32_t reported_shadow_extent = 0U;
-    float terrain_low = 0.0F, terrain_high = 0.0F, domain_m = 0.0F;
-    VkExtent2D extent{};
-    VkFormat format = VK_FORMAT_UNDEFINED;
-};
-TerrainSurfacePatchScene::TerrainSurfacePatchScene(std::filesystem::path directory)
-    : shader_directory_(std::move(directory)) {}
-std::filesystem::path TerrainSurfacePatchScene::shader(const char* name) const {
-    return shader_directory_ / name;
-}
-TerrainSurfacePatchScene::~TerrainSurfacePatchScene() = default;
-
-bool TerrainSurfacePatchScene::ensure_resources(
-    const vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
-    render::ColorTargetView target, const TerrainSurfacePatchGrid& config,
-    std::span<const float> bed_values, const TerrainSurfacePatchFields& fields,
-    bool integrated_terrain_diffuse, const TerrainSurfacePatchSurface* surface,
-    bool captured_daylight) {
-    bool diffuse_created = false;
-    if (!state_) {
-        state_ = std::make_unique<State>();
-        auto& s = *state_;
-        // Existing deterministic Cubey environment, no asset or atmosphere service dependency.
-        s.environment.emplace(render::create_generated_pbr_environment(device, gpu));
-        const std::uint32_t seed = 0x25d2026U;
-        s.detail.emplace(render::create_compute_generated_texture_2d(
-            device, gpu,
-            {
-                .label = "fluid_25d scenic filtered terrain detail",
-                .extent = {512U, 512U},
-                .format = VK_FORMAT_R8G8B8A8_UNORM,
-                .mip_levels = 10U,
-                .shader = render::compute_shader_file(shader("terrain_backdrop_material.comp.spv")),
-                .group_size_x = 8U,
-                .group_size_y = 8U,
-                .push_constants = std::as_bytes(std::span{&seed, 1U}),
-                .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT, .max_lod = 9.0F},
-            }));
-        s.linear_sampler.emplace(
-            device, vulkan::SamplerConfig{.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE});
-        s.nearest_sampler.emplace(
-            device, vulkan::SamplerConfig{.min_filter = VK_FILTER_NEAREST,
-                                          .mag_filter = VK_FILTER_NEAREST,
-                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE});
-        s.frame.emplace(device, render::FrameUniformMaterialInstanceConfig{
-                                    .material_pass = render::terrain_surface_patch_frame_material(),
-                                    .descriptor_set = 1U,
-                                    .frame_slot_count = slots});
-        s.profiler.emplace(device, slots, 9U);
-        s.visual_flow.emplace(
-            device, vulkan::device_local_buffer_config(fields.velocity.size(),
-                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        const std::array<vulkan::DescriptorSetBindingConfig, 2> flow_bindings{
-            {{.binding = 0U,
-              .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-              .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-             {.binding = 1U,
-              .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-              .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT}}};
-        s.visual_flow_set.emplace(device, vulkan::DescriptorSetInfo(flow_bindings));
-        render::MaterialDescriptorWriter flow_writer(s.visual_flow_set->set());
-        flow_writer.storage_buffer(0U, fields.velocity.handle(), fields.velocity.size())
-            .storage_buffer(1U, s.visual_flow->handle(), s.visual_flow->size())
-            .update(device);
-        const std::array<VkPushConstantRange, 1> flow_push{
-            {{.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT, .offset = 0U, .size = 16U}}};
-        render::emplace_single_set_compute_pipeline_resource(
-            s.visual_flow_pipeline, device,
-            render::compute_shader_file(shader("fluid_25d_scenic_flow.comp.spv")),
-            s.visual_flow_set->layout(), flow_push);
-        const auto [lo, hi] = std::minmax_element(bed_values.begin(), bed_values.end());
-        s.terrain_low = *lo;
-        s.terrain_high = *hi;
-        s.domain_m = static_cast<float>(std::max(config.grid_width - 1U, config.grid_height - 1U)) *
-                     config.cell_size_m;
-    }
-    auto& s = *state_;
-    if (captured_daylight && !s.captured_daylight) {
-        s.captured_daylight.emplace(
-            device, vulkan::device_local_buffer_config(sizeof(math::Vec4) * 10U,
-                                                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
-        const std::array<vulkan::DescriptorSetBindingConfig, 2> bindings{
-            {{.binding = 0U,
-              .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT},
-             {.binding = 1U,
-              .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-              .stage_flags = VK_SHADER_STAGE_COMPUTE_BIT}}};
-        for (std::uint32_t i = 0; i < slots; ++i)
-            s.daylight_sets.push_back(std::make_unique<vulkan::DescriptorSetBundle>(
-                device, vulkan::DescriptorSetInfo(bindings)));
-        const std::array<VkPushConstantRange, 1> push{{{.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
-                                                        .offset = 0U,
-                                                        .size = sizeof(DaylightPush)}}};
-        render::emplace_single_set_compute_pipeline_resource(
-            s.daylight_pipeline, device,
-            render::compute_shader_file(shader("fluid_25d_daylight.comp.spv")),
-            s.daylight_sets.front()->layout(), push);
-        diffuse_created = true;
-    }
-    if (surface && !s.landform_surface && !s.correlated_surface) {
-        if (!surface->landform.empty())
-            s.landform_surface.emplace(
-                upload_surface(device, gpu, surface->width, surface->height, surface->landform));
-        if (!surface->climate.empty())
-            s.climate_surface.emplace(
-                upload_surface(device, gpu, surface->width, surface->height, surface->climate));
-        if (!surface->correlated.empty())
-            s.correlated_surface.emplace(
-                upload_surface(device, gpu, surface->width, surface->height, surface->correlated));
-        diffuse_created = true;
-    }
-    if (integrated_terrain_diffuse && !s.terrain_diffuse) {
-        const auto bytes = render::generate_generated_diffuse_irradiance();
-        s.terrain_diffuse.emplace(render::create_uploaded_texture_cube(
-            device, gpu,
-            {.extent = 32U,
-             .mip_levels = 1U,
-             .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-             .bytes = bytes,
-             .create_sampler = true,
-             .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE}}));
-        diffuse_created = true;
-        std::printf("fluid_25d_terrain_diffuse: cosine-integrated E/pi; 32x32x6; 256 samples; "
-                    "water environment unchanged\n");
-        std::fflush(stdout);
-    }
-    if (s.patch && s.extent.width == target.extent.width &&
-        s.extent.height == target.extent.height && s.format == target.format)
-        return diffuse_created;
-    destroy_swapchain_resources();
-    s.extent = target.extent;
-    s.format = target.format;
-    std::printf("fluid_25d_scenic_resources: extent=%ux%u HDR=rgba16f shadow=runtime-selected\n",
-                target.extent.width, target.extent.height);
-    std::fflush(stdout);
-    // Set zero matches the immutable native field layout; set one owns frame-slot textures.
-    // The actual field layout is supplied below by an equivalent storage-buffer schema.
-    std::vector<vulkan::DescriptorSetBindingConfig> bindings;
-    for (std::uint32_t i = 0; i <= 8U; ++i)
-        bindings.push_back(
-            {.binding = i,
-             .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-             .stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT});
-    vulkan::DescriptorSetBundle field_layout(device, vulkan::DescriptorSetInfo(bindings));
-    const std::array<VkDescriptorSetLayout, 2> layouts{field_layout.layout(), s.frame->layout()};
-    const auto mesh = [&](std::optional<render::GraphicsPipelineResource>& p, const char* vertex,
-                          const char* fragment, bool water) {
-        const std::array<render::ShaderStageFile, 2> stages{
-            render::vertex_shader_file(shader(vertex)),
-            render::fragment_shader_file(shader(fragment))};
-        p.emplace(device, render::GraphicsPipelineFileResourceConfig{
-                              .extent = target.extent,
-                              .color_format = kHdrFormat,
-                              .depth_format = water ? VK_FORMAT_UNDEFINED : VK_FORMAT_D32_SFLOAT,
-                              .shader_stage_files = stages,
-                              .descriptor_set_layouts = layouts,
-                              .material_pass = render::terrain_surface_patch_mesh_pass(water)});
-    };
-    s.patch = std::make_unique<render::TerrainSurfacePatchRenderer>(
-        device, target.extent, field_layout.layout(), s.frame->layout(), shader_directory_);
-    mesh(s.rain, "fluid_25d_rain_visual.vert.spv", "fluid_25d_rain_visual.frag.spv", true);
-    const auto fullscreen = [&](std::optional<render::GraphicsPipelineResource>& p,
-                                const char* fragment, VkFormat format, bool depth) {
-        const std::array<render::ShaderStageFile, 2> stages{
-            render::vertex_shader_file(shader("fluid_25d.vert.spv")),
-            render::fragment_shader_file(shader(fragment))};
-        p.emplace(device, render::GraphicsPipelineFileResourceConfig{
-                              .extent = target.extent,
-                              .color_format = format,
-                              .depth_format = depth ? VK_FORMAT_D32_SFLOAT : VK_FORMAT_UNDEFINED,
-                              .shader_stage_files = stages,
-                              .descriptor_set_layouts = layouts,
-                              .material_pass = {.label = "fluid_25d.scenic.fullscreen"}});
-    };
-    fullscreen(s.sky, "fluid_25d_scenic_sky.frag.spv", kHdrFormat, true);
-    fullscreen(s.copy, "fluid_25d_scenic_copy.frag.spv", kHdrFormat, false);
-    fullscreen(s.display, "fluid_25d_scenic_display.frag.spv", target.format, true);
-    return true;
-}
-
-void TerrainSurfacePatchScene::destroy_swapchain_resources() {
-    if (!state_)
-        return;
-    auto& s = *state_;
-    s.display.reset();
-    s.foreground_merge.reset();
-    s.foreground_sets.clear();
-    s.rain.reset();
-    s.whitewater.reset();
-    s.copy.reset();
-    s.sky.reset();
-    s.patch.reset();
-}
-void TerrainSurfacePatchScene::destroy() {
-    state_.reset();
-}
 const render::GeneratedPbrEnvironment& TerrainSurfacePatchScene::fallback_environment() const {
     if (!state_ || !state_->environment)
         throw std::runtime_error("Scenic fallback environment is not initialized");
@@ -388,6 +115,8 @@ void TerrainSurfacePatchScene::record(
     std::uint64_t whitewater_generation, const render::TerrainSurfaceContextDraw* context,
     const TerrainSurfaceWeatherFrame* weather,
     const render::TerrainSurfacePatchOpaqueLayer* foreground) {
+    if (!state_ || !state_->patch)
+        throw std::runtime_error("terrain surface target resources are not initialized");
     auto& s = *state_;
     const auto* fixed = options.fixed_mesh;
     if (fixed) {
@@ -802,14 +531,15 @@ void TerrainSurfacePatchScene::record(
                                           .binding = 1U,
                                           .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                           .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT}};
+            std::vector<std::unique_ptr<vulkan::DescriptorSetBundle>> candidate_sets;
             for (std::uint32_t i = 0; i < slot.count; ++i)
-                s.foreground_sets.push_back(std::make_unique<vulkan::DescriptorSetBundle>(
+                candidate_sets.push_back(std::make_unique<vulkan::DescriptorSetBundle>(
                     device, vulkan::DescriptorSetInfo(bindings)));
-            const std::array layouts{s.foreground_sets.front()->layout()};
+            const std::array layouts{candidate_sets.front()->layout()};
             const std::array stages{
                 render::vertex_shader_file(shader("fluid_25d.vert.spv")),
                 render::fragment_shader_file(shader("terrain_surface_foreground.frag.spv"))};
-            s.foreground_merge.emplace(
+            auto candidate_pipeline = std::make_unique<render::GraphicsPipelineResource>(
                 device,
                 render::GraphicsPipelineFileResourceConfig{
                     .extent = target.extent,
@@ -821,6 +551,8 @@ void TerrainSurfacePatchScene::record(
                                       .push_constants = {{VK_SHADER_STAGE_FRAGMENT_BIT, 0U, 16U}},
                                       .depth_test = true,
                                       .depth_write = true}});
+            s.foreground_sets = std::move(candidate_sets);
+            s.foreground_merge = std::move(candidate_pipeline);
         }
         const render::RenderGraphTextureState sampled_hdr{VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                           VK_ACCESS_SHADER_READ_BIT,
@@ -956,7 +688,7 @@ void TerrainSurfacePatchScene::record(
             const std::array<render::ShaderStageFile, 2> stages{
                 render::vertex_shader_file(shader("fluid_25d_whitewater.vert.spv")),
                 render::fragment_shader_file(shader("fluid_25d_whitewater.frag.spv"))};
-            s.whitewater.emplace(
+            s.whitewater = std::make_unique<render::GraphicsPipelineResource>(
                 device, render::GraphicsPipelineFileResourceConfig{
                             .extent = target.extent,
                             .color_format = kHdrFormat,
