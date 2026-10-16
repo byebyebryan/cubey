@@ -96,14 +96,13 @@ class Documentation(unittest.TestCase):
         self.assertIn('Recorded Joining valleys',reference)
         self.assertEqual(args.mode,'live')
 
-    def test_shared_indexes_match_published_gallery(self):
+    def test_shared_indexes_match_selected_gallery(self):
         manifest=json.loads((ROOT/'docs/media/showcase/manifest.json').read_text())
-        published=[entry for entry in manifest['entries']
-                   if entry['publication'].get('github_attachment_url')]
+        selected=manifest['entries']
         count_words={1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',
                      8:'eight',9:'nine',10:'ten',11:'eleven',12:'twelve'}
-        word=count_words[len(published)]
-        self.assertIn(f'the {word} published project highlights',
+        word=count_words[len(selected)]
+        self.assertIn(f'the {word} showcased project highlights',
                       (ROOT/'docs/README.md').read_text())
         roadmap=(ROOT/'docs/roadmap.md').read_text()
         self.assertIn(f'{word.title()} highlights are now',roadmap)
@@ -139,7 +138,7 @@ class Documentation(unittest.TestCase):
         root=(ROOT/'README.md').read_text()
         self.assertIn('fluid-25d-master-1080p.mp4',root)
         self.assertNotIn('36-second project film',root)
-        self.assertIn('Five published highlights',root)
+        self.assertIn('Five highlights',root)
         self.assertNotIn('publication remains pending',root)
         self.assertIn('Default prepared site: Mountain',(HERE/'README.md').read_text())
 

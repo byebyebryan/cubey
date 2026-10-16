@@ -69,9 +69,11 @@
       "title": "glTF + Terrain",
       "publication": {
         "path": "docs/media/showcase/gltf-terrain.mp4",
-        "bytes": 1804016,
-        "sha256": "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2",
-        "github_attachment_url": "https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02"
+        "bytes": 1135650,
+        "sha256": "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233",
+        "github_attachment_url": null,
+        "state": "owner-approved saved-water A; packaged; GitHub attachment pending",
+        "recipe": "docs/media/showcase/gltf-terrain-recipe.json"
       },
       "poster": {
         "path": "docs/media/showcase/gltf-terrain.png",
@@ -80,20 +82,28 @@
         "colorspace": "RGB",
         "width": 1280,
         "height": 720,
-        "bytes": 372380,
-        "sha256": "b4d44e3a05e4fb861694a4b50d88c4542e885f7326906dc5c3f6ebb092419485"
+        "bytes": 656133,
+        "sha256": "d319cd8516a74102bf30c20a9533ce9816820c5f015db24ea7ba5c6fbbdca062"
       },
       "source": {
-        "revision": "51b5b5fe5dd5cf667dd634786a95d3c806956dd7",
-        "capture_dirty_diff_sha256": "04dd3d7413d1fa2c18205bfe87bc3ed7085c106777bf493a04e21fea3471a1d0",
-        "ignored_publication": "outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-publication.mp4"
+        "revision": "33351d81e77b9fd5f9a8c4cd37d6e1a3e50bfcf1",
+        "capture_dirty_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "ignored_publication": "outputs/showcase/gltf-landscape-A-promotion-20261015-kqz5EC/package/gltf-terrain.mp4"
       },
       "recipe": {
-        "capture_command": "build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1280 --height 720 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --pbr-environment-source atmosphere --time-of-day-mode solar --time-hours 14.0 --time-speed-hours-per-second 0.875 --clouds --cloud-weather-preset broken-cumulus --cloud-quality full --terrain-heightfield cache/terrain/sources/v1/default --terrain-surface-detail filtered-detail --terrain-shadows --terrain-foreground-height 200 --capture-camera-distance-scale 0.70 --capture-video-orbit-degrees 30 --exposure 1.0 --ibl-intensity 1.0 --output outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4",
-        "postprocess_commands": [
-          "ffmpeg -y -i outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4 -an -c:v libx264 -preset medium -crf 24 -pix_fmt yuv420p -r 60 -movflags +faststart outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-publication.mp4"
-        ],
-        "poster_command": "ffmpeg -y -i docs/media/showcase/gltf-terrain.mp4 -ss 4.0 -frames:v 1 -vf format=rgb24 docs/media/showcase/gltf-terrain.png"
+        "document": "docs/media/showcase/gltf-terrain-recipe.json",
+        "description": "Exact clean-source capture, CFR master/gallery/poster commands, frozen inputs and all-frame parity with the owner-approved A film."
+      },
+      "master": {
+        "path": "docs/media/showcase/gltf-terrain-master-1080p.mp4",
+        "bytes": 6410808,
+        "sha256": "94c25fc946c6ab040edff00727d0ea00c3fac63698d65ffdbb33417b1b673534",
+        "role": "native 1080p60 owner-selected saved-water A master"
+      },
+      "legacy": {
+        "recipe": "docs/media/showcase/gltf-terrain-legacy-v1-recipe.json",
+        "github_attachment_url": "https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02",
+        "scope": "Historical dry-terrain/day-to-night highlight; original bytes retained in Git history and at the unchanged attachment."
       },
       "license": {
         "source_code": "MIT",

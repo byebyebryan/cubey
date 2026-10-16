@@ -108,9 +108,11 @@ Current stable foundation pieces:
 The public visual showcase has a separate design checkpoint in [Showcase
 Storyboard and Capture Plan](showcase.md). Its twelve shot cards and
 provenance rules remain the storyboard authority. Five highlights are now
-creatively locked, packaged and published with GitHub native players in the
+creatively locked and packaged in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
-Water 3D, Fire 3D, and Fluid 2.5D. Fluid's owner-selected eight-second Joining
+Water 3D, Fire 3D, and Fluid 2.5D. Four have current GitHub native players;
+the newly selected saved-water glTF A cut uses a committed-poster fallback
+until its separate attachment upload. Fluid's owner-selected eight-second Joining
 valleys sunset shows recorded streams gathering into a lake; its separate
 36-second Mountain rain-off film remains a legacy study. Attachment identities
 and exact bytes are recorded in the manifest and Fluid publication receipt.

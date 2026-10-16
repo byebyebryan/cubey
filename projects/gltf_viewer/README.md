@@ -2,7 +2,7 @@
 
 `gltf_viewer` loads glTF/GLB assets into Cubey's PBR renderer. It supports
 generated or HDR-backed image-based lighting, animation, the shared procedural
-atmosphere/cloud environment, and an optional Terrain V1 backdrop.
+atmosphere/cloud environment, and optional Terrain V1 or saved-water landscape backdrops.
 
 Status: the first single-asset viewer milestone is closed. It covers staged CPU
 preparation, bounded incremental GPU residency, atomic scene activation, core
@@ -78,9 +78,10 @@ projects rather than incomplete viewer plumbing.
 
 ## Showcase highlight
 
-The existing published highlight below remains unchanged. An opt-in
-[saved-water landscape audition](water_landscape_v1.md) reuses the shared
-Terrain renderer and prepared captures; it is not a live Fluid simulation:
+The owner-selected **A: original mountain / sharper saved water / morning** is
+the current repository highlight. Its [audition and depth-precision study](water_landscape_v1.md)
+reuse the shared Terrain renderer and prepared captures; this is not a live
+Fluid simulation. The landscape stays explicitly opt-in at runtime:
 
 ```sh
 rtk proxy build/release/projects/gltf_viewer/gltf_viewer --terrain-landscape mountain-local --no-clouds --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --time-of-day-mode solar --time-hours 10 --time-speed-hours-per-second 0 --capture-camera-distance-scale .70 --capture-camera-yaw 94.538 --capture-camera-pitch -6.8755 --exposure 0
@@ -105,23 +106,38 @@ the foreground has its own asset-scale range and is remapped before water shadin
 override; `--terrain-landscape-shadow-strength 0` isolates sun shadows.
 Do not use this recipe as a ground-level
 or underwater camera. The foreground uses shared sky lighting, not reflections
-of the retained terrain/water. A future gallery replacement still needs review.
+of the retained terrain/water. Fitted depth is accepted for this bounded use;
+native Cubey GUI/layout acceptance remains separate from the reviewed film.
 
 [![glTF + Terrain showcase poster](../../docs/media/showcase/gltf-terrain.png)](../../docs/media/showcase/gltf-terrain.mp4)
 
-The highlight stages the Damaged Helmet against Cubey's canonical Terrain V1
-backdrop. A slow partial orbit and afternoon-to-night lighting change reveal the
-imported material response first, then let the emissive details take over.
+The eight-second morning highlight stages the Damaged Helmet above the original
+mountain, with a prominent lake on its right. It uses a held 12-hour saved water
+state from an exaggerated 512mm/h storm; it does not show lake formation,
+calibrated weather, permanent water, or a live solver. Camera and surface cues
+animate through the 20° eased arc. The normal no-landscape viewer remains unchanged.
 
-The exact capture uses full broken-cumulus clouds, atmosphere lighting,
-scene-distance scale `0.70`, exposure `1.0`, IBL intensity `1.0`, and a
-30-degree eased arc over 480 frames at 60 FPS:
+The [native 1080p master](../../docs/media/showcase/gltf-terrain-master-1080p.mp4)
+and [complete recipe](../../docs/media/showcase/gltf-terrain-recipe.json) retain
+the clean source revision, renderer/input hashes, exact command and validation.
+All 480 decoded source frames match the owner-approved depth-fixed film.
+The 720p/60 gallery copy is a Lanczos derivative, not a native 720p capture.
+Its GitHub attachment is a separate upload; the clickable poster is current.
+
+The exact native capture uses clear-sky shared lighting, fixed 10:00 solar time,
+distance scale `0.70`, exposure `0`, fitted independent foreground/background
+depth ranges, and 480 rendered frames at 60 FPS:
 
 ```sh
-./build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1280 --height 720 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --pbr-environment-source atmosphere --time-of-day-mode solar --time-hours 14.0 --time-speed-hours-per-second 0.875 --clouds --cloud-weather-preset broken-cumulus --cloud-quality full --terrain-heightfield cache/terrain/sources/v1/default --terrain-surface-detail filtered-detail --terrain-shadows --terrain-foreground-height 200 --capture-camera-distance-scale 0.70 --capture-video-orbit-degrees 30 --exposure 1.0 --ibl-intensity 1.0 --output outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4
+./build/release/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1920 --height 1080 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --terrain-landscape mountain-local --terrain-landscape-depth fitted --no-clouds --time-of-day-mode solar --time-hours 10 --time-speed-hours-per-second 0 --capture-camera-distance-scale .70 --capture-camera-yaw 84.53803619658582 --capture-camera-pitch -6.8755 --capture-video-orbit-degrees 20 --exposure 0 --ibl-intensity 1 --require-validation --terrain-water-audit --output outputs/showcase/gltf-landscape-A-source.mp4
 ```
 
-The media-only license boundary is important: the MP4 and poster are
+The previous dry-terrain/day-to-night cut remains in Git history and at its
+[original attachment](https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02).
+Its [legacy recipe](../../docs/media/showcase/gltf-terrain-legacy-v1-recipe.json)
+is historical metadata, not hashes of the current files.
+
+The media-only license boundary is important: both MP4s and the poster are
 `CC-BY-NC-4.0`, attributed to ctxwing (2018 rebuild/conversion) and
 theblueturtle_ (2016 earlier model), with the
 [upstream Damaged Helmet source](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet).

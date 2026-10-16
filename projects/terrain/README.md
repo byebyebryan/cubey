@@ -20,6 +20,11 @@ appearance as Fluid's Scenic renderer. No solver, CUDA, Python environment or
 hydraulic dispatch is needed to consume it. Source elevation/placement, payload
 sizes, hashes, units and finite fields are checked before rendering.
 
+The [glTF + Terrain highlight](../gltf_viewer/README.md#showcase-highlight) is an
+accepted external consumer of this saved-water foundation, using the same
+runtime and shared materials with independent foreground/background depth
+ranges. It does not add water to the separate radial backdrop or require a live solver.
+
 The current locally retained Mountain bundle can be reviewed with:
 
 ```sh

@@ -1,0 +1,48 @@
+{
+  "schema": "cubey.gltf.showcase-legacy.v1",
+  "status": "Historical dry-terrain clip, superseded by saved-water A",
+  "repository_media_revision": "33351d81e77b9fd5f9a8c4cd37d6e1a3e50bfcf1",
+  "notice": "Paths/hashes in entry describe that historical revision, not current gallery files. The original GitHub attachment is retained unchanged.",
+  "entry": {
+    "id": "gltf-terrain",
+    "project": "gltf_viewer",
+    "title": "glTF + Terrain",
+    "publication": {
+      "path": "docs/media/showcase/gltf-terrain.mp4",
+      "bytes": 1804016,
+      "sha256": "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2",
+      "github_attachment_url": "https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02"
+    },
+    "poster": {
+      "path": "docs/media/showcase/gltf-terrain.png",
+      "timestamp_seconds": 4,
+      "format": "PNG",
+      "colorspace": "RGB",
+      "width": 1280,
+      "height": 720,
+      "bytes": 372380,
+      "sha256": "b4d44e3a05e4fb861694a4b50d88c4542e885f7326906dc5c3f6ebb092419485"
+    },
+    "source": {
+      "revision": "51b5b5fe5dd5cf667dd634786a95d3c806956dd7",
+      "capture_dirty_diff_sha256": "04dd3d7413d1fa2c18205bfe87bc3ed7085c106777bf493a04e21fea3471a1d0",
+      "ignored_publication": "outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-publication.mp4"
+    },
+    "recipe": {
+      "capture_command": "build/dev/projects/gltf_viewer/gltf_viewer --headless --capture video --frames 480 --fps 60 --width 1280 --height 720 --input outputs/showcase/audition-2/assets/DamagedHelmet.glb --pbr-environment-source atmosphere --time-of-day-mode solar --time-hours 14.0 --time-speed-hours-per-second 0.875 --clouds --cloud-weather-preset broken-cumulus --cloud-quality full --terrain-heightfield cache/terrain/sources/v1/default --terrain-surface-detail filtered-detail --terrain-shadows --terrain-foreground-height 200 --capture-camera-distance-scale 0.70 --capture-video-orbit-degrees 30 --exposure 1.0 --ibl-intensity 1.0 --output outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4",
+      "postprocess_commands": [
+        "ffmpeg -y -i outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-source.mp4 -an -c:v libx264 -preset medium -crf 24 -pix_fmt yuv420p -r 60 -movflags +faststart outputs/showcase/audition-2/gltf/gltf-damaged-helmet-terrain-30deg-60fps-publication.mp4"
+      ],
+      "poster_command": "ffmpeg -y -i docs/media/showcase/gltf-terrain.mp4 -ss 4.0 -frames:v 1 -vf format=rgb24 docs/media/showcase/gltf-terrain.png"
+    },
+    "license": {
+      "source_code": "MIT",
+      "media": "CC-BY-NC-4.0",
+      "attribution": "Damaged Helmet: ctxwing (2018 rebuild/conversion, CC-BY-4.0) and theblueturtle_ (2016 earlier model, CC-BY-NC-4.0).",
+      "upstream": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet",
+      "asset_source_revision": "9429648735279342b4c32b8745f7904196607379",
+      "asset_sha256": "a1e3b04de97b11de564ce6e53b95f02954a297f0008183ac63a4f5974f6b32d8",
+      "notice": "This media-only exception does not relicense Cubey source; glTF media is not permissively reusable."
+    }
+  }
+}

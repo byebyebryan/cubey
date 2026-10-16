@@ -94,7 +94,7 @@ class Media(unittest.TestCase):
         segments=recipe['story']['segments']
         self.assertTrue(all(a['last_saved_s']<=b['first_saved_s'] for a,b in zip(segments,segments[1:])))
 
-    def test_existing_four_media_are_still_pinned(self):
+    def test_unrelated_media_and_original_gltf_receipt_remain_pinned(self):
         manifest=json.loads((MEDIA/'manifest.json').read_bytes())
         expected={'ocean':'dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b',
                   'gltf-terrain':'936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2',
@@ -103,7 +103,8 @@ class Media(unittest.TestCase):
         # All original entries are audited against their retained metadata; extra
         # pins protect the fluid siblings while no native-player URL is fabricated.
         self.assertEqual([e['id'] for e in manifest['entries'][:4]],['ocean','gltf-terrain','water-3d','fire-3d'])
-        for entry in manifest['entries'][:4]:
+        active=[e for e in manifest['entries'][:4] if e['id']!='gltf-terrain']
+        for entry in active:
             path=ROOT/entry['publication']['path']
             with path.open('rb') as stream:
                 self.assertEqual(hashlib.file_digest(stream,'sha256').hexdigest(),entry['publication']['sha256'])
@@ -111,10 +112,14 @@ class Media(unittest.TestCase):
             poster=entry['poster']
             with (ROOT/poster['path']).open('rb') as stream:
                 self.assertEqual(hashlib.file_digest(stream,'sha256').hexdigest(),poster['sha256'])
-        self.assertEqual([e['publication']['github_attachment_url'].rsplit('/',1)[-1]
-                          for e in manifest['entries'][:4]],
-                         ['dc923c55-1061-402f-92ad-09b7da2e7208','a6119257-6810-440d-b910-e247274fbd02',
+        self.assertEqual([e['publication']['github_attachment_url'].rsplit('/',1)[-1] for e in active],
+                         ['dc923c55-1061-402f-92ad-09b7da2e7208',
                           'd1267204-7857-40d8-a259-4205605a5a75','50052e2e-21f0-46fe-be94-9d8a93a657d0'])
+        gltf=next(e for e in manifest['entries'] if e['id']=='gltf-terrain')
+        legacy=json.loads((ROOT/gltf['legacy']['recipe']).read_bytes())['entry']
+        self.assertEqual(legacy['publication']['sha256'],expected['gltf-terrain'])
+        self.assertEqual(legacy['publication']['github_attachment_url'].rsplit('/',1)[-1],
+                         'a6119257-6810-440d-b910-e247274fbd02')
 
 
 if __name__=='__main__':

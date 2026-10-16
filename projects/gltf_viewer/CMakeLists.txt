@@ -90,6 +90,10 @@ if (BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
             -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_review_water_landscape_v1.py)
     set_tests_properties(gltf_viewer_water_landscape_review_helpers PROPERTIES LABELS "gltf;viewer;structural")
+    add_test(NAME gltf_viewer_showcase_media
+        COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+            -s "${CMAKE_CURRENT_SOURCE_DIR}" -p test_showcase_media_v1.py)
+    set_tests_properties(gltf_viewer_showcase_media PROPERTIES LABELS "gltf;viewer;structural;media")
     add_test(NAME gltf_viewer_headless_profiles_scene
         COMMAND "${CMAKE_COMMAND}" -E env --unset=DISPLAY --unset=WAYLAND_DISPLAY
             $<TARGET_FILE:cubey_project_gltf_viewer> --headless --headless-render-only

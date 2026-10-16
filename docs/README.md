@@ -13,7 +13,7 @@ there when implementation boundaries matter.
   repository structure.
 - [Roadmap](roadmap.md): current readiness, completed foundations, and likely
   next work.
-- [Showcase](../README.md#showcase): the five published project highlights.
+- [Showcase](../README.md#showcase): the five showcased project highlights.
 
 ## Current Design
 

@@ -1,8 +1,8 @@
 # Cubey showcase media
 
-This directory keeps five published highlights
+This directory keeps five selected highlights
 reproducible and independent of GitHub's presentation layer. The
-published root highlights use native video players;
+root highlights use native video players where published, or clickable posters;
 these committed MP4s, generated posters, and the manifest are the durable,
 hashable source of truth.
 
@@ -24,7 +24,19 @@ downsample to 720p/60 CRF 24, not a native 720p capture. The formed-lake poster
 comes from six seconds into that copy. Its [complete V2 recipe](fluid-25d-recipe.json)
 records clean-source capture, all 72 exact native states, animated endpoint holds,
 independent clocks and provenance. Encoded 60 FPS is not live solver performance.
-The original four media files and attachment receipts are unchanged.
+Ocean, Water 3D, Fire 3D and Fluid's media/attachment receipts are unchanged by
+the glTF promotion.
+
+The owner-selected **glTF A / original mountain / saved water / morning** replaces
+the old dry-terrain glTF gallery clip. Its [native 1080p master](gltf-terrain-master-1080p.mp4)
+and [recipe](gltf-terrain-recipe.json) retain the clean source revision, exact
+commands, frozen inputs and all-480-decoded-frame parity with the approved film.
+The gallery is a Lanczos 720p/60 CRF 24 derivative; the poster is its four-second
+frame. Water is one held 12h SynxFlow storm state with render-only surface cues,
+not live hydrology or a lake-formation timelapse. No solver runs in the consumer.
+The [legacy glTF recipe](gltf-terrain-legacy-v1-recipe.json) describes the previous
+media revision, not hashes of current paths. The old video/poster remain
+recoverable from that Git revision, and its original attachment is unchanged.
 
 The [36-second Mountain rain-off film](fluid-25d-story.mp4) and
 [V1 recipe](fluid-25d-legacy-v1-recipe.json) are retained legacy studies. They
@@ -37,17 +49,19 @@ exactly 60 FPS. `manifest.json` records their byte hashes, poster timestamps,
 capture recipes, source revisions, capture-time dirty-diff provenance,
 attachment URLs, and licensing.
 
-Fluid's approved CRF 20 / 1080p master is committed alongside its gallery
-derivative. Raw native encoder files, optional field archives, comparisons and
+Fluid's and glTF's approved CRF 20 / 1080p masters are committed alongside their
+gallery derivatives. Raw native encoder files, optional field archives, comparisons and
 diagnostic media remain ignored editing evidence under `outputs/showcase/`.
 
 ## GitHub attachment publication
 
-The original four committed MP4s were uploaded through GitHub's Markdown attachment
+The original four MP4s were uploaded through GitHub's Markdown attachment
 flow and anchored by closed [issue #1](https://github.com/byebyebryan/cubey/issues/1)
 at source commit `e21fdd86ba83049d0d187caf3973b1124163e576`. The same mapping
 is recorded in `manifest.json`. GitHub serves those attachments to the native
-players; the repository copies below remain independently inspectable.
+players. The original dry-terrain glTF URL is historical now: it does not serve
+the new saved-water A film. The current A clip uses its committed poster/MP4
+fallback until a separate attachment upload; no replacement URL is fabricated.
 
 Fluid's exact gallery MP4 was added in a separate
 [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145)
@@ -59,13 +73,13 @@ attachment mappings and issue body were not replaced.
 | Highlight | Native player attachment | Committed MP4 | Poster fallback |
 | --- | --- | --- | --- |
 | Ocean | https://github.com/user-attachments/assets/dc923c55-1061-402f-92ad-09b7da2e7208 | [MP4](ocean.mp4) | [Poster](ocean.png) |
-| glTF + Terrain | https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02 | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
+| glTF + Terrain | Selected A upload pending; [legacy dry-terrain attachment](https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02) | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
 | Water 3D | https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75 | [MP4](water-3d.mp4) | [Poster](water-3d.png) |
 | Fire 3D | https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0 | [MP4](fire-3d.mp4) | [Poster](fire-3d.png) |
 | Fluid 2.5D | https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08 | [MP4](fluid-25d.mp4) | [Poster](fluid-25d.png) |
 
 Cubey source and the Ocean, Water 3D, Fire 3D, and Fluid 2.5D generated media are MIT
-licensed. The glTF + Terrain MP4 and poster incorporate the Khronos Damaged
+licensed. The glTF + Terrain gallery/native-master MP4s and poster incorporate the Khronos Damaged
 Helmet asset and are a media-only `CC-BY-NC-4.0` exception. They must be
 attributed to ctxwing (2018 rebuild/conversion) and theblueturtle_ (2016
 earlier model); see the upstream

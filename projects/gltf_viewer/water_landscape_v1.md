@@ -3,6 +3,11 @@
 This is a presentation study, not a new solver, terrain generator, hydrology
 classification or replacement of the published glTF highlight.
 
+**Current status:** Owner accepted A and the fitted-depth correction on
+2026-10-15. A fresh clean-source capture is promoted into the repository gallery,
+with master, recipe and poster. GitHub attachment upload and push are separate.
+The sections below retain the original gated-study history and its limits.
+
 ## Protocol and first gate
 
 Freeze the current Damaged Helmet/dry-terrain recipe, published media, binaries,

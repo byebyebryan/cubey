@@ -15,11 +15,11 @@ PBR, profiling, and deterministic headless capture.
 
 ## Showcase
 
-Five published highlights show the workbench's range. Each highlight is an
+Five highlights show the workbench's range. Each highlight is an
 independent eight-second, 720p/60 FPS
-project story rather than a segment from a combined reel. Native video players
-are backed by committed media, posters and reproducible recipes; Fluid also
-retains its native 1080p master below.
+project story rather than a segment from a combined reel. Published native
+players and clickable posters are backed by committed media and reproducible
+recipes. Fluid and glTF also retain their native 1080p masters below.
 
 ### Ocean
 
@@ -33,13 +33,17 @@ cloud reflections, and atmosphere change together.
 
 ### glTF + Terrain
 
-https://github.com/user-attachments/assets/a6119257-6810-440d-b910-e247274fbd02
+[![glTF + Terrain — saved-water mountain landscape](docs/media/showcase/gltf-terrain.png)](docs/media/showcase/gltf-terrain.mp4)
 
-The Damaged Helmet exercises Cubey's imported PBR materials against its raster
-terrain and procedural environment. A restrained orbit and daylight-to-night
-transition reveal the material response and emissive details.
+The Damaged Helmet overlooks mountain streams and a lake on generated Terrain
+Diffusion terrain. A restrained morning orbit combines imported PBR materials
+with the shared captured-water landscape renderer. Water levels are a held
+SynxFlow storm state; only the camera and surface cues animate, not hydrology.
 
-[Project](projects/gltf_viewer/README.md) · [Committed MP4](docs/media/showcase/gltf-terrain.mp4) · [Poster](docs/media/showcase/gltf-terrain.png)
+[Project](projects/gltf_viewer/README.md) · [720p MP4](docs/media/showcase/gltf-terrain.mp4) · [1080p master](docs/media/showcase/gltf-terrain-master-1080p.mp4) · [Recipe](docs/media/showcase/gltf-terrain-recipe.json)
+
+The selected A cut is promoted in the repository; its GitHub native-player
+attachment will be uploaded separately. The poster opens the current committed clip.
 
 ### Water 3D
 
@@ -199,6 +203,6 @@ preserved on the `legacy` branch.
 ## License
 
 Cubey source and original project media are licensed under the [MIT License](LICENSE).
-The Damaged Helmet-derived glTF showcase MP4 and poster are a media-only
+The Damaged Helmet-derived glTF showcase MP4s (gallery and native master) and poster are a media-only
 CC-BY-NC-4.0 exception with their attribution recorded in the
 [showcase manifest](docs/media/showcase/manifest.json).
