@@ -79,6 +79,9 @@ struct GltfViewerStartupOptions {
     struct Terrain {
         std::optional<std::string> landscape{};
         std::optional<std::filesystem::path> landscape_cache_root{};
+        std::string landscape_depth = "fitted";
+        std::optional<float> landscape_near_m{};
+        std::optional<float> landscape_shadow_strength{};
         bool captured_water_visible = true;
         bool captured_water_audit = false;
         std::optional<std::filesystem::path> heightfield_path{};
@@ -164,8 +167,8 @@ resolve_gltf_viewer_pbr_tonemap(const std::optional<std::string>& tonemap) {
     throw std::runtime_error("glTF PBR tonemap must be linear or aces");
 }
 
-[[nodiscard]] inline float gltf_viewer_capture_camera_fovy_radians(
-    const std::optional<float>& fov_y_degrees) {
+[[nodiscard]] inline float
+gltf_viewer_capture_camera_fovy_radians(const std::optional<float>& fov_y_degrees) {
     const float degrees = fov_y_degrees.value_or(kGltfViewerDefaultCaptureCameraFovYDegrees);
     if (!std::isfinite(degrees) || degrees < kGltfViewerMinimumCaptureCameraFovYDegrees ||
         degrees > kGltfViewerMaximumCaptureCameraFovYDegrees) {
@@ -252,8 +255,7 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                  .max = kGltfViewerMaximumCaptureCameraPitchDegrees}),
                  config.capture.camera_pitch_degrees);
     builder.bind(detail::option("gltf.capture.camera_fov_y_degrees",
-                                "--capture-camera-fov-y-degrees", "Camera Vertical FOV",
-                                "Capture",
+                                "--capture-camera-fov-y-degrees", "Camera Vertical FOV", "Capture",
                                 "Optional capture camera vertical field of view in degrees.",
                                 ValueType::Float,
                                 {.has_min = true,
@@ -326,6 +328,22 @@ inline config::Schema gltf_viewer_project_config_schema(GltfViewerProjectConfig&
                                 "Landscape Cache", "Terrain", "Prepared terrain cache root.",
                                 ValueType::Path),
                  config.terrain.landscape_cache_root);
+    builder.bind(detail::option("terrain.landscape_depth", "--terrain-landscape-depth",
+                                "Landscape Depth", "Terrain",
+                                "Fitted split ranges or legacy 8m control.", ValueType::Enum, {},
+                                {"fitted", "legacy"}),
+                 config.terrain.landscape_depth);
+    builder.bind(detail::option("terrain.landscape_near_m", "--terrain-landscape-near",
+                                "Landscape Near", "Terrain",
+                                "Fitted-depth study override, checked against geometry.",
+                                ValueType::Float, {.has_min = true, .min = .01}),
+                 config.terrain.landscape_near_m);
+    builder.bind(detail::option("terrain.landscape_shadow_strength",
+                                "--terrain-landscape-shadow-strength", "Landscape Shadows",
+                                "Terrain", "Sun-shadow study only; saved fields unchanged.",
+                                ValueType::Float,
+                                {.has_min = true, .has_max = true, .min = 0, .max = 1}),
+                 config.terrain.landscape_shadow_strength);
     auto captured_water = detail::option(
         "terrain.captured_water_visible", "--terrain-water-visible", "Show Saved Water", "Terrain",
         "Hide surface only; retain wet ground and saved fields.", ValueType::Bool);
@@ -377,6 +395,8 @@ parse_gltf_viewer_project_config(int argc, char** argv, config::ParseResult* res
     validate_atmosphere_environment_options(config.atmosphere);
     validate_cloud_environment_options(config.clouds);
     if (config.terrain.landscape) {
+        if (config.terrain.landscape_near_m && config.terrain.landscape_depth != "fitted")
+            throw std::runtime_error("landscape near override requires fitted depth");
         if (!resolve_gltf_viewer_environment_policy(config.pbr.environment_source)
                  .uses_atmosphere_resources() ||
             config.clouds.enabled.value_or(true) || config.terrain.heightfield_path ||
@@ -387,7 +407,9 @@ parse_gltf_viewer_project_config(int argc, char** argv, config::ParseResult* res
             throw std::runtime_error("saved landscape V1 requires atmosphere, final ACES PBR, no "
                                      "clouds/ocean/legacy terrain controls");
     } else if (config.terrain.landscape_cache_root || config.terrain.captured_water_audit ||
-               !config.terrain.captured_water_visible) {
+               !config.terrain.captured_water_visible ||
+               config.terrain.landscape_depth != "fitted" || config.terrain.landscape_near_m ||
+               config.terrain.landscape_shadow_strength) {
         throw std::runtime_error("saved-water controls require --terrain-landscape");
     }
     if (config.profile.upload_owner_cpu_target_milliseconds.has_value() &&

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gltf_viewer_app.h"
+#include "gltf_viewer_landscape_depth.h"
 #include "gltf_viewer_loading_cage.h"
 #include "gltf_viewer_loading_metrics.h"
 #include "gltf_viewer_render_metrics.h"
@@ -98,6 +99,8 @@ struct GltfViewerSceneGeneration {
     cubey::GltfSceneImportResources import_resources{};
     cubey::GltfSceneImportResult import_result{};
     std::optional<cubey::render::BackdropSurfaceEnvelope> terrain_surface{};
+    cubey::math::Vec2 landscape_distance_bounds{};
+    float landscape_orbit_radius_m = 0;
 };
 
 // CPU preparation is deliberately self-contained: the worker owns the asset
@@ -284,6 +287,7 @@ class GltfViewerApp {
     std::optional<cubey::render::Texture2D> landscape_foreground_;
     bool landscape_water_visible_ = true;
     float landscape_maximum_surface_m_ = 0.0F;
+    cubey::math::Vec2 reported_landscape_depth_{};
     std::optional<cubey::TerrainBackdropRuntimeTargetInfo> terrain_target_info_{};
     cubey::OceanSurfaceRuntime ocean_runtime_{};
     cubey::render::OceanSurfaceConfig ocean_config_{};

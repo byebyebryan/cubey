@@ -1,4 +1,5 @@
 #include "gltf_viewer_config.h"
+#include "gltf_viewer_landscape_depth.h"
 #include <cubey/render/terrain_surface_patch_scene.h>
 
 #include <cstdlib>
@@ -119,6 +120,55 @@ void test_saved_landscape_is_explicit_and_bounded() {
                    "orphan saved-water controls must reject");
     require_throws([&] { (void)parse({"--no-terrain-water-visible"}); },
                    "orphan water-hidden control must reject");
+    const auto fitted =
+        parse({"--terrain-landscape", "mountain-local", "--no-clouds", "--terrain-landscape-near",
+               "32", "--terrain-landscape-shadow-strength", "0"});
+    require(fitted.terrain.landscape_depth == "fitted" && fitted.terrain.landscape_near_m == 32 &&
+                fitted.terrain.landscape_shadow_strength == 0,
+            "fitted depth and independent shadow study controls must bind");
+    require_throws([&] { (void)parse({"--terrain-landscape-near", "32"}); },
+                   "orphan depth override must reject");
+    require_throws(
+        [&] {
+            (void)parse({"--terrain-landscape", "mountain-local", "--no-clouds",
+                         "--terrain-landscape-depth", "legacy", "--terrain-landscape-near", "32"});
+        },
+        "near override must not silently change the legacy control");
+}
+
+void test_landscape_depth_fit() {
+    using cubey::projects::gltf_viewer::gltf_viewer_landscape_depth_range;
+    const auto range =
+        gltf_viewer_landscape_depth_range(2000, 150000, 20, 1.04719755F, 16.0F / 9.0F);
+    require(range.near_m > 600 && range.near_m < 700 && range.far_m > 150020,
+            "fit must use distant geometry, not the foreground asset range");
+    require(gltf_viewer_landscape_depth_range(2000, 150000, 20, 1.04719755F, 3).near_m <
+                range.near_m,
+            "wide frustum corners must reduce the safe near plane");
+    require(gltf_viewer_landscape_depth_range(2000, 150000, 20, 1.04719755F, 1, 32).near_m == 32,
+            "safe explicit study override must be retained");
+    require_throws([&] { (void)gltf_viewer_landscape_depth_range(2000, 150000, 20, 1, 1, 2000); },
+                   "unsafe near override must reject, not clip geometry");
+    require_throws([&] { (void)gltf_viewer_landscape_depth_range(10, 150000, 20, 1, 1); },
+                   "intersecting camera orbit cannot claim a disjoint depth fit");
+    // Points anywhere in the allowed orbit and anywhere in the frustum are
+    // protected by triangle inequality and the corner cosine, with 2x guard.
+    for (float aspect : {.5F, 1.0F, 16.0F / 9.0F, 3.0F}) {
+        const auto r = gltf_viewer_landscape_depth_range(2000, 150000, 20, 1.04719755F, aspect);
+        const float t = std::tan(1.04719755F * .5F);
+        const float closest_camera_z = 1980 / std::sqrt(1 + t * t * (1 + aspect * aspect));
+        require(r.near_m <= closest_camera_z * .501F && r.far_m >= 150020,
+                "range must enclose the entire orbit and frustum, not only its centre ray");
+    }
+    const auto quantized_ray_step = [](float near, float far, double distance) {
+        const double a = double(far) / (far - near), b = double(far) * near / (far - near);
+        const float depth = float(a - b / distance);
+        const float next = std::nextafter(depth, 1.0F);
+        return b / (a - next) - b / (a - depth);
+    };
+    require(quantized_ray_step(8, 81920, 20000) > 2.9 &&
+                quantized_ray_step(range.near_m, range.far_m, 20000) < .05,
+            "distant shallow-water fixture must gain actual float32 depth precision");
 }
 
 void test_landscape_perspective_depth_remap() {
@@ -236,9 +286,10 @@ void test_capture_orbit_controls() {
     require(!defaults.pbr.tonemap.has_value(), "glTF ACES tonemap should remain the default");
 
     const char* named_arguments[] = {
-        "gltf_viewer", "--capture-video-orbit-degrees", "30", "--capture-camera-distance-scale",
-        "0.75",        "--capture-camera-yaw",          "45", "--capture-camera-pitch",
-        "-15",         "--capture-camera-fov-y-degrees", "45", "--pbr-tonemap", "linear"};
+        "gltf_viewer", "--capture-video-orbit-degrees",  "30", "--capture-camera-distance-scale",
+        "0.75",        "--capture-camera-yaw",           "45", "--capture-camera-pitch",
+        "-15",         "--capture-camera-fov-y-degrees", "45", "--pbr-tonemap",
+        "linear"};
     const gltf::GltfViewerProjectConfig named =
         gltf::parse_gltf_viewer_project_config(13, const_cast<char**>(named_arguments));
     require(named.capture.video_orbit_degrees == 30.0F,
@@ -292,8 +343,7 @@ void test_capture_orbit_controls() {
     require(document.at("gltf").at("capture").at("camera_yaw_degrees").get<float>() == 90.0F &&
                 document.at("gltf").at("capture").at("camera_pitch_degrees").get<float>() == -30.0F,
             "glTF template should expose the configured capture camera angles");
-    require(document.at("gltf").at("capture").at("camera_fov_y_degrees").get<float>() ==
-                45.0F,
+    require(document.at("gltf").at("capture").at("camera_fov_y_degrees").get<float>() == 45.0F,
             "glTF template should expose the configured capture vertical FOV");
 }
 
@@ -308,7 +358,7 @@ void test_capture_fov_and_tonemap_resolve_to_runtime_values() {
     require(std::fabs(forty_five_fovy - (std::numbers::pi_v<float> / 4.0F)) < 0.00001F,
             "45-degree capture vertical FOV should resolve to Camera3D radians");
     require(gltf::resolve_gltf_viewer_pbr_tonemap(std::nullopt) ==
-                cubey::render::PbrTonemap::Aces &&
+                    cubey::render::PbrTonemap::Aces &&
                 gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"aces"}) ==
                     cubey::render::PbrTonemap::Aces &&
                 gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"linear"}) ==
@@ -316,8 +366,7 @@ void test_capture_fov_and_tonemap_resolve_to_runtime_values() {
             "capture tonemap choices should resolve to the forward renderer enum");
     require_throws(
         [] {
-            static_cast<void>(
-                gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"not-a-tonemap"}));
+            static_cast<void>(gltf::resolve_gltf_viewer_pbr_tonemap(std::string{"not-a-tonemap"}));
         },
         "capture tonemap resolver should reject a value outside the config enum");
 }
@@ -367,6 +416,7 @@ int main() {
         test_defaults_named_flags_and_typed_runtime();
         test_saved_landscape_is_explicit_and_bounded();
         test_landscape_perspective_depth_remap();
+        test_landscape_depth_fit();
         test_set_json_template_and_unknown_scope();
         test_shared_schema_validation_and_scope();
         test_capture_orbit_controls();

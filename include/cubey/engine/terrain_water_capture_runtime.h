@@ -39,6 +39,10 @@ class TerrainWaterCaptureRuntime {
     void prepare_fixed_lod(math::Vec2 focus_world, float fine_span_m = 16368.0F,
                            std::uint32_t maximum_vertices = 2000000U);
     [[nodiscard]] const terrain::TerrainSurfaceContextProduct* context_product() const;
+    // Conservative Euclidean distance bounds for fixed paired ground/water and
+    // optional exterior triangles, in the capture-local frame. CPU preparation
+    // only; no GPU readback. Lazy triangle clusters are retained across imports.
+    [[nodiscard]] math::Vec2 camera_distance_bounds(math::Vec3 orbit_pivot);
     void record(const vulkan::Device& device, VkCommandBuffer commands, render::FrameSlot slot,
                 render::ColorTargetView target, bool present,
                 const render::TerrainSurfacePatchCamera& camera, double animation_s,

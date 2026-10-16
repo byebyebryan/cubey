@@ -60,7 +60,8 @@ environment deliberately does not include rendered terrain or water reflections.
 The initial same-near-plane integration revealed substantial water-edge breakup:
 glTF's 0.1m near plane spends depth precision on a metre-scale model, not distant
 water. The qualified path keeps the foreground projection unchanged and uses an
-8m near plane for the kilometre-scale landscape. The merge applies the standard
+8m near plane for the kilometre-scale landscape (retained as the explicit
+`--terrain-landscape-depth legacy` control). The merge applies the standard
 perspective depth mapping `target_z = source_z * scale + bias`, derived from the
 two near/far pairs; foreground before the landscape near plane clamps to depth 0.
 The view pose/FOV remain identical. This is a small-range/orbit backdrop with
@@ -143,3 +144,59 @@ rtk proxy python3 projects/gltf_viewer/report_water_landscape_v1.py OUTPUT --qua
 The report packs raw timing CSVs losslessly as gzip so both native masters and
 all original PNGs fit the shared publisher's 100MiB bundle limit. It does not
 change global hosting limits or recompress the captured images/masters.
+
+## Depth-range follow-up · 2026-10-15
+
+Owner review selected A but exposed motion-dependent shimmer over shallow water.
+The working opt-in landscape path now uses separate asset-scale foreground and
+geometry-fitted background depth ranges. Normal glTF startup/gallery media and
+Fluid/Terrain behavior remain unchanged. This is a rendering correction trial,
+not a water-field change or final showcase promotion.
+
+The runtime lazily prepares conservative boxes around clusters of the actual
+retained paired ground/water triangles and exterior terrain. Bounds include
+CPU/GPU evaluation roundoff guard. The viewer fits about the entire allowed
+camera orbit with the frustum-corner cosine and an additional 2x near guard;
+yaw/pitch/zoom cannot pump the range. Aspect-ratio changes recompute that corner
+guard. Explicit near overrides exceeding the conservative bound reject.
+Source capture, topology, surface positions, lighting, optics and depth bias do
+not change. No reverse-Z migration or antialiasing filter is introduced.
+
+For the admitted A recipe the foreground becomes approximately 0.01–19m and
+the landscape 531.5m–98.9km, rather than 0.1m–81.9km / 8m–81.9km. The old recipe
+and original dry glTF baseline remain pixel-exact under the legacy control.
+The wider fitted far range also avoids assuming the foreground camera's far
+distance encloses all exterior terrain.
+
+Evidence lives under `outputs/showcase/gltf-depth-fit-20261015-JOVqfJ/final`.
+[Published matched depth-range comparison and shadow controls](http://starship:8787/reports/372c661105753f4f4a6b92c6845619a64be574571767435b268a685ca29e6571/).
+Five matched 8s/480-frame native 1080p movies isolate legacy depth, fitted split
+ranges with an 8m near plane, fully fitted depth, and both shadow-off controls.
+All five pass Vulkan validation and exact immutable GPU-field audits. Twenty-one
+scoped regression groups pass, including triangle-distance bounds, orbit/corner
+fitting, invalid override rejection, numerical distant depth precision and
+foreground/lifecycle regressions. Native GUI acceptance remains deferred.
+
+The distant-shallows crop's adjacent-frame luma difference drops about 32% with
+fitted depth; the split-8m and shadows-off controls do not produce that reduction.
+This metric includes intended motion and compression, not a reprojected shimmer
+score or proof that every residual artifact is depth-related. Do not promote
+“all shimmer eliminated”; tiny wet coverage and terrain-normal aliasing can remain.
+
+Reproduce at this study revision (before replacing the gallery files whose
+hashes are part of the frozen controls), against a fresh output directory:
+
+```sh
+rtk proxy python3 projects/gltf_viewer/review_landscape_depth_v1.py OUTPUT --phase freeze
+rtk proxy python3 projects/gltf_viewer/review_landscape_depth_v1.py OUTPUT --phase capture
+rtk proxy python3 projects/gltf_viewer/review_landscape_depth_v1.py OUTPUT --phase measure
+rtk proxy python3 projects/gltf_viewer/review_landscape_depth_v1.py OUTPUT --phase statistics
+rtk proxy python3 projects/gltf_viewer/review_landscape_depth_v1.py OUTPUT --phase confirmation --baseline-root outputs/showcase/gltf-water-20261015-aPJgeA
+rtk proxy ctest --test-dir build/release -R '^(terrain_water_capture_tests|terrain_water_capture_lifecycle_gpu|gltf_viewer_.*)$' -E reaches_glfw --output-on-failure --output-junit OUTPUT/regression-tests.xml
+rtk proxy python3 projects/gltf_viewer/report_landscape_depth_v1.py OUTPUT
+```
+
+Pixel-exact confirmation requires the original ignored audition evidence.
+The early preflight revision is retained outside `final` and excluded from the
+final report. Report snapshots preserve the original study's acceptance state;
+later owner promotion does not rewrite those historical receipts.

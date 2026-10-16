@@ -202,6 +202,8 @@ GltfViewerApp::GltfViewerApp(GltfViewerProjectConfig config)
         landscape_runtime_->prepare_fixed_lod(selected.site.center_xz_m,
                                               selected.site.level_spans_m[0], 4500000U);
         landscape_runtime_->set_terrain_readability(2U);
+        if (config_.terrain.landscape_shadow_strength)
+            landscape_runtime_->set_shadow_strength(*config_.terrain.landscape_shadow_strength);
         const auto& captured = landscape_runtime_->capture();
         landscape_maximum_surface_m_ = captured.bed_m.front() + captured.depth_m.front();
         for (std::size_t i = 0; i < captured.bed_m.size(); ++i)

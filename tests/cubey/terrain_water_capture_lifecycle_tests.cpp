@@ -254,6 +254,25 @@ int main() {
                                            CUBEY_TERRAIN_CAPTURE_TEST_SHADER_DIR);
         runtime.prepare_context();
         runtime.prepare_fixed_lod(c.grid.center_xz_m(), 256.0F);
+        const math::Vec3 pivot{0, 10000, 0};
+        const auto distance_bounds = runtime.camera_distance_bounds(pivot);
+        if (distance_bounds != runtime.camera_distance_bounds(pivot) || distance_bounds.x <= 0 ||
+            distance_bounds.y < distance_bounds.x)
+            throw std::runtime_error("retained triangle distance bounds are invalid or unstable");
+        const auto check_distance = [&](math::Vec3 p) {
+            const float d = glm::length(p - pivot);
+            if (d < distance_bounds.x || d > distance_bounds.y)
+                throw std::runtime_error("camera distance bounds do not enclose retained geometry");
+        };
+        for (const auto& v : runtime.context_product()->vertices)
+            check_distance(math::Vec3{v.position_wet_hint});
+        for (unsigned z = 0; z < 17; ++z)
+            for (unsigned x = 0; x < 17; ++x) {
+                const math::Vec2 p{float(x) * .25F, float(z) * .25F};
+                const auto v = terrain::terrain_surface_context_core_sample(c, p);
+                check_distance({(p.x - 2) * 128, v.bed_m, (p.y - 2) * 128});
+                check_distance({(p.x - 2) * 128, v.bed_m + v.depth_m, (p.y - 2) * 128});
+            }
         for (unsigned size : {128U, 192U, 128U}) {
             runtime.destroy_target_resources(); // No outstanding commands: retired synchronously
                                                 // below.

@@ -14,6 +14,7 @@
 #include <cubey/terrain/terrain_surface_field.h>
 #include <cubey/vulkan/buffer.h>
 #include <fstream>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
@@ -96,6 +97,7 @@ struct TerrainWaterCaptureRuntime::State {
     std::optional<terrain::TerrainSurfaceContextProduct> context;
     std::unique_ptr<TerrainSurfaceContextResources> context_resources;
     std::optional<terrain::TerrainSurfacePatchLod> fixed_mesh;
+    std::optional<std::vector<std::array<math::Vec3, 2>>> camera_clusters;
     std::optional<vulkan::Buffer> mesh_coordinates, mesh_indices;
     std::optional<vulkan::DescriptorSetBundle> mesh_fields;
     std::optional<vulkan::DescriptorSetBundle> fields;
@@ -394,6 +396,60 @@ void TerrainWaterCaptureRuntime::set_terrain_readability(unsigned mode) {
     s.material.terrain_world_x_m = center.x;
     s.material.terrain_world_z_m = center.y;
 }
+math::Vec2 TerrainWaterCaptureRuntime::camera_distance_bounds(math::Vec3 pivot) {
+    auto& s = *state_;
+    if (!s.fixed_mesh || !std::isfinite(pivot.x) || !std::isfinite(pivot.y) ||
+        !std::isfinite(pivot.z))
+        throw std::runtime_error("camera bounds require a fixed mesh and finite pivot");
+    if (!s.camera_clusters) {
+        const auto started = std::chrono::steady_clock::now();
+        std::vector<std::array<math::Vec3, 2>> vertices;
+        vertices.reserve(s.fixed_mesh->coordinates.size());
+        const auto& g = s.capture.grid;
+        for (const auto p : s.fixed_mesh->coordinates) {
+            const auto sample = terrain::terrain_surface_context_core_sample(s.capture, p);
+            const auto xz = (p - math::Vec2{g.width - 1U, g.height - 1U} * .5F) * g.cell_size_m;
+            vertices.push_back({math::Vec3{xz.x, sample.bed_m, xz.y},
+                                math::Vec3{xz.x, sample.bed_m + sample.depth_m, xz.y}});
+        }
+        std::vector<std::array<math::Vec3, 2>> clusters;
+        const auto add = [&](const auto& indices, const auto& positions) {
+            // Every triangle belongs to one box; both paired surfaces are
+            // enclosed. No native-cell approximation of coarse LOD triangles.
+            constexpr std::size_t batch = 64U * 3U;
+            for (std::size_t begin = 0; begin < indices.size(); begin += batch) {
+                math::Vec3 lo{std::numeric_limits<float>::max()}, hi{-lo};
+                for (auto i = begin; i < std::min(begin + batch, indices.size()); ++i) {
+                    const auto v = positions(indices[i]);
+                    lo = glm::min(lo, v[0]);
+                    hi = glm::max(hi, v[1]);
+                }
+                // CPU and GPU both evaluate the positive cubic basis, but
+                // may fuse arithmetic differently. Inflate bounds, not water.
+                clusters.push_back({lo - math::Vec3{.05F}, hi + math::Vec3{.05F}});
+            }
+        };
+        add(s.fixed_mesh->indices, [&](auto i) { return vertices[i]; });
+        if (s.context)
+            add(s.context->indices, [&](auto i) {
+                const math::Vec3 p{s.context->vertices[i].position_wet_hint};
+                return std::array{p, p};
+            });
+        s.camera_clusters.emplace(std::move(clusters));
+        std::printf(
+            "terrain_camera_bounds: CPU once; clusters=%zu build_ms=%.3f\n",
+            s.camera_clusters->size(),
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started)
+                .count());
+    }
+    float minimum = std::numeric_limits<float>::max(), maximum = 0;
+    for (const auto& b : *s.camera_clusters) {
+        minimum = std::min(minimum, glm::length(pivot - glm::clamp(pivot, b[0], b[1])));
+        maximum = std::max(maximum,
+                           glm::length(glm::max(glm::abs(pivot - b[0]), glm::abs(pivot - b[1]))));
+    }
+    return {minimum, maximum};
+}
 void TerrainWaterCaptureRuntime::set_shadow_strength(float strength) {
     if (!std::isfinite(strength) || strength < 0 || strength > 1)
         throw std::runtime_error("capture shadow strength must be in [0,1]");
@@ -404,6 +460,7 @@ void TerrainWaterCaptureRuntime::prepare_context(const std::filesystem::path& ex
     auto& s = *state_;
     if (s.context)
         return;
+    s.camera_clusters.reset();
     const auto started = std::chrono::steady_clock::now();
     std::optional<asset::TerrainRasterHeightSource> wider;
     if (!extension.empty()) {

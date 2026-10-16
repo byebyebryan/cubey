@@ -98,8 +98,12 @@ daylight**, not a general scene compositor. Clouds, alpha/transmission, ocean,
 legacy terrain controls, debug views and non-ACES display are rejected in this
 mode; their ordinary viewer paths remain available without this opt-in.
 The model stays at normal scale above the highest saved surface. A separate
-8m landscape near plane preserves distant water depth precision; the foreground
-depth is remapped before water shading. Do not use this recipe as a ground-level
+geometry-fitted landscape depth range preserves distant water depth precision;
+the foreground has its own asset-scale range and is remapped before water shading.
+`--terrain-landscape-depth legacy` retains the old 8m-near comparison.
+`--terrain-landscape-near METRES` provides a geometry-checked fitted-mode study
+override; `--terrain-landscape-shadow-strength 0` isolates sun shadows.
+Do not use this recipe as a ground-level
 or underwater camera. The foreground uses shared sky lighting, not reflections
 of the retained terrain/water. A future gallery replacement still needs review.
 

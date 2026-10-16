@@ -306,10 +306,26 @@ void GltfViewerApp::record_viewer_target(
             scene_view.transforms3d().instance(generation.camera_entity));
         const auto& asset_camera = scene_view.cameras3d().camera(
             scene_view.cameras3d().instance(generation.camera_entity));
-        const cubey::Camera3D landscape_camera({.fovy_radians = asset_camera.fovy_radians(),
-                                                .near_z = 8.0F,
-                                                .far_z = asset_camera.far_z()});
         const float aspect = float(color_target.extent.width) / float(color_target.extent.height);
+        const auto range =
+            config_.terrain.landscape_depth == "fitted"
+                ? gltf_viewer_landscape_depth_range(
+                      generation.landscape_distance_bounds.x,
+                      generation.landscape_distance_bounds.y, generation.landscape_orbit_radius_m,
+                      asset_camera.fovy_radians(), aspect, config_.terrain.landscape_near_m)
+                : GltfViewerLandscapeDepthRange{8, asset_camera.far_z()};
+        if (reported_landscape_depth_ != cubey::math::Vec2{range.near_m, range.far_m}) {
+            std::printf("gltf_landscape_depth: mode=%s foreground=(%.6f,%.6f) "
+                        "background=(%.6f,%.6f) orbit_radius=%.6f distance_bounds=(%.6f,%.6f)\n",
+                        config_.terrain.landscape_depth.c_str(), asset_camera.near_z(),
+                        asset_camera.far_z(), range.near_m, range.far_m,
+                        generation.landscape_orbit_radius_m, generation.landscape_distance_bounds.x,
+                        generation.landscape_distance_bounds.y);
+            reported_landscape_depth_ = {range.near_m, range.far_m};
+        }
+        const cubey::Camera3D landscape_camera({.fovy_radians = asset_camera.fovy_radians(),
+                                                .near_z = range.near_m,
+                                                .far_z = range.far_m});
         const cubey::render::TerrainSurfacePatchCamera camera{
             landscape_camera.view_projection_matrix(world, aspect) *
                 glm::translate(cubey::math::Mat4{1}, translation),

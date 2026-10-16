@@ -80,6 +80,19 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
     orbit_controller_.set_distance_limits(std::max(radius * 0.05F, 0.05F),
                                           std::max(radius * 10.0F, camera_distance * 2.0F));
     orbit_controller_.set_home_distance(camera_distance);
+    const bool fitted_landscape = landscape_runtime_ && config_.terrain.landscape_depth == "fitted";
+    if (fitted_landscape) {
+        const auto placement = cubey::render::resolve_backdrop_surface_placement(
+            {.surface = {.nominal_local_height_m = landscape_maximum_surface_m_,
+                         .maximum_local_height_m = landscape_maximum_surface_m_},
+             .foreground = {.anchor_world_height_m = generation.bounds.center.y,
+                            .minimum_local_height_m = -generation.bounds.half_extent.y},
+             .requested_foreground_height_m = terrain_foreground_height_m_,
+             .minimum_clearance_m = .1F});
+        generation.landscape_orbit_radius_m = std::max(radius * 10.0F, camera_distance * 2.0F);
+        generation.landscape_distance_bounds = landscape_runtime_->camera_distance_bounds(
+            {0, generation.bounds.center.y - placement.surface_world_translation_y, 0});
+    }
     generation.camera_entity = cubey::scene::create_camera_entity_3d(
         setup,
         cubey::orbit_camera_transform(cubey::OrbitCameraState{
@@ -95,10 +108,14 @@ void GltfViewerApp::create_camera_and_light(GltfViewerSceneGeneration& generatio
         cubey::Camera3D({
             .fovy_radians =
                 gltf_viewer_capture_camera_fovy_radians(config_.capture.camera_fov_y_degrees),
-            .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled() || landscape_runtime_
+            .near_z = terrain_backdrop_enabled() || ocean_backdrop_enabled() ||
+                              (landscape_runtime_ && !fitted_landscape)
                           ? 0.1F
                           : std::max(radius * 0.001F, 0.01F),
-            .far_z = terrain_backdrop_enabled() || ocean_backdrop_enabled() || landscape_runtime_
+            .far_z = fitted_landscape
+                         ? std::max(16.0F, (generation.landscape_orbit_radius_m + radius) * 1.05F)
+                     : terrain_backdrop_enabled() || ocean_backdrop_enabled() ||
+                             (landscape_runtime_ && !fitted_landscape)
                          ? std::max(radius * 12.0F, 16'384.0F * 5.0F)
                          : std::max(radius * 12.0F, 100.0F),
         }));

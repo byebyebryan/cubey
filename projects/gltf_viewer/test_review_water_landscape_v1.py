@@ -1,5 +1,10 @@
 import unittest
+import json
+from pathlib import Path
+import tempfile
+from unittest.mock import patch
 import review_water_landscape_v1 as review
+import review_landscape_depth_v1 as depth
 
 
 class WaterLandscapeAuditionTests(unittest.TestCase):
@@ -29,6 +34,29 @@ class WaterLandscapeAuditionTests(unittest.TestCase):
         self.assertEqual(args[args.index("--capture-camera-distance-scale") + 1], ".70")
         off = review.integrated_command("mountain-local", water=False)
         self.assertEqual(off, args + ["--no-terrain-water-visible"])
+
+    def test_depth_controls_only_change_the_named_render_setting(self):
+        self.assertEqual(len(depth.CASES), 5)
+        self.assertEqual(depth.CASES["fitted"], [])
+        self.assertEqual(depth.CASES["split-8m"], ["--terrain-landscape-near", "8"])
+        self.assertEqual(depth.CASES["legacy-no-shadow"], depth.CASES["legacy"] +
+                         ["--terrain-landscape-shadow-strength", "0"])
+
+    def test_depth_freeze_is_immutable_and_rejects_changed_inputs(self):
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(depth.base, "runtime", return_value={"binary": "frozen"}), \
+             patch.object(depth.base, "identities", return_value={}), \
+             patch.object(depth.subprocess, "check_output", return_value=""):
+            out = Path(temporary) / "fresh"
+            depth.freeze(out)
+            depth.verify(out)
+            with self.assertRaises(FileExistsError):
+                depth.freeze(out)
+            protocol = json.loads((out / "protocol.json").read_text())
+            protocol["inputs"] = {"tampered": "input"}
+            (out / "protocol.json").write_text(json.dumps(protocol))
+            with self.assertRaisesRegex(ValueError, "inputs changed"):
+                depth.verify(out)
 
 
 if __name__ == "__main__":
