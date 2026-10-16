@@ -3,13 +3,20 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ATMO_APP="${ATMO_APP:-${ROOT_DIR}/build/dev/projects/atmosphere/atmosphere}"
-CLOUD_REF_APP="${CLOUD_REF_APP:-${ROOT_DIR}/build/dev/projects/cloud_ref/cloud_ref}"
+CLOUD_REF_APP="${CLOUD_REF_APP:-${ROOT_DIR}/build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/atmosphere-cloud-sampling-perf-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-1}"
 WARMUP_FRAMES="${WARMUP_FRAMES:-0}"
 PRESET="${PRESET:-broken-cumulus}"
+
+for app in "${ATMO_APP}" "${CLOUD_REF_APP}"; do
+    if [[ ! -x "${app}" ]]; then
+        printf 'missing comparison executable: %s\nBuild Atmosphere with the dev preset; build the optional reference with the dev-cloud-studies preset and target cubey_study_cloud_reference.\n' "${app}" >&2
+        exit 1
+    fi
+done
 
 mkdir -p "${OUT_DIR}"
 

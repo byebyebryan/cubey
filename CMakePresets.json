@@ -65,6 +65,15 @@
       }
     },
     {
+      "name": "dev-cloud-studies",
+      "displayName": "Dev Debug + Cloud Reference Study",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/dev-cloud-studies",
+      "cacheVariables": {
+        "CUBEY_BUILD_CLOUD_STUDIES": "ON"
+      }
+    },
+    {
       "name": "dev-terrain-studies",
       "displayName": "Dev Debug + Terrain Studies",
       "inherits": "dev",
@@ -84,6 +93,10 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "dev-cloud-studies",
+      "configurePreset": "dev-cloud-studies"
+    },
     {
       "name": "dev",
       "configurePreset": "dev"
@@ -114,6 +127,21 @@
     }
   ],
   "testPresets": [
+    {
+      "name": "dev-cloud-studies",
+      "configurePreset": "dev-cloud-studies",
+      "filter": {
+        "include": {
+          "label": "^reference$"
+        },
+        "exclude": {
+          "label": "windowed"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      }
+    },
     {
       "name": "dev",
       "configurePreset": "dev",

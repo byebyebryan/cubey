@@ -8,7 +8,10 @@ Historical note: this file is chronological. Sections that mention
 `projects/cloud` describe the former standalone production cloud project before
 it was absorbed into the shared `cubey::render::CloudLayerRuntime`. Current
 production cloud tuning happens through `projects/atmosphere`, with
-`cloud_ref` as the retained runnable reference; `cloud_ref_2` and
+`cloud_ref` now retained only as the opt-in
+[TerrainEngine reference study](../../studies/cloud/terrainengine/README.md);
+old `projects/cloud_ref` commands below describe their original revision, not
+the current setup. `cloud_ref_2` and
 `clouds_legacy` are retired snapshots preserved in the notes and Git history,
 not active runnable targets.
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-APP="${APP:-${ROOT_DIR}/build/dev/projects/cloud_ref/cloud_ref}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+APP="${APP:-${ROOT_DIR}/build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/cloud-ref-lighting-compare-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
@@ -18,6 +18,11 @@ DEFAULT_DIRECT="${DEFAULT_DIRECT:-1.15}"
 DEFAULT_PHASE="${DEFAULT_PHASE:-1.20}"
 DEFAULT_POWDER="${DEFAULT_POWDER:-0.20}"
 DEFAULT_SHADOW="${DEFAULT_SHADOW:-0.15}"
+
+if [[ ! -x "${APP}" ]]; then
+    printf 'missing cloud reference study: %s\nBuild with: cmake --preset dev-cloud-studies && cmake --build --preset dev-cloud-studies --target cubey_study_cloud_reference\n' "${APP}" >&2
+    exit 1
+fi
 
 mkdir -p "${OUT_DIR}"
 INDEX="${OUT_DIR}/index.md"

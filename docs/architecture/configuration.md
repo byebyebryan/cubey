@@ -35,7 +35,7 @@ The repository now uses one configuration path:
 - runtime defaults are concrete typed values; optional command-line overrides
   use typed optional state rather than sentinel values.
 
-The clean break migrated 19 executable facades:
+At the V2 migration checkpoint, the clean break migrated 19 executable facades:
 
 - seven examples: `headless_cube`, `spinning_cube`, `textured_cube`,
   `instanced_cubes`, `material_cubes`, `particle_cubes`, and `shadow_cube`;
@@ -46,6 +46,12 @@ The clean break migrated 19 executable facades:
 Planet remains a project-owned facade as well. The retained terrain studies
 were not migrated because their useful algorithm, export, generator, and
 unit-test targets already had no executable configuration dependency.
+
+That list is migration history, not the current project roster. `cloud_ref` now
+lives in the opt-in [TerrainEngine cloud study](../../studies/cloud/terrainengine/README.md)
+and retains its typed facade only for reference comparisons. It is absent from
+normal project builds. Current applications are listed in the
+[portfolio](../../README.md#project-map).
 
 ## Ownership
 

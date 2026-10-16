@@ -92,11 +92,13 @@ small and have concrete capture or test criteria.
 spectrum/FFT/unpack path as its core, then adding Cubey atmosphere, terrain
 fields, diagnostics, and feature-isolation controls around it.
 
-The cloud direction also follows this policy: `cloud_ref` is the visual-shape
-reference, `projects/cloud_ref_2` is an architecture reference, and
-`projects/clouds_legacy` is integration evidence. Both projects are retired;
-neither should be treated as the single final renderer. See the retirement
-archive for the recovery anchor.
+The cloud direction also follows this policy: the opt-in
+[TerrainEngine cloud study](../../studies/cloud/terrainengine/README.md) retains
+the shape/sampling comparison, `projects/cloud_ref_2` is a retired architecture
+reference, and `projects/clouds_legacy` is retired integration evidence. Production
+cloud development and presentation belong in the shared layer through Atmosphere,
+not another standalone port. See the retirement archive for the old projects'
+recovery anchor.
 
 Future atmosphere, terrain, planet, ocean, cloud, material, and lighting work
 should use the same pattern unless the task is explicitly a foundation spike:

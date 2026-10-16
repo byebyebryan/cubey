@@ -1,5 +1,4 @@
 add_subdirectory(atmosphere)
-add_subdirectory(cloud_ref)
 add_subdirectory(fluid)
 add_subdirectory(fractal_2d)
 add_subdirectory(gltf_viewer)

@@ -1,5 +1,5 @@
 cubey_add_app_target(
-    cubey_project_cloud_ref
+    cubey_study_cloud_reference
     OUTPUT_NAME cloud_ref
     SHADER_DEFINE CUBEY_CLOUD_REF_SHADER_DIR
     WINDOWED_SMOKE_TEST cloud_ref_reaches_glfw
@@ -24,17 +24,17 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
-    add_executable(cubey_project_cloud_ref_tests
+    add_executable(cubey_study_cloud_reference_tests
         cloud_ref_config.cpp
         cloud_ref_config_tests.cpp
     )
     target_include_directories(
-        cubey_project_cloud_ref_tests
+        cubey_study_cloud_reference_tests
         PRIVATE
             "${CMAKE_CURRENT_SOURCE_DIR}"
     )
     target_link_libraries(
-        cubey_project_cloud_ref_tests
+        cubey_study_cloud_reference_tests
         PRIVATE
             cubey::core
             cubey::render
@@ -42,14 +42,14 @@ if (BUILD_TESTING)
             cubey_project_options
             cubey_project_warnings
     )
-    add_test(NAME cloud_ref_config_tests COMMAND cubey_project_cloud_ref_tests)
+    add_test(NAME cloud_ref_config_tests COMMAND cubey_study_cloud_reference_tests)
 
     set(CUBEY_CLOUD_REF_SURFACE_SMOKE_OUTPUT
         "${CMAKE_CURRENT_BINARY_DIR}/cloud-ref-surface-headless.png"
     )
     cubey_add_png_smoke_test(
         cloud_ref_surface_headless_writes_png
-        cubey_project_cloud_ref
+        cubey_study_cloud_reference
         "${CUBEY_CLOUD_REF_SURFACE_SMOKE_OUTPUT}"
         --frames
         2
@@ -68,7 +68,7 @@ if (BUILD_TESTING)
     )
     cubey_add_png_smoke_test(
         cloud_ref_high_headless_writes_png
-        cubey_project_cloud_ref
+        cubey_study_cloud_reference
         "${CUBEY_CLOUD_REF_HIGH_SMOKE_OUTPUT}"
         --frames
         2

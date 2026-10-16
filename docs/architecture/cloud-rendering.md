@@ -1,9 +1,10 @@
 # Cloud Rendering Direction
 
-This document promotes the lessons from the retained `projects/cloud_ref`
-reference and retired `projects/clouds_legacy` and `projects/cloud_ref_2`
+This document promotes the lessons from the opt-in
+[TerrainEngine reference study](../../studies/cloud/terrainengine/README.md)
+and retired `projects/clouds_legacy` and `projects/cloud_ref_2`
 prototypes into the direction for the production surface cloud layer hosted by
-`projects/atmosphere`. Those projects are historical evidence; new cloud
+`projects/atmosphere`. Those implementations are reference evidence; new cloud
 feature work should not keep tuning throwaway ports or a separate standalone
 production app.
 The retirement rationale and recovery anchor are recorded in
@@ -15,6 +16,13 @@ Use the shared `cubey::render::CloudLayerRuntime` through `projects/atmosphere`
 instead of reviving `projects/clouds_legacy` or `projects/cloud_ref_2` as
 standalone cloud applications or pulling either experiment toward visual
 quality.
+
+The retained `cloud_ref` executable is maintenance-only, not another project or
+a place for new cloud features. Its source and capture helpers live under
+`studies/cloud/terrainengine`, behind `CUBEY_BUILD_CLOUD_STUDIES=ON` (the
+`dev-cloud-studies` preset). Normal builds neither compile nor register its
+tests. Its original binary/config/debug identifiers remain reference labels,
+not the production cloud API. Atmosphere and other consumers do not load it.
 
 The accepted production baseline is now the surface-volume cloud path validated
 through the `cloud_ref` parity work, with the shared lower-sky horizon handoff
@@ -131,7 +139,8 @@ Keep the unfinished paths, but label them honestly:
   are deferred scale work, not Cloud V1;
 - temporal reconstruction is diagnostic until it stops turning cloud noise into
   shimmer;
-- `cloud_ref` is the local/surface visual reference and lighting test bed;
+- `cloud_ref` is the opt-in local/surface shape, sampling, and lighting comparison
+  study; only maintenance and regression work belongs there;
 - `projects/cloud_ref_2` is an architecture reference, not a quality target;
 - `projects/clouds_legacy` is evidence of failed and useful ideas from the first
   cloud implementation.
@@ -179,8 +188,8 @@ and horizon model should not.
 
 ## Lessons From Cloud Ref
 
-`cloud_ref` is the current visual-shape reference. The important lesson is that
-cloud form must be stable before lighting, cache, temporal filtering, or
+The retained `cloud_ref` study is a visual-shape comparison. The important lesson
+is that cloud form must be stable before lighting, cache, temporal filtering, or
 composition can make it look good.
 
 Keep these ideas:
@@ -219,13 +228,14 @@ useful contract is coverage, type, edge softness, and erosion as separate
 parameter biases over the local 3D density field before lighting and
 composition.
 
-### Cloud Ref Lighting Test Bed
+### Retained reference lighting lessons
 
-`projects/cloud_ref` should now serve as the clean lighting/rendering test bed
-for the local volumetric cloud path. It should keep the TerrainEngine-style
-density, shell, noise, weather, and basic cone-light march as the stable raw
-signal, but lighting is allowed to diverge from TerrainEngine where the source
-demo is too presentation-specific or too crude for Cubey.
+The earlier `cloud_ref` test-bed work retained TerrainEngine-style density,
+shell, noise, weather, and a basic cone-light march as its stable raw signal,
+while letting lighting diverge where the source demo was too presentation-specific
+or too crude for Cubey. That implementation now lives in
+`studies/cloud/terrainengine` for explicit comparisons. The lessons below guide
+the shared production layer; they are not a feature roadmap for the study.
 
 The corrected lighting direction is additive rather than a mix between ambient
 fill and direct sun:
@@ -244,9 +254,9 @@ fill and direct sun:
    radiance plus view transmittance/alpha for final resolve and composition.
 
 The earlier `cloud_ref` powder toggle was treated as experimental because it
-multiplied the direct-light mix weight by a local density term. Current
-`cloud_ref` lighting should keep powder/rim/backlit controls tied to view and
-light optical depth diagnostics instead. That keeps the Beer-Powder role closer
+multiplied the direct-light mix weight by a local density term. Its corrected
+lighting keeps powder/rim/backlit controls tied to view and light optical depth
+diagnostics instead. That keeps the Beer-Powder role closer
 to the references: a controlled local-scattering approximation layered on top of
 Beer transmittance and phase, not a density switch that suppresses direct light.
 
@@ -280,10 +290,10 @@ reference: fuller surface coverage and stronger phase/powder/detail relief than
 the old default, but lower shadow and lower twilight intensity than the explicit
 TerrainEngine-inspired study preset.
 
-The retained `cloud_ref` target remains the lighting/shape comparison surface:
-inactive controls must stay absent or honestly labeled, and debug views should
-continue to expose real ambient/direct/phase/source terms. New production work
-belongs in the shared atmosphere-hosted path after it is validated there.
+The retained `cloud_ref` target remains an opt-in lighting/shape comparison:
+inactive controls stay absent or honestly labeled, and its debug views expose
+the retained ambient/direct/phase/source terms. All new production work and
+validation belong in the shared atmosphere-hosted path, not a parallel port.
 
 ## Lessons From `projects/cloud_ref_2`
 
@@ -487,7 +497,7 @@ The final composite tone and color post pass is shared through
 are the external-background variants: atmosphere uses the background-only path;
 glTF Viewer, ocean, and Water 3D use opaque-foreground scene depth. The physical
 distance-aware mode is retained for future scale pressure but has no active
-Planet consumer. The retained `cloud_ref` project keeps its local shaders;
+Planet consumer. The opt-in `cloud_ref` study keeps its local shaders;
 superseded standalone cloud viewers are available only through Git history.
 
 ## Current Milestone

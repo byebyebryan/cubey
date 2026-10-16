@@ -15,6 +15,11 @@ option(CUBEY_BUILD_HOST "Build Cubey concrete host layer" ON)
 option(CUBEY_BUILD_EXAMPLES "Build Cubey examples" ${CUBEY_BUILD_HOST})
 option(CUBEY_BUILD_PROJECTS "Build Cubey projects" ${CUBEY_BUILD_HOST})
 option(
+    CUBEY_BUILD_CLOUD_STUDIES
+    "Build the optional TerrainEngine cloud reference study"
+    OFF
+)
+option(
     CUBEY_BUILD_TERRAIN_STUDIES
     "Build optional terrain reference and hydrology studies"
     OFF
@@ -248,6 +253,10 @@ if (CUBEY_BUILD_PROJECTS AND NOT CUBEY_BUILD_HOST)
     message(FATAL_ERROR "CUBEY_BUILD_PROJECTS requires CUBEY_BUILD_HOST")
 endif()
 
+if (CUBEY_BUILD_CLOUD_STUDIES AND NOT CUBEY_BUILD_HOST)
+    message(FATAL_ERROR "CUBEY_BUILD_CLOUD_STUDIES requires CUBEY_BUILD_HOST")
+endif()
+
 if (CUBEY_BUILD_TERRAIN_STUDIES AND NOT CUBEY_BUILD_HOST)
     message(FATAL_ERROR "CUBEY_BUILD_TERRAIN_STUDIES requires CUBEY_BUILD_HOST")
 endif()
@@ -326,7 +335,7 @@ if (CUBEY_BUILD_EXAMPLES)
     add_subdirectory(examples/particle_cubes)
 endif()
 
-if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
+if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS OR CUBEY_BUILD_CLOUD_STUDIES))
     set(CUBEY_CLASSIC_RENDERING_PATTERN
         "vkCreateRenderPass|vkDestroyRenderPass|VkRenderPass|vkCreateFramebuffer|vkDestroyFramebuffer|VkFramebuffer|vkCmdBeginRenderPass|vkCmdEndRenderPass|VkRenderPassBeginInfo"
     )
@@ -349,7 +358,6 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
             APPEND
             CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
                 "${CMAKE_SOURCE_DIR}/projects/atmosphere"
-                "${CMAKE_SOURCE_DIR}/projects/cloud_ref"
                 "${CMAKE_SOURCE_DIR}/projects/fractal_2d"
                 "${CMAKE_SOURCE_DIR}/projects/fluid"
                 "${CMAKE_SOURCE_DIR}/projects/gltf_viewer"
@@ -359,6 +367,10 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
                 "${CMAKE_SOURCE_DIR}/projects/terrain"
                 "${CMAKE_SOURCE_DIR}/projects/terrain_water"
         )
+    endif()
+    if (CUBEY_BUILD_CLOUD_STUDIES)
+        list(APPEND CUBEY_DYNAMIC_RENDERING_SCAN_DIRS
+            "${CMAKE_SOURCE_DIR}/studies/cloud/terrainengine")
     endif()
     add_test(
         NAME render_apps_use_dynamic_rendering
@@ -376,6 +388,7 @@ if (BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS))
         "${CMAKE_SOURCE_DIR}/projects/capture*.sh"
         "${CMAKE_SOURCE_DIR}/projects/*/capture*.sh"
         "${CMAKE_SOURCE_DIR}/projects/*/tools/capture*.sh"
+        "${CMAKE_SOURCE_DIR}/studies/cloud/terrainengine/tools/capture*.sh"
         "${CMAKE_SOURCE_DIR}/studies/terrain/landscapes/capture*.sh"
     )
     add_test(
@@ -424,6 +437,9 @@ endif()
 
 if (CUBEY_BUILD_PROJECTS)
     add_subdirectory(projects)
+endif()
+if (CUBEY_BUILD_CLOUD_STUDIES)
+    add_subdirectory(studies/cloud/terrainengine)
 endif()
 if (CUBEY_BUILD_TERRAIN_STUDIES)
     add_subdirectory(studies/terrain)

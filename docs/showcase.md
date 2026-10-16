@@ -47,10 +47,10 @@ white-furnace PBR validation target and remains useful for technical checks;
 its runtime and documentation references must not be removed merely because
 it is not a demo.
 
-The following remain outside this showcase set without a runtime or repository
-status change:
+The following remain outside this showcase set:
 
-- `cloud_ref`, which is a retained cloud reference study;
+- the opt-in [TerrainEngine cloud reference](../studies/cloud/terrainengine/README.md),
+  which is a retained study rather than an active project;
 - `examples/`, which are focused cube and foundation demonstrations rather
   than the project gallery;
 - retained terrain studies under `studies/terrain/reference` and

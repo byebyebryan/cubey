@@ -1,5 +1,11 @@
 # Cloud Foundation Integration Checkpoint
 
+Historical checkpoint: mentions of `projects/cloud_ref` below describe its former
+location and test-bed role. The retained comparison now lives in the opt-in
+[TerrainEngine cloud study](../../studies/cloud/terrainengine/README.md).
+Production ownership is described in the [cloud architecture](../architecture/cloud-rendering.md);
+new work belongs in the shared layer through Atmosphere, not the retained port.
+
 This note checkpoints the integration scope that promoted the former
 `projects/cloud` standalone renderer into a shared weather layer. Current cloud
 tuning happens through `projects/atmosphere`; glTF Viewer, ocean, and Water 3D

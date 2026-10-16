@@ -108,9 +108,9 @@ Active projects:
 - [Ocean](../projects/ocean/README.md)
 - [Planet](../projects/planet/README.md)
 
-Reference projects:
+Opt-in reference studies:
 
-- [Cloud Ref](../projects/cloud_ref/README.md)
+- [TerrainEngine cloud reference](../studies/cloud/terrainengine/README.md)
 - [Terrain Ref](../studies/terrain/reference/README.md)
 - [Terrain ShaderToy Study](../studies/terrain/shadertoy/README.md)
 

@@ -1,4 +1,5 @@
 """Project hygiene and current startup boundary; no GPU/native imports."""
+import os
 import subprocess
 import sys
 import tempfile
@@ -56,6 +57,64 @@ assert "numpy" not in sys.modules
 assert "synxflow" not in sys.modules
 """
         subprocess.run([sys.executable, "-B", "-c", code], cwd=root, check=True)
+
+    def test_cloud_reference_requires_explicit_study_build(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "projects").mkdir()
+            projects = root / "projects/CMakeLists.txt"
+            projects.write_text("add_subdirectory(atmosphere)\n")
+            cmake = root / "CMakeLists.txt"
+            valid = '''option(CUBEY_BUILD_CLOUD_STUDIES "Reference only" OFF)
+if (CUBEY_BUILD_CLOUD_STUDIES)
+    add_subdirectory(studies/cloud/terrainengine)
+endif()
+'''
+            cmake.write_text(valid)
+            self.assertEqual(check.cloud_reference_errors(root), [])
+            cmake.write_text(valid.replace('only" OFF', 'only" ON'))
+            self.assertEqual(len(check.cloud_reference_errors(root)), 1)
+            cmake.write_text(valid.replace("if (CUBEY_BUILD_CLOUD_STUDIES)", "if (CUBEY_BUILD_PROJECTS)"))
+            self.assertEqual(len(check.cloud_reference_errors(root)), 1)
+            cmake.write_text(valid)
+            projects.write_text("add_subdirectory(cloud_ref)\n")
+            (root / "projects/cloud_ref").mkdir()
+            (root / "projects/cloud_ref/CMakeLists.txt").touch()
+            self.assertEqual(len(check.cloud_reference_errors(root)), 2)
+
+    def test_relocations_allow_aliases_but_require_final_targets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "current").touch()
+            (root / "intermediate").touch()
+            self.assertEqual(check.relocation_errors(root, {
+                "original": "current", "intermediate": "current"}), [])
+            self.assertEqual(len(check.relocation_errors(root, {
+                "original": "intermediate", "intermediate": "current"})), 1)
+            self.assertEqual(len(check.relocation_errors(root, {
+                "original": "missing", "current": "current"})), 2)
+
+    def test_reference_helpers_fail_fast_without_a_built_executable(self):
+        root = Path(__file__).resolve().parents[2]
+        scripts = list((root / "studies/cloud/terrainengine/tools").glob("capture*.sh"))
+        scripts += [root / "projects/atmosphere/tools" / name for name in (
+            "capture_cloud_ref_parity.sh", "capture_cloud_sampling_perf.sh",
+            "profile_cloud_vs_ref.sh")]
+        self.assertEqual(len(scripts), 6)
+        with tempfile.TemporaryDirectory() as tmp:
+            absent = str(Path(tmp) / "not-built")
+            env = dict(os.environ, APP=absent, CLOUD_REF_APP=absent,
+                       ATMO_APP=absent, ATMOSPHERE_APP=absent)
+            for script in scripts:
+                with self.subTest(script=script.name):
+                    subprocess.run(["bash", "-n", str(script)], check=True)
+                    output = Path(tmp) / script.stem
+                    result = subprocess.run(["bash", str(script), str(output)],
+                                            env=env, capture_output=True, text=True, timeout=5)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertIn("missing", result.stderr)
+                    self.assertIn("dev-cloud-studies", result.stderr)
+                    self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

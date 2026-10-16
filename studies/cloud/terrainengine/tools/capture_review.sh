@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-APP="${APP:-${ROOT_DIR}/build/dev/projects/cloud_ref/cloud_ref}"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+APP="${APP:-${ROOT_DIR}/build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/cloud-ref-review-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
 FRAMES="${FRAMES:-2}"
 QUALITY="${QUALITY:-full}"
 PRESET="${PRESET:-fair-weather}"
+
+if [[ ! -x "${APP}" ]]; then
+    printf 'missing cloud reference study: %s\nBuild with: cmake --preset dev-cloud-studies && cmake --build --preset dev-cloud-studies --target cubey_study_cloud_reference\n' "${APP}" >&2
+    exit 1
+fi
 
 mkdir -p "${OUT_DIR}"
 

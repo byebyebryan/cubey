@@ -1,7 +1,13 @@
-# Cloud Ref
+# TerrainEngine Cloud Reference Study
 
-`cloud_ref` is the active local surface-view reference target for volumetric
-clouds. Its default path should stay deliberately close to the MIT-licensed
+Maintenance-only, opt-in comparison renderer; not an active Cubey project or a
+second production cloud implementation. Shared cloud rendering lives in
+`cubey::render::CloudLayerRuntime` / `cubey::CloudEnvironmentRuntime` and is
+showcased and tuned through [Atmosphere](../../../projects/atmosphere/README.md).
+See the [production contract](../../../docs/architecture/cloud-rendering.md).
+
+This study retains the TerrainEngine-derived local/surface density, sampling,
+and lighting baseline. Its default path stays close to the MIT-licensed
 TerrainEngine-OpenGL volumetric cloud renderer, even when that makes it less
 Cubey-native:
 
@@ -12,8 +18,8 @@ Cubey-native:
   transmittance, Bayer jitter, and a short cone light march
 - fullscreen composite over a source-like sky/background
 
-The intent is to keep a known, concrete local cloud reference running inside
-Cubey before promoting proven mechanics into the shared foundation cloud layer.
+The intent is to retain a concrete comparison for the mechanics already carried
+into the shared foundation cloud layer, not to develop a separate cloud product.
 This is deliberately a narrow reference: surface and near-surface views are the
 validation target. High-altitude and orbit views are useful diagnostics for
 showing where the local-dome model breaks down, not views that `cloud_ref`
@@ -27,43 +33,61 @@ The TerrainEngine shaders also cite Sebastian Hillaire/Nubis-style tileable
 volume noise and NadirRoGue-style volumetric cloud references; preserve those
 comments when touching the ported shader code.
 
+## Explicit build and use
+
+Normal `dev`/`release` builds do not register this executable or its tests.
+The dedicated preset enables `CUBEY_BUILD_CLOUD_STUDIES=ON`; it requires
+`CUBEY_BUILD_HOST=ON` but does not require `CUBEY_BUILD_PROJECTS`.
+
+```sh
+cmake --preset dev-cloud-studies
+cmake --build --preset dev-cloud-studies --target \
+  cubey_study_cloud_reference cubey_study_cloud_reference_tests cubey_png_stats
+ctest --preset dev-cloud-studies
+```
+
+The binary name `cloud_ref`, CLI/config keys, diagnostic labels, C++ namespace,
+and `cloud_ref_*` test names are retained deliberately for reference continuity.
+They do not identify a production `cloud` project. [Capture helpers](tools/README.md)
+use this preset's binary by default and accept an explicit `APP` override.
+
 Useful runs:
 
 ```sh
-./build/dev/projects/cloud_ref/cloud_ref
-./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode surface
-./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode surface-up
-./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode surface-sun
-./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode high
-./build/dev/projects/cloud_ref/cloud_ref --cloud-camera-mode high-oblique
-./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset fair-weather
-./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset broken-cumulus
-./build/dev/projects/cloud_ref/cloud_ref --cloud-weather-preset storm-cells
-./build/dev/projects/cloud_ref/cloud_ref --cloud-view-steps 96
-./build/dev/projects/cloud_ref/cloud_ref --cloud-view-samples 2
-./build/dev/projects/cloud_ref/cloud_ref --cloud-view-samples 1 --cloud-resolve-mode metadata-bilateral --cloud-resolve-radius-px 1.5
-./build/dev/projects/cloud_ref/cloud_ref --debug-view weather
-./build/dev/projects/cloud_ref/cloud_ref --debug-view base-density
-./build/dev/projects/cloud_ref/cloud_ref --debug-view detail-density
-./build/dev/projects/cloud_ref/cloud_ref --debug-view density
-./build/dev/projects/cloud_ref/cloud_ref --debug-view transmittance
-./build/dev/projects/cloud_ref/cloud_ref --debug-view lighting
-./build/dev/projects/cloud_ref/cloud_ref --debug-view ambient-light
-./build/dev/projects/cloud_ref/cloud_ref --debug-view direct-light
-./build/dev/projects/cloud_ref/cloud_ref --debug-view phase-light
-./build/dev/projects/cloud_ref/cloud_ref --debug-view shadow
-./build/dev/projects/cloud_ref/cloud_ref --debug-view view-optical-depth
-./build/dev/projects/cloud_ref/cloud_ref --debug-view light-optical-depth
-./build/dev/projects/cloud_ref/cloud_ref --debug-view cloud-alpha
-./build/dev/projects/cloud_ref/cloud_ref --debug-view distance
-./build/dev/projects/cloud_ref/cloud_ref --debug-view steps
-./build/dev/projects/cloud_ref/cloud_ref --debug-view background
-./build/dev/projects/cloud_ref/cloud_ref --debug-view raw-final
-./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode surface --output outputs/cloud-ref-surface.png
-./build/dev/projects/cloud_ref/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
-projects/cloud_ref/tools/capture_review.sh outputs/cloud-ref-review
-projects/cloud_ref/tools/capture_sampling_compare.sh outputs/cloud-ref-sampling-compare
-projects/cloud_ref/tools/capture_lighting_compare.sh outputs/cloud-ref-lighting-compare
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-camera-mode surface
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-camera-mode surface-up
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-camera-mode surface-sun
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-camera-mode high
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-camera-mode high-oblique
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-weather-preset fair-weather
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-weather-preset broken-cumulus
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-weather-preset storm-cells
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-view-steps 96
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-view-samples 2
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --cloud-view-samples 1 --cloud-resolve-mode metadata-bilateral --cloud-resolve-radius-px 1.5
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view weather
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view base-density
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view detail-density
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view density
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view transmittance
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view lighting
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view ambient-light
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view direct-light
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view phase-light
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view shadow
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view view-optical-depth
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view light-optical-depth
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view cloud-alpha
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view distance
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view steps
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view background
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --debug-view raw-final
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --headless --frames 2 --cloud-camera-mode surface --output outputs/cloud-ref-surface.png
+./build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref --headless --frames 2 --cloud-camera-mode high --output outputs/cloud-ref-high.png
+studies/cloud/terrainengine/tools/capture_review.sh outputs/cloud-ref-review
+studies/cloud/terrainengine/tools/capture_sampling_compare.sh outputs/cloud-ref-sampling-compare
+studies/cloud/terrainengine/tools/capture_lighting_compare.sh outputs/cloud-ref-lighting-compare
 ```
 
 Reference captures from the original TerrainEngine app are kept in
@@ -135,7 +159,7 @@ the mode is alpha/coverage-aware rather than true metadata-aware: it keeps
 between neighboring pixels, then resolves premultiplied cloud color and coverage
 mostly at transitional cloud edges. It is a diagnostic candidate, not a proven
 replacement for brute-force `s2`. Use
-`projects/cloud_ref/tools/capture_sampling_compare.sh` to compare `s1 terrain-post`,
+`studies/cloud/terrainengine/tools/capture_sampling_compare.sh` to compare `s1 terrain-post`,
 `s1 metadata-bilateral`, and brute-force `s2 terrain-post` from the same views.
 
 The fair-weather and broken-cumulus ceilings are intentionally below the earlier
@@ -145,10 +169,10 @@ volume stretched clouds vertically enough to make edge/far-field sampling
 artifacts more visible. Storm and cirrus presets keep higher ceilings because
 those presets explicitly represent taller or higher-altitude cloud types.
 
-Rendering test-bed direction:
+Retained lighting checkpoint (not a development roadmap):
 
 - `cloud_ref` is still the stable local-density and sampling baseline, but cloud
-  lighting is allowed to diverge from TerrainEngine.
+  its recorded lighting already diverges from TerrainEngine.
 - The target lighting equation is additive: Beer view extinction, cone-marched
   sun transmittance, dual/stacked HG phase, optional powder/multi-scatter boost,
   and separate sky/ground ambient.
@@ -187,7 +211,12 @@ Known limits:
   presentation context; real water, bloom FBOs, god rays, and cloud-distance
   outputs are not ported yet.
 - The latest lighting pass improves inspection and reduces flat grey lift, but
-  richer final shots still need better scene context and/or a production cloud
-  renderer rather than more one-off `cloud_ref` constants.
+  richer final shots belong to the shared production renderer, not more one-off
+  `cloud_ref` constants.
 - High and orbit camera modes are diagnostic previews for structural failure
   modes, not finished planet-scale weather systems.
+
+Only build/API repairs and reference regression checks belong here. New cloud
+features, look development, and presentation belong in the shared foundation and
+Atmosphere. Existing `outputs/cloud-ref-*` paths below describe optional local
+historical evidence; they are not included assets or fresh-checkout promises.

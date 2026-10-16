@@ -1,8 +1,8 @@
 # Atmosphere
 
-`atmosphere` is a standalone clear-sky scattering demo. It proves the sky model
-before the ocean renderer consumes it for sky, reflection, sun lighting, and
-horizon aerial perspective.
+`atmosphere` is the standalone atmosphere and shared surface-cloud demo. It proves
+the sky model and cloud integration before consumers such as Ocean use them for
+sky, reflection, sun lighting, and horizon aerial perspective.
 
 The first implementation is direct ray-marched single scattering with Rayleigh
 air scattering, Mie aerosol scattering, ozone absorption, transmittance, a sun
@@ -38,6 +38,9 @@ render-graph wiring; the render helpers are intended to be reusable by ocean and
 later terrain/environment work.
 
 Final view also uses the atmosphere runtime's shared cloud environment.
+This is the production cloud demo and tuning host; the optional
+[TerrainEngine reference study](../../studies/cloud/terrainengine/README.md)
+is maintenance-only and is not built or consumed by Atmosphere.
 `CloudEnvironmentRuntime` owns the visible `CloudLayerRuntime`, generated cloud
 resources, cached PBR environment, refresh state, and lifecycle; atmosphere
 consumes its visible product in external-background mode so clouds are

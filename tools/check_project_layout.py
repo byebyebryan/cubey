@@ -60,6 +60,35 @@ def link_errors(root, source):
     return errors
 
 
+def cloud_reference_errors(root):
+    """The retained port is an explicit study, never a normal project target."""
+    errors = []
+    if (root / "projects/cloud_ref/CMakeLists.txt").exists():
+        errors.append("cloud_ref belongs in studies/cloud/terrainengine, not projects")
+    projects = (root / "projects/CMakeLists.txt").read_text()
+    if re.search(r"add_subdirectory\(\s*cloud_ref\s*\)", projects):
+        errors.append("normal projects must not register cloud_ref")
+    cmake = (root / "CMakeLists.txt").read_text()
+    if not re.search(r'option\(\s*CUBEY_BUILD_CLOUD_STUDIES\s*"[^"]*"\s*OFF\s*\)', cmake):
+        errors.append("cloud studies must default OFF")
+    if not re.search(r"if\s*\(\s*CUBEY_BUILD_CLOUD_STUDIES\s*\)\s*"
+                     r"add_subdirectory\(studies/cloud/terrainengine\)\s*endif\(\)", cmake):
+        errors.append("cloud study registration must be gated by CUBEY_BUILD_CLOUD_STUDIES")
+    return errors
+
+
+def relocation_errors(root, mapping):
+    errors = []
+    for old, new in mapping.items():
+        if old == new or not (root / new).is_file():
+            errors.append(f"missing/invalid relocation target: {old} -> {new}")
+        elif new in mapping:
+            errors.append(f"relocation target is not canonical: {old} -> {new}")
+    # Successive cleanups may give one file several former names. These aliases
+    # must point directly at its current file, not at an intermediate relocation.
+    return errors
+
+
 def audit(root):
     root = root.resolve()
     errors, rows, front_doors = [], [], set()
@@ -79,6 +108,9 @@ def audit(root):
                      "root_scripts": sum(p.suffix in {".py", ".sh", ".mjs"} for p in files)})
     front_doors.update(root / p for p in (
         "README.md", "docs/README.md", "docs/architecture/project-layout.md",
+        "docs/architecture/cloud-rendering.md", "docs/architecture/configuration.md",
+        "studies/cloud/README.md", "studies/cloud/terrainengine/README.md",
+        "studies/cloud/terrainengine/tools/README.md",
         "studies/README.md", "studies/fluid_25d/README.md",
         "studies/fluid_25d/harness/README.md",
         "studies/terrain/landscapes/README.md", "studies/gltf_viewer/README.md",
@@ -91,6 +123,7 @@ def audit(root):
             errors.append(f"{p.relative_to(root)}: missing front door")
         else:
             errors.extend(link_errors(root, p))
+    errors.extend(cloud_reference_errors(root))
     builtin = root / "projects/fluid/fluid_25d/README.md"
     if builtin.is_file():
         text = builtin.read_text()
@@ -99,11 +132,7 @@ def audit(root):
     moves = root / "studies/relocations.json"
     if moves.is_file():
         mapping = json.loads(moves.read_text())
-        for old, new in mapping.items():
-            if old == new or not (root / new).is_file():
-                errors.append(f"missing/invalid relocation target: {old} -> {new}")
-        if len(set(mapping.values())) != len(mapping):
-            errors.append("relocation targets are not unique")
+        errors.extend(relocation_errors(root, mapping))
     snapshot = root / "studies/fluid_25d/harness/README_HISTORY.md"
     if not snapshot.is_file() or hashlib.sha256(snapshot.read_bytes()).hexdigest() != "126578a5596541e608f1d6588b4994ef3eade742147d62ddfa7c703f0fca290c":
         errors.append("sealed README narrative changed")

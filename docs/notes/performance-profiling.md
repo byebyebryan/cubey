@@ -10,11 +10,23 @@ with averaged profile output. The profiling path should record:
 - GPU timestamp spans for render-graph passes when the project owns a
   `GpuTimestampProfiler`.
 
-For cloud integration work, start with:
+For explicit cloud/reference comparisons, first build both executables:
 
 ```bash
+cmake --preset dev
+cmake --build --preset dev --target cubey_project_atmosphere
+cmake --preset dev-cloud-studies
+cmake --build --preset dev-cloud-studies --target cubey_study_cloud_reference
 projects/atmosphere/tools/profile_cloud_vs_ref.sh
 ```
+
+The reference now lives under `studies/cloud/terrainengine`, is maintenance-only,
+and is not part of normal project builds. `CLOUD_REF_APP` overrides the dedicated
+preset's default binary. This profiling helper opens native windows: use it only
+for an explicitly requested manual/native measurement, not unattended automation.
+For headless output comparisons use
+`projects/atmosphere/tools/capture_cloud_ref_parity.sh` instead; its timings are
+offscreen capture evidence, not presented FPS.
 
 Useful overrides:
 

@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ATMOSPHERE_APP="${ATMOSPHERE_APP:-${ROOT_DIR}/build/dev/projects/atmosphere/atmosphere}"
-CLOUD_REF_APP="${CLOUD_REF_APP:-${ROOT_DIR}/build/dev/projects/cloud_ref/cloud_ref}"
+CLOUD_REF_APP="${CLOUD_REF_APP:-${ROOT_DIR}/build/dev-cloud-studies/studies/cloud/terrainengine/cloud_ref}"
 OUT_DIR="${1:-${ROOT_DIR}/outputs/cloud-ref-parity-$(date +%Y%m%d-%H%M%S)}"
 WIDTH="${WIDTH:-1280}"
 HEIGHT="${HEIGHT:-720}"
@@ -12,16 +12,16 @@ CLOUD_REF_PRESET="${CLOUD_REF_PRESET:-fair-weather}"
 ATMOSPHERE_PRESET="${ATMOSPHERE_PRESET:-surface-volume}"
 VIEW_STEPS="${VIEW_STEPS:-64}"
 
-mkdir -p "${OUT_DIR}/cloud_ref" "${OUT_DIR}/atmosphere"
-
 if [[ ! -x "${ATMOSPHERE_APP}" ]]; then
-    printf 'missing atmosphere app: %s\n' "${ATMOSPHERE_APP}" >&2
+    printf 'missing atmosphere app: %s\nBuild Atmosphere with the dev preset; the optional reference uses dev-cloud-studies.\n' "${ATMOSPHERE_APP}" >&2
     exit 1
 fi
 if [[ ! -x "${CLOUD_REF_APP}" ]]; then
-    printf 'missing cloud_ref app: %s\n' "${CLOUD_REF_APP}" >&2
+    printf 'missing cloud reference study: %s\nBuild with: cmake --preset dev-cloud-studies && cmake --build --preset dev-cloud-studies --target cubey_study_cloud_reference\n' "${CLOUD_REF_APP}" >&2
     exit 1
 fi
+
+mkdir -p "${OUT_DIR}/cloud_ref" "${OUT_DIR}/atmosphere"
 
 MANIFEST="${OUT_DIR}/manifest.tsv"
 INDEX="${OUT_DIR}/index.md"

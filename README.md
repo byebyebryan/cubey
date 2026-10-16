@@ -130,7 +130,7 @@ white-furnace validation target, not a public demo.
 
 - [Terrain Hydrology](studies/terrain/hydrology/README.md) is a paused snapshot
   of the earlier regional terrain and landscape-evolution work.
-- [Cloud Ref](projects/cloud_ref/README.md), [Terrain Ref](studies/terrain/reference/README.md),
+- [Cloud reference study](studies/cloud/README.md), [Terrain Ref](studies/terrain/reference/README.md),
   and the [Terrain ShaderToy study](studies/terrain/shadertoy/README.md) retain
   reference evidence without competing with active products.
 - [Archived terrain attempts](docs/archive/terrain/legacy-attempts.md) summarize

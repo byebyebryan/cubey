@@ -379,7 +379,7 @@ Near-term non-goals:
   pass;
 - no CPU migration of generated atmosphere lunar/night-sky atlas noise until it
   has its own golden-value or image-review pass;
-- keep the retained `cloud_ref` reference distinct; `cloud_ref_2` and
+- keep the opt-in `studies/cloud/terrainengine` reference distinct; `cloud_ref_2` and
   `clouds_legacy` are retired snapshots preserved in docs and Git history while
   their historical source evidence remains useful;
 - no promotion of physical hydrology, erosion, foliage, materials, streaming, or

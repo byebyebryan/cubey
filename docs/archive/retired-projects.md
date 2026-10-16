@@ -21,3 +21,14 @@ detail must be revisited.
 The retained terrain studies under `studies/terrain` remain opt-in research
 sources and algorithm/export tests; their viewer layers were retired separately
 without deleting their useful source evidence.
+
+## Reclassified cloud reference (2026-10-15)
+
+Unlike the removed viewers above, `projects/cloud_ref` was moved rather than
+deleted. Its source, attribution, diagnostic executable, and tests are retained
+under [studies/cloud/terrainengine](../../studies/cloud/terrainengine/README.md),
+behind `CUBEY_BUILD_CLOUD_STUDIES=ON` / the `dev-cloud-studies` preset. Normal
+project builds no longer include it. Existing reference identifiers remain for
+comparison continuity; there is no replacement standalone `cloud` product.
+Production clouds remain in the shared atmosphere/environment foundation and
+are showcased through Atmosphere.

@@ -751,6 +751,8 @@ Project checkpoints:
   lessons, while retired `projects/cloud_ref_2` remains an architecture
   reference. Cloud V1 is intentionally surface-only: atmosphere is the tuning
   host; glTF Viewer, ocean, and Water 3D consume its accepted products.
+  The retained TerrainEngine-derived `cloud_ref` is a maintenance-only opt-in
+  study under `studies/cloud/terrainengine`, not another active project.
 - `projects/ocean` exercises spectral FFT water rendering, atmosphere/material
   integration, horizon-scale local frames, curved far-surface mapping, and
   terrain-field handoff vocabulary. It is now treated as a local-water renderer

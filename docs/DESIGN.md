@@ -510,7 +510,6 @@ cubey/
         atmosphere_app.* -- solar time, sky, moon, Milky Way, and HDR post host path
         atmosphere_environment.* -- shared-atmosphere config and frame adapter
         atmosphere_ui.* -- live atmosphere and night-sky controls
-      cloud_ref/          -- TerrainEngine-style surface-cloud reference
       fractal_2d/
         CMakeLists.txt
         main.cpp
@@ -627,6 +626,7 @@ cubey/
         pbr_furnace_scene_runtime.* -- scene entities and frame plans
         pbr_furnace_render.* -- render request assembly and headless target path
         pbr_furnace_scene.* -- material grid definition and tests
+  studies/cloud/terrainengine/ -- opt-in maintenance-only cloud reference port
   studies/terrain/        -- opt-in algorithm, ShaderToy, and hydrology studies
   tests/
     cubey/                 -- domain-split test registry and focused unit tests

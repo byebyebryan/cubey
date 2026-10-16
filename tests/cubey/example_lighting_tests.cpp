@@ -92,8 +92,11 @@ void test_render_app_dynamic_rendering_scan_covers_built_projects() {
 
     require_contains(cmake, "NAME render_apps_use_dynamic_rendering",
                      "dynamic-rendering hygiene test should name examples and projects");
-    require_contains(cmake, "BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS)",
-                     "dynamic-rendering hygiene test should register for project-only builds");
+    require_contains(cmake,
+                     "BUILD_TESTING AND (CUBEY_BUILD_EXAMPLES OR CUBEY_BUILD_PROJECTS OR "
+                     "CUBEY_BUILD_CLOUD_STUDIES)",
+                     "dynamic-rendering hygiene should register for project-only and "
+                     "cloud-study-only builds");
     require_contains(cmake, "CUBEY_DYNAMIC_RENDERING_SCAN_DIRS",
                      "dynamic-rendering hygiene test should build scan dirs conditionally");
     require_contains(cmake, "projects/gltf_viewer",
@@ -102,6 +105,10 @@ void test_render_app_dynamic_rendering_scan_covers_built_projects() {
                      "dynamic-rendering hygiene test should scan the active ocean project");
     require_contains(cmake, "projects/terrain",
                      "dynamic-rendering hygiene test should scan the active terrain project");
+    require_contains(cmake, "studies/cloud/terrainengine",
+                     "dynamic-rendering hygiene should scan the opt-in cloud reference study");
+    require_not_contains(cmake, "projects/cloud_ref",
+                         "cloud reference should no longer be scanned as a production project");
     require_not_contains(cmake, "projects/ocean_ref",
                          "dynamic-rendering hygiene test should not scan removed ocean reference");
     require_not_contains(cmake, "projects/ocean_legacy",
