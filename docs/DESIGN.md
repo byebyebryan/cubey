@@ -45,7 +45,7 @@ current design.
 | Shader compilation | glslangValidator (build time) | GLSL → SPIR-V, no runtime dependency |
 | Image output | `stb_image_write` | Single-header dependency, enough for inspectable artifacts |
 | Asset import | `cgltf` + `stb_image` + Basis Universal transcoder | Narrow glTF/glb CPU loading for meshes, materials, textures, animation/deformation data, PNG/JPEG decode, and `KHR_texture_basisu` KTX2 upload support before a broader asset pipeline |
-| CPU async work | undecided behind `cubey::jobs` | Taskflow and `BS::thread_pool` are the first candidates |
+| CPU async work | Cubey-owned `std::jthread` worker pool behind `cubey::jobs` | Typed job results, an inline executor for deterministic work, and explicit drain-and-join shutdown |
 
 ## Architecture
 

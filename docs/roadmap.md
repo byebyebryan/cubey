@@ -32,11 +32,19 @@ The 2026-10 foundation consolidation is complete: compiler-tracked shader
 include dependencies, configured library/include direction checks, standalone
 public-header compilation, a real cloud lifecycle/synchronization-validation
 lane, cohesive cloud/Ocean runtime implementations, and private Ocean/Terrain
-application modules. Renderer math, numerical behavior, product defaults,
-staged activation and GPU retirement are preserved. Closure covered 245 dev
-test groups, seven configure/policy variants, focused ASan/UBSan checks and seven
-byte-identical consumer captures. Eighteen windowed smokes passed on virtual
-X11; physical desktop interaction and human visual acceptance were not assessed.
+application modules.
+
+The follow-up hardening pass adds owner-ordered host cleanup, transactional
+terrain-surface resource construction, evaluated CMake dependency checks across
+concrete/alias/interface targets and configured variants, and private Fluid
+recording/live application modules. Renderer math, numerical behavior, product
+defaults and staged activation are preserved. Latest validation covered all 247
+dev test groups (full run plus a corrected source-policy rerun), seven configure
+variants with policy checks on the six testing variants, focused ASan/UBSan
+checks, and four byte-identical Fluid frontend captures. Seven shared consumer
+captures also stayed byte-identical. Nineteen windowed groups passed on virtual
+X11, and four synchronization-validation groups passed; physical desktop
+interaction and human visual acceptance were not assessed.
 See [resource lifecycle contracts](architecture/renderer-foundation.md#resource-lifecycle-contracts).
 
 Planet is paused as of 2026-10-15. Its orbital reboot did not reach the intended

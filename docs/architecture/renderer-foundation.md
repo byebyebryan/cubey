@@ -137,8 +137,9 @@ invalidation, failed creation/retry and full shutdown/re-enable.
 retry, retained targets, pending slot recordings, recreation and re-enable.
 `dev-sync-validation` proves enabled synchronization checks with an intentional
 unsubmitted hazard and runs clean cloud, host and terrain lifecycle fixtures.
-Consumer capture comparisons and the full dev suite remain integration gates; virtual windowed,
-physical desktop and human visual acceptance are distinct evidence.
+Consumer capture comparisons and the full dev suite remain integration gates;
+virtual windowed, physical desktop and human visual acceptance are distinct
+evidence.
 The design precedents are [Vulkan threading](https://docs.vulkan.org/guide/latest/threading.html),
 [Filament's framegraph](https://google.github.io/filament/notes/framegraph.html),
 and [Godot compositor lifetime/threading](https://docs.godotengine.org/en/stable/tutorials/rendering/compositor.html).
