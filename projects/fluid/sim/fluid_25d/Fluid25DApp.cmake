@@ -1,0 +1,125 @@
+# Shared implementation for the two project-owned frontends. Like Pyro's
+# Fire/Explosion facades, each app compiles the same sources with its own shader
+# resource directory. No solver or material implementation is copied.
+include_guard(GLOBAL)
+function(cubey_add_fluid25d_app target output entrypoint)
+    set(shared_source_root "${CMAKE_CURRENT_FUNCTION_LIST_DIR}")
+    cubey_atmosphere_shader_depends(CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS)
+    cubey_add_app_target(
+        ${target}
+        OUTPUT_NAME "${output}"
+        SHADER_DEFINE CUBEY_FLUID_25D_SHADER_DIR
+        SOURCES
+            "${shared_source_root}/fluid_25d_app.cpp"
+            "${shared_source_root}/fluid_25d_bank_controls.cpp"
+            "${shared_source_root}/fluid_25d_bank_comparison.cpp"
+            "${shared_source_root}/fluid_25d_backend_adapters.cpp"
+            "${shared_source_root}/fluid_25d_backend_contract.cpp"
+            "${shared_source_root}/fluid_25d_external_session.cpp"
+            "${shared_source_root}/fluid_25d_commands.cpp"
+            "${shared_source_root}/fluid_25d_diagnostics.cpp"
+            "${shared_source_root}/fluid_25d_display_coverage.cpp"
+            "${shared_source_root}/fluid_25d_finite_volume_oracle.cpp"
+            "${shared_source_root}/fluid_25d_gpu_resources.cpp"
+            "${shared_source_root}/fluid_25d_mass_audit.cpp"
+            "${shared_source_root}/fluid_25d_motion_markers.cpp"
+            "${shared_source_root}/fluid_25d_native_presentation_controls.cpp"
+            "${shared_source_root}/fluid_25d_natural_flow_recipe.cpp"
+            "${shared_source_root}/fluid_25d_oracle.cpp"
+            "${shared_source_root}/fluid_25d_recording.cpp"
+            "${shared_source_root}/fluid_25d_recording_app.cpp"
+            "${shared_source_root}/fluid_25d_scenic.cpp"
+            "${shared_source_root}/fluid_25d_scenic_material.cpp"
+            "${shared_source_root}/fluid_25d_terrain_demo.cpp"
+            "${shared_source_root}/fluid_25d_ui.cpp"
+            "${entrypoint}"
+        SHADERS
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_environment.comp"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.vert"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d.vert"
+            "${shared_source_root}/shaders/fluid_25d_bank_controls.comp"
+            "${shared_source_root}/shaders/fluid_25d_render.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain.vert"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline.vert"
+            "${shared_source_root}/shaders/fluid_25d_terrain.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water.vert"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline.vert"
+            "${shared_source_root}/shaders/fluid_25d_water.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_legacy.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_water.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.vert"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_flow.comp"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_sky.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_copy.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_display.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.vert"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.frag"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp"
+            "${shared_source_root}/shaders/fluid_25d_forcing_cubes.vert"
+            "${shared_source_root}/shaders/fluid_25d_forcing_cubes.frag"
+            "${shared_source_root}/shaders/fluid_25d_quiver.vert"
+            "${shared_source_root}/shaders/fluid_25d_quiver.frag"
+            "${shared_source_root}/shaders/fluid_25d_reset.comp"
+            "${shared_source_root}/shaders/fluid_25d_flux.comp"
+            "${shared_source_root}/shaders/fluid_25d_depth.comp"
+            "${shared_source_root}/shaders/fluid_25d_fv_reset.comp"
+            "${shared_source_root}/shaders/fluid_25d_fv_cfl.comp"
+            "${shared_source_root}/shaders/fluid_25d_fv_cfl_finalize.comp"
+            "${shared_source_root}/shaders/fluid_25d_fv_update.comp"
+            "${shared_source_root}/shaders/fluid_25d_fv_commit.comp"
+            "${shared_source_root}/shaders/fluid_25d_backend_progress.comp"
+            "${shared_source_root}/shaders/fluid_25d_presentation_cue_reset.comp"
+            "${shared_source_root}/shaders/fluid_25d_presentation_cue_advect.comp"
+            "${shared_source_root}/shaders/fluid_25d_quiver_reset.comp"
+            "${shared_source_root}/shaders/fluid_25d_quiver_update.comp"
+            "${shared_source_root}/shaders/fluid_25d_motion_markers.comp"
+            "${shared_source_root}/shaders/fluid_25d_motion_markers.vert"
+            "${shared_source_root}/shaders/fluid_25d_motion_markers_bilinear.vert"
+            "${shared_source_root}/shaders/fluid_25d_motion_markers.frag"
+        SHADER_INCLUDE_DIRS
+            "${CMAKE_SOURCE_DIR}/shaders"
+        SHADER_DEPENDS
+            ${CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS}
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_body.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_material_readability.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_agitation.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_rapids.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bank_edge.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater_motion.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_gradient.glsl"
+            "${shared_source_root}/shaders/fluid_25d_mass_audit.glsl"
+            "${shared_source_root}/shaders/fluid_25d_conserved_arithmetic.glsl"
+            "${shared_source_root}/shaders/fluid_25d_motion_markers.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline_body.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline_body.glsl"
+            "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"
+    )
+
+    target_include_directories(
+        ${target}
+        PRIVATE
+            "${CMAKE_SOURCE_DIR}/projects/fluid/fluid_25d"
+            "${shared_source_root}"
+    )
+    target_link_libraries(${target} PRIVATE cubey_fluid25d_terrain_surface)
+
+endfunction()

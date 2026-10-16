@@ -76,7 +76,8 @@ class Commands(unittest.TestCase):
                                          app=Path("/release/fluid_25d"))
         self.assertEqual(command[:3], ["rtk", "proxy", "/release/fluid_25d"])
         self.assertEqual(terrain.demo.ref.APP, original)
-        self.assertEqual(terrain.viewer_command(Path("/case"), Path("/session"), "test")[2], str(original))
+        self.assertEqual(terrain.viewer_command(Path("/case"), Path("/session"), "test")[2],
+                         str(terrain.RELEASE_APP))
 
     def test_lower_display_density_keeps_bspline_and_simulation_untouched(self):
         command = terrain.viewer_command(Path("/case"), Path("/session"), "test", surface_subdivision=1)

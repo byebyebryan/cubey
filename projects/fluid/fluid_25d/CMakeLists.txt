@@ -5,124 +5,13 @@ add_library(cubey_fluid25d_terrain_surface STATIC
 target_link_libraries(cubey_fluid25d_terrain_surface PUBLIC cubey::cubey
     nlohmann_json::nlohmann_json PRIVATE cubey_project_options cubey_project_warnings)
 
-cubey_add_app_target(
-    cubey_project_fluid_25d
-    OUTPUT_NAME fluid_25d
-    SHADER_DEFINE CUBEY_FLUID_25D_SHADER_DIR
-    WINDOWED_SMOKE_TEST fluid_25d_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "fluid_25d: .*rendering River V0"
-    SOURCES
-        ../sim/fluid_25d/fluid_25d_app.cpp
-        ../sim/fluid_25d/fluid_25d_bank_controls.cpp
-        ../sim/fluid_25d/fluid_25d_bank_comparison.cpp
-        ../sim/fluid_25d/fluid_25d_backend_adapters.cpp
-        ../sim/fluid_25d/fluid_25d_backend_contract.cpp
-        ../sim/fluid_25d/fluid_25d_external_session.cpp
-        ../sim/fluid_25d/fluid_25d_commands.cpp
-        ../sim/fluid_25d/fluid_25d_diagnostics.cpp
-        ../sim/fluid_25d/fluid_25d_display_coverage.cpp
-        ../sim/fluid_25d/fluid_25d_finite_volume_oracle.cpp
-        ../sim/fluid_25d/fluid_25d_gpu_resources.cpp
-        ../sim/fluid_25d/fluid_25d_mass_audit.cpp
-        ../sim/fluid_25d/fluid_25d_motion_markers.cpp
-        ../sim/fluid_25d/fluid_25d_native_presentation_controls.cpp
-        ../sim/fluid_25d/fluid_25d_natural_flow_recipe.cpp
-        ../sim/fluid_25d/fluid_25d_oracle.cpp
-        ../sim/fluid_25d/fluid_25d_recording.cpp
-        ../sim/fluid_25d/fluid_25d_recording_app.cpp
-        ../sim/fluid_25d/fluid_25d_scenic.cpp
-        ../sim/fluid_25d/fluid_25d_scenic_material.cpp
-        ../sim/fluid_25d/fluid_25d_terrain_demo.cpp
-        ../sim/fluid_25d/fluid_25d_ui.cpp
-        main.cpp
-    SHADERS
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_environment.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/terrain_surface_context.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d.vert"
-        ../sim/fluid_25d/shaders/fluid_25d_bank_controls.comp
-        ../sim/fluid_25d/shaders/fluid_25d_render.frag
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline.vert"
-        ../sim/fluid_25d/shaders/fluid_25d_terrain.frag
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline.vert"
-        ../sim/fluid_25d/shaders/fluid_25d_water.frag
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_legacy.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_water.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_flow.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.comp"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_sky.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_copy.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_display.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.vert"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_rain_visual.frag"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_backdrop_material.comp"
-        ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.vert
-        ../sim/fluid_25d/shaders/fluid_25d_forcing_cubes.frag
-        ../sim/fluid_25d/shaders/fluid_25d_quiver.vert
-        ../sim/fluid_25d/shaders/fluid_25d_quiver.frag
-        ../sim/fluid_25d/shaders/fluid_25d_reset.comp
-        ../sim/fluid_25d/shaders/fluid_25d_flux.comp
-        ../sim/fluid_25d/shaders/fluid_25d_depth.comp
-        ../sim/fluid_25d/shaders/fluid_25d_fv_reset.comp
-        ../sim/fluid_25d/shaders/fluid_25d_fv_cfl.comp
-        ../sim/fluid_25d/shaders/fluid_25d_fv_cfl_finalize.comp
-        ../sim/fluid_25d/shaders/fluid_25d_fv_update.comp
-        ../sim/fluid_25d/shaders/fluid_25d_fv_commit.comp
-        ../sim/fluid_25d/shaders/fluid_25d_backend_progress.comp
-        ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_reset.comp
-        ../sim/fluid_25d/shaders/fluid_25d_presentation_cue_advect.comp
-        ../sim/fluid_25d/shaders/fluid_25d_quiver_reset.comp
-        ../sim/fluid_25d/shaders/fluid_25d_quiver_update.comp
-        ../sim/fluid_25d/shaders/fluid_25d_motion_markers.comp
-        ../sim/fluid_25d/shaders/fluid_25d_motion_markers.vert
-        ../sim/fluid_25d/shaders/fluid_25d_motion_markers_bilinear.vert
-        ../sim/fluid_25d/shaders/fluid_25d_motion_markers.frag
-    SHADER_INCLUDE_DIRS
-        "${CMAKE_SOURCE_DIR}/shaders"
-    SHADER_DEPENDS
-        ${CUBEY_FLUID25D_ATMOSPHERE_SHADER_DEPENDS}
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/color_space.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/pbr.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/random.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/procedural/operators.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_lighting.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_scenic_terrain_body.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/terrain_material_readability.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_daylight.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_film.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_detail.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_agitation.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_rapids.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bank_edge.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_whitewater_motion.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_gradient.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_mass_audit.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_conserved_arithmetic.glsl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/shaders/fluid_25d_motion_markers.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_surface_sampling.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_bspline_surface.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_bspline_body.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_water_bspline_body.glsl"
-        "${CMAKE_SOURCE_DIR}/shaders/cubey/terrain/surface_patch/fluid_25d_terrain_wetness.glsl"
-)
-
-target_include_directories(
-    cubey_project_fluid_25d
-    PRIVATE
-        "${CMAKE_CURRENT_SOURCE_DIR}"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d"
-)
-target_link_libraries(cubey_project_fluid_25d PRIVATE cubey_fluid25d_terrain_surface)
+include("${CMAKE_CURRENT_SOURCE_DIR}/../sim/fluid_25d/Fluid25DApp.cmake")
+cubey_add_fluid25d_app(cubey_project_fluid_25d fluid_25d
+    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+if(BUILD_TESTING)
+    cubey_add_windowed_smoke_test(fluid_25d_reaches_glfw cubey_project_fluid_25d
+        "fluid_25d: .*rendering River V0")
+endif()
 
 # Explicit read/control diagnostic only; no automatic native launch or CUDA dependency.
 add_executable(cubey_project_fluid_25d_export_water_capture EXCLUDE_FROM_ALL
