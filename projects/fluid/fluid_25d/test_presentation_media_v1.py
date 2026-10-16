@@ -61,7 +61,7 @@ class Media(unittest.TestCase):
             self.assertEqual(receipt['verification'][key]['bytes'],receipt['bytes'])
         self.assertEqual(receipt['verification']['anonymous_public_page_video']['content_type'],'video/mp4')
         self.assertIn(receipt['github_attachment_url'],(ROOT/'README.md').read_text())
-        self.assertIn(receipt['github_attachment_url'],(ROOT/'projects/fluid/fluid_25d/README.md').read_text())
+        self.assertIn(receipt['github_attachment_url'],(ROOT/'projects/terrain_water/README.md').read_text())
 
     def test_native_frames_and_timelines_are_not_live_fps_claims(self):
         recipe=json.loads((MEDIA/'fluid-25d-recipe.json').read_bytes())

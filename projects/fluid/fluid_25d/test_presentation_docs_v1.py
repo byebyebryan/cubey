@@ -10,6 +10,7 @@ import run_terrain_rain_demo as terrain
 
 ROOT=Path(__file__).resolve().parents[3]
 HERE=Path(__file__).resolve().parent
+TERRAIN_WATER=ROOT/'projects/terrain_water'
 
 
 def slug(text):
@@ -19,6 +20,8 @@ def slug(text):
 class Documentation(unittest.TestCase):
     def test_current_front_pages_link_to_existing_local_targets(self):
         for path in (HERE/'README.md',HERE/'demo_setup_v1.md',ROOT/'projects/fluid/README.md',
+                     TERRAIN_WATER/'README.md',TERRAIN_WATER/'demo_setup_v1.md',
+                     TERRAIN_WATER/'current_reference.md',TERRAIN_WATER/'integration.md',
                      ROOT/'README.md', ROOT/'docs/showcase.md', ROOT/'docs/media/showcase/README.md',
                      HERE/'presentation_v1.md', HERE/'current_reference.md',
                      HERE/'development_map.md', ROOT/'docs/README.md',
@@ -37,12 +40,12 @@ class Documentation(unittest.TestCase):
                     self.assertIn(anchor,anchors,f'{path.name}: missing anchor {target}')
 
     def test_front_page_is_current_not_a_study_transcript(self):
-        current=(HERE/'README.md').read_text()
+        current=(TERRAIN_WATER/'README.md').read_text()
         self.assertLess(len(current.splitlines()),300)
         self.assertIn('separate CUDA worker',current)
-        self.assertIn('not silent fallbacks',current)
+        self.assertIn('no silent fallback',current.lower())
         self.assertIn('not a repository dependency',current)
-        self.assertIn('README_HISTORY.md',current)
+        self.assertIn('README_HISTORY.md',(HERE/'README.md').read_text())
         self.assertIn('current_reference.md',current)
         self.assertIn('development_map.md',current)
         self.assertLess(len((HERE/'presentation_v1.md').read_text().splitlines()),180)
@@ -70,7 +73,7 @@ class Documentation(unittest.TestCase):
             self.assertIn(f'id="{slug(heading)}"',current)
 
     def test_reference_grid_table_matches_preparation_contract(self):
-        reference=(HERE/'current_reference.md').read_text()
+        reference=(TERRAIN_WATER/'current_reference.md').read_text()
         rows=re.findall(r'^\| `([^`]+)` \| (\d+)² \| (\d+) m \| ([\d.]+) km \|$',
                         reference,re.M)
         actual={name:(int(n),int(spacing)) for name,n,spacing,_ in rows}
@@ -85,7 +88,7 @@ class Documentation(unittest.TestCase):
             self.assertAlmostEqual(int(n)*int(spacing)/1000,float(extent))
 
     def test_reference_entry_defaults_match_launcher_without_requiring_assets(self):
-        reference=(HERE/'current_reference.md').read_text()
+        reference=(TERRAIN_WATER/'current_reference.md').read_text()
         args=terrain.parser().parse_args(['--study','/not-a-prepared-study'])
         self.assertIn(f'`{args.configuration}`',reference)
         self.assertIn(args.site.title(),reference)
@@ -128,10 +131,11 @@ class Documentation(unittest.TestCase):
         docs=(ROOT/'docs/README.md').read_text()
         self.assertNotIn('Fluid 2.5D design and CPU contract',docs)
         self.assertNotIn('is a design-first direction',root)
-        self.assertIn('Fluid 2.5D terrain-rain demo',docs)
+        self.assertIn('Terrain Water',docs)
+        self.assertIn('Fluid 2.5D builtin shallow water',docs)
 
     def test_selected_cut_is_published_without_promoting_interactive_defaults(self):
-        for path in (ROOT/'README.md',HERE/'README.md',ROOT/'docs/showcase.md'):
+        for path in (ROOT/'README.md',TERRAIN_WATER/'README.md',ROOT/'docs/showcase.md'):
             source=path.read_text()
             self.assertIn('Joining valleys',source)
             self.assertNotIn('Owner creative review and GitHub attachment publication',source)
@@ -140,7 +144,21 @@ class Documentation(unittest.TestCase):
         self.assertNotIn('36-second project film',root)
         self.assertIn('Five highlights',root)
         self.assertNotIn('publication remains pending',root)
-        self.assertIn('Default prepared site: Mountain',(HERE/'README.md').read_text())
+        self.assertIn('Default prepared site: Mountain',(TERRAIN_WATER/'README.md').read_text())
+
+    def test_project_split_preserves_identity_and_backup_boundaries(self):
+        builtin=(HERE/'README.md').read_text()
+        terrain=(TERRAIN_WATER/'README.md').read_text()
+        self.assertIn('builtin shallow water',builtin)
+        self.assertIn('No SynxFlow, CUDA worker',builtin)
+        self.assertIn('not an\nequivalent mountain-flow backup',terrain)
+        self.assertIn('No silent fallback or water-state transfer',terrain)
+        entry=next(e for e in json.loads((ROOT/'docs/media/showcase/manifest.json').read_text())['entries']
+                   if e['id']=='fluid-25d')
+        self.assertEqual((entry['project'],entry['title']),('terrain_water','Terrain Water'))
+        # Capture identity is historical and must not be rewritten by a project move.
+        self.assertIn('/projects/fluid/fluid_25d/fluid_25d',entry['recipe']['capture_command'][2])
+        self.assertIn('projects/terrain_water/README.md',(ROOT/'README.md').read_text())
 
 
 if __name__=='__main__':

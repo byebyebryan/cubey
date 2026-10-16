@@ -46,7 +46,7 @@ stage metrics backed by a repeatable release-profile corpus.
 
 Current stable foundation pieces:
 
-- active Fluid 2.5D terrain-rain demo: Vulkan surface/bank rendering, a separately
+- dedicated Terrain Water demo (separate from builtin Fluid 2.5D): Vulkan surface/bank rendering, a separately
   prepared live SynxFlow worker, acknowledged rain/pace and site/reset controls,
   recorded capture, retained builtin alternatives, and a measured Mountain rain
   response. It renders only the selected detail patch; the shared Terrain
@@ -106,17 +106,17 @@ Current stable foundation pieces:
   tests audit those package dependencies.
 
 The public visual showcase has a separate design checkpoint in [Showcase
-Storyboard and Capture Plan](showcase.md). Its twelve shot cards and
+Storyboard and Capture Plan](showcase.md). Its thirteen project entries and
 provenance rules remain the storyboard authority. Five highlights are now
 creatively locked and packaged in the
 [showcase media package](media/showcase/README.md): Ocean, glTF + Terrain,
-Water 3D, Fire 3D, and Fluid 2.5D. All five have current GitHub native players,
+Water 3D, Fire 3D, and Terrain Water. All five have current GitHub native players,
 including the owner-selected face-on, afternoon-to-night saved-water glTF A cut.
-Fluid's eight-second Joining
+Terrain Water's eight-second Joining
 valleys sunset shows recorded streams gathering into a lake; its separate
 36-second Mountain rain-off film remains a legacy study. Attachment identities
 and exact bytes are recorded in the manifest and the Fluid/glTF publication receipts.
-The remaining seven cards are future editorial work. The original four
+The remaining eight project cards are future editorial work. The original four
 attachment mappings remain unchanged historical provenance.
 
 The bounded progressive-initialization slice is complete for generated

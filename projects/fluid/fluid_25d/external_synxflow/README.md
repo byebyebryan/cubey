@@ -1,9 +1,9 @@
 # SynxFlow dependency handoff
 
-This optional, separate-process dependency powers Fluid 2.5D's preferred live
-terrain-rain demo. Nothing here is installed, compiled or launched by normal
+This optional, separate-process dependency powers the preferred live
+[Terrain Water demo](../../../terrain_water/README.md). Nothing here is installed, compiled or launched by normal
 Cubey configure/build/test/startup. Cubey's Vulkan renderer does not link CUDA.
-Return to [demo setup](../demo_setup_v1.md) for terrain/case preparation and launch.
+Return to [demo setup](../../../terrain_water/demo_setup_v1.md) for terrain/case preparation and launch.
 
 ## Upstream credit and exact identities
 

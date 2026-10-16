@@ -34,13 +34,13 @@ GPL-3.0-only; it is not linked into the MIT renderer. See the retained
 Prepared terrain/climate cases and a qualified worker environment are required
 for live use. A fresh checkout alone is not a complete runnable terrain demo.
 Normal build/startup does not install packages, download models, generate
-terrain or build CUDA. Follow [explicit preparation](../fluid/fluid_25d/demo_setup_v1.md).
+terrain or build CUDA. Follow [explicit preparation](demo_setup_v1.md).
 The native extension must retain its qualified hash, including with path overrides.
 
 ## Managed live demo
 
 ```sh
-# Read-only admission; no worker or GUI starts.
+# Admission; no worker or GUI starts. Add --check-runtime for optional ABI/import checks.
 rtk proxy python3 projects/terrain_water/run_terrain_rain_demo.py \
   --study outputs/fluid/demo-local --print-command
 
@@ -55,7 +55,12 @@ not a repository dependency. `--native-python` and `--extension` select existing
 qualified artifacts without installing or rebuilding anything. An interpreter's
 venv path is retained rather than resolving its symlink to base Python.
 
-The prepared default is Mountain / 1024² / 16 m / 16.384 km square, Scenic Macro,
+`--print-command --check-runtime` additionally checks the qualified environment
+and native library imports, using temporary library caches. It is live-preflight
+only, never a solver dispatch or new-build qualification. Replay never imports
+the worker. The ordinary `--print-command` remains identity/admission-only.
+
+Default prepared site: Mountain / 1024² / 16 m / 16.384 km square, Scenic Macro,
 matched B-spline 2x ground/water, correlated terrain, scene-fitted shadows, rough
 water, visible rain and dots/trails. Bank noise remains optional/off. Only the
 full-resolution simulation patch is rendered. Six sites and five power-of-two
@@ -107,6 +112,9 @@ builtin experiments. No silent fallback or water-state transfer occurs.
 
 ## Ownership and integration
 
+The [integration inventory](integration.md) records actual consumers, deliberate
+exclusions, compatibility paths and the builtin backup qualification boundary.
+
 - **Terrain Water:** this frontend and managed launcher/supervisor; preferred
   external terrain experiment and recorded presentation.
 - **Fluid 2.5D:** builtin virtual-pipes/finite-volume experiments and numerical
@@ -124,6 +132,6 @@ paths for compatibility and provenance. The old managed launcher forwards here;
 it does not run a second implementation. Water 3D and Pyro adoption, solver
 research, Terrain default promotion and new media publication are out of scope.
 
-See the retained [behavior reference](../fluid/fluid_25d/current_reference.md),
+See the current [behavior reference](current_reference.md),
 [decision history](../fluid/fluid_25d/development_map.md) and
 [showcase reproduction](../fluid/fluid_25d/presentation_v1.md).

@@ -78,6 +78,9 @@ projects rather than incomplete viewer plumbing.
 
 ## Showcase highlight
 
+Saved landscapes reuse the Terrain foundation also used by
+[Terrain Water](../terrain_water/README.md); this viewer runs no hydraulic solver.
+
 The owner-selected **A: original mountain / saved water / face-on solar arc** is
 the current repository highlight. Its [audition and depth-precision study](water_landscape_v1.md)
 reuse the shared Terrain renderer and prepared captures; this is not a live

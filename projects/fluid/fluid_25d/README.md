@@ -1,204 +1,71 @@
-# Fluid 2.5D — rain, runoff and collection
+# Fluid 2.5D — builtin shallow water
 
-A macro-scale terrain-water demo: rain supplies an unmodified generated heightfield,
-water forms downhill streams, gathers in basins, and retreats when supply stops.
-Cubey renders the changing water surface, wet banks, rain and flow cues.
+Cubey's standalone heightfield-water experiments, using our own Vulkan
+virtual-pipes and opt-in finite-volume solvers. The retained River V0 and
+source/outlet, lake-at-rest, drainage and transport fixtures are the starting
+point for further bounded builtin work—not a claim of equivalent generated
+mountain results.
 
-https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
+The featured external terrain experiment is now the separate
+[Terrain Water project](../../terrain_water/README.md). It owns the managed
+SynxFlow demo and recorded presentation. Both frontends reuse existing source
+components; no numerical method, material or hydraulic state is copied.
 
-[8-second showcase highlight](../../../docs/media/showcase/fluid-25d.mp4) ·
-[Poster](../../../docs/media/showcase/fluid-25d.png) ·
-[Native 1080p master](../../../docs/media/showcase/fluid-25d-master-1080p.mp4) ·
-[Recipe and provenance](../../../docs/media/showcase/fluid-25d-recipe.json) ·
-[Browser package review](http://starship:8787/reports/4d2c9b639957b210136f1a88b49838f84fe81e5edf4a2ad762ac4a94f77b0e19/)
-
-The owner-selected Joining valleys sunset highlight shows streams gathering into
-a lake. Its native 1080p/60 master is retained; the gallery copy is an explicit
-720p downsample. Approximately six physical hours become 5.6 active seconds,
-with animated opening/closing holds and an independent afternoon-to-sunset clock.
-All 72 original water states are held between saves; rain/foam remain visual cues.
-This is recorded timelapse, not a live performance capture. The GitHub player
-serves the exact committed gallery bytes; see [publication receipt](../../../docs/media/showcase/fluid-25d-publication.json)
-and [reproduction and validation](presentation_v1.md).
-
-This showcase selection does not change the interactive Mountain defaults below.
-The [legacy 36-second Mountain rain-off film](../../../docs/media/showcase/fluid-25d-story.mp4)
-and [its V1 recipe](../../../docs/media/showcase/fluid-25d-legacy-v1-recipe.json)
-remain separate study references, not companions to the continuous-rain sunset cut.
-
-The preferred demo runs [SynxFlow](https://github.com/SynxFlow/SynxFlow) in
-a separate CUDA worker, streaming native depth and momentum into Cubey's Vulkan
-renderer. The simpler builtin solvers and
-recorded playback remain explicit alternatives; they are not silent fallbacks.
-
-Read next: [setup](demo_setup_v1.md) · [current behavior and boundaries](current_reference.md) ·
-[decisions and history](development_map.md) · [showcase reproduction](presentation_v1.md).
-“Default” below means the prepared launcher, not the bare builtin application
-or the recorded Joining valleys film.
-
-## Demo at a glance
-
-- Default prepared site: Mountain, 1024² cells at 16 m, a 16.384 km-square patch.
-- Appearance: Scenic Macro, shared source-aligned terrain material, rough water,
-  B-spline 2x banks, scene-fitted shadows, visible rain and dots/trails.
-- Startup: genuinely dry and paused. Start/Space defaults to the measured guided
-  rain response on the qualified Mountain bed; Manual keeps ordinary simulation.
-- Guide: 512 mm/h at requested 60x, rain off at two simulated hours, explanation
-  through six hours. Finishing the guide does **not** pause the solver.
-- Composition: only the selected full-resolution simulation patch. Wider terrain
-  and outer LOD belong to the shared Terrain foundation, not this viewer.
-
-This is deliberately exaggerated demonstration rainfall, not calibrated weather,
-surveyed terrain or research-grade hydrology. The elevation source is 30 m;
-a finer simulation grid interpolates it rather than inventing terrain detail.
-
-## Build and prerequisites
-
-Build the renderer normally:
+## Build and run
 
 ```sh
 rtk proxy cmake --preset release
 rtk proxy cmake --build --preset release --target cubey_project_fluid_25d -j 6
+rtk proxy build/release/projects/fluid/fluid_25d/fluid_25d
 ```
 
-The preferred live demo additionally needs already prepared terrain/climate
-assets, native case inputs, and the separately prepared SynxFlow worker environment
-and qualified service extension. These large/generated artifacts are **not**
-committed here. Normal configure, build, test and launch do not install packages,
-download models, generate terrain, build CUDA, or substitute another solver.
+No SynxFlow, CUDA worker, Python environment or Terrain Diffusion cache is
+required for the authored builtin scene. Bare startup retains virtual-pipes,
+River V0 and the established Original/legacy presentation. Source and outlet
+highlights identify cell regions, not point boundaries. Diagnostic depth,
+velocity, quiver and transport views remain available.
 
-See [explicit setup and preparation](demo_setup_v1.md). A fresh checkout alone
-does not supply the external runtime or captured terrain. Paths can be passed
-explicitly; the native extension must still match the qualified hash.
+`--fluid25d-solver finite-volume` explicitly selects the retained finite-volume
+alternative. Numerical oracles and CFL rejection checks remain authoritative for
+their bounded fixtures; neither solver is promoted as a drop-in equivalent to
+the external terrain setup. This project split adds no new solver research or
+physics. Future work should choose a readable builtin case first, rather than
+reopening the mountain-solver project implicitly.
 
-## Launch
+For headless checks, add `--headless --frames 120 --output outputs/fluid/FRESH.png`.
+Use the dedicated Terrain Water launcher for managed external computation.
+Existing `fluid_25d --fluid25d-recording` / external-session commands remain
+labelled compatibility entries, not silent fallbacks. No producer switch
+transfers existing water.
 
-After explicit preparation, preflight without starting a solver or opening a window:
+## Terrain Water and historical showcase
 
-```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
-  --study outputs/fluid/demo-local --print-command
-```
+The previously published clip belongs to Terrain Water, not this builtin
+solver demonstration:
 
-Then launch locally using the same prepared directory:
+https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
 
-```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
-  --study outputs/fluid/demo-local
-```
+Its Joining valleys sunset film keeps the historical `fluid-25d` media names
+and frozen recipe. No new film, solver equivalence, or publication is implied.
+See [Terrain Water's quickstart](../../terrain_water/README.md),
+[current behavior](../../terrain_water/current_reference.md) and
+[explicit setup](../../terrain_water/demo_setup_v1.md).
 
-Existing maintainer evidence can also be selected explicitly, for example
-`--study outputs/fluid/site-expansion-20261011-jtIA3s`. That dated directory is
-not a repository dependency or an assumed fresh-checkout asset.
+## Development and retained evidence
 
-Explicit worker path overrides:
+The implementation and numerical tests remain under
+`projects/fluid/sim/fluid_25d`. Shared terrain/water rendering lives in the
+Cubey foundation. The dedicated [Terrain demo](../../terrain/README.md) consumes
+saved landscapes without a running solver; it remains separate from live Terrain Water.
 
-```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py \
-  --study outputs/fluid/demo-local \
-  --native-python /path/to/worker-env/bin/python \
-  --extension /path/to/qualified/flood.cpython-311-x86_64-linux-gnu.so
-```
-
-The interpreter path is retained so a venv symlink does not lose its environment.
-A path override does not relax the extension hash guard. A different build needs
-separate qualification.
-
-## Controls and how to read the scene
-
-| Control / observation | Meaning |
-| --- | --- |
-| Start demo / Space | Runs the qualified rain-response guide from dry/paused water. |
-| Manual | Uses your current rain, pace and camera with no scheduled rain shutoff. |
-| Pause / Space while running | Pauses the actual worker; manual solver input exits the guide. |
-| Rain Off | Stops water input, not downhill motion or delayed collection. |
-| Reset water / R | Creates a fresh dry/paused session; retains chosen mode and applied rain/pace. |
-| Site/grid selection + Apply & restart | Replaces the complete session; does not regrid existing water. |
-| Whole patch / Downhill runoff / Basin collection | Overview and fixed observation cameras, not source/drain locations. |
-| Dots, trails and whitewater | Approximate flow cues from native velocity; not conserved dye or native particles. |
-| Water isolation / Flow inspection / raw maps | Diagnostic readings; Scenic color is not a depth palette. |
-
-Rain supplies the entire patch. Streams follow the bed rather than an authored
-source-to-drain channel. The perimeter is open/fall boundary, not a hidden outlet
-marker. Basin water may still grow after Rain Off because upstream water arrives
-later; remaining water is not automatically a certified calm or permanent lake.
-
-Manual rain/pace or camera selection exits the guide and selects Manual.
-Orbit/zoom during an active guide does the same. Guided Start explicitly restores
-512 mm/h; after a rain-off reset, Manual Start needs a rain preset to wet up.
-Live worker mode is continuous; the prepared 20-hour input horizon applies only
-to explicit finite diagnostics. Continuous does not promise unlimited clock precision.
-
-See [managed lifecycle and UI](terrain_demo_ux_v1.md) and
-[measured rain-response evidence](rain_response_v1.md).
-
-## Backends and boundaries
-
-| Backend | What runs | Role |
-| --- | --- | --- |
-| External | Separately licensed SynxFlow CUDA worker; Vulkan viewer imports fields | Preferred terrain-rain demo with acknowledged solver controls. |
-| Recording | Saved native fields; no solver | Repeatable viewing, presentation and headless captures. |
-| Builtin | Cubey's existing GPU virtual-pipes or finite-volume implementation | Simpler standalone alternative and diagnostic scenarios; not equivalent mountain results. |
-
-`--fluid25d-backend builtin|external|recording` makes the producer explicit.
-No water-state transfer or silent fallback occurs between these backends.
-The retained stock-file stream bridge is viewing-only, unlike the controlled
-external service. See [current backend contracts and ownership](current_reference.md#solver-contract-and-ownership).
-
-Replay explicitly, without CUDA computation:
-
-```sh
-rtk proxy python3 projects/fluid/fluid_25d/run_terrain_rain_demo.py replay \
-  --study outputs/fluid/demo-local --recording /path/to/recording.json
-```
-
-This launcher initially holds the final saved state. R rewinds; playback controls
-change viewing time, not recorded hydraulics. Presentation films use actual saved
-states held between saves; a 60 FPS rendered video does not imply 60 Hz hydraulic
-updates, real-time solver speed or native display/scanout FPS.
-
-The builtin alternative needs neither SynxFlow nor Terrain Diffusion:
-
-```sh
-rtk proxy build/release/projects/fluid/fluid_25d/fluid_25d --fluid25d-backend builtin
-```
-
-Its authored diagnostic scenario is retained, not the featured mountain-rain scene.
-
-## Terrain, lighting and performance
-
-The prepared catalogue includes multiple existing Terrain Diffusion landscapes
-and power-of-two grid presets. Missing or changed inputs remain disabled.
-The default grid/presentation is deliberately bounded; requesting a fine 2k grid
-does not guarantee the worker will sustain 60x.
-
-Fixed daylight is the normal entry. Optional shared clear-sky day/night is
-render-only and does not change rainfall or solver time. Clouds are excluded:
-the current shared surface cloud model is not an aerial/cloud-top presentation.
-
-See [terrain presentation](terrain_presentation_v1.md),
-[cached sites](site_expansion_v1.md), [shared environment](shared_environment_v1.md),
-[headless performance](offscreen_perf_v2.md), and [patch-only scope](patch_only_v1.md).
-Hardware-offscreen timing, native GUI interaction and human visual acceptance
-are distinct evidence. Cinematic recording/encoding is not a live performance trial.
-
-Saved water also has an opt-in consumer in the [shared Terrain foundation](../../terrain/README.md).
-That backdrop work retains its own wider terrain/LOD ownership.
-
-## Development and evidence
-
-The [decision map](development_map.md) explains the river-to-rain, solver,
-rendering and terrain-foundation pivots. Current work does not rewrite their
-outcomes. The [development record](README_HISTORY.md) preserves
-the previous full README, numerical experiments, rejected treatments and dated
-reproduction commands. Defaults described there are historical snapshots.
-
-The broader design map is [Fluid Simulation Direction](../../../docs/architecture/fluid-simulation.md).
-Cubey's renderer/client remains MIT; the external worker/build slice is separately
-marked GPL-3.0-only in [its license](external_synxflow/LICENSE). It is not compiled
-into the Vulkan application. See the setup document for dependency provenance.
-The [SynxFlow handoff](external_synxflow/README.md) includes upstream credit,
-locked dependencies, build/qualification instructions and builtin backup commands.
+The [decision map](development_map.md) explains the earlier river-to-rain and
+external-solver pivots; it is not a new builtin backlog.
+[README_HISTORY.md](README_HISTORY.md) preserves the prior full development
+record, and [presentation history](presentation_history.md) retains old recipes.
+The compatibility [behavior reference](current_reference.md) redirects to the
+current Terrain Water owner. The
+[fluid architecture map](../../../docs/architecture/fluid-simulation.md) covers
+the broader simulation family.
 
 <details>
 <summary>Historical section links (previous README anchors)</summary>

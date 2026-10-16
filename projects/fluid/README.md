@@ -13,12 +13,11 @@ Current projects:
 - `water_3d`: 3D APIC/PIC-FLIP liquid simulation foundation on a MAC grid,
   with a long-tank screen-space surface renderer, hose/drain flow, wave forcing,
   optional rain, whitewater, and diagnostics.
-- `fluid_25d`: active macro terrain-water demo with rain, downhill streams and
-  collection, Vulkan rendering, a separately prepared live SynxFlow worker,
-  recorded playback and simpler retained builtin GPU solvers. See its
-  [quickstart and prerequisites](fluid_25d/README.md),
-  [current behavior](fluid_25d/current_reference.md) and
-  [decision history](fluid_25d/development_map.md).
+- `fluid_25d`: standalone builtin Vulkan shallow-water experiments with
+  virtual-pipes and finite-volume solvers. See its [quickstart](fluid_25d/README.md).
+  The featured external terrain-water experience is now the sibling
+  [Terrain Water project](../terrain_water/README.md); shared implementation
+  components and legacy study/native artifact paths remain retained here.
 - `fire_3d`: 3D dense-grid pyro fire simulation.
 - `explosion_3d`: 3D dense-grid pyro explosion simulation.
 

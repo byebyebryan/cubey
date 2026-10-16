@@ -1,5 +1,10 @@
 # Fluid 2.5D — decision and evidence map
 
+Project split: the featured external terrain experience is now
+[Terrain Water](../../terrain_water/README.md). Fluid 2.5D retains the builtin
+shallow-water experiments. Decisions below explain their common lineage, not a
+claim that the builtin solver reproduces the featured external result.
+
 The project grew through several useful but different experiments. This map
 explains the pivots; it is not a new backlog. The [quickstart](README.md) and
 [current reference](current_reference.md) describe what runs now. Historical

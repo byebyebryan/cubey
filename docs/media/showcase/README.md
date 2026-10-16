@@ -7,7 +7,7 @@ these committed MP4s, generated posters, and the manifest are the durable,
 hashable source of truth.
 
 The published gallery order is Ocean, glTF + Terrain, Water 3D, Fire 3D, and
-Fluid 2.5D. Joining valleys sunset is the owner-selected Fluid cut. Each poster
+Terrain Water. Joining valleys sunset is the owner-selected Terrain Water cut. Each poster
 is extracted from its corresponding committed MP4; click one to open the clip:
 
 | Highlight | Poster / committed MP4 |
@@ -16,15 +16,15 @@ is extracted from its corresponding committed MP4; click one to open the clip:
 | glTF + Terrain | [![glTF + Terrain](gltf-terrain.png)](gltf-terrain.mp4) |
 | Water 3D | [![Water 3D](water-3d.png)](water-3d.mp4) |
 | Fire 3D | [![Fire 3D](fire-3d.png)](fire-3d.mp4) |
-| Fluid 2.5D | [![Fluid 2.5D](fluid-25d.png)](fluid-25d.mp4) |
+| Terrain Water | [![Terrain Water](fluid-25d.png)](fluid-25d.mp4) |
 
-Fluid's [native 1080p master](fluid-25d-master-1080p.mp4) shows streams collecting
+Terrain Water's [native 1080p master](fluid-25d-master-1080p.mp4) shows streams collecting
 into a lake under an independent sunset clock. The gallery copy is a Lanczos
 downsample to 720p/60 CRF 24, not a native 720p capture. The formed-lake poster
 comes from six seconds into that copy. Its [complete V2 recipe](fluid-25d-recipe.json)
 records clean-source capture, all 72 exact native states, animated endpoint holds,
 independent clocks and provenance. Encoded 60 FPS is not live solver performance.
-Ocean, Water 3D, Fire 3D and Fluid's media/attachment receipts are unchanged by
+Ocean, Water 3D, Fire 3D and Terrain Water's media/attachment receipts are unchanged by
 the glTF promotion.
 
 The owner-selected **glTF A / original mountain / saved water / face-on solar arc**
@@ -56,7 +56,7 @@ exactly 60 FPS. `manifest.json` records their byte hashes, poster timestamps,
 capture recipes, source revisions, capture-time dirty-diff provenance,
 attachment URLs, and licensing.
 
-Fluid's and glTF's approved CRF 20 / 1080p masters are committed alongside their
+Terrain Water's and glTF's approved CRF 20 / 1080p masters are committed alongside their
 gallery derivatives. Raw native encoder files, optional field archives, comparisons and
 diagnostic media remain ignored editing evidence under `outputs/showcase/`.
 
@@ -75,7 +75,7 @@ is retained. The current [publication receipt](gltf-terrain-publication.json)
 records the solar film's separate native-player URL and byte-identical anonymous
 download, without changing the earlier comments or attachments.
 
-Fluid's exact gallery MP4 was added in a separate
+Terrain Water's exact gallery MP4 was added in a separate
 [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145)
 on that same closed issue, from media package commit `a53316d9`.
 The [publication receipt](fluid-25d-publication.json) records the returned URL,
@@ -88,9 +88,9 @@ attachment mappings and issue body were not replaced.
 | glTF + Terrain | https://github.com/user-attachments/assets/961c41fe-1bdf-4c0d-a936-1c7fad251f2f | [MP4](gltf-terrain.mp4) | [Poster](gltf-terrain.png) |
 | Water 3D | https://github.com/user-attachments/assets/d1267204-7857-40d8-a259-4205605a5a75 | [MP4](water-3d.mp4) | [Poster](water-3d.png) |
 | Fire 3D | https://github.com/user-attachments/assets/50052e2e-21f0-46fe-be94-9d8a93a657d0 | [MP4](fire-3d.mp4) | [Poster](fire-3d.png) |
-| Fluid 2.5D | https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08 | [MP4](fluid-25d.mp4) | [Poster](fluid-25d.png) |
+| Terrain Water | https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08 | [MP4](fluid-25d.mp4) | [Poster](fluid-25d.png) |
 
-Cubey source and the Ocean, Water 3D, Fire 3D, and Fluid 2.5D generated media are MIT
+Cubey source and the Ocean, Water 3D, Fire 3D, and Terrain Water generated media are MIT
 licensed. The glTF + Terrain gallery/native-master MP4s and poster incorporate the Khronos Damaged
 Helmet asset and are a media-only `CC-BY-NC-4.0` exception. They must be
 attributed to ctxwing (2018 rebuild/conversion) and theblueturtle_ (2016

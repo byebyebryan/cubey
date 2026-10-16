@@ -1,10 +1,15 @@
-# Fluid 2.5D — showcase production and publication
+# Terrain Water — showcase production and publication
+
+This retained production guide and its `fluid-25d` media identifiers now belong
+to [Terrain Water](../../terrain_water/README.md). Frozen recipes, commands and
+publication receipts remain unchanged; builtin Fluid 2.5D is a separate demo.
 
 The published highlight is the owner-selected **Joining valleys sunset**:
 eight seconds, streams collecting into a lake, with a lower-angle orbit.
 It is recorded timelapse, not a running solver or a live-performance capture.
-The interactive default remains Mountain; see the [quickstart](README.md) and
-[current reference](current_reference.md).
+The Terrain Water interactive default remains Mountain; see the
+[quickstart](../../terrain_water/README.md) and
+[current reference](../../terrain_water/current_reference.md).
 
 ## Current package
 

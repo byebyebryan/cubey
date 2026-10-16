@@ -63,7 +63,8 @@ motion.
 
 [Project](projects/fluid/fire_3d/README.md) · [Committed MP4](docs/media/showcase/fire-3d.mp4) · [Poster](docs/media/showcase/fire-3d.png)
 
-### Fluid 2.5D — terrain rain
+<a id="fluid-25d--terrain-rain"></a>
+### Terrain Water
 
 https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
 
@@ -73,7 +74,7 @@ recorded [SynxFlow](https://github.com/SynxFlow/SynxFlow) timelapse rendered in 
 approximately six physical hours, an independent artistic solar clock, and exact
 water states held between saves—not a live-FPS claim. This is the owner-selected sunset cut.
 
-[Project](projects/fluid/fluid_25d/README.md) · [8-second gallery MP4](docs/media/showcase/fluid-25d.mp4) · [Poster](docs/media/showcase/fluid-25d.png) · [1080p master](docs/media/showcase/fluid-25d-master-1080p.mp4) · [Recipe and provenance](docs/media/showcase/fluid-25d-recipe.json)
+[Project](projects/terrain_water/README.md) · [8-second gallery MP4](docs/media/showcase/fluid-25d.mp4) · [Poster](docs/media/showcase/fluid-25d.png) · [1080p master](docs/media/showcase/fluid-25d-master-1080p.mp4) · [Recipe and provenance](docs/media/showcase/fluid-25d-recipe.json)
 
 The [showcase package](docs/media/showcase/README.md) preserves the exact media,
 posters, capture recipes, hashes, attachment mapping, and license boundaries.
@@ -93,6 +94,7 @@ and keep domain-specific policy local.
 | [Atmosphere](projects/atmosphere/README.md) | Clear-sky scattering, solar time, twilight, stars, moon, Milky Way, and the shared surface-cloud layer. |
 | [Ocean](projects/ocean/README.md) | Spectral FFT waves, clipmap LOD, persistent whitecaps, curved local horizon, and atmosphere/cloud lighting. |
 | [Terrain](projects/terrain/README.md) | External-raster far backdrop with cached sector geometry, placement, material detail, and self-shadowing. |
+| [Terrain Water](projects/terrain_water/README.md) | Terrain-water integration with live external SynxFlow, recorded fields, and shared terrain/water rendering. |
 | [Planet](projects/planet/README.md) | Orbital-only Earth-like globe with deterministic surface fields and shared celestial composition. |
 | [glTF Viewer](projects/gltf_viewer/README.md) | Staged glTF 2.0 PBR import, animation and deformation, required-use material extensions, procedural or HDR environments, shadows, and optional terrain. |
 | [Fractal 2D](projects/fractal_2d/) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
@@ -109,7 +111,7 @@ than hidden extensions of those products.
 | [Smoke 2D](projects/fluid/smoke_2d/README.md) | GPU dye/velocity field with MacCormack advection, vorticity, and pressure projection. |
 | [Water 2D](projects/fluid/water_2d/README.md) | APIC free-surface liquid with PIC/FLIP fallback, obstacles, hose/drain flow, and surface diagnostics. |
 | [Water 3D](projects/fluid/water_3d/README.md) | APIC liquid, sorted particle-grid transfers, screen-space surface reconstruction, and whitewater. |
-| [Fluid 2.5D](projects/fluid/fluid_25d/README.md) | Terrain rain, downhill streams and basin collection; optional live SynxFlow streaming, recorded playback, and a simpler builtin solver. |
+| [Fluid 2.5D](projects/fluid/fluid_25d/README.md) | Standalone builtin Vulkan shallow-water experiments, virtual-pipes/finite-volume alternatives and numerical diagnostics. |
 | [Fire 3D](projects/fluid/fire_3d/README.md) | Dense volumetric combustion, projection, vorticity, shadow volume, and raymarching. |
 | [Explosion 3D](projects/fluid/explosion_3d/README.md) | The shared pyro solver presented as repeated impulses with explosion-specific timing and controls. |
 

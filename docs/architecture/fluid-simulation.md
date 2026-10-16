@@ -20,15 +20,16 @@ is a small set of focused projects, each with different scaling assumptions:
   camera-relative mesh, GodotOceanWaves-style spectrum/FFT waves, foam/debug
   views, and future hooks for wakes and shorelines. It is rendering-first, not a
   fluid solver.
-- `projects/fluid/fluid_25d`: shallow-water terrain simulation for rivers, flooding,
-  basins, sources, sinks, and heightfield-driven water. Its featured demo now uses
+- `projects/fluid/fluid_25d`: standalone builtin Vulkan shallow-water experiments,
+  including virtual-pipes and finite-volume alternatives and numerical oracles.
+- `projects/terrain_water`: the dedicated terrain-water integration demo. It uses
   unmodified generated mountain terrain and guided rain/runoff/collection, with
   a separately prepared SynxFlow CUDA worker streaming depth/momentum into the
   Vulkan renderer.
   Recorded viewing and builtin virtual-pipes/finite-volume alternatives remain
   explicit. This is a visual demo, not a calibrated hydrology or solver-parity claim.
   Manual mode supports continuous rain; the published Joining valleys film is
-  recorded continuous-rain timelapse. See [current behavior](../../projects/fluid/fluid_25d/current_reference.md)
+  recorded continuous-rain timelapse. See [current behavior](../../projects/terrain_water/current_reference.md)
   and [decision history](../../projects/fluid/fluid_25d/development_map.md).
 - `projects/fluid/fire_3d` and `projects/fluid/explosion_3d`: dense 3D pyro
   baselines with shared 3D storage textures, compute
@@ -63,7 +64,7 @@ Observed real-time patterns:
 
 | Pattern | Examples | Cubey Implication |
 | --- | --- | --- |
-| Terrain/material gameplay | `From Dust`, `Timberborn` | Prioritize `fluid_25d`: heightfield water, sources, sinks, basins, floods. |
+| Terrain/material gameplay | `From Dust`, `Timberborn` | `terrain_water` integrates the featured terrain experience; `fluid_25d` retains bounded builtin experiments. |
 | Pixel/cellular material sim | `Noita` | Interesting for 2D material gameplay, but separate from Navier-Stokes-style grids. |
 | 2D water-routing puzzle sim | `Where's My Water?` | Good reminder that constrained water behavior can be more valuable than general fluid accuracy. |
 | Engine VFX fluids | Unreal Niagara Fluids | Keep sims local, debug-friendly, and bakeable when production needs it. |
@@ -103,7 +104,7 @@ Examples worth deeper later case-study work:
   effect does not need world-scale state.
 - Add detail synthetically with vorticity confinement, turbulence, foam,
   particles, sprites, or shading instead of simulating every scale directly.
-- Prefer GPU-resident state for in-process solvers. Fluid 2.5D deliberately uses
+- Prefer GPU-resident state for in-process solvers. Terrain Water deliberately uses
   bounded CPU-staged field transport for its separate external worker: a measured
   integration tradeoff that avoids a solver port and Vulkan–CUDA interop, not a
   general recommendation to read back every simulation.
@@ -259,8 +260,9 @@ project is worth the complexity.
 1. Keep `projects/ocean` on the promoted experimental base, but use explicit
    feature-isolation controls and repeatable captures to decide which cascade
    slots, foam, terrain/depth, and diagnostics features are worth their cost.
-2. Present and maintain the qualified `fluid_25d` terrain-rain demo, its explicit
-   external/builtin/recording boundary, and shared Terrain saved-water consumer.
+2. Present and maintain `terrain_water`, its explicit external/builtin/recording
+   boundary, and shared Terrain saved-water consumer. Retain `fluid_25d` as the
+   independent builtin shallow-water demo and numerical-study starting point.
    Do not presume a solver port, erosion/hydrology system or ocean shoreline
    coupling is required to improve its presentation.
 3. Continue `smoke_2d` beyond the current Jacobi/RBGS baseline with richer

@@ -1,5 +1,10 @@
 # Terrain
 
+Project boundary: [Terrain Water](../terrain_water/README.md) owns the featured
+live external-solver experiment. This dedicated Terrain demo consumes shared
+terrain and saved-water landscapes without a running solver. The builtin
+shallow-water experiments remain in [Fluid 2.5D](../fluid/fluid_25d/README.md).
+
 `projects/terrain` is Cubey's active fixed-focus far-field terrain backdrop and
 review application. It consumes an external `cubey.terrain.heightfield.v1`
 asset, selects a deterministic source placement, bakes one continuous cached

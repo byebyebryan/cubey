@@ -3,10 +3,10 @@
 Status: design authority. This document defines what the public visual
 showcase should communicate and the capture work that follows. Four root
 highlights were creatively locked and packaged as committed media. The
-remaining seven storyboard cards are future editorial work; GitHub attachment
+remaining eight storyboard cards are future editorial work; GitHub attachment
 publication for the current four is complete and recorded in the [showcase
 manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
-Fluid 2.5D is now the fifth published highlight. Its Joining valleys sunset
+Terrain Water (formerly the featured Fluid 2.5D terrain demo) is the fifth published highlight. Its Joining valleys sunset
 cut is owner-selected through headless cinematic auditions, with a byte-verified
 GitHub native-player attachment. It does not alter the original four clips or select a suite hero.
 
@@ -18,7 +18,7 @@ clip at README size.
 
 ## Scope
 
-The public-facing storyboard set contains these twelve active projects:
+The public-facing storyboard set contains these thirteen active projects:
 
 | Project | Public role | Story family |
 | --- | --- | --- |
@@ -30,7 +30,8 @@ The public-facing storyboard set contains these twelve active projects:
 | `smoke_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_2d` | Supporting project gallery; root inclusion after editorial review | Simulation-led |
 | `water_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
-| `fluid_25d` | Published fifth root-gallery highlight; hero eligibility deferred | Simulation-led |
+| `fluid_25d` | Builtin shallow-water demo; a separate clip remains future editorial work | Simulation-led |
+| `terrain_water` | Published fifth root-gallery highlight; historical media id `fluid-25d`; hero eligibility deferred | Simulation-led |
 | `fire_3d` | Packaged root-gallery highlight; hero eligibility deferred | Simulation-led |
 | `explosion_3d` | Root-gallery candidate; hero eligibility deferred | Simulation-led |
 | `fractal_2d` | Supporting project gallery; root inclusion after editorial review | Camera-led |
@@ -486,7 +487,8 @@ cut; the older recipes and attachments remain historical provenance.
 
 ## Media and provenance contract
 
-### Fluid 2.5D — rain becomes a landscape
+<a id="fluid-25d--rain-becomes-a-landscape"></a>
+### Terrain Water — rain becomes a landscape
 
 - **Takeaway:** Continuous rain on unmodified Joining valleys terrain forms
   streams that gather into a prominent lake/basin collection.
@@ -512,7 +514,7 @@ cut; the older recipes and attachments remain historical provenance.
   a byte-verified GitHub attachment. The original four clips are untouched.
 - **Authority:** [Recipe](media/showcase/fluid-25d-recipe.json),
   [presentation qualification](../projects/fluid/fluid_25d/presentation_v1.md),
-  and [project quickstart](../projects/fluid/fluid_25d/README.md).
+  and [project quickstart](../projects/terrain_water/README.md).
 
 ### Locked root-gallery capture standard
 
@@ -529,7 +531,7 @@ native capture and publication standard:
 - retain the higher-quality capture master beside the publication derivative
   until the committed artifact and provenance record are approved.
 
-Fluid 2.5D retains the same eight-second / 720p60 / CRF 24 gallery contract,
+Terrain Water retains the same eight-second / 720p60 / CRF 24 gallery contract,
 but its owner-approved master is rendered natively at 1920×1080, encoded at
 CRF 20 and committed too. The 720p copy is explicitly derived from that master;
 there is no claim that it was rendered natively at 720p. No sibling clip is changed.

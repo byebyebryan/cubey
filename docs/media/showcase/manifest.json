@@ -206,8 +206,8 @@
     },
     {
       "id": "fluid-25d",
-      "project": "fluid_25d",
-      "title": "Fluid 2.5D",
+      "project": "terrain_water",
+      "title": "Terrain Water",
       "publication": {
         "bytes": 1429568,
         "path": "docs/media/showcase/fluid-25d.mp4",

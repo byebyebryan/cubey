@@ -98,8 +98,9 @@ Active projects:
 - [Smoke 2D](../projects/fluid/smoke_2d/README.md)
 - [Water 2D](../projects/fluid/water_2d/README.md)
 - [Water 3D](../projects/fluid/water_3d/README.md)
-- [Fluid 2.5D terrain-rain demo](../projects/fluid/fluid_25d/README.md)
-  — [current behavior](../projects/fluid/fluid_25d/current_reference.md) and
+- [Fluid 2.5D builtin shallow water](../projects/fluid/fluid_25d/README.md)
+- [Terrain Water](../projects/terrain_water/README.md)
+  — [current behavior](../projects/terrain_water/current_reference.md) and
   [decision/evidence map](../projects/fluid/fluid_25d/development_map.md).
 - [Fire 3D](../projects/fluid/fire_3d/README.md)
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
