@@ -59,7 +59,9 @@ public and private foundation files, including relative includes. CPU layers
 cannot include Vulkan/GLFW, public headers cannot import private source headers,
 and library code cannot import projects or studies. The scene recording adapter
 is the sole direct scene-to-Vulkan exception. Negative fixtures exercise these
-boundaries. `foundation_public_headers` compiles every configured public header
+boundaries. CTest also checks the configured library link graph exported from
+actual CMake targets, so clean includes cannot hide a reversed target link.
+`foundation_public_headers` compiles every configured public header
 alone with its owning target's public compile requirements.
 
 `cubey::render` owns renderer-facing vocabulary:

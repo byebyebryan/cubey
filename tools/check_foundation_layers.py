@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Enforce the foundation's physical include boundaries, including private adapters."""
 import argparse
+import json
 from pathlib import Path
 import re
 
@@ -67,11 +68,29 @@ def check(root):
     return files, errors
 
 
+def check_target_graph(path):
+    graph = json.loads(path.read_text())
+    errors = []
+    if not graph:
+        errors.append("no configured foundation targets found")
+    for owner, dependencies in graph.items():
+        if owner not in ALLOWED:
+            errors.append(f"unknown configured foundation layer {owner}")
+            continue
+        for dependency in dependencies:
+            if dependency != owner and dependency not in ALLOWED[owner]:
+                errors.append(f"configured target has forbidden dependency {owner} -> {dependency}")
+    return errors
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target-graph", type=Path, help="Configured CMake foundation links")
     args = parser.parse_args()
     files, errors = check(args.root)
+    if args.target_graph is not None:
+        errors.extend(check_target_graph(args.target_graph))
     if errors:
         print("\n".join(errors))
         return 1

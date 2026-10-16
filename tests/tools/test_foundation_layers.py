@@ -1,11 +1,15 @@
 """Negative and adapter fixtures for physical foundation include boundaries."""
+import argparse
 from pathlib import Path
 import sys
+import subprocess
 import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
-from check_foundation_layers import check
+from check_foundation_layers import check, check_target_graph
+
+CMAKE = "cmake"
 
 
 class FoundationLayerTests(unittest.TestCase):
@@ -54,6 +58,36 @@ class FoundationLayerTests(unittest.TestCase):
         self.write("projects/demo/implementation.h")
         self.assertTrue(any("product/study" in e for e in check(self.root)[1]))
 
+    def test_actual_cmake_target_links_cannot_reverse_the_layers(self):
+        repository = Path(__file__).resolve().parents[2]
+        for name in ("core", "vulkan", "render"):
+            self.write(f"src/cubey/{name}/example.cpp", f"void {name}_example() {{}}\n")
+        cmake = self.root / "CMakeLists.txt"
+        cmake.write_text(f'''cmake_minimum_required(VERSION 3.21)
+project(LayerFixture LANGUAGES CXX)
+include("{repository.as_posix()}/cmake/CubeyFoundationChecks.cmake")
+foreach(module core vulkan render)
+    add_library(cubey_${{module}} STATIC src/cubey/${{module}}/example.cpp)
+    add_library(cubey::${{module}} ALIAS cubey_${{module}})
+endforeach()
+target_link_libraries(cubey_vulkan PUBLIC cubey::core)
+target_link_libraries(cubey_render PUBLIC cubey::vulkan)
+cubey_write_foundation_target_graph("${{CMAKE_BINARY_DIR}}/targets.json")
+''')
+        def configure():
+            result = subprocess.run([CMAKE, "-S", str(self.root), "-B", str(self.root / "build")],
+                                    capture_output=True, text=True, timeout=20)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        configure()
+        graph = self.root / "build/targets.json"
+        self.assertEqual(check_target_graph(graph), [])
+        # Physical includes stay clean, but this actual configured link is forbidden.
+        cmake.write_text(cmake.read_text().replace("cubey_write_foundation_target_graph(",
+            "target_link_libraries(cubey_core PRIVATE cubey::render)\ncubey_write_foundation_target_graph("))
+        configure()
+        self.assertEqual(check(self.root)[1], [])
+        self.assertTrue(any("core -> render" in e for e in check_target_graph(graph)))
+
     def test_procedural_is_part_of_core_and_new_layers_require_policy(self):
         self.write("include/cubey/procedural/example.h", "#include <cubey/core/math.h>\n")
         self.assertEqual(check(self.root)[1], [])
@@ -62,4 +96,8 @@ class FoundationLayerTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cmake", default=CMAKE)
+    args, remaining = parser.parse_known_args()
+    CMAKE = args.cmake
+    unittest.main(argv=[__file__, *remaining])

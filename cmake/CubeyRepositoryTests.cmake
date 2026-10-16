@@ -40,6 +40,7 @@ endfunction()
 function(cubey_add_repository_tests)
     cubey_add_render_app_policy_test()
     cubey_add_public_header_checks()
+    cubey_write_foundation_target_graph("${CMAKE_BINARY_DIR}/foundation-targets.json")
 
     file(GLOB_RECURSE capture_scripts CONFIGURE_DEPENDS
         "${CMAKE_SOURCE_DIR}/projects/capture*.sh"
@@ -63,9 +64,11 @@ function(cubey_add_repository_tests)
     find_program(CUBEY_REPOSITORY_PYTHON NAMES python3)
     if (CUBEY_REPOSITORY_PYTHON)
         add_test(NAME foundation_layers
-            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_foundation_layers.py")
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_foundation_layers.py"
+                --target-graph "${CMAKE_BINARY_DIR}/foundation-targets.json")
         add_test(NAME foundation_layer_rules
-            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_foundation_layers.py")
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_foundation_layers.py"
+                --cmake "${CMAKE_COMMAND}")
         set_tests_properties(foundation_layers foundation_layer_rules PROPERTIES LABELS "unit;build;policy" TIMEOUT 30)
         add_test(NAME project_layout_hygiene
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_project_layout.py")

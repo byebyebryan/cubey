@@ -27,3 +27,7 @@ Compile configured public headers independently with
 `cmake --build --preset dev --target cubey_header_checks`, or run the
 `foundation_public_headers` CTest group. The header target is excluded from the
 ordinary build and uses each owning library's public usage requirements.
+
+The `foundation_layers` CTest group also checks the configured CMake library
+link graph. To run both checks directly after configuration:
+`python3 -B tools/check_foundation_layers.py --target-graph build/dev/foundation-targets.json`.

@@ -137,7 +137,7 @@ requires exactly the expected diagnostic with `VK_LAYER_VALIDATE_SYNC=1`.
 The cloud lifecycle test runs separately with synchronization validation enabled
 and fails on any validation error. It exercises real GPU work with one/two frame
 slots, temporal invalidation/toggling, target recreation, failed creation/retry
-and shutdown. Missing capabilities fail this gate rather than establishing
+and shutdown. Missing capabilities or an empty test selection fail this gate rather than establishing
 coverage. The ordinary dev suite runs the same lifecycle fixture with standard
 validation; dedicated synchronization tests stay outside ordinary and sanitizer
 presets.
