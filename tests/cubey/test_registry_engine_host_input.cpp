@@ -4,6 +4,9 @@ void test_capture_queue_encodes_png_with_inline_executor();
 void test_capture_queue_propagates_encoding_errors();
 void test_capture_queue_creates_png_parent_directories();
 void test_capture_backlog_drains_at_threshold();
+void test_capture_backlog_consumes_failures_and_finishes_tail();
+void test_capture_queue_video_backpressure_and_wakeups();
+void test_video_encoder_constructor_failure_releases_resources();
 void test_capture_queue_encodes_video_frames_in_order();
 void test_capture_queue_video_encoder_rejects_dimension_mismatch();
 void test_capture_queue_video_encoder_propagates_worker_errors();
@@ -129,6 +132,9 @@ std::span<const TestCase> engine_host_input_test_cases() {
         CUBEY_TEST(test_capture_queue_propagates_encoding_errors),
         CUBEY_TEST(test_capture_queue_creates_png_parent_directories),
         CUBEY_TEST(test_capture_backlog_drains_at_threshold),
+        CUBEY_TEST(test_capture_backlog_consumes_failures_and_finishes_tail),
+        CUBEY_TEST(test_capture_queue_video_backpressure_and_wakeups),
+        CUBEY_TEST(test_video_encoder_constructor_failure_releases_resources),
         CUBEY_TEST(test_capture_queue_encodes_video_frames_in_order),
         CUBEY_TEST(test_capture_queue_video_encoder_rejects_dimension_mismatch),
         CUBEY_TEST(test_capture_queue_video_encoder_propagates_worker_errors),

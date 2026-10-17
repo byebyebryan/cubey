@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -17,8 +18,7 @@ void require(bool condition, const char* message) {
     }
 }
 
-template <typename Fn>
-void require_throws(Fn&& fn, const char* message) {
+template <typename Fn> void require_throws(Fn&& fn, const char* message) {
     try {
         fn();
     } catch (const std::exception&) {
@@ -107,4 +107,29 @@ void test_video_encoder_writes_mp4_when_backend_is_available() {
             "video encoder output should contain an MP4 file type box");
 
     std::filesystem::remove(output);
+}
+
+void test_video_encoder_constructor_failure_releases_resources() {
+    if (!cubey::video_encoding_available())
+        return;
+    const auto root = std::filesystem::temp_directory_path() / "cubey-video-constructor-failure";
+    std::filesystem::remove_all(root);
+    // Leak-enabled sanitizer runs exercise failure after format/codec allocation
+    // and codec opening, before a complete encoder can own normal finalization.
+    for (unsigned attempt = 0; attempt < 4; ++attempt) {
+        require_throws(
+            [&] {
+                static_cast<void>(cubey::create_video_encoder(
+                    {.output_path = root / "missing" / "video.mp4", .width = 32, .height = 24}));
+            },
+            "missing output parent must fail encoder construction");
+        require_throws(
+            [&] {
+                static_cast<void>(cubey::create_video_encoder(
+                    {.output_path = root / "video.mp4",
+                     .width = std::numeric_limits<std::uint32_t>::max() - 1U,
+                     .height = 2}));
+            },
+            "libav integer range must fail after partial allocation");
+    }
 }

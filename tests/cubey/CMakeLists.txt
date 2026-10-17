@@ -145,6 +145,16 @@ add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
 
 add_executable(cubey_capture_media_tests capture_media_tests.cpp)
+add_executable(cubey_capture_failure_tests capture_failure_gpu_tests.cpp)
+target_link_libraries(cubey_capture_failure_tests PRIVATE cubey::host
+    cubey_project_options cubey_project_warnings)
+add_test(NAME capture_failure_gpu COMMAND cubey_capture_failure_tests)
+set_tests_properties(capture_failure_gpu PROPERTIES LABELS "capture;headless;gpu"
+    SKIP_RETURN_CODE 77 TIMEOUT 120 FAIL_REGULAR_EXPRESSION "vulkan validation error")
+add_test(NAME capture_failure_sync COMMAND cubey_capture_failure_tests)
+set_tests_properties(capture_failure_sync PROPERTIES LABELS "capture;headless;gpu;sync_validation"
+    ENVIRONMENT "VK_LAYER_VALIDATE_SYNC=1" TIMEOUT 120
+    FAIL_REGULAR_EXPRESSION "vulkan validation error")
 target_link_libraries(cubey_capture_media_tests PRIVATE cubey::host
     cubey_project_options cubey_project_warnings)
 find_program(CUBEY_CAPTURE_TEST_PYTHON NAMES python3)

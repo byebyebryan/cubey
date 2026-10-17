@@ -149,10 +149,12 @@ It requires a Vulkan device and the Khronos validation layer. A negative-control
 probe records one intentional missing-barrier hazard without submitting it,
 verifies no synchronization diagnostic with `VK_LAYER_VALIDATE_SYNC=0`, then
 requires exactly the expected diagnostic with `VK_LAYER_VALIDATE_SYNC=1`.
-Cloud, host and terrain surface lifecycle fixtures then run with synchronization
-validation enabled and fail on any validation error. They cover one/two frame
+Cloud, host, video-capture and terrain surface lifecycle fixtures then run with
+synchronization validation enabled and fail on any validation error. They cover one/two frame
 slots, temporal invalidation/toggling, admitted work at callback failures,
 transactional resource failure/retry, target recreation and full shutdown/re-enable.
+Video failure coverage also requires the libav encoding backend and exercises
+producer/recording exceptions with pending capture slots in both execution modes.
 Missing capabilities, the probe's Python interpreter or an empty selection fail
 this gate rather than establishing coverage. The ordinary dev suite runs the same
 fixtures with standard validation; dedicated synchronization tests stay outside

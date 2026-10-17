@@ -227,6 +227,15 @@ the terrain scalar/debug exporter, for example, renders each debug view to an
 RGBA buffer and then queues PNG encoding before publishing the manifest.
 `CaptureBacklog` provides the shared bounded-ticket drain policy for multi-file
 exports that want a small encode backlog without open-coding deque management.
+It consumes a ticket before reporting its error; `finish_all()` attempts every
+pending ticket, then rethrows the first failure. Repeating cleanup is safe.
+The video worker admits up to three queued frames within a 64 MiB payload
+budget, allowing at least one frame at larger resolutions. Its active frame and
+the producer's payload are outside that budget. Admission blocks at capacity;
+worker failure or `finish()` wakes blocked producers. Normal shutdown drains
+accepted frames in order, while worker failure abandons the queued tail and
+preserves the original error. Libav handles have an owning resource group that
+also releases partial construction before a complete encoder exists.
 `cubey::ProjectGpuServices` now provides the GPU-side counterpart for RGBA8
 image readback: enqueue a readback ticket, drain the GPU runtime at an explicit
 boundary, then take the completed pixel payload. Headless video capture uses a

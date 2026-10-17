@@ -49,6 +49,30 @@ void check_av(int status, std::string_view action) {
 }
 
 class LibavVideoEncoder final : public VideoEncoder {
+    struct Resources {
+        AVFormatContext* format_ = nullptr;
+        AVCodecContext* codec_context_ = nullptr;
+        AVStream* stream_ = nullptr;
+        AVFrame* frame_ = nullptr;
+        AVPacket* packet_ = nullptr;
+        SwsContext* scaler_ = nullptr;
+
+        ~Resources() {
+            av_packet_free(&packet_);
+            av_frame_free(&frame_);
+            sws_freeContext(scaler_);
+            scaler_ = nullptr;
+            avcodec_free_context(&codec_context_);
+            if (format_ != nullptr) {
+                if (format_->pb != nullptr) {
+                    static_cast<void>(avio_closep(&format_->pb));
+                }
+                avformat_free_context(format_);
+                format_ = nullptr;
+            }
+        }
+    };
+
   public:
     explicit LibavVideoEncoder(VideoEncoderConfig config) : config_(std::move(config)) {
         av_log_set_level(AV_LOG_ERROR);
@@ -63,72 +87,75 @@ class LibavVideoEncoder final : public VideoEncoder {
         }
 
         const std::string output_path = config_.output_path.string();
-        check_av(avformat_alloc_output_context2(&format_, nullptr, nullptr, output_path.c_str()),
+        check_av(avformat_alloc_output_context2(&resources_.format_, nullptr, nullptr,
+                                                output_path.c_str()),
                  "create video output context");
-        if (format_ == nullptr) {
+        if (resources_.format_ == nullptr) {
             throw std::runtime_error("create video output context: unsupported output format");
         }
 
-        stream_ = avformat_new_stream(format_, nullptr);
-        if (stream_ == nullptr) {
+        resources_.stream_ = avformat_new_stream(resources_.format_, nullptr);
+        if (resources_.stream_ == nullptr) {
             throw std::runtime_error("create video stream failed");
         }
 
-        codec_context_ = avcodec_alloc_context3(codec);
-        if (codec_context_ == nullptr) {
+        resources_.codec_context_ = avcodec_alloc_context3(codec);
+        if (resources_.codec_context_ == nullptr) {
             throw std::runtime_error("allocate video codec context failed");
         }
 
         const int width = checked_int(config_.width, "width");
         const int height = checked_int(config_.height, "height");
         const int fps = checked_int(config_.fps, "fps");
-        codec_context_->codec_id = codec->id;
-        codec_context_->codec_type = AVMEDIA_TYPE_VIDEO;
-        codec_context_->width = width;
-        codec_context_->height = height;
-        codec_context_->time_base = AVRational{1, fps};
-        codec_context_->framerate = AVRational{fps, 1};
-        codec_context_->pix_fmt = AV_PIX_FMT_YUV420P;
-        codec_context_->gop_size = static_cast<int>(
+        resources_.codec_context_->codec_id = codec->id;
+        resources_.codec_context_->codec_type = AVMEDIA_TYPE_VIDEO;
+        resources_.codec_context_->width = width;
+        resources_.codec_context_->height = height;
+        resources_.codec_context_->time_base = AVRational{1, fps};
+        resources_.codec_context_->framerate = AVRational{fps, 1};
+        resources_.codec_context_->pix_fmt = AV_PIX_FMT_YUV420P;
+        resources_.codec_context_->gop_size = static_cast<int>(
             std::clamp<std::uint64_t>(static_cast<std::uint64_t>(config_.fps) * 2U, 12U, 240U));
-        codec_context_->max_b_frames = 0;
+        resources_.codec_context_->max_b_frames = 0;
 
-        if ((format_->oformat->flags & AVFMT_GLOBALHEADER) != 0) {
-            codec_context_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+        if ((resources_.format_->oformat->flags & AVFMT_GLOBALHEADER) != 0) {
+            resources_.codec_context_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
         }
-        if (codec->id == AV_CODEC_ID_H264 && codec_context_->priv_data != nullptr) {
-            static_cast<void>(av_opt_set(codec_context_->priv_data, "preset", "veryfast", 0));
-            static_cast<void>(av_opt_set(codec_context_->priv_data, "crf", "18", 0));
+        if (codec->id == AV_CODEC_ID_H264 && resources_.codec_context_->priv_data != nullptr) {
+            static_cast<void>(
+                av_opt_set(resources_.codec_context_->priv_data, "preset", "veryfast", 0));
+            static_cast<void>(av_opt_set(resources_.codec_context_->priv_data, "crf", "18", 0));
         }
 
-        check_av(avcodec_open2(codec_context_, codec, nullptr), "open video encoder");
-        check_av(avcodec_parameters_from_context(stream_->codecpar, codec_context_),
+        check_av(avcodec_open2(resources_.codec_context_, codec, nullptr), "open video encoder");
+        check_av(avcodec_parameters_from_context(resources_.stream_->codecpar,
+                                                 resources_.codec_context_),
                  "copy video stream parameters");
-        stream_->time_base = codec_context_->time_base;
+        resources_.stream_->time_base = resources_.codec_context_->time_base;
 
-        if ((format_->oformat->flags & AVFMT_NOFILE) == 0) {
-            check_av(avio_open(&format_->pb, output_path.c_str(), AVIO_FLAG_WRITE),
+        if ((resources_.format_->oformat->flags & AVFMT_NOFILE) == 0) {
+            check_av(avio_open(&resources_.format_->pb, output_path.c_str(), AVIO_FLAG_WRITE),
                      "open video output file");
         }
-        check_av(avformat_write_header(format_, nullptr), "write video header");
-        frame_ = av_frame_alloc();
-        if (frame_ == nullptr) {
+        check_av(avformat_write_header(resources_.format_, nullptr), "write video header");
+        resources_.frame_ = av_frame_alloc();
+        if (resources_.frame_ == nullptr) {
             throw std::runtime_error("allocate video frame failed");
         }
-        frame_->format = codec_context_->pix_fmt;
-        frame_->width = codec_context_->width;
-        frame_->height = codec_context_->height;
-        check_av(av_frame_get_buffer(frame_, 32), "allocate video frame buffers");
+        resources_.frame_->format = resources_.codec_context_->pix_fmt;
+        resources_.frame_->width = resources_.codec_context_->width;
+        resources_.frame_->height = resources_.codec_context_->height;
+        check_av(av_frame_get_buffer(resources_.frame_, 32), "allocate video frame buffers");
 
-        packet_ = av_packet_alloc();
-        if (packet_ == nullptr) {
+        resources_.packet_ = av_packet_alloc();
+        if (resources_.packet_ == nullptr) {
             throw std::runtime_error("allocate video packet failed");
         }
 
-        scaler_ = sws_getContext(width, height, AV_PIX_FMT_RGBA, width, height,
-                                 codec_context_->pix_fmt, SWS_BICUBIC, nullptr, nullptr,
-                                 nullptr);
-        if (scaler_ == nullptr) {
+        resources_.scaler_ = sws_getContext(width, height, AV_PIX_FMT_RGBA, width, height,
+                                            resources_.codec_context_->pix_fmt, SWS_BICUBIC,
+                                            nullptr, nullptr, nullptr);
+        if (resources_.scaler_ == nullptr) {
             throw std::runtime_error("create RGBA to YUV scaler failed");
         }
     }
@@ -140,7 +167,6 @@ class LibavVideoEncoder final : public VideoEncoder {
             } catch (...) {
             }
         }
-        release();
     }
 
     void write_frame(std::span<const std::uint8_t> rgba8) override {
@@ -148,20 +174,20 @@ class LibavVideoEncoder final : public VideoEncoder {
             throw std::runtime_error("cannot write a video frame after finish");
         }
         validate_video_frame_size(config_.width, config_.height, rgba8.size());
-        check_av(av_frame_make_writable(frame_), "make video frame writable");
+        check_av(av_frame_make_writable(resources_.frame_), "make video frame writable");
 
         const std::uint8_t* source_data[4] = {rgba8.data(), nullptr, nullptr, nullptr};
         const int source_linesize[4] = {
             checked_int(config_.width, "width") * static_cast<int>(sizeof(std::uint32_t)), 0, 0, 0};
-        const int scaled_rows =
-            sws_scale(scaler_, source_data, source_linesize, 0, codec_context_->height,
-                      frame_->data, frame_->linesize);
-        if (scaled_rows != codec_context_->height) {
+        const int scaled_rows = sws_scale(resources_.scaler_, source_data, source_linesize, 0,
+                                          resources_.codec_context_->height,
+                                          resources_.frame_->data, resources_.frame_->linesize);
+        if (scaled_rows != resources_.codec_context_->height) {
             throw std::runtime_error("scale RGBA frame for video failed");
         }
 
-        frame_->pts = next_pts_++;
-        encode(frame_);
+        resources_.frame_->pts = next_pts_++;
+        encode(resources_.frame_);
     }
 
     void finish() override {
@@ -169,15 +195,17 @@ class LibavVideoEncoder final : public VideoEncoder {
             return;
         }
         encode(nullptr);
-        check_av(av_write_trailer(format_), "write video trailer");
+        check_av(av_write_trailer(resources_.format_), "write video trailer");
         finished_ = true;
     }
 
   private:
     void encode(AVFrame* frame) {
-        check_av(avcodec_send_frame(codec_context_, frame), "send frame to video encoder");
+        check_av(avcodec_send_frame(resources_.codec_context_, frame),
+                 "send frame to video encoder");
         while (true) {
-            const int status = avcodec_receive_packet(codec_context_, packet_);
+            const int status =
+                avcodec_receive_packet(resources_.codec_context_, resources_.packet_);
             if (status == AVERROR(EAGAIN) || status == AVERROR_EOF) {
                 return;
             }
@@ -185,37 +213,19 @@ class LibavVideoEncoder final : public VideoEncoder {
             // This encoder emits fixed-rate, single-frame H.264 packets. Some
             // libav versions leave duration unknown; the final MP4 sample then
             // falls outside the track duration/edit list during normal decode.
-            if (packet_->duration == 0)
-                packet_->duration = 1; // Codec time base is exactly 1 / fps.
-            av_packet_rescale_ts(packet_, codec_context_->time_base, stream_->time_base);
-            packet_->stream_index = stream_->index;
-            check_av(av_interleaved_write_frame(format_, packet_), "write encoded video packet");
-            av_packet_unref(packet_);
-        }
-    }
-
-    void release() noexcept {
-        av_packet_free(&packet_);
-        av_frame_free(&frame_);
-        sws_freeContext(scaler_);
-        scaler_ = nullptr;
-        avcodec_free_context(&codec_context_);
-        if (format_ != nullptr) {
-            if ((format_->oformat->flags & AVFMT_NOFILE) == 0 && format_->pb != nullptr) {
-                static_cast<void>(avio_closep(&format_->pb));
-            }
-            avformat_free_context(format_);
-            format_ = nullptr;
+            if (resources_.packet_->duration == 0)
+                resources_.packet_->duration = 1; // Codec time base is exactly 1 / fps.
+            av_packet_rescale_ts(resources_.packet_, resources_.codec_context_->time_base,
+                                 resources_.stream_->time_base);
+            resources_.packet_->stream_index = resources_.stream_->index;
+            check_av(av_interleaved_write_frame(resources_.format_, resources_.packet_),
+                     "write encoded video packet");
+            av_packet_unref(resources_.packet_);
         }
     }
 
     VideoEncoderConfig config_;
-    AVFormatContext* format_ = nullptr;
-    AVCodecContext* codec_context_ = nullptr;
-    AVStream* stream_ = nullptr;
-    AVFrame* frame_ = nullptr;
-    AVPacket* packet_ = nullptr;
-    SwsContext* scaler_ = nullptr;
+    Resources resources_;
     std::int64_t next_pts_ = 0;
     bool finished_ = false;
 };

@@ -75,6 +75,8 @@ class CaptureBacklog {
     }
 
     void enqueue(CaptureTicket ticket);
+    // Consume every pending ticket, then report the first failure. Repeating
+    // cleanup is safe; an already-consumed failed future is never retained.
     void finish_all();
 
   private:
@@ -93,6 +95,9 @@ class QueuedVideoEncoder {
     QueuedVideoEncoder(QueuedVideoEncoder&&) = delete;
     QueuedVideoEncoder& operator=(QueuedVideoEncoder&&) = delete;
 
+    // Blocks at the queue budget (up to three queued frames / 64 MiB, with
+    // room for at least one frame). Worker failure or finish wakes producers.
+    // The worker's active frame and the caller's payload are outside the budget.
     void enqueue_frame(VideoFrameEncodeRequest request);
     void finish();
 

@@ -3,9 +3,11 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <future>
 #include <memory>
 #include <span>
 #include <stdexcept>
@@ -39,6 +41,7 @@ struct FakeVideoEncoderState {
     std::vector<std::vector<std::uint8_t>> frames;
     int finish_count = 0;
     bool fail_on_write = false;
+    bool fail_on_finish = false;
 };
 
 class FakeVideoEncoder final : public cubey::VideoEncoder {
@@ -55,6 +58,8 @@ class FakeVideoEncoder final : public cubey::VideoEncoder {
 
     void finish() override {
         ++state_->finish_count;
+        if (state_->fail_on_finish)
+            throw std::runtime_error("fake video finish failed");
     }
 
   private:
@@ -160,9 +165,143 @@ void test_capture_backlog_drains_at_threshold() {
     std::filesystem::remove_all(output_root);
 }
 
+void test_capture_backlog_consumes_failures_and_finishes_tail() {
+    for (unsigned failed = 0; failed < 3; ++failed) {
+        unsigned visited = 0;
+        cubey::CaptureBacklog backlog(4);
+        for (unsigned index = 0; index < 3; ++index) {
+            auto job = std::async(std::launch::deferred, [&, index] {
+                ++visited;
+                if (index == failed)
+                    throw std::runtime_error("original capture failure");
+                if (failed == 0 && index == 2)
+                    throw std::runtime_error("later capture failure");
+            });
+            backlog.enqueue({{}, cubey::jobs::JobHandle<void>(std::move(job))});
+        }
+        bool original = false;
+        try {
+            backlog.finish_all();
+        } catch (const std::runtime_error& error) {
+            original = std::string(error.what()) == "original capture failure";
+        }
+        require(original && visited == 3 && backlog.pending_count() == 0,
+                "failed drain must consume every ticket and preserve its first error");
+        backlog.finish_all();
+    }
+    cubey::CaptureBacklog backlog(2);
+    unsigned visited = 0;
+    auto failed = std::async(std::launch::deferred, [] { throw std::runtime_error("threshold"); });
+    backlog.enqueue({{}, cubey::jobs::JobHandle<void>(std::move(failed))});
+    auto tail = std::async(std::launch::deferred, [&] { ++visited; });
+    bool original = false;
+    try {
+        backlog.enqueue({{}, cubey::jobs::JobHandle<void>(std::move(tail))});
+    } catch (const std::runtime_error& error) {
+        original = std::string(error.what()) == "threshold";
+    }
+    backlog.finish_all();
+    require(original && visited == 1 && backlog.pending_count() == 0,
+            "threshold failure must leave only unconsumed tickets for cleanup");
+}
+
+namespace {
+struct BlockedEncoderState {
+    std::promise<void> entered, release;
+    std::vector<std::uint8_t> order;
+    unsigned finishes = 0;
+    bool fail = false;
+};
+
+class BlockedEncoder final : public cubey::VideoEncoder {
+  public:
+    explicit BlockedEncoder(std::shared_ptr<BlockedEncoderState> state)
+        : state_(std::move(state)), release_(state_->release.get_future()) {}
+    void write_frame(std::span<const std::uint8_t> frame) override {
+        if (state_->order.empty()) {
+            state_->entered.set_value();
+            release_.wait();
+        }
+        if (state_->fail)
+            throw std::runtime_error("blocked encoder failure");
+        state_->order.push_back(frame.front());
+    }
+    void finish() override {
+        ++state_->finishes;
+    }
+
+  private:
+    std::shared_ptr<BlockedEncoderState> state_;
+    std::future<void> release_;
+};
+
+void exercise_bounded_encoder(bool fail, bool close) {
+    using namespace std::chrono_literals;
+    auto state = std::make_shared<BlockedEncoderState>();
+    state->fail = fail;
+    cubey::QueuedVideoEncoder encoder(std::make_unique<BlockedEncoder>(state), 1, 1);
+    const auto enqueue = [&](std::uint8_t identity) {
+        encoder.enqueue_frame({1, 1, {identity, 0, 0, 255}});
+    };
+    enqueue(0);
+    state->entered.get_future().wait();
+    for (std::uint8_t index = 1; index <= 3; ++index)
+        enqueue(index);
+    std::promise<void> started;
+    auto producer = std::async(std::launch::async, [&] {
+        started.set_value();
+        try {
+            enqueue(4);
+            return std::string{};
+        } catch (const std::exception& error) {
+            return std::string(error.what());
+        }
+    });
+    started.get_future().wait();
+    const bool blocked = producer.wait_for(100ms) == std::future_status::timeout;
+    std::future<void> finishing;
+    bool woke_on_close = true;
+    if (close) {
+        finishing = std::async(std::launch::async, [&] { encoder.finish(); });
+        woke_on_close = producer.wait_for(2s) == std::future_status::ready;
+    }
+    // Always release the fake worker before checking assertions or destroying
+    // futures, including on the old unbounded implementation.
+    state->release.set_value();
+    const auto error = producer.get();
+    if (close)
+        finishing.get();
+    bool failed = false;
+    try {
+        encoder.finish();
+    } catch (const std::runtime_error& original) {
+        failed = std::string(original.what()) == "blocked encoder failure";
+    }
+    require(blocked, "video producer must block at the queue budget");
+    require(woke_on_close, "finish must wake producers before the encoder completes");
+    if (fail) {
+        require(error == "blocked encoder failure" && failed && state->order.empty(),
+                "worker failure must wake blocked admission and preserve its original error");
+    } else {
+        require(!failed && state->finishes == 1,
+                "repeated finish must finalize the underlying encoder once");
+        require(close ? error == "cannot enqueue video frames after finish" : error.empty(),
+                "admission must report close or resume after capacity is available");
+        const std::vector<std::uint8_t> expected = close ? std::vector<std::uint8_t>{0, 1, 2, 3}
+                                                         : std::vector<std::uint8_t>{0, 1, 2, 3, 4};
+        require(state->order == expected, "bounded encoding must retain accepted frame order");
+    }
+}
+} // namespace
+
+void test_capture_queue_video_backpressure_and_wakeups() {
+    exercise_bounded_encoder(false, false);
+    exercise_bounded_encoder(true, false);
+    exercise_bounded_encoder(false, true);
+}
+
 void test_capture_queue_encodes_video_frames_in_order() {
-    const std::shared_ptr<FakeVideoEncoderState> state =
-        std::make_shared<FakeVideoEncoderState>();
+    const std::shared_ptr<FakeVideoEncoderState> state = std::make_shared<FakeVideoEncoderState>();
     cubey::QueuedVideoEncoder encoder(std::make_unique<FakeVideoEncoder>(state), 2, 1);
 
     const std::vector<std::uint8_t> first{255, 0, 0, 255, 0, 255, 0, 255};
@@ -187,8 +326,7 @@ void test_capture_queue_encodes_video_frames_in_order() {
 }
 
 void test_capture_queue_video_encoder_rejects_dimension_mismatch() {
-    const std::shared_ptr<FakeVideoEncoderState> state =
-        std::make_shared<FakeVideoEncoderState>();
+    const std::shared_ptr<FakeVideoEncoderState> state = std::make_shared<FakeVideoEncoderState>();
     cubey::QueuedVideoEncoder encoder(std::make_unique<FakeVideoEncoder>(state), 2, 1);
 
     bool rejected = false;
@@ -207,22 +345,27 @@ void test_capture_queue_video_encoder_rejects_dimension_mismatch() {
 }
 
 void test_capture_queue_video_encoder_propagates_worker_errors() {
-    const std::shared_ptr<FakeVideoEncoderState> state =
-        std::make_shared<FakeVideoEncoderState>();
-    state->fail_on_write = true;
-    cubey::QueuedVideoEncoder encoder(std::make_unique<FakeVideoEncoder>(state), 1, 1);
-    encoder.enqueue_frame({
-        .width = 1,
-        .height = 1,
-        .rgba8 = {255, 0, 0, 255},
-    });
+    for (const bool fail_on_write : {false, true}) {
+        const std::shared_ptr<FakeVideoEncoderState> state =
+            std::make_shared<FakeVideoEncoderState>();
+        state->fail_on_write = fail_on_write;
+        state->fail_on_finish = true;
+        cubey::QueuedVideoEncoder encoder(std::make_unique<FakeVideoEncoder>(state), 1, 1);
+        encoder.enqueue_frame({
+            .width = 1,
+            .height = 1,
+            .rgba8 = {255, 0, 0, 255},
+        });
 
-    bool propagated = false;
-    try {
-        encoder.finish();
-    } catch (const std::runtime_error& error) {
-        propagated = std::string{error.what()} == "fake video write failed";
+        bool propagated = false;
+        try {
+            encoder.finish();
+        } catch (const std::runtime_error& error) {
+            propagated = std::string{error.what()} ==
+                         (fail_on_write ? "fake video write failed" : "fake video finish failed");
+        }
+
+        require(propagated, "queued video encoder should propagate worker failures");
+        require(state->finish_count == 1, "worker must attempt finalization exactly once");
     }
-
-    require(propagated, "queued video encoder should propagate worker failures");
 }
