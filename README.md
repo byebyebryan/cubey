@@ -19,7 +19,7 @@ Five highlights show the workbench's range. Each highlight is an
 independent eight-second, 720p/60 FPS
 project story rather than a segment from a combined reel. All five native
 players and their poster fallbacks are backed by committed media and reproducible
-recipes. Fluid and glTF also retain their native 1080p masters below.
+recipes. Terrain Water and glTF also retain their native 1080p masters below.
 
 ### Ocean
 

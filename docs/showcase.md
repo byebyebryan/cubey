@@ -36,8 +36,8 @@ The public-facing storyboard set contains these twelve active projects:
 | `fractal_2d` | Supporting project gallery; root inclusion after editorial review | Camera-led |
 
 “Root-gallery candidate” describes editorial eligibility, not a final ordering
-or hero decision. The four packaged highlights are ordered Ocean, glTF +
-Terrain, Water 3D, and Fire 3D; hero selection remains deferred. Every project
+or hero decision. The five packaged highlights are ordered Ocean, glTF +
+Terrain, Water 3D, Fire 3D, and Terrain Water; hero selection remains deferred. Every project
 may retain a project-local clip even when it does not enter the first root
 gallery.
 

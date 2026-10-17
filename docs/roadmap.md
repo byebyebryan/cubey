@@ -56,9 +56,10 @@ today's five-highlight package or select a suite hero.
 
 ## Next work and deferred boundaries
 
-The documentation foundation pass is consolidating current authority,
-historical context, navigation and mechanical checks. New engine abstractions
-still need repeated consumer pressure:
+The [documentation foundation pass](evidence/foundation-2026-10/README.md) is
+complete: current authority, historical context, navigation and mechanical
+checks have explicit owners. New engine abstractions still need repeated
+consumer pressure:
 
 - Use the shared dynamic environment handoff for future atmosphere/PBR
   consumers. Expand render-graph or command ownership only around repeated

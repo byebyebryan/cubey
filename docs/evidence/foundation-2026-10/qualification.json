@@ -1,0 +1,149 @@
+{
+  "schema": "cubey.foundation-qualification.v1",
+  "recorded_at_utc": "2026-10-17T18:50:38.640218+00:00",
+  "tooling_revision": "87f5a932914099c6b0ea684fa3bfc61e96b940a7",
+  "unchanged_runtime_revision": "86885a4d11acb40c5b19937ef5606aaa0e4e1671",
+  "documentation_revision": "Git commit containing this qualification record; final changes after tooling_revision are documentation and this record.",
+  "environment": {
+    "platform": "Linux-7.2.9-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.14.8",
+    "cmake": "cmake version 4.4.4",
+    "recipe_vulkan_icd": "/nonexistent/cubey-docs-no-icd.json",
+    "recipe_display": "empty DISPLAY and WAYLAND_DISPLAY"
+  },
+  "documentation_validation": {
+    "docs": {
+      "command": [
+        "ctest",
+        "--preset",
+        "dev-docs"
+      ],
+      "groups": 9,
+      "failures": 0,
+      "skips": 0,
+      "native_recipe_cases": 99,
+      "negative_fixture_cases": 11
+    },
+    "foundation": {
+      "command": [
+        "ctest",
+        "--preset",
+        "dev-foundation"
+      ],
+      "groups": 8,
+      "failures": 0,
+      "skips": 0,
+      "cmake_app_fixture_cases": 3
+    },
+    "navigation": "All tracked owned Markdown reachable from README.md; no missing current local links. Sealed historical link exceptions remain protected separately.",
+    "current_media": {
+      "entries": 5,
+      "files": 12,
+      "checks": [
+        "size",
+        "SHA-256",
+        "PNG dimensions",
+        "MP4 atom bounds and fast-start",
+        "native-player mapping/order"
+      ]
+    },
+    "configure_variants": {
+      "projects-only": {
+        "configured": true,
+        "static_policy_passed": true,
+        "configured_apps": 13,
+        "selected_native_recipes": 98
+      },
+      "examples-only": {
+        "configured": true,
+        "static_policy_passed": true,
+        "configured_apps": 7,
+        "selected_native_recipes": 1
+      },
+      "cloud-only": {
+        "configured": true,
+        "static_policy_passed": true,
+        "configured_apps": 1,
+        "selected_native_recipes": 31
+      },
+      "planet-only": {
+        "configured": true,
+        "static_policy_passed": true,
+        "configured_apps": 1,
+        "selected_native_recipes": 3
+      },
+      "terrain-studies-only": {
+        "configured": true,
+        "static_policy_passed": true,
+        "configured_apps": 0,
+        "selected_native_recipes": 0
+      },
+      "core-only": {
+        "configured": true,
+        "static_policy_passed": true,
+        "configured_apps": 0,
+        "selected_native_recipes": 0
+      },
+      "hostless": {
+        "configured": true,
+        "static_policy_passed": null,
+        "configured_apps": null,
+        "selected_native_recipes": null
+      }
+    }
+  },
+  "inherited_runtime_qualification": [
+    {
+      "source": "d713512b4b7dcc3ac99addd550043b7d9fdaea4f",
+      "closed_by": "c057139212cd96a5667f00f8820792d534352809",
+      "receipt": "outputs/foundation-loop/20261016-capture-fluid/closure.json",
+      "dev_groups": 252,
+      "virtual_windowed_groups": 19,
+      "sync_groups": 6,
+      "scope": "Full qualification at the named runtime source; not rerun by this documentation pass."
+    },
+    {
+      "source": "86885a4d11acb40c5b19937ef5606aaa0e4e1671",
+      "receipt": "outputs/repo-review/20261017-final/review.json",
+      "focused_groups": 13,
+      "virtual_windowed_groups": 19,
+      "sync_groups": 6,
+      "scope": "Focused Ocean owner-order correction; includes owner sanitizers and retained capture comparisons, not a full dev rerun."
+    }
+  ],
+  "preserved_sha256": {
+    "docs/media/showcase/README.md": "4fe981568e3da63957883f6a8b19640b8237e8ccc50f18971c6eb5fbb721e308",
+    "docs/media/showcase/fire-3d.mp4": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
+    "docs/media/showcase/fire-3d.png": "fbd8b576ade4de1efcb09cf221a4c64a3432b2ba242d94e3752fa193eed34e04",
+    "docs/media/showcase/fluid-25d-legacy-v1-recipe.json": "630259043748fdb275d8ffc9cd3dceaf4cb67242f3065348f5e00e3abe8d003e",
+    "docs/media/showcase/fluid-25d-master-1080p.mp4": "f35e77792d96e640bcefafad9af2edc2e47b14e62f19fcd67c26555256e76576",
+    "docs/media/showcase/fluid-25d-publication.json": "b1b2b9f8cfc4de9678bc70a90d2519e2bcf50a0d53cb61ad613961bf497f90b4",
+    "docs/media/showcase/fluid-25d-recipe.json": "d52f8045526aefb05c75777efeefee15298c95916882995add9837c6faf80d67",
+    "docs/media/showcase/fluid-25d-story.mp4": "54fcfe775a46637520eb596f6a02619da3781b5c89f2e588a405348fa7f59399",
+    "docs/media/showcase/fluid-25d-story.png": "c431e4bd61f9445859e947b8114728ca9463aa31c17637dda7fee64c020219d0",
+    "docs/media/showcase/fluid-25d.mp4": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+    "docs/media/showcase/fluid-25d.png": "d7dd733c50f3eda0289915415071cbbb1e0588b1fa7d1eb312901701558b4953",
+    "docs/media/showcase/gltf-terrain-legacy-v1-recipe.json": "05eddbef22a35a565aa4c1ffd0e9e3b93505e242f0a7deeac058851876a31935",
+    "docs/media/showcase/gltf-terrain-master-1080p.mp4": "847f2e2b7461ffe88f4427f3e8a54c0e1c2942d32af4e71f3d465bb8e3a5000c",
+    "docs/media/showcase/gltf-terrain-morning-v1-publication.json": "c370a0dbe314da0f46262e94f9bbb82eb6a7f286a9a827cb0c79865f815f89bc",
+    "docs/media/showcase/gltf-terrain-morning-v1-recipe.json": "bee7d8d9e060d2ae4de0fefac600e25a999bec432fbee9e72bb943aabdb62dbb",
+    "docs/media/showcase/gltf-terrain-publication.json": "de35a23e0405707e30ced43fd1470d0bfd6f0c306e210a55a1fcfc3f410e777f",
+    "docs/media/showcase/gltf-terrain-recipe.json": "1c2e3024fd5c370e07d0607fc3a8a6af32f759bdca4726504dc3ae0fa09c6763",
+    "docs/media/showcase/gltf-terrain.mp4": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909",
+    "docs/media/showcase/gltf-terrain.png": "959f212390691e12799739cc3fb19ba8b04186e2905faef974b651677e95b831",
+    "docs/media/showcase/manifest.json": "ba43aa10dbab0f2a3e21091f58f541fa6b6a95949ab525b5ba7237e230821ac4",
+    "docs/media/showcase/ocean.mp4": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
+    "docs/media/showcase/ocean.png": "40605723e7c51dc99f4c184442fdea2ad2cc50ee4d7edf6139e171cc78a10e0a",
+    "docs/media/showcase/water-3d.mp4": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
+    "docs/media/showcase/water-3d.png": "22688a05fcefec6abdee2706ac9f465a3cdef5fedfd904f56cfeaded86fc5376",
+    "studies/fluid_25d/harness/README_HISTORY.md": "126578a5596541e608f1d6588b4994ef3eade742147d62ddfa7c703f0fca290c",
+    "studies/fluid_25d/harness/presentation_history.md": "a2f133f1134aa3671b8648a6faf527629820c5349b12e4b0811f77f321e54ace",
+    "studies/relocations.json": "f1499f5b991018326752f6d83cb034264a039b05034a720442f8b9244693af62"
+  },
+  "limits": [
+    "No runtime C++/header/shader, numerical-oracle or external-worker dependency change.",
+    "No new full runtime, GPU/sanitizer, external-worker, native GUI or creative visual qualification.",
+    "Existing media, recipes, attachments and historical receipts were preserved, not regenerated or republished.",
+    "Local ignored receipts complement this tracked record and are not checkout prerequisites."
+  ]
+}
