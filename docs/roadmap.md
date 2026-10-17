@@ -771,10 +771,11 @@ Project checkpoints:
   fire/explosion products. Each has windowed interaction, deterministic
   headless PNG/MP4 output, project-owned solver policy, and graph-declared
   compute/render boundaries where that contract is useful.
-- Fluid 2.5D is now an active terrain-water demo, not a design-only River V0
-  CPU contract. Its external worker, recorded viewer and builtin GPU solvers
-  have distinct capabilities. The preferred Mountain demo has guided and
-  Manual entry, continuous rain/runoff/collection and explicit finite horizon.
+- Terrain Water owns the external SynxFlow worker, recorded terrain-water
+  viewer, guided/Manual Mountain demo, continuous rain/runoff/collection and
+  explicit finite horizon. Fluid 2.5D is the separate builtin Vulkan
+  shallow-water demo, retaining River V0 and the numerical experiments. Its
+  compatibility external/replay paths do not change that product ownership.
 - `projects/atmosphere` now hosts the active surface cloud/weather layer.
   The shared `CloudLayerRuntime` keeps the texture-backed coherent density path,
   generated 3D base/detail noise, generated 2D weather map, spherical-shell

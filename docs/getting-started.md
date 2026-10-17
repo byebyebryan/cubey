@@ -262,9 +262,11 @@ updates and two in-flight render slots, and writes no PNG/MP4. `--render-fps 0`
 is unpaced; `60` deliberately leaves GPU time available for other work. The
 same `--run-seconds` and `--render-fps` options can bound and pace a native
 window. Wall-time bounds exclude resource setup. Existing deterministic
-PNG/video capture behavior is unchanged. Fluid 2.5D's external-session path
-polls and renders advancing solver fields in this mode; other project-specific
-capture/update policies still belong to their applications.
+PNG/video capture behavior is unchanged. [Terrain Water](../projects/terrain_water/README.md)
+polls and renders advancing external-session fields in this mode. The older
+Fluid 2.5D external/replay entry remains compatibility-only; the command above
+uses its standalone builtin solver. Project-specific capture/update policies
+belong to their applications.
 
 ## Configuration
 

@@ -104,6 +104,11 @@ Active projects:
 - [Explosion 3D](../projects/fluid/explosion_3d/README.md)
 - [glTF Viewer](../projects/gltf_viewer/README.md)
 - [Ocean](../projects/ocean/README.md)
+- [Fractal 2D](../projects/fractal_2d/README.md)
+
+Internal validation:
+
+- [PBR furnace](../projects/pbr_furnace/README.md): white-furnace validation, outside the public gallery.
 
 Opt-in reference studies:
 

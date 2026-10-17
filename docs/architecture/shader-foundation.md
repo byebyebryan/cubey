@@ -41,10 +41,11 @@ or have more than one active consumer:
 - `debug.glsl`: false-color and scalar visualization helpers.
 - `view.glsl`: screen-space, view-ray, and depth/fade helpers.
 
-Project-local shader helpers should stay beside the entry shader when the code
-is domain-specific, binding-specific, or still changing quickly. Good examples
-are ocean foam logic, ocean far-field material response, planet surface field
-evaluation, and volume diagnostic modes.
+Helpers stay beside the entry shader and its owning renderer when the code is
+domain-specific, binding-specific, or still changing quickly. Ocean foam and
+far-field material logic live with the shared Ocean surface renderer under
+`shaders/cubey/ocean`; paused Planet surface evaluation and Fluid volume
+diagnostics stay with their respective study or simulation.
 
 ## Current Checkpoint
 
@@ -57,8 +58,8 @@ evaluation, and volume diagnostic modes.
 - Core source tests audit the active shared shader packages by resolving their
   GLSL `#include` paths and checking that the CMake dependency packages track
   those includes.
-- `projects/ocean/shaders/ocean.frag` is now the entry point for layout,
-  constants, cascade sampling, and final composition. Project-local helpers hold
+- `shaders/cubey/ocean/ocean.frag` is the shared surface entry point for layout,
+  constants, cascade sampling, and final composition. Adjacent helpers hold
   the bulk of the material logic:
   `ocean_shading.glsl`, `ocean_far_field.glsl`, `ocean_foam.glsl`, and
   `ocean_debug.glsl`.
@@ -87,7 +88,7 @@ The current oversized shader pressure points are:
 - `shaders/cubey/atmosphere/atmosphere.frag`: active, now about 5 KB after the
   split. Keep it focused on declarations, includes, ray classification, and
   final composition.
-- `projects/ocean/shaders/ocean.frag`: active, already split into project-local
+- `shaders/cubey/ocean/ocean.frag`: active, already split into shared surface
   helpers. Keep the entry shader focused on declarations, cascade sampling, and
   final composition.
 - Retired cloud prototypes are historical evidence; do not recreate or refactor
