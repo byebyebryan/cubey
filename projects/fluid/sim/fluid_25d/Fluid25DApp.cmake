@@ -11,6 +11,11 @@ function(cubey_add_fluid25d_app target output entrypoint)
         SHADER_DEFINE CUBEY_FLUID_25D_SHADER_DIR
         SOURCES
             "${shared_source_root}/fluid_25d_app.cpp"
+            "${shared_source_root}/fluid_25d_builtin_boundary.cpp"
+            "${shared_source_root}/fluid_25d_builtin_presentation.cpp"
+            "${shared_source_root}/fluid_25d_builtin_render.cpp"
+            "${shared_source_root}/fluid_25d_builtin_diagnostics.cpp"
+            "${shared_source_root}/fluid_25d_builtin_validation.cpp"
             "${shared_source_root}/fluid_25d_bank_controls.cpp"
             "${shared_source_root}/fluid_25d_bank_comparison.cpp"
             "${shared_source_root}/fluid_25d_backend_adapters.cpp"

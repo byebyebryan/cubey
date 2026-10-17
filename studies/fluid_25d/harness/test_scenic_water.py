@@ -54,7 +54,10 @@ class ScenicWaterTests(unittest.TestCase):
 
     def test_one_water_fragment_and_pipeline_pair(self):
         root = review.ref.ROOT
-        cmake = (root / review.LOCAL / "CMakeLists.txt").read_text()
+        cmake_sources = [root / review.LOCAL / "CMakeLists.txt",
+                         root / review.SIM / "Fluid25DApp.cmake"]
+        cmake_sources += sorted((root / "projects/fluid/tests/fluid_25d").glob("*.cmake"))
+        cmake = "\n".join(path.read_text() for path in cmake_sources)
         wrapper = (root / review.SIM / "fluid_25d_scenic.cpp").read_text()
         cpp = (root / "src/cubey/render/terrain_surface_patch.cpp").read_text()
         self.assertNotIn("scenic_water_study", cmake)

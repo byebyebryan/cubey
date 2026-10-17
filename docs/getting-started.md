@@ -86,17 +86,30 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-`dev` includes headless tests but excludes windowed and dedicated
-synchronization-validation tests. Headless PNG and video tests deliberately run
-without desktop-session environment
-variables, so ordinary local and SSH validation does not depend on X11,
-Wayland, or SDDM. A usable Vulkan device is still required. Cloud, host and terrain
-lifecycle fixtures also require the Khronos validation layer.
+`dev` includes headless tests but excludes windowed, dedicated
+synchronization-validation and alternative Fluid domain tests. Headless PNG and
+video tests deliberately run without desktop-session environment variables, so
+ordinary local and SSH validation does not depend on X11, Wayland, or SDDM. A
+usable Vulkan device is still required. Cloud, host, terrain and Fluid lifecycle
+fixtures also require the Khronos validation layer.
 
 For a quick core/build/policy check, use `ctest --preset dev-foundation`. It runs
 the CPU core suite, standalone-header build, dependency guards, shader rebuild
 fixtures and repository layout checks. Lifecycle and consumer GPU checks remain
 in the full `dev` and dedicated synchronization presets.
+
+`ctest --preset dev-fluid-domains --parallel 4` selects Fluid's CPU contracts by
+configuration/backend, scenarios, diagnostics, numerics, tracer and presentation.
+These six groups partition the same 64 cases as the `fluid_25d_tests` aggregate,
+which remains the default `dev` entry point with its original case order.
+For a single domain:
+
+```bash
+build/dev/projects/fluid/fluid_25d/cubey_project_fluid_25d_tests --domain numerics
+```
+
+Unknown or empty domains fail. The default `asan` lane also runs the aggregate
+once rather than repeating the domain selectors.
 
 `ctest --preset dev-capture-media` requires libav, `ffmpeg`, `ffprobe`, Python3
 and a Vulkan device with validation. It decodes direct-encoder and inline/threaded

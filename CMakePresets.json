@@ -160,7 +160,7 @@
       "configurePreset": "dev",
       "filter": {
         "exclude": {
-          "label": "^(windowed|sync_validation)$"
+          "label": "^(windowed|sync_validation|fluid_domain)$"
         }
       },
       "output": {
@@ -194,7 +194,7 @@
       },
       "filter": {
         "exclude": {
-          "label": "^(windowed|gpu|artifact)$"
+          "label": "^(windowed|gpu|artifact|fluid_domain)$"
         }
       },
       "output": {
@@ -243,7 +243,7 @@
       "configurePreset": "dev-terrain-studies",
       "filter": {
         "exclude": {
-          "label": "^(windowed|sync_validation)$"
+          "label": "^(windowed|sync_validation|fluid_domain)$"
         }
       },
       "output": {
@@ -323,6 +323,23 @@
       "filter": {
         "include": {
           "name": "^capture_media_"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "dev-fluid-domains",
+      "displayName": "Fluid CPU domain contracts",
+      "description": "Alternative domain selectors over the same 64 cases as fluid_25d_tests.",
+      "configurePreset": "dev",
+      "filter": {
+        "include": {
+          "label": "^fluid_domain$"
         }
       },
       "output": {
