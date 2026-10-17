@@ -29,7 +29,75 @@ namespace cubey::projects::fluid::pyro_3d {
 inline constexpr VkFormat kPyro3DSceneColorFormat = VK_FORMAT_R16G16B16A16_SFLOAT;
 inline constexpr VkFormat kPyro3DSceneDepthFormat = VK_FORMAT_D32_SFLOAT;
 
-class Pyro3DGpuResources {
+namespace gpu_resource_detail {
+// Project-private simulation products and target-dependent presentation resources.
+struct GlobalResources {
+    std::optional<cubey::render::Texture3D> density_a_;
+    std::optional<cubey::render::Texture3D> density_b_;
+    std::optional<cubey::render::Texture3D> velocity_a_;
+    std::optional<cubey::render::Texture3D> velocity_b_;
+    std::optional<cubey::render::Texture3D> density_prediction_;
+    std::optional<cubey::render::Texture3D> velocity_prediction_;
+    std::optional<cubey::render::Texture3D> divergence_;
+    std::optional<cubey::render::Texture3D> pressure_a_;
+    std::optional<cubey::render::Texture3D> pressure_b_;
+    std::optional<cubey::render::Texture3D> shadow_volume_;
+    std::optional<cubey::vulkan::Buffer> sources_;
+    std::optional<cubey::vulkan::DescriptorSetLayout> reset_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> reset_descriptor_pool_;
+    VkDescriptorSet reset_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> advect_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> advect_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> advect_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> advect_correct_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> combustion_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> combustion_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> combustion_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> divergence_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
+    VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet pressure_b_to_a_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> projection_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> projection_descriptor_pool_;
+    std::array<VkDescriptorSet, 4> projection_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetLayout> shadow_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> shadow_descriptor_pool_;
+    std::array<VkDescriptorSet, 2> shadow_descriptor_sets_{};
+    std::optional<cubey::vulkan::DescriptorSetArray> render_descriptors_;
+    std::optional<cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>>
+        environment_lighting_uniforms_;
+    std::optional<cubey::vulkan::DescriptorSetArray> environment_descriptors_;
+    std::optional<cubey::vulkan::DescriptorSetArray> scene_descriptors_;
+    std::optional<cubey::vulkan::Sampler> scene_sampler_;
+    std::optional<cubey::vulkan::Sampler> scene_depth_sampler_;
+    cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
+    cubey::render::CelestialBodyFrame moon_body_frame_;
+    std::optional<cubey::render::Mesh> moon_mesh_;
+    std::uint32_t frame_slot_count_ = 0;
+    std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> advect_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> combustion_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> projection_pipeline_;
+    std::optional<cubey::render::ComputePipelineResource> shadow_pipeline_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
+    std::array<std::uint64_t, 8> resource_shape_{};
+    bool global_resources_created_ = false;
+};
+struct TargetResources {
+    std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_;
+};
+} // namespace gpu_resource_detail
+
+class Pyro3DGpuResources : private gpu_resource_detail::GlobalResources,
+                           private gpu_resource_detail::TargetResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::vulkan::GpuRuntime& mesh_gpu,
@@ -142,64 +210,6 @@ class Pyro3DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorSetArray& scene_descriptors() const;
     [[nodiscard]] const cubey::vulkan::Buffer&
     environment_lighting_uniform_buffer(std::uint32_t frame_slot_index) const;
-
-    std::optional<cubey::render::Texture3D> density_a_;
-    std::optional<cubey::render::Texture3D> density_b_;
-    std::optional<cubey::render::Texture3D> velocity_a_;
-    std::optional<cubey::render::Texture3D> velocity_b_;
-    std::optional<cubey::render::Texture3D> density_prediction_;
-    std::optional<cubey::render::Texture3D> velocity_prediction_;
-    std::optional<cubey::render::Texture3D> divergence_;
-    std::optional<cubey::render::Texture3D> pressure_a_;
-    std::optional<cubey::render::Texture3D> pressure_b_;
-    std::optional<cubey::render::Texture3D> shadow_volume_;
-    std::optional<cubey::vulkan::Buffer> sources_;
-    std::optional<cubey::vulkan::DescriptorSetLayout> reset_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> reset_descriptor_pool_;
-    VkDescriptorSet reset_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> advect_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> advect_descriptor_pool_;
-    std::array<VkDescriptorSet, 4> advect_descriptor_sets_{};
-    std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
-    std::array<VkDescriptorSet, 4> advect_correct_descriptor_sets_{};
-    std::optional<cubey::vulkan::DescriptorSetLayout> combustion_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> combustion_descriptor_pool_;
-    std::array<VkDescriptorSet, 4> combustion_descriptor_sets_{};
-    std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
-    std::array<VkDescriptorSet, 4> divergence_descriptor_sets_{};
-    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
-    VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet pressure_b_to_a_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> projection_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> projection_descriptor_pool_;
-    std::array<VkDescriptorSet, 4> projection_descriptor_sets_{};
-    std::optional<cubey::vulkan::DescriptorSetLayout> shadow_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> shadow_descriptor_pool_;
-    std::array<VkDescriptorSet, 2> shadow_descriptor_sets_{};
-    std::optional<cubey::vulkan::DescriptorSetArray> render_descriptors_;
-    std::optional<cubey::render::FrameUniformBuffer<cubey::render::EnvironmentLightingUniforms>>
-        environment_lighting_uniforms_;
-    std::optional<cubey::vulkan::DescriptorSetArray> environment_descriptors_;
-    std::optional<cubey::vulkan::DescriptorSetArray> scene_descriptors_;
-    std::optional<cubey::vulkan::Sampler> scene_sampler_;
-    std::optional<cubey::vulkan::Sampler> scene_depth_sampler_;
-    cubey::render::AtmosphereBackgroundFrame atmosphere_background_;
-    cubey::render::CelestialBodyFrame moon_body_frame_;
-    std::optional<cubey::render::Mesh> moon_mesh_;
-    std::uint32_t frame_slot_count_ = 0;
-    std::optional<cubey::render::ComputePipelineResource> reset_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> advect_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> combustion_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> projection_pipeline_;
-    std::optional<cubey::render::ComputePipelineResource> shadow_pipeline_;
-    std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_;
-    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 
 } // namespace cubey::projects::fluid::pyro_3d

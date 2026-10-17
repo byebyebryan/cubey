@@ -283,24 +283,38 @@ void Water3DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
                                                             cubey::ProjectGpuServices& gpu,
                                                             const Water3DConfig& config,
                                                             std::uint32_t frame_slot_count) {
-    if (particle_positions_.has_value()) {
-        if (!profiler_.has_value()) {
-            profiler_.emplace(device, frame_slot_count, kWater3DGpuProfilerPassCapacity);
-        }
+    if (frame_slot_count == 0)
+        throw std::runtime_error("simulation resources require at least one frame slot");
+    static_cast<void>(cell_count(config));
+    const std::array<std::uint64_t, 8> shape{frame_slot_count,
+                                             config.grid_width,
+                                             config.grid_height,
+                                             config.grid_depth,
+                                             config.particle_capacity,
+                                             config.whitewater_capacity,
+                                             0,
+                                             0};
+    if (global_resources_created_) {
+        if (resource_shape_ != shape)
+            throw std::runtime_error("simulation resource shape changes require full teardown");
         return;
     }
-    if (frame_slot_count == 0) {
-        throw std::runtime_error("water 3D resources require at least one frame slot");
-    }
-    frame_slot_count_ = frame_slot_count;
+    try {
+        frame_slot_count_ = frame_slot_count;
 
-    create_field_buffers(gpu, config);
-    create_moon_mesh_if_needed(mesh_gpu);
-    simulation_uniforms_.emplace(device, frame_slot_count_);
-    environment_lighting_uniforms_.emplace(device, frame_slot_count_);
-    create_descriptor_resources(device);
-    create_compute_pipelines(device);
-    profiler_.emplace(device, frame_slot_count_, kWater3DGpuProfilerPassCapacity);
+        create_field_buffers(gpu, config);
+        create_moon_mesh_if_needed(mesh_gpu);
+        simulation_uniforms_.emplace(device, frame_slot_count_);
+        environment_lighting_uniforms_.emplace(device, frame_slot_count_);
+        create_descriptor_resources(device);
+        create_compute_pipelines(device);
+        profiler_.emplace(device, frame_slot_count_, kWater3DGpuProfilerPassCapacity);
+        resource_shape_ = shape;
+        global_resources_created_ = true;
+    } catch (...) {
+        destroy_all_resources();
+        throw;
+    }
 }
 
 void Water3DGpuResources::create_moon_mesh_if_needed(cubey::vulkan::GpuRuntime& gpu) {
@@ -341,6 +355,9 @@ void Water3DGpuResources::destroy_swapchain_resources() {
 }
 
 void Water3DGpuResources::destroy_all_resources() {
+    global_resources_created_ = false;
+    resource_shape_ = {};
+
     destroy_swapchain_resources();
     moon_body_frame_.destroy();
     atmosphere_background_.destroy();
@@ -891,285 +908,303 @@ void Water3DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 void Water3DGpuResources::create_render_pipeline(
     cubey::vulkan::Device& device, VkFormat color_format, VkExtent2D extent,
     const Water3DEnvironmentTextureBindings& environment) {
+    if (!global_resources_created_)
+        throw std::runtime_error("simulation global resources are not ready");
+    if (extent.width == 0 || extent.height == 0 || color_format == VK_FORMAT_UNDEFINED)
+        throw std::runtime_error("invalid simulation render target");
     validate_water_3d_environment_texture_bindings(environment);
-    depth_attachment_.emplace(device, extent);
-    surface_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
-                                         .min_filter = VK_FILTER_LINEAR,
-                                         .mag_filter = VK_FILTER_LINEAR,
-                                         .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                                     });
-    whitewater_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
-                                            .min_filter = VK_FILTER_NEAREST,
-                                            .mag_filter = VK_FILTER_NEAREST,
-                                            .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-                                        });
+    try {
+        depth_attachment_.emplace(device, extent);
+        surface_sampler_.emplace(device, cubey::vulkan::SamplerConfig{
+                                             .min_filter = VK_FILTER_LINEAR,
+                                             .mag_filter = VK_FILTER_LINEAR,
+                                             .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                         });
+        whitewater_sampler_.emplace(device,
+                                    cubey::vulkan::SamplerConfig{
+                                        .min_filter = VK_FILTER_NEAREST,
+                                        .mag_filter = VK_FILTER_NEAREST,
+                                        .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                    });
 
-    const cubey::render::MaterialPassInfo debug_material_pass = water_render_pass_info();
-    const cubey::render::MaterialPassInfo surface_scene_material_pass =
-        water_surface_scene_pass_info();
-    const cubey::render::MaterialPassInfo surface_depth_material_pass =
-        water_surface_depth_pass_info();
-    const cubey::render::MaterialPassInfo surface_thickness_material_pass =
-        water_surface_thickness_pass_info();
-    const cubey::render::MaterialPassInfo surface_pack_material_pass =
-        water_surface_pack_pass_info();
-    const cubey::render::MaterialPassInfo surface_repair_material_pass =
-        water_surface_repair_pass_info();
-    const cubey::render::MaterialPassInfo surface_smooth_material_pass =
-        water_surface_smooth_pass_info();
-    const cubey::render::MaterialPassInfo surface_composite_material_pass =
-        water_surface_composite_pass_info();
-    const cubey::render::MaterialPassInfo whitewater_material_pass = water_whitewater_pass_info();
+        const cubey::render::MaterialPassInfo debug_material_pass = water_render_pass_info();
+        const cubey::render::MaterialPassInfo surface_scene_material_pass =
+            water_surface_scene_pass_info();
+        const cubey::render::MaterialPassInfo surface_depth_material_pass =
+            water_surface_depth_pass_info();
+        const cubey::render::MaterialPassInfo surface_thickness_material_pass =
+            water_surface_thickness_pass_info();
+        const cubey::render::MaterialPassInfo surface_pack_material_pass =
+            water_surface_pack_pass_info();
+        const cubey::render::MaterialPassInfo surface_repair_material_pass =
+            water_surface_repair_pass_info();
+        const cubey::render::MaterialPassInfo surface_smooth_material_pass =
+            water_surface_smooth_pass_info();
+        const cubey::render::MaterialPassInfo surface_composite_material_pass =
+            water_surface_composite_pass_info();
+        const cubey::render::MaterialPassInfo whitewater_material_pass =
+            water_whitewater_pass_info();
 
-    surface_scene_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                                .material_pass = surface_scene_material_pass,
-                                                .descriptor_set = 0,
+        surface_scene_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                    .material_pass = surface_scene_material_pass,
+                                                    .descriptor_set = 0,
+                                                    .set_count = frame_slot_count_,
+                                                });
+        surface_thickness_material_.emplace(device,
+                                            cubey::render::MaterialInstanceConfig{
+                                                .material_pass = surface_thickness_material_pass,
+                                                .descriptor_set = 1,
                                                 .set_count = frame_slot_count_,
                                             });
-    surface_thickness_material_.emplace(device,
-                                        cubey::render::MaterialInstanceConfig{
-                                            .material_pass = surface_thickness_material_pass,
-                                            .descriptor_set = 1,
-                                            .set_count = frame_slot_count_,
-                                        });
-    surface_pack_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                               .material_pass = surface_pack_material_pass,
+        surface_pack_material_.emplace(device, cubey::render::MaterialInstanceConfig{
+                                                   .material_pass = surface_pack_material_pass,
+                                                   .descriptor_set = 0,
+                                                   .set_count = frame_slot_count_,
+                                               });
+        surface_source_a_material_.emplace(device,
+                                           cubey::render::MaterialInstanceConfig{
+                                               .material_pass = surface_smooth_material_pass,
                                                .descriptor_set = 0,
                                                .set_count = frame_slot_count_,
                                            });
-    surface_source_a_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                                   .material_pass = surface_smooth_material_pass,
-                                                   .descriptor_set = 0,
-                                                   .set_count = frame_slot_count_,
-                                               });
-    surface_source_b_material_.emplace(device, cubey::render::MaterialInstanceConfig{
-                                                   .material_pass = surface_smooth_material_pass,
-                                                   .descriptor_set = 0,
-                                                   .set_count = frame_slot_count_,
-                                               });
-    surface_composite_material_.emplace(device,
-                                        cubey::render::MaterialInstanceConfig{
-                                            .material_pass = surface_composite_material_pass,
-                                            .descriptor_set = 0,
-                                            .set_count = frame_slot_count_,
-                                        });
+        surface_source_b_material_.emplace(device,
+                                           cubey::render::MaterialInstanceConfig{
+                                               .material_pass = surface_smooth_material_pass,
+                                               .descriptor_set = 0,
+                                               .set_count = frame_slot_count_,
+                                           });
+        surface_composite_material_.emplace(device,
+                                            cubey::render::MaterialInstanceConfig{
+                                                .material_pass = surface_composite_material_pass,
+                                                .descriptor_set = 0,
+                                                .set_count = frame_slot_count_,
+                                            });
 
-    const std::array<cubey::render::ShaderStageFile, 2> debug_shader_stage_files{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_render.frag.spv"),
-        },
-    };
-
-    const std::array<cubey::render::ShaderStageFile, 2> surface_scene_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_fullscreen.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_scene.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> atmosphere_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("atmosphere.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("atmosphere.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> celestial_body_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("celestial_body.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("celestial_body.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> surface_particle_depth_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_surface_particle.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_surface_depth.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> surface_particle_thickness_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_surface_particle.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_surface_thickness.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> surface_pack_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_fullscreen.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_surface_pack.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> surface_repair_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_fullscreen.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_surface_repair.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> surface_smooth_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_fullscreen.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_surface_smooth.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> surface_composite_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_fullscreen.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_surface_composite.frag.spv"),
-        },
-    };
-    const std::array<cubey::render::ShaderStageFile, 2> whitewater_shaders{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("water_3d_whitewater.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("water_3d_whitewater.frag.spv"),
-        },
-    };
-
-    const std::array<VkDescriptorSetLayout, 1> field_set_layouts{field_descriptor_layout()};
-    const std::array<VkDescriptorSetLayout, 1> scene_set_layouts{
-        surface_scene_material_->layout(),
-    };
-    const std::array<VkDescriptorSetLayout, 2> field_and_thickness_set_layouts{
-        field_descriptor_layout(),
-        surface_thickness_material_->layout(),
-    };
-    const std::array<VkDescriptorSetLayout, 1> pack_set_layouts{surface_pack_material_->layout()};
-    const std::array<VkDescriptorSetLayout, 1> source_set_layouts{
-        surface_source_a_material_->layout(),
-    };
-    const std::array<VkDescriptorSetLayout, 1> composite_set_layouts{
-        surface_composite_material_->layout(),
-    };
-
-    create_graphics_pipeline_resource(device, extent, color_format, depth_attachment().format(),
-                                      debug_shader_stage_files, field_set_layouts,
-                                      debug_material_pass, render_pipeline_resource_);
-    create_graphics_pipeline_resource(device, extent, kWater3DSceneColorFormat,
-                                      depth_attachment().format(), surface_scene_shaders,
-                                      scene_set_layouts, surface_scene_material_pass,
-                                      surface_scene_pipeline_resource_);
-    if (environment.atmosphere_background_textures.has_value()) {
-        const cubey::render::CelestialBodyFrameTextureBindings moon_textures{
-            .surface_sampler = environment.atmosphere_background_textures->lunar_surface_sampler,
-            .surface_view = environment.atmosphere_background_textures->lunar_surface_view,
-            .surface_layout = environment.atmosphere_background_textures->lunar_surface_layout,
+        const std::array<cubey::render::ShaderStageFile, 2> debug_shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_render.frag.spv"),
+            },
         };
-        if (!atmosphere_background_.materials_created()) {
-            atmosphere_background_.create_materials(
-                device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
-                            .frame_slot_count = frame_slot_count_,
-                            .textures = environment.atmosphere_background_textures.value(),
+
+        const std::array<cubey::render::ShaderStageFile, 2> surface_scene_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_fullscreen.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_scene.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> atmosphere_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("atmosphere.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("atmosphere.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> celestial_body_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("celestial_body.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("celestial_body.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> surface_particle_depth_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_surface_particle.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_surface_depth.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> surface_particle_thickness_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_surface_particle.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_surface_thickness.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> surface_pack_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_fullscreen.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_surface_pack.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> surface_repair_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_fullscreen.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_surface_repair.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> surface_smooth_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_fullscreen.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_surface_smooth.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> surface_composite_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_fullscreen.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_surface_composite.frag.spv"),
+            },
+        };
+        const std::array<cubey::render::ShaderStageFile, 2> whitewater_shaders{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("water_3d_whitewater.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("water_3d_whitewater.frag.spv"),
+            },
+        };
+
+        const std::array<VkDescriptorSetLayout, 1> field_set_layouts{field_descriptor_layout()};
+        const std::array<VkDescriptorSetLayout, 1> scene_set_layouts{
+            surface_scene_material_->layout(),
+        };
+        const std::array<VkDescriptorSetLayout, 2> field_and_thickness_set_layouts{
+            field_descriptor_layout(),
+            surface_thickness_material_->layout(),
+        };
+        const std::array<VkDescriptorSetLayout, 1> pack_set_layouts{
+            surface_pack_material_->layout()};
+        const std::array<VkDescriptorSetLayout, 1> source_set_layouts{
+            surface_source_a_material_->layout(),
+        };
+        const std::array<VkDescriptorSetLayout, 1> composite_set_layouts{
+            surface_composite_material_->layout(),
+        };
+
+        create_graphics_pipeline_resource(device, extent, color_format, depth_attachment().format(),
+                                          debug_shader_stage_files, field_set_layouts,
+                                          debug_material_pass, render_pipeline_resource_);
+        create_graphics_pipeline_resource(device, extent, kWater3DSceneColorFormat,
+                                          depth_attachment().format(), surface_scene_shaders,
+                                          scene_set_layouts, surface_scene_material_pass,
+                                          surface_scene_pipeline_resource_);
+        if (environment.atmosphere_background_textures.has_value()) {
+            const cubey::render::CelestialBodyFrameTextureBindings moon_textures{
+                .surface_sampler =
+                    environment.atmosphere_background_textures->lunar_surface_sampler,
+                .surface_view = environment.atmosphere_background_textures->lunar_surface_view,
+                .surface_layout = environment.atmosphere_background_textures->lunar_surface_layout,
+            };
+            if (!atmosphere_background_.materials_created()) {
+                atmosphere_background_.create_materials(
+                    device, cubey::render::AtmosphereBackgroundFrameMaterialConfig{
+                                .frame_slot_count = frame_slot_count_,
+                                .textures = environment.atmosphere_background_textures.value(),
+                            });
+            } else {
+                atmosphere_background_.update_texture_bindings(
+                    device, environment.atmosphere_background_textures.value());
+            }
+            atmosphere_background_.create_pipeline(
+                device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
+                            .extent = extent,
+                            .color_format = kWater3DSceneColorFormat,
+                            .depth_format = depth_attachment().format(),
+                            .shader_stage_files = atmosphere_shaders,
                         });
-        } else {
-            atmosphere_background_.update_texture_bindings(
-                device, environment.atmosphere_background_textures.value());
+            if (!moon_body_frame_.materials_created()) {
+                moon_body_frame_.create_materials(device,
+                                                  cubey::render::CelestialBodyFrameMaterialConfig{
+                                                      .frame_slot_count = frame_slot_count_,
+                                                      .textures = moon_textures,
+                                                  });
+            } else {
+                moon_body_frame_.update_texture_bindings(device, moon_textures);
+            }
+            moon_body_frame_.create_pipeline(
+                device, cubey::render::CelestialBodyFramePipelineConfig{
+                            .extent = extent,
+                            .color_format = kWater3DSceneColorFormat,
+                            .depth_format = depth_attachment().format(),
+                            .shader_stage_files = celestial_body_shaders,
+                            .depth_mode = cubey::render::CelestialBodyDepthMode::None,
+                        });
         }
-        atmosphere_background_.create_pipeline(
-            device, cubey::render::AtmosphereBackgroundFramePipelineConfig{
-                        .extent = extent,
-                        .color_format = kWater3DSceneColorFormat,
-                        .depth_format = depth_attachment().format(),
-                        .shader_stage_files = atmosphere_shaders,
-                    });
-        if (!moon_body_frame_.materials_created()) {
-            moon_body_frame_.create_materials(device,
-                                              cubey::render::CelestialBodyFrameMaterialConfig{
-                                                  .frame_slot_count = frame_slot_count_,
-                                                  .textures = moon_textures,
-                                              });
-        } else {
-            moon_body_frame_.update_texture_bindings(device, moon_textures);
-        }
-        moon_body_frame_.create_pipeline(
-            device, cubey::render::CelestialBodyFramePipelineConfig{
-                        .extent = extent,
-                        .color_format = kWater3DSceneColorFormat,
-                        .depth_format = depth_attachment().format(),
-                        .shader_stage_files = celestial_body_shaders,
-                        .depth_mode = cubey::render::CelestialBodyDepthMode::None,
-                    });
-    }
-    create_graphics_pipeline_resource(device, extent, kWater3DSurfaceScalarFormat,
-                                      depth_attachment().format(), surface_particle_depth_shaders,
-                                      field_set_layouts, surface_depth_material_pass,
-                                      surface_depth_pipeline_resource_);
-    create_graphics_pipeline_resource(
-        device, extent, kWater3DSurfaceScalarFormat, VK_FORMAT_UNDEFINED,
-        surface_particle_thickness_shaders, field_and_thickness_set_layouts,
-        surface_thickness_material_pass, surface_thickness_pipeline_resource_);
-    create_graphics_pipeline_resource(device, extent, kWater3DSurfacePackedFormat,
-                                      VK_FORMAT_UNDEFINED, surface_pack_shaders, pack_set_layouts,
-                                      surface_pack_material_pass, surface_pack_pipeline_resource_);
-    create_graphics_pipeline_resource(
-        device, extent, kWater3DSurfacePackedFormat, VK_FORMAT_UNDEFINED, surface_repair_shaders,
-        source_set_layouts, surface_repair_material_pass, surface_repair_pipeline_resource_);
-    create_graphics_pipeline_resource(
-        device, extent, kWater3DSurfacePackedFormat, VK_FORMAT_UNDEFINED, surface_smooth_shaders,
-        source_set_layouts, surface_smooth_material_pass, surface_smooth_pipeline_resource_);
-    create_graphics_pipeline_resource(device, extent, color_format, VK_FORMAT_UNDEFINED,
-                                      surface_composite_shaders, composite_set_layouts,
-                                      surface_composite_material_pass,
-                                      surface_composite_pipeline_resource_);
-    create_graphics_pipeline_resource(
-        device, extent, kWater3DSceneColorFormat, depth_attachment().format(), whitewater_shaders,
-        field_set_layouts, whitewater_material_pass, whitewater_pipeline_resource_);
+        create_graphics_pipeline_resource(
+            device, extent, kWater3DSurfaceScalarFormat, depth_attachment().format(),
+            surface_particle_depth_shaders, field_set_layouts, surface_depth_material_pass,
+            surface_depth_pipeline_resource_);
+        create_graphics_pipeline_resource(
+            device, extent, kWater3DSurfaceScalarFormat, VK_FORMAT_UNDEFINED,
+            surface_particle_thickness_shaders, field_and_thickness_set_layouts,
+            surface_thickness_material_pass, surface_thickness_pipeline_resource_);
+        create_graphics_pipeline_resource(
+            device, extent, kWater3DSurfacePackedFormat, VK_FORMAT_UNDEFINED, surface_pack_shaders,
+            pack_set_layouts, surface_pack_material_pass, surface_pack_pipeline_resource_);
+        create_graphics_pipeline_resource(device, extent, kWater3DSurfacePackedFormat,
+                                          VK_FORMAT_UNDEFINED, surface_repair_shaders,
+                                          source_set_layouts, surface_repair_material_pass,
+                                          surface_repair_pipeline_resource_);
+        create_graphics_pipeline_resource(device, extent, kWater3DSurfacePackedFormat,
+                                          VK_FORMAT_UNDEFINED, surface_smooth_shaders,
+                                          source_set_layouts, surface_smooth_material_pass,
+                                          surface_smooth_pipeline_resource_);
+        create_graphics_pipeline_resource(device, extent, color_format, VK_FORMAT_UNDEFINED,
+                                          surface_composite_shaders, composite_set_layouts,
+                                          surface_composite_material_pass,
+                                          surface_composite_pipeline_resource_);
+        create_graphics_pipeline_resource(device, extent, kWater3DSceneColorFormat,
+                                          depth_attachment().format(), whitewater_shaders,
+                                          field_set_layouts, whitewater_material_pass,
+                                          whitewater_pipeline_resource_);
 
-    cubey::vulkan::DescriptorWriteBatch writes;
-    for (std::uint32_t slot_index = 0; slot_index < frame_slot_count_; ++slot_index) {
-        const cubey::render::FrameSlot frame_slot{
-            .index = slot_index,
-            .count = frame_slot_count_,
-        };
-        writes
-            .combined_image_sampler(surface_scene_descriptor_set(frame_slot), 0,
-                                    environment.display_sampler, environment.display_view,
-                                    environment.display_layout)
-            .uniform_buffer(surface_scene_descriptor_set(frame_slot), 1,
-                            environment_lighting_uniform_buffer(frame_slot).handle(),
-                            environment_lighting_uniform_buffer(frame_slot).size());
+        cubey::vulkan::DescriptorWriteBatch writes;
+        for (std::uint32_t slot_index = 0; slot_index < frame_slot_count_; ++slot_index) {
+            const cubey::render::FrameSlot frame_slot{
+                .index = slot_index,
+                .count = frame_slot_count_,
+            };
+            writes
+                .combined_image_sampler(surface_scene_descriptor_set(frame_slot), 0,
+                                        environment.display_sampler, environment.display_view,
+                                        environment.display_layout)
+                .uniform_buffer(surface_scene_descriptor_set(frame_slot), 1,
+                                environment_lighting_uniform_buffer(frame_slot).handle(),
+                                environment_lighting_uniform_buffer(frame_slot).size());
+        }
+        writes.update(device);
+    } catch (...) {
+        destroy_swapchain_resources();
+        throw;
     }
-    writes.update(device);
 }
 
 const cubey::vulkan::Buffer& Water3DGpuResources::particle_positions() const {

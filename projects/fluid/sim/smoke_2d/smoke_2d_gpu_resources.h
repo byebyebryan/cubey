@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include "smoke_2d_config.h"
 #include "smoke_2d_injectors.h"
 
@@ -18,7 +20,61 @@
 
 namespace cubey::projects::fluid::smoke_2d {
 
-class Smoke2DGpuResources {
+namespace gpu_resource_detail {
+// Project-private simulation products and target-dependent presentation resources.
+struct GlobalResources {
+    std::optional<cubey::vulkan::Buffer> field_a_;
+    std::optional<cubey::vulkan::Buffer> field_b_;
+    std::optional<cubey::vulkan::Buffer> field_temp_;
+    std::optional<cubey::vulkan::Buffer> divergence_;
+    std::optional<cubey::vulkan::Buffer> curl_;
+    std::optional<cubey::vulkan::Buffer> injectors_;
+    std::optional<cubey::vulkan::Buffer> pressure_a_;
+    std::optional<cubey::vulkan::Buffer> pressure_b_;
+    std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> compute_descriptor_pool_;
+    VkDescriptorSet inject_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet advect_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet curl_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet vorticity_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
+    VkDescriptorSet advect_correct_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
+    VkDescriptorSet divergence_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
+    VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet pressure_b_to_a_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_rbgs_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> pressure_rbgs_descriptor_pool_;
+    VkDescriptorSet pressure_rbgs_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetLayout> projection_descriptor_layout_;
+    std::optional<cubey::vulkan::DescriptorPool> projection_descriptor_pool_;
+    VkDescriptorSet projection_pressure_a_descriptor_set_ = VK_NULL_HANDLE;
+    VkDescriptorSet projection_pressure_b_descriptor_set_ = VK_NULL_HANDLE;
+    std::optional<cubey::vulkan::DescriptorSetBundle> render_descriptors_;
+    std::optional<cubey::render::ComputePipelineResource> inject_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> advect_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> curl_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> vorticity_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> pressure_rbgs_pipeline_resource_;
+    std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
+    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
+    std::array<std::uint64_t, 8> resource_shape_{};
+    bool global_resources_created_ = false;
+};
+struct TargetResources {
+    std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
+};
+} // namespace gpu_resource_detail
+
+class Smoke2DGpuResources : private gpu_resource_detail::GlobalResources,
+                            private gpu_resource_detail::TargetResources {
   public:
     void create_global_resources_if_needed(cubey::vulkan::Device& device,
                                            cubey::ProjectGpuServices& gpu,
@@ -107,50 +163,6 @@ class Smoke2DGpuResources {
     [[nodiscard]] const cubey::vulkan::DescriptorPool& pressure_rbgs_descriptor_pool() const;
     [[nodiscard]] VkDescriptorSetLayout projection_descriptor_layout() const;
     [[nodiscard]] const cubey::vulkan::DescriptorPool& projection_descriptor_pool() const;
-
-    std::optional<cubey::vulkan::Buffer> field_a_;
-    std::optional<cubey::vulkan::Buffer> field_b_;
-    std::optional<cubey::vulkan::Buffer> field_temp_;
-    std::optional<cubey::vulkan::Buffer> divergence_;
-    std::optional<cubey::vulkan::Buffer> curl_;
-    std::optional<cubey::vulkan::Buffer> injectors_;
-    std::optional<cubey::vulkan::Buffer> pressure_a_;
-    std::optional<cubey::vulkan::Buffer> pressure_b_;
-    std::optional<cubey::vulkan::DescriptorSetLayout> compute_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> compute_descriptor_pool_;
-    VkDescriptorSet inject_descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet advect_descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet curl_descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet vorticity_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> advect_correct_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> advect_correct_descriptor_pool_;
-    VkDescriptorSet advect_correct_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> divergence_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> divergence_descriptor_pool_;
-    VkDescriptorSet divergence_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> pressure_descriptor_pool_;
-    VkDescriptorSet pressure_a_to_b_descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet pressure_b_to_a_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> pressure_rbgs_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> pressure_rbgs_descriptor_pool_;
-    VkDescriptorSet pressure_rbgs_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetLayout> projection_descriptor_layout_;
-    std::optional<cubey::vulkan::DescriptorPool> projection_descriptor_pool_;
-    VkDescriptorSet projection_pressure_a_descriptor_set_ = VK_NULL_HANDLE;
-    VkDescriptorSet projection_pressure_b_descriptor_set_ = VK_NULL_HANDLE;
-    std::optional<cubey::vulkan::DescriptorSetBundle> render_descriptors_;
-    std::optional<cubey::render::ComputePipelineResource> inject_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> advect_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> advect_correct_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> curl_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> vorticity_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> divergence_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> pressure_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> pressure_rbgs_pipeline_resource_;
-    std::optional<cubey::render::ComputePipelineResource> projection_pipeline_resource_;
-    std::optional<cubey::render::GraphicsPipelineResource> render_pipeline_resource_;
-    std::optional<cubey::vulkan::GpuTimestampProfiler> profiler_;
 };
 
 } // namespace cubey::projects::fluid::smoke_2d

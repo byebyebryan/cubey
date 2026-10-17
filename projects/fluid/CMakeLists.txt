@@ -84,3 +84,7 @@ if (BUILD_TESTING)
     )
     add_test(NAME pyro_3d_config_tests COMMAND cubey_project_pyro_3d_tests)
 endif()
+
+if (BUILD_TESTING)
+    add_subdirectory(tests)
+endif()

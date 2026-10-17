@@ -319,9 +319,7 @@ class Water3DApp {
             return;
         }
         if (clouds_config_.enabled && !clouds.surface_resources_created()) {
-            cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                                 "vkDeviceWaitIdle water 3D cloud enable");
-            static_cast<void>(context.gpu().drain());
+            context.gpu().wait_queue_idle("water 3D cloud enable");
             create_cloud_environment_runtime(context.device(), context.gpu(),
                                              context.frame_slot_count());
             atmosphere_runtime_.clouds().create_surface_target_resources(

@@ -129,14 +129,27 @@ previous complete target; retry needs no caller-specific partial cleanup. Target
 recreation preserves global products. Changing frame-slot count requires full
 scene teardown, and the caller completes GPU use before replacement or teardown.
 
+Smoke, Water 2D/3D, Pyro and Fluid 2.5D keep simulation/global resources and
+target-dependent presentation resources in separate private groups. Global
+creation publishes readiness only after every allocation and pipeline succeeds;
+failure clears the partial generation so callers can retry directly. Matching
+resource shapes reuse the complete generation; changing dimensions, capacities,
+solver/replay mode or frame-slot count requires full teardown. Target creation
+requires ready globals and a valid target. A failed target build clears target
+resources while preserving globals, and retry needs no partial cleanup. Callers
+complete GPU use before target replacement or either teardown operation.
+
 `foundation_layers`, `foundation_public_headers` and `shader_build_rules` guard
 include/link direction, public compile requirements and actual shader rebuilds.
 `cloud_lifecycle_gpu` covers pending slot recordings, target recreation, temporal
 invalidation, failed creation/retry and full shutdown/re-enable.
 `terrain_surface_lifecycle_gpu` covers early/middle/late and daylight failures,
 retry, retained targets, pending slot recordings, recreation and re-enable.
+`fluid_resource_lifecycle_gpu` covers early/middle/late global and target
+failures, direct retry, shape rejection, recreation and full re-enable across
+eight configurations, one/two slots, and inline/threaded execution.
 `dev-sync-validation` proves enabled synchronization checks with an intentional
-unsubmitted hazard and runs clean cloud, host and terrain lifecycle fixtures.
+unsubmitted hazard and runs clean cloud, host, terrain and Fluid lifecycle fixtures.
 Consumer capture comparisons and the full dev suite remain integration gates;
 virtual windowed, physical desktop and human visual acceptance are distinct
 evidence.

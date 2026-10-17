@@ -62,20 +62,27 @@ void Smoke2DGpuResources::create_global_resources_if_needed(cubey::vulkan::Devic
                                                             cubey::ProjectGpuServices& gpu,
                                                             const Smoke2DConfig& config,
                                                             std::uint32_t frame_slot_count) {
-    if (frame_slot_count == 0) {
-        throw std::runtime_error("smoke 2D resources require at least one frame slot");
-    }
-    if (field_a_.has_value()) {
-        if (!profiler_.has_value()) {
-            profiler_.emplace(device, frame_slot_count, kSmoke2DGpuProfilerPassCapacity);
-        }
+    if (frame_slot_count == 0)
+        throw std::runtime_error("simulation resources require at least one frame slot");
+    static_cast<void>(field_byte_size(config));
+    const std::array<std::uint64_t, 8> shape{
+        frame_slot_count, config.grid_width, config.grid_height, 0, 0, 0, 0, 0};
+    if (global_resources_created_) {
+        if (resource_shape_ != shape)
+            throw std::runtime_error("simulation resource shape changes require full teardown");
         return;
     }
-
-    create_field_buffers(gpu, config);
-    create_descriptor_resources(device);
-    create_compute_pipelines(device);
-    profiler_.emplace(device, frame_slot_count, kSmoke2DGpuProfilerPassCapacity);
+    try {
+        create_field_buffers(gpu, config);
+        create_descriptor_resources(device);
+        create_compute_pipelines(device);
+        profiler_.emplace(device, frame_slot_count, kSmoke2DGpuProfilerPassCapacity);
+        resource_shape_ = shape;
+        global_resources_created_ = true;
+    } catch (...) {
+        destroy_all_resources();
+        throw;
+    }
 }
 
 void Smoke2DGpuResources::destroy_swapchain_resources() {
@@ -83,6 +90,9 @@ void Smoke2DGpuResources::destroy_swapchain_resources() {
 }
 
 void Smoke2DGpuResources::destroy_all_resources() {
+    global_resources_created_ = false;
+    resource_shape_ = {};
+
     destroy_swapchain_resources();
     profiler_.reset();
     projection_pipeline_resource_.reset();
@@ -115,6 +125,17 @@ void Smoke2DGpuResources::destroy_all_resources() {
     field_temp_.reset();
     field_b_.reset();
     field_a_.reset();
+    inject_descriptor_set_ = {};
+    advect_descriptor_set_ = {};
+    curl_descriptor_set_ = {};
+    vorticity_descriptor_set_ = {};
+    advect_correct_descriptor_set_ = {};
+    divergence_descriptor_set_ = {};
+    pressure_a_to_b_descriptor_set_ = {};
+    pressure_b_to_a_descriptor_set_ = {};
+    pressure_rbgs_descriptor_set_ = {};
+    projection_pressure_a_descriptor_set_ = {};
+    projection_pressure_b_descriptor_set_ = {};
 }
 
 void Smoke2DGpuResources::create_field_buffers(cubey::ProjectGpuServices& gpu,
@@ -419,26 +440,35 @@ void Smoke2DGpuResources::create_compute_pipelines(cubey::vulkan::Device& device
 
 void Smoke2DGpuResources::create_render_pipeline(cubey::vulkan::Device& device,
                                                  VkFormat color_format, VkExtent2D extent) {
-    const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .path = shader_path("smoke_2d.vert.spv"),
-        },
-        cubey::render::ShaderStageFile{
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .path = shader_path("smoke_2d_render.frag.spv"),
-        },
-    };
+    if (!global_resources_created_)
+        throw std::runtime_error("simulation global resources are not ready");
+    if (extent.width == 0 || extent.height == 0 || color_format == VK_FORMAT_UNDEFINED)
+        throw std::runtime_error("invalid simulation render target");
+    try {
+        const std::array<cubey::render::ShaderStageFile, 2> shader_stage_files{
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                .path = shader_path("smoke_2d.vert.spv"),
+            },
+            cubey::render::ShaderStageFile{
+                .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                .path = shader_path("smoke_2d_render.frag.spv"),
+            },
+        };
 
-    const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
-    const cubey::render::MaterialPassInfo material_pass = smoke_render_pass_info();
-    render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
-                                                  .extent = extent,
-                                                  .color_format = color_format,
-                                                  .shader_stage_files = shader_stage_files,
-                                                  .descriptor_set_layouts = set_layouts,
-                                                  .material_pass = material_pass,
-                                              });
+        const std::array<VkDescriptorSetLayout, 1> set_layouts{render_descriptors().layout()};
+        const cubey::render::MaterialPassInfo material_pass = smoke_render_pass_info();
+        render_pipeline_resource_.emplace(device, cubey::render::GraphicsPipelineFileResourceConfig{
+                                                      .extent = extent,
+                                                      .color_format = color_format,
+                                                      .shader_stage_files = shader_stage_files,
+                                                      .descriptor_set_layouts = set_layouts,
+                                                      .material_pass = material_pass,
+                                                  });
+    } catch (...) {
+        destroy_swapchain_resources();
+        throw;
+    }
 }
 
 const cubey::vulkan::Buffer& Smoke2DGpuResources::field_a() const {
