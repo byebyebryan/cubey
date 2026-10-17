@@ -46,6 +46,7 @@ if(STUDY)
     add_subdirectory(studies/optional)
 endif()
 cubey_add_render_app_policy_test()
+cubey_write_documented_app_manifest("${{CMAKE_BINARY_DIR}}/documented-apps.json")
 ''')
 
     def configure(self, *options):
@@ -63,6 +64,9 @@ cubey_add_render_app_policy_test()
     def test_frontend_and_shared_implementation_are_scanned(self):
         tests = self.configure()
         self.assertEqual([test["name"] for test in tests], ["render_apps_use_dynamic_rendering"])
+        manifest = json.loads((self.build / "documented-apps.json").read_text())
+        self.assertEqual(manifest["applications"], [{
+            "source": "apps/active", "binary": str(self.build / "apps/active/active")}])
         command = tests[0]["command"]
         self.assertIn(str(self.root / "apps/active"), command)
         self.assertIn(str(self.root / "shared runtime"), command)
@@ -73,6 +77,9 @@ cubey_add_render_app_policy_test()
 
     def test_study_only_build_scans_the_enabled_study(self):
         tests = self.configure("-DACTIVE=OFF", "-DSTUDY=ON")
+        manifest = json.loads((self.build / "documented-apps.json").read_text())
+        self.assertEqual(manifest["applications"], [{
+            "source": "studies/optional", "binary": str(self.build / "studies/optional/optional")}])
         command = tests[0]["command"]
         self.assertIn(str(self.root / "studies/optional"), command)
         self.assertNotIn(str(self.root / "apps/active"), command)
@@ -80,6 +87,8 @@ cubey_add_render_app_policy_test()
 
     def test_no_application_targets_registers_no_render_scan(self):
         self.assertEqual(self.configure("-DACTIVE=OFF"), [])
+        self.assertEqual(json.loads((self.build / "documented-apps.json").read_text()),
+                         {"applications": []})
 
 
 if __name__ == "__main__":

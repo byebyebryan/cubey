@@ -58,7 +58,7 @@ diagnostics stay with their respective study or simulation.
 - Core source tests audit the active shared shader packages by resolving their
   GLSL `#include` paths and checking that the CMake dependency packages track
   those includes.
-- `shaders/cubey/ocean/ocean.frag` is the shared surface entry point for layout,
+- [shared Ocean fragment shader](../../shaders/cubey/ocean/ocean.frag) is the shared surface entry point for layout,
   constants, cascade sampling, and final composition. Adjacent helpers hold
   the bulk of the material logic:
   `ocean_shading.glsl`, `ocean_far_field.glsl`, `ocean_foam.glsl`, and
@@ -88,7 +88,7 @@ The current oversized shader pressure points are:
 - `shaders/cubey/atmosphere/atmosphere.frag`: active, now about 5 KB after the
   split. Keep it focused on declarations, includes, ray classification, and
   final composition.
-- `shaders/cubey/ocean/ocean.frag`: active, already split into shared surface
+- [shared Ocean fragment shader](../../shaders/cubey/ocean/ocean.frag): active, already split into shared surface
   helpers. Keep the entry shader focused on declarations, cascade sampling, and
   final composition.
 - Retired cloud prototypes are historical evidence; do not recreate or refactor

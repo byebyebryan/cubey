@@ -2,13 +2,15 @@
 import hashlib
 import json
 from pathlib import Path
-import struct
+import sys
 import unittest
 
 from package_landscape_showcase_v1 import check_video
 
 ROOT = Path(__file__).resolve().parents[2]
 MEDIA = ROOT / "docs/media/showcase"
+sys.path.insert(0, str(ROOT / "tools"))
+from repo_docs import media_errors
 
 
 class ShowcaseMedia(unittest.TestCase):
@@ -22,20 +24,10 @@ class ShowcaseMedia(unittest.TestCase):
         for name, descriptor in self.recipe["media"].items():
             path = ROOT / descriptor["path"]
             self.assertEqual(path.name, name)
-            payload = path.read_bytes()
-            self.assertEqual(len(payload), descriptor["bytes"])
-            self.assertEqual(hashlib.sha256(payload).hexdigest(), descriptor["sha256"])
+            expected = dict(descriptor)
             if path.suffix == ".png":
-                self.assertEqual(payload[:8], b"\x89PNG\r\n\x1a\n")
-                self.assertEqual(struct.unpack_from(">II", payload, 16), (1280, 720))
-            else:
-                offset, atoms = 0, []
-                while offset + 8 <= len(payload):
-                    size, kind = struct.unpack_from(">I4s", payload, offset)
-                    self.assertGreaterEqual(size, 8)
-                    atoms.append(kind)
-                    offset += size
-                self.assertLess(atoms.index(b"moov"), atoms.index(b"mdat"))
+                expected.update(width=1280, height=720)
+            self.assertEqual(media_errors(ROOT, expected), [])
         for key, name in (("publication", "gltf-terrain.mp4"), ("poster", "gltf-terrain.png"),
                           ("master", "gltf-terrain-master-1080p.mp4")):
             self.assertEqual(self.entry[key]["sha256"], self.recipe["media"][name]["sha256"])

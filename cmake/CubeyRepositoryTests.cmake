@@ -37,6 +37,19 @@ function(cubey_add_render_app_policy_test)
     set_tests_properties(render_apps_use_dynamic_rendering PROPERTIES LABELS "policy")
 endfunction()
 
+# Runtime paths come from configured app targets, never guessed build folders.
+function(cubey_write_documented_app_manifest output)
+    get_property(app_targets GLOBAL PROPERTY CUBEY_APP_TARGETS)
+    set(entries)
+    foreach(target IN LISTS app_targets)
+        get_target_property(source "${target}" SOURCE_DIR)
+        file(RELATIVE_PATH source "${CMAKE_SOURCE_DIR}" "${source}")
+        string(APPEND entries "    {\"source\": \"${source}\", \"binary\": \"$<TARGET_FILE:${target}>\"},\n")
+    endforeach()
+    string(REGEX REPLACE ",\n$" "\n" entries "${entries}")
+    file(GENERATE OUTPUT "${output}" CONTENT "{\n  \"applications\": [\n${entries}  ]\n}\n")
+endfunction()
+
 function(cubey_add_repository_tests)
     cubey_add_render_app_policy_test()
     cubey_add_public_header_checks()
@@ -74,6 +87,24 @@ function(cubey_add_repository_tests)
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_project_layout.py")
         add_test(NAME project_layout_rules
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_project_layout.py")
+        add_test(NAME documentation_hygiene
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_documentation.py")
+        add_test(NAME documentation_media
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_documentation.py" --check media)
+        add_test(NAME documentation_rules
+            COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_documentation.py")
+        set_tests_properties(documentation_hygiene documentation_media documentation_rules
+            PROPERTIES LABELS "unit;docs;policy" TIMEOUT 30)
+        cubey_write_documented_app_manifest("${CMAKE_BINARY_DIR}/documented-apps.json")
+        get_property(documented_apps GLOBAL PROPERTY CUBEY_APP_TARGETS)
+        if (documented_apps)
+            add_test(NAME documentation_cli_recipes
+                COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_documentation.py"
+                    --check recipes --app-manifest "${CMAKE_BINARY_DIR}/documented-apps.json")
+            set_tests_properties(documentation_cli_recipes PROPERTIES
+                LABELS "unit;docs;config" TIMEOUT 60
+                ENVIRONMENT "VK_DRIVER_FILES=/nonexistent/cubey-docs-no-icd.json;VK_ICD_FILENAMES=/nonexistent/cubey-docs-no-icd.json;DISPLAY=;WAYLAND_DISPLAY=")
+        endif()
         add_test(NAME cmake_app_policy_rules
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tests/tools/test_cmake_app_policy.py"
                 --cmake "${CMAKE_COMMAND}" --ctest "${CMAKE_CTEST_COMMAND}")

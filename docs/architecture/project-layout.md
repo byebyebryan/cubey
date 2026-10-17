@@ -32,11 +32,15 @@ capture-time provenance and must not be rewritten.
 Several historical names may resolve to one final file after successive moves;
 relocation targets must be canonical, not chains through another former name.
 
-`tools/check_project_layout.py` and its tests enforce root script/note placement,
-current project and architecture navigation, relocation targets, protected
-narratives and builtin media identity. Markdown code examples are excluded from
-link checks. Repository tools are indexed in [tools/README.md](../../tools/README.md),
-with their regression suites under `tests/tools/` and registered in CTest.
+`tools/check_project_layout.py` discovers tracked front doors and enforces root
+script/note placement, relocation targets, protected narratives and builtin media
+identity. The shared `repo_docs.py` primitives also power the full tracked
+Markdown navigation and current-media checks in `tools/check_documentation.py`.
+They exclude code samples and retain the sealed narrative link exceptions.
+`ctest --preset dev-docs` combines these checks with domain presentation tests
+and bounded native configuration parsing. Repository tools and their limits are
+indexed in [tools/README.md](../../tools/README.md#documentation-gate); negative
+fixtures live under `tests/tools/`.
 
 `cubey_add_app_target` records configured application targets. After project and
 study registration, `cmake/CubeyRepositoryTests.cmake` derives dynamic-rendering

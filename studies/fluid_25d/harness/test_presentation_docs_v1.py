@@ -3,6 +3,7 @@ import ast
 import hashlib
 import json
 import re
+import sys
 from pathlib import Path
 import unittest
 
@@ -15,8 +16,9 @@ BUILTIN=ROOT/'projects/fluid/fluid_25d'
 TERRAIN_WATER=ROOT/'projects/terrain_water'
 
 
-def slug(text):
-    return re.sub(r'\s','-',re.sub(r'[^\w\s-]','',text.lower()))
+sys.path.insert(0, str(ROOT / "tools"))
+from repo_docs import link_errors, slug
+from check_documentation import check_media
 
 
 class Documentation(unittest.TestCase):
@@ -28,18 +30,7 @@ class Documentation(unittest.TestCase):
                      NOTES/'presentation_v1.md', NOTES/'current_reference.md',
                      NOTES/'development_map.md', ROOT/'docs/README.md',
                      ROOT/'docs/architecture/fluid-simulation.md', TERRAIN_WATER/'external_synxflow/README.md'):
-            source=path.read_text()
-            for target in re.findall(r'\]\(([^)]+)\)',source):
-                if '://' in target:
-                    continue
-                relative,_,anchor=target.partition('#')
-                destination=(path.parent/relative).resolve() if relative else path
-                self.assertTrue(destination.exists(),f'{path.name}: missing {target}')
-                if anchor and destination.suffix=='.md':
-                    text=destination.read_text()
-                    anchors={slug(h) for h in re.findall(r'^#{1,6} (.+)$',text,re.M)}
-                    anchors.update(re.findall(r'id="([^"]+)"',text))
-                    self.assertIn(anchor,anchors,f'{path.name}: missing anchor {target}')
+            self.assertEqual(link_errors(ROOT, path), [], str(path))
 
     def test_front_page_is_current_not_a_study_transcript(self):
         current=(TERRAIN_WATER/'README.md').read_text()
@@ -102,17 +93,7 @@ class Documentation(unittest.TestCase):
         self.assertEqual(args.mode,'live')
 
     def test_shared_indexes_match_selected_gallery(self):
-        manifest=json.loads((ROOT/'docs/media/showcase/manifest.json').read_text())
-        selected=manifest['entries']
-        count_words={1:'one',2:'two',3:'three',4:'four',5:'five',6:'six',7:'seven',
-                     8:'eight',9:'nine',10:'ten',11:'eleven',12:'twelve'}
-        word=count_words[len(selected)]
-        self.assertIn(f'the {word} showcased project highlights',
-                      (ROOT/'docs/README.md').read_text())
-        roadmap=(ROOT/'docs/roadmap.md').read_text()
-        self.assertIn(f'{word.title()} highlights are now',roadmap)
-        self.assertNotIn('packaged candidate and a 36-second explanatory film',roadmap)
-        self.assertNotIn('attachment publication remain pending',roadmap)
+        self.assertEqual(check_media(ROOT)["errors"], [])
         terrain_docs=(ROOT/'projects/terrain/README.md').read_text()
         self.assertNotIn('source sampling and exterior-ground resources',terrain_docs)
 
@@ -144,7 +125,6 @@ class Documentation(unittest.TestCase):
         root=(ROOT/'README.md').read_text()
         self.assertIn('fluid-25d-master-1080p.mp4',root)
         self.assertNotIn('36-second project film',root)
-        self.assertIn('Five highlights',root)
         self.assertNotIn('publication remains pending',root)
         self.assertIn('Default prepared site: Mountain',(TERRAIN_WATER/'README.md').read_text())
 

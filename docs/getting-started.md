@@ -93,6 +93,13 @@ ordinary local and SSH validation does not depend on X11, Wayland, or SDDM. A
 usable Vulkan device is still required. Cloud, host, terrain and Fluid lifecycle
 fixtures also require the Khronos validation layer.
 
+For documentation and presentation integrity, use `ctest --preset dev-docs`
+after the normal build. It checks tracked local links/navigation, sealed study
+boundaries, current gallery hashes and documented native option parsing. Native
+recipes exit after writing a temporary configuration template, with no usable
+Vulkan ICD or display. This lane does not render, decode media, load optional
+assets or qualify GUI/solver behavior. See the [repository tools](../tools/README.md#documentation-gate).
+
 For a quick core/build/policy check, use `ctest --preset dev-foundation`. It runs
 the CPU core suite, standalone-header build, dependency guards, shader rebuild
 fixtures and repository layout checks. Lifecycle and consumer GPU checks remain
@@ -213,6 +220,7 @@ Applications open an interactive window unless `--headless` is supplied:
 
 ```bash
 ./build/dev/projects/ocean/ocean
+./build/dev/examples/spinning_cube/spinning_cube
 ./build/dev/projects/fluid/water_3d/water_3d
 ./build/dev/projects/fluid/fire_3d/fire_3d
 ./build/dev/projects/atmosphere/atmosphere

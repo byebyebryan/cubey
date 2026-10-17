@@ -2,11 +2,13 @@
 import hashlib
 import json
 from pathlib import Path
-import struct
+import sys
 import unittest
 
 ROOT=Path(__file__).resolve().parents[3]
 MEDIA=ROOT/'docs/media/showcase'
+sys.path.insert(0, str(ROOT / 'tools'))
+from repo_docs import media_errors
 
 
 class Media(unittest.TestCase):
@@ -18,23 +20,10 @@ class Media(unittest.TestCase):
         self.assertEqual(entry['publication']['github_attachment_url'],
                          'https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08')
         for descriptor in recipe['media'].values():
-            path=ROOT/descriptor['path']
-            self.assertEqual(path.stat().st_size,descriptor['bytes'])
-            with path.open('rb') as stream:
-                self.assertEqual(hashlib.file_digest(stream,'sha256').hexdigest(),descriptor['sha256'])
-            if path.suffix=='.png':
-                header=path.read_bytes()[:24]
-                self.assertEqual(header[:8],b'\x89PNG\r\n\x1a\n')
-                self.assertEqual(struct.unpack('>II',header[16:24]),(1280,720))
-            elif path.suffix=='.mp4':
-                payload=path.read_bytes()
-                offset,atoms=0,[]
-                while offset+8<=len(payload):
-                    size,kind=struct.unpack_from('>I4s',payload,offset)
-                    self.assertTrue(size==0 or size>=8)
-                    atoms.append(kind)
-                    offset+=size or len(payload)-offset
-                self.assertLess(atoms.index(b'moov'),atoms.index(b'mdat'))
+            expected = dict(descriptor)
+            if Path(descriptor['path']).suffix == '.png':
+                expected.update(width=1280, height=720)
+            self.assertEqual(media_errors(ROOT, expected), [])
         self.assertEqual(entry['publication']['sha256'],recipe['media']['fluid-25d.mp4']['sha256'])
         self.assertEqual(entry['master']['sha256'],recipe['media']['fluid-25d-master-1080p.mp4']['sha256'])
         self.assertEqual(entry['poster']['timestamp_seconds'],6)

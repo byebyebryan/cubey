@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 import re
 
+from repo_docs import link_errors, owned_markdown, slug, without_fenced_code
+
 ENTRY_SCRIPTS = {
     "projects/fluid/fluid_25d/run_terrain_rain_demo.py",  # compatibility only
     "projects/terrain_water/run_terrain_rain_demo.py",
@@ -18,26 +20,6 @@ STUDY_BUILDS = {
     "cloud_ref": ("studies/cloud/terrainengine", "CUBEY_BUILD_CLOUD_STUDIES"),
     "planet": ("studies/planet", "CUBEY_BUILD_PLANET_STUDIES"),
 }
-
-
-def slug(text):
-    return re.sub(r"\s", "-", re.sub(r"[^\w\s-]", "", text.lower()))
-
-
-def without_fenced_code(text):
-    """Leave prose and headings, ignoring Markdown's backtick/tilde fences."""
-    lines, fence, length = [], None, 0
-    for line in text.splitlines(keepends=True):
-        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
-        if fence:
-            if marker and marker[1][0] == fence and len(marker[1]) >= length and not marker[2].strip():
-                fence = None
-            continue
-        if marker:
-            fence, length = marker[1][0], len(marker[1])
-        else:
-            lines.append(line)
-    return "".join(lines)
 
 
 def project_errors(root, folder):
@@ -52,33 +34,6 @@ def project_errors(root, folder):
             errors.append(f"{name}: use owned tools/tests or indexed studies")
         if item.suffix == ".md" and item.name not in ROOT_DOCS:
             errors.append(f"{name}: put detail under docs or dated work under studies")
-    return errors
-
-
-def link_errors(root, source):
-    errors = []
-    prose = without_fenced_code(source.read_text())
-    prose = re.sub(r"(`+)(?!`).*?\1(?!`)", "", prose, flags=re.S)
-    for target in re.findall(r"\]\(([^)]+)\)", prose):
-        if re.match(r"[a-zA-Z]+:", target):
-            continue
-        relative, _, anchor = target.partition("#")
-        destination = (source.parent / relative.strip("<>")).resolve() if relative else source
-        try:
-            inside = destination.relative_to(root)
-        except ValueError:
-            errors.append(f"{source.relative_to(root)}: link leaves repository: {target}")
-            continue
-        if inside.parts and inside.parts[0] in {"outputs", "cache", "build"}:
-            continue  # optional generated evidence is never a checkout prerequisite
-        if not destination.exists():
-            errors.append(f"{source.relative_to(root)}: missing link {target}")
-        elif anchor and destination.suffix == ".md":
-            text = without_fenced_code(destination.read_text())
-            anchors = {slug(h) for h in re.findall(r"^#{1,6} (.+)$", text, re.M)}
-            anchors.update(re.findall(r'id="([^"]+)"', text))
-            if anchor not in anchors:
-                errors.append(f"{source.relative_to(root)}: missing anchor {target}")
     return errors
 
 
@@ -128,21 +83,11 @@ def audit(root):
         rows.append({"project": folder.relative_to(root).as_posix(),
                      "root_files": len(files),
                      "root_scripts": sum(p.suffix in {".py", ".sh", ".mjs"} for p in files)})
-    front_doors.update(root / p for p in (
-        "README.md", "tools/README.md", "docs/README.md", "docs/DESIGN.md",
-        "docs/getting-started.md", "docs/roadmap.md", "docs/showcase.md",
-        "studies/cloud/README.md", "studies/cloud/terrainengine/README.md",
-        "studies/cloud/terrainengine/tools/README.md",
-        "studies/planet/README.md", "studies/planet/design.md",
-        "studies/planet/showcase-plan.md", "studies/planet/tools/README.md",
-        "studies/README.md", "studies/fluid_25d/README.md",
-        "studies/fluid_25d/harness/README.md",
-        "studies/terrain/landscapes/README.md", "studies/gltf_viewer/README.md",
-        "projects/terrain_water/current_reference.md",
-        "projects/terrain_water/demo_setup_v1.md",
-        "projects/terrain_water/integration.md",
-        "projects/terrain_water/external_synxflow/README.md"))
-    front_doors.update((root / "docs/architecture").glob("*.md"))
+    # Discover documentation front doors from tracked sources, not a second
+    # application/study roster. The full docs gate also checks historical notes.
+    front_doors.update(p for p in owned_markdown(root)
+                       if p.name == "README.md" or p.parent in {
+                           root / "docs", root / "docs/architecture"})
     for p in sorted(front_doors):
         if not p.is_file():
             errors.append(f"{p.relative_to(root)}: missing front door")

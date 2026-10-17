@@ -298,6 +298,22 @@
       }
     },
     {
+      "name": "dev-docs",
+      "displayName": "Documentation, media integrity and native recipe parsing",
+      "configurePreset": "dev",
+      "filter": {
+        "include": {
+          "name": "^(documentation_.*|project_layout_.*|fluid_25d_presentation_docs|fluid_25d_presentation_media|gltf_viewer_showcase_media)$"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
       "name": "dev-foundation",
       "displayName": "Core, build and foundation policy",
       "configurePreset": "dev",
