@@ -323,339 +323,46 @@ Borrow the contract clarity and terminology; keep Cubey's implementation small.
 
 ## Repository Structure
 
-Cubey is becoming a small C++ monorepo. The public foundation is modeled as
-layered `cubey::*` targets (`core`, `asset`, `vulkan`, `render`, `scene`, `engine`, and
-optional `host`) plus the aggregate `cubey::cubey` target for examples and
-projects that do not need a narrower dependency. Runnable binaries should be
-named explicitly and live in either `examples/` or `projects/`:
+Cubey is a small C++ monorepo. Its explicit `cubey::*` CMake libraries and
+public include boundaries define ownership; a directory tree is not a second
+source registry. The [root project map](../README.md#project-map) owns the
+application inventory, and [project layout](architecture/project-layout.md)
+distinguishes supported front doors, tools, tests and retained studies.
 
-- `include/cubey/` - public library headers. These define the include discipline
-  used by examples, projects, and tests.
-- `src/cubey/` - library implementation and private headers.
-- `cmake/` - shared CMake helpers for shaders, warnings, and CTest smoke
-  targets.
-- `examples/` - small, focused cube-first reference programs that prove one
-  renderer concept or API path. Current examples are `spinning_cube`,
-  `textured_cube`, `shadow_cube`, `instanced_cubes`, `material_cubes`,
-  `headless_cube`, and `particle_cubes`. Larger examples may split into
-  example-local private modules for lifecycle, resources, scene setup, and
-  command recording; that split is not automatically Cubey library API.
-- `projects/` - first-class graphics experiments and longer-lived creative
-  work, including `atmosphere`, `terrain`, `smoke_2d`, `water_2d`, `water_3d`,
-  `fire_3d`, `explosion_3d`, `fractal_2d`, `gltf_viewer`, `ocean`,
-  and `pbr_furnace`; retained reference and design-only targets have explicit
-  names and status docs, while retired implementations live in Git history.
-- `third_party/` - small vendored dependencies with explicit license notes.
-- `tests/` - unit and integration tests.
+| Location | Responsibility |
+| --- | --- |
+| [`include/cubey/`](../include/cubey) | Public foundation contracts, checked as standalone headers. |
+| [`src/cubey/`](../src/cubey) | Library implementations and private modules. |
+| [`shaders/cubey/`](../shaders/cubey) | Shared shader packages owned by their rendering domains. |
+| [`examples/`](../examples) | Small cube-focused proofs of foundation contracts. |
+| [`projects/`](../projects) | Focused applications with local scene, simulation, configuration and presentation policy. |
+| [`studies/`](../studies/README.md) | Indexed experiments, frozen references and paused applications, explicitly opt-in where runnable. |
+| [`tests/`](../tests) | Core contracts and repository-tool regression fixtures; project/domain tests also live with their owners. |
+| [`cmake/`](../cmake) | Application, shader, smoke, library-policy and repository-test helpers. |
+| [`tools/`](../tools/README.md) | Maintained repository checks and local report browser. |
+| [`third_party/`](../third_party) | Small vendored dependencies with license notes. |
+| [`docs/`](README.md) | Current guides and architecture, indexed notes, evidence and explicit archives. |
 
-CMake should model this as explicit targets, not source-folder convention. The
-layering order is:
+The library graph is declared in [`src/cubey/CMakeLists.txt`](../src/cubey/CMakeLists.txt):
+`core`, `asset`, `vulkan`, `render`, `scene` and `engine`, plus input and optional
+concrete host libraries. `cubey::cubey` is the convenience aggregate for
+applications that do not need narrower dependencies. The configured dependency
+guard checks actual direct/interface links and wrappers; the
+[Vulkan map](architecture/vulkan-abstractions.md) explains the intended boundaries.
+Libraries must not depend on projects.
 
-```
-cubey::core
-  +-> cubey::asset
-  +-> cubey::vulkan
-        -> cubey::render
-        -> cubey::scene
-        -> cubey::engine
-        -> cubey::cubey aggregate
-              + cubey::input
-              + optional cubey::host for concrete hosts
-  ^
-  |
-examples / projects / tools / tests / benchmarks
-```
+Shared code either graduates into its owning layer or stays local to its
+consumer. For example, the shared [Ocean surface runtime](architecture/ocean-rendering.md)
+owns its GPU resources and shaders; the Ocean app owns review controls and scene
+orchestration. [Fluid](../projects/fluid/README.md) keeps numerical and application
+modules with the simulation domain; Terrain Water has its own frontend and
+external-worker boundary. These ownership contracts matter more than a manually
+copied list of filenames.
 
-Projects can depend on the aggregate `cubey::cubey` target or a narrower
-`cubey::*` layer; Cubey library targets must not depend on projects. Shared
-code either graduates into the appropriate Cubey layer or stays local to the
-project that needs it. Example-specific host behavior should stay in that
-example. The Cubey library should contain reusable engine/host pieces, not
-named-demo policy.
-
-Cubey targets should expose public headers now, but they should not gain
-install/export/package rules until the project genuinely needs external
-consumption and versioning.
-
-```
-cubey/
-  CMakeLists.txt
-  CHANGELOG.md             -- release-note source
-  LICENSE                  -- MIT license
-  cmake/
-    CubeyShaders.cmake     -- GLSL to SPIR-V build helper
-    CubeySmokeTests.cmake  -- shared CTest smoke helper definitions
-    CubeyWarnings.cmake    -- compiler warning helper
-  include/
-    cubey/
-      core/
-        config_schema.h    -- composable typed configuration kernel
-        jobs.h             -- CPU job facade
-        frame_clock.h      -- frame timing
-        file_io.h          -- generic binary file reads/writes
-        image_io.h         -- PNG artifact output
-        math.h             -- GLM-backed math aliases and Vulkan projection helpers
-      input/
-        input.h            -- shared keyboard and mouse input snapshot
-        pointer_drag.h     -- shared pointer drag helper
-        pan_zoom_2d_controller.h -- input-driven 2D camera controller
-        orbit_controller.h -- basic orbit input state
-      engine/
-        capture_queue.h    -- queued PNG and video capture encoding
-        engine.h           -- scoped root owner for runtime, scenes, and registries
-        gltf_scene_importer.h -- glTF scene/resource/deformation bridge
-        forward_pbr_renderer_3d.h -- reusable shadow/skybox/PBR forward renderer
-                             -- and its explicit render request contract
-        renderer_service.h -- engine-owned renderer instance lifetime
-        project_gpu_services.h -- project-facing GPU uploads/readbacks
-        project_runtime.h  -- async-ready project vocabulary
-        staged_resource.h  -- whole-generation CPU/GPU preparation and activation
-        upload_queue.h     -- CPU-owned upload request queue
-        video_encoder.h    -- optional libav-backed MP4 video encoder
-      asset/
-        gltf_asset.h       -- glTF/glb CPU asset data loader
-        hdr_image.h        -- standalone Radiance HDR CPU image loader
-      host/
-        common_config.h    -- host-owned typed configuration boundary
-        configured_app.h   -- shared parse/template/error/launch flow
-        frame_stats.h      -- windowed telemetry sampling and title formatting
-        glfw_window.h      -- GLFW window and surface host
-        headless_png_host.h -- no-window offscreen PNG/MP4 capture host aliases
-        windowed_app.h     -- small app-facing shell over the windowed host loop
-        windowed_host.h    -- shared windowed host loop
-      render/
-        environment_lighting.h -- compact shared light/ambient/sky/exposure uniforms
-        generated_ibl.h    -- generated and HDR-backed PBR IBL environment resources
-        material.h         -- material metadata and material/pass contracts
-        pbr.h              -- current PBR vertex, scene, skybox, material, and push-constant contract
-        target.h           -- color/depth render target views
-        pass.h             -- dynamic-rendering pass recording helpers
-        mesh.h             -- indexed mesh buffers and draw item vocabulary
-        pipeline_resource.h -- shader modules and graphics/compute pipeline resources
-        primitive_mesh.h   -- CPU primitive mesh data and vertex input layouts
-        texture.h          -- sampled color/depth/cubemap texture ownership helpers
-        resource_handle.h  -- opaque render resource handle values
-        resource_registry.h -- render handle identity and material tags
-        resource_table.h   -- project-owned move-only render resources
-        render_graph_builder.h -- pass/resource declaration and validation
-        render_graph_frame.h -- per-frame resource ownership and execution
-        shadow_map.h       -- reusable sampled-depth shadow-map pass resource
-      scene/
-        entity.h           -- generational entity handles and stable manager
-        scene.h            -- scene edit/read-view contract
-        camera_*.h         -- 2D/3D cameras and entity-backed camera managers
-        render_plan.h      -- scene-backed CPU 3D draw-packet planning
-        render_recording.h -- scene packet filtering and draw recording helpers
-        view_3d.h          -- scene-backed CPU 3D view/pass planning and culling
-        stable_slot_store.h -- MT-stable scene/component slot storage
-        single_instance_component_store.h -- one-component-per-entity storage
-        transform_*.h      -- explicit 2D/3D affine transform value types
-        transform_manager.h -- parented transform components and snapshots
-        light_manager.h    -- entity-backed 3D light components
-        renderable_manager.h -- entity-backed 3D renderable components
-      vulkan/
-        buffer.h           -- Vulkan buffer and memory ownership
-        command_pool.h     -- command pool ownership and command-buffer begin
-        command_recorder.h -- non-owning command-buffer recording helper
-        descriptors.h      -- descriptor set layout/pool ownership and write batching
-        device.h           -- physical/logical device and queue ownership
-        dynamic_rendering.h -- dynamic-rendering attachment helpers
-        frame_resources.h  -- per-frame command/sync resources
-        gpu_runtime.h      -- queued GPU work and owner-thread context
-        image.h            -- Vulkan image, memory, and image-view ownership
-        image_transitions.h -- image layout transitions and barriers
-        immediate_commands.h -- one-shot setup command submission
-        instance.h         -- instance, validation, debug messenger
-        pipeline.h         -- pipeline ownership and graphics setup helpers
-        queue_submit.h     -- binary-semaphore queue-submit description
-        render_context.h   -- surface-backed begin/end frame lifecycle
-        sampler.h          -- Vulkan sampler ownership
-        shader_bytecode.h  -- SPIR-V bytecode file loading
-        shader_module.h    -- shader module lifetime
-        submission_tickets.h -- monotonic GPU submission tickets and retirement
-        submission_coordinator.h -- serialized GPU submission helper
-        swapchain.h        -- swapchain images and image views
-        vk_check.h         -- Vulkan result helpers
-  src/
-    cubey/
-      CMakeLists.txt       -- layered cubey::* library targets
-      asset/               -- glTF/glb parsing, URI loading, and image decode
-      core/                -- typed config kernel, jobs, frame timing, I/O, and PNG writer
-      engine/              -- engine root, project runtime, queues, GPU services,
-                             -- glTF scene import, and reusable renderer internals
-      host/                -- concrete GLFW/windowed/headless hosts
-      input/               -- input snapshot and camera-control helpers
-      render/              -- renderer-facing CPU resource and target helpers
-      scene/               -- scene/entity, planning helpers, and component managers
-        transform_manager.cpp -- transform hierarchy implementation instantiations
-      vulkan/
-        *.cpp              -- Vulkan object, command, submission, and swapchain helpers
-  examples/
-    spinning_cube/         -- indexed cube, push constants, depth
-    textured_cube/         -- compute texture generation, uniforms, sampling
-    shadow_cube/           -- graph-declared shadow/scene/present example
-      shadow_cube_app.*    -- app lifecycle and resource accessors
-      shadow_cube_resources.* -- mesh, texture, descriptor, and pipeline setup
-      shadow_cube_scene.*  -- scene entities, light camera, and view plans
-      shadow_cube_frame.*  -- render-graph declaration and pass recording
-      shadow_cube_render.* -- shadow pass metadata and graph texture states
-    instanced_cubes/       -- instance-rate cube grid rendering
-    material_cubes/        -- per-packet material instance binding
-    headless_cube/         -- no-window offscreen cube PNG/MP4 capture path
-    particle_cubes/        -- compute-updated cube particles
-  projects/
-      atmosphere/
-        CMakeLists.txt
-        main.cpp
-        atmosphere_app.* -- solar time, sky, moon, Milky Way, and HDR post host path
-        atmosphere_environment.* -- shared-atmosphere config and frame adapter
-        atmosphere_ui.* -- live atmosphere and night-sky controls
-      fractal_2d/
-        CMakeLists.txt
-        main.cpp
-        fractal_2d_app.*   -- fullscreen fractal host/headless orchestration
-      fluid/
-        smoke_2d/
-          CMakeLists.txt
-          main.cpp
-          README.md
-        sim/common/
-          water_common.h
-          shaders/
-            fluid_ray_box.glsl
-            water_2d_grid.glsl
-            water_3d_grid.glsl
-        sim/smoke_2d/
-          smoke_2d_app.*     -- host/engine/input orchestration
-          smoke_2d_commands.* -- simulation and fullscreen draw command recording
-          smoke_2d_diagnostics.* -- profile/readback metric export
-          smoke_2d_gpu_resources.* -- project-owned GPU buffers/descriptors/pipelines
-          shaders/
-            smoke_2d_inject.comp
-            smoke_2d_advect_predict.comp
-            smoke_2d_advect_correct.comp
-            smoke_2d_curl.comp
-            smoke_2d_vorticity.comp
-            smoke_2d_divergence.comp
-            smoke_2d_pressure.comp
-            smoke_2d_pressure_rbgs.comp
-            smoke_2d_projection.comp
-            smoke_2d.vert
-            smoke_2d_render.frag
-        water_2d/
-          CMakeLists.txt
-          main.cpp
-        sim/water_2d/
-          water_2d_app.*     -- host/engine/input orchestration
-          water_2d_commands.* -- PIC/FLIP simulation and fullscreen draw recording
-          water_2d_gpu_resources.* -- particle / MAC-grid buffers and pipelines
-          shaders/
-            water_2d_contract.glsl
-            water_2d_reset.comp
-            water_2d_clear_grid.comp
-            water_2d_clear_bins.comp
-            water_2d_build_bins.comp
-            water_2d_emit_particles.comp
-            water_2d_particle_to_grid.comp
-            water_2d_force.comp
-            water_2d_divergence.comp
-            water_2d_pressure.comp
-            water_2d_projection.comp
-            water_2d_grid_to_particle.comp
-            water_2d_advect_particles.comp
-            water_2d.vert
-            water_2d_render.frag
-        sim/pyro_3d/
-          pyro_3d_app.*     -- shared host/headless/input orchestration
-          pyro_3d_commands.* -- simulation, environment-lit shadow, and raymarch draw recording
-          pyro_3d_gpu_resources.* -- shared 3D textures/descriptors/pipelines
-          pyro_3d_sources.* -- fire/explosion source generation
-          shaders/
-            pyro_3d_reset.comp
-            pyro_3d_advect.comp
-            pyro_3d_advect_correct.comp
-            pyro_3d_combust.comp
-            pyro_3d_divergence.comp
-            pyro_3d_pressure.comp
-            pyro_3d_projection.comp
-            pyro_3d_shadow.comp
-            pyro_3d.vert
-            pyro_3d_raymarch.frag
-        fire_3d/
-          main.cpp          -- fire app wrapper over sim/pyro_3d
-        explosion_3d/
-          main.cpp          -- explosion app wrapper over sim/pyro_3d
-        fluid_25d/
-          CMakeLists.txt
-          README.md          -- River V0 contract and CPU-oracle authority
-          fluid_25d_project_config.h
-        sim/fluid_25d/
-          fluid_25d_config.h
-          fluid_25d_scenarios.h
-          fluid_25d_oracle.*
-          fluid_25d_tests.cpp
-      gltf_viewer/
-        CMakeLists.txt
-        main.cpp
-        gltf_viewer_app.*  -- viewer lifecycle and host orchestration
-        gltf_viewer_assets.* -- asset/fallback/IBL resource setup
-        gltf_viewer_scene.* -- camera, light, bounds, and scene setup
-        gltf_viewer_render.* -- render request assembly
-      ocean/
-        CMakeLists.txt
-        main.cpp
-        ocean_app.*       -- active reference-derived ocean host/headless orchestration
-        ocean_gpu_resources.* -- spectrum, FFT, unpack textures, descriptors, and pipelines
-        ocean_sea_state.* -- Calm/Windy/Stormy preset contract
-        ocean_surface_frame.* -- local frame, horizon, and effective mesh state
-        ocean_ui.*        -- grouped wave/surface/lighting/LOD/environment controls
-        shaders/
-          ocean_spectrum.comp -- seeded GodotOceanWaves-style spectrum generation
-          ocean_modulate.comp -- time-evolved frequency-domain fields
-          ocean_fft.comp  -- in-repo staged Stockham FFT passes
-          ocean_unpack.comp -- displacement, normals, and foam from FFT fields
-          ocean.vert      -- camera-relative clipmap and cascaded displacement
-          ocean.frag      -- water, foam, shared environment lighting, diagnostics
-      terrain/            -- raster heightfield backdrop product and review app
-      pbr_furnace/
-        CMakeLists.txt
-        main.cpp
-        pbr_furnace_app.*  -- white-furnace app lifecycle
-        pbr_furnace_resources.* -- mesh, material, and render resource setup
-        pbr_furnace_scene_runtime.* -- scene entities and frame plans
-        pbr_furnace_render.* -- render request assembly and headless target path
-        pbr_furnace_scene.* -- material grid definition and tests
-  studies/cloud/terrainengine/ -- opt-in maintenance-only cloud reference port
-  studies/planet/         -- opt-in paused orbital globe and retained design
-  studies/terrain/        -- opt-in algorithm, ShaderToy, and hydrology studies
-  tests/
-    cubey/                 -- domain-split test registry and focused unit tests
-    tools/                 -- repository policy and local-report HTTP tests
-  tools/                   -- maintained repository checks and report browser
-  shaders/                 -- shared GLSL includes (lighting, noise, math)
-  third_party/             -- vendored single-header dependencies and notices
-  docs/
-    README.md              -- docs index and taxonomy
-    DESIGN.md              -- current design and tenets
-    roadmap.md             -- living implementation plan
-    architecture/          -- detailed current foundation notes
-      animation-deformation.md
-      entity-component-foundation.md
-      fluid-simulation.md
-      gltf-assets.md
-      host-engine.md
-      ocean-adjacent-systems.md
-      ocean-horizon-and-planet-scale.md
-      ocean-rendering.md
-      pbr-ibl.md
-      render-graph.md
-      renderer-foundation.md
-      threading-and-async.md
-      vulkan-abstractions.md
-    cpp-style.md           -- C++ naming, formatting, and review conventions
-    notes/                 -- scratch context and working notes
-    archive/               -- historical decisions and superseded context
-```
+CMake records the actual source and target inventories. Use the configured
+build graph, [foundation checks](../tools/README.md) and local project guides
+when adding modules. Install/export/package rules remain deferred until external
+consumption and versioning supply a concrete need.
 
 ## What We're Not Building
 
