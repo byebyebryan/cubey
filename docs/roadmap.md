@@ -37,14 +37,26 @@ application modules.
 The follow-up hardening pass adds owner-ordered host cleanup, transactional
 terrain-surface resource construction, evaluated CMake dependency checks across
 concrete/alias/interface targets and configured variants, and private Fluid
-recording/live application modules. Renderer math, numerical behavior, product
-defaults and staged activation are preserved. Latest validation covered all 247
-dev test groups (full run plus a corrected source-policy rerun), seven configure
-variants with policy checks on the six testing variants, focused ASan/UBSan
-checks, and four byte-identical Fluid frontend captures. Seven shared consumer
-captures also stayed byte-identical. Nineteen windowed groups passed on virtual
-X11, and four synchronization-validation groups passed; physical desktop
-interaction and human visual acceptance were not assessed.
+recording/live application modules.
+
+The capture and Fluid follow-up fixes decoded video order/count/duration,
+bounds queued video payloads, and makes capture failure cleanup and encoder
+construction safe. Smoke, Water 2D/3D, Pyro and Fluid 2.5D now distinguish complete
+global resources from target resources and support direct retry after failed
+creation. Water 3D cloud enablement uses the GPU owner's queue barrier. Builtin
+Fluid host flow, backend status/forcing, presentation, recording, diagnostics and
+validation have private modules. Its 64 CPU cases retain their aggregate order
+and offer six alternative domain selectors; test CMake registrations have their
+own project modules. Shaders, numerical oracles, frontend identities and
+external-worker dependencies are unchanged.
+
+Latest validation passed all 252 dev groups without skips, the six Fluid domain
+groups, seven configure variants with policy checks on the six testing variants,
+focused ASan/UBSan checks and capture-queue TSan checks. Four Fluid frontend
+captures and seven shared consumer captures stayed byte-identical. All 364
+maintained C++ sources were registered for compilation. Nineteen windowed groups
+passed on virtual X11, and six synchronization-validation groups passed; physical
+desktop interaction and human visual acceptance were not assessed.
 See [resource lifecycle contracts](architecture/renderer-foundation.md#resource-lifecycle-contracts).
 
 Planet is paused as of 2026-10-15. Its orbital reboot did not reach the intended
