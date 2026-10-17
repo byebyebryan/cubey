@@ -1353,6 +1353,10 @@ int main() {
         const std::string shader_cmake_source =
             read_text_file(source_root.parent_path().parent_path() / "cmake/CubeyShaders.cmake");
 
+        require_not_contains(app_source, "vkDeviceWaitIdle(",
+                             "ocean resource changes must wait through the GPU owner");
+        require_not_contains(app_source, "vkQueueWaitIdle(",
+                             "ocean must not wait on the submission queue from the host thread");
         require_contains(spectrum_shader, "xy = h0(k), zw = conj(h0(-k))",
                          "spectrum shader should document reference h0 packing");
         require_contains(spectrum_entry, "#define OCEAN_FIELD_FORMAT rgba32f",

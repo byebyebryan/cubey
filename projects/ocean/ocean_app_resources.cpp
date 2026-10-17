@@ -313,9 +313,7 @@ void OceanApp::sync_cloud_runtime_after_ui(cubey::host::WindowedAppContext& cont
     if (!clouds_config_.enabled || atmosphere_runtime_.clouds().surface_resources_created()) {
         return;
     }
-    cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                         "vkDeviceWaitIdle ocean cloud enable");
-    static_cast<void>(context.gpu().drain());
+    context.gpu().wait_queue_idle("ocean cloud enable");
     create_cloud_resources(context.device(), context.gpu());
     create_cloud_pipelines(context.device(), context.swapchain().extent(),
                            context.frame_slot_count());
@@ -384,15 +382,13 @@ void OceanApp::sync_gpu_resources(cubey::host::WindowedAppContext& context) {
         return;
     }
     if (ocean_resource_layout_changed(ocean_config_, gpu_config_.value())) {
-        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                             "vkDeviceWaitIdle before ocean resource recreation");
+        context.gpu().wait_queue_idle("ocean resource recreation");
         create_pipeline(context.device(), context.gpu(), context.swapchain().format(),
                         context.swapchain().extent(), context.frame_slot_count());
         return;
     }
     if (ocean_terrain_field_source_changed(ocean_config_, gpu_config_.value())) {
-        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                             "vkDeviceWaitIdle before ocean terrain field recreation");
+        context.gpu().wait_queue_idle("ocean terrain field recreation");
         terrain_ocean_fields_texture_.reset();
         terrain_ocean_field_uniforms_.reset();
         create_terrain_ocean_field_resources(context.device(), context.gpu(),
@@ -408,14 +404,12 @@ void OceanApp::sync_gpu_resources(cubey::host::WindowedAppContext& context) {
     }
     if (ocean_cloud_environment_resource_changed(ocean_config_, gpu_config_.value()) &&
         atmosphere_runtime_.clouds().surface_resources_created()) {
-        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                             "vkDeviceWaitIdle before cloud environment recreation");
+        context.gpu().wait_queue_idle("ocean cloud environment recreation");
         create_cloud_environment_runtime(context.device(), context.frame_slot_count());
     }
     if (ocean_cloud_planar_resource_changed(ocean_config_, gpu_config_.value()) &&
         atmosphere_runtime_.clouds().surface_resources_created()) {
-        cubey::vulkan::check(vkDeviceWaitIdle(context.device().handle()),
-                             "vkDeviceWaitIdle before cloud planar reflection recreation");
+        context.gpu().wait_queue_idle("ocean cloud planar reflection recreation");
         create_cloud_planar_reflection(context.device(), context.swapchain().extent(),
                                        context.frame_slot_count());
     }

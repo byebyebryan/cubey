@@ -470,22 +470,52 @@ void test_gpu_runtime_threaded_submit_and_wait_handles_owner_thread_calls() {
 }
 
 void test_gpu_runtime_wait_queue_idle_runs_on_owner_thread() {
-    std::thread::id caller_thread = std::this_thread::get_id();
-    std::thread::id wait_thread{};
-    cubey::vulkan::SubmissionCoordinator submission(
-        reinterpret_cast<VkQueue>(0x56),
-        [](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {},
-        [&wait_thread](VkQueue, const char*) { wait_thread = std::this_thread::get_id(); });
-    cubey::vulkan::GpuRuntime runtime({
-        .device = fake_device(),
-        .submission = &submission,
-    });
+    for (const auto mode : {cubey::vulkan::GpuRuntimeExecutionMode::Inline,
+                            cubey::vulkan::GpuRuntimeExecutionMode::Threaded}) {
+        const auto caller_thread = std::this_thread::get_id();
+        std::thread::id work_thread{}, wait_thread{}, retirement_thread{};
+        std::vector<std::string> order;
+        cubey::vulkan::GpuSubmissionTicket submitted{};
+        cubey::vulkan::SubmissionCoordinator submission(
+            reinterpret_cast<VkQueue>(0x56),
+            [&order](VkQueue, const cubey::vulkan::QueueSubmitInfo&, const char*) {
+                order.emplace_back("submit");
+            },
+            [&](VkQueue, const char*) {
+                wait_thread = std::this_thread::get_id();
+                order.emplace_back("idle");
+            });
+        cubey::vulkan::GpuRuntime runtime({
+            .device = fake_device(),
+            .submission = &submission,
+            .execution_mode = mode,
+        });
+        static_cast<void>(runtime.enqueue({
+            .label = "admitted work before resource replacement",
+            .work = [&](cubey::vulkan::GpuOwnerContext& owner) {
+                work_thread = std::this_thread::get_id();
+                submitted = owner.submission().submit(
+                    {.command_buffers = {reinterpret_cast<VkCommandBuffer>(0x57)}},
+                    "submit before replacement");
+                owner.defer_destruction_after(submitted, [&] {
+                    retirement_thread = std::this_thread::get_id();
+                    order.emplace_back("retire");
+                });
+            },
+        }));
 
-    runtime.wait_queue_idle("test queue idle");
+        runtime.wait_queue_idle("test queue idle");
 
-    require(wait_thread != std::thread::id{}, "queue idle should call the wait function");
-    require(wait_thread != caller_thread,
-            "threaded queue idle should execute on the GPU owner thread");
+        require(order == std::vector<std::string>{"submit", "idle", "retire"},
+                "owner barrier must submit admitted work, idle, then retire before returning");
+        require(submitted.value != 0 && submission.completed() == submitted,
+                "owner barrier must publish completion of preceding submissions");
+        require(work_thread == wait_thread && retirement_thread == wait_thread,
+                "submission, idle and retirement must share the GPU owner");
+        require((wait_thread == caller_thread) ==
+                    (mode == cubey::vulkan::GpuRuntimeExecutionMode::Inline),
+                "queue idle must respect inline/threaded ownership");
+    }
 }
 
 void test_gpu_runtime_mark_submission_completed_updates_completed_ticket() {

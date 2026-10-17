@@ -36,6 +36,11 @@ The wave data remains local even when the base surface bends toward a spherical
 datum. This keeps the FFT domain stable and makes planet/global coordinates a
 future adapter concern.
 
+Windowed wave-field, terrain-field, cloud-environment and planar-reflection
+recreation, plus first cloud enablement, wait through
+`GpuRuntime::wait_queue_idle` before replacing resources. This keeps admitted
+owner work, submitted GPU use and deferred retirement ordered before the edit.
+
 ## Wave Fields
 
 There are five regular cascade slots. Sea-state presets enable C0 and C1 and

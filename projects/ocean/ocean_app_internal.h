@@ -45,7 +45,6 @@
 #include <cubey/vulkan/image_transitions.h>
 #include <cubey/vulkan/memory_barriers.h>
 #include <cubey/vulkan/sampler.h>
-#include <cubey/vulkan/vk_check.h>
 
 #include <vulkan/vulkan.h>
 

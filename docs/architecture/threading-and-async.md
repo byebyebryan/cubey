@@ -122,6 +122,10 @@ Vulkan wrapper policy:
   thread-safe; `drain_inline()` is owner-thread-only and `wait_queue_idle()`
   routes queue-idle waits through the owner. The default host path already uses
   a threaded owner, while inline mode preserves deterministic tests.
+  The barrier submits preceding admitted work, waits for queue completion and
+  retires dependent resources before returning. Projects use it before resource
+  replacement; a direct device-idle wait cannot account for work still queued
+  on the CPU owner.
 - `CommandPool` remains single-thread-owned. Future parallel recording should
   allocate command pools by frame and worker index.
 - `DescriptorPool` remains single-owner unless a future allocator explicitly
