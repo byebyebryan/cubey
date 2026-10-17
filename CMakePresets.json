@@ -312,6 +312,25 @@
       "execution": {
         "noTestsAction": "error"
       }
+    },
+    {
+      "name": "dev-capture-media",
+      "displayName": "Decoded capture media contracts",
+      "configurePreset": "dev",
+      "environment": {
+        "CUBEY_REQUIRE_CAPTURE_MEDIA_TESTS": "1"
+      },
+      "filter": {
+        "include": {
+          "name": "^capture_media_"
+        }
+      },
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
     }
   ]
 }

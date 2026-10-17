@@ -600,8 +600,10 @@ void HeadlessPngHost::write_video(HeadlessPngContext& context, const HeadlessRen
         submit_slot(frame_context, slot, frame);
         record_profile_frame(frame, slot.target);
     }
-    for (const std::unique_ptr<HeadlessCaptureSlot>& slot : slots) {
-        wait_for_slot(*slot);
+    // The next submission position is the oldest pending frame, including
+    // when the final ring is only partially filled. Slot order is not time order.
+    for (std::size_t index = 0; index < slots.size(); ++index) {
+        wait_for_slot(*slots[(frame_count % slots.size() + index) % slots.size()]);
     }
     encoder.finish();
 

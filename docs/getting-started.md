@@ -98,6 +98,13 @@ the CPU core suite, standalone-header build, dependency guards, shader rebuild
 fixtures and repository layout checks. Lifecycle and consumer GPU checks remain
 in the full `dev` and dedicated synchronization presets.
 
+`ctest --preset dev-capture-media` requires libav, `ffmpeg`, `ffprobe`, Python3
+and a Vulkan device with validation. It decodes direct-encoder and inline/threaded
+headless captures, checking frame identity/order, exact count, presentation times
+and duration for all three-slot ring remainders at 24/60 FPS. Ordinary `dev` tests
+skip this optional media capability when the encoding/decoding tools are absent;
+the dedicated preset requires it.
+
 For the owned-code AddressSanitizer/UBSan gate, configure and build the
 sanitized tree, then run its test preset:
 

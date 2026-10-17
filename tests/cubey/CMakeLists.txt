@@ -143,6 +143,30 @@ cubey_add_glsl_shaders(
 add_dependencies(cubey_core_tests cubey_procedural_shader_smoke)
 
 add_test(NAME cubey_core_tests COMMAND cubey_core_tests)
+
+add_executable(cubey_capture_media_tests capture_media_tests.cpp)
+target_link_libraries(cubey_capture_media_tests PRIVATE cubey::host
+    cubey_project_options cubey_project_warnings)
+find_program(CUBEY_CAPTURE_TEST_PYTHON NAMES python3)
+if(CUBEY_CAPTURE_TEST_PYTHON)
+    foreach(mode direct inline threaded)
+        add_test(NAME capture_media_${mode}
+            COMMAND "${CUBEY_CAPTURE_TEST_PYTHON}" -B
+                "${CMAKE_SOURCE_DIR}/tests/tools/check_capture_media.py"
+                --app $<TARGET_FILE:cubey_capture_media_tests> --mode ${mode})
+        set_tests_properties(capture_media_${mode} PROPERTIES LABELS "capture;artifact"
+            SKIP_RETURN_CODE 77 TIMEOUT 240)
+        if(NOT mode STREQUAL "direct")
+            set_property(TEST capture_media_${mode} APPEND PROPERTY LABELS "headless;gpu")
+        endif()
+    endforeach()
+else()
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/capture_media_unavailable.cmake"
+        "message(FATAL_ERROR \"Python3 is required to verify decoded capture media\")\n")
+    add_test(NAME capture_media_unavailable
+        COMMAND "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/capture_media_unavailable.cmake")
+    set_tests_properties(capture_media_unavailable PROPERTIES LABELS "capture;artifact")
+endif()
 add_executable(cubey_terrain_water_capture_tests terrain_water_capture_tests.cpp)
 target_link_libraries(cubey_terrain_water_capture_tests PRIVATE
     cubey::asset nlohmann_json::nlohmann_json cubey_project_warnings)

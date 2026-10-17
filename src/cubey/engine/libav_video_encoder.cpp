@@ -182,6 +182,11 @@ class LibavVideoEncoder final : public VideoEncoder {
                 return;
             }
             check_av(status, "receive encoded video packet");
+            // This encoder emits fixed-rate, single-frame H.264 packets. Some
+            // libav versions leave duration unknown; the final MP4 sample then
+            // falls outside the track duration/edit list during normal decode.
+            if (packet_->duration == 0)
+                packet_->duration = 1; // Codec time base is exactly 1 / fps.
             av_packet_rescale_ts(packet_, codec_context_->time_base, stream_->time_base);
             packet_->stream_index = stream_->index;
             check_av(av_interleaved_write_frame(format_, packet_), "write encoded video packet");
