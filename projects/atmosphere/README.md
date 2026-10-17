@@ -144,3 +144,6 @@ Controls:
 - The Night sky panel switches diagnostic layer, human/camera response, Milky
   Way intensity/contrast, light pollution, and procedural variation.
 - Escape: close.
+
+The [capture and profiling tools index](tools/README.md) lists supported helpers
+and their optional reference-study and windowing requirements.

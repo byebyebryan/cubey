@@ -105,6 +105,9 @@ than hidden extensions of those products.
 
 ### Simulation
 
+The [Fluid family guide](projects/fluid/README.md) maps shared solver modules,
+frontend ownership and focused validation.
+
 | Project | Focus |
 | --- | --- |
 | [Smoke 2D](projects/fluid/smoke_2d/README.md) | GPU dye/velocity field with MacCormack advection, vorticity, and pressure projection. |

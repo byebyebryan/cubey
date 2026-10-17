@@ -1,5 +1,10 @@
 # Terrain Reboot Current Captures
 
+Historical capture checkpoint for the removed terrain workbench. “Current”
+below names that experiment's recorded source, not the active Terrain renderer.
+Use the [Terrain guide](../../projects/terrain/README.md) for supported entry
+points and the [retirement archive](../archive/terrain/legacy-attempts.md) for its verdict.
+
 This note records the current terrain reboot capture set after the revision 33
 mountain visual source retune and the revision 34 TerrainEngine reference lane.
 

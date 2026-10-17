@@ -2,6 +2,13 @@
 
 Date: 2026-06-30
 
+Status: historical plan for the removed terrain workbench. Its “current” and
+“near-term” sections below retain the original experiment's scope. The
+implementation is preserved in Git history and the [retirement archive](../archive/terrain/legacy-attempts.md).
+The [reference study](../../studies/terrain/reference/README.md) is frozen;
+new product work belongs in [Terrain](../../projects/terrain/README.md) or a
+separately selected product, not an implicit revival of this roadmap.
+
 This note captures the current terrain reboot reset point after the river and
 mountain driver experiments. The project has useful product plumbing now, but
 the next work should move away from per-image tuning and toward reusable terrain
@@ -9,10 +16,9 @@ process fields.
 
 ## Current Position
 
-`projects/terrain_workbench_legacy` preserves this roadmap and the old reboot
-workbench evidence. New visual terrain rendering work should happen in
-`studies/terrain/reference` unless this note is intentionally revived for product
-field work. The data-first direction remains:
+The former `projects/terrain_workbench_legacy` implementation is removed.
+This record preserves its process-field reasoning, not a supported renderer
+or a work order for the frozen reference study. Its data-first direction was:
 
 ```text
 coherent source fields -> terrain process fields -> product fields -> consumers

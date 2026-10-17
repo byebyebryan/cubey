@@ -180,6 +180,9 @@ shadow caster.
 
 ## Review
 
+The [capture and profiling tools index](tools/README.md) describes supported
+helpers and their build, asset and windowing prerequisites.
+
 Use the single canonical closure harness after changing waves, foam, LOD,
 lighting, reflection, or environment integration:
 

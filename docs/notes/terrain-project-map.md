@@ -1,6 +1,6 @@
 # Terrain Project Map
 
-Date: 2026-07-23
+Original checkpoint: 2026-07-23. Ownership reconciled on 2026-10-17.
 
 This map records the terrain product-promotion boundary. Older river,
 mountain-driver, source-model, and landscape-evolution notes are historical
@@ -10,6 +10,7 @@ evidence rather than an active queue.
 
 | Location | Role | Change policy |
 | --- | --- | --- |
+| `projects/terrain_water` | Live external SynxFlow and recorded terrain-water frontend. | Explicit preparation and admitted worker/recording required; separate from the shared far backdrop and builtin Fluid. |
 | `projects/terrain` | Fixed-focus external-heightfield backdrop, shared runtime, atmosphere, material review, diagnostics, and capture. | Accepted far-backdrop V1 and review host. Reopen only for a concrete consumer failure or bounded next product. |
 | `studies/terrain/reference` | TerrainEngine and curated clean-room ShaderToy visual controls. | Optional frozen study. Maintenance and reproducibility fixes only. |
 | `studies/terrain/shadertoy` | External-source fidelity comparison between original raymarches and Cubey mesh transfer. | Optional restricted-source study. Do not promote source code directly. |
@@ -17,8 +18,9 @@ evidence rather than an active queue.
 
 The failed workbench, terrain-lab, and coastal procedural-terrain
 implementations are removed after their conclusions are archived. Git history
-is the implementation record. `projects/planet` remains a distinct
-planet-scale renderer whose local terrain field does not define this product.
+is the implementation record. Planet is paused under `studies/planet`; its
+orbital experiment does not define the Terrain product or an active surface
+terrain integration lane.
 
 ## Product Spine
 

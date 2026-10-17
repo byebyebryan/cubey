@@ -22,9 +22,6 @@ than the root design and roadmap.
 - [Ocean horizon and curved-local scale](ocean-horizon-and-planet-scale.md):
   horizon-scale local ocean, planet-compatible contracts, curved-local
   rendering, and deferred handoff to a future planet-surface product.
-- [Terrain reboot direction](terrain-reboot.md): local terrain product
-  generator strategy, previous terrain lessons, reference takeaways, product
-  contract, and first vertical slice.
 - [Terrain v1 runtime](terrain-v1.md): active external-heightfield backdrop,
   CPU terrain ownership, cached product contract, consumer boundary, and
   acceptance criteria after closing the reference lane.
@@ -57,3 +54,9 @@ than the root design and roadmap.
 
 The [paused Planet design](../../studies/planet/design.md) is retained with its
 study rather than as active architecture direction.
+
+## Retained directional context
+
+- [Archived terrain reboot direction](terrain-reboot.md): earlier generator and
+  product strategy, retained at its original URL for historical links. Current
+  Terrain behavior belongs in [Terrain V1](terrain-v1.md).

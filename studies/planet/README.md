@@ -54,6 +54,9 @@ source channels without material or lighting.
 
 ## Review
 
+The [study tools index](tools/README.md) records explicit build and capture
+requirements; these helpers do not reopen the paused study.
+
 ```sh
 studies/planet/tools/capture_orbital_review.sh outputs/planet/new-review
 ```

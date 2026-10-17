@@ -1,350 +1,206 @@
 # Notes
 
-Notes are living scratch context: progress logs, gotchas, rough ideas, and
-temporary investigation records that are useful but not polished enough to be
-current design guidance.
+Current behavior belongs in the [project guides](../README.md#project-docs),
+[architecture](../architecture/README.md) and [roadmap](../roadmap.md). Notes
+record operating workflows, decisions and point-in-time evidence; an old
+“current”, “next” or “plan” is not an active backlog or a present-build promise.
+Promote stable contracts into their owning guide when behavior changes.
 
-When a decision stabilizes, promote it into the current docs under `docs/` or
-the detailed foundation notes under `docs/architecture/`.
+For Terrain Water, begin with the [current behavior reference](../../projects/terrain_water/current_reference.md)
+and [decision/evidence map](../../studies/fluid_25d/notes/development_map.md).
+The [study index](../../studies/README.md) owns retained harnesses and their
+optional inputs; the [archive](../archive/README.md) owns retired applications
+and completed foundation phases.
 
-## Entries
+<a id="entries"></a>
 
-- [Fluid 2.5D decision/evidence map](../../studies/fluid_25d/notes/development_map.md):
-  current verdict and navigation across the retained solver, terrain, bank,
-  performance and presentation studies. The early Fluid notes below are
-  historical evidence, not today's defaults or an active implementation backlog.
-- [Working notes](working-notes.md): broad implementation history and lessons
-  learned.
-- [Atmosphere rendering research](atmosphere-rendering-research.md): early
-  notes on clear-sky scattering approaches and the first `projects/atmosphere`
-  implementation direction.
-- [Celestial rendering research](celestial-rendering-research.md): historical
-  pivot note from atmosphere-owned celestial disks toward shared visible body
-  geometry with atmosphere as a consumer.
-- [Archived planet renderer notes](../archive/planet/README.md): pre-reboot
-  surface, terrain, atmosphere, cloud, and capture records.
-- [Sky and celestial current state](sky-celestial-current-state.md): accepted
-  Moon, Milky Way, and Star Field V2 ownership, render paths, and deferred
-  feature boundaries.
-- [Procedural star field v2](star-field-v2.md): accepted shared analytic star
-  field, isolated diagnostics, failure modes, and review workflow.
-- [Sky validation baseline](sky-validation-baseline.md): historical focused sky
-  build, unit-test, and PNG-smoke baseline from the unified-sky migration.
-- [Sky visual baseline review](sky-visual-baseline-review.md): historical capture
-  findings behind removing the legacy planet `SkyFrame` backend.
-- [Sky visual iteration plan](sky-visual-iteration-plan.md): historical first
-  post-cleanup tuning plan for unified atmosphere sun work.
-- [Sky visual pass 001 review](sky-visual-pass-001-review.md): historical clean
-  pre-tuning capture review for the first unified atmosphere sun pass.
-- [Sky visual pass 001 post-sun review](sky-visual-pass-001-post-sun-review.md):
-  historical post-halo capture review for the first unified atmosphere sun pass.
-- [Geometry moon migration](sky-geometry-moon-migration.md): migration plan for
-  making explicit geometry the canonical app-visible moon path.
-- [Geometry moon migration captures](sky-moon-geo-migration-captures.md):
-  reproducible capture commands and observations for the migrated moon paths.
-- [Moon surface detail plan](sky-moon-surface-detail-plan.md): procedural
-  spherical lunar surface map references, implementation outcome, and remaining
-  material tuning caveat.
-- [Moon surface detail captures](sky-moon-surface-detail-captures.md):
-  reproducible capture commands and observations for the lunar surface-map
-  routing pass.
-- [Procedural Milky Way v2 research](milky-way-v2-research.md): accepted
-  atlas-layer research, source/reference takeaways, and field-based direction
-  for replacing hand-stamped Milky Way landmarks with procedural structure.
-- [Water 3D profiling notes](water-3d-profiling.md): current solver profiling
-  captures and optimization candidates.
-- [Fluid 2.5D Terrain-Water Audition V2](fluid-25d-terrain-water-audition-v2.md):
-  historical builtin finite-volume real-terrain evidence, retained shortlist,
-  and that study's no-promotion boundary.
-- [Fluid 2.5D Dynamics Study V1](fluid-25d-dynamics-study-v1.md):
-  historical builtin finite-volume rain dynamics tiers, diagnostic evidence,
-  and no-promotion result; not a verdict on all shallow-water solvers.
-- [Fluid 2.5D Transport Readability V1](fluid-25d-transport-readability-v1.md):
-  historical conservative dye-pulse study protocol, source/outlet reading guide,
-  and deterministic video/profile acceptance contract.
-- [Performance profiling](performance-profiling.md): repeatable host/GPU
-  profiling workflow and the cloud-vs-atmosphere comparison harness.
-- [glTF staged-loading profile](gltf-loading-profile.md): pinned sample-asset
-  corpus, repeatable first/warm staged-loading measurements, and the current
-  performance decision gate.
-- [glTF Viewer V1 closure](gltf-viewer-v1-closure.md): reconciled loading,
-  material-conformance, dynamic-optics, validation, accepted limits, and reopen
-  decision for the closed single-asset viewer milestone.
-- [Ocean performance notes](ocean-performance.md): measured whole-renderer GPU
-  baseline, spectral FFT cost model, map-size tradeoffs, and optimization
-  guardrails.
-- [Scene ocean performance study](ocean-scene-performance-study.md):
-  non-invasive surface attribution, close/low/mid budgets, controlled
-  ablations, cloud-product costs, and the next optimization order.
-- [Surface Ocean V1](ocean-surface-v1.md): accepted local-ocean runtime,
-  sea-state, lighting, LOD, removal, review, and terrain/planet boundaries.
-- [Ocean cloud lighting v1](ocean-cloud-lighting-v1.md): projected cloud shadow,
-  planar reflection, and cached fallback contracts, review matrix, measured cost, and
-  explicit surface-only limits.
-- [Ocean visual capture recipes](ocean-visual-captures.md): repeatable ocean
-  debug, cascade isolation, far-field, and reference comparison matrix.
-- [Cloud and weather rendering research](cloud-weather-rendering-research.md):
-  historical cloud research, reference-code passes, and checkpoints that led to
-  the current production direction in `docs/architecture/cloud-rendering.md`.
-- [Cloud pre-merge checkpoint](cloud-pre-merge-checkpoint.md): current
-  production cloud capture recipe and known-good read before syncing cloud work
-  into other worktrees.
-- [Cloud foundation integration checkpoint](cloud-foundation-integration-checkpoint.md):
-  current shared runtime ownership, accepted surface consumers, direct/cached
-  product boundaries, and deferred aerial/orbit scope.
-- [Procedural terrain reference review](procedural-terrain-reference-review.md):
-  current pass over `3DWorld`, `Planet-Generator`, `TerraForge3D`, and
-  `terrain-diffusion`, with lessons for code-centric terrain recipes, field
-  sets, tile contracts, diagnostics, and ML non-goals.
-- [Terrain reboot current captures](terrain-reboot-current-captures.md):
-  archived terrain-workbench PNG review set, what to
-  inspect, and river driver limitations.
-- [Terrain project map](terrain-project-map.md): current active, frozen, paused,
-  and legacy lanes plus the external-raster terrain v1 spine.
-- [Terrain and foundation closure](terrain-foundation-closure-2026-07-22.md):
-  worktree source/tool caches, verified payload identity, persistent derived
-  products, and atmosphere-atlas startup adoption.
-- [Terrain backdrop foundation promotion](terrain-backdrop-foundation-promotion.md):
-  ownership, second-consumer composition, climate boundary, and acceptance
-  gates for promoting the fixed-focus backdrop.
-- [Terrain captured water integration plan](terrain-captured-water-v1-plan.md):
-  historical rain-fed/post-rain proposal and placement gates; current accepted
-  rain-on paired-surface consumer is documented in [Terrain](../../projects/terrain/README.md).
-- [Terrain captured water alignment result](terrain-captured-water-alignment-v1.md):
-  retained first-gate geometry rejection and density/filtering controls that
-  motivated the later shared paired ground/water reconstruction.
-- [Terrain captured water paired surface plan](terrain-captured-water-v2-plan.md):
-  historical V2 implementation plan for the now-integrated opt-in rain-fed
-  capture consumer; not a second active integration backlog.
-- [Terrain v1 reboot](terrain-v1-reboot.md): decision to archive analytical
-  hydrology work and reboot terrain as a directly sampled CPU/GPU runtime.
-- [Terrain v1 runtime checkpoint](terrain-v1-runtime-checkpoint.md): superseded
-  historical CPU/GPU source and traversable clipmap checkpoint retained for
-  provenance.
-- [Terrain rendering refinement](terrain-rendering-refinement.md): completed
-  ground-level rendering checkpoint with heightfield shadows, atmosphere
-  composition, procedural materials, LOD handoff fixes, and a frozen source.
-- [Terrain backdrop presentation](terrain-backdrop-presentation.md): opt-in
-  distant vegetation-coverage and deterministic framing study, with an explicit
-  close-range negative-control boundary.
-- [Terrain backdrop foreground clearance](terrain-backdrop-foreground-clearance.md):
-  strict 150 m AGL and 300 m lower-frustum contract for keeping backdrop framing
-  out of unsupported surface-detail range.
-- [Backdrop surface placement](backdrop-surface-placement.md): shared foreground
-  bounds, terrain-footprint, ocean-crest, and consumer-clearance contract for
-  compositing terrain and ocean behind scene content.
-- [Terrain rendering quality reset](terrain-rendering-quality-reset.md):
-  completed native-resolution correction for final-height shading, seeded
-  procedural geology, bounded landform lighting, and honest reference controls.
-- [Terrain resolution and bandwidth prototype](terrain-resolution-bandwidth-prototype.md):
-  opt-in adaptive mountain geometry, source-v2 spectrum, and generated material
-  texture contract while source v1 and the control renderer remain stable.
-- [Terrain resolution and bandwidth checkpoint](terrain-resolution-bandwidth-checkpoint.md):
-  implemented control/quality comparison, measured review pack, and remaining
-  terrain-rendering limits.
-- [Terrain midground detail v3](terrain-midground-detail-v3.md): implemented
-  opt-in layered materials, explicit backdrop/midground tiers, measured A/B
-  review pack, and frozen near-ground boundary.
-- [Terrain midground correction v4](terrain-midground-correction-v4.md): frozen
-  source/geometry contract for separating macro classification from shading
-  detail and rejecting near-frame camera occluders.
-- [Terrain source v2.1 refinement plan](terrain-source-v2-1-refinement-plan.md):
-  implemented source-only scale separation that preserves v2 above a 64 m
-  footprint while bounding sub-110 m relief outside the nonlinear profile.
-- [Terrain far-field v1](terrain-far-field-v1.md): superseded directional
-  3.2 km backdrop checkpoint and crack-free quality-rendering evidence.
-- [Terrain orbit stage plan](terrain-orbit-stage-plan.md): current panoramic
-  detached/grounded placement contract with unrestricted orbit yaw and no
-  terrain-source conditioning.
-- [Terrain quality tile field](terrain-quality-tile-field.md): correction of
-  fixed-factor and mixed-LOD quality geometry with a finite world-aligned,
-  adaptively tessellated far-field tile contract.
-- [Terrain cached backdrop pivot](terrain-cached-backdrop-pivot.md): current
-  decision to replace per-frame procedural tessellation with a fixed-focus,
-  setup-time cached mesh and a terrain-only sub-millisecond GPU budget.
-- [Terrain cached backdrop v1 review](terrain-cached-backdrop-v1-review.md):
-  accepted multi-seed fixed-focus product, ownership envelope, setup cost, and
-  1440p sub-millisecond terrain-pass evidence.
-- [Terrain radial backdrop product v1](terrain-radial-backdrop-product-v1.md):
-  promoted radial far-field profile, runtime ownership, exact study parity,
-  maintained capture pack, and explicit performance/detail debt.
-- [Terrain radial backdrop macro baseline](terrain-radial-backdrop-macro-baseline.md):
-  accepted expanded-domain composition and camera target, with explicit cached
-  integration, detail, performance, and stop boundaries.
-- [Terrain radial fidelity ablation](terrain-radial-fidelity-ablation.md):
-  frozen-macro `2 x 2` study separating coherent radial source detail from
-  filtered backdrop material detail before either lane can be promoted.
-- [Terrain source model study](terrain-source-model-study.md): controlled
-  clean-room comparison of scalable mountain source operators through the
-  accepted cached-backdrop renderer, with fixed calibration and provenance
-  boundaries.
-- [Terrain external generator bakeoff](terrain-external-generator-bakeoff.md):
-  pinned Terrain Diffusion offline-field comparison, deterministic mountain
-  region selection, raster study boundary, and promotion gates.
-- [Terrain external generator bakeoff review](terrain-external-generator-bakeoff-review.md):
-  completed Terrain Diffusion evidence, determinism corrections, measured
-  source-quality gain, backdrop-composition failure, and reference verdict.
-- [Terrain source preset contract](terrain-source-preset-contract.md): one
-  committed default recipe, independently generated optional natural locations,
-  runtime availability states, and uncommitted raster storage.
-- [Terrain raster backdrop v1](terrain-raster-backdrop-v1.md): completed opt-in
-  external-heightfield product, deterministic natural staging, seam-matched
-  continuous center, and measured far-field acceptance.
-- [Terrain placement controls](terrain-placement-controls.md): selected,
-  raw-center, and deterministic raw-sample controls for separating unchanged
-  source quality from placement before considering synthetic stage shaping.
-- [Terrain lighting and material v1](terrain-lighting-material-v1.md): frozen
-  geometry control, cached directional-shadow contract, bounded procedural
-  material refinement, and candidate acceptance gates.
-- [Terrain rendering envelope v1](terrain-rendering-envelope-v1.md): retained
-  stride-3 far-backdrop boundary and evidence that denser fixed geometry does
-  not materially improve the accepted views.
-- [Terrain material v2](terrain-material-v2.md): frozen-source refinement gate
-  for broad mineral identity, mesoscopic light response, matched captures, and
-  explicit performance and visual acceptance criteria.
-- [Rejected terrain daylight-form study](terrain-daylight-form-v1.md): marginal
-  mineral/ambient tuning and source-normal texture experiments that did not
-  produce a meaningful visual improvement.
-- [Terrain visual fidelity strategy](terrain-visual-fidelity-strategy.md):
-  source-versus-rendering diagnosis, effort ranking, and the bounded
-  surface-data proof required before reopening the accepted far backdrop.
-- [Rejected terrain climate response V1.1](../archive/terrain/climate-response-v1-1-rejected.md):
-  compact evidence from the unmerged climate branch and the snow-allocation
-  failure that kept mineral control as the production default.
-- [ShaderToy Mountains fidelity study](terrain-shadertoy-mountains-fidelity.md):
-  optional external-source control that compares the unchanged Mountains
-  raymarch against an exact-source Cubey mesh transfer and staged ablations.
-- [ShaderToy terrain source-shape studies](terrain-shadertoy-source-shape-studies.md):
-  external Swiss Alps, Mountain Peak, and erosion-filter comparisons in the
-  shared mesh and orbit harness.
-- [Mountains-guided terrain source correction](terrain-mountains-guided-source-correction.md):
-  bounded clean-room correction of the mountain scale hierarchy, external
-  component diagnostics, and the measured rejection before any production v4.
-- [Terrain directional backdrop study](terrain-directional-backdrop-study.md):
-  rejected directional placement/shaping comparison plus the radial follow-up
-  evidence that led to the accepted macro baseline.
-- [Terrain source v3 hierarchy plan](terrain-source-v3-hierarchy-plan.md):
-  retained hierarchy diagnostics and measured rejection of the smooth massif
-  composition as a promotion candidate.
-- [Terrain ref closure](terrain-ref-closure.md): final multi-seed reference
-  matrix, recipe status, freeze policy, and explicit carry/reject decisions for
-  the production terrain reboot.
-- [Terrain v1 baseline review](terrain-v1-baseline.md): archived CPU terrain
-  patch product, multi-seed captures, measured generation cost, and the basin
-  and routing artifacts exposed before river selection or carving.
-- [Terrain source bakeoff v1](terrain-source-bakeoff-v1.md): corrected contour
-  baseline versus broad OpenSimplex control, fixed-scale measurements, regional
-  captures, and the decision to move next toward uplift plus erosion.
-- [Terrain landscape evolution v1](terrain-landscape-evolution-v1.md): regional
-  analytical stream-power candidate, fixed model parameters, oracle/license
-  boundary, product fields, and macro-terrain acceptance contract.
-- [Terrain landscape evolution v1 review](terrain-landscape-evolution-v1-review.md):
-  clean-room implementation evidence, three-seed metrics, guarded oracle
-  comparison, visual findings, and remaining four-neighbor routing artifacts.
-- [Terrain process roadmap](terrain-process-roadmap.md): current reset point
-  after river/mountain experiments, reusable process-field gaps, and the
-  near-term order before adding more biome slices.
-- [Terrain ShaderToy operator extraction](terrain-shadertoy-operator-extraction.md):
-  deeper ShaderToy terrain/hydro review, what to borrow as clean-room process
-  operators or visual cues, and what to keep out of river topology.
-- [Terrain ShaderToy erosion filter reference](terrain-shadertoy-erosion-filter-plan.md):
-  final `terrain_ref` experiment for a clean-room, slope-aware procedural
-  erosion filter with explicit non-hydraulic boundaries and review criteria.
-- [Terrain erosion filter generalization](terrain-erosion-filter-generalization.md):
-  cross-biome positive/negative control matrix for deciding whether the
-  slope-aware filter is a reusable selective process or a narrow mountain
-  effect, plus its recommended boundary from regional hydrology.
-- [Terrain ShaderToy biome reference map](terrain-shadertoy-biome-reference-map.md):
-  classification of local ShaderToy terrain files for clean-room visual/source
-  recipes in `terrain_ref`, starting with alpine, dunes, and lake-basin refs.
-- [TerrainEngine reference port plan](terrain-engine-reference-port-plan.md):
-  isolated recipe plan for porting TerrainEngine's shader-side height/material
-  model into the terrain product contract, plus capability review notes for
-  tessellation, water, materials, hydrology gaps, and foliage gaps.
-- [Terrain ref split plan](terrain-ref-split-plan.md): split the current
-  terrain workbench into an archived implementation and start a clean
-  terrain visual-reference lane before more TerrainEngine or ShaderToy
-  rendering work.
-- [Terrain ref presentation port plan](terrain-ref-presentation-port-plan.md):
-  first rendering pass for the clean reference lane: TerrainEngine-style
-  material textures, lighting/fog, captures, and explicit water/tessellation
-  deferrals.
-- [Terrain ref ShaderToy heightfield plan](terrain-ref-shadertoy-heightfield-plan.md):
-  first clean-room ShaderToy-style heightfield recipe in `terrain_ref`, with
-  source-specific material response and explicit non-goals.
-- [Terrain mountain gully diagnostic plan](terrain-mountain-gully-diagnostic-plan.md):
-  revision 24 plan for diagnostic-only gully / erosion fields over the mountain
-  stress recipe before any height-affecting erosion pass.
-- [Terrain mountain macro shape plan](terrain-mountain-macro-shape-plan.md):
-  revision 25 plan for preview surface selection and stronger mountain mass,
-  shoulder, and summit source fields.
-- [Terrain coherent height rule](terrain-coherent-height-rule.md): revision 26
-  guardrail against building visible terrain from independently pasted feature
-  masks.
-- [Terrain anisotropic mountain profile plan](terrain-anisotropic-mountain-profile-plan.md):
-  revision 27 target for replacing straight ridge bands and round summit blobs
-  with curved crests, elongated summit support, and saddle suppression.
-- [Terrain mountain profile correction plan](terrain-mountain-profile-correction-plan.md):
-  revision 28 target for correcting bulgy summits, fin-like crests, and stepped
-  shoulders while keeping the coherent height rule.
-- [Terrain mountain thermal talus plan](terrain-mountain-thermal-talus-plan.md):
-  revision 29 target for adding a bounded thermal/talus process diagnostic
-  before more local mountain source tuning.
-- [Terrain mountain source/process loop plan](terrain-mountain-source-process-loop-plan.md):
-  revision 30 target for comparing mountain source/product/process stages and
-  improving the source profile before more erosion or biome polish.
-- [Terrain resolution scene-readiness plan](terrain-resolution-scene-readiness-plan.md):
-  fixed-extent `513`/`1025`/`2049` audit for separating sample density limits
-  from source/process model failures before terrain LOD work.
-- [Terrain river stream-order corridor plan](terrain-river-stream-order-corridor-plan.md):
-  next river-quality pivot: promote `stream_order` and `flow_accumulation` into
-  connected corridor selection while avoiding direct graph-edge rendering.
-- [Terrain routing repair plan](terrain-routing-repair-plan.md):
-  priority-flood epsilon fill pass for repairing local routing sinks before
-  broader hydrology or erosion work.
-- [Terrain river degrid and stress pruning plan](terrain-river-degrid-stress-pruning-plan.md):
-  revision 11/12 outcomes for moving rendered river centerlines away from raw
-  D8 graph paths, pruning low-order support branches, and recovering active
-  network coverage.
-- [Terrain stress trunk hierarchy plan](terrain-stress-trunk-hierarchy-plan.md):
-  revision 13 plan and outcome for promoting major stress support/order-seed
-  paths into trunk so tributaries stop carrying most of the visible network.
-- [Terrain stress branch distinctness plan](terrain-stress-branch-distinctness-plan.md):
-  revision 14 plan and outcome for rejecting near-parallel promoted stress
-  trunks so trunk branches add distinct visible drainage area.
-- [Terrain stress basin network reach plan](terrain-stress-basin-network-reach-plan.md):
-  next stress-river correction: move from sparse promoted branches to a broad
-  connected basin tree with explicit reach and continuity acceptance checks.
-- [Terrain stress promotion organic cleanup plan](terrain-stress-promotion-organic-cleanup-plan.md):
-  revision 16 outcome for rendered trunk-connectivity gating, anti-straight
-  stress support filters, and the remaining broad-network driver gap.
-- [Terrain graph-first river plan](terrain-graph-first-river-plan.md):
-  revision 17/18 river-quality pivot: generate a non-grid river graph first,
-  then rasterize graph mainstem, major tributaries, and minor tributaries into
-  existing terrain process fields.
-- [Terrain river terrain coupling plan](terrain-river-terrain-coupling-plan.md):
-  revision 23 correction that makes river fields carve final terrain height
-  instead of reading as material-only overlays in 3D previews.
-- [Terrain water bodies scope](terrain-water-bodies-scope.md):
-  river/lake/wetland/coast/ocean boundaries before moving from river work to the
-  next terrain driver.
-- [Terrain mountain driver plan](terrain-mountain-driver-plan.md):
-  revision 19 implementation for explicit mountain support, ridge, peak, and uplift
-  fields in an isolated mountain-range stress recipe.
-- [Terrain mountain hierarchy plan](terrain-mountain-hierarchy-plan.md):
-  revision 20 plan for range spine, ridge hierarchy, and peak-candidate source
-  fields before alpine biome polish.
-- [Terrain peak-first mountain skeleton plan](terrain-peak-first-mountain-skeleton-plan.md):
-  revision 21 plan for envelope, peak anchors, peak prominence, ridge skeleton,
-  and ridge influence fields.
-- [Terrain mountain peak readability plan](terrain-mountain-peak-readability-plan.md):
-  revision 22 plan for making the peak-first mountain stress recipe visibly
-  build from broad support into high peaks.
-- [Terrain renderer preview plan](terrain-renderer-preview-plan.md): plan for
-  adding a renderer-backed perspective consumer of the rebooted terrain product
-  so peaks, basins, and slopes can be reviewed in 3D.
-- [Procedural consumer inventory](procedural-consumer-inventory.md):
-  current inventory of atmosphere, cloud, ocean, fluid, planet, and future
-  terrain procedural consumers that should shape shared foundation work.
-- [Procedural shader parity](procedural-shader-parity.md): current
-  CPU-vs-GLSL helper parity scope for shared procedural shader migrations.
+## Operating guides
+
+- [Performance Profiling Notes](performance-profiling.md): repeatable host/GPU profiling workflow; compare matched runs, not GUI FPS.
+- [Ocean Visual Captures](ocean-visual-captures.md): canonical capture matrix for the current Ocean renderer.
+- [glTF Staged-Loading Profile](gltf-loading-profile.md): pinned corpus and release-profile workflow; recorded timings belong to their measured source.
+- [Procedural Shader Parity](procedural-shader-parity.md): CPU/GLSL parity contracts for mechanical helper migrations.
+
+## Decisions and integration checkpoints
+
+These records explain why the current contracts exist. Their measurements,
+manual-acceptance limits and historical sections retain their original scope;
+the architecture and project guides remain current authority.
+
+- [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
+- [Dynamic Environment Probe Coherence](dynamic-environment-probe-coherence.md): coherent full-cubemap publication and consumer handoff.
+- [Surface Ocean V1](ocean-surface-v1.md): accepted local-water product boundary.
+- [Ocean Cloud Lighting V1](ocean-cloud-lighting-v1.md): explicit cloud lighting/reflection products and surface-only limits.
+- [Ocean Surface Foundation Promotion](ocean-surface-foundation-promotion.md): shared runtime promotion; performance claims retain their recorded qualification scope.
+- [Cloud Foundation Integration Checkpoint](cloud-foundation-integration-checkpoint.md): shared surface-cloud ownership; old Planet/reference integrations remain historical.
+- [Sky and Celestial Current State](sky-celestial-current-state.md): shared celestial checkpoint; Planet-specific sections describe the retired integration.
+- [Procedural Star Field V2](star-field-v2.md): analytic star field and diagnostic contract.
+- [Terrain Project Map](terrain-project-map.md): current product versus frozen/paused lanes.
+- [Terrain Product Promotion](terrain-product-promotion.md): far-backdrop promotion and ownership boundary.
+- [Terrain And Foundation Closure](terrain-foundation-closure-2026-07-22.md): source/product caches and generated-atlas adoption.
+- [Terrain Backdrop Foundation Promotion](terrain-backdrop-foundation-promotion.md): second-consumer promotion and acceptance gates.
+- [Terrain Source Preset Contract](terrain-source-preset-contract.md): explicit source recipes, availability states and cache boundary.
+- [Terrain Raster Backdrop V1](terrain-raster-backdrop-v1.md): external-raster product and natural placement checkpoint.
+- [Terrain Rendering Envelope V1](terrain-rendering-envelope-v1.md): far-backdrop geometry/detail limits.
+- [Terrain Visual Fidelity Strategy](terrain-visual-fidelity-strategy.md): bounded evidence required before reopening the accepted backdrop.
+
+## Historical research and study records
+
+Completed, rejected, superseded and optional experiments are grouped below.
+Read each record's verdict and source/input boundary before reproducing it.
+In particular, the cloud pre-merge and terrain process plans describe removed
+implementations; they do not reopen frozen reference studies. Current cloud
+work uses Atmosphere; current terrain work uses the promoted Terrain product
+or a separately chosen new product.
+
+### Sky and cloud research and superseded capture plans
+
+- [Atmosphere Rendering Research](atmosphere-rendering-research.md)
+- [Celestial Rendering Research](celestial-rendering-research.md)
+- [Cloud Pre-Merge Checkpoint](cloud-pre-merge-checkpoint.md)
+- [Cloud And Weather Rendering Research](cloud-weather-rendering-research.md)
+- [Procedural Milky Way V2 Research](milky-way-v2-research.md)
+- [Geometry Moon Migration](sky-geometry-moon-migration.md)
+- [Geometry Moon Migration Captures](sky-moon-geo-migration-captures.md)
+- [Moon Surface Detail Captures](sky-moon-surface-detail-captures.md)
+- [Moon Surface Detail Plan](sky-moon-surface-detail-plan.md)
+- [Sky Validation Baseline](sky-validation-baseline.md)
+- [Sky Visual Baseline Review](sky-visual-baseline-review.md)
+- [Sky Visual Iteration Plan](sky-visual-iteration-plan.md)
+- [Sky Visual Pass 001 Post-Sun Review](sky-visual-pass-001-post-sun-review.md)
+- [Sky Visual Pass 001 Review](sky-visual-pass-001-review.md)
+
+### Ocean and liquid performance or presentation studies
+
+- [Ocean Cloud Reflection Strategy](ocean-cloud-reflection-strategy.md)
+- [Ocean Performance Notes](ocean-performance.md)
+- [Scene Ocean Performance Study](ocean-scene-performance-study.md)
+- [Water 3D Profiling Notes](water-3d-profiling.md)
+
+### Builtin Fluid and terrain-water study lineage
+
+- [Fluid 2.5D dynamics study V1](fluid-25d-dynamics-study-v1.md)
+- [Fluid 2.5D sustained-headwaters bankfull study V1](fluid-25d-headwaters-bankfull-v1.md)
+- [Fluid 2.5D headwaters resolution and speed study V1](fluid-25d-headwaters-resolution-speed-v1.md)
+- [Fluid 2.5D headwaters supply and speed study V1](fluid-25d-headwaters-supply-speed-v1.md)
+- [Hillside conservation and transport V3](fluid-25d-hillside-conservation-transport-v3.md)
+- [Macro hillside-flow study V1](fluid-25d-hillside-flow-study-v1.md)
+- [Hillside motion and readability V4](fluid-25d-hillside-motion-readability-v4.md)
+- [Hillside Rain V2: camera bounds and downhill transport diagnosis](fluid-25d-hillside-rain-v2-transport-diagnosis.md)
+- [Hillside Rain V3: bounded CPU transport correction study](fluid-25d-hillside-rain-v3-cpu-transport-study.md)
+- [Hillside Rain V4: shared-geometry CPU study](fluid-25d-hillside-rain-v4-geometry-study.md)
+- [Sustained hillside flow V2](fluid-25d-hillside-sustained-flow-v2.md)
+- [Native Terrain Diffusion flow-site survey V1 — 2026-09-25](fluid-25d-native-flow-site-survey-v1.md)
+- [Native Terrain Diffusion sustained-flow preflight V1 — 2026-09-25](fluid-25d-native-sustained-flow-preflight-v1.md)
+- [Fluid 2.5D natural-reach study V1 — 2026-09-23](fluid-25d-natural-reach-study-v1.md)
+- [Fluid 2.5D rain catchment study V1 (2026-09-24)](fluid-25d-rain-catchment-study-v1.md)
+- [Fluid 2.5D rain-pool terrain screen V1 (2026-09-24)](fluid-25d-rain-pool-terrain-screen-v1.md)
+- [Fluid 2.5D River V0 checkpoint](fluid-25d-river-v0-checkpoint.md)
+- [Fluid 2.5D sustained-headwaters control V1](fluid-25d-sustained-headwaters-v1.md)
+- [Fluid 2.5D Terrain Diffusion hydrology read V1 — 2026-09-24](fluid-25d-terrain-hydro-read-v1.md)
+- [Fluid 2.5D terrain-site water study V1 — 2026-09-23](fluid-25d-terrain-site-water-v1.md)
+- [Fluid 2.5D Terrain-Water Audition V1 — 2026-09-15](fluid-25d-terrain-water-audition-v1.md)
+- [Fluid 2.5D Terrain-Water Audition V2 — 2026-09-15](fluid-25d-terrain-water-audition-v2.md)
+- [Fluid 2.5D Transport Readability V1](fluid-25d-transport-readability-v1.md)
+- [Fluid 2.5D quiet water-edge spike](fluid25d-bank-edge-v1.md)
+- [Fluid 2.5D opt-in cascade cues V1](fluid25d-cascade-cues-v1.md)
+- [Fluid 2.5D climate-informed procedural surface V1](fluid25d-climate-surface-v1.md)
+- [Fluid 2.5D bare macro-terrain and rainfall V4](fluid25d-macro-terrain-v4.md)
+- [Optional shallow-water treatments](fluid25d-shallow-water-options-v1.md)
+- [Fluid 2.5D opt-in steep-flow presentation spike](fluid25d-steep-flow-v1.md)
+- [Fluid 2.5D terrain material study V3](fluid25d-terrain-material-v3.md)
+- [Fluid 2.5D water-film presentation V5](fluid25d-water-film-v5.md)
+
+### Terrain research, completed experiments and superseded plans
+
+- [Backdrop Surface Placement](backdrop-surface-placement.md)
+- [Terrain Anisotropic Mountain Profile Plan](terrain-anisotropic-mountain-profile-plan.md)
+- [Terrain Backdrop Foreground Clearance](terrain-backdrop-foreground-clearance.md)
+- [Terrain Backdrop Presentation Study](terrain-backdrop-presentation.md)
+- [Terrain Cached Backdrop Pivot](terrain-cached-backdrop-pivot.md)
+- [Terrain Cached Backdrop V1 Review](terrain-cached-backdrop-v1-review.md)
+- [Terrain Cached Radial Integration](terrain-cached-radial-integration.md)
+- [Terrain captured water alignment result](terrain-captured-water-alignment-v1.md)
+- [Captured-water landscape context V1](terrain-captured-water-context-v1-plan.md)
+- [Terrain captured water integration plan](terrain-captured-water-v1-plan.md)
+- [Terrain captured water paired surface plan](terrain-captured-water-v2-plan.md)
+- [Terrain Climate Calibration V1](terrain-climate-calibration-v1.md)
+- [Terrain Climate Surface Model Research](terrain-climate-surface-model-research.md)
+- [Terrain Coherent Height Rule](terrain-coherent-height-rule.md)
+- [Rejected Terrain Daylight-Form Study](terrain-daylight-form-v1.md)
+- [Terrain Diffusion Desert And Canyon Study](terrain-diffusion-desert-canyon-study.md)
+- [Terrain Directional Backdrop Study](terrain-directional-backdrop-study.md)
+- [TerrainEngine Reference Port Plan](terrain-engine-reference-port-plan.md)
+- [Terrain Erosion Filter Generalization](terrain-erosion-filter-generalization.md)
+- [Terrain External Generator Bakeoff Review](terrain-external-generator-bakeoff-review.md)
+- [Terrain External Generator Bakeoff](terrain-external-generator-bakeoff.md)
+- [Terrain Far-Field V1](terrain-far-field-v1.md)
+- [Terrain Graph-First River Plan](terrain-graph-first-river-plan.md)
+- [Terrain Landscape Evolution V1 Review](terrain-landscape-evolution-v1-review.md)
+- [Terrain Landscape Evolution V1](terrain-landscape-evolution-v1.md)
+- [Terrain Landscape Variations V1](terrain-landscape-variations-v1.md)
+- [Terrain Lighting And Material V1](terrain-lighting-material-v1.md)
+- [Terrain Material V2](terrain-material-v2.md)
+- [Terrain Midground Correction V4](terrain-midground-correction-v4.md)
+- [Terrain Midground Detail V3](terrain-midground-detail-v3.md)
+- [Terrain Mountain Driver Plan](terrain-mountain-driver-plan.md)
+- [Terrain Mountain Gully Diagnostic Plan](terrain-mountain-gully-diagnostic-plan.md)
+- [Terrain Mountain Hierarchy Plan](terrain-mountain-hierarchy-plan.md)
+- [Terrain Mountain Macro Shape Plan](terrain-mountain-macro-shape-plan.md)
+- [Terrain Mountain Peak Readability Plan](terrain-mountain-peak-readability-plan.md)
+- [Terrain Mountain Profile Correction Plan](terrain-mountain-profile-correction-plan.md)
+- [Terrain Mountain Source Process Loop Plan](terrain-mountain-source-process-loop-plan.md)
+- [Terrain Mountain Thermal Talus Plan](terrain-mountain-thermal-talus-plan.md)
+- [Terrain Mountain Visual Source Pivot](terrain-mountain-visual-source-pivot-plan.md)
+- [Mountains-Guided Terrain Source Correction](terrain-mountains-guided-source-correction.md)
+- [Terrain Natural Raster Staging](terrain-natural-raster-staging.md)
+- [Terrain Orbit Stage Plan](terrain-orbit-stage-plan.md)
+- [Terrain Peak-First Mountain Skeleton Plan](terrain-peak-first-mountain-skeleton-plan.md)
+- [Terrain Placement Controls](terrain-placement-controls.md)
+- [Terrain Process Roadmap](terrain-process-roadmap.md)
+- [Terrain Quality Tile Field](terrain-quality-tile-field.md)
+- [Terrain Radial Backdrop Macro Baseline](terrain-radial-backdrop-macro-baseline.md)
+- [Terrain Radial Backdrop Product V1](terrain-radial-backdrop-product-v1.md)
+- [Terrain Radial Fidelity Ablation](terrain-radial-fidelity-ablation.md)
+- [Terrain Reboot Current Captures](terrain-reboot-current-captures.md)
+- [Terrain Ref Closure](terrain-ref-closure.md)
+- [Terrain Ref Presentation Port Plan](terrain-ref-presentation-port-plan.md)
+- [Terrain Ref ShaderToy Heightfield Plan](terrain-ref-shadertoy-heightfield-plan.md)
+- [Terrain Ref Split Plan](terrain-ref-split-plan.md)
+- [Terrain Renderer Preview Plan](terrain-renderer-preview-plan.md)
+- [Terrain Rendering Acceptance V1](terrain-rendering-acceptance-v1.md)
+- [Terrain Rendering Quality Reset](terrain-rendering-quality-reset.md)
+- [Terrain Rendering Refinement](terrain-rendering-refinement.md)
+- [Terrain Resolution And Bandwidth Checkpoint](terrain-resolution-bandwidth-checkpoint.md)
+- [Terrain Resolution And Bandwidth Prototype](terrain-resolution-bandwidth-prototype.md)
+- [Terrain Resolution Scene-Readiness Plan](terrain-resolution-scene-readiness-plan.md)
+- [Terrain River Degrid And Stress Pruning Plan](terrain-river-degrid-stress-pruning-plan.md)
+- [Terrain River Graph Routing Attempt](terrain-river-graph-routing-attempt.md)
+- [Terrain River Stream-Order Corridor Plan](terrain-river-stream-order-corridor-plan.md)
+- [Terrain River Terrain Coupling Plan](terrain-river-terrain-coupling-plan.md)
+- [Terrain Routing Repair Plan](terrain-routing-repair-plan.md)
+- [Terrain ShaderToy Biome Reference Map](terrain-shadertoy-biome-reference-map.md)
+- [Terrain ShaderToy Erosion Filter Reference](terrain-shadertoy-erosion-filter-plan.md)
+- [ShaderToy Mountains Fidelity Study](terrain-shadertoy-mountains-fidelity.md)
+- [Terrain ShaderToy Operator Extraction](terrain-shadertoy-operator-extraction.md)
+- [ShaderToy Terrain Source-Shape Studies](terrain-shadertoy-source-shape-studies.md)
+- [Terrain Source Bakeoff V1](terrain-source-bakeoff-v1.md)
+- [Terrain Source Model Study](terrain-source-model-study.md)
+- [Terrain Source v2.1 Refinement Plan](terrain-source-v2-1-refinement-plan.md)
+- [Terrain Source V3 Far-Field Hierarchy](terrain-source-v3-hierarchy-plan.md)
+- [Terrain Stress Basin Network Reach Plan](terrain-stress-basin-network-reach-plan.md)
+- [Terrain Stress Branch Distinctness Plan](terrain-stress-branch-distinctness-plan.md)
+- [Terrain Stress Promotion Organic Cleanup Plan](terrain-stress-promotion-organic-cleanup-plan.md)
+- [Terrain Stress Trunk Hierarchy Plan](terrain-stress-trunk-hierarchy-plan.md)
+- [Terrain Surface Semantics Study](terrain-surface-semantics-study.md)
+- [Terrain V1 Baseline Review](terrain-v1-baseline.md)
+- [Terrain V1 Reboot Decision](terrain-v1-reboot.md)
+- [Terrain V1 Runtime Checkpoint](terrain-v1-runtime-checkpoint.md)
+- [Terrain V1 Visual Closure](terrain-visual-closure-v1.md)
+- [Terrain Water Bodies Scope](terrain-water-bodies-scope.md)
+
+### Procedural research and working history
+
+- [Procedural Consumer Inventory](procedural-consumer-inventory.md)
+- [Procedural Terrain Reference Review](procedural-terrain-reference-review.md)
+- [Working Notes](working-notes.md)

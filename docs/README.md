@@ -62,9 +62,6 @@ Detailed current foundation notes live under
 - [Ocean horizon and curved-local scale](architecture/ocean-horizon-and-planet-scale.md):
   ocean/planet scale boundary, curved far-surface mapping, and local-frame
   handoff direction.
-- [Terrain reboot direction](architecture/terrain-reboot.md): local terrain
-  product generator strategy, previous terrain lessons, reference takeaways,
-  product contract, and first vertical slice.
 - [Terrain v1 runtime](architecture/terrain-v1.md): active external-heightfield
   far-backdrop product, natural placement, cached geometry, material review,
   and consumer boundary.
@@ -133,8 +130,8 @@ Legacy material:
 
 ## Notes
 
-- [Notes index](notes/README.md): current living notes, research records, and
-  promoted implementation checkpoints.
+- [Notes index](notes/README.md): operating guides, integration checkpoints,
+  historical research and superseded plans.
 - [Performance profiling](notes/performance-profiling.md): repeatable host/GPU
   profiling workflow and the cloud-vs-atmosphere comparison harness.
 - [Working notes](notes/working-notes.md): scratchpad for progress, gotchas,
@@ -147,6 +144,11 @@ Legacy material:
   for promoted foundation milestones.
 
 ## Archive
+
+- [Archive index](archive/README.md): completed foundation phases, retired
+  applications and retained rejection records.
+- [Archived terrain reboot direction](architecture/terrain-reboot.md): earlier
+  product strategy retained at its original URL; current behavior is in Terrain V1.
 
 - [Spike findings](archive/spike-findings.md): historical WebGPU/Vulkan spike
   notes and decision record. This is archived context, not current direction.
