@@ -5,13 +5,12 @@ from __future__ import annotations
 import dataclasses
 import json
 import math
-import os
-import shutil
 import sys
-import tempfile
 import time
 from pathlib import Path
 from types import ModuleType
+
+from terrain_bundle import staged_bundle
 
 STUDY_SCHEMA = "cubey.terrain.desert-canyon-study.v1"
 PROBE_SCHEMA = "cubey.terrain.landform-probe.v1"
@@ -764,11 +763,7 @@ def bake_landform_study_assets(
         },
     }
 
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(
-        tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent)
-    )
-    try:
+    with staged_bundle(output_dir) as temporary:
         probe_records = []
         preview_paths = {}
         for probe in probes:
@@ -898,11 +893,5 @@ def bake_landform_study_assets(
                 f"terrain landform study generation took {generation_seconds:.3f} "
                 f"seconds, over the {STUDY_GENERATION_LIMIT_SECONDS:.0f}-second limit"
             )
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(temporary, output_dir)
-    except Exception:
-        shutil.rmtree(temporary, ignore_errors=True)
-        raise
 
     print(f"terrain desert/canyon study assets: wrote {output_dir}")

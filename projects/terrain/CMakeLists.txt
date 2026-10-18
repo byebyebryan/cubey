@@ -396,6 +396,11 @@ if (BUILD_TESTING)
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_source_cache.py"
     )
     set_tests_properties(terrain_source_cache_tests PROPERTIES LABELS terrain)
+    add_test(NAME terrain_bundle_publication_helpers
+        COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_terrain_bundle.py")
+    set_tests_properties(terrain_bundle_publication_helpers
+        PROPERTIES LABELS "unit;terrain;asset" TIMEOUT 30)
     add_test(
         NAME terrain_world_coverage_tests
         COMMAND "${Python3_EXECUTABLE}" -B

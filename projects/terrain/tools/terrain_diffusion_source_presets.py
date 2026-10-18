@@ -7,12 +7,12 @@ import json
 import math
 import os
 import re
-import shutil
 import sys
-import tempfile
 import time
 from pathlib import Path
 from types import ModuleType
+
+from terrain_bundle import staged_bundle
 
 CATALOG_SCHEMA = "cubey.terrain.source-presets.v1"
 BUNDLE_SCHEMA = "cubey.terrain.source-preset-bundle.v1"
@@ -400,7 +400,6 @@ def bake_source_preset_asset(
         + "\n"
     )
 
-    temporary = None
     try:
         torch.backends.cuda.matmul.allow_tf32 = False
         torch.backends.cudnn.allow_tf32 = False
@@ -466,69 +465,57 @@ def bake_source_preset_asset(
             },
         }
 
-        temporary = Path(
-            tempfile.mkdtemp(
-                prefix=f"{output_dir.name}.tmp.",
-                dir=output_dir.parent,
+        with staged_bundle(output_dir, bundle_name=recipe.id) as temporary:
+            record = common._write_landscape_variation_region(
+                temporary, generated, common_source
             )
-        )
-        record = common._write_landscape_variation_region(
-            temporary, generated, common_source
-        )
-        actual_hashes = (
-            record.get("elevation_sha256"),
-            record.get("climate_sha256"),
-        )
-        expected_hashes = (
-            recipe.expected_elevation_sha256,
-            recipe.expected_climate_sha256,
-        )
-        if actual_hashes != expected_hashes:
-            raise RuntimeError(
-                f"terrain source preset {recipe.id} payload changed: "
-                f"expected {expected_hashes}, got {actual_hashes}"
+            actual_hashes = (
+                record.get("elevation_sha256"),
+                record.get("climate_sha256"),
             )
+            expected_hashes = (
+                recipe.expected_elevation_sha256,
+                recipe.expected_climate_sha256,
+            )
+            if actual_hashes != expected_hashes:
+                raise RuntimeError(
+                    f"terrain source preset {recipe.id} payload changed: "
+                    f"expected {expected_hashes}, got {actual_hashes}"
+                )
 
-        generation_seconds = time.perf_counter() - generation_start
-        region = temporary / recipe.id
-        bundle = {
-            "schema": BUNDLE_SCHEMA,
-            "id": recipe.id,
-            "label": recipe.label,
-            "tier": recipe.tier,
-            "source_study": recipe.source_study,
-            "catalog_sha256": common.sha256_file(catalog.path),
-            "seed": recipe.seed,
-            "selection": selection.as_json(),
-            "elevation_sha256": recipe.expected_elevation_sha256,
-            "climate_sha256": recipe.expected_climate_sha256,
-            "generation": {
-                "method": "direct-pinned-region-v1",
-                "seconds": generation_seconds,
-                "limit_seconds": OPTIONAL_GENERATION_LIMIT_SECONDS,
-                "scan_performed": False,
-                "probe_performed": False,
-            },
-        }
-        (region / "preset.json").write_text(
-            json.dumps(bundle, indent=2, sort_keys=True, allow_nan=False) + "\n"
-        )
-        if generation_seconds > OPTIONAL_GENERATION_LIMIT_SECONDS:
-            raise RuntimeError(
-                f"terrain source preset generation took {generation_seconds:.3f} "
-                f"seconds, over the {OPTIONAL_GENERATION_LIMIT_SECONDS:.0f}-second limit"
+            generation_seconds = time.perf_counter() - generation_start
+            region = temporary / recipe.id
+            bundle = {
+                "schema": BUNDLE_SCHEMA,
+                "id": recipe.id,
+                "label": recipe.label,
+                "tier": recipe.tier,
+                "source_study": recipe.source_study,
+                "catalog_sha256": common.sha256_file(catalog.path),
+                "seed": recipe.seed,
+                "selection": selection.as_json(),
+                "elevation_sha256": recipe.expected_elevation_sha256,
+                "climate_sha256": recipe.expected_climate_sha256,
+                "generation": {
+                    "method": "direct-pinned-region-v1",
+                    "seconds": generation_seconds,
+                    "limit_seconds": OPTIONAL_GENERATION_LIMIT_SECONDS,
+                    "scan_performed": False,
+                    "probe_performed": False,
+                },
+            }
+            (region / "preset.json").write_text(
+                json.dumps(bundle, indent=2, sort_keys=True, allow_nan=False) + "\n"
             )
-        if not validate_source_preset_asset(common, catalog.path, recipe.id, region):
-            raise RuntimeError("generated terrain source preset failed validation")
+            if generation_seconds > OPTIONAL_GENERATION_LIMIT_SECONDS:
+                raise RuntimeError(
+                    f"terrain source preset generation took {generation_seconds:.3f} "
+                    f"seconds, over the {OPTIONAL_GENERATION_LIMIT_SECONDS:.0f}-second limit"
+                )
+            if not validate_source_preset_asset(common, catalog.path, recipe.id, region):
+                raise RuntimeError("generated terrain source preset failed validation")
 
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(region, output_dir)
-        shutil.rmtree(temporary)
-        temporary = None
     finally:
-        if temporary is not None:
-            shutil.rmtree(temporary, ignore_errors=True)
         marker.unlink(missing_ok=True)
 
     print(f"terrain source preset {recipe.id}: wrote {output_dir}")

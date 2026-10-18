@@ -22,6 +22,8 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
+from terrain_bundle import staged_bundle
+
 from export_heightfield_manifest import export_study_field
 
 CODE_REVISION = "82a0431281f21a6ec3d691a12ee61525de5b0790"
@@ -2407,9 +2409,7 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
         },
     }
 
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent))
-    try:
+    with staged_bundle(output_dir) as temporary:
         summaries = [
             _write_seed_artifacts(temporary, generated, calibration, common_source)
             for generated in generated_fields
@@ -2452,12 +2452,6 @@ def bake(reference_root: Path, output_dir: Path, data_cache: Path) -> None:
         }
         report_path = temporary / "generation-report.json"
         report_path.write_text(json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n")
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(temporary, output_dir)
-    except Exception:
-        shutil.rmtree(temporary, ignore_errors=True)
-        raise
 
     print(f"terrain diffusion bakeoff: wrote {output_dir}")
 
@@ -2522,9 +2516,7 @@ def bake_default_asset(reference_root: Path, output_dir: Path, data_cache: Path)
         finally:
             world.close()
 
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent))
-    try:
+    with staged_bundle(output_dir) as temporary:
         elevation_file = write_f32(temporary / "elevation.f32", generated["elevation"])
         if elevation_file["sha256"] != DEFAULT_ASSET_ELEVATION_SHA256:
             raise RuntimeError(
@@ -2585,12 +2577,6 @@ def bake_default_asset(reference_root: Path, output_dir: Path, data_cache: Path)
         (temporary / "heightfield.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
         )
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(temporary, output_dir)
-    except Exception:
-        shutil.rmtree(temporary, ignore_errors=True)
-        raise
 
     print(f"terrain default asset: wrote {output_dir}")
 
@@ -2661,9 +2647,7 @@ def bake_surface_study_asset(reference_root: Path, output_dir: Path, data_cache:
         normalize_climate_channels(generated["climate"]), SURFACE_STUDY_DOWNSAMPLE
     )
 
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent))
-    try:
+    with staged_bundle(output_dir) as temporary:
         climate_file = write_f32(temporary / "climate.f32", climate)
         manifest = surface_study_manifest(
             climate_file, generated, time.perf_counter() - generation_start
@@ -2671,12 +2655,6 @@ def bake_surface_study_asset(reference_root: Path, output_dir: Path, data_cache:
         (temporary / "surface-fields.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True, allow_nan=False) + "\n"
         )
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(temporary, output_dir)
-    except Exception:
-        shutil.rmtree(temporary, ignore_errors=True)
-        raise
 
     print(f"terrain surface study asset: wrote {output_dir}")
 
@@ -2765,11 +2743,7 @@ def bake_climate_calibration_assets(
         },
     }
 
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(
-        tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent)
-    )
-    try:
+    with staged_bundle(output_dir) as temporary:
         region_summaries = [
             _write_climate_calibration_region(
                 temporary, generated, common_source
@@ -2856,12 +2830,6 @@ def bake_climate_calibration_assets(
                 f"climate calibration generation took {generation_seconds:.3f} seconds, "
                 f"over the {CLIMATE_CALIBRATION_GENERATION_LIMIT_SECONDS:.0f}-second limit"
             )
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(temporary, output_dir)
-    except Exception:
-        shutil.rmtree(temporary, ignore_errors=True)
-        raise
 
     print(f"terrain climate calibration assets: wrote {output_dir}")
 
@@ -2970,11 +2938,7 @@ def bake_landscape_variation_assets(
         },
     }
 
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(
-        tempfile.mkdtemp(prefix=f"{output_dir.name}.tmp.", dir=output_dir.parent)
-    )
-    try:
+    with staged_bundle(output_dir) as temporary:
         variants = [
             _write_landscape_variation_region(
                 temporary, generated, common_source
@@ -3055,12 +3019,6 @@ def bake_landscape_variation_assets(
                 f"landscape variation generation took {generation_seconds:.3f} seconds, "
                 f"over the {LANDSCAPE_VARIATION_GENERATION_LIMIT_SECONDS:.0f}-second limit"
             )
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
-        os.replace(temporary, output_dir)
-    except Exception:
-        shutil.rmtree(temporary, ignore_errors=True)
-        raise
 
     print(f"terrain landscape variation assets: wrote {output_dir}")
 
