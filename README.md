@@ -161,8 +161,10 @@ visible when hiding them would make the code less useful.
 
 ## Build and run
 
-Cubey needs a C++20 compiler, CMake, Ninja, Vulkan development packages, a
-working Vulkan driver, and `glslangValidator`.
+The normal presets need Clang 16+ with C++20 support, CMake 3.25+, Ninja, Git,
+pkg-config, OpenSSL and Vulkan development packages, a working Vulkan driver,
+and `glslangValidator`. Tests also require Python 3.11+. Linux window-backend
+packages and distribution examples are listed in the [setup guide](docs/getting-started.md#prerequisites).
 
 ```bash
 cmake --preset dev

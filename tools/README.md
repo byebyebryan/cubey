@@ -1,6 +1,6 @@
 # Repository tools
 
-Run these stdlib Python tools from the repository root:
+Run these stdlib Python 3.11+ tools from the repository root:
 
 - `python3 -B tools/check_project_layout.py` checks project layout, discovered
   documentation front doors, relocation targets and protected study boundaries.
@@ -50,7 +50,7 @@ Keep the adjacent generated `.json.links/` directory with that manifest.
 
 After configuring and building the normal dev tree, run `ctest --preset dev-docs`.
 It selects navigation, layout, media integrity, domain presentation checks and
-native CLI recipes. It needs Git and stdlib Python; it does not need a GPU,
+native CLI recipes. It needs Git and stdlib Python 3.11+; it does not need a GPU,
 desktop, CUDA worker, terrain cache, media decoder or network access.
 
 `repo_docs.py` supplies the shared Markdown and media primitives used here and

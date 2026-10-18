@@ -157,7 +157,7 @@ set_tests_properties(capture_failure_sync PROPERTIES LABELS "capture;headless;gp
     FAIL_REGULAR_EXPRESSION "vulkan validation error")
 target_link_libraries(cubey_capture_media_tests PRIVATE cubey::host
     cubey_project_options cubey_project_warnings)
-find_program(CUBEY_CAPTURE_TEST_PYTHON NAMES python3)
+set(CUBEY_CAPTURE_TEST_PYTHON "${Python3_EXECUTABLE}")
 if(CUBEY_CAPTURE_TEST_PYTHON)
     foreach(mode direct inline threaded)
         add_test(NAME capture_media_${mode}
@@ -426,7 +426,7 @@ cubey_add_glsl_shaders(cubey_cloud_lifecycle_tests
 add_test(NAME cloud_lifecycle_gpu COMMAND cubey_cloud_lifecycle_tests)
 set_tests_properties(cloud_lifecycle_gpu PROPERTIES LABELS "cloud;headless;gpu" TIMEOUT 60
     FAIL_REGULAR_EXPRESSION "vulkan validation error")
-find_program(CUBEY_SYNC_TEST_PYTHON NAMES python3)
+set(CUBEY_SYNC_TEST_PYTHON "${Python3_EXECUTABLE}")
 if(CUBEY_SYNC_TEST_PYTHON)
     add_test(NAME synchronization_validation_probe
         COMMAND "${CUBEY_SYNC_TEST_PYTHON}" -B "${PROJECT_SOURCE_DIR}/tests/tools/check_sync_validation.py"

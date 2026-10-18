@@ -74,7 +74,7 @@ function(cubey_add_repository_tests)
         set_tests_properties(capture_review_scripts_use_headless PROPERTIES LABELS "headless;policy")
     endif()
 
-    find_program(CUBEY_REPOSITORY_PYTHON NAMES python3)
+    set(CUBEY_REPOSITORY_PYTHON "${Python3_EXECUTABLE}")
     if (CUBEY_REPOSITORY_PYTHON)
         add_test(NAME foundation_layers
             COMMAND "${CUBEY_REPOSITORY_PYTHON}" -B "${CMAKE_SOURCE_DIR}/tools/check_foundation_layers.py"

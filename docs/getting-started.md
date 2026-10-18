@@ -43,9 +43,12 @@ available at `http://127.0.0.1:8001/` without changing firewall policy.
 
 Required:
 
-- a C++20 compiler and standard build tools;
-- CMake, Ninja, and Git;
+- Clang 16 or newer with C++20 support and standard build tools for the checked-in presets;
+- CMake 3.25 or newer, Ninja, Git with HTTPS CA certificates, and pkg-config;
+- OpenSSL development files (the Crypto library);
+- Python 3.11 or newer when building tests (the default);
 - Vulkan headers and loader;
+- GLFW's X11 and Wayland development dependencies on Linux;
 - a Vulkan-capable GPU driver / ICD; and
 - `glslangValidator` for build-time GLSL-to-SPIR-V compilation.
 
@@ -53,24 +56,45 @@ Package names vary by distribution. For example:
 
 ```bash
 # Arch Linux
-sudo pacman -S --needed base-devel cmake ninja git vulkan-headers vulkan-icd-loader vulkan-tools glslang
+sudo pacman -S --needed base-devel clang cmake ninja git ca-certificates pkgconf openssl python \
+  vulkan-headers vulkan-icd-loader vulkan-tools glslang \
+  libx11 libxcursor libxi libxinerama libxrandr wayland wayland-protocols libxkbcommon
 # Install the Vulkan driver for your GPU, such as vulkan-radeon, vulkan-intel,
 # amdvlk, or the NVIDIA driver stack.
 # Optional MP4 capture: sudo pacman -S --needed pkgconf ffmpeg
 
-# Ubuntu / Debian
-sudo apt install build-essential cmake ninja-build git libvulkan-dev vulkan-tools glslang-tools
+# Ubuntu 24.04+ / Debian 13+ (check the version floors above)
+sudo apt install build-essential clang cmake ninja-build git ca-certificates pkg-config libssl-dev python3 \
+  libvulkan-dev vulkan-tools glslang-tools xorg-dev libwayland-dev \
+  wayland-protocols libxkbcommon-dev
 # Install a compatible Vulkan driver, such as mesa-vulkan-drivers or the
 # vendor driver stack.
 # Optional MP4 capture:
 sudo apt install pkg-config libavcodec-dev libavformat-dev libavutil-dev libswscale-dev
 
 # Fedora
-sudo dnf install gcc-c++ cmake ninja-build git vulkan-headers vulkan-loader-devel vulkan-tools glslang
+sudo dnf install gcc-c++ clang cmake ninja-build git ca-certificates pkgconf-pkg-config openssl-devel python3 \
+  vulkan-headers vulkan-loader-devel vulkan-tools glslang \
+  libX11-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel \
+  wayland-devel wayland-protocols-devel libxkbcommon-devel
 # Install a compatible Vulkan driver. Optional MP4 capture also needs
 # pkgconf-pkg-config and FFmpeg/libav development packages from an enabled
 # repository.
 ```
+
+CMake fetches GLFW itself; the Linux packages above supply both native window
+backends enabled by GLFW's default configuration. The normal presets select
+`clang++` explicitly. Debian 12 can use the same packages plus `clang-16`, then
+configure with `cmake --preset dev -DCMAKE_CXX_COMPILER=clang++-16` instead of its
+default Clang 14. Clang 16 added the
+[structured-binding lambda capture support](https://releases.llvm.org/16.0.0/tools/clang/docs/ReleaseNotes.html#c-20-feature-support)
+used by Cubey; configuration checks this capability before fetching dependencies.
+A direct CMake configuration can select another compatible C++20
+compiler. CTest requires Python 3.11 and uses the interpreter selected at
+configure time; set `Python3_EXECUTABLE` to choose it. Configurations with
+`BUILD_TESTING=OFF` do not require Python. Optional terrain generation and
+external solver environments have separate, pinned requirements in their
+project guides.
 
 Vulkan validation layers are optional but recommended for local development.
 Use `--require-validation` when a run must fail rather than continue without

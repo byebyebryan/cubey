@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.25)
 
 project(cubey VERSION 0.1.0 LANGUAGES C CXX)
 
@@ -6,6 +6,17 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("int main() {
+    int values[] = {1, 2};
+    auto [first, second] = values;
+    return [&] { return first + second; }();
+}" CUBEY_HAS_CXX20_STRUCTURED_BINDING_CAPTURE)
+if (NOT CUBEY_HAS_CXX20_STRUCTURED_BINDING_CAPTURE)
+    message(FATAL_ERROR
+        "Cubey requires C++20 structured-binding lambda captures; use Clang 16+ or a compatible C++20 compiler.")
+endif()
 
 option(CUBEY_ENABLE_WARNINGS "Enable project warning flags" ON)
 option(CUBEY_WARNINGS_AS_ERRORS "Treat project warnings as errors" OFF)
@@ -29,6 +40,15 @@ option(
     "Build optional terrain reference and hydrology studies"
     OFF
 )
+if (NOT DEFINED BUILD_TESTING)
+    set(BUILD_TESTING ${CUBEY_BUILD_HOST} CACHE BOOL "Build tests")
+endif()
+include(CTest)
+if (BUILD_TESTING)
+    # All CTest Python helpers use this interpreter, including the stdlib
+    # media audits that require hashlib.file_digest (Python 3.11).
+    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)
+endif()
 set(
     CUBEY_VIDEO_CAPTURE
     "AUTO"
@@ -229,11 +249,6 @@ if (NOT nlohmann_json_FOUND)
     )
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
-
-if (NOT DEFINED BUILD_TESTING)
-    set(BUILD_TESTING ${CUBEY_BUILD_HOST} CACHE BOOL "Build tests")
-endif()
-include(CTest)
 
 if (BUILD_TESTING)
     add_executable(cubey_png_stats

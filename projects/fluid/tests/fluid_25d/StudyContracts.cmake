@@ -1,5 +1,5 @@
 # Included from the Fluid frontend directory; source/binary paths stay frontend-owned.
-find_program(CUBEY_FLUID_RECORDING_PYTHON NAMES python3)
+set(CUBEY_FLUID_RECORDING_PYTHON "${Python3_EXECUTABLE}")
 if (CUBEY_FLUID_RECORDING_PYTHON)
     add_test(NAME fluid_25d_presentation_helpers
         COMMAND "${CUBEY_FLUID_RECORDING_PYTHON}" -B -m unittest discover

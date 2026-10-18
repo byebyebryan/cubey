@@ -85,7 +85,6 @@ if (CUBEY_HDR_SAMPLE_ASSETS_DIR)
 endif()
 
 if (BUILD_TESTING)
-    find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME gltf_viewer_water_landscape_review_helpers
         COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
             -s "${CMAKE_SOURCE_DIR}/studies/gltf_viewer" -p test_review_water_landscape_v1.py)
