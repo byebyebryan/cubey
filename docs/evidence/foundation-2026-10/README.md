@@ -59,3 +59,39 @@ static build policy, rendered output and human visual acceptance establish
 different things. No new full runtime suite, GPU/sanitizer qualification,
 external CUDA worker admission, native GUI review or creative media approval
 was performed by this documentation pass.
+
+## Bootstrap and Terrain publication follow-up
+
+The 2026-10-18 review found an incomplete bootstrap contract and Terrain
+generation paths that deleted the previous bundle before installation succeeded.
+The [follow-up qualification](bootstrap-publication.json) pins these fixes to
+`b663564a` (toolchain/setup) and `1f4ad859` (Terrain publication).
+
+- CMake 3.25+ matches the preset schema; all CTest Python helpers use one
+  required Python 3.11+ interpreter. The normal presets use Clang 16+ with an
+  early structured-binding capture capability check. Setup covers OpenSSL,
+  HTTPS certificates and GLFW's Linux backend dependencies.
+- A clean Debian 12 container, using only the documented package list plus
+  the documented `clang-16` override, built all dev targets with CMake 3.25.1,
+  Clang 16.0.6 and Python 3.11.2. All 15 distinct docs/foundation groups passed,
+  including standalone public headers and native CLI recipe parsing. Optional
+  libav capture was disabled; no Vulkan rendering or desktop run was performed.
+  Clang 14 was rejected before dependency fetching. Separately, an explicitly
+  missing test interpreter failed early, and hostless configuration with
+  tests disabled succeeded without Python.
+- All seven Terrain Diffusion generation modes use one recoverable publication
+  helper. Fourteen focused tests cover installation, rollback, interruption,
+  contention, process-kill recovery and a default-generator fixture. They passed
+  on Python 3.11 and the host interpreter. The 37 existing Terrain Diffusion
+  unit tests and two source-cache tests passed. Artifact-writing/validation
+  bodies are structurally identical to the pre-refactor source.
+- Local documentation and foundation lanes passed 9/9 and 8/8. All 27 protected
+  media/provenance and sealed-study files retained their hashes. No C++, public
+  header, shader, numerical oracle or external-worker dependency changed.
+
+Full local logs remain in the optional ignored
+[follow-up receipt](../../../outputs/foundation-loop/20261018-bootstrap-publication/closure.json).
+The [Terrain tools guide](../../../projects/terrain/tools/README.md#generated-bundle-replacement)
+documents recovery, retained lock files and the short reader gap during
+replacement. This pass did not regenerate production terrain or qualify CUDA
+producers, external workers, GPU runtime behavior or human visual acceptance.

@@ -187,6 +187,13 @@ versioned section and use that section as the release notes.
 
 ### Changed
 
+- The normal presets require Clang 16+ and CMake 3.25+; tests use one
+  configure-time Python 3.11+ interpreter. Setup instructions include OpenSSL,
+  HTTPS certificates and Linux window-backend development packages, and
+  configuration rejects unsupported structured-binding captures early.
+- Terrain Diffusion generation shares recoverable bundle publication: failed
+  installation restores the previous directory where possible and retains
+  generated staging plus any recovery backup when rollback cannot complete.
 - Cubey 2.0 is framed as a ground-up native Vulkan workbench rather than an
   OpenGL continuation or WebGPU-first rewrite.
 - Runnable targets are explicit examples/projects rather than a generic `cubey`

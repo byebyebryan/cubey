@@ -1,0 +1,195 @@
+{
+  "schema": "cubey.foundation-maintenance-qualification.v1",
+  "recorded_at_utc": "2026-10-18T16:45:54.096222+00:00",
+  "source_revisions": {
+    "bootstrap": "b663564a64568549fdea5770fcc5c6026bfae1a3",
+    "terrain_publication": "1f4ad859a73ac67cbd0dfefa3a266d8b0e0e8ea7"
+  },
+  "unchanged_runtime_revision": "86885a4d11acb40c5b19937ef5606aaa0e4e1671",
+  "bootstrap": {
+    "image": "debian:12-slim@sha256:7c7b2c966bc9ee8cedfeef67e0e279108992c77681fa595db4a9d65c06ccc587",
+    "isolation": "Fresh container; source snapshot mounted read-only, no host dependency/build/asset caches; container removed after qualification",
+    "source_identity": {
+      "commit": "b663564a64568549fdea5770fcc5c6026bfae1a3",
+      "all_tracked_blob_bytes_equal": true,
+      "files": 1944
+    },
+    "packages": [
+      "build-essential",
+      "clang",
+      "clang-16",
+      "cmake",
+      "ninja-build",
+      "git",
+      "ca-certificates",
+      "pkg-config",
+      "libssl-dev",
+      "python3",
+      "libvulkan-dev",
+      "vulkan-tools",
+      "glslang-tools",
+      "xorg-dev",
+      "libwayland-dev",
+      "wayland-protocols",
+      "libxkbcommon-dev"
+    ],
+    "configure": "cmake --preset dev -B /work/build -DCMAKE_CXX_COMPILER=clang++-16",
+    "build": "cmake --build /work/build --parallel 4",
+    "versions": {
+      "cmake": "3.25.1",
+      "clang": "16.0.6",
+      "python": "3.11.2",
+      "vulkan_headers": "1.3.239",
+      "openssl": "3.0.22"
+    },
+    "all_dev_targets_built": true,
+    "video_capture": "AUTO disabled; optional libav development packages absent",
+    "test_groups": {
+      "passed": 15,
+      "scope": "Union of dev-docs and dev-foundation; overlap counted once"
+    },
+    "negative_checks": [
+      "Clang 14 structured-binding capture rejected before dependency fetch",
+      "Explicitly missing Python interpreter rejected before dependency fetch"
+    ],
+    "additional_configurations": {
+      "hostless-no-python": {
+        "configured": true,
+        "options": [
+          "-DCUBEY_BUILD_HOST=OFF",
+          "-DBUILD_TESTING=OFF",
+          "-DPython3_EXECUTABLE=/nonexistent/cubey-python"
+        ],
+        "scope": "configure only; no native build or runtime qualification"
+      },
+      "core-tests-python311": {
+        "configured": true,
+        "options": [
+          "-DCUBEY_BUILD_PROJECTS=OFF",
+          "-DCUBEY_BUILD_EXAMPLES=OFF",
+          "-DBUILD_TESTING=ON",
+          "-DPython3_EXECUTABLE=/home/bryan/.local/share/uv/python/cpython-3.11-linux-x86_64-gnu/bin/python3.11"
+        ],
+        "scope": "configure only; no native build or runtime qualification"
+      }
+    },
+    "scope": "Compile, CPU/static/build policy, media integrity and native parser checks; no GPU/windowed execution",
+    "upstream_compiler_contract": "https://releases.llvm.org/16.0.0/tools/clang/docs/ReleaseNotes.html#c-20-feature-support"
+  },
+  "terrain_publication": {
+    "generation_modes": 7,
+    "artifact_writer_validation_body_comparison": [
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_bake.py",
+        "function": "bake",
+        "artifact_writing_and_validation_ast_identical": true
+      },
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_bake.py",
+        "function": "bake_default_asset",
+        "artifact_writing_and_validation_ast_identical": true
+      },
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_bake.py",
+        "function": "bake_surface_study_asset",
+        "artifact_writing_and_validation_ast_identical": true
+      },
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_bake.py",
+        "function": "bake_climate_calibration_assets",
+        "artifact_writing_and_validation_ast_identical": true
+      },
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_bake.py",
+        "function": "bake_landscape_variation_assets",
+        "artifact_writing_and_validation_ast_identical": true
+      },
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_landform_study.py",
+        "function": "bake_landform_study_assets",
+        "artifact_writing_and_validation_ast_identical": true
+      },
+      {
+        "source": "projects/terrain/tools/terrain_diffusion_source_presets.py",
+        "function": "bake_source_preset_asset",
+        "artifact_writing_and_validation_ast_identical": true
+      }
+    ],
+    "publication_tests": {
+      "passed": 14,
+      "interpreters": [
+        "CPython 3.11.17",
+        "CPython 3.14.8"
+      ],
+      "scope": "Synthetic directories, rename/rollback failures, ordinary and hard interruption, flock contention, retained recovery directories, default-generator entry point with fixture producer"
+    },
+    "existing_terrain_diffusion_unit_tests": {
+      "passed": 37,
+      "environment": "Existing pinned Terrain Diffusion environment; dependencies unchanged; no producer run"
+    },
+    "source_cache_tests": {
+      "passed": 2,
+      "interpreter": "CPython 3.11.17"
+    },
+    "ctest_focused_groups": {
+      "passed": 3,
+      "names": [
+        "terrain_source_cache_tests",
+        "terrain_bundle_publication_helpers",
+        "terrain_landscape_prepare_helpers"
+      ]
+    },
+    "contract": "Generation/validation failures discard partial staging. Publication failures retain generated staging and restore the previous bundle where possible; rollback failure retains and identifies the previous backup. Successful activation reports cleanup failures separately.",
+    "boundaries": [
+      "POSIX directory renames and flock",
+      "Persistent lock file is retained",
+      "Hard termination can leave previous and staging directories for manual recovery",
+      "Short missing-destination interval; readers reopen after success",
+      "No atomic directory exchange or power-loss durability guarantee"
+    ]
+  },
+  "local_gates": {
+    "dev-docs": {
+      "passed": 9
+    },
+    "dev-foundation": {
+      "passed": 8
+    }
+  },
+  "preserved_sha256": {
+    "docs/media/showcase/README.md": "4fe981568e3da63957883f6a8b19640b8237e8ccc50f18971c6eb5fbb721e308",
+    "docs/media/showcase/fire-3d.mp4": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
+    "docs/media/showcase/fire-3d.png": "fbd8b576ade4de1efcb09cf221a4c64a3432b2ba242d94e3752fa193eed34e04",
+    "docs/media/showcase/fluid-25d-legacy-v1-recipe.json": "630259043748fdb275d8ffc9cd3dceaf4cb67242f3065348f5e00e3abe8d003e",
+    "docs/media/showcase/fluid-25d-master-1080p.mp4": "f35e77792d96e640bcefafad9af2edc2e47b14e62f19fcd67c26555256e76576",
+    "docs/media/showcase/fluid-25d-publication.json": "b1b2b9f8cfc4de9678bc70a90d2519e2bcf50a0d53cb61ad613961bf497f90b4",
+    "docs/media/showcase/fluid-25d-recipe.json": "d52f8045526aefb05c75777efeefee15298c95916882995add9837c6faf80d67",
+    "docs/media/showcase/fluid-25d-story.mp4": "54fcfe775a46637520eb596f6a02619da3781b5c89f2e588a405348fa7f59399",
+    "docs/media/showcase/fluid-25d-story.png": "c431e4bd61f9445859e947b8114728ca9463aa31c17637dda7fee64c020219d0",
+    "docs/media/showcase/fluid-25d.mp4": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+    "docs/media/showcase/fluid-25d.png": "d7dd733c50f3eda0289915415071cbbb1e0588b1fa7d1eb312901701558b4953",
+    "docs/media/showcase/gltf-terrain-legacy-v1-recipe.json": "05eddbef22a35a565aa4c1ffd0e9e3b93505e242f0a7deeac058851876a31935",
+    "docs/media/showcase/gltf-terrain-master-1080p.mp4": "847f2e2b7461ffe88f4427f3e8a54c0e1c2942d32af4e71f3d465bb8e3a5000c",
+    "docs/media/showcase/gltf-terrain-morning-v1-publication.json": "c370a0dbe314da0f46262e94f9bbb82eb6a7f286a9a827cb0c79865f815f89bc",
+    "docs/media/showcase/gltf-terrain-morning-v1-recipe.json": "bee7d8d9e060d2ae4de0fefac600e25a999bec432fbee9e72bb943aabdb62dbb",
+    "docs/media/showcase/gltf-terrain-publication.json": "de35a23e0405707e30ced43fd1470d0bfd6f0c306e210a55a1fcfc3f410e777f",
+    "docs/media/showcase/gltf-terrain-recipe.json": "1c2e3024fd5c370e07d0607fc3a8a6af32f759bdca4726504dc3ae0fa09c6763",
+    "docs/media/showcase/gltf-terrain.mp4": "e8d2e16887ae8b28a4e12d711f511e72e189902297684e26ae9e2c0a2eecf909",
+    "docs/media/showcase/gltf-terrain.png": "959f212390691e12799739cc3fb19ba8b04186e2905faef974b651677e95b831",
+    "docs/media/showcase/manifest.json": "ba43aa10dbab0f2a3e21091f58f541fa6b6a95949ab525b5ba7237e230821ac4",
+    "docs/media/showcase/ocean.mp4": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
+    "docs/media/showcase/ocean.png": "40605723e7c51dc99f4c184442fdea2ad2cc50ee4d7edf6139e171cc78a10e0a",
+    "docs/media/showcase/water-3d.mp4": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
+    "docs/media/showcase/water-3d.png": "22688a05fcefec6abdee2706ac9f465a3cdef5fedfd904f56cfeaded86fc5376",
+    "studies/fluid_25d/harness/README_HISTORY.md": "126578a5596541e608f1d6588b4994ef3eade742147d62ddfa7c703f0fca290c",
+    "studies/fluid_25d/harness/presentation_history.md": "a2f133f1134aa3671b8648a6faf527629820c5349b12e4b0811f77f321e54ace",
+    "studies/relocations.json": "f1499f5b991018326752f6d83cb034264a039b05034a720442f8b9244693af62"
+  },
+  "limits": [
+    "No C++, public header, shader, numerical oracle or external-worker dependency changed",
+    "No full dev runtime or sanitizer qualification repeated",
+    "No production terrain regeneration or external CUDA producer/worker admission",
+    "No physical desktop or human visual acceptance",
+    "No push"
+  ]
+}
