@@ -102,6 +102,7 @@ Active projects:
 - [glTF Viewer](../projects/gltf_viewer/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Fractal 2D](../projects/fractal_2d/README.md)
+- [SDF](../projects/sdf/README.md): boxes-only ProjectR port in development.
 
 Internal validation:
 
