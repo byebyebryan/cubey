@@ -6,12 +6,12 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
-[Earlier ground-plane demo and captures](http://starship:8787/reports/7f1fd699ff363f13294391b0917eac5e1ba9e98f348aaedced78de93d4142211/).
-The original review includes the 24-second presentation, lighting comparisons,
-explicit recipe, applied configurations and qualification receipts. Its downward
-camera and ground plane hide the sky. The app and current presentation preset
-use hard self-shadows against the shared atmosphere sky, with the ground plane
-disabled.
+[Watch the native demo and review the captures](http://starship:8787/reports/ac8d841ecc3900e08a9eaa6cced9597a0d466c4ad511142376a65adfffe8f31b/).
+The review includes the 24-second presentation, lighting comparisons, explicit
+recipe, applied configurations and qualification receipts. The app and current
+presentation preset use hard self-shadows against the shared atmosphere sky,
+with the ground plane disabled. The report links the earlier ground-plane
+study, whose downward camera and receiver hid the sky.
 
 The native renderer builds a four-stage hierarchy at depths 2/4/6/8, filters
 ordered box edits into leaf lists and samples 8-cubed R16F bricks. Paired fields
@@ -89,20 +89,21 @@ the edit prefix.
 Reproduce the fixed native acceptance/capture matrix and assemble its review:
 
 ```sh
-python3 projects/sdf/tools/qualify.py --video --windowed
-python3 projects/sdf/tools/report.py
+python3 projects/sdf/tools/qualify.py --output outputs/sdf/sky-qualification --video --windowed
+python3 projects/sdf/tools/report.py --input outputs/sdf/sky-qualification \
+  --output outputs/sdf/sky-review-export
 ```
 
 The optional windowed check uses an isolated Xvfb server, libX11/libXtst and
 FFmpeg. The headless matrix needs the app and CPU-test targets built above.
 Receipts, applied configs, profiles, recipe and captures go under
-`outputs/sdf/qualification`; `report.py` prepares a separate static export.
+the selected output directory; `report.py` prepares a separate static export.
 Use a fresh `--output` directory when the binary or shaders change.
 
-The fixed 1080p matrix uses 1× sampling and a closer default camera. The original
-ground-enabled run measured 3.05 ms for primary rendering, 5.32 ms with hard
-shadows and 12.56 ms with soft shadows. Fresh ground-disabled timings will be
-recorded separately. The presentation capture uses 2× sampling at 720p.
+The fixed 1080p matrix uses 1× sampling and a closer default camera. The current
+ground-disabled run measured 3.25 ms for primary rendering, 5.14 ms with hard
+shadows and 11.39 ms with soft shadows. The presentation capture uses 2× sampling
+at 720p. The evidence record retains the earlier ground-enabled measurements.
 See the evidence record for frame counts, p95 values, capacity failures and the
 sampling-error boundary.
 

@@ -15,10 +15,12 @@ rendering, authoring and AI-content experiments.
 ## First deliverable
 
 Build `projects/sdf` as a native Cubey rendering experiment. The first finished
-demonstration is a procedurally constructed ball of sticks above simple ground,
-with orbit controls, repeatable construction playback, shared atmosphere
-lighting, mapless shadows and optional local ambient occlusion. A diagnostic
+demonstration is a procedurally constructed ball of sticks against the shared
+atmosphere sky, with orbit controls, repeatable construction playback, shared
+atmosphere lighting, hard self-shadows and optional local ambient occlusion. A diagnostic
 view explains the hierarchy and ray traversal using the same scene.
+The ground receiver remains an optional diagnostic; the presentation disables
+it so it cannot obscure the sky. Soft shadows remain an explicit comparison.
 
 The learning objective is to make the full path from ordered primitive edits
 to a cached field and a shaded image understandable. The visual objective is
@@ -26,8 +28,8 @@ a deliberate short presentation that works without a hand-sculpted model.
 Actual captures determine whether the recipe and presentation succeed.
 
 V1 does not require desktop sculpting, VR, imported assets, learned generation,
-GI, a general SDF engine or a second permanent renderer. A terrain-background
-audition follows the core demonstration and does not block it.
+GI, a general SDF engine or a second permanent renderer. Terrain backgrounds
+are deferred; the current presentation uses the atmosphere sky alone.
 
 ## Renderer and source selection
 

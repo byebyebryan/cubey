@@ -134,7 +134,7 @@ recomputed/copied brick counts, and remaining wall time. An isolated full
 not isolate copy-only time from sampling; both share the donor-style dispatch.
 The measured cost does not justify an indirect-dispatch foundation change in V1.
 
-## Final native qualification
+## Original native qualification with ground
 
 [Published native review](http://starship:8787/reports/7f1fd699ff363f13294391b0917eac5e1ba9e98f348aaedced78de93d4142211/)
 contains the video, stills, comparisons and raw receipts. HTTP delivery was
@@ -190,3 +190,45 @@ exceeds the 778,688-brick profile and fails without publishing a capture.
 The field allocation counts exclude frame targets, driver overhead and padding.
 Terrain backgrounds, desktop sculpting, learned generation and GI remain
 exploration candidates rather than V1 dependencies.
+
+## Ground-free atmosphere presentation
+
+[Updated native review](http://starship:8787/reports/ac8d841ecc3900e08a9eaa6cced9597a0d466c4ad511142376a65adfffe8f31b/)
+uses hard self-shadows and disables the ground plane in both app defaults and
+the presentation preset. The preset now targets the sculpture's center rather
+than framing its old ground shadow. Terrain backgrounds remain deferred.
+
+The earlier video did not visibly show the sky: its 0.6-radian downward pitch
+and 45-degree vertical field of view let the infinite receiver fill every
+background pixel. The atmosphere still supplied surface lighting. Disabling
+the receiver exposes the already-integrated atmosphere sky, including the
+shared backdrop direction remapping; no atmosphere shader change was required.
+The receiver can still be selected explicitly with `--ground` for diagnostics.
+
+Measured source: `5cd14031af54de07fbf8e9d3bc10884f90d5805e`, clean at capture.
+Fresh artifacts are in `outputs/sdf/sky-qualification`, with a separate static
+export in `outputs/sdf/sky-review-export`. Executable and shader hashes, applied
+configs and receipts are recorded as before. The ground-free matrix uses the
+same device, camera, light, 1080p/1x resolution, 180 render-only frames, 30 warmup
+frames and 148 completed GPU samples as the original matrix above.
+
+| Mode, ground disabled | Median trace + post | p95 |
+| --- | ---: | ---: |
+| Primary + atmosphere | 3.245 ms | 3.358 ms |
+| Hard self-shadows (default) | 5.138 ms | 5.308 ms |
+| Soft shadows, four samples | 11.387 ms | 11.829 ms |
+| Soft shadows + local AO | 14.037 ms | 14.520 ms |
+
+The recorded full build took 132.5 ms, including 65.3 ms filtering and 50.8 ms
+brick sampling/copying. Construction is excluded from the steady timings.
+The complete native capture/batch/overflow matrix and isolated Xvfb input/resize
+exercise passed with required Vulkan validation. The 256-ray main-scene oracle
+reported zero out-of-bound mismatches/exhaustion and five sampling ambiguities.
+
+The new presentation is again 720 H.264 frames, 1280x720/30 FPS, exactly 24
+seconds, with 2x internal resolution. Decoded views at 4, 8, 14, 20 and 22 seconds
+were inspected: construction and orbit show the blue atmosphere sky, then the
+two diagnostic phases use their diagnostic backdrop. HTTP delivery was verified.
+Chrome playback advanced, phase seeking returned to 8 seconds, all four lighting
+comparison controls selected the correct images, and the hard-shadow view was
+restored. User aesthetic acceptance remains separate from these checks.
