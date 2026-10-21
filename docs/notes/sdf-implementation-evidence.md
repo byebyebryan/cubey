@@ -108,3 +108,26 @@ the loaded recipe also differed by a similar amount (72.37 dB). GPU append
 order changes atlas addresses, so hardware texture-coordinate interpolation
 can produce small shading differences. Geometry/timeline reproducibility is
 qualified within sampling tolerance, not bit-identical frame buffers.
+
+## Timeline and publication checkpoint
+
+The native 257-stick construction video crossed full batches and ended at the
+same 88,474 bricks as a fresh full build. CPU timeline checks cover the first
+frame, partial tail, construction endpoint and both diagnostic stages, including
+the same logical states at 30/60 FPS. Headless camera/view state is derived from
+the submitted frame, so queued video recording does not read a later mutable
+timeline sample.
+
+The extended native matrix passes forward, unchanged and backward prefixes,
+reset, and both 64- and 128-edit batches with individually visible edits.
+Deliberately reduced frontier and edit-reference buffers each reject their
+overflow before publication, then recover to a validated empty field.
+Required Vulkan validation emitted no errors in these runs.
+
+Construction now records GPU filtering and sampling/copy dispatch times,
+recomputed/copied brick counts, and remaining wall time. An isolated full
+2,048-stick build measured 129.9 ms: 65.4 ms filtering, 50.4 ms brick work and
+14.1 ms other wall time. Across its 16 batches, 4,838,910 bricks were copied and
+712,716 recomputed (work totals, not simultaneous atlas occupancy). This does
+not isolate copy-only time from sampling; both share the donor-style dispatch.
+The measured cost does not justify an indirect-dispatch foundation change in V1.

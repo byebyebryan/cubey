@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -13,7 +14,6 @@
 namespace cubey::projects::sdf {
 namespace {
 constexpr std::uint32_t node_count = 19173961;
-constexpr std::uint32_t ref_capacity = 16U * 1024U * 1024U;
 constexpr auto storage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
                          VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 struct Parameters {
@@ -30,12 +30,20 @@ void barrier(VkCommandBuffer command) {
 }
 } // namespace
 
-Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis)
-    : atlas_axis(axis), capacity(axis * axis * axis), device_(device), gpu_(gpu) {
+Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis,
+             std::uint32_t batch_size, std::uint32_t frontier_limit, std::uint32_t reference_limit)
+    : atlas_axis(axis), capacity(frontier_limit ? frontier_limit : axis * axis * axis),
+      device_(device), gpu_(gpu), batch_size_(batch_size), reference_capacity_(reference_limit) {
+    if (batch_size < 1 || batch_size > 128)
+        throw std::invalid_argument("SDF batch size must be 1..128");
     if (axis != 64 && axis != 80 && axis != 92)
         throw std::invalid_argument("SDF atlas axis must be 64, 80 or 92 bricks");
-    const std::uint64_t allocation = 16ULL * node_count + 8ULL * capacity + 4ULL * ref_capacity +
-                                     128 * sizeof(GpuEdit) + 16 + 2048ULL * capacity;
+    if (capacity > axis * axis * axis || reference_limit < 128 ||
+        reference_limit > 16U * 1024U * 1024U)
+        throw std::invalid_argument("invalid SDF frontier/reference validation limits");
+    const std::uint64_t allocation = 16ULL * node_count + 8ULL * capacity +
+                                     4ULL * reference_capacity_ + 128 * sizeof(GpuEdit) + 16 +
+                                     2048ULL * axis * axis * axis;
     if (allocation > 2ULL * 1024 * 1024 * 1024)
         throw std::runtime_error("SDF field exceeds 2 GiB allocation budget");
     if (device.properties().limits.maxStorageBufferRange < node_count * 8ULL ||
@@ -70,10 +78,10 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
                         .format = VK_FORMAT_R16_SFLOAT,
                         .create_sampler = true,
                         .sampler = {.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE}});
-        stats_.allocation_bytes += 1024ULL * capacity;
+        stats_.allocation_bytes += 1024ULL * axis * axis * axis;
     }
     edit_headers_ = buffer(node_count * 8ULL);
-    references_ = buffer(ref_capacity * 4ULL);
+    references_ = buffer(reference_capacity_ * 4ULL);
     edits_ = buffer(128 * sizeof(GpuEdit), true);
     counters_ = buffer(16, true);
     if (stats_.allocation_bytes > 2ULL * 1024 * 1024 * 1024)
@@ -85,6 +93,7 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
     bindings.push_back({9, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT});
     descriptors_ =
         std::make_unique<vulkan::DescriptorSetBundle>(device, vulkan::DescriptorSetInfo(bindings));
+    profiler_.emplace(device, 1, 1);
     const std::array<VkPushConstantRange, 1> push{
         {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(Parameters)}}};
     for (auto [pipeline, name] : {std::pair{&filter_pipeline_, "filter.comp.spv"},
@@ -138,15 +147,22 @@ void Field::dispatch(bool bricks, std::uint32_t level, std::uint32_t count, std:
                  vkCmdFillBuffer(command, counters_->handle(), 0, 4, 0);
              barrier(command);
              const vulkan::CommandRecorder recorder(command);
+             profiler_->begin_frame(command, 0);
+             profiler_->begin_pass(command, 0, bricks ? "sdf.bricks" : "sdf.filter");
              recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
              recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
                                           descriptors_->set());
-             recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                                     Parameters{level, count, capacity, ref_capacity, atlas_axis});
+             recorder.push_constants(
+                 pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                 Parameters{level, count, capacity, reference_capacity_, atlas_axis});
              recorder.dispatch(std::min(count, 1024U), (count + 1023U) / 1024U, 1);
+             profiler_->end_pass(command, 0);
              barrier(command);
              commands.submit_and_wait();
          }}));
+    profiler_->collect(0);
+    for (const auto& timing : profiler_->latest_timings())
+        (bricks ? stats_.brick_gpu_ms : stats_.filter_gpu_ms) += timing.milliseconds;
 }
 
 void Field::build(std::span<const BoxEdit> edits) {
@@ -154,19 +170,43 @@ void Field::build(std::span<const BoxEdit> edits) {
     const auto packed = gpu_edits(edits);
     stats_.batch_count = 0;
     stats_.reference_count = 0;
-    // Rebuild from the retained recipe, never from a partially serialized batch.
-    static_cast<void>(gpu_.submit_and_wait(
-        {.label = "sdf reset recipe", .work = [&](vulkan::GpuOwnerContext& owner) {
-             vulkan::ImmediateCommands commands(owner);
-             for (auto& nodes : nodes_)
-                 vkCmdFillBuffer(commands.command_buffer(), nodes->handle(), 0, VK_WHOLE_SIZE, 0);
-             barrier(commands.command_buffer());
-             commands.submit_and_wait();
-         }}));
-    stats_.brick_count = 0;
-    for (std::size_t begin = 0; begin < packed.size(); begin += 128) {
+    stats_.filter_gpu_ms = 0;
+    stats_.brick_gpu_ms = 0;
+    stats_.other_wall_ms = 0;
+    stats_.copied_bricks = 0;
+    stats_.updated_bricks = 0;
+    stats_.build_ms = 0;
+    const auto matches = [](const std::vector<GpuEdit>& a, std::span<const GpuEdit> b) {
+        return a.size() <= b.size() &&
+               (a.empty() || std::memcmp(a.data(), b.data(), a.size() * sizeof(GpuEdit)) == 0);
+    };
+    if (has_last_requested_ && last_requested_.size() == packed.size() &&
+        matches(last_requested_, packed))
+        return;
+    has_last_requested_ = false;
+    last_requested_.clear();
+    // Keep a completed base at a full batch boundary. A partial tail is a
+    // displayed working field, never a new base for applying that tail again.
+    if (!matches(committed_edits_, packed)) {
+        static_cast<void>(gpu_.submit_and_wait(
+            {.label = "sdf reset recipe", .work = [&](vulkan::GpuOwnerContext& owner) {
+                 vulkan::ImmediateCommands commands(owner);
+                 for (auto& nodes : nodes_)
+                     vkCmdFillBuffer(commands.command_buffer(), nodes->handle(), 0, VK_WHOLE_SIZE,
+                                     0);
+                 barrier(commands.command_buffer());
+                 commands.submit_and_wait();
+             }}));
+        committed_ = 0;
+        committed_edits_.clear();
+        base_brick_count_ = 0;
+    }
+    displayed_ = committed_;
+    displayed_edit_count_ = committed_edits_.size();
+    stats_.brick_count = base_brick_count_;
+    for (std::size_t begin = committed_edits_.size(); begin < packed.size(); begin += batch_size_) {
         const auto count =
-            static_cast<std::uint32_t>(std::min<std::size_t>(128, packed.size() - begin));
+            static_cast<std::uint32_t>(std::min<std::size_t>(batch_size_, packed.size() - begin));
         static_cast<void>(gpu_.submit_and_wait(
             {.label = "sdf begin edit batch", .work = [&](vulkan::GpuOwnerContext& owner) {
                  edits_->upload(packed.data() + begin, count * sizeof(GpuEdit));
@@ -192,9 +232,10 @@ void Field::build(std::span<const BoxEdit> edits) {
             std::array<std::uint32_t, 4> counters{};
             counters_->download(counters.data(), 16);
             if (counters[2] != 0 || counters[0] > capacity)
-                throw std::runtime_error(
+                throw CapacityExceeded(
                     "SDF field capacity exceeded: frontier=" + std::to_string(counters[0]) +
-                    ", references=" + std::to_string(counters[1]) +
+                    ", references=" + std::to_string(counters[1]) + ", capacity=" +
+                    std::to_string(capacity) + ", atlas_axis=" + std::to_string(atlas_axis) +
                     ", flags=" + std::to_string(counters[2]));
             frontier_count = counters[0];
             stats_.reference_count = std::max(stats_.reference_count, counters[1]);
@@ -202,17 +243,36 @@ void Field::build(std::span<const BoxEdit> edits) {
         }
         if (frontier_count > 0)
             dispatch(true, depth, frontier_count, input, 1U - input);
-        // Promote only after all dispatches and their fences have completed.
-        committed_ = 1U - committed_;
+        std::array<std::uint32_t, 4> counters{};
+        counters_->download(counters.data(), 16);
+        stats_.updated_bricks += counters[3];
+        stats_.copied_bricks += frontier_count - counters[3];
+        // Publication follows GPU completion. Only a full batch replaces the
+        // reusable base; the next prefix reconstructs its partial tail once.
+        displayed_ = 1U - committed_;
+        displayed_edit_count_ = begin + count;
+        if (count == batch_size_) {
+            committed_ = displayed_;
+            committed_edits_.assign(packed.begin(),
+                                    packed.begin() + static_cast<std::ptrdiff_t>(begin + count));
+            base_brick_count_ = frontier_count;
+        }
         stats_.brick_count = frontier_count;
         ++stats_.batch_count;
     }
     stats_.build_ms =
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+    last_requested_ = packed;
+    has_last_requested_ = true;
+    stats_.other_wall_ms =
+        std::max(0.0, stats_.build_ms - stats_.filter_gpu_ms - stats_.brick_gpu_ms);
     std::cout << "sdf: edits=" << edits.size() << " batches=" << stats_.batch_count
               << " bricks=" << stats_.brick_count << "/" << capacity
               << " references=" << stats_.reference_count
               << " allocated=" << stats_.allocation_bytes << " build_ms=" << stats_.build_ms
-              << '\n';
+              << " filter_gpu_ms=" << stats_.filter_gpu_ms
+              << " brick_gpu_ms=" << stats_.brick_gpu_ms
+              << " other_wall_ms=" << stats_.other_wall_ms << " copied=" << stats_.copied_bricks
+              << " updated=" << stats_.updated_bricks << '\n';
 }
 } // namespace cubey::projects::sdf

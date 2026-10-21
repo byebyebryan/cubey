@@ -7,6 +7,7 @@ layout(std430,set=0,binding=2) readonly buffer EditHeaders { uvec2 editHeaders[]
 layout(std430,set=0,binding=3) readonly buffer References { uint refs[]; };
 layout(std430,set=0,binding=4) readonly buffer Edits { Edit edits[]; };
 layout(std430,set=0,binding=5) readonly buffer InputNodes { uint inputs[]; };
+layout(std430,set=0,binding=7) buffer Counters { uint outputCount; uint refCount; uint overflow; uint updated; };
 layout(set=0,binding=8) uniform sampler3D originalAtlas;
 layout(r16f,set=0,binding=9) writeonly uniform image3D atlas;
 layout(push_constant) uniform Params { uint depth; uint count; uint capacity; uint refCapacity; uint atlasAxis; } pc;
@@ -33,5 +34,8 @@ void main() {
               float(1u<<pc.depth) - 0.5;
     for (uint i=0; i<editCount; ++i) d = applyEdit(d,editDistance(p,cache[i]),cache[i]);
     imageStore(atlas,brickOrigin(index,pc.atlasAxis)+cell,vec4(d));
-    if (gl_LocalInvocationIndex == 0) nodes[ptr] = SUBDIVIDED | index;
+    if (gl_LocalInvocationIndex == 0) {
+        nodes[ptr] = SUBDIVIDED | index;
+        if (editCount>0) atomicAdd(updated,1u);
+    }
 }

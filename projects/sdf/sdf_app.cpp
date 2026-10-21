@@ -12,10 +12,13 @@
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/image_transitions.h>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
+#include <imgui.h>
 #include <iostream>
+#include <limits>
 
 namespace cubey::projects::sdf {
 namespace {
@@ -26,17 +29,25 @@ class App {
           recipe_(config_.recipe_path.empty()
                       ? make_recipe(config_.scene, config_.seed, config_.count)
                       : load_recipe(config_.recipe_path)) {
-        if (config_.debug > 3 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+        if (config_.debug > 4 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
-            config_.distance < 0.6F || (config_.supersample != 1 && config_.supersample != 2) ||
+            !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
+            (config_.supersample != 1 && config_.supersample != 2) ||
             !std::isfinite(config_.exposure) || !std::isfinite(config_.sun_elevation) ||
             !std::isfinite(config_.sun_azimuth) || !std::isfinite(config_.roughness) ||
             config_.roughness < 0.05F || config_.roughness > 1.0F ||
             !std::isfinite(config_.shadow_softness) || config_.shadow_softness < 0 ||
             config_.shadow_softness > 0.3F)
             throw std::invalid_argument("invalid SDF view options");
+        validate_timeline(config_.timeline);
+        if (!std::isfinite(config_.snapshot_time) || config_.snapshot_time < -1)
+            throw std::invalid_argument("SDF time must be -1 or a nonnegative logical time");
         orbit_.set_pitch(config_.pitch);
+        orbit_.set_home_distance(config_.distance);
         orbit_.set_distance(config_.distance);
+        playback_seconds_ = std::max(config_.snapshot_time, 0.0);
+        timeline_ = sample_timeline(config_.timeline, recipe_.edits.size(), playback_seconds_,
+                                    config_.debug);
         if (!config_.export_recipe_path.empty())
             save_recipe(config_.export_recipe_path, recipe_);
     }
@@ -47,13 +58,43 @@ class App {
                 initialize(ctx.device(), ctx.gpu(), ctx.render_target(),
                            host::headless_capture_frame_slot_count(config_.common));
             };
-            callbacks.record_frame =
-                [&](host::HeadlessPngContext& ctx, const host::HeadlessCaptureFrame& frame,
-                    VkCommandBuffer command, const host::HeadlessRenderTarget& target) {
-                    renderer_.record(ctx.device(), command, target, frame.frame_slot, false,
-                                     config_, config_.yaw + orbit_.yaw(), orbit_.pitch(),
-                                     orbit_.distance(), ctx.profile_recorder(), frame.index);
-                };
+            callbacks.record_frame = [&](host::HeadlessPngContext& ctx,
+                                         const host::HeadlessCaptureFrame& frame,
+                                         VkCommandBuffer command,
+                                         const host::HeadlessRenderTarget& target) {
+                const double time =
+                    config_.snapshot_time >= 0
+                        ? config_.snapshot_time
+                        : config_.timeline.duration *
+                              static_cast<double>(host::headless_capture_progress(frame));
+                const auto sample =
+                    sample_timeline(config_.timeline, recipe_.edits.size(), time, config_.debug);
+                auto view = config_;
+                view.debug = sample.debug;
+                renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
+                                 config_.yaw + orbit_.yaw() + sample.yaw, orbit_.pitch(),
+                                 orbit_.distance(), ctx.profile_recorder(), frame.index);
+            };
+            callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
+                                         const host::HeadlessCaptureFrame& frame) {
+                const double time =
+                    config_.snapshot_time >= 0
+                        ? config_.snapshot_time
+                        : config_.timeline.duration *
+                              static_cast<double>(host::headless_capture_progress(frame));
+                auto span =
+                    ctx.profile_recorder()
+                        ? ctx.profile_recorder()->cpu_span(frame.index, "sdf.prepare_geometry")
+                        : profiling::ScopedCpuProfileSpan{};
+                prepare_time(ctx.device(), time);
+                if (config_.validate && frame.index + 1 == frame.count &&
+                    (config_.timeline.motion == "construction" ||
+                     config_.timeline.motion == "presentation")) {
+                    auto prefix = recipe_;
+                    prefix.edits.resize(field_->displayed_edit_count());
+                    validate_field(ctx.device(), runtime_.gpu(), *field_, prefix);
+                }
+            };
             callbacks.shutdown = [&](host::HeadlessPngContext&) { shutdown(); };
             return host::HeadlessPngHost(
                        {.run_config = config_.common,
@@ -73,15 +114,41 @@ class App {
         };
         callbacks.update = [&](host::WindowedAppContext& ctx, const FrameTiming& timing) {
             orbit_.update_from_input(ctx.filtered_input(), timing.delta_seconds);
+            if (ctx.filtered_input().key_pressed(input::Key::R)) {
+                playback_seconds_ = 0;
+                orbit_.set_pitch(config_.pitch);
+                orbit_.set_distance(config_.distance);
+            }
+            if (regenerate_requested_) {
+                recipe_ = make_recipe("sticks", config_.seed, config_.count);
+                regenerate_requested_ = false;
+                active_prefix_ = std::numeric_limits<std::size_t>::max();
+                playback_seconds_ = 0;
+            }
+            if (config_.timeline.motion != "static" && !orbit_.paused())
+                playback_seconds_ =
+                    std::min(playback_seconds_ + timing.delta_seconds, config_.timeline.duration);
+            try {
+                prepare_time(ctx.device(), playback_seconds_);
+            } catch (const CapacityExceeded& error) {
+                error_ = error.what();
+                if (!orbit_.paused())
+                    orbit_.toggle_pause();
+                active_prefix_ = timeline_.prefix;
+                renderer_.update_field(ctx.device(), *field_);
+            }
         };
+        callbacks.draw_ui = [&](host::WindowedAppContext&) { draw_ui(); };
         callbacks.record_frame = [&](host::WindowedAppContext& ctx,
                                      const host::WindowedRenderFrame& frame) {
             const vulkan::CommandRecorder recorder(frame.command_buffer);
             recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+            auto view = config_;
+            view.debug = timeline_.debug;
             renderer_.record(ctx.device(), frame.command_buffer, frame.color_target,
-                             frame.frame_slot, true, config_, config_.yaw + orbit_.yaw(),
-                             orbit_.pitch(), orbit_.distance(), ctx.profile_recorder(),
-                             frame.timing.frame_index);
+                             frame.frame_slot, true, view,
+                             config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
+                             orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index);
             recorder.end("sdf frame");
         };
         callbacks.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
@@ -104,13 +171,93 @@ class App {
             field_ = std::make_unique<Field>(device, runtime_.gpu(), config_.atlas_axis);
             if (config_.validate_batches)
                 validate_batches(device, runtime_.gpu(), *field_);
-            field_->build(recipe_.edits);
-            if (config_.validate)
-                validate_field(device, runtime_.gpu(), *field_, recipe_);
+            active_prefix_ = timeline_.prefix;
+            field_->build(std::span<const BoxEdit>(recipe_.edits).first(active_prefix_));
+            if (config_.validate) {
+                auto prefix = recipe_;
+                prefix.edits.resize(active_prefix_);
+                validate_field(device, runtime_.gpu(), *field_, prefix);
+            }
             std::cout << "sdf: recipe hash=" << std::hex << recipe_hash(recipe_) << std::dec
                       << '\n';
         }
         renderer_.create(device, target.extent, target.format, slots, *field_, config_);
+    }
+    void prepare_time(vulkan::Device& device, double time) {
+        timeline_ = sample_timeline(config_.timeline, recipe_.edits.size(), time, config_.debug);
+        if (timeline_.prefix == active_prefix_)
+            return;
+        runtime_.gpu().wait_queue_idle("sdf prefix publication");
+        field_->build(std::span<const BoxEdit>(recipe_.edits).first(timeline_.prefix));
+        renderer_.update_field(device, *field_);
+        active_prefix_ = timeline_.prefix;
+        error_.clear();
+    }
+    void draw_ui() {
+        ImGui::SetNextWindowSize({340, 0}, ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("SDF study")) {
+            ImGui::Text("%zu / %zu boxes", field_->displayed_edit_count(), recipe_.edits.size());
+            if (ImGui::Button(orbit_.paused() ? "Play" : "Pause"))
+                orbit_.toggle_pause();
+            ImGui::SameLine();
+            if (ImGui::Button("Restart"))
+                playback_seconds_ = 0;
+            const char* motions[]{"Static", "Orbit", "Construction", "Presentation"};
+            const std::string motion_names[]{"static", "orbit", "construction", "presentation"};
+            int motion = 0;
+            for (int i = 0; i < 4; ++i)
+                if (config_.timeline.motion == motion_names[i])
+                    motion = i;
+            if (ImGui::Combo("Motion", &motion, motions, 4)) {
+                auto next = config_.timeline;
+                next.motion = motion_names[motion];
+                try {
+                    validate_timeline(next);
+                    config_.timeline = next;
+                    playback_seconds_ = 0;
+                } catch (const std::invalid_argument& error) {
+                    error_ = error.what();
+                }
+            }
+            float progress = static_cast<float>(playback_seconds_ / config_.timeline.duration);
+            if (ImGui::SliderFloat("Timeline", &progress, 0, 1, "%.2f"))
+                playback_seconds_ = static_cast<double>(progress) * config_.timeline.duration;
+            int view = static_cast<int>(config_.debug);
+            const char* views[]{"Shaded", "Normals", "Ray distance", "Traversal work",
+                                "Brick cells"};
+            if (ImGui::Combo("View", &view, views, 5))
+                config_.debug = static_cast<std::uint32_t>(view);
+            int shadows = static_cast<int>(config_.shadows);
+            const char* shadow_names[]{"Off", "Hard", "Soft (4 samples)"};
+            if (ImGui::Combo("Shadows", &shadows, shadow_names, 3))
+                config_.shadows = static_cast<std::uint32_t>(shadows);
+            ImGui::Checkbox("Local ambient occlusion", &config_.ao);
+            ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
+            ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
+            ImGui::SliderFloat("Exposure", &config_.exposure, -3, 3, "%.1f stops");
+            ImGui::SliderFloat("Roughness", &config_.roughness, 0.05F, 1);
+            ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
+            ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
+            ImGui::Separator();
+            ImGui::InputScalar("Seed", ImGuiDataType_U32, &config_.seed);
+            ImGui::InputScalar("Stick count", ImGuiDataType_U32, &config_.count);
+            if (ImGui::Button("Generate sticks")) {
+                config_.count = std::min(config_.count, 65536U);
+                regenerate_requested_ = true;
+            }
+            if (!error_.empty())
+                ImGui::TextWrapped("%s", error_.c_str());
+            if (ImGui::CollapsingHeader("Field and tracing")) {
+                const auto& stats = field_->stats();
+                ImGui::Text("Bricks: %u / %u", stats.brick_count, field_->capacity);
+                ImGui::Text("Field: %.1f MiB",
+                            static_cast<double>(stats.allocation_bytes) / (1024 * 1024));
+                ImGui::Text("Last build: %.2f ms", stats.build_ms);
+                ImGui::TextWrapped("Four hierarchy stages skip empty cells. Each leaf caches 8x8x8 "
+                                   "distance samples. Magenta reports an exhausted ray.");
+            }
+        }
+        ImGui::End();
     }
     void shutdown() {
         renderer_.destroy();
@@ -123,6 +270,11 @@ class App {
     OrbitController orbit_{{.distance = 1.35F, .min_distance = 0.6F, .max_distance = 5.0F}};
     std::unique_ptr<Field> field_;
     Renderer renderer_;
+    TimelineSample timeline_;
+    std::size_t active_prefix_ = std::numeric_limits<std::size_t>::max();
+    double playback_seconds_ = 0;
+    bool regenerate_requested_ = false;
+    std::string error_;
 };
 } // namespace
 int run_sdf(const SdfConfig& config) {

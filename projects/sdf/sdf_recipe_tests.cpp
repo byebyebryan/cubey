@@ -1,4 +1,5 @@
 #include "sdf_recipe.h"
+#include "sdf_timeline.h"
 
 #include <cmath>
 #include <limits>
@@ -72,6 +73,21 @@ int main() {
     }
     require(construction_prefix(2048, 4.0, 8.0) == 1024,
             "construction depends on time rather than FPS");
+    const TimelineConfig timeline{.motion = "presentation"};
+    require(sample_timeline(timeline, 2048, 0).prefix == 0, "presentation must begin empty");
+    require(sample_timeline(timeline, 2048, 4).prefix == 1024,
+            "construction half-time must be half the edits");
+    require(sample_timeline(timeline, 2048, 8).prefix == 2048,
+            "construction endpoint must include the tail");
+    require(sample_timeline(timeline, 2048, 21).debug == 3 &&
+                sample_timeline(timeline, 2048, 24).debug == 4,
+            "presentation must show traversal then brick diagnostics");
+    for (unsigned tick = 0; tick <= 24; ++tick) {
+        const auto at30 = sample_timeline(timeline, 257, static_cast<double>(tick * 30) / 30);
+        const auto at60 = sample_timeline(timeline, 257, static_cast<double>(tick * 60) / 60);
+        require(at30.prefix == at60.prefix && at30.yaw == at60.yaw && at30.debug == at60.debug,
+                "logical state must be independent of capture FPS");
+    }
     bool rejected = false;
     try {
         box.half_extent.x = std::numeric_limits<float>::quiet_NaN();

@@ -69,7 +69,8 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,inout bool exh
     float ambientVisibility=environmentVisibility(p,n,exhausted);
     vec3 base=object ? lighting.material.xyz : vec3(0.12,0.14,0.16);
     float roughness=object ? lighting.quality.x : 0.8;
-    vec3 h=normalize(lightDirection+viewDirection);
+    vec3 halfVector=lightDirection+viewDirection;
+    vec3 h=dot(halfVector,halfVector)>1e-8 ? normalize(halfVector) : n;
     float nl=max(dot(n,lightDirection),0.0),nv=max(dot(n,viewDirection),0.001);
     vec3 f=cubey_pbr_fresnel_schlick(max(dot(h,viewDirection),0.0),vec3(0.04));
     float d=cubey_pbr_distribution_ggx(max(dot(n,h),0.0),roughness);

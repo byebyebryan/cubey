@@ -13,8 +13,9 @@ recipe remains independent of those caches. Empty cells use conservative box
 exits; hits write surface depth, and exhaustion is visible in magenta.
 
 The scene uses Cubey's render graph, shared HDR post, atmosphere sky integration
-and atmosphere-derived direct light/diffuse irradiance. Presentation playback,
-deterministic playback and final performance qualification are still in progress.
+and atmosphere-derived direct light/diffuse irradiance. Construction, orbit and
+the diagnostic presentation use a deterministic logical timeline. Final
+performance/visual qualification is in progress.
 See the [evidence record](../../docs/notes/sdf-implementation-evidence.md).
 
 ```sh
@@ -28,12 +29,12 @@ build/dev/projects/sdf/sdf --headless --count 2048 --atlas-axis 92 \
   --shadows 1 --output /tmp/sdf-sticks.png
 ```
 
-Drag to orbit, scroll to zoom, R to reset, Space to pause auto-rotation and
+Drag to orbit, scroll to zoom, R to reset, Space to pause playback and
 Escape to close. Static orbit/view changes reuse the existing field.
 `--scene` selects `box`, `rotated`, `cut` or `sticks`; `--seed` and `--count`
 specify the reproducible stick recipe. `--yaw`, `--pitch` and `--distance`
 specify the capture camera in radians/workspace units. `--debug` selects shaded
-(0), normal (1), ray-distance (2) or traversal-work (3) display. `--shadows 1`
+(0), normal (1), ray-distance (2), traversal-work (3) or brick-cell (4) display. `--shadows 1`
 enables hard mapless shadows; `--no-ground` removes the receiver.
 `--shadows 2` selects four-sample soft shadows, with angular radius controlled
 by `--shadow-softness`. `--ao` enables four local hemisphere queries affecting
@@ -55,6 +56,32 @@ partial batch. `--recipe /path/scene.json` rebuilds from that explicit list.
 The versioned file stores forward quaternions as xyzw, generator metadata and
 a geometry hash; invalid geometry, unsupported versions and hash mismatches
 fail before upload. The generator seed alone is not the saved sculpture.
+
+Use the [stick-ball preset](presets/stick-ball.json) for the main visual scene:
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/stick-ball.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/stick-ball.json \
+  --headless --motion presentation --capture video --fps 30 --output /tmp/sdf.mp4
+build/dev/projects/sdf/sdf --headless --motion construction --time 4 \
+  --count 257 --output /tmp/sdf-half.png
+```
+
+`--motion` selects `static`, `orbit`, `construction` or `presentation`.
+The default presentation is 24 logical seconds: eight for construction,
+twelve for orbit, then traversal and brick diagnostics. `--duration`,
+`--construction-seconds` and `--orbit-turns` adjust the timeline. `--time`
+selects an exact headless still state. Motion videos default to duration times
+FPS frames; an explicit `--frames` overrides that count. First/last capture
+frames land at the timeline endpoints. Rendering and capture FPS do not decide
+the edit prefix.
+
+The windowed panel supplies playback/scrubbing, scene regeneration, shading,
+light and diagnostic controls. A full batch is retained as the reusable base;
+the displayed partial tail is rebuilt when it changes. Backward scrubbing can
+rebuild from the complete recipe. Updates wait for readers before replacing
+either GPU field. Capacity failure stops publication, displays the completed
+prefix and reports the limit; headless capture fails.
 
 Atlas profiles are explicit: `--atlas-axis 64` (default, 262,144 bricks), `80`
 (512,000) or `92` (778,688). All remain below a 2 GiB field resource budget.

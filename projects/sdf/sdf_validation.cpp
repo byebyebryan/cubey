@@ -171,7 +171,8 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
         throw std::runtime_error("SDF GPU/CPU ray validation failed");
 }
 void validate_batches(vulkan::Device& device, ProjectGpuServices& gpu, Field& field) {
-    for (unsigned count : {0U, 128U, 129U, 256U, 257U}) {
+    Recipe last;
+    for (unsigned count : {0U, 128U, 129U, 256U, 257U, 257U, 129U, 128U, 0U, 257U}) {
         Recipe recipe;
         for (unsigned i = 0; i < count; ++i) {
             BoxEdit edit;
@@ -182,8 +183,34 @@ void validate_batches(vulkan::Device& device, ProjectGpuServices& gpu, Field& fi
             recipe.edits.push_back(edit);
         }
         field.build(recipe.edits);
+        if (field.displayed_edit_count() != recipe.edits.size())
+            throw std::runtime_error("SDF cache published the wrong edit prefix");
         validate_field(device, gpu, field, recipe);
+        last = recipe;
     }
-    std::cout << "sdf: batch/reset matrix passed (0, 128, 129, 256, 257 edits)\n";
+    {
+        Field smaller_batches(device, gpu, 64, 64);
+        smaller_batches.build(last.edits);
+        validate_field(device, gpu, smaller_batches, last);
+    }
+    for (bool reference_overflow : {false, true}) {
+        Field limited(device, gpu, 64, 128, reference_overflow ? 0U : 16U,
+                      reference_overflow ? 128U : 16U * 1024U * 1024U);
+        bool rejected = false;
+        try {
+            limited.build(make_recipe("box", 0, 1).edits);
+        } catch (const std::runtime_error& error) {
+            if (std::string_view(error.what()).find("SDF field capacity exceeded") ==
+                std::string_view::npos)
+                throw;
+            rejected = true;
+        }
+        if (!rejected || limited.displayed_edit_count() != 0)
+            throw std::runtime_error("SDF capacity failure was silently published");
+        limited.build({});
+        validate_field(device, gpu, limited, Recipe{});
+    }
+    std::cout << "sdf: batch/reset matrix passed (forward, unchanged, backward, reset, 64/128 edit "
+                 "batches, frontier/reference overflow recovery)\n";
 }
 } // namespace cubey::projects::sdf

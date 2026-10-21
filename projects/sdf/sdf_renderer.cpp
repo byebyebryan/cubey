@@ -106,6 +106,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
                       const SdfConfig& config, float yaw, float pitch, float distance,
                       profiling::ProfileRecorder* profile, std::uint64_t frame_index) {
+    auto environment = atmosphere_.environment();
+    environment.sun_elevation_degrees = config.sun_elevation;
+    environment.sun_azimuth_degrees = config.sun_azimuth;
+    atmosphere_.set_environment(environment);
     if (profiler_) {
         profiler_->collect(slot.index);
         if (recorded_frames_[slot.index] && profile)
@@ -115,14 +119,16 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         profiler_->begin_frame(command, slot.index);
         recorded_frames_[slot.index] = frame_index;
     }
-    const math::Vec3 eye = math::Vec3{std::cos(pitch) * std::sin(yaw), std::sin(pitch),
-                                      std::cos(pitch) * std::cos(yaw)} *
+    const math::Vec3 target_point{0, config.target_y, 0};
+    const math::Vec3 eye =
+        target_point + math::Vec3{std::cos(pitch) * std::sin(yaw), std::sin(pitch),
+                                  std::cos(pitch) * std::cos(yaw)} *
                            distance;
     const auto vp = math::perspective(glm::radians(45.0F),
                                       static_cast<float>(target.extent.width) /
                                           static_cast<float>(target.extent.height),
                                       0.01F, 100.0F) *
-                    glm::lookAt(eye, math::Vec3{0}, math::Vec3{0, 1, 0});
+                    glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
     const auto& light = atmosphere_.lighting();
     LightingUniforms uniforms;
     uniforms.atmosphere = atmosphere_.frame({}).background;
@@ -137,7 +143,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                         {light.primary_light_direction, 0},
                         {static_cast<float>(config.debug), static_cast<float>(config.shadows),
                          config.ground ? 1.0F : 0.0F, 0},
-                        {glm::normalize(-eye), 0}};
+                        {glm::normalize(target_point - eye), 0}};
     post_.upload(slot, render::hdr_post_uniforms(
                            target.format, config.debug ? 0.0F : config.exposure,
                            config.debug ? render::PbrTonemap::Linear : render::PbrTonemap::Aces));

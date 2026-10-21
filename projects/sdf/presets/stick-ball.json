@@ -1,0 +1,16 @@
+{
+  "scene": "sticks",
+  "seed": 42,
+  "count": 2048,
+  "atlas-axis": 92,
+  "pitch": 0.6,
+  "yaw": 0.6,
+  "distance": 2.0,
+  "target-y": -0.2,
+  "sun-elevation": 60,
+  "sun-azimuth": -35,
+  "shadows": 2,
+  "roughness": 0.36,
+  "exposure": 0.7,
+  "supersample": 2
+}
