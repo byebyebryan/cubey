@@ -44,6 +44,21 @@ the architecture and project guides remain current authority.
 - [Terrain Rendering Envelope V1](terrain-rendering-envelope-v1.md): far-backdrop geometry/detail limits.
 - [Terrain Visual Fidelity Strategy](terrain-visual-fidelity-strategy.md): bounded evidence required before reopening the accepted backdrop.
 
+## Exploration candidates
+
+These records retain proposed experiments and their scope. They do not imply
+an implemented project or a new runtime dependency.
+
+- [projectR architecture and source review](projectr-architecture-review.md):
+  edit representation, hierarchy and brick construction, renderer generations,
+  interaction, persistence and source-level correctness findings.
+- [projectR development history](projectr-development-history.md): the original
+  commit-message journey through meshing, brick filtering, hybrid tracing,
+  incremental updates and the renderer fork.
+- [SDF / projectR port exploration](sdf-projectr-port-exploration.md): a bounded
+  procedural rendering demo first, with learned-content and authoring
+  experiments retained for later selection.
+
 ## Historical research and study records
 
 Completed, rejected, superseded and optional experiments are grouped below.
