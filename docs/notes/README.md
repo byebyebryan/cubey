@@ -27,6 +27,8 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
+- [SDF implementation evidence](sdf-implementation-evidence.md): native field, traversal and batch checkpoints for the boxes-only port.
+
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
 - [Dynamic Environment Probe Coherence](dynamic-environment-probe-coherence.md): coherent full-cubemap publication and consumer handoff.
 - [Surface Ocean V1](ocean-surface-v1.md): accepted local-water product boundary.

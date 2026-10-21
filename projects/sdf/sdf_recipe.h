@@ -10,7 +10,10 @@
 
 namespace cubey::projects::sdf {
 
-enum class Operation : std::uint32_t { Fill = 1, Remove = 2 };
+enum class Operation : std::uint32_t {
+    Fill = 1,
+    Remove = 2
+};
 
 struct BoxEdit {
     math::Vec3 center{0.0F};
@@ -39,11 +42,9 @@ struct Recipe {
 [[nodiscard]] float box_distance(math::Vec3 point, math::Vec3 half_extent, float rounding);
 [[nodiscard]] float edit_distance(math::Vec3 point, const BoxEdit& edit);
 [[nodiscard]] float recipe_distance(math::Vec3 point, std::span<const BoxEdit> edits);
-[[nodiscard]] Recipe make_recipe(std::string_view scene, std::uint32_t seed,
-                                  std::uint32_t count);
+[[nodiscard]] Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count);
 [[nodiscard]] std::uint64_t recipe_hash(const Recipe& recipe);
-[[nodiscard]] std::size_t construction_prefix(std::size_t count, double seconds,
-                                              double duration);
+[[nodiscard]] std::size_t construction_prefix(std::size_t count, double seconds, double duration);
 void validate_edit(const BoxEdit& edit);
 
 } // namespace cubey::projects::sdf

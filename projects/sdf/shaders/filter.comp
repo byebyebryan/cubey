@@ -1,0 +1,78 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+layout(local_size_x=4, local_size_y=4, local_size_z=4) in;
+layout(std430,set=0,binding=0) readonly buffer Original { uint original[]; };
+layout(std430,set=0,binding=1) buffer Nodes { uint nodes[]; };
+layout(std430,set=0,binding=2) buffer EditHeaders { uvec2 editHeaders[]; };
+layout(std430,set=0,binding=3) buffer References { uint refs[]; };
+layout(std430,set=0,binding=4) readonly buffer Edits { Edit edits[]; };
+layout(std430,set=0,binding=5) readonly buffer InputNodes { uint inputs[]; };
+layout(std430,set=0,binding=6) writeonly buffer OutputNodes { uint outputs[]; };
+layout(std430,set=0,binding=7) buffer Counters { uint outputCount; uint refCount; uint overflow; uint unused; };
+layout(push_constant) uniform Params { uint depth; uint count; uint capacity; uint refCapacity; uint atlasAxis; } pc;
+shared uint parentHeader;
+shared uint parentCode;
+shared uint editCount;
+shared Edit cache[128];
+shared uint indices[128];
+void main() {
+    uint inputIndex = gl_WorkGroupID.x + gl_WorkGroupID.y * 1024u;
+    if (inputIndex >= pc.count) return;
+    uint lane = gl_LocalInvocationIndex;
+    if (lane == 0) {
+        uint ptr = inputs[inputIndex];
+        parentCode = ptr - LEVEL[pc.depth-2];
+        parentHeader = nodes[ptr];
+        editCount = (parentHeader & NEW_EDIT) != 0 ? editHeaders[ptr].y : 0;
+    }
+    barrier();
+    for (uint i=lane; i<editCount; i+=64) {
+        uint ptr = refs[editHeaders[inputs[inputIndex]].x+i];
+        indices[i] = ptr;
+        cache[i] = edits[ptr];
+    }
+    barrier();
+    uint code = (parentCode << 6) | morton(ivec3(gl_LocalInvocationID));
+    uint ptr = LEVEL[pc.depth] + code;
+    uint header = (parentHeader & OVERWRITTEN) != 0 ? parentHeader & ~SUBDIVIDED
+                                                         : original[ptr] & 0x3fffffffu;
+    if ((parentHeader & NEW_EDIT) != 0) {
+        if ((header & SUBDIVIDED) == 0) header |= OVERWRITTEN;
+        float size = 1.0 / float(1u << pc.depth);
+        vec3 p = (vec3(unmorton(code)) + 0.5)*size - 0.5;
+        float radius = size * 0.866025404;
+        uint retained[128];
+        uint n = 0;
+        for (uint i=0; i<editCount; ++i) {
+            float d = editDistance(p,cache[i]);
+            if (d >= radius) continue;
+            bool fill = cache[i].center_operation.w < 1.5;
+            if ((header & SUBDIVIDED) == 0 && (((header & FILLED) != 0) == fill)) continue;
+            if (d < -radius) {
+                header = OVERWRITTEN | (fill ? FILLED : 0u);
+                n = 0;
+            } else {
+                header |= SUBDIVIDED;
+                retained[n++] = indices[i];
+            }
+        }
+        header &= ~NEW_EDIT;
+        if (n > 0) {
+            uint offset = atomicAdd(refCount,n);
+            if (offset > pc.refCapacity || n > pc.refCapacity-offset) {
+                atomicOr(overflow,2u);
+                return;
+            }
+            for (uint i=0; i<n; ++i) refs[offset+i] = retained[i];
+            editHeaders[ptr] = uvec2(offset,n);
+            header |= NEW_EDIT;
+        }
+    }
+    nodes[ptr] = header;
+    if ((header & SUBDIVIDED) != 0) {
+        uint outputIndex = atomicAdd(outputCount,1u);
+        if (outputIndex >= pc.capacity) { atomicOr(overflow,1u); return; }
+        outputs[outputIndex] = ptr;
+    }
+}

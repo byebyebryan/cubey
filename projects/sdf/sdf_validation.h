@@ -1,0 +1,7 @@
+#pragma once
+#include "sdf_field.h"
+namespace cubey::projects::sdf {
+void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field& field,
+                    const Recipe& recipe);
+void validate_batches(vulkan::Device& device, ProjectGpuServices& gpu, Field& field);
+} // namespace cubey::projects::sdf

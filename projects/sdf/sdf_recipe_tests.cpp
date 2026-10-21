@@ -8,12 +8,13 @@ using namespace cubey::projects::sdf;
 using cubey::math::Vec3;
 namespace {
 void require(bool value, const char* message) {
-    if (!value) throw std::runtime_error(message);
+    if (!value)
+        throw std::runtime_error(message);
 }
 void close(float value, float expected) {
     require(std::abs(value - expected) < 1.0e-5F, "box distance disagrees with known geometry");
 }
-}
+} // namespace
 
 int main() {
     BoxEdit box;
@@ -37,22 +38,29 @@ int main() {
     const auto first = make_recipe("sticks", 42, 257);
     const auto second = make_recipe("sticks", 42, 257);
     require(first.edits.size() == 257, "recipe must retain every edit beyond batch boundaries");
-    require(recipe_hash(first) == recipe_hash(second), "same seed must produce the same explicit edits");
-    require(recipe_hash(first) != recipe_hash(make_recipe("sticks", 43, 257)), "seed must change scene");
+    require(recipe_hash(first) == recipe_hash(second),
+            "same seed must produce the same explicit edits");
+    require(recipe_hash(first) != recipe_hash(make_recipe("sticks", 43, 257)),
+            "seed must change scene");
     for (const auto& edit : first.edits) {
         validate_edit(edit);
         const float radius = glm::length(edit.center);
-        require(radius >= 0.28999F && radius <= 0.30001F, "stick shell must match reference dimensions");
+        require(radius >= 0.28999F && radius <= 0.30001F,
+                "stick shell must match reference dimensions");
     }
     for (const auto count : {128U, 129U, 256U, 257U}) {
-        require(construction_prefix(count, 8.0, 8.0) == count, "last frame must contain every edit");
+        require(construction_prefix(count, 8.0, 8.0) == count,
+                "last frame must contain every edit");
         require(construction_prefix(count, -1.0, 8.0) == 0, "negative time must clamp to empty");
     }
-    require(construction_prefix(2048, 4.0, 8.0) == 1024, "construction depends on time rather than FPS");
+    require(construction_prefix(2048, 4.0, 8.0) == 1024,
+            "construction depends on time rather than FPS");
     bool rejected = false;
     try {
         box.half_extent.x = std::numeric_limits<float>::quiet_NaN();
         static_cast<void>(gpu_edit(box));
-    } catch (const std::invalid_argument&) { rejected = true; }
+    } catch (const std::invalid_argument&) {
+        rejected = true;
+    }
     require(rejected, "nonfinite geometry must be rejected before GPU upload");
 }
