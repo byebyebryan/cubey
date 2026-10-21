@@ -2,9 +2,12 @@
 
 Date: 2026-10-21
 
-Status: selected for incremental implementation, with a static stick-ball image
-ahead of persistence and playback polish. Implementation evidence belongs in
-the SDF project guide as checkpoints land. The [architecture review](projectr-architecture-review.md)
+Status: native V1 implemented through M4, with bounded 2,048-stick captures,
+construction/orbit playback and recorded correctness/performance evidence.
+The [project guide](../../projects/sdf/README.md) owns current behavior; the
+[implementation evidence](sdf-implementation-evidence.md) records qualification
+and remaining limits. User visual acceptance remains separate from those checks.
+The [architecture review](projectr-architecture-review.md)
 and [development history](projectr-development-history.md) describe projectR;
 the [exploration record](sdf-projectr-port-exploration.md) retains broader
 rendering, authoring and AI-content experiments.

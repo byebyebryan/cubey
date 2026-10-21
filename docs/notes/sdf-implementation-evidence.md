@@ -1,6 +1,6 @@
 # SDF implementation evidence
 
-Date: 2026-10-21. Work in progress under the
+Date: 2026-10-21. Native V1 implemented under the
 [implementation plan](sdf-projectr-port-plan.md); the
 [project guide](../../projects/sdf/README.md) owns run commands and behavior.
 
@@ -106,7 +106,9 @@ A native 257-stick save/reload produced the same explicit recipe hash
 The before/reload PNGs were not byte-identical (RGBA PSNR 72.29 dB). Repeating
 the loaded recipe also differed by a similar amount (72.37 dB). GPU append
 order changes atlas addresses, so hardware texture-coordinate interpolation
-can produce small shading differences. Geometry/timeline reproducibility is
+can affect grazing contacts and shading. Of 307,200 pixels, 48 differed on
+save/reload: 44 by one channel level, two by two, one by seven and one by 57.
+The repeated loaded run also had one pixel differing by 57. Geometry/timeline reproducibility is
 qualified within sampling tolerance, not bit-identical frame buffers.
 
 ## Timeline and publication checkpoint
@@ -131,3 +133,60 @@ recomputed/copied brick counts, and remaining wall time. An isolated full
 712,716 recomputed (work totals, not simultaneous atlas occupancy). This does
 not isolate copy-only time from sampling; both share the donor-style dispatch.
 The measured cost does not justify an indirect-dispatch foundation change in V1.
+
+## Final native qualification
+
+[Published native review](http://starship:8787/reports/7f1fd699ff363f13294391b0917eac5e1ba9e98f348aaedced78de93d4142211/)
+contains the video, stills, comparisons and raw receipts. HTTP delivery was
+verified, then native video playback, phase seeking and the lighting selector
+were exercised in Chrome. The export includes a browser verification image.
+
+Measured native implementation: `651fd2c2b93e7e6e7091339cbd1eead562585178`.
+The later tools/documentation checkpoint preserves the capture recipes and
+review export; it does not change the measured rendering implementation.
+The capture manifest records the executable hash, applied configurations,
+source hashes and individual results; `runtime-artifacts.json` additionally
+records the SPIR-V hashes. The executable was rechecked against the manifest.
+
+Device: NVIDIA GeForce RTX 5070 Ti, driver 610.57.04, 16,303 MiB inventory.
+Each fixed timing run used 180 headless render-only frames at 1920x1080,
+30 warmup frames and 148 completed GPU samples. The final two frame slots were
+not collected. Readback/encoding were disabled, validation was required,
+supersampling was 1, and the full 2,048-stick field used atlas profile 92.
+Camera: yaw 0.6, pitch 0.3, distance 1.35, target height 0; sun elevation 35,
+azimuth -55, exposure 0, roughness 0.36. The field was built once.
+
+| Mode | Median trace + post | p95 | Render-only loop, 180 frames |
+| --- | ---: | ---: | ---: |
+| Primary + atmosphere | 3.052 ms | 3.199 ms | 0.552 s |
+| Hard shadows | 5.322 ms | 5.549 ms | 0.964 s |
+| Soft shadows, four samples | 12.563 ms | 13.062 ms | 2.268 s |
+| Soft shadows + local AO | 14.568 ms | 15.104 ms | 2.629 s |
+
+The selected static modes meet the planned 60 FPS primary/30 FPS lit timing
+targets on this device at 1x sampling. These results exclude geometry rebuilds
+and do not qualify 1080p 2x supersampling or other devices.
+
+The authored clip completed as 720 H.264 frames at 1280x720/30 FPS, duration
+exactly 24 seconds. It uses 2x internal resolution, the committed stick-ball
+preset, eight seconds of construction, twelve of orbit, then traversal and
+brick-cell diagnostics. Five decoded stages were inspected, and browser
+playback/phase seeking were checked. The static host lacks HTTP Range support;
+the review player downloads a local Blob to make seeking work without changing
+the report server. Lighting comparison controls and relative assets were checked.
+
+The complete capture matrix includes transformed/subtracted box normals,
+opposing raster depth views, batch/overflow checks, matched lighting modes,
+a partial construction frame, diagnostics and a second seed. Required Vulkan
+validation emitted no errors. The full stick-ball oracle reported zero
+out-of-bound errors/exhaustion and four sampling ambiguities in this capture.
+The windowed interaction exercise injected orbit, scroll, pause/reset,
+two resizes and Escape in an isolated Xvfb display; it completed with one field
+build and clean shutdown. Physical-desktop/user aesthetic acceptance is pending.
+
+Current limits remain explicit: 2,048 sticks use 630,656 bricks and
+1,974,880,928 bytes of field resource payload. The 6,400-stick stress case
+exceeds the 778,688-brick profile and fails without publishing a capture.
+The field allocation counts exclude frame targets, driver overhead and padding.
+Terrain backgrounds, desktop sculpting, learned generation and GI remain
+exploration candidates rather than V1 dependencies.

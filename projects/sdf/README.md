@@ -6,6 +6,10 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
+[Watch the native demo and review the captures](http://starship:8787/reports/7f1fd699ff363f13294391b0917eac5e1ba9e98f348aaedced78de93d4142211/).
+The review includes the 24-second presentation, lighting comparisons,
+explicit recipe, applied configurations and qualification receipts.
+
 The native renderer builds a four-stage hierarchy at depths 2/4/6/8, filters
 ordered box edits into leaf lists and samples 8-cubed R16F bricks. Paired fields
 promote only after a completed batch of at most 128 edits. The complete CPU
@@ -14,8 +18,9 @@ exits; hits write surface depth, and exhaustion is visible in magenta.
 
 The scene uses Cubey's render graph, shared HDR post, atmosphere sky integration
 and atmosphere-derived direct light/diffuse irradiance. Construction, orbit and
-the diagnostic presentation use a deterministic logical timeline. Final
-performance/visual qualification is in progress.
+the diagnostic presentation use a deterministic logical timeline. Native V1
+checks and the fixed performance matrix pass on the selected RTX 5070 Ti;
+the captured composition is ready for user visual review.
 See the [evidence record](../../docs/notes/sdf-implementation-evidence.md).
 
 ```sh
@@ -75,6 +80,24 @@ selects an exact headless still state. Motion videos default to duration times
 FPS frames; an explicit `--frames` overrides that count. First/last capture
 frames land at the timeline endpoints. Rendering and capture FPS do not decide
 the edit prefix.
+
+Reproduce the fixed native acceptance/capture matrix and assemble its review:
+
+```sh
+python3 projects/sdf/tools/qualify.py --video --windowed
+python3 projects/sdf/tools/report.py
+```
+
+The optional windowed check uses an isolated Xvfb server, libX11/libXtst and
+FFmpeg. The headless matrix needs the app and CPU-test targets built above.
+Receipts, applied configs, profiles, recipe and captures go under
+`outputs/sdf/qualification`; `report.py` prepares a separate static export.
+Use a fresh `--output` directory when the binary or shaders change.
+
+The fixed 1080p matrix uses 1× sampling and a closer default camera: median GPU
+time was 3.05 ms for primary rendering and 12.56 ms with soft shadows. The
+presentation capture uses 2× sampling at 720p. See the evidence record for
+frame counts, p95 values, capacity failures and the sampling-error boundary.
 
 The windowed panel supplies playback/scrubbing, scene regeneration, shading,
 light and diagnostic controls. A full batch is retained as the reusable base;

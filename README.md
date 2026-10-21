@@ -97,6 +97,7 @@ and keep domain-specific policy local.
 | [Terrain Water](projects/terrain_water/README.md) | Terrain-water integration with live external SynxFlow, recorded fields, and shared terrain/water rendering. |
 | [glTF Viewer](projects/gltf_viewer/README.md) | Staged glTF 2.0 PBR import, animation and deformation, required-use material extensions, procedural or HDR environments, shadows, and optional terrain. |
 | [Fractal 2D](projects/fractal_2d) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
+| [SDF](projects/sdf/README.md) | Boxes-only ProjectR revival with sparse distance bricks, deterministic construction playback, atmosphere lighting, and mapless shadows. |
 
 Terrain and Ocean deliberately represent different scales: far backdrop and
 local water surface. Planet rendering is a paused study. Surface-scale planet terrain,
