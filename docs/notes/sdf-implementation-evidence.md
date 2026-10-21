@@ -94,3 +94,17 @@ camera, soft shadows, AO off, supersampling 1, 80 headless render-only frames,
 The profiler retained 68 completed GPU samples: trace median 12.526 ms,
 p95 12.928 ms; post median 0.0135 ms. This is an initial measurement, pending
 the matched final matrix and construction-stage breakdown.
+
+## Recipe persistence checkpoint
+
+Version-1 JSON retains all box transforms, operations and dimensions, including
+the partial tail beyond a 128-edit boundary. CPU roundtrip checks cover a
+257-stick list, ordered subtraction and an empty recipe; corrupt hashes fail.
+A native 257-stick save/reload produced the same explicit recipe hash
+`4eed14fe9a9ec1f0`, edit count and 88,474 active bricks.
+
+The before/reload PNGs were not byte-identical (RGBA PSNR 72.29 dB). Repeating
+the loaded recipe also differed by a similar amount (72.37 dB). GPU append
+order changes atlas addresses, so hardware texture-coordinate interpolation
+can produce small shading differences. Geometry/timeline reproducibility is
+qualified within sampling tolerance, not bit-identical frame buffers.

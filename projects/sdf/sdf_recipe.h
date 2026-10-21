@@ -4,7 +4,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -35,6 +37,8 @@ static_assert(offsetof(GpuEdit, extent_rounding) == 32);
 
 struct Recipe {
     std::vector<BoxEdit> edits;
+    std::string generator = "explicit";
+    std::uint32_t seed = 0;
 };
 
 [[nodiscard]] GpuEdit gpu_edit(const BoxEdit& edit);
@@ -46,5 +50,9 @@ struct Recipe {
 [[nodiscard]] std::uint64_t recipe_hash(const Recipe& recipe);
 [[nodiscard]] std::size_t construction_prefix(std::size_t count, double seconds, double duration);
 void validate_edit(const BoxEdit& edit);
+[[nodiscard]] std::string serialize_recipe(const Recipe& recipe);
+[[nodiscard]] Recipe parse_recipe(std::string_view json);
+void save_recipe(const std::filesystem::path& path, const Recipe& recipe);
+[[nodiscard]] Recipe load_recipe(const std::filesystem::path& path);
 
 } // namespace cubey::projects::sdf

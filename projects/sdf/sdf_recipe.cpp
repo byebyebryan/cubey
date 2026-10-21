@@ -1,10 +1,15 @@
 #include "sdf_recipe.h"
 
+#include <cubey/core/file_io.h>
+#include <nlohmann/json.hpp>
+
 #include <algorithm>
 #include <bit>
 #include <cmath>
+#include <iomanip>
 #include <limits>
 #include <numbers>
+#include <sstream>
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
@@ -91,6 +96,8 @@ float recipe_distance(math::Vec3 point, std::span<const BoxEdit> edits) {
 
 Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count) {
     Recipe recipe;
+    recipe.generator = scene == "sticks" ? "sticks-pcg32-v1" : std::string(scene);
+    recipe.seed = seed;
     if (scene == "box" || scene == "rotated" || scene == "cut") {
         BoxEdit box;
         box.half_extent = {0.24F, 0.19F, 0.22F};
@@ -155,6 +162,76 @@ std::size_t construction_prefix(std::size_t count, double seconds, double durati
         throw std::invalid_argument("SDF construction time must be finite with positive duration");
     return static_cast<std::size_t>(
         std::floor(static_cast<double>(count) * std::clamp(seconds / duration, 0.0, 1.0)));
+}
+
+std::string serialize_recipe(const Recipe& recipe) {
+    nlohmann::json edits = nlohmann::json::array();
+    for (const auto& edit : recipe.edits) {
+        validate_edit(edit);
+        edits.push_back(
+            {{"operation", edit.operation == Operation::Fill ? "fill" : "remove"},
+             {"center", {edit.center.x, edit.center.y, edit.center.z}},
+             {"rotation_xyzw",
+              {edit.rotation.x, edit.rotation.y, edit.rotation.z, edit.rotation.w}},
+             {"half_extent", {edit.half_extent.x, edit.half_extent.y, edit.half_extent.z}},
+             {"rounding", edit.rounding}});
+    }
+    std::ostringstream hash;
+    hash << std::hex << std::setfill('0') << std::setw(16) << recipe_hash(recipe);
+    return nlohmann::json{{"format", "cubey.sdf.boxes"},
+                          {"version", 1},
+                          {"generator", {{"name", recipe.generator}, {"seed", recipe.seed}}},
+                          {"hash_algorithm", "fnv1a64-gpu-lanes-le-v1"},
+                          {"hash", hash.str()},
+                          {"edits", std::move(edits)}}
+               .dump(2) +
+           "\n";
+}
+
+Recipe parse_recipe(std::string_view text) {
+    const auto json = nlohmann::json::parse(text);
+    if (json.at("format") != "cubey.sdf.boxes" || !json.at("version").is_number_integer() ||
+        json.at("version") != 1 || json.at("hash_algorithm") != "fnv1a64-gpu-lanes-le-v1" ||
+        !json.at("edits").is_array() || json.at("edits").size() > 65536)
+        throw std::invalid_argument("unsupported SDF recipe format/version or edit count");
+    Recipe recipe;
+    recipe.generator = json.at("generator").at("name").get<std::string>();
+    recipe.seed = json.at("generator").at("seed").get<std::uint32_t>();
+    const auto vector = [](const nlohmann::json& values) {
+        if (!values.is_array() || values.size() != 3)
+            throw std::invalid_argument("SDF vector must contain exactly three numbers");
+        return math::Vec3{values.at(0).get<float>(), values.at(1).get<float>(),
+                          values.at(2).get<float>()};
+    };
+    for (const auto& item : json.at("edits")) {
+        BoxEdit edit;
+        const auto operation = item.at("operation").get<std::string>();
+        if (operation != "fill" && operation != "remove")
+            throw std::invalid_argument("invalid SDF box operation");
+        edit.operation = operation == "fill" ? Operation::Fill : Operation::Remove;
+        edit.center = vector(item.at("center"));
+        edit.half_extent = vector(item.at("half_extent"));
+        edit.rounding = item.at("rounding").get<float>();
+        const auto& q = item.at("rotation_xyzw");
+        if (!q.is_array() || q.size() != 4)
+            throw std::invalid_argument("SDF quaternion must be xyzw");
+        edit.rotation = {q.at(3).get<float>(), q.at(0).get<float>(), q.at(1).get<float>(),
+                         q.at(2).get<float>()};
+        validate_edit(edit);
+        recipe.edits.push_back(edit);
+    }
+    const auto canonical = nlohmann::json::parse(serialize_recipe(recipe));
+    if (canonical.at("hash") != json.at("hash"))
+        throw std::invalid_argument("SDF recipe hash mismatch");
+    return recipe;
+}
+void save_recipe(const std::filesystem::path& path, const Recipe& recipe) {
+    const auto text = serialize_recipe(recipe);
+    write_binary_file(path, {reinterpret_cast<const std::uint8_t*>(text.data()), text.size()});
+}
+Recipe load_recipe(const std::filesystem::path& path) {
+    const auto bytes = read_binary_file(path);
+    return parse_recipe({reinterpret_cast<const char*>(bytes.data()), bytes.size()});
 }
 
 } // namespace cubey::projects::sdf

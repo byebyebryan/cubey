@@ -42,6 +42,23 @@ int main() {
             "same seed must produce the same explicit edits");
     require(recipe_hash(first) != recipe_hash(make_recipe("sticks", 43, 257)),
             "seed must change scene");
+    for (const auto& recipe : {first, cut, Recipe{}}) {
+        const auto restored = parse_recipe(serialize_recipe(recipe));
+        require(
+            restored.edits.size() == recipe.edits.size() &&
+                recipe_hash(restored) == recipe_hash(recipe),
+            "recipe roundtrip must retain all edits and operations, including the partial tail");
+    }
+    bool corrupt_rejected = false;
+    try {
+        auto corrupt = serialize_recipe(first);
+        const auto hash = corrupt.find("\"hash\": \"") + 9;
+        corrupt[hash] = corrupt[hash] == '0' ? '1' : '0';
+        static_cast<void>(parse_recipe(corrupt));
+    } catch (const std::exception&) {
+        corrupt_rejected = true;
+    }
+    require(corrupt_rejected, "corrupt recipe content/hash must not load as a complete sculpture");
     for (const auto& edit : first.edits) {
         validate_edit(edit);
         const float radius = glm::length(edit.center);

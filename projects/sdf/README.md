@@ -14,7 +14,7 @@ exits; hits write surface depth, and exhaustion is visible in magenta.
 
 The scene uses Cubey's render graph, shared HDR post, atmosphere sky integration
 and atmosphere-derived direct light/diffuse irradiance. Presentation playback,
-persistence and final performance qualification are still in progress.
+deterministic playback and final performance qualification are still in progress.
 See the [evidence record](../../docs/notes/sdf-implementation-evidence.md).
 
 ```sh
@@ -49,6 +49,12 @@ foundation's backdrop horizon remapping; this does not remap surface lighting.
 `--validate-field` compares GPU rays against direct CPU box CSG, including axis
 parallel and inside-solid rays. `--validate-batches` checks empty/reset and
 128/129/256/257-edit scenes with an individually visible box per edit.
+
+`--export-recipe /path/scene.json` saves every ordered edit, including the final
+partial batch. `--recipe /path/scene.json` rebuilds from that explicit list.
+The versioned file stores forward quaternions as xyzw, generator metadata and
+a geometry hash; invalid geometry, unsupported versions and hash mismatches
+fail before upload. The generator seed alone is not the saved sculpture.
 
 Atlas profiles are explicit: `--atlas-axis 64` (default, 262,144 bricks), `80`
 (512,000) or `92` (778,688). All remain below a 2 GiB field resource budget.

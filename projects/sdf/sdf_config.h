@@ -4,6 +4,7 @@
 namespace cubey::projects::sdf {
 struct SdfConfig {
     host::CommonRunConfig common;
+    std::filesystem::path recipe_path, export_recipe_path;
     std::string scene = "sticks";
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 0;
     std::uint32_t atlas_axis = 64;
@@ -44,6 +45,10 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
+        .bind(option("recipe", "Load an explicit versioned box recipe", config::ValueType::Path),
+              c.recipe_path)
+        .bind(option("export-recipe", "Save the complete ordered recipe", config::ValueType::Path),
+              c.export_recipe_path)
         .bind(option("seed", "Seed", config::ValueType::UInt32), c.seed)
         .bind(option("count", "Sticks", config::ValueType::UInt32), c.count)
         .bind(option("debug", "Debug (0 shaded, 1 normals, 2 distance, 3 steps)",

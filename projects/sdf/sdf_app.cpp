@@ -23,7 +23,9 @@ class App {
   public:
     explicit App(SdfConfig config)
         : config_(std::move(config)),
-          recipe_(make_recipe(config_.scene, config_.seed, config_.count)) {
+          recipe_(config_.recipe_path.empty()
+                      ? make_recipe(config_.scene, config_.seed, config_.count)
+                      : load_recipe(config_.recipe_path)) {
         if (config_.debug > 3 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             config_.distance < 0.6F || (config_.supersample != 1 && config_.supersample != 2) ||
@@ -35,6 +37,8 @@ class App {
             throw std::invalid_argument("invalid SDF view options");
         orbit_.set_pitch(config_.pitch);
         orbit_.set_distance(config_.distance);
+        if (!config_.export_recipe_path.empty())
+            save_recipe(config_.export_recipe_path, recipe_);
     }
     int run() {
         if (config_.common.headless) {
