@@ -9,7 +9,7 @@
   "target-y": -0.2,
   "sun-elevation": 60,
   "sun-azimuth": -35,
-  "shadows": 2,
+  "shadows": 1,
   "roughness": 0.36,
   "exposure": 0.7,
   "supersample": 2

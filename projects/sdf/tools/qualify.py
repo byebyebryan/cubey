@@ -118,7 +118,8 @@ def main():
         preset = root / "projects/sdf/presets/stick-ball.json"
         for name, extra in (("hero", ["--validate-field", "--export-recipe", output / "recipe.json"]),
                             ("baseline", ["--shadows", 0]), ("hard", ["--shadows", 1]),
-                            ("ao", ["--ao"]), ("half", ["--motion", "construction", "--time", 4]),
+                            ("soft", ["--shadows", 2]), ("ao", ["--shadows", 2, "--ao"]),
+                            ("half", ["--motion", "construction", "--time", 4]),
                             ("steps", ["--debug", 3]), ("bricks", ["--debug", 4]),
                             ("seed-43", ["--seed", 43, "--count", 512, "--atlas-axis", 64])):
             capture = output / "captures" / f"{name}.png"

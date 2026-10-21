@@ -12,7 +12,7 @@ struct SdfConfig {
     double snapshot_time = -1;
     std::filesystem::path recipe_path, export_recipe_path;
     std::string scene = "sticks";
-    std::uint32_t seed = 42, count = 512, debug = 0, shadows = 0;
+    std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
     std::uint32_t supersample = 1;
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,

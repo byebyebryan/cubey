@@ -32,6 +32,9 @@ def main():
                     f'<td>{timing["p95_ms"]:.2f} ms</td><td>{timing["samples"]}</td>'
                     f'<td><a href="{html.escape(run["summary"])}">raw summary</a></td></tr>')
     template = Path(__file__).with_name("report_template.html").read_text()
+    # The original review used a soft-shadow hero; newer runs capture it explicitly.
+    soft_capture = "soft" if "soft" in manifest["runs"] else "hero"
+    template = template.replace("__SOFT_CAPTURE__", soft_capture)
     template = template.replace("__PERFORMANCE_ROWS__", "\n".join(rows))
     template = template.replace("__COMMIT__", html.escape(manifest["source_commit"][:12]))
     runtime=json.loads((source/"runtime-artifacts.json").read_text())
