@@ -6,10 +6,12 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
-[Watch the native demo and review the captures](http://starship:8787/reports/7f1fd699ff363f13294391b0917eac5e1ba9e98f348aaedced78de93d4142211/).
-The review includes the original soft-shadow 24-second presentation, lighting
-comparisons, explicit recipe, applied configurations and qualification receipts.
-The app and current presentation preset default to hard shadows.
+[Earlier ground-plane demo and captures](http://starship:8787/reports/7f1fd699ff363f13294391b0917eac5e1ba9e98f348aaedced78de93d4142211/).
+The original review includes the 24-second presentation, lighting comparisons,
+explicit recipe, applied configurations and qualification receipts. Its downward
+camera and ground plane hide the sky. The app and current presentation preset
+use hard self-shadows against the shared atmosphere sky, with the ground plane
+disabled.
 
 The native renderer builds a four-stage hierarchy at depths 2/4/6/8, filters
 ordered box edits into leaf lists and samples 8-cubed R16F bricks. Paired fields
@@ -41,8 +43,9 @@ Escape to close. Static orbit/view changes reuse the existing field.
 specify the reproducible stick recipe. `--yaw`, `--pitch` and `--distance`
 specify the capture camera in radians/workspace units. `--debug` selects shaded
 (0), normal (1), ray-distance (2), traversal-work (3) or brick-cell (4) display.
-Hard mapless shadows are the default (`--shadows 1`); `--shadows 0` disables
-them and `--no-ground` removes the receiver. `--shadows 2` explicitly selects
+Hard mapless self-shadows are the default (`--shadows 1`); `--shadows 0` disables
+them. The ground plane is off by default; `--ground` enables it for diagnostics.
+`--shadows 2` explicitly selects
 four-sample soft shadows, with angular radius controlled by `--shadow-softness`.
 `--ao` enables four local hemisphere queries affecting
 environment visibility. Neither mode provides indirect bounced light.
@@ -96,11 +99,12 @@ Receipts, applied configs, profiles, recipe and captures go under
 `outputs/sdf/qualification`; `report.py` prepares a separate static export.
 Use a fresh `--output` directory when the binary or shaders change.
 
-The fixed 1080p matrix uses 1× sampling and a closer default camera: median GPU
-time was 3.05 ms for primary rendering, 5.32 ms with hard shadows and 12.56 ms
-with soft shadows. The presentation capture uses 2× sampling at 720p.
-See the evidence record for
-frame counts, p95 values, capacity failures and the sampling-error boundary.
+The fixed 1080p matrix uses 1× sampling and a closer default camera. The original
+ground-enabled run measured 3.05 ms for primary rendering, 5.32 ms with hard
+shadows and 12.56 ms with soft shadows. Fresh ground-disabled timings will be
+recorded separately. The presentation capture uses 2× sampling at 720p.
+See the evidence record for frame counts, p95 values, capacity failures and the
+sampling-error boundary.
 
 The windowed panel supplies playback/scrubbing, scene regeneration, shading,
 light and diagnostic controls. A full batch is retained as the reusable base;

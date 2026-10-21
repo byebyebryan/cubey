@@ -18,7 +18,7 @@ struct SdfConfig {
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
     bool ao = false;
-    bool ground = true, validate = false, validate_batches = false, occluder = false;
+    bool ground = false, validate = false, validate_batches = false, occluder = false;
     float yaw = 0.6F, pitch = 0.3F, distance = 1.35F;
     float target_y = 0;
 };

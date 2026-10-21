@@ -6,10 +6,11 @@
   "pitch": 0.6,
   "yaw": 0.6,
   "distance": 2.0,
-  "target-y": -0.2,
+  "target-y": 0.0,
   "sun-elevation": 60,
   "sun-azimuth": -35,
   "shadows": 1,
+  "ground": false,
   "roughness": 0.36,
   "exposure": 0.7,
   "supersample": 2

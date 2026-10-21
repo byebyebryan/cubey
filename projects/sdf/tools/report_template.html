@@ -12,6 +12,7 @@
 <div class="eyebrow">Cubey / rendering experiments / ProjectR revival</div>
 <h1>A sculpture made of boxes.</h1>
 <p>Every stick is a reproducible box edit. The revived ProjectR pipeline turns that ordered recipe into a sparse distance field, then lights it with Cubey’s atmosphere and mapless shadows.</p>
+<p>__PRESENTATION_NOTE__</p>
 <div class="facts"><span><strong>2,048</strong> boxes · seed 42</span><span><strong>630,656</strong> cached bricks</span><span><strong>1.84 GiB</strong> bounded field</span><span><strong>24 seconds</strong> construction → orbit → diagnostics</span></div>
 </header>
 <div class="movie">
@@ -28,7 +29,7 @@
 <p>The camera and recipe stay fixed. Soft shadows sample the light four times; optional local occlusion affects the environment contribution.</p>
 <label for="lighting">Lighting comparison </label><select id="lighting"><option value="hard" selected>Hard shadows</option><option value="baseline">Without local shadows</option><option value="__SOFT_CAPTURE__">Soft shadows</option><option value="ao">Soft shadows + local AO</option></select>
 <img class="capture" id="comparison" src="captures/hard.png" alt="Procedural stick ball with hard mapless shadows">
-<p class="note" id="comparison-caption">Hard shadows · a second field query starts at the actual hit. The ground receiver can start outside the workspace.</p>
+<p class="note" id="comparison-caption">__HARD_DESCRIPTION__</p>
 </section>
 
 <section>
@@ -42,9 +43,9 @@
 
 <section>
 <h2>Measured on the native renderer.</h2>
-<p>__DEVICE__ · driver __DRIVER__ · 1920×1080 · 2,048 boxes · 1× sampling · fixed default camera. The benchmark uses a closer view than the presentation.</p>
+<p>__DEVICE__ · driver __DRIVER__ · 1920×1080 · 2,048 boxes · 1× sampling · fixed default camera · ground __GROUND_STATE__. The benchmark uses a closer view than the presentation.</p>
 <div class="table-wrap"><table><thead><tr><th>Mode</th><th>Median GPU</th><th>p95 GPU</th><th>Samples</th><th>Evidence</th></tr></thead><tbody>__PERFORMANCE_ROWS__</tbody></table></div>
-<p class="note">Trace/lighting plus shared post. Each run: 180 render-only frames, 30 warmup, 148 completed GPU samples; the final two slots are not collected. Readback and encoding were disabled. Field construction is separate: the recorded full build took 131 ms, including 65 ms filtering and 50 ms brick sampling/copying. These are bounded device measurements, not a general hardware claim.</p>
+<p class="note">Trace/lighting plus shared post. Each run: 180 render-only frames, 30 warmup, 148 completed GPU samples; the final two slots are not collected. Readback and encoding were disabled. Field construction is separate: the recorded full build took __BUILD_MS__ ms, including __FILTER_MS__ ms filtering and __BRICK_MS__ ms brick sampling/copying. These are bounded device measurements, not a general hardware claim.</p>
 </section>
 
 <section>
@@ -53,7 +54,7 @@
 <figure><img src="captures/cut-normals.png" alt="Normal visualization of an ordered box subtraction"><figcaption>Ordered subtraction and transformed boxes agree with the CPU oracle.</figcaption></figure>
 <figure><img src="captures/depth-front.png" alt="Blue raster plane crossing a shaded SDF box"><figcaption>A raster plane crosses the SDF: its front part occludes the box, and its rear part is hidden.</figcaption></figure>
 </div>
-<details><summary>Windowed controls and acceptance limits</summary><div class="grid"><div><img class="capture" src="captures/window-orbit.png" alt="Native SDF study panel and rotated stick ball"><p class="note">Injected orbit, zoom, pause/reset, two resizes and clean shutdown passed in an isolated Xvfb display, with one geometry build. Physical desktop acceptance remains a separate check.</p></div><div class="card"><h3>Deliberate limits</h3><p>The default atlas holds 262,144 bricks. The main scene selects 778,688 slots and fits below the 2 GiB field budget. The 6,400-stick stress request exceeds that profile and fails without a capture.</p><p>Sampled fields can alter grazing silhouettes. The CPU/GPU check reported zero errors outside its interpolation bound and four ambiguous rays in this run. Repeated PNGs are not promised to be bit identical.</p><p class="note">This port covers boxes, rendering and procedural presentation. Desktop sculpting, learned generation, GI and terrain-background integration remain later experiments.</p></div></div></details>
+<details><summary>Windowed controls and acceptance limits</summary><div class="grid"><div><img class="capture" src="captures/window-orbit.png" alt="Native SDF study panel and rotated stick ball"><p class="note">Injected orbit, zoom, pause/reset, two resizes and clean shutdown passed in an isolated Xvfb display, with one geometry build. Physical desktop acceptance remains a separate check.</p></div><div class="card"><h3>Deliberate limits</h3><p>The default atlas holds 262,144 bricks. The main scene selects 778,688 slots and fits below the 2 GiB field budget. The 6,400-stick stress request exceeds that profile and fails without a capture.</p><p>Sampled fields can alter grazing silhouettes. The CPU/GPU check reported zero errors outside its interpolation bound and __AMBIGUITIES__ ambiguous rays in this run. Repeated PNGs are not promised to be bit identical.</p><p class="note">This port covers boxes, rendering and procedural presentation. Desktop sculpting, learned generation, GI and terrain-background integration remain later experiments.</p></div></div></details>
 </section>
 
 <section>
@@ -79,7 +80,7 @@ function updateStage(){const t=demo.currentTime;seek.value=t;const phase=t<8?'Co
 demo.addEventListener('timeupdate',updateStage);demo.addEventListener('seeked',updateStage);
 document.querySelectorAll('[data-seek]').forEach(button=>button.addEventListener('click',()=>{demo.pause();demo.currentTime=Math.max(0.001,Number(button.dataset.seek));updateStage();}));
 seek.addEventListener('input',()=>{demo.pause();demo.currentTime=Math.max(0.001,Number(seek.value));updateStage();});
-const labels={__SOFT_CAPTURE__:'Soft shadows · four deterministic light samples. Direct GGX highlights and diffuse atmosphere irradiance share one HDR display transform.',baseline:'Baseline · local shadow visibility disabled. Geometry and atmosphere lighting are unchanged.',hard:'Hard shadows · a second field query starts at the actual hit. The ground receiver can start outside the workspace.',ao:'Soft shadows + local AO · four short hemisphere queries affect environment visibility; this is not bounced light.'};
+const labels={__SOFT_CAPTURE__:'Soft shadows · four deterministic light samples. Direct GGX highlights and diffuse atmosphere irradiance share one HDR display transform.',baseline:'Baseline · local shadow visibility disabled. Geometry and atmosphere lighting are unchanged.',hard:'__HARD_DESCRIPTION__',ao:'Soft shadows + local AO · four short hemisphere queries affect environment visibility; this is not bounced light.'};
 document.querySelector('#lighting').addEventListener('change',event=>{const key=event.target.value;document.querySelector('#comparison').src='captures/'+key+'.png';document.querySelector('#comparison').alt=labels[key];document.querySelector('#comparison-caption').textContent=labels[key];});
 </script>
 </html>
