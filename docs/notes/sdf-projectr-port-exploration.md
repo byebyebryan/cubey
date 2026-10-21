@@ -6,6 +6,8 @@ Status: exploration and scope record. The proposed starting point is a bounded
 projectR rendering port with procedural content. No Cubey SDF implementation,
 native capture, desktop sculpting workflow or visual acceptance is established
 by this note. Learned-content experiments are retained below for later selection.
+The [implementation plan](sdf-projectr-port-plan.md) develops the bounded port
+into proposed decisions, checkpoints and acceptance criteria.
 
 ## Purpose
 
@@ -65,7 +67,7 @@ performance and appearance experiments.
 
 | Area | Proposed treatment |
 | --- | --- |
-| Primitive evaluation, fill/remove, transforms and mirroring | Preserve as reference behavior. Smooth unions are a possible later extension, not an established active feature of the source path. |
+| Geometry evaluation and operations | Start with boxes, source dimensions/rounding, transforms and fill/remove. Additional primitives and mirroring wait for a concrete use. Smooth unions remain a possible later extension, not an established active feature of the source path. |
 | Stick generation and construction playback | Preserve the recipe, with explicit deterministic edit data and playback independent of render FPS. |
 | Hierarchy, edit pruning and sampled bricks | Use as the starting algorithm. Review traversal and capacity before fixing the native layout; a new sparse architecture is not a prerequisite. |
 | Allocations, resource lifetime and synchronization | Adapt to Cubey ownership and an explicit memory budget. Diagnose overflow; do not inherit large fixed allocations without accounting for them. |

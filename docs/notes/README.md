@@ -58,6 +58,9 @@ an implemented project or a new runtime dependency.
 - [SDF / projectR port exploration](sdf-projectr-port-exploration.md): a bounded
   procedural rendering demo first, with learned-content and authoring
   experiments retained for later selection.
+- [SDF project implementation plan](sdf-projectr-port-plan.md): proposed renderer
+  boundary, complete recipe model, native milestones, resource limits and
+  visual/performance acceptance for the first procedural demo.
 
 ## Historical research and study records
 
