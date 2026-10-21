@@ -4,9 +4,11 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp
+    SOURCES main.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp
     SHADERS shaders/sdf.vert shaders/sdf.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
         shaders/occluder.vert shaders/occluder.frag
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
     SHADER_DEPENDS shaders/field.glsl shaders/trace.glsl
 )

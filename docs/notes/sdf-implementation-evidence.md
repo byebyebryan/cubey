@@ -66,3 +66,31 @@ The windowed lifecycle smoke passes under Xvfb on the native Vulkan device,
 including resource creation, a rendered frame and shutdown. This does not
 establish manual pointer-control or resize acceptance on the physical desktop.
 Later lighting/playback/performance results will be recorded as completed.
+
+## Shared lighting and graph checkpoint
+
+The SDF pass imports the field into the render graph and writes transient
+linear HDR color plus real depth. Shared `HdrPostFrame` applies the single final
+display transform. The atmosphere runtime supplies the same direct light and
+diffuse irradiance used by the object and ground; the shared atmosphere GLSL
+integrator supplies the sky. No reflection probe, night-sky assets or terrain
+are required by this material. Its specular highlight uses the shared GGX
+helpers, and environment lighting is diffuse SH.
+
+Hard/soft shadow and optional local-AO captures completed with required Vulkan
+validation. Secondary-ray exhaustion also appears as magenta. The native
+windowed smoke passes under Xvfb after the graph integration. The cut oracle
+and crossing raster depth fixture were rerun. The shared sky backdrop horizon
+policy removed a dark strip between the sky and the local receiver.
+
+Supersampling at twice each dimension was inspected on the 512- and 2,048-stick
+images. A higher view (`pitch=0.53`, `distance=1.75`, `exposure=0.7`, sun azimuth
+`-35`) gave a more readable object/shadow composition; final capture framing is
+still being refined.
+
+Initial isolated timing: 2,048 sticks, seed 42, atlas 92, 1920x1080, default
+camera, soft shadows, AO off, supersampling 1, 80 headless render-only frames,
+10 warmup frames, required validation. No readback or encoding was active.
+The profiler retained 68 completed GPU samples: trace median 12.526 ms,
+p95 12.928 ms; post median 0.0135 ms. This is an initial measurement, pending
+the matched final matrix and construction-stage breakdown.

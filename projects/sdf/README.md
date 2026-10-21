@@ -12,9 +12,10 @@ promote only after a completed batch of at most 128 edits. The complete CPU
 recipe remains independent of those caches. Empty cells use conservative box
 exits; hits write surface depth, and exhaustion is visible in magenta.
 
-This is an implementation checkpoint. Shared atmosphere/HDR integration,
-soft shadows, presentation playback, persistence and performance qualification
-are still in progress. See the [evidence record](../../docs/notes/sdf-implementation-evidence.md).
+The scene uses Cubey's render graph, shared HDR post, atmosphere sky integration
+and atmosphere-derived direct light/diffuse irradiance. Presentation playback,
+persistence and final performance qualification are still in progress.
+See the [evidence record](../../docs/notes/sdf-implementation-evidence.md).
 
 ```sh
 cmake --preset dev
@@ -34,6 +35,15 @@ specify the reproducible stick recipe. `--yaw`, `--pitch` and `--distance`
 specify the capture camera in radians/workspace units. `--debug` selects shaded
 (0), normal (1), ray-distance (2) or traversal-work (3) display. `--shadows 1`
 enables hard mapless shadows; `--no-ground` removes the receiver.
+`--shadows 2` selects four-sample soft shadows, with angular radius controlled
+by `--shadow-softness`. `--ao` enables four local hemisphere queries affecting
+environment visibility. Neither mode provides indirect bounced light.
+
+`--sun-elevation` and `--sun-azimuth` use degrees; `--exposure` uses stops.
+`--roughness` adjusts the plain material. `--supersample 2` renders at twice
+the output width/height and filters through the shared post pass, useful for
+thin-feature captures. Default sampling is 1 for timing runs. The sky uses the
+foundation's backdrop horizon remapping; this does not remap surface lighting.
 
 `--occluder` draws a raster plane crossing the sculpture to check surface depth.
 `--validate-field` compares GPU rays against direct CPU box CSG, including axis
