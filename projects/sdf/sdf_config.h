@@ -36,7 +36,13 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         return spec;
     };
     auto scene = option("scene", "Deterministic box recipe", config::ValueType::Enum);
-    scene.enum_values = {"box", "rotated", "cut", "sticks", "negative-sticks", "negative-sphere"};
+    scene.enum_values = {"box",
+                         "rotated",
+                         "cut",
+                         "sticks",
+                         "negative-sticks",
+                         "negative-sphere",
+                         "negative-stick-ball"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
     motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};

@@ -274,21 +274,24 @@ class App {
             ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
             ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
             ImGui::Separator();
-            const char* scene_labels[]{"Sticks", "Negative sticks", "Negative sphere",
-                                       "Box",    "Rotated box",     "Cut fixture"};
-            const std::string scene_names[]{"sticks", "negative-sticks", "negative-sphere",
-                                            "box",    "rotated",         "cut"};
+            const char* scene_labels[]{
+                "Sticks",      "Negative sticks", "Negative sphere",    "Box",
+                "Rotated box", "Cut fixture",     "Negative stick ball"};
+            const std::string scene_names[]{
+                "sticks", "negative-sticks",    "negative-sphere", "box", "rotated",
+                "cut",    "negative-stick-ball"};
             int scene = 0;
-            for (int i = 0; i < 6; ++i)
+            for (int i = 0; i < 7; ++i)
                 if (config_.scene == scene_names[i])
                     scene = i;
-            if (ImGui::Combo("Generator", &scene, scene_labels, 6))
+            if (ImGui::Combo("Generator", &scene, scene_labels, 7))
                 config_.scene = scene_names[scene];
             if (!config_.recipe_path.empty())
                 ImGui::TextWrapped("Loaded explicit recipe. Generate scene replaces it.");
             ImGui::InputScalar("Seed", ImGuiDataType_U32, &config_.seed);
-            const bool negative =
-                config_.scene == "negative-sticks" || config_.scene == "negative-sphere";
+            const bool negative = config_.scene == "negative-sticks" ||
+                                  config_.scene == "negative-sphere" ||
+                                  config_.scene == "negative-stick-ball";
             ImGui::InputScalar(negative ? "Cutter count" : "Stick count", ImGuiDataType_U32,
                                &config_.count);
             if (ImGui::Button("Generate scene")) {

@@ -54,18 +54,31 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
         const auto center = recipe.edits.back().center;
         rays.push_back({{center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
     }
-    // Small fixtures can check every edit, including all edits either side of
-    // a promotion boundary, rather than relying on their chance visibility.
-    if (recipe.edits.size() <= 257)
-        for (const auto& edit : recipe.edits) {
-            rays.push_back({{edit.center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
-            if (edit.operation == Operation::Remove) {
-                // Begin in a carved cavity, then query along and across its axes.
-                for (const auto axis :
-                     {math::Vec3{1, 0, 0}, math::Vec3{0, 1, 0}, math::Vec3{0, 0, 1}})
-                    rays.push_back({{edit.center, 0}, {glm::normalize(edit.rotation) * axis, 0}});
-            }
+    const auto probe_edit = [&](const BoxEdit& edit) {
+        rays.push_back({{edit.center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
+        if (edit.operation == Operation::Remove) {
+            // Begin in a carved cavity, then query along and across its axes.
+            for (const auto axis : {math::Vec3{1, 0, 0}, math::Vec3{0, 1, 0}, math::Vec3{0, 0, 1}})
+                rays.push_back({{edit.center, 0}, {glm::normalize(edit.rotation) * axis, 0}});
         }
+    };
+    // Small fixtures check every edit across batch promotion boundaries.
+    if (recipe.edits.size() <= 257) {
+        for (const auto& edit : recipe.edits)
+            probe_edit(edit);
+    } else {
+        // Exterior grids rarely hit slender bores. Probe a bounded sample of
+        // actual removals across the full recipe, including its first and last.
+        std::vector<const BoxEdit*> cutters;
+        for (const auto& edit : recipe.edits)
+            if (edit.operation == Operation::Remove)
+                cutters.push_back(&edit);
+        const auto samples = std::min<std::size_t>(64, cutters.size());
+        for (std::size_t i = 0; i < samples; ++i) {
+            const auto index = samples == 1 ? 0 : i * (cutters.size() - 1) / (samples - 1);
+            probe_edit(*cutters[index]);
+        }
+    }
     // These off-center origins exercise remaining solid in the subtraction
     // fixtures, in addition to the center origins that become empty cavities.
     for (const auto origin : {math::Vec3{0.249F, 0.232F, 0}, math::Vec3{0.17F, 0.15F, 0.025F}})

@@ -129,6 +129,39 @@ int main() {
             "zero-core spheres must survive explicit recipe serialization");
     require(make_recipe("negative-sphere", 42, 0).edits.size() == 1,
             "zero cutters must retain the spherical base");
+    const auto thin_negative = make_recipe("negative-stick-ball", 42, 2048);
+    validate_carve_recipe(thin_negative);
+    require(thin_negative.edits.size() == 2049,
+            "negative stick ball must retain every slender cutter plus its base");
+    close(edit_distance({0.30F, 0, 0}, thin_negative.edits.front()), 0);
+    auto thin_positive = thin_negative;
+    thin_positive.edits.erase(thin_positive.edits.begin());
+    for (auto& edit : thin_positive.edits) {
+        require(edit.operation == Operation::Remove,
+                "negative stick ball must contain only removals after the base");
+        edit.operation = Operation::Fill;
+    }
+    require(recipe_hash(thin_positive) == recipe_hash(make_recipe("sticks", 42, 2048)),
+            "slender subtraction must exactly reuse the additive sticks' geometry");
+    auto thin_prefix = thin_negative;
+    thin_prefix.edits.resize(257);
+    require(recipe_hash(thin_prefix) == recipe_hash(make_recipe("negative-stick-ball", 42, 256)),
+            "thin cutter counts must preserve exact earlier edits");
+    require(recipe_hash(thin_negative) ==
+                recipe_hash(parse_recipe(serialize_recipe(thin_negative))),
+            "thin subtraction must roundtrip its explicit recipe");
+    require(recipe_hash(thin_prefix) != recipe_hash(make_recipe("negative-stick-ball", 43, 256)),
+            "thin cutter seed must change geometry");
+    const auto thin_intact = make_recipe("negative-stick-ball", 42, 0);
+    require(thin_intact.edits.size() == 1, "zero slender cuts must retain the base");
+    validate_carve_recipe(thin_intact);
+    bool too_many_thin_cutters = false;
+    try {
+        static_cast<void>(make_recipe("negative-stick-ball", 42, 65536));
+    } catch (const std::invalid_argument&) {
+        too_many_thin_cutters = true;
+    }
+    require(too_many_thin_cutters, "thin cutters plus base must fit the recipe loader limit");
     for (const auto extent : {Vec3{0, 0.1F, 0.1F}, Vec3{-0.1F}, Vec3{0}}) {
         bool rejected_core = false;
         try {

@@ -102,6 +102,22 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
     Recipe recipe;
     recipe.generator = scene == "sticks" ? "sticks-pcg32-v1" : std::string(scene);
     recipe.seed = seed;
+    if (scene == "negative-stick-ball") {
+        if (count > 65535U)
+            throw std::invalid_argument(
+                "negative scenes accept at most 65535 cutters plus their base");
+        // Literal counterpart to the additive ball: retain every stick's
+        // dimensions, transform and rounding, changing only its CSG operation.
+        recipe = make_recipe("sticks", seed, count);
+        recipe.generator = "negative-stick-ball-pcg32-v1";
+        for (auto& edit : recipe.edits)
+            edit.operation = Operation::Remove;
+        BoxEdit base;
+        base.half_extent = math::Vec3{0.0F};
+        base.rounding = 0.30F; // The additive stick centers occupy radii 0.29–0.30.
+        recipe.edits.insert(recipe.edits.begin(), base);
+        return recipe;
+    }
     if (scene == "negative-sticks" || scene == "negative-sphere") {
         if (count > 65535U)
             throw std::invalid_argument(
@@ -154,7 +170,8 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
     }
     if (scene != "sticks" || count > 65536U)
         throw std::invalid_argument("SDF scene must be box, rotated, cut, sticks or "
-                                    "negative-sticks or negative-sphere (sticks count <= 65536)");
+                                    "negative-sticks, negative-sphere or negative-stick-ball "
+                                    "(sticks count <= 65536)");
     Random random(seed);
     constexpr float tau = 2.0F * std::numbers::pi_v<float>;
     recipe.edits.reserve(count);
