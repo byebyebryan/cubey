@@ -186,7 +186,8 @@ def main():
         # A fixed construction camera can hide rear-facing cutters. Record
         # visibility separately; field/fingerprint checks still apply to all.
         preview['visible_from_capture_camera'] = preview['image_comparison']['changed'] > 100
-        assert preview['visible_from_capture_camera'] or preview['node'] in args.hidden_preview_node, preview
+        assert (preview['visible_from_capture_camera'] or
+                set(preview['nodes']).intersection(args.hidden_preview_node)), preview
     assert set(args.hidden_preview_node).issubset(cutters)
     manifest['hidden_preview_allowlist'] = args.hidden_preview_node
     if args.video:
