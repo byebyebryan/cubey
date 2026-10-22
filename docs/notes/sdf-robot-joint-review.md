@@ -154,3 +154,27 @@ ratio. No page JavaScript errors occur. Receipts are
 `outputs/sdf/robot-joints-report-delivery.json`. Documentation navigation and
 Python compilation checks pass. The geometry, source scenes, binary/shaders,
 native captures and labeled video hashes match the final qualification.
+
+## Accepted model and subtraction highlight follow-up
+
+The user subsequently described the revised model as looking pretty good and
+requested a red highlighter for subtraction operations before review/commit.
+The current runtime uses a shared red tint for authored cut previews and the
+procedural cutter-bounds outline, with the existing fade, depth occlusion and
+commit timing. The published joint-review video remains a source-pinned capture
+of the earlier cyan preview. Report templates describe the cutter without a
+fixed color so they remain accurate when assembling older captures.
+
+This review also found that authored preview bounds had not been extended for
+the new primitives: tori used a cylinder-like extent that omitted the tube
+radius, and capped cones used the top radius in place of their half-length.
+The corrected torus bounds use major+minor radius in X/Z and minor radius in Y;
+cone bounds use the larger end radius in X/Z and half-length in Y.
+
+`outputs/sdf/subtraction-red/manifest.json` records validation-enabled native
+captures of hard socket, smooth recess and gripper previews, isolated torus/cone
+cutters, and the procedural negative-sticks outline, each on/off. All six pairs
+show red highlights, while authored fingerprints match across each pair.
+The settled robot hero is byte identical to the joint-review capture. Shader
+build policy and documentation navigation checks pass. This small follow-up
+does not recapture the full build video or rerun the unchanged field builder.

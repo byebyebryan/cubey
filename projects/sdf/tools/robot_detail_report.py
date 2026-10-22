@@ -154,7 +154,7 @@ button:disabled{{opacity:.45;cursor:default}}video{{height:auto;aspect-ratio:4/3
 <div class="chapters">{chapter_buttons}</div><p class="note" id="video-status" role="status">Preparing the video…</p>
 <p class="note">{history['duration']} seconds · {history['construction_seconds']} seconds of construction, then a {orbit}-second orbit · 1280×960 · 30 FPS · 2× internal sampling · hard self-shadows and shared atmosphere. Labels were added after native capture. <a href="data/history/presentation.mp4">Labeled video</a> · <a href="data/history/native.mp4">Original native capture</a>.</p>
 <details id="steps-panel"><summary>Inspect any of the {count} committed edits</summary>
-<p>Choose a named edit, drag the slider or step backward and forward. The cyan preview in playback precedes the actual subtraction; these images show committed states.</p>
+<p>Choose a named edit, drag the slider or step backward and forward. The translucent cutter preview in playback precedes the actual subtraction; these images show committed states.</p>
 <div class="range-row"><output id="step-count" for="step">Edit {count} / {count}</output><input id="step" type="range" min="0" max="{count}" value="{count}" step="1" aria-label="Committed edit"></div>
 <div class="controls"><button id="previous">Previous edit</button><button id="next" disabled>Next edit</button><button id="watch-step" disabled data-time="0">Watch this edit</button></div>
 <select id="step-select" aria-label="Named committed edit">{step_options}</select><p id="step-label" aria-live="polite"></p>

@@ -21,7 +21,7 @@ The [edit-by-edit presentation](http://starship:8787/reports/5d6bfde3c2493278b5c
 builds the same robot from an empty workspace through 43 named additions and
 cuts. Run `--config projects/sdf/presets/survey-robot-build.json` for a steady
 construction view followed by the finished orbit. Previous/next buttons and
-the Edit scrubber inspect each committed state; cyan cut previews precede the
+the Edit scrubber inspect each committed state; red cut previews precede the
 six local removals. The static robot preset above remains available. See the
 [history evidence](../../docs/notes/sdf-authored-history-evidence.md).
 

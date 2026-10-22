@@ -36,7 +36,7 @@ def main():
     preview = data['previews'][0]
     cut_images = ''.join(f'<figure><a href="data/{file}"><img loading="lazy" src="data/{file}" alt="{label}"></a><figcaption>{label}</figcaption></figure>'
         for file, label in (('captures/step-04.png', 'Before: the head is solid'),
-                           (preview['on'], 'Preview: the cyan cutter is visible'),
+                           (preview['on'], 'Preview: the cutter is visible'),
                            ('captures/step-05.png', 'After: the socket has been removed')))
     frame_ms = regression['runs']['profile-hard']['gpu_frame']
     final_geometry = next(s for s in data['runs']['static-final']['stats'] if s.startswith('sdf: authored geometry='))
@@ -61,7 +61,7 @@ button:disabled{{opacity:.45;cursor:default}}.hero-video,.gallery{{max-width:100
 <div class="viewer gallery"><a id="step-link" href="data/captures/step-04.png"><img id="step-image" src="data/captures/step-04.png" alt="Edit 4: Place the tilted head shell"></a></div>
 <p class="note">These are native captures of the intermediate grouped scenes. The two backpack edits are on the rear; they become clear in the final orbit. In the desktop app you can orbit freely while inspecting a paused edit.</p>
 <h2>See a cut before it commits</h2><div class="grid">{cut_images}</div>
-<p>The translucent cyan preview identifies the next cutter while the body remains intact. At commitment, the scene performs the subtraction and rebuilds its distance field. The six removals cut the socket, three face vents, the optic bore and the chest notch.</p>
+<p>The translucent cutter preview identifies the next cutter while the body remains intact. At commitment, the scene performs the subtraction and rebuilds its distance field. The six removals cut the socket, three face vents, the optic bore and the chest notch.</p>
 <h2>A saved sequence, with real intermediate geometry</h2>
 <p>The scene stores the final named CSG tree and an ordered history of its primitive leaves. Missing operands are reduced into valid partial expressions, preserving local transforms and material inheritance. A subtraction needs its body first. Each step can be revisited, and the last step retains the exact final scene fingerprints.</p>
 <div class="facts"><div><strong>44 scene states</strong><small>Empty workspace and 43 committed edits</small></div><div><strong>6 cuts</strong><small>Local removals with depth-aware previews</small></div><div><strong>44 field builds</strong><small>Across 1,260 native video frames</small></div></div>

@@ -15,6 +15,7 @@ layout(push_constant) uniform Camera {
 #include "authored_material.glsl"
 #endif
 #include "lighting.glsl"
+const vec3 SUBTRACTION_HIGHLIGHT=vec3(2.0,0.08,0.04);
 // Color-only guide for the next cutter's bounding box. Test both box faces so
 // rear edges remain visible through empty space, but never through the solid.
 float cutterOutline(vec3 origin,vec3 direction,float surfaceT) {
@@ -53,6 +54,8 @@ float authoredCutPreview(vec3 origin,vec3 direction,float surfaceT) {
     vec3 extent=code==1u ? node.parameters.xyz+node.parameters.w :
         (code==2u ? vec3(node.parameters.x) :
         vec3(node.parameters.x,node.parameters.y+(code==3u ? node.parameters.x : 0.0),node.parameters.x));
+    if (code==5u) extent=vec3(node.parameters.x+node.parameters.y,node.parameters.y,node.parameters.x+node.parameters.y);
+    if (code==6u) extent=vec3(max(node.parameters.x,node.parameters.y),node.parameters.z,max(node.parameters.x,node.parameters.y));
     vec2 interval=rayBox(localOrigin,localDirection,-extent,extent);
     float t=max(interval.x,0.0),end=min(interval.y,surfaceT);
     // A color-only preview, depth limited by the currently published solid.
@@ -106,10 +109,10 @@ void main() {
         gl_FragDepth=clamp(100.0/99.99-(1.0/99.99)/viewZ,0.0,1.0);
     } else if (camera.options.x<0.5) radiance=skyRadiance(direction);
     if (camera.options.x<0.5)
-        radiance=mix(radiance,vec3(0.06,1.4,2.0),cutterOutline(camera.eye.xyz,direction,t));
+        radiance=mix(radiance,SUBTRACTION_HIGHLIGHT,cutterOutline(camera.eye.xyz,direction,t));
 #ifdef SDF_AUTHORED
     if (camera.options.x<0.5)
-        radiance=mix(radiance,vec3(0.06,1.4,2.0),authoredCutPreview(camera.eye.xyz,direction,t));
+        radiance=mix(radiance,SUBTRACTION_HIGHLIGHT,authoredCutPreview(camera.eye.xyz,direction,t));
 #endif
     color=vec4(radiance,1);
 }
