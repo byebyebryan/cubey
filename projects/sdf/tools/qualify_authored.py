@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""Qualify authored SDF expressions, robot views, replay and matched GPU costs."""
+import argparse
+import csv
+import datetime as dt
+import hashlib
+import json
+import math
+from pathlib import Path
+import shutil
+import subprocess
+from qualify import distribution
+from sdf_author import box, cylinder, material, rotation, smooth_union, sphere, subtract, union, write_scene
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--binary', type=Path, default=Path('build/dev/projects/sdf/sdf'))
+    parser.add_argument('--video', action='store_true')
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parents[3]
+    out = args.output.resolve()
+    if out.exists():
+        raise RuntimeError('Use a fresh output directory to preserve previous qualification')
+    for directory in ('captures', 'fixtures', 'logs', 'configs', 'profiles', 'scenes'):
+        (out / directory).mkdir(parents=True)
+    binary = args.binary.resolve()
+    sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+    manifest = dict(captured_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
+        source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+        source_dirty=bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=root, text=True).strip()),
+        binary_sha256=sha(binary),
+        shader_sha256={p.name: sha(p) for p in sorted((binary.parent / 'shaders').glob('*.spv'))},
+        device=subprocess.check_output(['nvidia-smi', '--query-gpu=name,driver_version', '--format=csv,noheader'], text=True).strip(),
+        runs={})
+
+    def save():
+        (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+
+    def run(name, options=(), *, config=True, capture=True, video=False, error=None):
+        output = out / ('turntable.mp4' if video else f'captures/{name}.png')
+        command = [str(binary), '--headless', '--require-validation']
+        if config:
+            command += ['--config', str(root / 'projects/sdf/presets/survey-robot.json')]
+        command += ['--width', '960', '--height', '960', *map(str, options)]
+        if capture:
+            command += ['--output', str(output)]
+        subprocess.run([*command, '--write-config-template', str(out / f'configs/{name}.json')],
+                       cwd=root, check=True, stdout=subprocess.DEVNULL)
+        result = subprocess.run(command, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        (out / f'logs/{name}.log').write_text(result.stdout)
+        if 'validation error' in result.stdout.lower():
+            raise RuntimeError(name + ': Vulkan validation error')
+        if error:
+            if not result.returncode or error not in result.stdout or output.exists():
+                raise RuntimeError(name + ': expected rejection failed: ' + result.stdout)
+        elif result.returncode:
+            raise RuntimeError(name + ': ' + result.stdout)
+        row = dict(command=command, exit_code=result.returncode, expected_error=error,
+                   stats=[line for line in result.stdout.splitlines() if line.startswith('sdf:')])
+        if capture and not error:
+            row.update(capture=str(output.relative_to(out)), capture_sha256=sha(output))
+        manifest['runs'][name] = row
+        save()
+        print(name, 'passed' if not error else 'expected rejection', flush=True)
+        return row
+
+    materials = [material('red', 'CC4636'), material('blue', '397BD6', .7)]
+    fixtures = {
+        'sphere': sphere('ball', (0, 0, 0), .2),
+        'capsule': dict(type='capsule', name='capsule', radius=.07, half_length=.16),
+        'cylinder': cylinder('cylinder', (0, 0, 0), .15, .12, 'blue'),
+        'local-cut': union('assembly', subtract('housing', sphere('body', (0, 0, 0), .25),
+            sphere('cut', (.1, 0, .2), .15), cut_material='blue'), sphere('plug', (.1, 0, .2), .04, 'blue')),
+        'inherit-cut': subtract('body-cut', sphere('body', (0, 0, 0), .25), sphere('cut', (.1, 0, .2), .15, 'blue')),
+        'smooth': smooth_union('blend', sphere('left', (-.16, 0, 0), .15), sphere('right', (.16, 0, 0), .15, 'blue'), .12, True),
+        'nested-blend': smooth_union('outer', smooth_union('inner', sphere('a', (-.08, 0, 0), .13),
+            sphere('b', (.08, 0, 0), .13, 'blue'), .12, True), sphere('c', (0, .14, 0), .11), .08, True),
+        'transform': union('transform', box('box', (-.12, 0, 0), (.07, .1, .08), .01),
+            cylinder('tube', (.12, 0, 0), .07, .12, 'blue'), position=(.08, .02, 0), scale=.8,
+            rotation_xyzw=rotation((0, 0, 1), 27)),
+        'thin-gap': union('gap', sphere('left', (-.102, 0, 0), .1), sphere('right', (.102, 0, 0), .1, 'blue')),
+        'workspace-clip': sphere('clipped', (.48, 0, 0), .1),
+        'maximum': union('maximum', *[sphere(f's{i}', ((i % 4 - 1.5) * .12, (i // 4 % 4 - 1.5) * .12,
+            (i // 16 - 1.5) * .12), .018, 'blue' if i % 2 else 'red') for i in range(64)]),
+    }
+    for name, tree in fixtures.items():
+        path = out / f'fixtures/{name}.json'
+        write_scene(path, name, materials, tree)
+        run(f'fixture-{name}', ['--authored-scene', path, '--validate-field', '--sun-azimuth', 160,
+            '--width', 640, '--height', 480, '--exposure', .7], config=False)
+    for target in ('cubey_project_sdf_recipe_tests', 'cubey_project_sdf_authored_tests'):
+        with (out / f'logs/{target}.log').open('w') as stream:
+            subprocess.run([str(binary.with_name(target))], cwd=root, check=True, stdout=stream, stderr=subprocess.STDOUT)
+    run('lifecycle', ['--validate-field', '--validate-batches', '--validate-subtractions', '--width', 320, '--height', 320])
+    for name, options in (
+        ('hero', ['--validate-field', '--export-authored', out / 'scenes/robot.json']),
+        ('front', ['--yaw', 0, '--pitch', .04]),
+        ('side', ['--yaw', math.pi / 2, '--pitch', .10]),
+        ('rear', ['--yaw', math.pi + .35, '--pitch', .17]),
+        ('clay', ['--clay', '--roughness', .65]),
+        ('parts', ['--debug', 5]), ('base-color', ['--debug', 6]), ('roughness', ['--debug', 7]),
+        ('normals', ['--debug', 1]), ('detail', ['--distance', .87, '--target-y', .22]),
+        ('reloaded', ['--authored-scene', out / 'scenes/robot.json', '--validate-field', '--export-authored', out / 'scenes/reloaded.json']),
+    ):
+        run(name, options)
+    assert (out / 'scenes/robot.json').read_bytes() == (out / 'scenes/reloaded.json').read_bytes()
+    manifest['replay_scene_bytes_identical'] = True
+    run('legacy-cut', ['--scene', 'cut', '--validate-field', '--width', 640, '--height', 480], config=False)
+    run('legacy-sticks', ['--config', root / 'projects/sdf/presets/stick-ball.json', '--motion', 'static', '--validate-field', '--width', 640, '--height', 480], config=False)
+    run('incompatible-motion', ['--motion', 'carve'], error='Authored scenes support static/orbit')
+    for name, options in (
+        ('primary', ['--shadows', 0]), ('hard', ['--shadows', 1]), ('clay', ['--shadows', 1, '--clay']),
+    ):
+        prefix = out / f'profiles/{name}'
+        row = run(f'profile-{name}', ['--headless-render-only', '--frames', 180, '--profile-warmup-frames', 30,
+            '--profile-output', prefix, '--width', 1920, '--height', 1080, '--supersample', 1, *options], capture=False)
+        frames, stages = {}, {}
+        with Path(f'{prefix}.passes.csv').open() as stream:
+            for item in csv.DictReader(stream):
+                if item['kind'] == 'gpu':
+                    duration = float(item['duration_ms'])
+                    index = int(item['frame_index'])
+                    frames[index] = frames.get(index, 0) + duration
+                    stages.setdefault(item['label'], []).append(duration)
+        row['gpu_frame'] = distribution(list(frames.values()))
+        row['gpu_stages'] = {key: distribution(values) for key, values in stages.items()}
+        save()
+    if args.video:
+        run('video', ['--motion', 'orbit', '--capture', 'video', '--fps', 30, '--frames', 480,
+                     '--width', 1280, '--height', 960], video=True)
+        manifest['video_probe'] = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries',
+            'stream=codec_name,width,height,nb_frames,r_frame_rate', '-show_entries', 'format=duration', '-of', 'json', str(out / 'turntable.mp4')], text=True))
+        assert manifest['video_probe']['format']['duration'] == '16.000000'
+        assert manifest['video_probe']['streams'][0]['nb_frames'] == '480'
+        for seconds in (0, 4, 8, 12, 15.9):
+            subprocess.run(['ffmpeg', '-v', 'error', '-ss', str(seconds), '-i', str(out / 'turntable.mp4'),
+                '-frames:v', '1', '-y', str(out / f'captures/video-{seconds}.png')], check=True)
+    shutil.copy2(root / 'projects/sdf/tools/author_robot.py', out / 'scenes/author_robot.py')
+    shutil.copy2(root / 'projects/sdf/tools/sdf_author.py', out / 'scenes/sdf_author.py')
+    save()
+    print(out / 'manifest.json', flush=True)
+
+
+if __name__ == '__main__':
+    main()

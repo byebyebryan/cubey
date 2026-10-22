@@ -72,12 +72,14 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,inout bool exh
     vec3 base=object ? lighting.material.xyz : vec3(0.12,0.14,0.16);
     float roughness=object ? lighting.quality.x : 0.8;
     vec3 emission=vec3(0);
+#ifdef SDF_AUTHORED
     if (object && authoredHeader.x>0u && lighting.material.w<0.5) {
         SceneSurface surface=authoredSurface(p);
         base=surface.material.base_roughness.xyz;
         roughness=surface.material.base_roughness.w;
         emission=surface.material.emission.xyz;
     }
+#endif
     vec3 halfVector=lightDirection+viewDirection;
     vec3 h=dot(halfVector,halfVector)>1e-8 ? normalize(halfVector) : n;
     float nl=max(dot(n,lightDirection),0.0),nv=max(dot(n,viewDirection),0.001);

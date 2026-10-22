@@ -56,8 +56,9 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
         writes.update(device);
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
-    const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
-                            render::fragment_shader_file(path / "sdf.frag.spv")};
+    const std::array stages{
+        render::vertex_shader_file(path / "sdf.vert.spv"),
+        render::fragment_shader_file(path / (scene ? "sdf_authored.frag.spv" : "sdf.frag.spv"))};
     const std::array layouts{descriptors_->layout()};
     render::MaterialPassInfo pass{
         .label = "sdf.trace",

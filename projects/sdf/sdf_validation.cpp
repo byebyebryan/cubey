@@ -357,6 +357,10 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
     for (std::size_t i = 0; i < points.size(); ++i) {
         std::array<math::Vec4, 3> actual;
         std::memcpy(actual.data(), bytes.data() + i * sizeof(actual), sizeof(actual));
+        for (const auto& lane : actual)
+            for (int channel = 0; channel < 4; ++channel)
+                if (!std::isfinite(lane[channel]))
+                    throw std::runtime_error("authored GPU evaluation returned a nonfinite value");
         const auto expected = authored_surface(math::Vec3(points[i]), scene);
         max_distance = std::max({max_distance, std::abs(actual[0].x - expected.distance),
                                  std::abs(actual[0].y - expected.distance)});
@@ -374,5 +378,43 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
     std::cout << "sdf: authored CPU/GPU points=" << points.size()
               << " max_distance_error=" << max_distance << " max_material_error=" << max_material
               << " part_mismatches=0\n";
+}
+void validate_authored_lifecycle(vulkan::Device& device, ProjectGpuServices& gpu) {
+    auto small = parse_authored_scene(R"({"format":"cubey.sdf.scene","version":2,"name":"lifecycle",
+        "materials":[{"name":"plain","base_color":[0.5,0.5,0.5]}],
+        "root":{"name":"ball","type":"sphere","radius":0.01}})");
+    const auto large =
+        parse_authored_scene(R"({"format":"cubey.sdf.scene","version":2,"name":"overflow",
+        "materials":[{"name":"plain","base_color":[0.5,0.5,0.5]}],
+        "root":{"name":"ball","type":"sphere","radius":0.3}})");
+    Field limited(device, gpu, 64, 128, 1024);
+    limited.build(small);
+    const auto handle = limited.nodes().handle();
+    const auto stats = limited.stats();
+    bool failed = false;
+    try {
+        limited.build(large);
+    } catch (const CapacityExceeded&) {
+        failed = true;
+    }
+    if (!failed || limited.nodes().handle() != handle ||
+        limited.stats().brick_count != stats.brick_count ||
+        limited.stats().build_count != stats.build_count)
+        throw std::runtime_error("authored capacity failure replaced the completed field");
+    validate_field(device, gpu, limited, Recipe{}, &small);
+    small.materials[0].base_roughness.x = .2F;
+    limited.build(small);
+    if (limited.stats().build_count != stats.build_count)
+        throw std::runtime_error("authored recoloring rebuilt geometry");
+    Recipe legacy;
+    BoxEdit box;
+    box.half_extent = {.006F, .006F, .006F};
+    legacy.edits.push_back(box);
+    limited.build(legacy.edits);
+    validate_field(device, gpu, limited, legacy);
+    limited.build(small);
+    validate_field(device, gpu, limited, Recipe{}, &small);
+    std::cout << "sdf: authored lifecycle passed (capacity rollback, material-only cache, "
+                 "legacy/authored transitions)\n";
 }
 } // namespace cubey::projects::sdf
