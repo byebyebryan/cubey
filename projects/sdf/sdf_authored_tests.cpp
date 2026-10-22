@@ -1,5 +1,6 @@
 #include "sdf_authored.h"
 #include "sdf_history.h"
+#include <algorithm>
 #include <cmath>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -301,13 +302,60 @@ int main() {
     for (std::size_t i = 0; i < authored_max_leaves; ++i)
         many.push_back(sphere("s" + std::to_string(i), {}, .01F));
     const auto maximum = scene({{"name", "max"}, {"type", "union"}, {"children", many}});
-    require(maximum.program.size() == 255 && maximum.leaf_count == 128,
-            "128-leaf boundary lost nodes");
+    require(maximum.program.size() == 2 * authored_max_leaves - 1 &&
+                maximum.leaf_count == authored_max_leaves,
+            "authored leaf boundary lost nodes");
     many.push_back(sphere("overflow", {}, .01F));
     rejected(document({{"name", "max"}, {"type", "union"}, {"children", many}}));
     require(authored_program_bytes(nullptr).size() >= 16 &&
-                authored_program_bytes(&maximum).size() == 16 + 255 * sizeof(SceneInstruction),
+                authored_program_bytes(&maximum).size() ==
+                    16 + (2 * authored_max_leaves - 1) * sizeof(SceneInstruction),
             "GPU packing mismatch");
+    auto maximum_history_json = Json::parse(maximum.document);
+    maximum_history_json["history"] = Json::array();
+    for (std::size_t i = 0; i < authored_max_leaves; ++i)
+        maximum_history_json["history"].push_back(
+            {{"node", "s" + std::to_string(i)}, {"label", "Capacity stroke"}});
+    const auto maximum_history = parse_authored_scene(maximum_history_json.dump());
+    for (const auto count : {std::size_t{0}, std::size_t{1}, authored_max_leaves / 2,
+                             authored_max_leaves})
+        require(authored_history_scene(maximum_history, count).leaf_count == count,
+                "maximum history lost leaves on seek/reset");
+    close(authored_distance({}, maximum_history), -.01F);
+
+    // Check the dependency proof against exhaustive prefix compilation for
+    // every ordering of overlapping bodies, a nested negative tool and a
+    // separate cut. This oracle uses the original reveal implementation.
+    const Json masses = {{"name", "masses"}, {"type", "union"},
+                         {"children", {sphere("a", {}, .2F), sphere("b", {}, .1F)}}};
+    const Json tool = {{"name", "tool"}, {"type", "subtract"},
+                       {"children", {sphere("c", {}, .08F), sphere("d", {}, .03F)}}};
+    const Json shell = {{"name", "shell"}, {"type", "subtract"}, {"children", {masses, tool}}};
+    const Json other = {{"name", "other"}, {"type", "subtract"},
+                        {"children", {sphere("e", {}, .15F), sphere("f", {}, .04F)}}};
+    const auto order_fixture = document(
+        {{"name", "all"}, {"type", "union"}, {"children", {shell, other}}});
+    std::array<std::string, 6> order{"a", "b", "c", "d", "e", "f"};
+    do {
+        auto reference = parse_authored_scene(order_fixture.dump());
+        auto candidate = order_fixture;
+        candidate["history"] = Json::array();
+        for (const auto& name : order) {
+            reference.history.push_back(
+                {.node = name, .label = name, .seconds = .65, .cutter = std::nullopt});
+            candidate["history"].push_back({{"node", name}, {"label", name}});
+        }
+        bool expected = true;
+        for (std::size_t count = 1; count < order.size(); ++count)
+            expected &= authored_history_scene(reference, count).leaf_count == count;
+        bool accepted = true;
+        try {
+            static_cast<void>(parse_authored_scene(candidate.dump()));
+        } catch (const std::invalid_argument&) {
+            accepted = false;
+        }
+        require(accepted == expected, "history dependency check disagrees with prefix oracle");
+    } while (std::next_permutation(order.begin(), order.end()));
     // History must retain transform/material inheritance when a Boolean has
     // only its first visible child, and isolate later cuts from other parts.
     auto history_json = document(

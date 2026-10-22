@@ -83,6 +83,9 @@ an implemented project or a new runtime dependency.
   and revising driftwood's forms, broken ends and grain before fine detail;
   qualified and delivered as a matched native comparison gallery, followed by
   guardian cleanup and retirement of the unsuccessful driftwood candidate.
+- [SDF organic guardian plan](sdf-guardian-organic-plan.md): a separate organic
+  sculpt, roughly 1,000 leaf reveals, bounded capacity and history-loading work,
+  with native form and presentation checkpoints.
 
 ## Historical research and study records
 

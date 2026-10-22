@@ -53,7 +53,7 @@ continues the modeling with a rolled optic lip and
 seal, neck collars, tapered forearms and shins, wrist/ankle seals, elbow bearing
 caps, a recessed abdominal service door and two backpack power pods. Its 82
 shapes and 163 instructions use new torus, capped-cone and smooth-subtraction
-contracts, within a bounded 128-shape / 256-instruction budget. Both earlier
+contracts, within a bounded 1,024-shape / 2,048-instruction budget. Both earlier
 robot scenes remain intact, including the cleaned lens in the detail model.
 
 ```sh
@@ -315,7 +315,7 @@ capped cone, but describes the convex hull of spheres at Y = ±half-length.
 Equal radii give a capsule, and contained endpoints reduce to the larger
 sphere. See the [rounded stroke contract](../../docs/notes/sdf-rounded-stroke-contract.md).
 Union/smooth-union fold two or more children in order; both subtraction forms
-have exactly two. Scene limits are 128 primitive leaves, 256 instructions,
+have exactly two. Scene limits are 1,024 primitive leaves, 2,048 instructions,
 16 materials, tree depth 24 and GPU stack depth 32.
 The composite is clipped to the existing workspace box of half-width 0.499.
 Unary `group` nodes preserve a single child's local transform/material scope;

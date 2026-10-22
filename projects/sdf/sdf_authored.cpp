@@ -216,7 +216,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
             }
         } else {
             if (++result.leaf_count > authored_max_leaves)
-                throw std::invalid_argument("authored SDF scene exceeds 128 primitive leaves");
+                throw std::invalid_argument("authored SDF scene exceeds " +
+                                            std::to_string(authored_max_leaves) + " primitive leaves");
             SceneInstruction instruction;
             ShapeCode code;
             if (type == "box") {
@@ -257,7 +258,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
             result.part_names.push_back(name);
         }
         if (result.program.size() > authored_max_instructions)
-            throw std::invalid_argument("authored SDF program exceeds 256 instructions");
+            throw std::invalid_argument("authored SDF program exceeds " +
+                                        std::to_string(authored_max_instructions) + " instructions");
     };
     if (!json.at("root").is_null())
         compile(json.at("root"), {}, 0, 0);

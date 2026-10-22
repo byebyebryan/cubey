@@ -105,11 +105,29 @@ void read_authored_history(AuthoredScene& scene) {
         primitives.erase(found);
         scene.history.push_back(std::move(step));
     }
-    // Every revealed primitive must participate immediately, rather than
-    // springing into existence when a later body happens to be added.
-    for (std::size_t count = 1; count < scene.history.size(); ++count)
-        if (authored_history_scene(scene, count).leaf_count != count)
-            throw std::invalid_argument("authored history reveals a cutter before its body");
+    // A subtraction is visible as soon as its body is visible. Requiring the
+    // first body leaf before the first tool leaf at every subtraction proves
+    // that every prefix participates immediately, including nested tools.
+    // This avoids serializing/recompiling all N prefixes on every scene load.
+    std::map<std::string, std::size_t> order;
+    for (std::size_t i = 0; i < scene.history.size(); ++i)
+        order.emplace(scene.history[i].node, i);
+    std::function<std::size_t(const Json&)> first = [&](const Json& node) {
+        if (!node.contains("children"))
+            return order.at(node.at("name").get<std::string>());
+        const auto& children = node.at("children");
+        auto earliest = first(children.at(0));
+        const bool subtract = node.at("type") == "subtract" ||
+                              node.at("type") == "smooth-subtract";
+        for (std::size_t i = 1; i < children.size(); ++i) {
+            const auto next = first(children.at(i));
+            if (subtract && next < earliest)
+                throw std::invalid_argument("authored history reveals a cutter before its body");
+            earliest = std::min(earliest, next);
+        }
+        return earliest;
+    };
+    first(json.at("root"));
 }
 
 AuthoredHistorySample sample_authored_history(const TimelineConfig& config,

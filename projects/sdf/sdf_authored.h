@@ -4,8 +4,8 @@
 #include <optional>
 
 namespace cubey::projects::sdf {
-inline constexpr std::size_t authored_max_leaves = 128;
-inline constexpr std::size_t authored_max_instructions = 256;
+inline constexpr std::size_t authored_max_leaves = 1024;
+inline constexpr std::size_t authored_max_instructions = 2048;
 enum class ShapeCode : std::uint32_t {
     Box = 1,
     Sphere = 2,
