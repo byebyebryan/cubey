@@ -136,7 +136,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     uniforms.direct_color = {light.primary_light_color * light.primary_light_intensity, 0};
     for (unsigned i = 0; i < 9; ++i)
         uniforms.irradiance[i] = {light.diffuse_irradiance_sh[i], 0};
-    uniforms.material = {0.55F, 0.27F, 0.095F, 0};
+    uniforms.material = config.clay ? math::Vec4{0.42F, 0.42F, 0.42F, 0}
+                                    : math::Vec4{0.55F, 0.27F, 0.095F, 0};
     uniforms.quality = {config.roughness, config.shadow_softness, config.ao ? 1.0F : 0.0F, -0.48F};
     if (cutter && config.cutter_cue && config.debug == 0) {
         uniforms.cutter = gpu_edit(*cutter);

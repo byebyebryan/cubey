@@ -2,7 +2,9 @@
 
 Date: 2026-10-21
 
-Status: proposed next experiment after the [procedural prototype closeout](sdf-procedural-prototype-closeout.md).
+Status: implementation in progress after the [procedural prototype closeout](sdf-procedural-prototype-closeout.md).
+The [authored content evidence](sdf-authored-content-evidence.md) records native
+checkpoints and visual decisions.
 The user selected a small stylized robot or mechanical toy as the first subject.
 Appearance uses plain materials and, optionally, procedural or noise patterns.
 Image textures and UV mapping are outside this experiment.

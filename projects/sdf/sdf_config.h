@@ -20,6 +20,7 @@ struct SdfConfig {
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
     bool ao = false;
+    bool clay = false;
     bool cutter_cue = true;
     bool ground = false, validate = false, validate_batches = false, occluder = false;
     bool validate_subtractions = false;
@@ -111,6 +112,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(batches, c.validate_batches)
         .bind(subtractions, c.validate_subtractions)
         .bind(ao, c.ao)
+        .bind(option("clay", "Neutral clay material for shape inspection", config::ValueType::Bool),
+              c.clay)
         .bind(option("supersample", "Internal resolution multiplier (1 or 2)",
                      config::ValueType::UInt32),
               c.supersample)
