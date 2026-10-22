@@ -2,9 +2,10 @@
 
 Date: 2026-10-22
 
-Status: execution requested after the user's acceptance of the survey robot
-experiment. The [study evidence](sdf-sculpture-study-evidence.md) records completed
-checkpoints; the sections below retain the execution and acceptance plan.
+Status: implemented, qualified and delivered for visual review after the user's
+acceptance of the survey robot experiment. The
+[study evidence](sdf-sculpture-study-evidence.md) records completed checkpoints
+and the gallery; the sections below retain the execution and acceptance plan.
 
 ## Objective and value
 
@@ -229,7 +230,7 @@ study result, but must not be relabeled a visual success.
 
 ## Goal-loop handoff
 
-When execution is requested, use this objective:
+The executed objective was:
 
 > Deliver the four-subject SDF sculpture study in this plan: audition all four
 > in native clay, add only the shared capabilities their forms need, finish

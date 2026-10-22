@@ -2,9 +2,12 @@
 
 Date: 2026-10-22
 
-Status: in progress under the [four-subject plan](sdf-sculpture-study-plan.md).
-The user requested execution with commits as work progresses. Native visual
-assessment below is the assistant's; user acceptance remains separate.
+Status: implemented, qualified and delivered for visual review under the
+[four-subject plan](sdf-sculpture-study-plan.md). The user requested execution
+with commits as work progresses. Native visual assessment below is the
+assistant's; user acceptance remains separate.
+
+[Open the native sculpture gallery, four construction films and all edit states](http://starship:8787/reports/b155234e48461677cf2e6d7bd69569f4f6fc3a79c87ac94e430ad4af1980ed08/).
 
 ## Clay audition
 
@@ -39,11 +42,11 @@ python3 projects/sdf/tools/sculpture_audition.py \
 
 - [x] Two clay variants and native shaping checkpoints for all four subjects.
 - [x] Shared tapered-stroke decision and generic qualification/presentation.
-- [ ] Guardian modeling, construction presentation and native qualification.
-- [ ] Vessel modeling, construction presentation and native qualification.
-- [ ] Arch modeling, construction presentation and native qualification.
-- [ ] Driftwood modeling, construction presentation and native qualification.
-- [ ] Published comparison gallery, delivery review and study verdicts.
+- [x] Guardian modeling, construction presentation and native qualification.
+- [x] Vessel modeling, construction presentation and native qualification.
+- [x] Arch modeling, construction presentation and native qualification.
+- [x] Driftwood modeling, construction presentation and native qualification.
+- [x] Published comparison gallery, delivery review and study verdicts.
 
 ## Shared foundation
 
@@ -146,3 +149,134 @@ restoring the intended arch silhouette. Its added empty-path check passes
 while both retained support paths remain solid. The native hero was inspected
 before the final capture. The intermediate closed-window qualification is
 retained at `outputs/sdf/sculpture-arch-window-qualified/`.
+
+## Final native qualification
+
+Each selected scene has a deterministic generator, explicit scene, static/build
+presets, six material inspection views, hero clay/blockout comparisons, every
+committed state and a 50-second film (40 seconds construction, ten orbit).
+Outputs are `outputs/sdf/sculpture-{subject}-qualified/`. Native matrix starts
+are clean at the source revisions recorded below; later shared-author changes
+only add the arch's construction corrections. Per-subject snapshots retain the
+exact generators, scenes, configuration, native binary and thirteen shader
+hashes used by that capture.
+
+| Subject | Capture source | Distinct states | Native history comparisons, including revisits | Rays | Direct CPU/GPU points |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Guardian | `086d90cc` | 77 | 80 | 33,514 | 82,122 |
+| Vessel | `23b8423a` | 11 | 14 | 4,408 | 12,294 |
+| Arch | `7e55b2b1` | 52 | 55 | 20,437 | 52,081 |
+| Driftwood | `db065c0b` | 95 | 98 | 44,476 | 106,458 |
+
+These final history runs total 235 distinct states, 247 comparisons, 102,835
+rays and 252,955 direct points. There are zero reported mismatches, exhausted
+rays, material/part disagreements or finite-grid sampling ambiguities across
+this matrix. Existing tolerances are unchanged; future scenes may still report
+sampling ambiguities under that established contract. Material-only cache
+checks pass. Every final static/replay image is identical, and export/reload
+preserves both scene bytes and the hero image. Axis-80 atlas relocation gives
+identical images under the same native oracle.
+
+Regenerating both blockout and final stages reproduces every scene/preset byte
+and all four qualified source-scene hashes. The separate reproduction receipt
+is `outputs/sdf/sculpture-reproduction.json`.
+
+All 117 cutter on/off pairs preserve geometry/appearance identity. The 116
+front-visible previews meet the existing image gate; only the documented
+`belly-interior` preview is hidden. All 6,000 native video frames decode with
+zero visible magenta exhaustion pixels. Each film visits every edit and builds
+exactly its edit count plus one fields, including the empty workspace.
+
+The same binary/shaders identify the 41-run foundation matrix, the four final
+content matrices and private Xvfb controls. Each subject passes resize,
+orbit/zoom, next/previous, empty/final/midpoint scrubbing, stable paused cache,
+restart, playback and Escape. The control check now waits for real committed
+progress: a ten-edit history scales its empty opening hold longer than the
+robot's old fixed wait. Receipts are under
+`outputs/sdf/sculpture-controls/{subject}/windowed-interaction.json`.
+
+## Costs and visual verdicts
+
+RTX 5070 Ti / 610.57.04, 1920×1080 at 1×, hard shadows, 180 frames with 30
+warmup and 148 completed GPU samples per profile. Steady frame time sums
+tracing/shading and shared post. Build wall time is separate and synchronous;
+readback/encoding are excluded from frame costs.
+
+| Subject | Cold geometry build | GPU median / p95 | Final active bricks | Peak committed-state bricks |
+| --- | ---: | ---: | ---: | ---: |
+| Guardian | 69.154 ms | 2.231 / 2.326 ms | 107,422 | 107,422 |
+| Vessel | 13.090 ms | 2.002 / 2.106 ms | 140,780 | 141,470 |
+| Arch | 61.690 ms | 2.296 / 2.357 ms | 143,060 | 158,176 |
+| Driftwood | 56.658 ms | 1.981 / 2.050 ms | 70,531 | 70,531 |
+
+Each uses the same 912,882,864-byte axis-64 field allocation and 262,144-brick
+capacity. No geometry/program or field-allocation ceiling was raised. Different
+shapes cover different pixels and occupy different bricks; these are bounded
+content measurements, not a claim of a general renderer speedup. Matched robot
+profiles are retained in each receipt.
+
+The guardian and vessel are the stronger visual candidates in the assistant's
+assessment. The guardian has a recognizable expression and fused silhouette;
+rear lighting still reveals some transitions between horn segments. The vessel
+is the cleanest hollowing example, and simpler analytic geometry won its handle
+comparison. The arch's corrected breakthrough is a clear SDF operation, while
+its final form remains a stylized carving rather than convincing wind erosion.
+Driftwood establishes curved stroke placement, joins and hollows, but its grain
+and branching remain simplified and some tangent changes are visible.
+
+The study supports scripted authoring as a useful content route. It also shows
+why more primitives alone do not solve composition, why final-object checks
+cannot prove a construction story, and why a true curve sweep would be a more
+focused next geometry experiment than a broad catalog of new shapes. These are
+four reviewable experimental results; technical passage does not imply user
+acceptance or four equally successful artworks.
+
+## Gallery delivery
+
+The gallery packages native material/clay/blockout views, all 235 state images,
+four films, seventeen video chapters, per-subject evidence and downloadable
+source. Browser checks visit every state image, all six inspection views per
+subject, all material modes, previous/next boundaries and keyboard scrubbing.
+All seventeen chapters seek to the expected caption and all four films play.
+Selected-edit seeking also works for each subject. The final reset guard hides
+unloaded video controls and prevents a stale caption after switching subjects.
+The 390px layout has no document overflow and preserves the 4:3 film ratio.
+No page errors or warnings are reported. The published URL's breakthrough
+chapter was checked again after delivery.
+
+The full export initially exceeded the publisher's 100 MiB bundle limit.
+`sculpture_report.py` now packs all auxiliary cutter on/off PNGs and desktop
+screenshots in `auxiliary-captures.tar.xz`, retaining their original paths and
+byte hashes. Every archived file is restored into memory and hash checked
+before removing only its duplicate in the export. Original qualified outputs
+are untouched. Every film, state and inspection image remains directly
+accessible. The published bundle is 103,308,013 bytes across 1,483 files.
+
+HTTP delivery verifies the entrypoint bytes. Separate checks reproduce the
+served HTML, lossless archive and arch presentation film exactly. Shared report
+hosting remains running. Receipts and screenshot:
+
+- `outputs/sdf/sculpture-browser-review.json`
+- `outputs/sdf/sculpture-report-delivery.json`
+- `outputs/sdf/sculpture-gallery.png`
+- `outputs/sdf/sculpture-study-summary.json`
+- `outputs/sdf/sculpture-reproduction.json`
+
+The published snapshot retains its pre-publication browser receipt; the local
+receipt additionally records the published-URL check. Git retains source,
+presets and these evidence links; generated media lives in outputs and the
+immutable report snapshot.
+
+```sh
+python3 projects/sdf/tools/author_sculptures.py --stage final
+build/dev/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-build.json
+python3 projects/sdf/tools/qualify_sculpture.py --subject guardian --video \
+  --output outputs/sdf/sculpture-guardian-new
+```
+
+Select `vessel`, `arch` or `driftwood` in the corresponding generator,
+qualification command and preset names. Static presets omit `-build`.
+The retained blockout stage remains independently reproducible. Reports are
+assembled with `sculpture_report.py --controls-root ... --output ...` after all
+four native matrices and desktop receipts are available; run browser checks
+before publishing a fresh export.

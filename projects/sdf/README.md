@@ -98,11 +98,38 @@ The [authored content plan](../../docs/notes/sdf-authored-content-plan.md)
 sets the small primitive vocabulary and plain-material scope. The robot uses
 no procedural patterns, image textures or UV mapping.
 
-The proposed [sculpture study](../../docs/notes/sdf-sculpture-study-plan.md)
-plans four next subjects: a guardian bust, pierced ceramic vessel, carved rock
-arch and twisted driftwood. It focuses on continuous forms, hollowing and
-visible carving sequences; these scenes and any additional tooling are not yet
-implemented.
+The [native sculpture gallery](http://starship:8787/reports/b155234e48461677cf2e6d7bd69569f4f6fc3a79c87ac94e430ad4af1980ed08/)
+adds a guardian bust, pierced ceramic vessel, carved rock arch and twisted
+driftwood. They explore fused forms, hollowing, real passage breakthroughs and
+curved tapered strokes, with plain materials and independent construction
+histories. Each has a 40-second construction view and ten-second final orbit.
+All 235 committed-state images and the four films are available in the gallery.
+See the [study evidence and visual verdicts](../../docs/notes/sdf-sculpture-study-evidence.md)
+and its [execution plan](../../docs/notes/sdf-sculpture-study-plan.md). These are
+delivered candidates for review; the arch/driftwood remain stylized, and some
+sampled stroke transitions are visible under inspection lighting.
+
+| Sculpture | Static preset | Construction/orbit preset | Leaves |
+| --- | --- | --- | ---: |
+| Guardian | [Static](presets/sculpture-guardian.json) | [Build](presets/sculpture-guardian-build.json) | 76 |
+| Ceramic vessel | [Static](presets/sculpture-vessel.json) | [Build](presets/sculpture-vessel-build.json) | 10 |
+| Rock arch | [Static](presets/sculpture-arch.json) | [Build](presets/sculpture-arch-build.json) | 51 |
+| Driftwood | [Static](presets/sculpture-driftwood.json) | [Build](presets/sculpture-driftwood-build.json) | 94 |
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-build.json
+python3 projects/sdf/tools/author_sculptures.py --stage final
+python3 projects/sdf/tools/qualify_sculpture.py --subject guardian --video \
+  --output outputs/sdf/sculpture-guardian-new
+```
+
+`sculptures.json` defines per-subject inspection views and solid/empty design
+probes. The authoring helper samples curved paths into rounded tapered segments
+and projects selected grooves onto the actual surface. It emits explicit scenes
+without an embedded Python dependency. This is scripted CSG authoring and
+leaf-reveal playback; a freehand brush editor and exact spline sweep remain
+separate work. Atmosphere, hard self-shadows and the absence of a ground plane
+carry over from the robot/procedural studies.
 
 The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
 starts from a solid and carves intersecting through-holes with a deterministic

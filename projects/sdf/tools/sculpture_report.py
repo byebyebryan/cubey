@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import tarfile
 
 from author_sculptures import SUBJECTS
 
@@ -95,6 +96,23 @@ def main():
     payload=json.dumps(data).replace('</','<\\/')
     (out/'index.html').write_text(template.replace('__SCULPTURES__',payload))
     (out/'gallery-manifest.json').write_text(json.dumps(dict(subjects=data),indent=2)+'\n')
+    # Keep the full native proof without exceeding the static publisher's
+    # bundle ceiling. These images are auxiliary to the interactive viewers.
+    auxiliary=sorted([*out.glob('data/*/history/captures/preview-*.png'),
+                      *out.glob('controls/*/captures/*.png')])
+    inventory={str(p.relative_to(out)):dict(sha256=sha(p),bytes=p.stat().st_size) for p in auxiliary}
+    with tarfile.open(out/'auxiliary-captures.tar.xz','w:xz',preset=6) as archive:
+        for path in auxiliary:archive.add(path,arcname=str(path.relative_to(out)))
+    # Verify byte restoration before removing only the export's duplicate PNGs.
+    with tarfile.open(out/'auxiliary-captures.tar.xz','r:xz') as archive:
+        for member in archive:
+            assert hashlib.sha256(archive.extractfile(member).read()).hexdigest()==inventory[member.name]['sha256']
+    for path in auxiliary:path.unlink()
+    (out/'auxiliary-captures.json').write_text(json.dumps(dict(
+        scope='Lossless archive of all cutter on/off PNGs and desktop screenshots; paths restore relative to this report root. All state/inspection images and films remain directly accessible.',
+        files=inventory),indent=2)+'\n')
+    total=sum(p.stat().st_size for p in out.rglob('*') if p.is_file())
+    if total>100*1024*1024:raise RuntimeError(f'Report still exceeds the 100 MiB publishing envelope: {total}')
     print(out)
 
 

@@ -33,7 +33,7 @@ the architecture and project guides remain current authority.
 - [SDF robot detail evidence](sdf-robot-detail-evidence.md): the mechanical detail variant, matched visual comparisons and atlas-sampling precision correction.
 - [SDF robot field-kit evidence](sdf-robot-fieldkit-evidence.md): further authored assemblies, torus/cone/smooth-subtraction contracts and next vocabulary decisions.
 - [SDF robot joint review](sdf-robot-joint-review.md): pose-derived hinge frames, continuous leg centerlines and independent modeling-intent checks after user review.
-- [SDF sculpture study evidence](sdf-sculpture-study-evidence.md): native auditions and ongoing checkpoints for four sculptural subjects.
+- [SDF sculpture study evidence](sdf-sculpture-study-evidence.md): four authored sculptures, native construction histories, measured costs and the published comparison gallery; user visual acceptance remains separate.
 - [SDF rounded stroke contract](sdf-rounded-stroke-contract.md): tapered endpoint spheres, conservative bounds and independent/native qualification for sculptural strokes.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
@@ -73,9 +73,10 @@ an implemented project or a new runtime dependency.
 - [SDF authored content plan](sdf-authored-content-plan.md): a first stylized
   robot, early native blockout review, grouped composition and plain materials;
   implemented through native presentation and accepted as the first experiment.
-- [SDF sculpture study plan](sdf-sculpture-study-plan.md): a proposed four-subject
+- [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
-  with shared authoring gaps, construction presentation and native review gates.
+  with shared authoring gaps, construction presentation and native review gates;
+  implemented and delivered for visual review.
 
 ## Historical research and study records
 
