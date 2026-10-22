@@ -22,4 +22,6 @@ if (BUILD_TESTING)
     add_executable(cubey_project_sdf_authored_tests sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_recipe.cpp sdf_authored_tests.cpp)
     target_link_libraries(cubey_project_sdf_authored_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_authored_tests COMMAND cubey_project_sdf_authored_tests)
+    add_test(NAME sdf_normal_projection_tests
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/normal_projection_tests.py")
 endif()

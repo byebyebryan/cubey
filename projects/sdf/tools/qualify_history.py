@@ -15,6 +15,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--video', action='store_true')
+    parser.add_argument('--binary',type=Path,default=Path('build/dev/projects/sdf/sdf'))
+    parser.add_argument('--capture-step',type=int,action='append',
+                        help='Capture selected committed stills; all native prefix checks still run')
+    parser.add_argument('--preview-node',action='append',
+                        help='Capture only these named cutter previews; default is every cutter')
     parser.add_argument('--regressions', action='store_true')
     parser.add_argument('--reuse-captures', type=Path,
                         help='Reuse hash-verified stills/checks for identical scene, preset and native artifacts; always recapture video')
@@ -32,11 +37,15 @@ def main():
         raise RuntimeError('Use a fresh qualification output directory')
     for folder in ('captures', 'logs', 'configs', 'scenes'):
         (out / folder).mkdir(parents=True)
-    binary = root / 'build/dev/projects/sdf/sdf'
+    binary = (root/args.binary).resolve()
     preset = args.config.resolve()
     config = json.loads(preset.read_text())
     scene = json.loads((root / config['authored-scene']).read_text())
     history = scene['history']
+    capture_steps=(set(range(len(history)+1)) if args.capture_step is None else
+                   {0,len(history),*args.capture_step})
+    if any(i<0 or i>len(history) for i in capture_steps):
+        parser.error('--capture-step outside the saved history')
     total = .65 + sum(step['seconds'] for step in history)
     construction, duration, fps = config['construction-seconds'], config['duration'], 30
     frames = int(duration * fps)
@@ -50,6 +59,8 @@ def main():
         config=str(preset.relative_to(root) if preset.is_relative_to(root) else preset),
         config_sha256=sha(preset), source_scene_sha256=sha(root/config['authored-scene']),
         scene_name=scene['name'], exported_scene=f'scenes/{args.export_name}',
+        capture_scope=dict(committed_stills=sorted(capture_steps),
+                           preview_nodes=args.preview_node, native_prefix_checks='all'),
         runs={}, steps=[], previews=[])
     reusable = None
     if args.reuse_captures:
@@ -95,14 +106,16 @@ def main():
                 return row
         subprocess.run([*command, '--write-config-template', str(out / f'configs/{name}.json')], cwd=root,
                        check=True, stdout=subprocess.DEVNULL)
-        result = subprocess.run(command, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        (out / f'logs/{name}.log').write_text(result.stdout)
-        if result.returncode or 'validation error' in result.stdout.lower():
-            raise RuntimeError(name + ': ' + result.stdout)
+        log_path=out/f'logs/{name}.log'
+        with log_path.open('w') as log:
+            result = subprocess.run(command, cwd=root, text=True, stdout=log, stderr=subprocess.STDOUT)
+        output_text=log_path.read_text()
+        if result.returncode or 'validation error' in output_text.lower():
+            raise RuntimeError(name + ': ' + output_text)
         if expected_step is not None:
-            assert f'sdf: history initial step={expected_step}/{len(history)}' in result.stdout, result.stdout
+            assert f'sdf: history initial step={expected_step}/{len(history)}' in output_text, output_text
         row = dict(command=command, exit_code=result.returncode, capture=str(output.relative_to(out)),
-            capture_sha256=sha(output), stats=[s for s in result.stdout.splitlines() if s.startswith('sdf:')])
+            capture_sha256=sha(output), stats=[s for s in output_text.splitlines() if s.startswith('sdf:')])
         manifest['runs'][name] = row
         save()
         print(name, 'passed', flush=True)
@@ -117,9 +130,10 @@ def main():
     for index in range(len(history) + 1):
         step = history[index - 1] if index else None
         time = (start + .7 * step['seconds']) / total * construction if step else 0
-        run(f'step-{index:02}', ['--time', time], index)
+        if index in capture_steps:
+            run(f'step-{index:02}', ['--time', time], index)
         manifest['steps'].append(dict(index=index, time=time, label=step['label'] if step else 'Empty workspace',
-                                     capture=f'captures/step-{index:02}.png'))
+                                     capture=f'captures/step-{index:02}.png' if index in capture_steps else None))
         if step:
             start += step['seconds']
     # Identify cutters from the actual tree, not the English label.
@@ -131,9 +145,11 @@ def main():
             for i, child in enumerate(node['children']):
                 walk(child, negative != (node['type'] in ('subtract', 'smooth-subtract') and i == 1))
     walk(scene['root'])
+    if args.preview_node and not set(args.preview_node).issubset(cutters):
+        raise ValueError('--preview-node must identify saved cutter leaves')
     start = .65
     for index, step in enumerate(history):
-        if step['node'] in cutters:
+        if step['node'] in cutters and (args.preview_node is None or step['node'] in args.preview_node):
             time = (start + .175 * step['seconds']) / total * construction
             run(f'preview-{index+1:02}', ['--time', time], index)
             off = run(f'preview-{index+1:02}-off', ['--time', time, '--no-cutter-cue'], index)

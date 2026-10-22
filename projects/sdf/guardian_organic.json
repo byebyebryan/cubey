@@ -1,0 +1,224 @@
+{
+  "guardian": {
+    "config": "projects/sdf/presets/sculpture-guardian-organic.json",
+    "build_config": "projects/sdf/presets/sculpture-guardian-organic-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-guardian-refined.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Face and carved expression",
+        "options": [
+          "--distance",
+          0.85,
+          "--target-y",
+          0.09,
+          "--pitch",
+          0.11
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "base neck and skull connect",
+        "expect": "solid",
+        "path": true,
+        "margin": 0.008,
+        "points": [
+          [
+            0,
+            -0.27,
+            -0.03
+          ],
+          [
+            0,
+            -0.16,
+            -0.03
+          ],
+          [
+            0,
+            0.1,
+            -0.03
+          ]
+        ]
+      },
+      {
+        "name": "both sockets remain hollow",
+        "expect": "empty",
+        "margin": 0.008,
+        "points": [
+          [
+            -0.08,
+            0.066,
+            0.13
+          ],
+          [
+            0.08,
+            0.066,
+            0.13
+          ]
+        ]
+      },
+      {
+        "name": "rounded chin remains solid",
+        "expect": "solid",
+        "margin": 0.01,
+        "points": [
+          [
+            0,
+            -0.115,
+            0.13
+          ]
+        ]
+      },
+      {
+        "name": "upper lip remains solid",
+        "expect": "solid",
+        "margin": 0.001,
+        "points": [
+          [
+            0,
+            -0.056,
+            0.154
+          ]
+        ]
+      },
+      {
+        "name": "lower lip remains solid",
+        "expect": "solid",
+        "margin": 0.001,
+        "points": [
+          [
+            0,
+            -0.09,
+            0.146
+          ]
+        ]
+      },
+      {
+        "name": "nape connects to occiput",
+        "expect": "solid",
+        "path": true,
+        "margin": 0.008,
+        "points": [
+          [
+            0,
+            -0.1,
+            -0.065
+          ],
+          [
+            0,
+            -0.02,
+            -0.12
+          ],
+          [
+            0,
+            0.07,
+            -0.15
+          ]
+        ]
+      },
+      {
+        "name": "horns attach to skull",
+        "expect": "solid",
+        "points": [
+          [
+            -0.115,
+            0.2,
+            -0.035
+          ],
+          [
+            -0.16,
+            0.23,
+            -0.045
+          ],
+          [
+            -0.2,
+            0.255,
+            -0.055
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "opposite horn attaches",
+        "expect": "solid",
+        "points": [
+          [
+            0.115,
+            0.2,
+            -0.035
+          ],
+          [
+            0.16,
+            0.23,
+            -0.045
+          ],
+          [
+            0.2,
+            0.255,
+            -0.055
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      }
+    ],
+    "authoring_sources": [
+      "author_guardian.py",
+      "refinement_author.py",
+      "author_sculptures.py",
+      "sdf_author.py",
+      "sdf_probe.py"
+    ],
+    "supplemental_previews": []
+  }
+}

@@ -45,11 +45,15 @@ class Refinement(Sculpt):
     def curve(self,name,points,radii,label,count=4,join=0):
         return self.segments(name,samples(points,radii,count),label,join)
 
-    def groove(self,name,body,points,radii,label,axis=2,side=1,count=2,depth=.28):
+    def groove(self,name,body,points,radii,label,axis=2,side=1,count=2,depth=.28,
+               normal_offset=False):
         """Project an authored 3D path from a selected world-axis side.
 
         The other two coordinates define the path. Fail on a missed surface;
         callers inspect wall retention independently. No runtime brush exists.
+        Depth is the center's inward offset in tool radii: a negative value
+        places a shallow cutter outside. Normal offsets preserve that depth
+        on oblique surfaces; the default retains legacy axis-offset output.
         """
         path=[]
         for p,r in samples(points,radii,count):
@@ -64,7 +68,18 @@ class Refinement(Sculpt):
                         p[axis]=side*middle
                         if distance(body,p)>0:outside=middle
                         else:inside=middle
-                    p[axis]=side*((outside+inside)/2-r*depth)
+                    p[axis]=side*(outside+inside)/2
+                    if normal_offset:
+                        gradient=[]
+                        for component in range(3):
+                            a,b=p.copy(),p.copy()
+                            a[component]+=.00002;b[component]-=.00002
+                            gradient.append(distance(body,a)-distance(body,b))
+                        length=sum(v*v for v in gradient)**.5
+                        if length<1e-12:raise ValueError(f'{name}: undefined surface normal')
+                        p=[x-r*depth*v/length for x,v in zip(p,gradient)]
+                    else:
+                        p[axis]-=side*r*depth
                     path.append((p.copy(),r))
                     break
                 outside=inside
