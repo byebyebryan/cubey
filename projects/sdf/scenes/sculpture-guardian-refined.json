@@ -1962,7 +1962,7 @@
       },
       {
         "type": "union",
-        "name": "stone-wear-tools",
+        "name": "temple-crack",
         "position": [
           0,
           0,
@@ -1970,129 +1970,76 @@
         ],
         "children": [
           {
-            "type": "box",
-            "name": "base-chip",
+            "type": "round-cone",
+            "name": "temple-crack-0",
             "position": [
-              -0.139,
-              -0.275,
-              0.083
+              -0.14021875,
+              0.14146874999999998,
+              0.0930036334228515
             ],
-            "half_extent": [
-              0.022,
-              0.016,
-              0.022
-            ],
-            "rounding": 0.001,
+            "half_length": 0.007458868378638033,
             "rotation_xyzw": [
+              0.4348878585979062,
               0.0,
-              0.0,
-              0.24192189559966773,
-              0.9702957262759965
-            ]
+              0.8652689202330087,
+              0.24936368244580193
+            ],
+            "bottom_radius": 0.001,
+            "top_radius": 0.0022500000000000003
           },
           {
-            "type": "box",
-            "name": "jaw-chip",
+            "type": "round-cone",
+            "name": "temple-crack-1",
             "position": [
-              0.103,
-              -0.11,
-              0.148
+              -0.14621875,
+              0.12746875,
+              0.09316619075775143
             ],
-            "half_extent": [
-              0.015,
-              0.01,
-              0.018
-            ],
-            "rounding": 0.001,
+            "half_length": 0.008101554522307798,
             "rotation_xyzw": [
-              -0.0,
-              -0.0,
-              -0.1993679344171972,
-              0.9799247046208296
-            ]
+              -0.4544527901927178,
+              0.0,
+              0.8685724777674213,
+              0.19762214539624895
+            ],
+            "bottom_radius": 0.0022500000000000003,
+            "top_radius": 0.003
           },
           {
-            "type": "union",
-            "name": "temple-crack",
+            "type": "round-cone",
+            "name": "temple-crack-2",
             "position": [
-              0,
-              0,
-              0
+              -0.147625,
+              0.115375,
+              0.09140466846466061
             ],
-            "children": [
-              {
-                "type": "round-cone",
-                "name": "temple-crack-0",
-                "position": [
-                  -0.14021875,
-                  0.14146874999999998,
-                  0.0930036334228515
-                ],
-                "half_length": 0.007458868378638033,
-                "rotation_xyzw": [
-                  0.4348878585979062,
-                  0.0,
-                  0.8652689202330087,
-                  0.24936368244580193
-                ],
-                "bottom_radius": 0.001,
-                "top_radius": 0.0022500000000000003
-              },
-              {
-                "type": "round-cone",
-                "name": "temple-crack-1",
-                "position": [
-                  -0.14621875,
-                  0.12746875,
-                  0.09316619075775143
-                ],
-                "half_length": 0.008101554522307798,
-                "rotation_xyzw": [
-                  -0.4544527901927178,
-                  0.0,
-                  0.8685724777674213,
-                  0.19762214539624895
-                ],
-                "bottom_radius": 0.0022500000000000003,
-                "top_radius": 0.003
-              },
-              {
-                "type": "round-cone",
-                "name": "temple-crack-2",
-                "position": [
-                  -0.147625,
-                  0.115375,
-                  0.09140466846466061
-                ],
-                "half_length": 0.004834778509846398,
-                "rotation_xyzw": [
-                  -0.21507729568801573,
-                  0.0,
-                  -0.9654258223675078,
-                  0.14729133846072137
-                ],
-                "bottom_radius": 0.003,
-                "top_radius": 0.0022500000000000003
-              },
-              {
-                "type": "round-cone",
-                "name": "temple-crack-3",
-                "position": [
-                  -0.144125,
-                  0.107875,
-                  0.09136903802871699
-                ],
-                "half_length": 0.0035853206252876367,
-                "rotation_xyzw": [
-                  0.1199412853674261,
-                  0.0,
-                  -0.9415702416514808,
-                  0.3147373001421685
-                ],
-                "bottom_radius": 0.0022500000000000003,
-                "top_radius": 0.001
-              }
-            ]
+            "half_length": 0.004834778509846398,
+            "rotation_xyzw": [
+              -0.21507729568801573,
+              0.0,
+              -0.9654258223675078,
+              0.14729133846072137
+            ],
+            "bottom_radius": 0.003,
+            "top_radius": 0.0022500000000000003
+          },
+          {
+            "type": "round-cone",
+            "name": "temple-crack-3",
+            "position": [
+              -0.144125,
+              0.107875,
+              0.09136903802871699
+            ],
+            "half_length": 0.0035853206252876367,
+            "rotation_xyzw": [
+              0.1199412853674261,
+              0.0,
+              -0.9415702416514808,
+              0.3147373001421685
+            ],
+            "bottom_radius": 0.0022500000000000003,
+            "top_radius": 0.001
           }
         ]
       }
@@ -2613,16 +2560,6 @@
       "node": "right-rear-neck-3",
       "label": "Carve the back of the shoulder / continue",
       "seconds": 0.42
-    },
-    {
-      "node": "base-chip",
-      "label": "Chip an exposed base corner",
-      "seconds": 0.65
-    },
-    {
-      "node": "jaw-chip",
-      "label": "Chip the jaw edge",
-      "seconds": 0.65
     },
     {
       "node": "temple-crack-0",

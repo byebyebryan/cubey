@@ -68,12 +68,8 @@ def guardian(variant=0,stage='final'):
         tools.append(s.groove(tag+'-rear-neck',body,[(side*.05,-.115,0),(side*.075,-.178,0),(side*.12,-.23,0)],
                     [.002,.006,.002],'Carve the back of the shoulder',side=-1))
     body=s.cuts('structural-carving',body,tools,.002)
-    wear=[s.leaf(box('base-chip',(-.139,-.275,.083),(.022,.016,.022),.001,
-                rotation_xyzw=rotation((0,0,1),28)),'Chip an exposed base corner'),
-          s.leaf(box('jaw-chip',(.103,-.11,.148),(.015,.01,.018),.001,
-                rotation_xyzw=rotation((0,0,1),-23)),'Chip the jaw edge')]
-    wear.append(s.groove('temple-crack',body,[(-.137,.148,0),(-.149,.12,0),(-.142,.105,0)],
-                         [.001,.003,.001],'Cut a short weathered temple crack'))
+    wear=[s.groove('temple-crack',body,[(-.137,.148,0),(-.149,.12,0),(-.142,.105,0)],
+                         [.001,.003,.001],'Cut a short weathered temple crack')]
     body=s.cuts('stone-wear',body,wear,.0008)
     return s,body
 

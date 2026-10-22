@@ -108,34 +108,36 @@ See the [study evidence and visual verdicts](../../docs/notes/sdf-sculpture-stud
 and its [execution plan](../../docs/notes/sdf-sculpture-study-plan.md). These are
 delivered candidates for review; the arch/driftwood remain stylized, and some
 sampled stroke transitions are visible under inspection lighting.
-The user ranks the guardian strongest and driftwood weakest; a
+The user ranks the guardian strongest and driftwood weakest. A
 [refinement pass](../../docs/notes/sdf-guardian-driftwood-refinement-plan.md)
-targets those two, with facial/structural detail for the guardian and stronger
-wood forms, broken ends and grain for driftwood. Separate
-`sculpture-guardian-refined` and `sculpture-driftwood-refined` static/build presets
-are [qualified](../../docs/notes/sdf-guardian-driftwood-refinement-evidence.md).
-The [matched refinement gallery](http://starship:8787/reports/d66a4ee7ce92dd2f255e170b9dc67676551a1f5efec099ec99ccda304a4d7973/)
-pairs both versions in material/clay from every inspection angle, with all 210
-committed states and two construction films. Visual acceptance remains open.
+developed both, but user review still found driftwood unsuccessful. It is
+retained as an experiment and removed from the active refinement presentation;
+further wood detailing is deferred. The guardian remains the selected sculpture.
+Its arbitrary jaw/base chips have been removed, retaining the facial carving,
+inner ears, horn flutes and neck structure. The
+[review and native evidence](../../docs/notes/sdf-guardian-driftwood-refinement-evidence.md)
+distinguish this correction from the historical 108-leaf version.
+The earlier [matched refinement gallery](http://starship:8787/reports/d66a4ee7ce92dd2f255e170b9dc67676551a1f5efec099ec99ccda304a4d7973/)
+retains both prior versions, their 210 states and two films as the review record.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
 | Guardian | [Static](presets/sculpture-guardian.json) | [Build](presets/sculpture-guardian-build.json) | 76 |
 | Ceramic vessel | [Static](presets/sculpture-vessel.json) | [Build](presets/sculpture-vessel-build.json) | 10 |
 | Rock arch | [Static](presets/sculpture-arch.json) | [Build](presets/sculpture-arch-build.json) | 51 |
-| Driftwood | [Static](presets/sculpture-driftwood.json) | [Build](presets/sculpture-driftwood-build.json) | 94 |
-| Guardian, refined | [Static](presets/sculpture-guardian-refined.json) | [Build](presets/sculpture-guardian-refined-build.json) | 108 |
-| Driftwood, refined | [Static](presets/sculpture-driftwood-refined.json) | [Build](presets/sculpture-driftwood-refined-build.json) | 100 |
+| Driftwood (retained experiment) | [Static](presets/sculpture-driftwood.json) | [Build](presets/sculpture-driftwood-build.json) | 94 |
+| Guardian, refined / chips removed | [Static](presets/sculpture-guardian-refined.json) | [Build](presets/sculpture-guardian-refined-build.json) | 106 |
+| Driftwood, refined (retained experiment) | [Static](presets/sculpture-driftwood-refined.json) | [Build](presets/sculpture-driftwood-refined-build.json) | 100 |
 
 ```sh
 build/dev/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-build.json
 python3 projects/sdf/tools/author_sculptures.py --stage final
 python3 projects/sdf/tools/qualify_sculpture.py --subject guardian --video \
   --output outputs/sdf/sculpture-guardian-new
-python3 projects/sdf/tools/author_refinements.py
-python3 projects/sdf/tools/qualify_sculpture.py --subject driftwood \
+python3 projects/sdf/tools/author_refinements.py --subject guardian
+python3 projects/sdf/tools/qualify_sculpture.py --subject guardian \
   --metadata projects/sdf/sculpture_refinements.json --video \
-  --output outputs/sdf/driftwood-refined-new
+  --output outputs/sdf/guardian-refined-new
 ```
 
 `sculptures.json` defines per-subject inspection views and solid/empty design

@@ -242,6 +242,12 @@ every modeling detail. The subsequent implemented pass has its own
 [native evidence and comparison gallery](sdf-guardian-driftwood-refinement-evidence.md).
 Vessel and arch remain unchanged comparison subjects.
 
+On reviewing that detail pass, the user questioned the guardian's jaw/base
+chips and still found driftwood unsuccessful. Both chips are removed. Driftwood
+is retained as an unsuccessful experiment and dropped from the active refinement
+presentation; further wood polish is deferred. The guardian continues as the
+selected sculpture. Historical galleries and technical receipts remain intact.
+
 ## Gallery delivery
 
 The gallery packages native material/clay/blockout views, all 235 state images,

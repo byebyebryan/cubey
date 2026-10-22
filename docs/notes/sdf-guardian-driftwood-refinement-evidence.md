@@ -2,13 +2,35 @@
 
 Date: 2026-10-22
 
-Status: implemented, qualified and delivered for visual review under the
+Status: the two-subject pass was implemented, qualified and delivered under the
 [refinement plan](sdf-guardian-driftwood-refinement-plan.md). The first-pass
-scenes, presets and published four-subject gallery remain intact.
+scenes, presets and published four-subject gallery remain intact. User review
+selects the guardian for continuation and retires driftwood from the active
+refinement presentation.
 
 [Open the matched refinement gallery](http://starship:8787/reports/d66a4ee7ce92dd2f255e170b9dc67676551a1f5efec099ec99ccda304a4d7973/).
 It contains material/clay comparisons from every inspection angle, all 210
 committed states, two construction/orbit films and twelve chapter links.
+
+## User review: remove the chips, stop the wood pass
+
+The jaw/chin and base notches were intentional rotated-box subtractions meant
+to suggest stone wear. Their arbitrary placement and rectangular shape read as
+unmotivated damage. Proving that a cut is visible and opens onto the surface
+does not establish that it improves the sculpture. Both cuts are removed from
+the generator, explicit scene and construction history. The guardian now uses
+106 leaves / 211 instructions. Facial carving and the short temple crack remain.
+Saved-volume checks require the restored jaw edge and base corner to be solid,
+alongside the existing connection, horn and socket checks.
+
+The user still finds driftwood visually unsuccessful after the detail pass and
+is considering dropping it. It is removed from the active presentation and no
+further polish is planned. Its source, presets, technical receipts and published
+films remain available as an unsuccessful content experiment. The earlier
+assistant assessment of its improvement did not establish artistic acceptance.
+
+The sections below describe the historical two-subject delivery, including its
+108-leaf guardian with chips. They are not measurements of the corrected scene.
 
 ## Curve comparison and shared correctness
 

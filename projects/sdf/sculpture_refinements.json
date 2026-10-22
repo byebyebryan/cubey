@@ -213,9 +213,8 @@
         "margin": 0.008
       },
       {
-        "name": "jaw edge solid before chip",
+        "name": "jaw edge remains intact",
         "expect": "solid",
-        "before_node": "jaw-chip",
         "margin": 0.001,
         "points": [
           [
@@ -226,20 +225,14 @@
         ]
       },
       {
-        "name": "jaw chip opens onto front",
-        "expect": "empty",
-        "path": true,
-        "margin": 0.002,
+        "name": "base corner remains intact",
+        "expect": "solid",
+        "margin": 0.001,
         "points": [
           [
-            0.102,
-            -0.109,
-            0.14
-          ],
-          [
-            0.102,
-            -0.109,
-            0.19
+            -0.139,
+            -0.275,
+            0.083
           ]
         ]
       }

@@ -2,11 +2,17 @@
 
 Date: 2026-10-22
 
-Status: implemented, qualified and delivered for visual review; see the
+Status: implemented, qualified and reviewed; see the
 [native evidence](sdf-guardian-driftwood-refinement-evidence.md). The user ranks the
 guardian strongest and driftwood weakest in the delivered
 [four-subject study](sdf-sculpture-study-evidence.md). This pass develops those
 two pieces; vessel and arch remain comparison subjects.
+
+After reviewing the second pass, the user questioned the guardian's arbitrary
+jaw/base damage and still found driftwood unsuccessful. The chips are removed
+and driftwood is retired from the active presentation, with its experiment
+inputs and evidence retained. The briefs below record the original plan;
+their chip and wood-detailing proposals are no longer active work.
 
 ## Purpose and baseline
 
