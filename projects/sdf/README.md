@@ -1,6 +1,7 @@
 # SDF
 
-Boxes-only procedural SDF rendering project derived from projectR. The
+Procedural SDF rendering project derived from projectR, using rounded-box edits
+and exact spheres represented by zero-size box cores. The
 [implementation plan](../../docs/notes/sdf-projectr-port-plan.md) defines the
 checkpoints; the [source review](../../docs/notes/projectr-architecture-review.md)
 and [development history](../../docs/notes/projectr-development-history.md)
@@ -11,6 +12,11 @@ starts from a solid and carves intersecting through-holes with a deterministic
 sequence of thick box cutters. It includes a native seed audition, slow cutter
 guides, accelerated carving and a final orbit. See its
 [qualification evidence](../../docs/notes/sdf-negative-sticks-evidence.md).
+
+The [sphere comparison](http://starship:8787/reports/597b5db0fb6edef3a52ec569083ae0719b10b39a3104102eb719a0da9c5fadf9/)
+tries the identical cutters against a radius-0.36 ball. Run it with
+`--config projects/sdf/presets/negative-sphere.json`; the original rounded-cube
+preset remains available. See the [sphere evidence](../../docs/notes/sdf-negative-sphere-evidence.md).
 
 [Watch the carving video and compare the seed audition](http://starship:8787/reports/3d8baa7ee96f132b28062ace6e4878538982df72c66aea7c0094f884b2729f65/).
 
@@ -51,8 +57,8 @@ build/dev/projects/sdf/sdf --headless --count 2048 --atlas-axis 92 \
 
 Drag to orbit, scroll to zoom, R to reset, Space to pause playback and
 Escape to close. Static orbit/view changes reuse the existing field.
-`--scene` selects `box`, `rotated`, `cut`, `sticks` or `negative-sticks`;
-`--seed` and `--count` specify the reproducible recipe. For `negative-sticks`,
+`--scene` selects `box`, `rotated`, `cut`, `sticks`, `negative-sticks` or `negative-sphere`;
+`--seed` and `--count` specify the reproducible recipe. For either negative scene,
 count means cutters, excluding the one initial Fill (zero cutters retains the
 solid; maximum 65,535). The original `sticks` generator is unchanged.
 `--yaw`, `--pitch` and `--distance`
