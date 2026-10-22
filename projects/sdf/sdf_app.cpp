@@ -1,6 +1,7 @@
 #include "sdf_config.h"
 #include "sdf_field.h"
 #include "sdf_history.h"
+#include "sdf_material.h"
 #include "sdf_renderer.h"
 #include "sdf_validation.h"
 
@@ -305,6 +306,19 @@ class App {
                                 "procedural material edit rebuilt distance bricks");
                         std::cout << "sdf: procedural-only cache check passed builds=" << before
                                   << '\n';
+                        for (std::size_t i = 0; i < authored_->patterns.size(); ++i) {
+                            if (authored_->patterns[i].settings.x != 2)
+                                continue;
+                            auto tinted = *displayed_authored_;
+                            tinted.patterns[i].offset.w =
+                                tinted.patterns[i].offset.w == .1F ? .2F : .1F;
+                            field_->build(tinted);
+                            if (field_->stats().build_count != before)
+                                throw std::runtime_error(
+                                    "marble color edit rebuilt distance bricks");
+                            std::cout << "sdf: marble color cache check passed builds=" << before
+                                      << '\n';
+                        }
                     }
                 }
                 std::cout << "sdf: authored geometry=" << std::hex
@@ -493,6 +507,36 @@ class App {
                                 ImGui::SliderFloat("Grain scale", &pattern.detail.y, 1, 512);
                             materials_changed_ |= ImGui::SliderFloat(
                                 "Bump height", &pattern.detail.x, 0, .002F, "%.5f");
+                            if (pattern.settings.x == 2) {
+                                const int detail = marble_detail_index(pattern);
+                                if (ImGui::BeginCombo(
+                                        "Marble detail",
+                                        detail < 0
+                                            ? "Custom"
+                                            : marble_details[static_cast<std::size_t>(detail)]
+                                                  .name)) {
+                                    for (std::size_t j = 0; j < marble_details.size(); ++j) {
+                                        const bool selected = detail == static_cast<int>(j);
+                                        if (ImGui::Selectable(marble_details[j].name, selected)) {
+                                            apply_marble_detail(pattern, j);
+                                            materials_changed_ = true;
+                                            std::cout << "sdf: marble detail preset="
+                                                      << marble_details[j].name << '\n';
+                                        }
+                                        if (selected)
+                                            ImGui::SetItemDefaultFocus();
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                                materials_changed_ |= ImGui::SliderFloat(
+                                    "Vein frequency", &pattern.veins.w, .25F, 32);
+                                materials_changed_ |= ImGui::SliderFloat(
+                                    "Vein width", &pattern.detail.z, .02F, .5F, "%.3f");
+                                materials_changed_ |=
+                                    ImGui::SliderFloat("Vein warping", &pattern.detail.w, 0, 12);
+                                materials_changed_ |= ImGui::SliderFloat(
+                                    "Body color variation", &pattern.offset.w, 0, .25F, "%.3f");
+                            }
                         }
                         ImGui::TreePop();
                     }

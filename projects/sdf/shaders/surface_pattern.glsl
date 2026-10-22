@@ -69,6 +69,12 @@ MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 
         mask=mix(mask,clamp(width*.63662+.025,0.0,1.0),smoothstep(.7,2.0,coverage));
     }
     vec3 color=mix(base.base_roughness.xyz,pattern.secondary.xyz,pattern.settings.w*mask);
+    if (pattern.settings.x==2.0 && pattern.offset.w>0.0) {
+        float frequency=scale*.45;
+        float temperature=surfaceNoise(p*frequency,seed+9091u).w*surfaceFade(footprint,frequency);
+        float tint=pattern.offset.w*temperature*(1.0-mask);
+        color*=vec3(1)+tint*vec3(1,.1,-.8);
+    }
     result.material.base_roughness=vec4(clamp(color,0.0,1.0),
         clamp(base.base_roughness.w+pattern.secondary.w*macro.w,.05,1.0));
     float grain=pattern.detail.y;

@@ -58,4 +58,36 @@ int main() {
     require(sample_material(base, p, {.13F, .07F, .29F}).height_gradient !=
             sample_material(base, seed, {.13F, .07F, .29F}).height_gradient);
     require(material_shading_normal({0, 1, 0}, {0, 0, 0}) == Vec3(0, 1, 0));
+    // Detail choices alter only five pattern controls, retaining the artist's
+    // palette, bump amplitude, seed, orientation and color variation.
+    p.offset.w = .08F;
+    for (std::size_t i = 0; i < marble_details.size(); ++i) {
+        auto preset = p;
+        apply_marble_detail(preset, i);
+        validate_material_pattern(preset);
+        require(marble_detail_index(preset) == static_cast<int>(i));
+        require(preset.settings.x == p.settings.x && preset.settings.y == p.settings.y &&
+                preset.settings.w == p.settings.w && preset.secondary == p.secondary &&
+                Vec3{preset.veins} == Vec3{p.veins} && preset.offset == p.offset &&
+                preset.detail.x == p.detail.x);
+        preset.veins.w += .01F;
+        require(marble_detail_index(preset) == -1);
+    }
+    auto neutral = p;
+    neutral.offset.w = 0;
+    bool warm = false, cool = false;
+    for (unsigned i = 0; i < 200; ++i) {
+        const Vec3 point{coordinate(random), coordinate(random), coordinate(random)};
+        const auto a = sample_material(base, neutral, point, .0005F);
+        const auto b = sample_material(base, p, point, .0005F);
+        require(a.height_gradient == b.height_gradient &&
+                a.material.base_roughness.w == b.material.base_roughness.w);
+        const auto delta = Vec3{b.material.base_roughness - a.material.base_roughness};
+        require(glm::length(delta) < .1F);
+        warm |= delta.x > 0 && delta.z < 0;
+        cool |= delta.x < 0 && delta.z > 0;
+        require(sample_material(base, neutral, point, 100).material.base_roughness ==
+                sample_material(base, p, point, 100).material.base_roughness);
+    }
+    require(warm && cool);
 }

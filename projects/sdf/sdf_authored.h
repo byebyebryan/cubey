@@ -39,7 +39,7 @@ struct alignas(16) MaterialPattern {
     math::Vec4 secondary{.2F, .18F, .15F, .08F}; // linear RGB, roughness variation
     math::Vec4 veins{1, .3F, .2F, 5};            // direction, frequency
     math::Vec4 detail{.0005F, 160, .10F, 5};     // bump height, grain scale, vein width, warp
-    math::Vec4 offset{0};                        // fixed model-space domain offset
+    math::Vec4 offset{0}; // fixed model-space domain offset XYZ, marble body color variation
 };
 static_assert(sizeof(MaterialPattern) == 80);
 struct AuthoredStep {

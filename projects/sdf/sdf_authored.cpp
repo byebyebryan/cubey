@@ -178,6 +178,7 @@ AuthoredScene parse_authored_scene(std::string_view text) {
                               p.value("vein_width", .10F), p.value("warp_strength", 5.0F)};
             if (p.contains("offset"))
                 pattern.offset = {vector(p.at("offset")), 0};
+            pattern.offset.w = p.value("color_variation", 0.0F);
         }
         validate_material_pattern(pattern);
         result.patterns.push_back(pattern);
@@ -458,6 +459,7 @@ std::string serialize_authored_scene(const AuthoredScene& scene) {
                 {"grain_scale", p.detail.y},
                 {"vein_width", p.detail.z},
                 {"warp_strength", p.detail.w},
+                {"color_variation", p.offset.w},
                 {"offset", {p.offset.x, p.offset.y, p.offset.z}}};
         }
     }

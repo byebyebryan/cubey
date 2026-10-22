@@ -16,11 +16,15 @@ parser.add_argument("--material-scroll",type=int,default=0,
                     help="Wheel notches to expose an expanded material panel")
 parser.add_argument("--procedural-controls",action="store_true",
                     help="Check pattern/bump toggles and grain editing after five material scroll notches")
+parser.add_argument("--marble-controls",action="store_true",
+                    help="Check marble detail presets and body tint after eight material scroll notches")
 args=parser.parse_args()
 if not args.config or args.height != 1000:
     raise SystemExit("Authored material controls require --config and --height 1000")
 if args.procedural_controls and (args.history_controls or args.material_scroll!=5):
     raise SystemExit('Procedural controls require static mode and --material-scroll 5')
+if args.marble_controls and (args.history_controls or args.procedural_controls or args.material_scroll!=8):
+    raise SystemExit('Marble controls require static mode and --material-scroll 8')
 if os.environ.get("CUBEY_SDF_PRIVATE_XVFB")!="1":
     raise SystemExit("Run in a private xvfb-run display with CUBEY_SDF_PRIVATE_XVFB=1")
 D=C.c_void_p; W=C.c_ulong; U=C.c_uint; I=C.c_int
@@ -163,8 +167,20 @@ with log.open("w") as stream:
                     x.XSync(d,0);time.sleep(.12)
                 time.sleep(.3);capture('window-material-scrolled.png')
             # Coordinates come from inspection of this owned 900x1000 panel.
-            click(300,654-65*args.material_scroll)
+            # The longer marble panel reaches its scroll limit before 8 full notches.
+            click(300,155 if args.marble_controls else 654-65*args.material_scroll)
             capture("window-material-edited.png")
+            if args.marble_controls:
+                capture('window-marble-balanced.png')
+                # Inspected in this owned 900x1000 panel at its lower scroll limit.
+                click(200,474);capture('window-marble-menu.png')
+                click(200,504);capture('window-marble-original.png')
+                for name,index in [('denser',2),('fine',3),('balanced-restored',1)]:
+                    click(200,474);click(200,504+index*20)
+                    capture('window-marble-'+name+'.png')
+                click(260,504);capture('window-marble-custom.png')
+                click(97,594);capture('window-marble-color-zero.png')
+                click(280,594);capture('window-marble-color-edited.png')
             if args.procedural_controls:
                 # Positions inspected in this owned, five-notch scrolled panel.
                 click(102,410);capture('window-pattern-off.png')
@@ -198,6 +214,20 @@ else:
     assert any(row[1]!=initial[2] for row in updates)
     receipt={"passed":True,"command":command,"field_builds":builds,"updates":updates,
     "actions":["resize twice","orbit","zoom","pause/reset","change material roughness without field rebuild","Escape"]}
+    if args.marble_controls:
+        choices=re.findall(r'marble detail preset=(\w+)',text)
+        assert choices==['Original','Denser','Fine','Balanced'],choices
+        def pixels(name):
+            return subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'captures'/name),
+                '-vf','crop=450:700:440:150','-f','rawvideo','-pix_fmt','rgb24','-'])
+        zero=pixels('window-marble-color-zero.png');colored=pixels('window-marble-color-edited.png')
+        changed=sum(zero[i:i+3]!=colored[i:i+3] for i in range(0,len(zero),3))
+        assert changed>100,changed
+        receipt['marble_controls']=True
+        receipt['marble_choices']=choices
+        receipt['tint_render_changed_pixels']=changed
+        receipt['actions'] += ['choose all four marble detail presets','manual vein edit becomes Custom',
+                               'edit body color variation','compare rendered model outside the UI']
     if args.procedural_controls:
         def render_pixels(name):
             return subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'captures'/name),

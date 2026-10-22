@@ -92,6 +92,25 @@ def main():
     run('uniform-history','plain',['--authored-scene',uniform,'--validate-history'],True)
     receipt['checks']['mixed_material_cpu_gpu_passed']=True
     receipt['checks']['empty_uniform_history_passed']=True
+    neutral=copy.deepcopy(documents['marble'])
+    neutral['materials'][0]['procedural']['color_variation']=0
+    neutral_source=out/'scenes/marble-neutral.json';neutral_source.write_text(json.dumps(neutral))
+    neutral_image=run('marble-neutral','marble',['--authored-scene',neutral_source],True)
+    equal(neutral_image,root/'outputs/sdf/marble-balance-native/after/captures/hero.png')
+    assert neutral_image.read_bytes()!= (out/'captures/marble.png').read_bytes()
+    for debug in (7,8):
+        colored=run(f'marble-color-invariant-{debug}','marble',['--debug',debug])
+        equal(colored,run(f'marble-neutral-invariant-{debug}','marble',
+                          ['--authored-scene',neutral_source,'--debug',debug]))
+    tinted=out/'scenes/marble-tinted-history.json'
+    body=sphere('body',(0,0,0),.2,'marble');tool=sphere('tool',(0,0,.18),.06,'marble')
+    write_scene(tinted,'Tinted marble history',[marble],subtract('carved',body,tool),
+                [dict(node='body',label='Body'),dict(node='tool',label='Cut')])
+    run('tinted-history','plain',['--authored-scene',tinted,'--validate-history'],True)
+    assert 'marble color cache check passed builds=1' in '\n'.join(receipt['runs']['marble']['stats'])
+    receipt['checks']['marble_color_variation']=dict(zero_matches_prior_png=True,
+        roughness_and_shading_normals_exact=True,color_visible=True,
+        empty_cut_history_passed=True,variation_edit_keeps_one_build=True)
     receipt['geometry_identities']={name:re.search(r'authored geometry=(\w+)',
         '\n'.join(receipt['runs'][name]['stats']))[1] for name in configs}
     assert len(set(receipt['geometry_identities'].values()))==1

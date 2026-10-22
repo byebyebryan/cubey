@@ -28,6 +28,29 @@ void range(float value, float low, float high) {
 }
 } // namespace
 
+int marble_detail_index(const MaterialPattern& pattern) {
+    if (pattern.settings.x != 2)
+        return -1;
+    for (std::size_t i = 0; i < marble_details.size(); ++i) {
+        const auto& d = marble_details[i];
+        if (pattern.settings.z == d.scale && pattern.veins.w == d.frequency &&
+            pattern.detail.z == d.width && pattern.detail.w == d.warp &&
+            pattern.detail.y == d.grain)
+            return static_cast<int>(i);
+    }
+    return -1;
+}
+void apply_marble_detail(MaterialPattern& pattern, std::size_t index) {
+    if (pattern.settings.x != 2)
+        throw std::invalid_argument("marble detail preset requires a marble material");
+    const auto& d = marble_details.at(index);
+    pattern.settings.z = d.scale;
+    pattern.veins.w = d.frequency;
+    pattern.detail.z = d.width;
+    pattern.detail.w = d.warp;
+    pattern.detail.y = d.grain;
+}
+
 NoiseGradient material_noise(math::Vec3 p, std::uint32_t seed) {
     const auto cell = math::Vec3{glm::floor(p)};
     const auto t = p - cell;
@@ -91,8 +114,17 @@ MaterialSample sample_material(const SurfaceMaterial& base, const MaterialPatter
         mask = glm::mix(mask, std::clamp(width * .63662F + .025F, 0.0F, 1.0F),
                         glm::smoothstep(.7F, 2.0F, coverage));
     }
-    const auto color = glm::mix(math::Vec3{base.base_roughness}, math::Vec3{pattern.secondary},
-                                pattern.settings.w * mask);
+    auto color = glm::mix(math::Vec3{base.base_roughness}, math::Vec3{pattern.secondary},
+                          pattern.settings.w * mask);
+    if (pattern.settings.x == 2 && pattern.offset.w > 0) {
+        // Broad mineral temperature variation, independent of the vein mask.
+        // Keep veins mostly neutral and fade unresolved tint towards the base.
+        const float frequency = scale * .45F;
+        const float temperature =
+            material_noise(p * frequency, seed + 9091U).value * fade(footprint, frequency);
+        const float tint = pattern.offset.w * temperature * (1 - mask);
+        color *= math::Vec3{1} + tint * math::Vec3{1, .1F, -.8F};
+    }
     result.material.base_roughness = {
         glm::clamp(color, math::Vec3{0}, math::Vec3{1}),
         std::clamp(base.base_roughness.w + pattern.secondary.w * macro.value, .05F, 1.0F)};
@@ -135,6 +167,6 @@ void validate_material_pattern(const MaterialPattern& p) {
     range(p.detail.y, 1, 512);
     range(p.detail.z, .02F, .5F);
     range(p.detail.w, 0, 12);
-    range(p.offset.w, 0, 0);
+    range(p.offset.w, 0, .25F);
 }
 } // namespace cubey::projects::sdf
