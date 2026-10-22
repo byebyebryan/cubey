@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check authored robot input, resize and material editing in a private Xvfb display."""
+"""Check authored scene input, history, resize and material editing in private Xvfb."""
 import ctypes as C
 from ctypes.util import find_library
 from pathlib import Path
@@ -93,7 +93,16 @@ with log.open("w") as stream:
             click(190,306);assert abs(step()-total/2)<2
             capture("window-step-middle.png")
             click(160,146);assert step()==0
-            click(95,146);time.sleep(1.5);click(95,146)
+            # Short histories have a longer scaled empty opening hold. Wait
+            # for an actual committed edit instead of assuming robot timing.
+            preset=json.loads(args.config.read_text())
+            authored=json.loads(Path(preset['authored-scene']).read_text())
+            weight=.65+sum(item.get('seconds',.65) for item in authored['history'])
+            opening=preset.get('construction-seconds',32)*.65/weight
+            click(95,146)
+            deadline=time.monotonic()+opening+3
+            while step()==0 and time.monotonic()<deadline:time.sleep(.1)
+            click(95,146)
             assert step()>0
             capture("window-playback-paused.png")
             click(160,146);assert step()==0
