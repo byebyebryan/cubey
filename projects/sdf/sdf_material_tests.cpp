@@ -75,7 +75,7 @@ int main() {
     }
     auto neutral = p;
     neutral.offset.w = 0;
-    bool warm = false, cool = false;
+    bool warm = false, untinted = false;
     for (unsigned i = 0; i < 200; ++i) {
         const Vec3 point{coordinate(random), coordinate(random), coordinate(random)};
         const auto a = sample_material(base, neutral, point, .0005F);
@@ -84,10 +84,12 @@ int main() {
                 a.material.base_roughness.w == b.material.base_roughness.w);
         const auto delta = Vec3{b.material.base_roughness - a.material.base_roughness};
         require(glm::length(delta) < .1F);
+        // The uncolored end is the original material, never a cooler/darker tint.
+        require(delta.x >= -1e-7F && delta.y <= 1e-7F && delta.z <= 1e-7F);
         warm |= delta.x > 0 && delta.z < 0;
-        cool |= delta.x < 0 && delta.z > 0;
+        untinted |= glm::length(delta) < 1e-7F;
         require(sample_material(base, neutral, point, 100).material.base_roughness ==
                 sample_material(base, p, point, 100).material.base_roughness);
     }
-    require(warm && cool);
+    require(warm && untinted);
 }

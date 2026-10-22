@@ -46,7 +46,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--marble-detail',choices=MARBLE_DETAILS,default='balanced')
     parser.add_argument('--marble-color-variation',type=float,default=.08,
-                        help='Warm/cool body variation, 0 to 0.25; zero retains the pale material')
+                        help='Original/cream body variation, 0 to 0.25; zero retains the pale material')
     args=parser.parse_args()
     if not math.isfinite(args.marble_color_variation) or not 0<=args.marble_color_variation<=.25:
         parser.error('--marble-color-variation must be finite and between 0 and 0.25')

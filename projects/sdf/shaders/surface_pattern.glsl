@@ -73,7 +73,7 @@ MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 
         float frequency=scale*.9;
         float temperature=surfaceNoise(p*frequency,seed+9091u).w;
         float mineral=smoothstep(-.45,.45,temperature);
-        vec3 palette=mix(vec3(.49,.77,1.13),vec3(1.13,.83,.47),mineral);
+        vec3 palette=mix(vec3(1),vec3(1.13,.83,.47),mineral);
         float tint=4.0*pattern.offset.w*surfaceFade(footprint,frequency)*(1.0-mask);
         color*=mix(vec3(1),palette,tint);
     }

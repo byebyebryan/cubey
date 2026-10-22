@@ -117,13 +117,12 @@ MaterialSample sample_material(const SurfaceMaterial& base, const MaterialPatter
     auto color = glm::mix(math::Vec3{base.base_roughness}, math::Vec3{pattern.secondary},
                           pattern.settings.w * mask);
     if (pattern.settings.x == 2 && pattern.offset.w > 0) {
-        // Broad mineral temperature variation, independent of the vein mask.
+        // Broad cream mineral variation, independent of the vein mask.
         // Keep veins mostly neutral and fade unresolved tint towards the base.
         const float frequency = scale * .9F;
         const float temperature = material_noise(p * frequency, seed + 9091U).value;
         const float mineral = glm::smoothstep(-.45F, .45F, temperature);
-        const auto palette =
-            glm::mix(math::Vec3{.49F, .77F, 1.13F}, math::Vec3{1.13F, .83F, .47F}, mineral);
+        const auto palette = glm::mix(math::Vec3{1}, math::Vec3{1.13F, .83F, .47F}, mineral);
         const float tint = 4 * pattern.offset.w * fade(footprint, frequency) * (1 - mask);
         color *= glm::mix(math::Vec3{1}, palette, tint);
     }
