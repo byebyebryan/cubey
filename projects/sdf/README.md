@@ -27,9 +27,15 @@ six local removals. The static robot preset above remains available. See the
 
 The separate [mechanical detail study](http://starship:8787/reports/8344b13c50933132bbf4db4a064de66a9f1197a9ff74fa8fdad91368966d5232/)
 adds open grippers, a recessed status gauge, head/joint fasteners, toe bumper
-seams and backpack vents. Its 62 shapes and 123 instructions fit the existing
+seams and backpack vents. Its 61 shapes and 121 instructions fit the existing
 limits and retain the four-material palette. The original 43-shape scene and
 generator output remain intact.
+
+The current detail scene removes the original ivory `sensor-glint` sphere from
+the lens and its build history, letting scene lighting supply highlights. The
+linked mechanical-study capture predates this small visual cleanup;
+[compare the lens before and after](http://starship:8787/reports/0a6102e62987f7754d93f4baf74fd2a4cdefe6d29d9a2ff7994d8c3c7c2b14c9/)
+and see the [follow-up evidence](../../docs/notes/sdf-robot-detail-evidence.md#lens-cleanup-follow-up).
 
 ```sh
 build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-detail.json

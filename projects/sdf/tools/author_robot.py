@@ -26,11 +26,13 @@ def robot(detailed=False):
     eye_ring = subtract('optic-ring',
         cylinder('optic-barrel', (-.027, .006, .097), .074, .026, 'teal', rotation_xyzw=front),
         cylinder('optic-bore', (-.027, .006, .10), .058, .06, rotation_xyzw=front), cut_material='teal')
+    # Preserve the original scene; the detail study lets lighting supply highlights.
+    glint = [] if detailed else [sphere('sensor-glint', (-.041, .024, .131), .006, 'ivory')]
     head = union('head', shell, eye_ring,
         cylinder('sensor-seat', (-.027, .006, .10), .057, .014, 'rubber', rotation_xyzw=front),
         cylinder('sensor-amber', (-.027, .006, .119), .046, .005, 'amber', rotation_xyzw=front),
         cylinder('sensor-pupil', (-.027, .006, .126), .025, .003, 'rubber', rotation_xyzw=front),
-        sphere('sensor-glint', (-.041, .024, .131), .006, 'ivory'),
+        *glint,
         box('head-left-ear', (-.185, 0, 0), (.012, .029, .034), .008, 'teal'),
         box('head-right-ear', (.185, 0, 0), (.012, .029, .034), .008, 'teal'),
         capsule('antenna-stem', (.10, .105, -.025), (.122, .19, -.025), .005, 'rubber'),
@@ -125,7 +127,8 @@ def robot_history(detailed=False):
                         ('sensor-glint', 'Place the small ivory glint'),
                         ('head-left-ear', 'Fit the left side cap'),
                         ('head-right-ear', 'Fit the right side cap')]:
-        add(node, label)
+        if node != 'sensor-glint' or not detailed:
+            add(node, label)
     add('chest-accent', 'Attach the teal chest panel', .85)
     if detailed:
         add('chest-display-cut', 'Recess the status display', 1.1)

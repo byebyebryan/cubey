@@ -363,17 +363,6 @@
             ]
           },
           {
-            "type": "sphere",
-            "name": "sensor-glint",
-            "position": [
-              -0.041,
-              0.024,
-              0.131
-            ],
-            "radius": 0.006,
-            "material": "ivory"
-          },
-          {
             "type": "box",
             "name": "head-left-ear",
             "position": [
@@ -1466,11 +1455,6 @@
     {
       "node": "sensor-pupil",
       "label": "Add its dark pupil",
-      "seconds": 0.65
-    },
-    {
-      "node": "sensor-glint",
-      "label": "Place the small ivory glint",
       "seconds": 0.65
     },
     {

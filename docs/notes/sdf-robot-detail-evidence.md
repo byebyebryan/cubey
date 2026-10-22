@@ -10,6 +10,10 @@ for the user to judge.
 
 [Open the native detail comparison and build video](http://starship:8787/reports/8344b13c50933132bbf4db4a064de66a9f1197a9ff74fa8fdad91368966d5232/).
 
+The initial 62-shape study below is retained as captured. The subsequent
+[lens cleanup](#lens-cleanup-follow-up) removes one decorative sphere and its
+history step from the current detail scene.
+
 ## Authored additions
 
 `author_robot.py --detailed` writes `scenes/survey-robot-detail.json` and its
@@ -163,3 +167,28 @@ Documentation navigation and all 15 selected native SDF CLI recipes pass. CLI
 recipes use template early exit with unavailable GPU/display variables,
 separately from the native execution checks above. The work is committed in
 content, qualification, sampler-fix and presentation/evidence checkpoints.
+
+## Lens cleanup follow-up
+
+The user found the fixed ivory dot on the lens odd. It was a literal sphere
+named `sensor-glint`, including its own shadow. The detail generator now omits
+that sphere and its history entry, letting actual scene lighting provide
+highlights. The original 43-shape scene and default generator remain byte
+identical. The current detail scene has 61 leaves, 121 instructions and 61
+history entries. Geometry is `37c08624cc9a4f57`, appearance `952d6e9226c78f4e`,
+with 128,160 active bricks and the same field allocation.
+
+[Compare the native lens before and after](http://starship:8787/reports/0a6102e62987f7754d93f4baf74fd2a4cdefe6d29d9a2ff7994d8c3c7c2b14c9/).
+The earlier detailed build video remains an immutable capture with the dot;
+the current static and build presets both use the cleaned scene.
+
+`outputs/sdf/robot-lens-cleanup/manifest.json` records source scene hashes,
+binary/shader hashes and native commands. Captures compare the preceding
+`dd563a0a` scene and current scene using identical camera, lighting and materials
+for face and full-model views. This was captured with the content edit
+uncommitted; the source snapshot and generator are included in the export.
+All 62 scene states pass Vulkan validation, sampled-field CPU ray checks and
+direct CPU/GPU distance/material/part comparisons. Midpoint, empty and final
+revisits and cache reuse also pass. Final static/history images and exported
+scene bytes are identical. All five captured images have zero screened magenta
+exhaustion pixels. No renderer, shader, material or lighting code changed.

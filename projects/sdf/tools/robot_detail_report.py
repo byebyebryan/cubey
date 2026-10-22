@@ -75,7 +75,7 @@ button:disabled{{opacity:.45;cursor:default}}video{{height:auto;aspect-ratio:4/3
 <p class="note"><a id="baseline-link" href="data/captures/baseline-hero.png">Original PNG</a> · <a id="detail-link" href="data/captures/detail-hero.png">Detail PNG</a>. Rear and backpack inspections use a rear-facing sun; each pair shares the same settings.</p>
 <h2>Details with a job to do</h2>
 <p>The capsule hands are cut into two-finger grippers. The chest gains a recessed backing plate and three raised amber gauge bars. Teal fasteners sit in counterbores on the head, slotted caps explain the shoulder joints, and shallow seams divide the toe bumpers. Three cooling vents finish the backpack.</p>
-<p>This pass adds 19 primitive leaves, reaching {count} of the current 64-shape limit. It uses the existing primitive and material vocabulary. The original scene and its generator output remain intact. No image textures or procedural surface noise were added.</p>
+<p>This version uses {count-43} more primitive leaves than the original, reaching {count} of the current 64-shape limit. It uses the existing primitive and material vocabulary. The original scene and its generator output remain intact. No image textures or procedural surface noise were added.</p>
 <h2>Watch the detailed robot take shape</h2>
 <div class="hero-video"><video controls preload="metadata" width="1280" height="960" data-video-src="data/history/presentation.mp4" poster="data/captures/detail-hero.png" aria-label="Native detailed robot construction and final orbit"></video></div>
 <p class="note" id="video-caption" aria-live="polite">Build the detailed robot from an empty workspace.</p>
