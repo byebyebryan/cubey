@@ -2,10 +2,13 @@
 
 Date: 2026-10-22
 
-Status: the organic sculpt and capacity work are implemented; exhaustive native
-history and presentation qualification is running. This is a separate candidate
+Status: implemented, qualified and delivered for visual review. This is a separate candidate
 for visual review, not user acceptance. The clean 106-leaf guardian, original
 sculptures and retired driftwood experiment remain intact.
+
+[Open the completed organic guardian gallery](http://starship:8787/reports/1f385381082f8cb914e5deb57eec6cd42dd17508f7369cb69f250b36bb370931/).
+It contains matched comparisons, an eight-second orbit and the full 150-second
+construction/orbit presentation, with every leaf reveal seekable in the film.
 
 ## Content and count
 
@@ -50,7 +53,7 @@ Normal-aware projection is opt-in. Positive depth insets a brush center into the
 body; negative depth places a shallow cutter outside it. The new mode uses the
 normalized finite-difference SDF gradient instead of the projection axis. An
 analytic sphere test covers twelve front/rear/side and inward/outward cases,
-including retained material four millimeters beneath an oblique shallow cut.
+including retained material 0.004 workspace units beneath an oblique shallow cut.
 Legacy axis-offset output remains unchanged when the mode is unselected.
 
 `f28360a1` commits the 1,011-leaf candidate and selective capture support.
@@ -65,6 +68,14 @@ eight-second native orbit decodes all 240 frames without exhaustion, retained
 under `outputs/sdf/guardian-organic-orbit/`.
 
 ## Qualification scope
+
+The clean `f28360a1` input completes all 1,012 distinct prefixes and 1,015 native
+checkpoints. The history-validation log records 2,317,717 field rays and
+4,347,121 direct CPU/GPU points, with zero mismatches, exhaustion, ambiguous
+samples or part disagreement. Final static/replay PNGs are byte-identical.
+The 4,500-frame film visits all 1,011 reveals in order and records 1,012 geometry
+builds including the empty state. Every decoded frame passes the exhaustion-color
+screen. This extends the unchanged native gates to the larger authored scene.
 
 `qualify_history.py` retains exhaustive native field and CPU/GPU checks for every
 prefix, backward/reset revisits and unchanged-state cache reuse. New optional
@@ -116,6 +127,32 @@ real-time thousand-stroke brush editor.
 
 Receipts: `outputs/sdf/guardian-organic-performance.json` and the raw profiles,
 commands and logs under `outputs/sdf/guardian-organic-profile/`.
+
+## Desktop and report delivery
+
+The private 900×1000 desktop check passes resizing, orbit/zoom, pause/reset,
+next/previous edits, the final reveal, exact numeric midpoint, stable paused
+field caching, resumed playback and Escape. The initial harness stopped too
+early after the large final rebuild, then its fixed midpoint coordinate missed
+a slider moved by a wrapped caption. `check_authored_window.py` now waits for
+actual committed states, accounts for the caption in this fixed test layout,
+and uses numeric midpoint entry rather than pixel precision over 1,011 values.
+No field/image tolerance was loosened. The two failed attempts remain under
+`guardian-organic-controls{,-qualified}`; the passing receipt and exact harness
+are under `outputs/sdf/guardian-organic-controls-final/`. Its binary/shader and
+final geometry/appearance identities match the headless qualification.
+
+The final report contains 193 files / 37,646,189 bytes. Publication checks the
+entrypoint, and a separate HTTP pass hash-verifies every served asset. Native
+stills, an orbit frame and a captioned construction frame were inspected
+directly. No browser was connected, so web interactions have static-link and
+script-syntax checks but no browser acceptance. Receipts are
+`outputs/sdf/guardian-organic-{delivery,served-review}.json`.
+
+The earlier
+[working still review](http://starship:8787/reports/bd9fe161d7ae75898e0bc58af83c7f75bf27c5ed8ea4f047450858f565b5e39a/)
+records the candidate while exhaustive qualification was still running. The
+completed gallery above supersedes it for the current review.
 
 ## Reproduction
 

@@ -76,23 +76,45 @@ with log.open("w") as stream:
             observed=[]
             def step():
                 return int(re.findall(r'history (?:initial )?step=(\d+)/',log.read_text())[-1])
+            def wait_step(predicate):
+                deadline=time.monotonic()+15
+                while time.monotonic()<deadline:
+                    current=step()
+                    if predicate(current):return current
+                    if proc.poll() is not None:raise RuntimeError('Native app exited while committing a history seek')
+                    time.sleep(.05)
+                raise AssertionError(f'History seek did not commit; last step {step()}')
             total=int(re.findall(r'history (?:initial )?step=\d+/(\d+)',log.read_text())[-1])
             assert step()==0,log.read_text()
             for index in range(1,6):
                 click(233,277)
-                observed.append(step())
+                observed.append(wait_step(lambda n:n==index))
                 assert observed[-1]==index,observed
                 if index in (4,5):capture(f"window-step-{index}.png")
-            click(125,277);assert step()==4
-            click(233,277);assert step()==5
-            click(304,306);assert step()==total
+            click(125,277);assert wait_step(lambda n:n==4)==4
+            click(233,277);assert wait_step(lambda n:n==5)==5
+            click(304,306);assert wait_step(lambda n:n==total)==total
             capture("window-step-final.png")
             before=log.read_text().count("sdf: authored instructions=")
             time.sleep(.4)
             assert before==log.read_text().count("sdf: authored instructions=")
-            click(190,306);assert abs(step()-total/2)<2
+            # In this owned 360px panel, the default 13px monospace font
+            # wraps long captions at 47 columns and moves the slider down.
+            # Use numeric entry rather than one-pixel precision for 1k steps.
+            import textwrap
+            preset=json.loads(args.config.read_text())
+            authored=json.loads(Path(preset['authored-scene']).read_text())
+            lines=max(1,len(textwrap.wrap(authored['history'][-1]['label'],width=47)))
+            midpoint_y=306+13*(lines-1)
+            control=x.XKeysymToKeycode(d,x.XStringToKeysym(b'Control_L'))
+            t.XTestFakeKeyEvent(d,control,1,0);x.XSync(d,0)
+            click(190,midpoint_y);key('a')
+            t.XTestFakeKeyEvent(d,control,0,0);x.XSync(d,0)
+            for digit in str(total//2):key(digit)
+            key('Return')
+            assert wait_step(lambda n:n==total//2)==total//2
             capture("window-step-middle.png")
-            click(160,146);assert step()==0
+            click(160,146);assert wait_step(lambda n:n==0)==0
             # Short histories have a longer scaled empty opening hold. Wait
             # for an actual committed edit instead of assuming robot timing.
             preset=json.loads(args.config.read_text())
@@ -105,7 +127,7 @@ with log.open("w") as stream:
             click(95,146)
             assert step()>0
             capture("window-playback-paused.png")
-            click(160,146);assert step()==0
+            click(160,146);assert wait_step(lambda n:n==0)==0
         else:
             click(110,600)
             capture("window-material-open.png")
@@ -126,7 +148,7 @@ if args.history_controls:
     visits=[int(s) for s in re.findall(r'history (?:initial )?step=(\d+)/',text)]
     receipt={"passed":True,"command":command,"field_builds":builds,"history_visits":visits,
         "actions":["resize twice","orbit","zoom","pause/reset","next edits 1 through 5",
-                   "previous to 4 and next to 5","scrub to final and midpoint","stable paused field",
+                   "previous to 4 and next to 5","scrub to final and enter numeric midpoint","stable paused field",
                    "restart empty","resume and pause playback","Escape"]}
 else:
     assert builds==1,builds

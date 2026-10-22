@@ -131,6 +131,11 @@ its retained form stage has 197 leaves. Authored capacity is now 1,024 leaves /
 New strokes can offset along the local surface normal, while legacy authoring
 remains reproducible. Use `sculpture-guardian-organic[-build].json`; the earlier
 106-leaf refined preset remains available for comparison.
+The [completed organic guardian gallery](http://starship:8787/reports/1f385381082f8cb914e5deb57eec6cd42dd17508f7369cb69f250b36bb370931/)
+includes a short orbit, the full 1,011-reveal film and selected stills; all 1,012
+prefixes pass independent native field checks. At the tested 1080p settings,
+the detailed scene costs about 11 ms per frame and 0.9 seconds per full rebuild.
+Live playback can skip reveals while rebuilding; the offline film visits each.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -139,6 +144,8 @@ remains reproducible. Use `sculpture-guardian-organic[-build].json`; the earlier
 | Rock arch | [Static](presets/sculpture-arch.json) | [Build](presets/sculpture-arch-build.json) | 51 |
 | Driftwood (retained experiment) | [Static](presets/sculpture-driftwood.json) | [Build](presets/sculpture-driftwood-build.json) | 94 |
 | Guardian, refined / chips removed | [Static](presets/sculpture-guardian-refined.json) | [Build](presets/sculpture-guardian-refined-build.json) | 106 |
+| Guardian, organic form | [Static](presets/sculpture-guardian-organic-form.json) | [Build](presets/sculpture-guardian-organic-form-build.json) | 197 |
+| Guardian, organic detail | [Static](presets/sculpture-guardian-organic.json) | [Build](presets/sculpture-guardian-organic-build.json) | 1,011 |
 | Driftwood, refined (retained experiment) | [Static](presets/sculpture-driftwood-refined.json) | [Build](presets/sculpture-driftwood-refined-build.json) | 100 |
 
 ```sh

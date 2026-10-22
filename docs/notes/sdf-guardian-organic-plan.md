@@ -2,8 +2,7 @@
 
 Date: 2026-10-22
 
-Status: capacity, authoring and the separate 1,011-leaf sculpt are implemented;
-native history/presentation qualification is running. See the
+Status: implemented, qualified and delivered for visual review. See the
 [execution evidence](sdf-guardian-organic-evidence.md).
 
 The user selects the guardian, asks for a more organic jaw/chin and skull,
