@@ -38,7 +38,7 @@ python3 projects/sdf/tools/sculpture_audition.py \
 ## Progress
 
 - [x] Two clay variants and native shaping checkpoints for all four subjects.
-- [ ] Shared tapered-stroke decision and generic qualification/presentation.
+- [x] Shared tapered-stroke decision and generic qualification/presentation.
 - [ ] Guardian modeling, construction presentation and native qualification.
 - [ ] Vessel modeling, construction presentation and native qualification.
 - [ ] Arch modeling, construction presentation and native qualification.
@@ -96,7 +96,7 @@ an exact spline sweep or claim these sampled curves have no approximation.
 | --- | ---: | ---: | --- |
 | Guardian | 76 | 151 | Tapered swept horns, small ears, shoulder/neck mass and surface-following mouth/cheek/brow cuts. |
 | Vessel | 10 | 19 | Rounded hollow belly, open lip, fused analytic handle and three confirmed wall-to-interior piercings. |
-| Arch | 49 | 97 | Joined front/rear cavities, exposed rock planes and directed surface grooves, with both supports retained. |
+| Arch | 50 | 99 | A filled core, joined front/rear cavities, exposed rock planes and directed surface grooves, with both supports retained. |
 | Driftwood | 94 | 187 | Curved tapered trunk/branches, a rear branch, hollow broken ends, a knot recess and tapered grooves following the form. |
 
 `sculptures.json` holds subject-specific inspection cameras and design-intent
@@ -107,3 +107,35 @@ right-support check fail; that negative control is recorded at
 `outputs/sdf/sculpture-arch-bad-support-audit.json`. These sampled intent checks
 complement native rays and visual inspections; they are not a complete topology
 proof or an artistic acceptance result. Full final qualification follows.
+
+## Construction review corrections
+
+The first complete guardian run passes all 77 distinct states, all 31 cutter
+visibility pairs, 1,500 video frames, export/reload and atlas relocation. Its
+final replay is pixel identical to the static scene. The full receipts are at
+`outputs/sdf/sculpture-guardian-qualified/`. Driftwood also completes its native
+matrix at `outputs/sdf/sculpture-driftwood-qualified/`.
+
+The vessel's initial run stops at the visibility gate: `belly-interior` is
+fully hidden behind the front wall. It expands the chamber after the visible
+main hollowing operation. This single named cutter now has a documented
+exception in subject metadata; the overhead interior view remains required.
+The main hollowing and all three wall piercings still need visible previews.
+The stopped run is retained at `outputs/sdf/sculpture-vessel-preview-attempt/`.
+The film's chapters choose the visible hollowing, handle and piercing steps.
+
+A more substantial issue was found in the arch's construction story. Its
+initial mass already had an opening between the supports: the cuts only
+enlarged that gap. Native blockout images and saved-tree probes establish the
+mistake. The finished author now fills a central core before carving. New
+prefix-intent checks require a solid center before the first cutter, a front
+void with a retained back wall before the rear cutter, and a through-passage
+afterward. The previous construction fails those new checks; its otherwise
+passing native renderer matrix is retained separately at
+`outputs/sdf/sculpture-arch-open-blockout-qualified/`.
+
+The new saved-tree probes measure distance -0.170 at the initial center,
++0.12445 in the first front cavity, -0.00987 in its retained back wall, and
++0.12152 at the opened rear sample in the final scene. Those sign changes test
+the intended operation, beyond checking the final object's appearance. The
+new arch and the vessel's explicit preview policy are requalified separately.

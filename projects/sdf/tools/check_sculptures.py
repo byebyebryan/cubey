@@ -10,6 +10,18 @@ from sdf_probe import distance
 
 def audit(scene_path, checks):
     scene=json.loads(scene_path.read_text())
+    def before(node_name):
+        index=next(i for i,h in enumerate(scene['history']) if h['node']==node_name)
+        visible={h['node'] for h in scene['history'][:index]}
+        def prune(node):
+            if 'children' not in node:
+                return node if node['name'] in visible else None
+            children=[p for c in node['children'] if (p:=prune(c)) is not None]
+            if not children:return None
+            reduced=dict(node,children=children)
+            if len(children)==1:reduced['type']='group'
+            return reduced
+        return prune(scene['root'])
     rows=[]
     for check in checks:
         points=check['points']
@@ -19,7 +31,8 @@ def audit(scene_path, checks):
                 samples.extend([[x*(1-i/20)+y*i/20 for x,y in zip(a,b)] for i in range(20)])
             samples.append(points[-1])
         else: samples=points
-        values=[distance(scene['root'],p) for p in samples]
+        tree=before(check['before_node']) if 'before_node' in check else scene['root']
+        values=[distance(tree,p) for p in samples]
         margin=check.get('margin',.001)
         passed=all(v<=-margin for v in values) if check['expect']=='solid' else all(v>=margin for v in values)
         rows.append(dict(**check,passed=passed,samples=len(samples),min_distance=min(values),max_distance=max(values)))

@@ -17,11 +17,11 @@ COPY = {
     'vessel': dict(kicker='Hollowing / pierced walls',
         description='A full asymmetric body becomes a hollow ceramic vessel. The handle fuses into the body and three piercings open through its front wall.',
         verdict='The clearest hollowing experiment. The simpler analytic handle and round openings read better than the more elaborate sampled alternatives.',
-        chapters=[('Hollow the body','interior'),('Round the inside','belly-interior'),('Pierce the wall','piercing-0')]),
+        chapters=[('Hollow the body','interior'),('Fuse the handle','handle-loop'),('Pierce the wall','piercing-0')]),
     'arch': dict(kicker='Carving / connected passages',
         description='Two cavities approach from opposite sides of one solid mass. Their meeting opens a passage, followed by broad cuts and shallow erosion lines.',
         verdict='The breakthrough sells the operation better than the finished object. The result is a stylized carved arch; convincing natural erosion needs a stronger study of large forms.',
-        chapters=[('Front alcove','front-cavity'),('Break through','rear-cavity'),('Shape exposed planes','crown-plane')]),
+        chapters=[('Solid mass','solid-arch-core'),('Front alcove','front-cavity'),('Break through','rear-cavity'),('Shape exposed planes','crown-plane')]),
     'driftwood': dict(kicker='Curved strokes / fused branches',
         description='Tapered paths form a twisting trunk and branches, including one reaching behind the fork. Hollow ends, a knot recess and long grooves shape the retained wood.',
         verdict='Useful evidence for curved authoring, with a readable fork and hollows. The grooves and simplified branch forms still feel stylized; an exact curve sweep remains a possible later improvement.',
@@ -84,7 +84,9 @@ def main():
             state_checks=len(h['validated_states']),intent_checks=len(audit['checks']),
             config=m['metadata']['config'],build_config=m['metadata']['build_config']))
     shutil.copy2(args.input_root/'sculpture-foundation/manifest.json',out/'foundation.json')
+    shutil.copy2(args.input_root/'sculpture-foundation/robot-regression.json',out/'robot-regression.json')
     shutil.copy2(args.input_root/'sculpture-arch-bad-support-audit.json',out/'arch-negative-control.json')
+    shutil.copy2(args.input_root/'sculpture-arch-bad-support.json',out/'arch-negative-control-scene.json')
     shutil.copy2(repo/'docs/notes/sdf-rounded-stroke-contract.md',out/'rounded-stroke-contract.md')
     template=Path(__file__).with_name('sculpture_report_template.html').read_text()
     payload=json.dumps(data).replace('</','<\\/')

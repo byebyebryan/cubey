@@ -238,7 +238,12 @@
         ]
       }
     ],
-    "hidden_previews": [],
+    "hidden_previews": [
+      {
+        "node": "belly-interior",
+        "reason": "The belly cutter expands the inner chamber behind the front wall and is fully occluded in the build camera. The main hollowing and all wall piercings remain visible; the overhead interior view inspects this refinement."
+      }
+    ],
     "intent_checks": [
       {
         "name": "interior connects to open mouth",
@@ -447,6 +452,45 @@
     ],
     "hidden_previews": [],
     "intent_checks": [
+      {
+        "name": "mass is solid before any cavity",
+        "before_node": "front-cavity",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            -0.115,
+            0
+          ]
+        ],
+        "margin": 0.05
+      },
+      {
+        "name": "first cavity opens at the front",
+        "before_node": "rear-cavity",
+        "expect": "empty",
+        "points": [
+          [
+            0,
+            -0.115,
+            0.12
+          ]
+        ],
+        "margin": 0.02
+      },
+      {
+        "name": "first cavity retains its back wall",
+        "before_node": "rear-cavity",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            -0.115,
+            -0.16
+          ]
+        ],
+        "margin": 0.005
+      },
       {
         "name": "front and rear cavities form a passage",
         "expect": "empty",

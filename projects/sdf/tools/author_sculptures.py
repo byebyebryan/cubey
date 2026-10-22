@@ -170,6 +170,9 @@ def arch(variant=0, detail=False):
         s.leaf(sphere('left-crown', (-.115, .12 if variant == 0 else .16, -.015), .185), 'Fuse the bridge crown'),
         s.leaf(sphere('right-crown', (.115, .09, -.005), .18), 'Carry the crown across the opening'),
     ]
+    if detail:
+        masses.append(s.leaf(box('solid-arch-core',(0,-.08,0),(.145,.175,.13),.04),
+                             'Close the rock mass before carving',.9))
     body = s.blend('rock-mass', masses, .065)
     for name, start, end, r in [
         ('front-cavity', (-.018, -.115, .35), (-.02, -.105, .015), .145),
