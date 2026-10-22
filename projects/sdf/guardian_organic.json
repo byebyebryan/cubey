@@ -62,6 +62,20 @@
           "--pitch",
           0.11
         ]
+      },
+      {
+        "name": "profile-light",
+        "label": "Profile / alternate light",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1,
+          "--sun-azimuth",
+          60,
+          "--sun-elevation",
+          60
+        ]
       }
     ],
     "hidden_previews": [],

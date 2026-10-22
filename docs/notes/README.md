@@ -35,6 +35,9 @@ the architecture and project guides remain current authority.
 - [SDF robot joint review](sdf-robot-joint-review.md): pose-derived hinge frames, continuous leg centerlines and independent modeling-intent checks after user review.
 - [SDF sculpture study evidence](sdf-sculpture-study-evidence.md): four authored sculptures, native construction histories, measured costs and the published comparison gallery; user visual acceptance remains separate.
 - [SDF guardian and driftwood refinement evidence](sdf-guardian-driftwood-refinement-evidence.md): follow-up modeling and native qualification; user review removes guardian chips and retires driftwood from the active presentation.
+- [SDF organic guardian evidence](sdf-guardian-organic-evidence.md): a separate
+  1,011-leaf sculpt, organic form changes, normal-aware authoring and bounded
+  capacity/history scaling after user review.
 - [SDF rounded stroke contract](sdf-rounded-stroke-contract.md): tapered endpoint spheres, conservative bounds and independent/native qualification for sculptural strokes.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.

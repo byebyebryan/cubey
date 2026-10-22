@@ -123,6 +123,15 @@ film without those two cuts.
 The earlier [matched refinement gallery](http://starship:8787/reports/d66a4ee7ce92dd2f255e170b9dc67676551a1f5efec099ec99ccda304a4d7973/)
 retains both prior versions, their 210 states and two films as the review record.
 
+The [organic guardian study](../../docs/notes/sdf-guardian-organic-evidence.md)
+adds a separate curved-jaw, elongated-skull variant with anatomical relief.
+It uses 1,011 leaf reveals across 113 coherent strokes and primitive placements;
+its retained form stage has 197 leaves. Authored capacity is now 1,024 leaves /
+2,048 instructions, with the existing field resolution and other ceilings.
+New strokes can offset along the local surface normal, while legacy authoring
+remains reproducible. Use `sculpture-guardian-organic[-build].json`; the earlier
+106-leaf refined preset remains available for comparison.
+
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
 | Guardian | [Static](presets/sculpture-guardian.json) | [Build](presets/sculpture-guardian-build.json) | 76 |
