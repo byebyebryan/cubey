@@ -18,6 +18,13 @@ tries the identical cutters against a radius-0.36 ball. Run it with
 `--config projects/sdf/presets/negative-sphere.json`; the original rounded-cube
 preset remains available. See the [sphere evidence](../../docs/notes/sdf-negative-sphere-evidence.md).
 
+The [denser sphere study](http://starship:8787/reports/f23de4a4ab24f55ab4403a145e1b4fe87a0548c6abf279fbe51561eda92cc096/)
+compares up to 2,048 cuts and includes a fresh 256-cut carving video. Run
+`--config projects/sdf/presets/negative-sphere-dense.json` for that candidate.
+At higher counts the broad cutters mostly erase the ball; a quarter-width
+trial instead reaches the field capacity at 256 cuts. See the
+[density evidence](../../docs/notes/sdf-negative-sphere-density-evidence.md).
+
 [Watch the carving video and compare the seed audition](http://starship:8787/reports/3d8baa7ee96f132b28062ace6e4878538982df72c66aea7c0094f884b2729f65/).
 
 ```sh

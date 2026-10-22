@@ -4,6 +4,10 @@ Date: 2026-10-21
 
 [Video and matched native captures](http://starship:8787/reports/597b5db0fb6edef3a52ec569083ae0719b10b39a3104102eb719a0da9c5fadf9/).
 
+The subsequent [cut-count study](sdf-negative-sphere-density-evidence.md)
+extends the unchanged sphere recipe through 2,048 cutters and adds a separate
+256-cut presentation preset. This record retains the original 72-cut comparison.
+
 The user requested a ball after reviewing the rounded-cube carving demo.
 `negative-sphere` starts with an exact radius-0.36 sphere and reuses every
 cutter from `negative-sticks`, without changing the seed, camera, material,
