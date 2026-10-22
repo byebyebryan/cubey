@@ -1,0 +1,2120 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Survey robot field kit",
+  "materials": [
+    {
+      "name": "ivory",
+      "base_color": [
+        0.8069522576692516,
+        0.7230551289219693,
+        0.5775804404296506
+      ],
+      "roughness": 0.52,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "teal",
+      "base_color": [
+        0.04091519690685319,
+        0.2704977910130658,
+        0.2874408377269175
+      ],
+      "roughness": 0.31,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "rubber",
+      "base_color": [
+        0.018500220128379697,
+        0.033104766570885055,
+        0.043735029256973465
+      ],
+      "roughness": 0.8,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "amber",
+      "base_color": [
+        0.9215818562772946,
+        0.39157247774972326,
+        0.043735029256973465
+      ],
+      "roughness": 0.29,
+      "emission": [
+        0.16588473412991303,
+        0.07048304599495019,
+        0.007872305266255224
+      ]
+    }
+  ],
+  "root": {
+    "type": "union",
+    "name": "survey-robot",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "union",
+        "name": "head",
+        "position": [
+          0,
+          0.232,
+          0
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "head-right-counterbore",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "subtract",
+                "name": "head-left-counterbore",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "subtract",
+                    "name": "head-vent-2",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "subtract",
+                        "name": "head-vent-1",
+                        "position": [
+                          0,
+                          0,
+                          0
+                        ],
+                        "children": [
+                          {
+                            "type": "subtract",
+                            "name": "head-vent-0",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "children": [
+                              {
+                                "type": "subtract",
+                                "name": "head-eye-socket",
+                                "position": [
+                                  0,
+                                  0,
+                                  0
+                                ],
+                                "children": [
+                                  {
+                                    "type": "box",
+                                    "name": "head-shell",
+                                    "position": [
+                                      0,
+                                      0,
+                                      0
+                                    ],
+                                    "half_extent": [
+                                      0.145,
+                                      0.082,
+                                      0.065
+                                    ],
+                                    "rounding": 0.03
+                                  },
+                                  {
+                                    "type": "cylinder",
+                                    "name": "eye-socket-cut",
+                                    "position": [
+                                      -0.027,
+                                      0.006,
+                                      0.095
+                                    ],
+                                    "radius": 0.069,
+                                    "half_length": 0.1,
+                                    "rotation_xyzw": [
+                                      0.7071067811865475,
+                                      0.0,
+                                      0.0,
+                                      0.7071067811865476
+                                    ]
+                                  }
+                                ],
+                                "cut_material": "rubber"
+                              },
+                              {
+                                "type": "box",
+                                "name": "head-vent-cut-0",
+                                "position": [
+                                  0.105,
+                                  -0.026,
+                                  0.087
+                                ],
+                                "half_extent": [
+                                  0.022,
+                                  0.0025,
+                                  0.018
+                                ],
+                                "rounding": 0.002
+                              }
+                            ],
+                            "cut_material": "rubber"
+                          },
+                          {
+                            "type": "box",
+                            "name": "head-vent-cut-1",
+                            "position": [
+                              0.105,
+                              -0.011,
+                              0.087
+                            ],
+                            "half_extent": [
+                              0.022,
+                              0.0025,
+                              0.018
+                            ],
+                            "rounding": 0.002
+                          }
+                        ],
+                        "cut_material": "rubber"
+                      },
+                      {
+                        "type": "box",
+                        "name": "head-vent-cut-2",
+                        "position": [
+                          0.105,
+                          0.004,
+                          0.087
+                        ],
+                        "half_extent": [
+                          0.022,
+                          0.0025,
+                          0.018
+                        ],
+                        "rounding": 0.002
+                      }
+                    ],
+                    "cut_material": "rubber"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "head-left-fastener-cut",
+                    "position": [
+                      -0.132,
+                      0.069,
+                      0.095
+                    ],
+                    "radius": 0.01,
+                    "half_length": 0.012,
+                    "rotation_xyzw": [
+                      0.7071067811865475,
+                      0.0,
+                      0.0,
+                      0.7071067811865476
+                    ]
+                  }
+                ],
+                "cut_material": "rubber"
+              },
+              {
+                "type": "cylinder",
+                "name": "head-right-fastener-cut",
+                "position": [
+                  0.132,
+                  0.069,
+                  0.095
+                ],
+                "radius": 0.01,
+                "half_length": 0.012,
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "subtract",
+            "name": "optic-ring",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "capped-cone",
+                "name": "optic-barrel",
+                "position": [
+                  -0.027,
+                  0.006,
+                  0.097
+                ],
+                "bottom_radius": 0.07,
+                "top_radius": 0.079,
+                "half_length": 0.026,
+                "material": "teal",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              },
+              {
+                "type": "cylinder",
+                "name": "optic-bore",
+                "position": [
+                  -0.027,
+                  0.006,
+                  0.1
+                ],
+                "radius": 0.058,
+                "half_length": 0.06,
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ],
+            "cut_material": "teal"
+          },
+          {
+            "type": "cylinder",
+            "name": "sensor-seat",
+            "position": [
+              -0.027,
+              0.006,
+              0.1
+            ],
+            "radius": 0.057,
+            "half_length": 0.014,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "sensor-amber",
+            "position": [
+              -0.027,
+              0.006,
+              0.119
+            ],
+            "radius": 0.046,
+            "half_length": 0.005,
+            "material": "amber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "sensor-pupil",
+            "position": [
+              -0.027,
+              0.006,
+              0.126
+            ],
+            "radius": 0.025,
+            "half_length": 0.003,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "box",
+            "name": "head-left-ear",
+            "position": [
+              -0.185,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          },
+          {
+            "type": "box",
+            "name": "head-right-ear",
+            "position": [
+              0.185,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          },
+          {
+            "type": "capsule",
+            "name": "antenna-stem",
+            "position": [
+              0.111,
+              0.1475,
+              -0.025
+            ],
+            "radius": 0.005,
+            "half_length": 0.04390045557850169,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.12629470927265898,
+              0.9919927653011057
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "antenna-tip",
+            "position": [
+              0.122,
+              0.2,
+              -0.025
+            ],
+            "radius": 0.015,
+            "material": "amber"
+          },
+          {
+            "type": "cylinder",
+            "name": "head-left-fastener",
+            "position": [
+              -0.132,
+              0.069,
+              0.086
+            ],
+            "radius": 0.007,
+            "half_length": 0.005,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "head-right-fastener",
+            "position": [
+              0.132,
+              0.069,
+              0.086
+            ],
+            "radius": 0.007,
+            "half_length": 0.005,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "torus",
+            "name": "optic-seal",
+            "position": [
+              -0.027,
+              0.006,
+              0.124
+            ],
+            "major_radius": 0.055,
+            "minor_radius": 0.004,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "torus",
+            "name": "optic-lip",
+            "position": [
+              -0.027,
+              0.006,
+              0.129
+            ],
+            "major_radius": 0.065,
+            "minor_radius": 0.007,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          }
+        ],
+        "material": "ivory",
+        "rotation_xyzw": [
+          -0.0,
+          -0.0,
+          -0.03489949670250097,
+          0.9993908270190958
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "neck",
+        "position": [
+          0,
+          0.101,
+          0
+        ],
+        "radius": 0.035,
+        "half_length": 0.037,
+        "material": "rubber"
+      },
+      {
+        "type": "smooth-subtract",
+        "name": "abdomen-recess",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-union",
+            "name": "torso-form",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "torso-shell",
+                "position": [
+                  0,
+                  -0.04,
+                  0
+                ],
+                "half_extent": [
+                  0.1,
+                  0.11,
+                  0.065
+                ],
+                "rounding": 0.027,
+                "material": "ivory"
+              },
+              {
+                "type": "sphere",
+                "name": "hip-housing",
+                "position": [
+                  0,
+                  -0.14,
+                  0
+                ],
+                "radius": 0.075,
+                "material": "ivory"
+              }
+            ],
+            "radius": 0.025,
+            "blend_materials": false
+          },
+          {
+            "type": "box",
+            "name": "abdomen-door-cut",
+            "position": [
+              0,
+              -0.132,
+              0.091
+            ],
+            "half_extent": [
+              0.061,
+              0.024,
+              0.016
+            ],
+            "rounding": 0.006
+          }
+        ],
+        "cut_material": "rubber",
+        "radius": 0.004
+      },
+      {
+        "type": "smooth-subtract",
+        "name": "chest-display-recess",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "chest-panel",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "chest-accent",
+                "position": [
+                  0,
+                  -0.035,
+                  0.089
+                ],
+                "half_extent": [
+                  0.063,
+                  0.048,
+                  0.006
+                ],
+                "rounding": 0.014,
+                "material": "teal"
+              },
+              {
+                "type": "box",
+                "name": "chest-notch-cut",
+                "position": [
+                  0.028,
+                  -0.07,
+                  0.1
+                ],
+                "half_extent": [
+                  0.022,
+                  0.007,
+                  0.015
+                ],
+                "rounding": 0.003
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "box",
+            "name": "chest-display-cut",
+            "position": [
+              0,
+              -0.015,
+              0.109
+            ],
+            "half_extent": [
+              0.046,
+              0.021,
+              0.008
+            ],
+            "rounding": 0.004
+          }
+        ],
+        "cut_material": "rubber",
+        "radius": 0.003
+      },
+      {
+        "type": "box",
+        "name": "chest-status",
+        "position": [
+          -0.025,
+          -0.025,
+          0.104
+        ],
+        "half_extent": [
+          0.006,
+          0.004,
+          0.0015
+        ],
+        "rounding": 0.001,
+        "material": "amber"
+      },
+      {
+        "type": "union",
+        "name": "backpack",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "backpack-vent-2",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "subtract",
+                "name": "backpack-vent-1",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "subtract",
+                    "name": "backpack-vent-0",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "box",
+                        "name": "backpack-case",
+                        "position": [
+                          0,
+                          -0.035,
+                          -0.11
+                        ],
+                        "half_extent": [
+                          0.07,
+                          0.08,
+                          0.025
+                        ],
+                        "rounding": 0.018,
+                        "material": "teal"
+                      },
+                      {
+                        "type": "box",
+                        "name": "backpack-vent-cut-0",
+                        "position": [
+                          0.043,
+                          0.012,
+                          -0.153
+                        ],
+                        "half_extent": [
+                          0.014,
+                          0.003,
+                          0.018
+                        ],
+                        "rounding": 0.002
+                      }
+                    ],
+                    "cut_material": "rubber"
+                  },
+                  {
+                    "type": "box",
+                    "name": "backpack-vent-cut-1",
+                    "position": [
+                      0.043,
+                      -0.012,
+                      -0.153
+                    ],
+                    "half_extent": [
+                      0.014,
+                      0.003,
+                      0.018
+                    ],
+                    "rounding": 0.002
+                  }
+                ],
+                "cut_material": "rubber"
+              },
+              {
+                "type": "box",
+                "name": "backpack-vent-cut-2",
+                "position": [
+                  0.043,
+                  -0.036,
+                  -0.153
+                ],
+                "half_extent": [
+                  0.014,
+                  0.003,
+                  0.018
+                ],
+                "rounding": 0.002
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "box",
+            "name": "backpack-spine",
+            "position": [
+              0,
+              -0.035,
+              -0.16
+            ],
+            "half_extent": [
+              0.018,
+              0.065,
+              0.005
+            ],
+            "rounding": 0.006,
+            "material": "ivory"
+          },
+          {
+            "type": "capped-cone",
+            "name": "left-power-pod",
+            "position": [
+              -0.105,
+              -0.031,
+              -0.139
+            ],
+            "bottom_radius": 0.022,
+            "top_radius": 0.018,
+            "half_length": 0.054,
+            "material": "ivory"
+          },
+          {
+            "type": "torus",
+            "name": "left-pod-lower-seal",
+            "position": [
+              -0.105,
+              -0.078,
+              -0.139
+            ],
+            "major_radius": 0.02,
+            "minor_radius": 0.004,
+            "material": "teal"
+          },
+          {
+            "type": "torus",
+            "name": "left-pod-upper-seal",
+            "position": [
+              -0.105,
+              0.014,
+              -0.139
+            ],
+            "major_radius": 0.019,
+            "minor_radius": 0.004,
+            "material": "teal"
+          },
+          {
+            "type": "capped-cone",
+            "name": "right-power-pod",
+            "position": [
+              0.105,
+              -0.031,
+              -0.139
+            ],
+            "bottom_radius": 0.022,
+            "top_radius": 0.018,
+            "half_length": 0.054,
+            "material": "ivory"
+          },
+          {
+            "type": "torus",
+            "name": "right-pod-lower-seal",
+            "position": [
+              0.105,
+              -0.078,
+              -0.139
+            ],
+            "major_radius": 0.02,
+            "minor_radius": 0.004,
+            "material": "teal"
+          },
+          {
+            "type": "torus",
+            "name": "right-pod-upper-seal",
+            "position": [
+              0.105,
+              0.014,
+              -0.139
+            ],
+            "major_radius": 0.019,
+            "minor_radius": 0.004,
+            "material": "teal"
+          }
+        ]
+      },
+      {
+        "type": "box",
+        "name": "chest-display",
+        "position": [
+          0,
+          -0.015,
+          0.0975
+        ],
+        "half_extent": [
+          0.044,
+          0.019,
+          0.0025
+        ],
+        "rounding": 0.002,
+        "material": "rubber"
+      },
+      {
+        "type": "box",
+        "name": "chest-status-mid",
+        "position": [
+          -0.006,
+          -0.021,
+          0.104
+        ],
+        "half_extent": [
+          0.006,
+          0.008,
+          0.0015
+        ],
+        "rounding": 0.001,
+        "material": "amber"
+      },
+      {
+        "type": "box",
+        "name": "chest-status-high",
+        "position": [
+          0.013,
+          -0.017,
+          0.104
+        ],
+        "half_extent": [
+          0.006,
+          0.012,
+          0.0015
+        ],
+        "rounding": 0.001,
+        "material": "amber"
+      },
+      {
+        "type": "union",
+        "name": "left-arm",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "sphere",
+            "name": "left-shoulder-joint",
+            "position": [
+              -0.151,
+              0.005,
+              0
+            ],
+            "radius": 0.035,
+            "material": "rubber"
+          },
+          {
+            "type": "capsule",
+            "name": "left-upper-arm",
+            "position": [
+              -0.17049999999999998,
+              -0.042499999999999996,
+              0.004
+            ],
+            "radius": 0.023,
+            "half_length": 0.05150242712727236,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.1970014526837239,
+              0.0,
+              0.9603820818331543,
+              0.19712098958334986
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "left-elbow",
+            "position": [
+              -0.19,
+              -0.09,
+              0.008
+            ],
+            "radius": 0.027,
+            "material": "rubber"
+          },
+          {
+            "type": "capped-cone",
+            "name": "left-forearm",
+            "position": [
+              -0.195,
+              -0.1335,
+              0.0255
+            ],
+            "bottom_radius": 0.021,
+            "top_radius": 0.03,
+            "half_length": 0.047154003011409325,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.9427126112363567,
+              0.0,
+              0.26934646035324505,
+              0.19683855544864007
+            ]
+          },
+          {
+            "type": "subtract",
+            "name": "left-gripper",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "capsule",
+                "name": "left-hand",
+                "position": [
+                  -0.2,
+                  -0.194,
+                  0.0475
+                ],
+                "radius": 0.026,
+                "half_length": 0.017585505395068975,
+                "material": "ivory",
+                "rotation_xyzw": [
+                  0.9916413736481331,
+                  0.0,
+                  -0.0,
+                  0.12902474983213122
+                ]
+              },
+              {
+                "type": "box",
+                "name": "left-gripper-slot",
+                "position": [
+                  -0.2,
+                  -0.22356716796219964,
+                  0.055326603284111674
+                ],
+                "half_extent": [
+                  0.008,
+                  0.03,
+                  0.042
+                ],
+                "rounding": 0.003,
+                "rotation_xyzw": [
+                  0.9916413736481331,
+                  0.0,
+                  -0.0,
+                  0.12902474983213122
+                ]
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "subtract",
+            "name": "left-shoulder-fastener",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "cylinder",
+                "name": "left-shoulder-cap",
+                "position": [
+                  -0.151,
+                  0.005,
+                  0.034
+                ],
+                "radius": 0.022,
+                "half_length": 0.005,
+                "material": "teal",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              },
+              {
+                "type": "box",
+                "name": "left-shoulder-slot",
+                "position": [
+                  -0.151,
+                  0.005,
+                  0.039
+                ],
+                "half_extent": [
+                  0.013,
+                  0.012,
+                  0.0025
+                ],
+                "rounding": 0.0015,
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "torus",
+            "name": "left-wrist-seal",
+            "position": [
+              -0.1985,
+              -0.16394999999999998,
+              0.03774999999999999
+            ],
+            "major_radius": 0.028,
+            "minor_radius": 0.005,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.9427126112363567,
+              0.0,
+              0.26934646035324505,
+              0.19683855544864007
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "left-elbow-cap",
+            "position": [
+              -0.19,
+              -0.09,
+              0.034
+            ],
+            "radius": 0.018,
+            "half_length": 0.004,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "torus",
+            "name": "left-elbow-rim",
+            "position": [
+              -0.19,
+              -0.09,
+              0.038
+            ],
+            "major_radius": 0.02,
+            "minor_radius": 0.0035,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "left-leg",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capsule",
+            "name": "left-hip-link",
+            "position": [
+              -0.075,
+              -0.20750000000000002,
+              0.0025
+            ],
+            "radius": 0.024,
+            "half_length": 0.03758324094593226,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.9994461360815323,
+              0.0,
+              -0.0,
+              0.0332779367103106
+            ]
+          },
+          {
+            "type": "capped-cone",
+            "name": "left-shin",
+            "position": [
+              -0.075,
+              -0.259,
+              0.008
+            ],
+            "bottom_radius": 0.038,
+            "top_radius": 0.027,
+            "half_length": 0.038,
+            "material": "ivory"
+          },
+          {
+            "type": "sphere",
+            "name": "left-ankle",
+            "position": [
+              -0.075,
+              -0.311,
+              0.018
+            ],
+            "radius": 0.024,
+            "material": "rubber"
+          },
+          {
+            "type": "subtract",
+            "name": "left-toe-bumper",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "union",
+                "name": "left-foot-assembly",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "left-foot",
+                    "position": [
+                      -0.085,
+                      -0.344,
+                      0.045
+                    ],
+                    "half_extent": [
+                      0.044,
+                      0.024,
+                      0.064
+                    ],
+                    "rounding": 0.015,
+                    "material": "ivory"
+                  },
+                  {
+                    "type": "box",
+                    "name": "left-sole",
+                    "position": [
+                      -0.085,
+                      -0.372,
+                      0.045
+                    ],
+                    "half_extent": [
+                      0.044,
+                      0.006,
+                      0.064
+                    ],
+                    "rounding": 0.01,
+                    "material": "rubber"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "name": "left-toe-groove",
+                "position": [
+                  -0.085,
+                  -0.365,
+                  0.12
+                ],
+                "half_extent": [
+                  0.041,
+                  0.0025,
+                  0.012
+                ],
+                "rounding": 0.002
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "torus",
+            "name": "left-ankle-seal",
+            "position": [
+              -0.075,
+              -0.298,
+              0.008
+            ],
+            "major_radius": 0.036,
+            "minor_radius": 0.005,
+            "material": "teal"
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "right-arm",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "sphere",
+            "name": "right-shoulder-joint",
+            "position": [
+              0.151,
+              0.005,
+              0
+            ],
+            "radius": 0.035,
+            "material": "rubber"
+          },
+          {
+            "type": "capsule",
+            "name": "right-upper-arm",
+            "position": [
+              0.178,
+              -0.021,
+              0.011
+            ],
+            "radius": 0.023,
+            "half_length": 0.03906404996924922,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.3443103972890035,
+              0.0,
+              -0.845125520618463,
+              0.40891711228323574
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "right-elbow",
+            "position": [
+              0.205,
+              -0.047,
+              0.022
+            ],
+            "radius": 0.027,
+            "material": "rubber"
+          },
+          {
+            "type": "capped-cone",
+            "name": "right-forearm",
+            "position": [
+              0.22299999999999998,
+              -0.011,
+              0.0485
+            ],
+            "bottom_radius": 0.021,
+            "top_radius": 0.03,
+            "half_length": 0.04818972919616794,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.2941874060317164,
+              0.0,
+              -0.19982540787059982,
+              0.9346248319522003
+            ]
+          },
+          {
+            "type": "subtract",
+            "name": "right-gripper",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "capsule",
+                "name": "right-hand",
+                "position": [
+                  0.243,
+                  0.0475,
+                  0.0785
+                ],
+                "radius": 0.026,
+                "half_length": 0.022858258901324924,
+                "material": "ivory",
+                "rotation_xyzw": [
+                  0.07686051410015757,
+                  0.0,
+                  -0.04392029377151862,
+                  0.996074027955394
+                ]
+              },
+              {
+                "type": "box",
+                "name": "right-gripper-slot",
+                "position": [
+                  0.2461374444620755,
+                  0.08279625019834937,
+                  0.08399052780863213
+                ],
+                "half_extent": [
+                  0.008,
+                  0.03,
+                  0.042
+                ],
+                "rounding": 0.003,
+                "rotation_xyzw": [
+                  0.07686051410015757,
+                  0.0,
+                  -0.04392029377151862,
+                  0.996074027955394
+                ]
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "subtract",
+            "name": "right-shoulder-fastener",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "cylinder",
+                "name": "right-shoulder-cap",
+                "position": [
+                  0.151,
+                  0.005,
+                  0.034
+                ],
+                "radius": 0.022,
+                "half_length": 0.005,
+                "material": "teal",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              },
+              {
+                "type": "box",
+                "name": "right-shoulder-slot",
+                "position": [
+                  0.151,
+                  0.005,
+                  0.039
+                ],
+                "half_extent": [
+                  0.013,
+                  0.012,
+                  0.0025
+                ],
+                "rounding": 0.0015,
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "torus",
+            "name": "right-wrist-seal",
+            "position": [
+              0.23559999999999998,
+              0.014200000000000004,
+              0.06705
+            ],
+            "major_radius": 0.028,
+            "minor_radius": 0.005,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.2941874060317164,
+              0.0,
+              -0.19982540787059982,
+              0.9346248319522003
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "right-elbow-cap",
+            "position": [
+              0.205,
+              -0.047,
+              0.048
+            ],
+            "radius": 0.018,
+            "half_length": 0.004,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "torus",
+            "name": "right-elbow-rim",
+            "position": [
+              0.205,
+              -0.047,
+              0.052
+            ],
+            "major_radius": 0.02,
+            "minor_radius": 0.0035,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "right-leg",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capsule",
+            "name": "right-hip-link",
+            "position": [
+              0.075,
+              -0.20750000000000002,
+              0.0025
+            ],
+            "radius": 0.024,
+            "half_length": 0.03758324094593226,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.9994461360815323,
+              0.0,
+              -0.0,
+              0.0332779367103106
+            ]
+          },
+          {
+            "type": "capped-cone",
+            "name": "right-shin",
+            "position": [
+              0.075,
+              -0.259,
+              0.008
+            ],
+            "bottom_radius": 0.038,
+            "top_radius": 0.027,
+            "half_length": 0.038,
+            "material": "ivory"
+          },
+          {
+            "type": "sphere",
+            "name": "right-ankle",
+            "position": [
+              0.075,
+              -0.311,
+              0.018
+            ],
+            "radius": 0.024,
+            "material": "rubber"
+          },
+          {
+            "type": "subtract",
+            "name": "right-toe-bumper",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "union",
+                "name": "right-foot-assembly",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "right-foot",
+                    "position": [
+                      0.085,
+                      -0.344,
+                      0.045
+                    ],
+                    "half_extent": [
+                      0.044,
+                      0.024,
+                      0.064
+                    ],
+                    "rounding": 0.015,
+                    "material": "ivory"
+                  },
+                  {
+                    "type": "box",
+                    "name": "right-sole",
+                    "position": [
+                      0.085,
+                      -0.372,
+                      0.045
+                    ],
+                    "half_extent": [
+                      0.044,
+                      0.006,
+                      0.064
+                    ],
+                    "rounding": 0.01,
+                    "material": "rubber"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "name": "right-toe-groove",
+                "position": [
+                  0.085,
+                  -0.365,
+                  0.12
+                ],
+                "half_extent": [
+                  0.041,
+                  0.0025,
+                  0.012
+                ],
+                "rounding": 0.002
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "torus",
+            "name": "right-ankle-seal",
+            "position": [
+              0.075,
+              -0.298,
+              0.008
+            ],
+            "major_radius": 0.036,
+            "minor_radius": 0.005,
+            "material": "teal"
+          }
+        ]
+      },
+      {
+        "type": "torus",
+        "name": "neck-collar-0",
+        "position": [
+          0,
+          0.102,
+          0
+        ],
+        "major_radius": 0.035,
+        "minor_radius": 0.0045,
+        "material": "teal"
+      },
+      {
+        "type": "torus",
+        "name": "neck-collar-1",
+        "position": [
+          0,
+          0.117,
+          0
+        ],
+        "major_radius": 0.035,
+        "minor_radius": 0.0045,
+        "material": "teal"
+      },
+      {
+        "type": "box",
+        "name": "abdomen-door",
+        "position": [
+          0,
+          -0.132,
+          0.078
+        ],
+        "half_extent": [
+          0.054,
+          0.018,
+          0.004
+        ],
+        "rounding": 0.005,
+        "material": "ivory"
+      },
+      {
+        "type": "cylinder",
+        "name": "abdomen-latch",
+        "position": [
+          0.032,
+          -0.132,
+          0.089
+        ],
+        "radius": 0.009,
+        "half_length": 0.003,
+        "material": "teal",
+        "rotation_xyzw": [
+          0.7071067811865475,
+          0.0,
+          0.0,
+          0.7071067811865476
+        ]
+      }
+    ],
+    "material": "ivory"
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "torso-shell",
+      "label": "Start with a rounded box torso",
+      "seconds": 1.1
+    },
+    {
+      "node": "hip-housing",
+      "label": "Blend a sphere into the torso",
+      "seconds": 1.1
+    },
+    {
+      "node": "abdomen-door-cut",
+      "label": "Round a service-door recess",
+      "seconds": 0.65
+    },
+    {
+      "node": "abdomen-door",
+      "label": "Seat the ivory service door",
+      "seconds": 0.65
+    },
+    {
+      "node": "abdomen-latch",
+      "label": "Fit its quarter-turn latch",
+      "seconds": 0.65
+    },
+    {
+      "node": "neck",
+      "label": "Add the neck joint",
+      "seconds": 0.65
+    },
+    {
+      "node": "neck-collar-0",
+      "label": "Fit a neck joint collar",
+      "seconds": 0.65
+    },
+    {
+      "node": "neck-collar-1",
+      "label": "Fit a neck joint collar",
+      "seconds": 0.65
+    },
+    {
+      "node": "head-shell",
+      "label": "Place the tilted head shell",
+      "seconds": 1.1
+    },
+    {
+      "node": "eye-socket-cut",
+      "label": "Cut the sensor socket",
+      "seconds": 1.8
+    },
+    {
+      "node": "head-vent-cut-0",
+      "label": "Cut face vent 1 of 3",
+      "seconds": 1.1
+    },
+    {
+      "node": "head-vent-cut-1",
+      "label": "Cut face vent 2 of 3",
+      "seconds": 1.1
+    },
+    {
+      "node": "head-vent-cut-2",
+      "label": "Cut face vent 3 of 3",
+      "seconds": 1.1
+    },
+    {
+      "node": "head-left-fastener-cut",
+      "label": "Counterbore the left head fastener",
+      "seconds": 0.9
+    },
+    {
+      "node": "head-left-fastener",
+      "label": "Seat the left teal fastener",
+      "seconds": 0.55
+    },
+    {
+      "node": "head-right-fastener-cut",
+      "label": "Counterbore the right head fastener",
+      "seconds": 0.9
+    },
+    {
+      "node": "head-right-fastener",
+      "label": "Seat the right teal fastener",
+      "seconds": 0.55
+    },
+    {
+      "node": "optic-barrel",
+      "label": "Fit the teal optic barrel",
+      "seconds": 0.85
+    },
+    {
+      "node": "optic-bore",
+      "label": "Bore through the optic barrel",
+      "seconds": 1.6
+    },
+    {
+      "node": "optic-seal",
+      "label": "Seat the optic seal",
+      "seconds": 0.65
+    },
+    {
+      "node": "optic-lip",
+      "label": "Roll the front optic lip",
+      "seconds": 0.65
+    },
+    {
+      "node": "sensor-seat",
+      "label": "Insert the dark sensor seat",
+      "seconds": 0.65
+    },
+    {
+      "node": "sensor-amber",
+      "label": "Add the amber sensor",
+      "seconds": 0.65
+    },
+    {
+      "node": "sensor-pupil",
+      "label": "Add its dark pupil",
+      "seconds": 0.65
+    },
+    {
+      "node": "head-left-ear",
+      "label": "Fit the left side cap",
+      "seconds": 0.65
+    },
+    {
+      "node": "head-right-ear",
+      "label": "Fit the right side cap",
+      "seconds": 0.65
+    },
+    {
+      "node": "chest-accent",
+      "label": "Attach the teal chest panel",
+      "seconds": 0.85
+    },
+    {
+      "node": "chest-display-cut",
+      "label": "Recess the status display",
+      "seconds": 1.1
+    },
+    {
+      "node": "chest-display",
+      "label": "Fit its dark backing plate",
+      "seconds": 0.55
+    },
+    {
+      "node": "chest-notch-cut",
+      "label": "Cut the chest panel notch",
+      "seconds": 1.4
+    },
+    {
+      "node": "chest-status",
+      "label": "Add the amber status indicator",
+      "seconds": 0.65
+    },
+    {
+      "node": "chest-status-mid",
+      "label": "Add the middle gauge bar",
+      "seconds": 0.45
+    },
+    {
+      "node": "chest-status-high",
+      "label": "Complete the three-bar gauge",
+      "seconds": 0.45
+    },
+    {
+      "node": "left-shoulder-joint",
+      "label": "Add the left shoulder joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-shoulder-cap",
+      "label": "Fit the left shoulder fastener cap",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-shoulder-slot",
+      "label": "Slot the left shoulder fastener",
+      "seconds": 0.9
+    },
+    {
+      "node": "left-upper-arm",
+      "label": "Add the left upper arm",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-elbow",
+      "label": "Add the left elbow joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-elbow-cap",
+      "label": "Cap the left elbow bearing",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-elbow-rim",
+      "label": "Fit its ivory retaining ring",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-forearm",
+      "label": "Add the left teal forearm",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-wrist-seal",
+      "label": "Seat the left wrist seal",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-hand",
+      "label": "Add the left hand",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-gripper-slot",
+      "label": "Open the left two-finger gripper",
+      "seconds": 1.2
+    },
+    {
+      "node": "left-hip-link",
+      "label": "Add the left hip link",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-shin",
+      "label": "Add the left shin",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-ankle-seal",
+      "label": "Seat the left ankle seal",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-ankle",
+      "label": "Add the left ankle joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-foot",
+      "label": "Add the left rounded foot",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-sole",
+      "label": "Add the left dark sole",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-toe-groove",
+      "label": "Cut the left toe bumper seam",
+      "seconds": 0.85
+    },
+    {
+      "node": "right-shoulder-joint",
+      "label": "Add the right shoulder joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-shoulder-cap",
+      "label": "Fit the right shoulder fastener cap",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-shoulder-slot",
+      "label": "Slot the right shoulder fastener",
+      "seconds": 0.9
+    },
+    {
+      "node": "right-upper-arm",
+      "label": "Add the right upper arm",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-elbow",
+      "label": "Add the right elbow joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-elbow-cap",
+      "label": "Cap the right elbow bearing",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-elbow-rim",
+      "label": "Fit its ivory retaining ring",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-forearm",
+      "label": "Add the right teal forearm",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-wrist-seal",
+      "label": "Seat the right wrist seal",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-hand",
+      "label": "Add the right hand",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-gripper-slot",
+      "label": "Open the right two-finger gripper",
+      "seconds": 1.2
+    },
+    {
+      "node": "right-hip-link",
+      "label": "Add the right hip link",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-shin",
+      "label": "Add the right shin",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-ankle-seal",
+      "label": "Seat the right ankle seal",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-ankle",
+      "label": "Add the right ankle joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-foot",
+      "label": "Add the right rounded foot",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-sole",
+      "label": "Add the right dark sole",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-toe-groove",
+      "label": "Cut the right toe bumper seam",
+      "seconds": 0.85
+    },
+    {
+      "node": "backpack-case",
+      "label": "Attach the backpack on the rear",
+      "seconds": 0.8
+    },
+    {
+      "node": "backpack-vent-cut-0",
+      "label": "Cut backpack cooling vent 1 of 3",
+      "seconds": 0.85
+    },
+    {
+      "node": "backpack-vent-cut-1",
+      "label": "Cut backpack cooling vent 2 of 3",
+      "seconds": 0.85
+    },
+    {
+      "node": "backpack-vent-cut-2",
+      "label": "Cut backpack cooling vent 3 of 3",
+      "seconds": 0.85
+    },
+    {
+      "node": "backpack-spine",
+      "label": "Fit its ivory spine",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-power-pod",
+      "label": "Attach the left tapered power pod",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-pod-lower-seal",
+      "label": "Secure its lower collar",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-pod-upper-seal",
+      "label": "Secure its upper collar",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-power-pod",
+      "label": "Attach the right tapered power pod",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-pod-lower-seal",
+      "label": "Secure its lower collar",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-pod-upper-seal",
+      "label": "Secure its upper collar",
+      "seconds": 0.65
+    },
+    {
+      "node": "antenna-stem",
+      "label": "Add the antenna stem",
+      "seconds": 0.8
+    },
+    {
+      "node": "antenna-tip",
+      "label": "Finish with the amber antenna tip",
+      "seconds": 1.1
+    }
+  ]
+}

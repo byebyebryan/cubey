@@ -14,6 +14,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--video', action='store_true')
+    parser.add_argument('--config', type=Path, default=Path('projects/sdf/presets/survey-robot-detail.json'))
+    parser.add_argument('--build-config', type=Path, default=Path('projects/sdf/presets/survey-robot-detail-build.json'))
+    parser.add_argument('--baseline-config', type=Path, default=Path('projects/sdf/presets/survey-robot.json'))
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     out = args.output.resolve()
@@ -23,16 +26,22 @@ def main():
         (out / directory).mkdir(parents=True)
     binary = root / 'build/dev/projects/sdf/sdf'
     sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+    presets = {'baseline': args.baseline_config.resolve(), 'detail': args.config.resolve()}
+    scenes = {key: root/json.loads(path.read_text())['authored-scene'] for key,path in presets.items()}
+    build_config = args.build_config.resolve()
+    assert (root/json.loads(build_config.read_text())['authored-scene']).resolve() == scenes['detail'].resolve()
     manifest = dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
         source_dirty=bool(subprocess.check_output(['git','status','--porcelain'],cwd=root,text=True).strip()),
         binary_sha256=sha(binary),
         shader_sha256={p.name:sha(p) for p in sorted((binary.parent/'shaders').glob('*.spv'))},
-        source_scene_sha256={name:sha(root/f'projects/sdf/scenes/{file}.json')
-            for name,file in (('baseline','survey-robot'),('detail','survey-robot-detail'))}, runs={}, views={})
+        source_scene_sha256={name:sha(path) for name,path in scenes.items()},
+        scene_counts={name:len(json.loads(path.read_text())['history']) for name,path in scenes.items()},
+        configs={name:str(path.relative_to(root)) for name,path in presets.items()},
+        build_config=str(build_config.relative_to(root)), runs={}, views={})
     def save():
         (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     command=['python3',str(root/'projects/sdf/tools/qualify_history.py'),
-        '--config',str(root/'projects/sdf/presets/survey-robot-detail-build.json'),
+        '--config',str(build_config),
         '--output',str(out/'history')]
     if args.video:command.append('--video')
     for name in ('left-shoulder-slot','backpack-vent-cut-0','backpack-vent-cut-1','backpack-vent-cut-2'):
@@ -41,7 +50,7 @@ def main():
     save()
     subprocess.run(command,cwd=root,check=True)
     def run(name,variant,options=(),capture=True):
-        preset=root/f'projects/sdf/presets/survey-robot{"-detail" if variant=="detail" else ""}.json'
+        preset=presets[variant]
         command=[str(binary),'--headless','--require-validation','--config',str(preset),
             '--width','960','--height','960',*map(str,options)]
         output=out/f'captures/{name}.png'
@@ -101,6 +110,8 @@ def main():
         save()
     shutil.copy2(root/'projects/sdf/tools/author_robot.py',out/'scenes/author_robot.py')
     shutil.copy2(root/'projects/sdf/tools/sdf_author.py',out/'scenes/sdf_author.py')
+    if 'fieldkit' in args.config.stem:
+        shutil.copy2(root/'projects/sdf/tools/author_robot_fieldkit.py',out/'scenes/author_robot_fieldkit.py')
     print(out/'manifest.json',flush=True)
 
 

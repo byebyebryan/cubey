@@ -1,0 +1,19 @@
+{
+  "authored-scene": "projects/sdf/scenes/survey-robot-fieldkit.json",
+  "atlas-axis": 64,
+  "motion": "presentation",
+  "duration": 62,
+  "construction-seconds": 50,
+  "orbit-turns": 1,
+  "pitch": 0.19,
+  "yaw": 0.48,
+  "distance": 1.45,
+  "target-y": 0.03,
+  "sun-elevation": 45,
+  "sun-azimuth": 160,
+  "shadows": 1,
+  "ground": false,
+  "ao": false,
+  "exposure": 0.6,
+  "supersample": 2
+}
