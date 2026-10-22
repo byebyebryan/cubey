@@ -12,6 +12,7 @@ struct SdfConfig {
     double snapshot_time = -1;
     std::filesystem::path recipe_path, export_recipe_path;
     std::string scene = "sticks";
+    std::string cutter_mode = "original";
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
     std::uint32_t supersample = 1;
@@ -44,6 +45,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
                          "negative-sticks",
                          "negative-sphere",
                          "negative-stick-ball"};
+    auto cutter_mode =
+        option("cutter-mode", "Cutter treatment for negative-stick-ball", config::ValueType::Enum);
+    cutter_mode.enum_values = {"original", "intro-bores", "through"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
     motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
@@ -71,6 +75,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
+        .bind(cutter_mode, c.cutter_mode)
         .bind(motion, c.timeline.motion)
         .bind(option("duration", "Logical clip duration in seconds", config::ValueType::Float),
               c.timeline.duration)

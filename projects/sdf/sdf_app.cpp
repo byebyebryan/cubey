@@ -26,9 +26,10 @@ class App {
   public:
     explicit App(SdfConfig config)
         : config_(std::move(config)),
-          recipe_(config_.recipe_path.empty() ? make_recipe(config_.scene, config_.seed,
-                                                            config_.count, config_.cutter_width)
-                                              : load_recipe(config_.recipe_path)) {
+          recipe_(config_.recipe_path.empty()
+                      ? make_recipe(config_.scene, config_.seed, config_.count,
+                                    config_.cutter_width, config_.cutter_mode)
+                      : load_recipe(config_.recipe_path)) {
         if (config_.debug > 4 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
@@ -127,7 +128,7 @@ class App {
                 regenerate_requested_ = false;
                 try {
                     auto next = make_recipe(config_.scene, config_.seed, config_.count,
-                                            config_.cutter_width);
+                                            config_.cutter_width, config_.cutter_mode);
                     if (config_.timeline.motion == "carve")
                         validate_carve_recipe(next);
                     recipe_ = std::move(next);
@@ -295,8 +296,17 @@ class App {
                                   config_.scene == "negative-stick-ball";
             ImGui::InputScalar(negative ? "Cutter count" : "Stick count", ImGuiDataType_U32,
                                &config_.count);
-            if (config_.scene == "negative-stick-ball")
+            if (config_.scene == "negative-stick-ball") {
                 ImGui::SliderFloat("Cutter width", &config_.cutter_width, 0.003F, 0.06F, "%.3f");
+                const char* mode_labels[]{"Original sticks", "Intro bores", "All through"};
+                const std::string mode_names[]{"original", "intro-bores", "through"};
+                int mode = 0;
+                for (int i = 0; i < 3; ++i)
+                    if (config_.cutter_mode == mode_names[i])
+                        mode = i;
+                if (ImGui::Combo("Cutter mode", &mode, mode_labels, 3))
+                    config_.cutter_mode = mode_names[mode];
+            }
             if (ImGui::Button("Generate scene")) {
                 config_.count = std::min(config_.count, negative ? 65535U : 65536U);
                 regenerate_requested_ = true;

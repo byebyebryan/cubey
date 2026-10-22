@@ -193,6 +193,61 @@ int main() {
         }
         require(rejected_width, "invalid cutter widths must be rejected before field building");
     }
+    require(recipe_hash(make_recipe("negative-stick-ball", 42, 2048, 0.024F)) ==
+                0x83c63ecabc073415ULL,
+            "original-length dense recipes must remain unchanged");
+    const auto intro_bores = make_recipe("negative-stick-ball", 42, 8, 0.024F, "intro-bores");
+    const auto all_through = make_recipe("negative-stick-ball", 42, 8, 0.024F, "through");
+    auto intro_first = intro_bores;
+    intro_first.edits.resize(5);
+    require(recipe_hash(intro_first) ==
+                recipe_hash(make_recipe("negative-stick-ball", 42, 4, 0.024F, "intro-bores")),
+            "through-hole introductions must preserve count prefixes");
+    auto intro_tail = intro_bores;
+    auto original_tail = make_recipe("negative-stick-ball", 42, 8, 0.024F);
+    intro_tail.edits.erase(intro_tail.edits.begin(), intro_tail.edits.begin() + 5);
+    original_tail.edits.erase(original_tail.edits.begin(), original_tail.edits.begin() + 5);
+    require(recipe_hash(intro_tail) == recipe_hash(original_tail),
+            "extending the introduction must leave all later cutters unchanged");
+    for (const auto& recipe : {intro_bores, all_through}) {
+        const auto restored = parse_recipe(serialize_recipe(recipe));
+        require(recipe_hash(restored) == recipe_hash(recipe) &&
+                    restored.cutter_mode == recipe.cutter_mode,
+                "through-hole recipes must preserve explicit geometry and mode metadata");
+        const auto extended = *recipe.cutter_mode == "through" ? 8U : 4U;
+        for (unsigned i = 1; i <= extended; ++i) {
+            const auto& cutter = recipe.edits[i];
+            const auto axis = glm::normalize(glm::normalize(cutter.rotation) * Vec3{1, 0, 0});
+            require(glm::length(cutter.center + axis * cutter.half_extent.x) > 0.30F &&
+                        glm::length(cutter.center - axis * cutter.half_extent.x) > 0.30F,
+                    "extended cutter endpoints must both be outside the starting sphere");
+            const float projection = glm::dot(cutter.center, axis);
+            const float chord =
+                std::sqrt(std::max(0.0F, projection * projection + 0.30F * 0.30F -
+                                             glm::dot(cutter.center, cutter.center)));
+            for (int sample = -16; sample <= 16; ++sample) {
+                const auto point =
+                    cutter.center + axis * (-projection + chord * static_cast<float>(sample) / 16);
+                require(edit_distance(point, cutter) < -0.001F &&
+                            recipe_distance(point, std::span(recipe.edits).first(i + 1)) > 0,
+                        "a through cutter must remove a connected path across the full chord");
+            }
+        }
+    }
+    for (const auto count : {0U, 1U, 3U}) {
+        const auto short_intro =
+            make_recipe("negative-stick-ball", 42, count, 0.024F, "intro-bores");
+        require(short_intro.edits.size() == count + 1,
+                "small through-hole introductions must preserve the base and every cutter");
+        validate_carve_recipe(short_intro);
+    }
+    bool bad_mode = false;
+    try {
+        static_cast<void>(make_recipe("negative-stick-ball", 42, 8, 0.024F, "invalid"));
+    } catch (const std::invalid_argument&) {
+        bad_mode = true;
+    }
+    require(bad_mode, "unknown cutter modes must be rejected");
     for (const auto extent : {Vec3{0, 0.1F, 0.1F}, Vec3{-0.1F}, Vec3{0}}) {
         bool rejected_core = false;
         try {

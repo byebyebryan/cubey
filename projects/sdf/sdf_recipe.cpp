@@ -41,6 +41,10 @@ bool finite(math::Vec3 value) {
     return std::isfinite(value.x) && std::isfinite(value.y) && std::isfinite(value.z);
 }
 
+bool valid_cutter_mode(std::string_view value) {
+    return value == "original" || value == "intro-bores" || value == "through";
+}
+
 } // namespace
 
 void validate_edit(const BoxEdit& edit) {
@@ -99,13 +103,15 @@ float recipe_distance(math::Vec3 point, std::span<const BoxEdit> edits) {
 }
 
 Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count,
-                   float cutter_width) {
+                   float cutter_width, std::string_view cutter_mode) {
     Recipe recipe;
     recipe.generator = scene == "sticks" ? "sticks-pcg32-v1" : std::string(scene);
     recipe.seed = seed;
     if (scene == "negative-stick-ball") {
         if (!std::isfinite(cutter_width) || cutter_width < 0.003F || cutter_width > 0.06F)
             throw std::invalid_argument("negative stick ball cutter width must be 0.003–0.06");
+        if (!valid_cutter_mode(cutter_mode))
+            throw std::invalid_argument("invalid negative stick ball cutter mode");
         if (count > 65535U)
             throw std::invalid_argument(
                 "negative scenes accept at most 65535 cutters plus their base");
@@ -118,11 +124,26 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
             recipe.generator = "negative-stick-ball-width-pcg32-v1";
             recipe.cutter_width = cutter_width;
         }
-        for (auto& edit : recipe.edits) {
+        if (cutter_mode != "original") {
+            recipe.generator = cutter_mode == "intro-bores"
+                                   ? "negative-stick-ball-intro-bores-pcg32-v1"
+                                   : "negative-stick-ball-through-pcg32-v1";
+            recipe.cutter_mode = cutter_mode;
+        }
+        for (std::size_t i = 0; i < recipe.edits.size(); ++i) {
+            auto& edit = recipe.edits[i];
             edit.operation = Operation::Remove;
             edit.half_extent.y *= scale;
             edit.half_extent.z *= scale;
             edit.rounding *= scale;
+            // Move only the four presentation bores away from the surface shell.
+            // A long surface-tangent cutter would otherwise read as a rim notch.
+            if (cutter_mode == "intro-bores" && i < 4)
+                edit.center *= 0.25F;
+            if (cutter_mode == "through" || (cutter_mode == "intro-bores" && i < 4))
+                // Both endpoints are beyond the radius-0.30 sphere even when
+                // its stick center is at radius 0.30: 0.65 - 0.30 > 0.30.
+                edit.half_extent.x = 0.65F;
         }
         BoxEdit base;
         base.half_extent = math::Vec3{0.0F};
@@ -260,6 +281,11 @@ std::string serialize_recipe(const Recipe& recipe) {
             throw std::invalid_argument("invalid cutter width metadata");
         generator["cutter_width"] = *recipe.cutter_width;
     }
+    if (recipe.cutter_mode) {
+        if (!valid_cutter_mode(*recipe.cutter_mode))
+            throw std::invalid_argument("invalid cutter mode metadata");
+        generator["cutter_mode"] = *recipe.cutter_mode;
+    }
     return nlohmann::json{{"format", "cubey.sdf.boxes"},
                           {"version", 1},
                           {"generator", std::move(generator)},
@@ -281,6 +307,8 @@ Recipe parse_recipe(std::string_view text) {
     recipe.seed = json.at("generator").at("seed").get<std::uint32_t>();
     if (json.at("generator").contains("cutter_width"))
         recipe.cutter_width = json.at("generator").at("cutter_width").get<float>();
+    if (json.at("generator").contains("cutter_mode"))
+        recipe.cutter_mode = json.at("generator").at("cutter_mode").get<std::string>();
     const auto vector = [](const nlohmann::json& values) {
         if (!values.is_array() || values.size() != 3)
             throw std::invalid_argument("SDF vector must contain exactly three numbers");
