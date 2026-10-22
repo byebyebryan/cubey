@@ -162,13 +162,20 @@ identical; appearance edits retain the field cache. The
 includes twelve matched views per material, three turntables, inspection passes
 and the complete marble construction film. Limestone reads more convincingly
 in native inspection; marble remains a stylized surface treatment.
+User review accepted the limestone appearance and requested finer marble.
+The current marble preset raises pattern scale and vein frequency, adds smaller
+bends and finer grain, and preserves its pale colors and restrained bump.
+The [follow-up evidence](../../docs/notes/sdf-procedural-materials-evidence.md#finer-marble-follow-up)
+compares the original, an intermediate trial and this revised treatment.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
-one-material shaded hits. These three variants measure about 1.8 ms at the
-tested 1080p settings, superseding the earlier uniform guardian shading costs
+one-material shaded hits. The original three material-audition variants measure
+about 1.8 ms at the tested 1080p settings, superseding the earlier shading costs
 above. General multimaterial and part-ID queries still use the full evaluator.
 Geometry rebuilds remain about 0.92 seconds. The evidence separates shortcut,
 pattern-only and bump costs; material differences are within timing variation.
+The later marble frequency revision requalifies appearance and history; it does
+not add a new performance measurement.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |

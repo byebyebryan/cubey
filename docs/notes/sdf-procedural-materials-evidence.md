@@ -6,6 +6,9 @@ The [published comparison](http://starship:8787/reports/65b3ef76be120d14f2594129
 contains plain, limestone and marble views, three native turntables, inspection
 passes, the 80-second marble carving film and raw qualification receipts.
 The [implementation plan](sdf-procedural-materials-plan.md) records the checkpoints.
+User review accepted the limestone appearance and found marble interesting,
+requesting more detail. The [finer-marble follow-up](#finer-marble-follow-up)
+below records the subsequently revised marble preset and its comparison.
 
 ## Result and scope
 
@@ -204,4 +207,75 @@ python3 projects/sdf/tools/qualify_history.py \
   --export-name guardian-marble.json --preview-node left-socket \
   --preview-node left-muzzle-crease-0 --video \
   --output outputs/sdf/guardian-marble-history-new
+```
+
+## Finer marble follow-up
+
+After the initial material audition, user review accepted limestone and
+requested more detail / higher frequency in marble. The
+[finer marble comparison](http://starship:8787/reports/b34aab013e54f0baca6966075de69df69f10bf56e88543b2a13eb60d7dec96b0/)
+shows the original, an intermediate denser trial and the revised current preset.
+The earlier report and its full carving film preserve the original treatment.
+
+This is a five-parameter material revision, implemented in `dc6c7d4f`:
+
+| Parameter | Original | Intermediate trial | Revised preset |
+| --- | ---: | ---: | ---: |
+| Pattern scale | 4.5 | 9 | 12 |
+| Vein frequency | 5.5 | 11 | 12 |
+| Vein width | 0.08 | 0.055 | 0.05 |
+| Warp strength | 5 | 7 | 8.5 |
+| Grain scale | 220 | 360 | 360 |
+
+The revised material has smaller bends and denser, narrower veins. Its axial
+vein frequency (`scale × vein_frequency`) is about 5.8 times the original;
+turbulence adds local variation, so this is not a uniform line-count multiplier.
+Base colors, roughness amounts, seed, vein direction, offset and the restrained
+0.00008 bump amplitude remain unchanged. Geometry and all 65 operations match
+exactly. Limestone and both scenes' static/build preset files are unchanged.
+The generator reproduces both scenes and all four presets byte for byte.
+
+No native renderer or shader changes were needed. The binary/shader identities
+match the initial final qualification. Six matched views per treatment cover
+hero, rear, detail, grazing light, color and clay; all eight structural probes
+pass. Three native turntables build once each, and all 720 decoded frames pass
+screening. Native close-ups, grazing-light and extracted rear orbit frames were
+visually inspected before selection. The finest version was selected for the
+current preset; user artistic review of that revision remains separate.
+
+The revised material's full history passes 66 distinct states / 69 checkpoints,
+148,031 sampled-field rays and 279,378 direct CPU/GPU points, with zero
+mismatches, exhaustion, sampling ambiguities or part disagreements. Maximum
+CPU/GPU color error is 0.0000758171, within the existing 0.0002 procedural bound;
+thresholds were not changed. Final static/replay PNGs are exact. Both
+material-only and procedural-only cache checks pass without an additional
+geometry rebuild. Four selected committed stills and the paired socket preview
+are captured. This follow-up does not claim a new full construction film,
+desktop-controls run or performance measurement; the earlier timings retain
+their original material snapshot.
+
+Follow-up artifacts under `outputs/sdf/`:
+
+- `marble-frequency-audition/`: five parameter trials and their hero/detail
+  renders, including the original snapshot used for matching.
+- `marble-frequency-comparison/`: eighteen native inspection PNGs, three
+  turntables, saved source/configuration, hashes, video receipts and probes.
+- `marble-frequency-history/`: complete revised-material history validation,
+  selected stills, preview, exported scene and static/replay comparison.
+- `marble-frequency-reproduction.json`: exact generator reproduction receipt.
+- `marble-frequency-report/`: 106-file, 20,671,280-byte publication bundle.
+- `marble-frequency-served-review.json`: HTTP/hash parity for every served file.
+
+The report's static/dynamic assets and JavaScript syntax pass checks. Browser
+discovery again returned no connected browsers, so browser interaction review
+remains unavailable. The five documentation/layout checks and all 18 scoped
+SDF CLI recipes pass after this follow-up.
+
+Reproduce the three-way report from the captured inputs:
+
+```sh
+python3 projects/sdf/tools/marble_frequency_report.py \
+  --comparison outputs/sdf/marble-frequency-comparison \
+  --history outputs/sdf/marble-frequency-history \
+  --output outputs/sdf/marble-frequency-report-new
 ```
