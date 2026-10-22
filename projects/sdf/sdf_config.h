@@ -18,6 +18,7 @@ struct SdfConfig {
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
     bool ao = false;
+    bool cutter_cue = true;
     bool ground = false, validate = false, validate_batches = false, occluder = false;
     float yaw = 0.6F, pitch = 0.3F, distance = 1.35F;
     float target_y = 0;
@@ -52,6 +53,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto occluder = option("occluder", "Raster plane intersecting the SDF for depth checks",
                            config::ValueType::Bool);
     occluder.negative_cli_name = "--no-occluder";
+    auto cue = option("cutter-cue", "Show cutter bounds during the slow carving introduction",
+                      config::ValueType::Bool);
+    cue.negative_cli_name = "--no-cutter-cue";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
@@ -98,6 +102,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("shadow-softness", "Soft shadow angular radius", config::ValueType::Float),
               c.shadow_softness)
         .bind(occluder, c.occluder)
+        .bind(cue, c.cutter_cue)
         .bind(option("yaw", "Yaw", config::ValueType::Float), c.yaw)
         .bind(option("pitch", "Pitch", config::ValueType::Float), c.pitch)
         .bind(option("distance", "Distance", config::ValueType::Float), c.distance)

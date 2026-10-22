@@ -2,7 +2,7 @@
 
 Date: 2026-10-21
 
-Status: checkpoints A/B complete; cutter cue and final qualification pending.
+Status: checkpoints A/B/C complete; final qualification and report pending.
 The [plan](sdf-negative-sticks-plan.md) defines the experiment and acceptance.
 
 ## Native geometry audition
@@ -67,3 +67,18 @@ rendered one edit and passed 257 oracle rays without mismatches, exhaustion or
 sampling ambiguities. The desktop generator selection now controls regeneration;
 changing seed/count alone retains the loaded recipe until Generate scene.
 Windowed interaction qualification remains pending.
+
+## Cutter guide and first presentation
+
+The slow introduction shows a cyan outline of the next cutter's oriented
+bounding box, clipped to the workspace and hidden behind the current solid.
+The guide composites color in the existing surface pass without changing
+field contents or surface depth. Its data uses the existing per-frame uniform
+buffer; camera push constants remain 128 bytes. `--no-cutter-cue` disables it.
+
+`projects/sdf/presets/negative-sticks.json` selects the 72-cut recipe, hard
+self-shadows, atmosphere sky, and the planned 24-second carve/orbit sequence.
+An initial native capture contains 720 H.264 frames at 1280x720 / 30 FPS, with
+2x internal sampling. The introductory guide and a decoded twelve-second
+frame were inspected. The final qualification will recapture the video from
+committed source and inspect the remaining phases.

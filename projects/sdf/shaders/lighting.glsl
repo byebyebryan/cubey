@@ -13,6 +13,8 @@ layout(set=0,binding=2) uniform Lighting {
     vec4 irradiance[9];
     vec4 material;
     vec4 quality;
+    Edit cutter;
+    vec4 cutter_style;
 } lighting;
 vec3 skyRadiance(vec3 direction) {
     AtmosphereParams a=lighting.atmosphere;

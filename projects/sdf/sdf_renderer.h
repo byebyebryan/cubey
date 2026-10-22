@@ -16,7 +16,11 @@ struct LightingUniforms {
     std::array<math::Vec4, 9> irradiance;
     math::Vec4 material;
     math::Vec4 quality; // roughness, softness, AO, ground height
+    GpuEdit cutter;
+    math::Vec4 cutter_style; // opacity, world line width, unused, unused
 };
+static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
+static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);
 class Renderer {
   public:
     void create(vulkan::Device& device, VkExtent2D extent, VkFormat format, std::uint32_t slots,
@@ -26,7 +30,8 @@ class Renderer {
     void record(vulkan::Device& device, VkCommandBuffer command, render::ColorTargetView target,
                 render::FrameSlot slot, bool present, const SdfConfig& config, float yaw,
                 float pitch, float distance, profiling::ProfileRecorder* profile,
-                std::uint64_t frame_index);
+                std::uint64_t frame_index, const BoxEdit* cutter = nullptr,
+                float cutter_opacity = 0);
 
   private:
     AtmosphereEnvironmentRuntime atmosphere_;

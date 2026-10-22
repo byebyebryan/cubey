@@ -75,7 +75,8 @@ class App {
                 view.debug = sample.debug;
                 renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
                                  config_.yaw + orbit_.yaw() + sample.yaw, orbit_.pitch(),
-                                 orbit_.distance(), ctx.profile_recorder(), frame.index);
+                                 orbit_.distance(), ctx.profile_recorder(), frame.index,
+                                 current_cutter(), sample.cutter_opacity);
             };
             callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
                                          const host::HeadlessCaptureFrame& frame) {
@@ -163,7 +164,8 @@ class App {
             renderer_.record(ctx.device(), frame.command_buffer, frame.color_target,
                              frame.frame_slot, true, view,
                              config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
-                             orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index);
+                             orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index,
+                             current_cutter(), timeline_.cutter_opacity);
             recorder.end("sdf frame");
         };
         callbacks.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
@@ -179,6 +181,12 @@ class App {
     }
 
   private:
+    const BoxEdit* current_cutter() const {
+        if (timeline_.cutter_index == 0 || timeline_.cutter_index >= recipe_.edits.size() ||
+            field_->displayed_edit_count() != timeline_.prefix)
+            return nullptr;
+        return &recipe_.edits[timeline_.cutter_index];
+    }
     void initialize(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                     const render::ColorTargetView& target, std::uint32_t slots) {
         runtime_.attach_gpu_if_needed(gpu);
@@ -256,6 +264,7 @@ class App {
             if (ImGui::Combo("Shadows", &shadows, shadow_names, 3))
                 config_.shadows = static_cast<std::uint32_t>(shadows);
             ImGui::Checkbox("Local ambient occlusion", &config_.ao);
+            ImGui::Checkbox("Cutter bounds cue", &config_.cutter_cue);
             ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
             ImGui::SliderFloat("Exposure", &config_.exposure, -3, 3, "%.1f stops");

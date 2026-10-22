@@ -105,7 +105,8 @@ void Renderer::destroy() {
 void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
                       const SdfConfig& config, float yaw, float pitch, float distance,
-                      profiling::ProfileRecorder* profile, std::uint64_t frame_index) {
+                      profiling::ProfileRecorder* profile, std::uint64_t frame_index,
+                      const BoxEdit* cutter, float cutter_opacity) {
     auto environment = atmosphere_.environment();
     environment.sun_elevation_degrees = config.sun_elevation;
     environment.sun_azimuth_degrees = config.sun_azimuth;
@@ -130,13 +131,17 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                       0.01F, 100.0F) *
                     glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
     const auto& light = atmosphere_.lighting();
-    LightingUniforms uniforms;
+    LightingUniforms uniforms{};
     uniforms.atmosphere = atmosphere_.frame({}).background;
     uniforms.direct_color = {light.primary_light_color * light.primary_light_intensity, 0};
     for (unsigned i = 0; i < 9; ++i)
         uniforms.irradiance[i] = {light.diffuse_irradiance_sh[i], 0};
     uniforms.material = {0.55F, 0.27F, 0.095F, 0};
     uniforms.quality = {config.roughness, config.shadow_softness, config.ao ? 1.0F : 0.0F, -0.48F};
+    if (cutter && config.cutter_cue && config.debug == 0) {
+        uniforms.cutter = gpu_edit(*cutter);
+        uniforms.cutter_style = {cutter_opacity, 0.0025F, 0, 0};
+    }
     lighting_->upload(slot, uniforms);
     const Camera camera{glm::inverse(vp),
                         {eye, static_cast<float>(field_->atlas_axis)},
