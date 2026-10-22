@@ -57,8 +57,19 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
     // Small fixtures can check every edit, including all edits either side of
     // a promotion boundary, rather than relying on their chance visibility.
     if (recipe.edits.size() <= 257)
-        for (const auto& edit : recipe.edits)
+        for (const auto& edit : recipe.edits) {
             rays.push_back({{edit.center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
+            if (edit.operation == Operation::Remove) {
+                // Begin in a carved cavity, then query along and across its axes.
+                for (const auto axis :
+                     {math::Vec3{1, 0, 0}, math::Vec3{0, 1, 0}, math::Vec3{0, 0, 1}})
+                    rays.push_back({{edit.center, 0}, {glm::normalize(edit.rotation) * axis, 0}});
+            }
+        }
+    // These off-center origins exercise remaining solid in the subtraction
+    // fixtures, in addition to the center origins that become empty cavities.
+    for (const auto origin : {math::Vec3{0.249F, 0.232F, 0}, math::Vec3{0.17F, 0.15F, 0.025F}})
+        rays.push_back({{origin, 0}, {glm::normalize(math::Vec3{1, 0.001F, 1}), 0}});
     for (auto direction : {math::Vec3{1, 0, 0}, math::Vec3{0, 1, 0}, math::Vec3{0, 0, 1},
                            glm::normalize(math::Vec3{1, 0.001F, 1})}) {
         rays.push_back({{0, 0, 0, 0}, {direction, 0}});
@@ -212,5 +223,48 @@ void validate_batches(vulkan::Device& device, ProjectGpuServices& gpu, Field& fi
     }
     std::cout << "sdf: batch/reset matrix passed (forward, unchanged, backward, reset, 64/128 edit "
                  "batches, frontier/reference overflow recovery)\n";
+}
+
+void validate_subtractions(vulkan::Device& device, ProjectGpuServices& gpu, Field& field) {
+    Recipe crossing;
+    BoxEdit base;
+    base.half_extent = {0.22F, 0.20F, 0.04F};
+    crossing.edits.push_back(base);
+    BoxEdit bore;
+    bore.operation = Operation::Remove;
+    bore.half_extent = {0.04F, 0.03F, 0.30F};
+    crossing.edits.push_back(bore);
+    bore.half_extent = {0.30F, 0.04F, 0.02F};
+    crossing.edits.push_back(bore);
+    field.build(crossing.edits);
+    validate_field(device, gpu, field, crossing);
+
+    // A perforated plate gives each late cut a separate, visible location.
+    // Unlike hundreds of random cuts, this cannot pass through redundant tails.
+    Recipe last;
+    for (unsigned count : {1U, 128U, 129U, 256U, 257U, 129U, 1U, 0U, 257U}) {
+        Recipe recipe;
+        base.half_extent = {0.255F, 0.24F, 0.015F};
+        if (count > 0)
+            recipe.edits.push_back(base);
+        for (unsigned i = 1; i < count; ++i) {
+            BoxEdit cut;
+            cut.operation = Operation::Remove;
+            cut.center = {-0.24F + static_cast<float>((i - 1) % 17U) * 0.03F,
+                          -0.225F + static_cast<float>((i - 1) / 17U) * 0.03F, 0};
+            cut.half_extent = {0.005F, 0.005F, 0.10F};
+            recipe.edits.push_back(cut);
+        }
+        field.build(recipe.edits);
+        if (field.displayed_edit_count() != recipe.edits.size())
+            throw std::runtime_error("Subtractive cache published the wrong edit prefix");
+        validate_field(device, gpu, field, recipe);
+        last = recipe;
+    }
+    Field smaller_batches(device, gpu, 64, 64);
+    smaller_batches.build(last.edits);
+    validate_field(device, gpu, smaller_batches, last);
+    std::cout << "sdf: subtraction matrix passed (intersecting cavities, visible late cuts, "
+                 "128/129/256/257 total edits, backward/reset, 64/128 batches)\n";
 }
 } // namespace cubey::projects::sdf

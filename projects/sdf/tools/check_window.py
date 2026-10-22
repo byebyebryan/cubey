@@ -7,6 +7,8 @@ import os,subprocess,time,json,argparse
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--binary",default="build/dev/projects/sdf/sdf")
 parser.add_argument("--output",type=Path,default=Path("outputs/sdf/qualification"))
+parser.add_argument("--config",type=Path,help="scene preset; interactions use static motion")
+parser.add_argument("--height",type=int,default=600)
 args=parser.parse_args()
 if os.environ.get("CUBEY_SDF_PRIVATE_XVFB")!="1":
     raise SystemExit("Use qualify.py --windowed to create an isolated display")
@@ -25,7 +27,10 @@ assert d,"Xvfb display unavailable"
 root=x.XDefaultRootWindow(d)
 log=out/"logs/windowed-interaction.log"
 with log.open("w") as stream:
-    proc=subprocess.Popen([args.binary,"--width","900","--height","600","--require-validation"],stdout=stream,stderr=subprocess.STDOUT)
+    command=[args.binary]
+    if args.config:command += ["--config",str(args.config),"--motion","static","--supersample","1"]
+    command += ["--width","900","--height",str(args.height),"--require-validation"]
+    proc=subprocess.Popen(command,stdout=stream,stderr=subprocess.STDOUT)
     try:
         window=None
         for attempt in range(100):
@@ -44,10 +49,10 @@ with log.open("w") as stream:
         assert window,"SDF window not found"
         x.XMoveWindow(d,window,20,20);x.XSetInputFocus(d,window,1,0);x.XSync(d,0);time.sleep(1)
         def capture(name):
-            subprocess.run(["ffmpeg","-v","error","-f","x11grab","-video_size","900x600","-i",os.environ["DISPLAY"]+"+20,20","-frames:v","1","-y",str(out/"captures"/name)],check=True)
+            subprocess.run(["ffmpeg","-v","error","-f","x11grab","-video_size",f"900x{args.height}","-i",os.environ["DISPLAY"]+"+20,20","-frames:v","1","-y",str(out/"captures"/name)],check=True)
         capture("window-before.png")
         x.XResizeWindow(d,window,1100,700);x.XSync(d,0);time.sleep(.4)
-        x.XResizeWindow(d,window,900,600);x.XSync(d,0);time.sleep(.4)
+        x.XResizeWindow(d,window,900,args.height);x.XSync(d,0);time.sleep(.4)
         t.XTestFakeMotionEvent(d,-1,730,320,0);t.XTestFakeButtonEvent(d,1,1,0);x.XSync(d,0)
         for i in range(10):
             t.XTestFakeMotionEvent(d,-1,730+i*5,320+i*4,0);x.XSync(d,0);time.sleep(.03)
@@ -66,6 +71,6 @@ text=log.read_text()
 assert "validation error" not in text.lower(),text
 builds=sum(line.startswith("sdf: edits=") for line in text.splitlines())
 assert builds==1,f"camera/resize/input rebuilt the geometry {builds} times"
-receipt={"passed":True,"display":"isolated Xvfb","field_builds":builds,"actions":["resize twice","pointer orbit","scroll zoom","Space","R","Escape"],"log":str(log.relative_to(out))}
+receipt={"passed":True,"display":"isolated Xvfb","command":command,"field_builds":builds,"actions":["resize twice","pointer orbit","scroll zoom","Space","R","Escape"],"log":str(log.relative_to(out))}
 (out/"windowed-interaction.json").write_text(json.dumps(receipt,indent=2)+"\n")
 print(json.dumps(receipt))

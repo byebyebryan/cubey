@@ -20,6 +20,7 @@ struct SdfConfig {
     bool ao = false;
     bool cutter_cue = true;
     bool ground = false, validate = false, validate_batches = false, occluder = false;
+    bool validate_subtractions = false;
     float yaw = 0.6F, pitch = 0.3F, distance = 1.35F;
     float target_y = 0;
 };
@@ -48,6 +49,10 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         option("validate-batches", "Check field reset and 128/129/256/257 edit promotion",
                config::ValueType::Bool);
     batches.negative_cli_name = "--no-validate-batches";
+    auto subtractions = option("validate-subtractions",
+                               "Check intersecting cavities and subtractive batch boundaries",
+                               config::ValueType::Bool);
+    subtractions.negative_cli_name = "--no-validate-subtractions";
     auto ao = option("ao", "Local environment occlusion", config::ValueType::Bool);
     ao.negative_cli_name = "--no-ao";
     auto occluder = option("occluder", "Raster plane intersecting the SDF for depth checks",
@@ -89,6 +94,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
             c.atlas_axis)
         .bind(validate, c.validate)
         .bind(batches, c.validate_batches)
+        .bind(subtractions, c.validate_subtractions)
         .bind(ao, c.ao)
         .bind(option("supersample", "Internal resolution multiplier (1 or 2)",
                      config::ValueType::UInt32),

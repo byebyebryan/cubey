@@ -194,6 +194,8 @@ class App {
             field_ = std::make_unique<Field>(device, runtime_.gpu(), config_.atlas_axis);
             if (config_.validate_batches)
                 validate_batches(device, runtime_.gpu(), *field_);
+            if (config_.validate_subtractions)
+                validate_subtractions(device, runtime_.gpu(), *field_);
             active_prefix_ = timeline_.prefix;
             field_->build(std::span<const BoxEdit>(recipe_.edits).first(active_prefix_));
             if (config_.validate) {
