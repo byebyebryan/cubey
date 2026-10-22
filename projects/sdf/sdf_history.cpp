@@ -25,7 +25,7 @@ Json reveal(const Json& node, const std::set<std::string>& visible) {
         return visible.contains(node.at("name").get<std::string>()) ? node : Json(nullptr);
     auto result = node;
     auto children = Json::array();
-    const bool subtract = node.at("type") == "subtract";
+    const bool subtract = node.at("type") == "subtract" || node.at("type") == "smooth-subtract";
     for (const auto& child : node.at("children")) {
         auto part = reveal(child, visible);
         if (subtract && children.empty() && part.is_null())
@@ -80,7 +80,9 @@ void read_authored_history(AuthoredScene& scene) {
         }
         std::size_t index = 0;
         for (const auto& child : node.at("children")) {
-            collect(child, negative != (node.at("type") == "subtract" && index == 1));
+            collect(child, negative != ((node.at("type") == "subtract" ||
+                                         node.at("type") == "smooth-subtract") &&
+                                        index == 1));
             ++index;
         }
     };

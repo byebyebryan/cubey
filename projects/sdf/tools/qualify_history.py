@@ -84,7 +84,7 @@ def main():
             if negative: cutters.add(node['name'])
         else:
             for i, child in enumerate(node['children']):
-                walk(child, negative != (node['type'] == 'subtract' and i == 1))
+                walk(child, negative != (node['type'] in ('subtract', 'smooth-subtract') and i == 1))
     walk(scene['root'])
     start = .65
     for index, step in enumerate(history):

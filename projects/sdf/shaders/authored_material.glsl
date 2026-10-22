@@ -30,6 +30,13 @@ SceneSurface authoredSurface(vec3 p) {
                     if (node.settings.w>=0.0) { a.material=authoredMaterials[uint(node.settings.w)]; a.part=i; }
                 }
                 a.distance=d;
+            } else if (code==13u) {
+                float h=clamp(0.5+0.5*(a.distance+b.distance)/node.settings.y,0.0,1.0);
+                float d=mix(-b.distance,a.distance,h)+node.settings.y*h*(1.0-h);
+                if (h<0.5 && node.settings.w>=0.0) {
+                    a.material=authoredMaterials[uint(node.settings.w)]; a.part=i;
+                }
+                a.distance=d;
             } else {
                 float h=clamp(0.5+0.5*(b.distance-a.distance)/node.settings.y,0.0,1.0);
                 float d=mix(b.distance,a.distance,h)-node.settings.y*h*(1.0-h);

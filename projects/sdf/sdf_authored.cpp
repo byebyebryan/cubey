@@ -81,10 +81,28 @@ float primitive_distance(math::Vec3 point, const SceneInstruction& node) {
     else if (code == ShapeCode::Capsule) {
         p.y -= std::clamp(p.y, -node.parameters.y, node.parameters.y);
         distance = glm::length(p) - node.parameters.x;
-    } else {
+    } else if (code == ShapeCode::Cylinder) {
         const math::Vec2 d{glm::length(math::Vec2{p.x, p.z}) - node.parameters.x,
                            std::abs(p.y) - node.parameters.y};
         distance = glm::length(glm::max(d, math::Vec2{0})) + std::min(std::max(d.x, d.y), 0.0F);
+    } else if (code == ShapeCode::Torus) {
+        distance =
+            glm::length(math::Vec2{glm::length(math::Vec2{p.x, p.z}) - node.parameters.x, p.y}) -
+            node.parameters.y;
+    } else if (code == ShapeCode::CappedCone) {
+        // Revolve the exact distance to the frustum's two caps and side segment.
+        const float bottom = node.parameters.x, top = node.parameters.y, h = node.parameters.z;
+        const math::Vec2 radial{glm::length(math::Vec2{p.x, p.z}), p.y};
+        const math::Vec2 a{bottom, -h}, edge{top - bottom, 2 * h};
+        const auto side =
+            radial - a -
+            edge * std::clamp(glm::dot(radial - a, edge) / glm::dot(edge, edge), 0.0F, 1.0F);
+        const float caps =
+            std::min(glm::length(math::Vec2{std::max(radial.x - bottom, 0.0F), radial.y + h}),
+                     glm::length(math::Vec2{std::max(radial.x - top, 0.0F), radial.y - h}));
+        const float radius = bottom + (top - bottom) * (radial.y + h) / (2 * h);
+        const bool inside = std::abs(radial.y) <= h && radial.x <= radius;
+        distance = std::min(caps, glm::length(side)) * (inside ? -1.0F : 1.0F);
     }
     return distance * node.settings.x;
 }
@@ -131,7 +149,7 @@ AuthoredScene parse_authored_scene(std::string_view text) {
     std::size_t visited = 0;
     std::function<void(const Json&, Transform, unsigned, unsigned)> compile;
     compile = [&](const Json& node, Transform parent, unsigned inherited, unsigned depth) {
-        if (++visited > 128 || depth > 24)
+        if (++visited > authored_max_instructions || depth > 24)
             throw std::invalid_argument("authored SDF tree exceeds node/depth limits");
         const auto name = node.at("name").get<std::string>();
         if (name.empty() || !names.insert(name).second)
@@ -146,35 +164,38 @@ AuthoredScene parse_authored_scene(std::string_view text) {
             if (!children.is_array() || children.size() != 1)
                 throw std::invalid_argument("authored transform group requires one child");
             compile(children.at(0), world, mat, depth + 1);
-        } else if (type == "union" || type == "subtract" || type == "smooth-union") {
+        } else if (type == "union" || type == "subtract" || type == "smooth-union" ||
+                   type == "smooth-subtract") {
+            const bool subtract = type == "subtract" || type == "smooth-subtract";
             const auto& children = node.at("children");
-            if (!children.is_array() || children.size() < 2 || children.size() > 64 ||
-                (type == "subtract" && children.size() != 2))
+            if (!children.is_array() || children.size() < 2 ||
+                children.size() > authored_max_leaves || (subtract && children.size() != 2))
                 throw std::invalid_argument("invalid authored SDF operator arity");
             compile(children.at(0), world, mat, depth + 1);
             for (std::size_t i = 1; i < children.size(); ++i) {
                 compile(children.at(i), world, mat, depth + 1);
                 SceneInstruction instruction;
                 instruction.center_code.w =
-                    static_cast<float>(type == "union"      ? ShapeCode::Union
-                                       : type == "subtract" ? ShapeCode::Subtract
-                                                            : ShapeCode::SmoothUnion);
+                    static_cast<float>(type == "union"             ? ShapeCode::Union
+                                       : type == "subtract"        ? ShapeCode::Subtract
+                                       : type == "smooth-subtract" ? ShapeCode::SmoothSubtract
+                                                                   : ShapeCode::SmoothUnion);
                 instruction.settings.y =
-                    type == "smooth-union"
+                    (type == "smooth-union" || type == "smooth-subtract")
                         ? number(node.at("radius").get<float>(), .00001F, 1) * world.scale
                         : 0;
                 instruction.settings.w =
-                    type == "subtract" ? (node.contains("cut_material")
-                                              ? static_cast<float>(material_index(
-                                                    node.at("cut_material").get<std::string>()))
-                                              : -1.0F)
-                                       : (node.value("blend_materials", true) ? 1.0F : 0.0F);
+                    subtract ? (node.contains("cut_material")
+                                    ? static_cast<float>(material_index(
+                                          node.at("cut_material").get<std::string>()))
+                                    : -1.0F)
+                             : (node.value("blend_materials", true) ? 1.0F : 0.0F);
                 result.program.push_back(instruction);
                 result.part_names.push_back(name);
             }
         } else {
-            if (++result.leaf_count > 64)
-                throw std::invalid_argument("authored SDF scene exceeds 64 primitive leaves");
+            if (++result.leaf_count > authored_max_leaves)
+                throw std::invalid_argument("authored SDF scene exceeds 128 primitive leaves");
             SceneInstruction instruction;
             ShapeCode code;
             if (type == "box") {
@@ -189,6 +210,22 @@ AuthoredScene parse_authored_scene(std::string_view text) {
                 instruction.parameters.x = number(node.at("radius").get<float>(), .000001F, 10);
                 instruction.parameters.y =
                     number(node.at("half_length").get<float>(), .000001F, 10);
+            } else if (type == "torus") {
+                code = ShapeCode::Torus;
+                const float major = number(node.at("major_radius").get<float>(), .000001F, 10);
+                const float minor = number(node.at("minor_radius").get<float>(), .000001F, 10);
+                if (minor >= major)
+                    throw std::invalid_argument(
+                        "authored torus requires minor radius below major radius");
+                instruction.parameters = {major, minor, 0, 0};
+            } else if (type == "capped-cone") {
+                code = ShapeCode::CappedCone;
+                const float bottom = number(node.at("bottom_radius").get<float>(), 0, 10);
+                const float top = number(node.at("top_radius").get<float>(), 0, 10);
+                if (std::max(bottom, top) < .000001F)
+                    throw std::invalid_argument("authored capped cone needs a positive end radius");
+                instruction.parameters = {
+                    bottom, top, number(node.at("half_length").get<float>(), .000001F, 10), 0};
             } else
                 throw std::invalid_argument("unknown authored SDF primitive: " + type);
             const auto inverse = glm::conjugate(world.rotation);
@@ -198,8 +235,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
             result.program.push_back(instruction);
             result.part_names.push_back(name);
         }
-        if (result.program.size() > 128)
-            throw std::invalid_argument("authored SDF program exceeds 128 instructions");
+        if (result.program.size() > authored_max_instructions)
+            throw std::invalid_argument("authored SDF program exceeds 256 instructions");
     };
     if (!json.at("root").is_null())
         compile(json.at("root"), {}, 0, 0);
@@ -281,6 +318,16 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
                             scene.materials.at(static_cast<unsigned>(instruction.settings.w));
                         a.part = static_cast<unsigned>(i);
                     }
+                }
+                a.distance = distance;
+            } else if (code == ShapeCode::SmoothSubtract) {
+                const float radius = instruction.settings.y;
+                const float h =
+                    std::clamp(.5F + .5F * (a.distance + b.distance) / radius, 0.0F, 1.0F);
+                const float distance = glm::mix(-b.distance, a.distance, h) + radius * h * (1 - h);
+                if (h < .5F && instruction.settings.w >= 0) {
+                    a.material = scene.materials.at(static_cast<unsigned>(instruction.settings.w));
+                    a.part = static_cast<unsigned>(i);
                 }
                 a.distance = distance;
             } else {

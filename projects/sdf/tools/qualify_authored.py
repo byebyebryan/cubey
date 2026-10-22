@@ -10,7 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 from qualify import distribution
-from sdf_author import box, cylinder, material, rotation, smooth_union, sphere, subtract, union, write_scene
+from sdf_author import box, capped_cone, cylinder, material, rotation, smooth_subtract, smooth_union, sphere, subtract, torus, union, write_scene
 
 
 def check_video(path, width=1280, height=960, expected_frames=480):
@@ -104,6 +104,18 @@ def main():
         'sphere': sphere('ball', (0, 0, 0), .2),
         'capsule': dict(type='capsule', name='capsule', radius=.07, half_length=.16),
         'cylinder': cylinder('cylinder', (0, 0, 0), .15, .12, 'blue'),
+        'torus': torus('seal', (0, 0, 0), .18, .045, 'blue'),
+        'torus-transformed': union('seal-assembly',
+            torus('seal', (0, 0, 0), .18, .025, 'blue', rotation_xyzw=rotation((1, 0, 0), 71)),
+            sphere('cap', (.2, 0, 0), .04), position=(.02, .01, -.03), scale=.8,
+            rotation_xyzw=rotation((0, 0, 1), 23)),
+        'capped-cone': capped_cone('taper', (0, 0, 0), .18, .07, .2, 'blue'),
+        'cone-tip': capped_cone('tip', (0, 0, 0), .18, 0, .2, 'blue', rotation_xyzw=rotation((1, 0, 1), 34)),
+        'cone-equal-ends': capped_cone('cylinder-equivalent', (0, 0, 0), .15, .15, .12, 'blue'),
+        'smooth-cut': union('assembly', smooth_subtract('recess', sphere('body', (0, 0, 0), .25),
+            sphere('tool', (.1, 0, .2), .15), .04, cut_material='blue'), sphere('plug', (.1, 0, .2), .035)),
+        'smooth-inherit-cut': smooth_subtract('recess', sphere('body', (0, 0, 0), .25),
+            sphere('tool', (.1, 0, .2), .15, 'blue'), .04),
         'local-cut': union('assembly', subtract('housing', sphere('body', (0, 0, 0), .25),
             sphere('cut', (.1, 0, .2), .15), cut_material='blue'), sphere('plug', (.1, 0, .2), .04, 'blue')),
         'inherit-cut': subtract('body-cut', sphere('body', (0, 0, 0), .25), sphere('cut', (.1, 0, .2), .15, 'blue')),
@@ -117,6 +129,9 @@ def main():
         'workspace-clip': sphere('clipped', (.48, 0, 0), .1),
         'maximum': union('maximum', *[sphere(f's{i}', ((i % 4 - 1.5) * .12, (i // 4 % 4 - 1.5) * .12,
             (i // 16 - 1.5) * .12), .018, 'blue' if i % 2 else 'red') for i in range(64)]),
+        'maximum-128': union('maximum-128', *[sphere(f's{i}', ((i % 8 - 3.5) * .08,
+            (i // 8 % 4 - 1.5) * .10, (i // 32 - 1.5) * .10), .018,
+            'blue' if i % 2 else 'red') for i in range(128)]),
     }
     for name, tree in fixtures.items():
         path = out / f'fixtures/{name}.json'

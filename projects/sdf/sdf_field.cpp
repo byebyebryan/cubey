@@ -43,7 +43,8 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
         throw std::invalid_argument("invalid SDF frontier/reference validation limits");
     const std::uint64_t allocation = 16ULL * node_count + 8ULL * capacity +
                                      4ULL * reference_capacity_ + 128 * sizeof(GpuEdit) + 16 +
-                                     2048ULL * axis * axis * axis;
+                                     2048ULL * axis * axis * axis + 16 +
+                                     authored_max_instructions * sizeof(SceneInstruction);
     if (allocation > 2ULL * 1024 * 1024 * 1024)
         throw std::runtime_error("SDF field exceeds 2 GiB allocation budget");
     if (device.properties().limits.maxStorageBufferRange < node_count * 8ULL ||
@@ -84,7 +85,7 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
     references_ = buffer(reference_capacity_ * 4ULL);
     edits_ = buffer(128 * sizeof(GpuEdit), true);
     counters_ = buffer(16, true);
-    authored_program_ = buffer(16 + 128 * sizeof(SceneInstruction), true);
+    authored_program_ = buffer(16 + authored_max_instructions * sizeof(SceneInstruction), true);
     if (stats_.allocation_bytes > 2ULL * 1024 * 1024 * 1024)
         throw std::runtime_error("SDF field exceeds 2 GiB allocation budget");
     std::vector<vulkan::DescriptorSetBindingConfig> bindings;

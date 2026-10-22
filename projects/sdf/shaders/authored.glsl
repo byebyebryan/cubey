@@ -25,9 +25,20 @@ float authoredPrimitive(vec3 p,SceneInstruction node) {
     else if (code==3u) {
         p.y-=clamp(p.y,-node.parameters.y,node.parameters.y);
         d=length(p)-node.parameters.x;
-    } else {
+    } else if (code==4u) {
         vec2 v=vec2(length(p.xz)-node.parameters.x,abs(p.y)-node.parameters.y);
         d=length(max(v,0.0))+min(max(v.x,v.y),0.0);
+    } else if (code==5u) {
+        d=length(vec2(length(p.xz)-node.parameters.x,p.y))-node.parameters.y;
+    } else {
+        float bottom=node.parameters.x,top=node.parameters.y,h=node.parameters.z;
+        vec2 v=vec2(length(p.xz),p.y),a=vec2(bottom,-h),edge=vec2(top-bottom,2.0*h);
+        vec2 side=v-a-edge*clamp(dot(v-a,edge)/dot(edge,edge),0.0,1.0);
+        float caps=min(length(vec2(max(v.x-bottom,0.0),v.y+h)),
+                       length(vec2(max(v.x-top,0.0),v.y-h)));
+        float radius=bottom+(top-bottom)*(v.y+h)/(2.0*h);
+        bool inside=abs(v.y)<=h && v.x<=radius;
+        d=min(caps,length(side))*(inside ? -1.0 : 1.0);
     }
     return d*node.settings.x;
 }
@@ -43,6 +54,10 @@ float authoredDistance(vec3 p) {
             float b=stack[--size],a=stack[size-1];
             if (code==10u) a=min(a,b);
             else if (code==11u) a=max(a,-b);
+            else if (code==13u) {
+                float h=clamp(0.5+0.5*(a+b)/node.settings.y,0.0,1.0);
+                a=mix(-b,a,h)+node.settings.y*h*(1.0-h);
+            }
             else {
                 float h=clamp(0.5+0.5*(b-a)/node.settings.y,0.0,1.0);
                 a=mix(b,a,h)-node.settings.y*h*(1.0-h);

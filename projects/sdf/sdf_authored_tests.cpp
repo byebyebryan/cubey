@@ -59,6 +59,46 @@ int main() {
     close(authored_distance({0, .2F, 0}, cylinder), 0);
     close(authored_distance({.1F, .1F, 0}, cylinder), 0);
     close(authored_distance({.2F, .3F, 0}, cylinder), std::sqrt(.02F));
+    const Json torus_json{
+        {"type", "torus"}, {"name", "seal"}, {"major_radius", .15}, {"minor_radius", .04}};
+    const auto seal = scene(torus_json);
+    close(authored_distance({}, seal), .11F);
+    close(authored_distance({.15F, 0, 0}, seal), -.04F);
+    close(authored_distance({.19F, 0, 0}, seal), 0);
+    close(authored_distance({.15F, .1F, 0}, seal), .06F);
+    const Json cone_json{{"type", "capped-cone"},
+                         {"name", "taper"},
+                         {"bottom_radius", .2},
+                         {"top_radius", .1},
+                         {"half_length", .2}};
+    const auto taper = scene(cone_json);
+    close(authored_distance({}, taper), -.15F / std::sqrt(1.0625F));
+    close(authored_distance({.2F, -.2F, 0}, taper), 0);
+    close(authored_distance({.1F, .2F, 0}, taper), 0);
+    close(authored_distance({0, .3F, 0}, taper), .1F);
+    close(authored_distance({.3F, 0, 0}, taper), .15F / std::sqrt(1.0625F));
+    auto equal_ends = cone_json;
+    equal_ends["bottom_radius"] = .1;
+    for (const auto p : {Vec3{}, Vec3{.2F, .3F, 0}, Vec3{.05F, -.1F, .02F}})
+        close(authored_distance(p, scene(equal_ends)), authored_distance(p, cylinder));
+    auto tip = cone_json;
+    tip["top_radius"] = 0;
+    close(authored_distance({}, scene(tip)), -.1F / std::sqrt(1.25F));
+    close(authored_distance({0, .2F, 0}, scene(tip)), 0);
+    for (const auto kind : {0, 1, 2, 3}) {
+        auto bad = kind < 2 ? torus_json : cone_json;
+        if (kind == 0)
+            bad["minor_radius"] = .15;
+        if (kind == 1)
+            bad["major_radius"] = 0;
+        if (kind == 2)
+            bad["top_radius"] = -.1;
+        if (kind == 3) {
+            bad["bottom_radius"] = 0;
+            bad["top_radius"] = 0;
+        }
+        rejected(document(bad));
+    }
     auto moved = sphere("moved", {.1F, .2F, 0}, .05F);
     moved["scale"] = 2;
     close(authored_distance({.2F, .2F, 0}, scene(moved)), 0);
@@ -91,6 +131,26 @@ int main() {
     close(authored_surface({}, blend).material.base_roughness.z, .5F);
     smooth["blend_materials"] = false;
     close(authored_surface({}, scene(smooth)).material.base_roughness.x, 1);
+    Json soft_cut{{"type", "smooth-subtract"},
+                  {"name", "rounded-recess"},
+                  {"radius", .04},
+                  {"cut_material", "blue"},
+                  {"children", {sphere("body", {}, .2F), sphere("tool", {0, 0, .2F}, .1F)}}};
+    const auto recess = scene(soft_cut);
+    close(authored_distance({0, 0, .05F}, recess), -.05F);
+    close(authored_surface({0, 0, .15F}, recess).material.base_roughness.z, 1);
+    close(authored_surface({0, 0, -.1F}, recess).material.base_roughness.x, 1);
+    auto hard_cut = soft_cut;
+    hard_cut["type"] = "subtract";
+    for (int i = -20; i <= 20; ++i) {
+        const Vec3 p{.13F, 0, static_cast<float>(i) * .01F};
+        const float extra = authored_distance(p, recess) - authored_distance(p, scene(hard_cut));
+        require(extra >= -1e-6F && extra <= .010001F, "smooth subtraction exceeds its blend bound");
+    }
+    soft_cut.erase("cut_material");
+    close(authored_surface({0, 0, .15F}, scene(soft_cut)).material.base_roughness.x, 1);
+    soft_cut["radius"] = 0;
+    rejected(document(soft_cut));
     // A nested blend must retain three contributors, rather than truncating to two IDs.
     const auto nested =
         scene({{"name", "outer"},
@@ -165,15 +225,15 @@ int main() {
     invalid["root"]["children"].erase(1);
     rejected(invalid);
     Json many = Json::array();
-    for (int i = 0; i < 64; ++i)
+    for (std::size_t i = 0; i < authored_max_leaves; ++i)
         many.push_back(sphere("s" + std::to_string(i), {}, .01F));
     const auto maximum = scene({{"name", "max"}, {"type", "union"}, {"children", many}});
-    require(maximum.program.size() == 127 && maximum.leaf_count == 64,
-            "64-leaf boundary lost nodes");
+    require(maximum.program.size() == 255 && maximum.leaf_count == 128,
+            "128-leaf boundary lost nodes");
     many.push_back(sphere("overflow", {}, .01F));
     rejected(document({{"name", "max"}, {"type", "union"}, {"children", many}}));
     require(authored_program_bytes(nullptr).size() >= 16 &&
-                authored_program_bytes(&maximum).size() == 16 + 127 * sizeof(SceneInstruction),
+                authored_program_bytes(&maximum).size() == 16 + 255 * sizeof(SceneInstruction),
             "GPU packing mismatch");
     // History must retain transform/material inheritance when a Boolean has
     // only its first visible child, and isolate later cuts from other parts.
@@ -212,6 +272,17 @@ int main() {
     const auto history_roundtrip = parse_authored_scene(serialize_authored_scene(history));
     require(history_roundtrip.history.size() == 3 && history_roundtrip.history[1].cutter,
             "history persistence lost its cutter or steps");
+    auto soft_history_json = history_json;
+    soft_history_json["root"]["children"][0]["type"] = "smooth-subtract";
+    soft_history_json["root"]["children"][0]["radius"] = .02;
+    const auto soft_history = parse_authored_scene(soft_history_json.dump());
+    require(soft_history.history[1].cutter.has_value(), "smooth subtraction lost its cut preview");
+    require(authored_history_scene(soft_history, 1).leaf_count == 1 &&
+                authored_history_scene(soft_history, 2).leaf_count == 2,
+            "smooth subtraction lost body-first reveal semantics");
+    auto reversed_soft_history = soft_history_json;
+    std::swap(reversed_soft_history["history"][0], reversed_soft_history["history"][1]);
+    rejected(reversed_soft_history);
     TimelineConfig timeline{"presentation", 12, 8, 1};
     for (std::size_t i = 0; i <= history.history.size(); ++i) {
         const auto time = authored_history_seek(timeline, history, i);

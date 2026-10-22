@@ -4,14 +4,19 @@
 #include <optional>
 
 namespace cubey::projects::sdf {
+inline constexpr std::size_t authored_max_leaves = 128;
+inline constexpr std::size_t authored_max_instructions = 256;
 enum class ShapeCode : std::uint32_t {
     Box = 1,
     Sphere = 2,
     Capsule = 3,
     Cylinder = 4,
+    Torus = 5,
+    CappedCone = 6,
     Union = 10,
     Subtract = 11,
-    SmoothUnion = 12
+    SmoothUnion = 12,
+    SmoothSubtract = 13
 };
 // Postfix program. Operators consume two stack entries; leaves push one.
 // Transforms are flattened to world space, with distance-preserving uniform scale.

@@ -33,7 +33,7 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
                                  .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
     };
-    scene_program_ = host_buffer(16 + 128 * sizeof(SceneInstruction));
+    scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction));
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
     update_authored(scene);
     const std::array<vulkan::DescriptorSetBindingConfig, 5> bindings{

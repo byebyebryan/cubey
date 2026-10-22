@@ -38,6 +38,15 @@ def cylinder(name, position, radius, half_length, material=None, **options):
     return shape('cylinder', name, position, material, radius=radius, half_length=half_length, **options)
 
 
+def torus(name, position, major_radius, minor_radius, material=None, **options):
+    return shape('torus', name, position, material, major_radius=major_radius, minor_radius=minor_radius, **options)
+
+
+def capped_cone(name, position, bottom_radius, top_radius, half_length, material=None, **options):
+    return shape('capped-cone', name, position, material, bottom_radius=bottom_radius,
+                 top_radius=top_radius, half_length=half_length, **options)
+
+
 def capsule(name, start, end, radius, material=None):
     delta = [b-a for a, b in zip(start, end)]
     length = math.sqrt(sum(v*v for v in delta))
@@ -63,6 +72,12 @@ def subtract(name, body, cutter, cut_material=None, **options):
 def smooth_union(name, a, b, radius, blend_materials=False, **options):
     return shape('smooth-union', name, children=[a, b], radius=radius,
                  blend_materials=blend_materials, **options)
+
+
+def smooth_subtract(name, body, cutter, radius, cut_material=None, **options):
+    result = subtract(name, body, cutter, cut_material, **options)
+    result.update(type='smooth-subtract', radius=radius)
+    return result
 
 
 def write_scene(path, name, materials, root, history=None):
