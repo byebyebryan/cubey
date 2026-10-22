@@ -188,6 +188,16 @@ int main() {
     close(authored_surface({}, blend).material.base_roughness.z, .5F);
     smooth["blend_materials"] = false;
     close(authored_surface({}, scene(smooth)).material.base_roughness.x, 1);
+    // Smooth joins use the same world-distance tie band as hard union. Tiny
+    // curve blends otherwise amplify CPU/GPU rounding into different parts.
+    const auto tied = scene(smooth);
+    const auto first_part = authored_surface({}, tied).part;
+    for (float x : {-2e-7F, 0.0F, 2e-7F}) {
+        const auto at_tie = authored_surface({x, 0, 0}, tied);
+        require(at_tie.part == first_part, "smooth union lost its stable tie owner");
+        close(at_tie.material.base_roughness.x, 1);
+    }
+    close(authored_surface({2e-5F, 0, 0}, tied).material.base_roughness.z, 1);
     Json soft_cut{{"type", "smooth-subtract"},
                   {"name", "rounded-recess"},
                   {"radius", .04},
@@ -197,6 +207,12 @@ int main() {
     close(authored_distance({0, 0, .05F}, recess), -.05F);
     close(authored_surface({0, 0, .15F}, recess).material.base_roughness.z, 1);
     close(authored_surface({0, 0, -.1F}, recess).material.base_roughness.x, 1);
+    auto coincident_cut = soft_cut;
+    coincident_cut["children"][1] = sphere("tool", {}, .2F);
+    const auto cut_tie = scene(coincident_cut);
+    for (float x : {.2F - 2e-7F, .2F, .2F + 2e-7F})
+        close(authored_surface({x, 0, 0}, cut_tie).material.base_roughness.x, 1);
+    close(authored_surface({.2F - 2e-5F, 0, 0}, cut_tie).material.base_roughness.z, 1);
     auto hard_cut = soft_cut;
     hard_cut["type"] = "subtract";
     for (int i = -20; i <= 20; ++i) {

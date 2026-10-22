@@ -33,7 +33,7 @@ SceneSurface authoredSurface(vec3 p) {
             } else if (code==13u) {
                 float h=clamp(0.5+0.5*(a.distance+b.distance)/node.settings.y,0.0,1.0);
                 float d=mix(-b.distance,a.distance,h)+node.settings.y*h*(1.0-h);
-                if (h<0.5 && node.settings.w>=0.0) {
+                if (-b.distance>a.distance+1e-6 && node.settings.w>=0.0) {
                     a.material=authoredMaterials[uint(node.settings.w)]; a.part=i;
                 }
                 a.distance=d;
@@ -43,8 +43,8 @@ SceneSurface authoredSurface(vec3 p) {
                 if (node.settings.w>0.5) {
                     a.material.base_roughness=mix(b.material.base_roughness,a.material.base_roughness,h);
                     a.material.emission=mix(b.material.emission,a.material.emission,h);
-                } else if (h<0.5) a.material=b.material;
-                if (h<0.5) a.part=b.part;
+                } else if (b.distance<a.distance-1e-6) a.material=b.material;
+                if (b.distance<a.distance-1e-6) a.part=b.part;
                 a.distance=d;
             }
             stack[size-1]=a;

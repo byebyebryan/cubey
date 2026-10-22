@@ -374,7 +374,10 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
             static_cast<unsigned>(actual[0].z) != expected.part || max_distance > 2e-5F ||
             max_material > 2e-5F)
             throw std::runtime_error("authored CPU/GPU distance/material mismatch at point " +
-                                     std::to_string(i));
+                                     std::to_string(i) + " CPU part=" + std::to_string(expected.part) +
+                                     " GPU part=" + std::to_string(static_cast<unsigned>(actual[0].z)) +
+                                     " distance_error=" + std::to_string(max_distance) +
+                                     " material_error=" + std::to_string(max_material));
     }
     std::cout << "sdf: authored CPU/GPU points=" << points.size()
               << " max_distance_error=" << max_distance << " max_material_error=" << max_material

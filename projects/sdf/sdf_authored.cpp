@@ -346,7 +346,7 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
                 const float h =
                     std::clamp(.5F + .5F * (a.distance + b.distance) / radius, 0.0F, 1.0F);
                 const float distance = glm::mix(-b.distance, a.distance, h) + radius * h * (1 - h);
-                if (h < .5F && instruction.settings.w >= 0) {
+                if (-b.distance > a.distance + 1e-6F && instruction.settings.w >= 0) {
                     a.material = scene.materials.at(static_cast<unsigned>(instruction.settings.w));
                     a.part = static_cast<unsigned>(i);
                 }
@@ -360,9 +360,9 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
                     a.material.base_roughness =
                         glm::mix(b.material.base_roughness, a.material.base_roughness, h);
                     a.material.emission = glm::mix(b.material.emission, a.material.emission, h);
-                } else if (h < .5F)
+                } else if (b.distance < a.distance - 1e-6F)
                     a.material = b.material;
-                if (h < .5F)
+                if (b.distance < a.distance - 1e-6F)
                     a.part = b.part;
                 a.distance = distance;
             }
