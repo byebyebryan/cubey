@@ -35,7 +35,7 @@ def robot():
         box('chest-notch-cut', (.028, -.07, .10), (.022, .007, .015), .003), cut_material='rubber')
     backpack = union('backpack',
         box('backpack-case', (0, -.035, -.11), (.07, .08, .025), .018, 'teal'),
-        box('backpack-spine', (0, -.035, -.14), (.018, .065, .005), .006, 'ivory'))
+        box('backpack-spine', (0, -.035, -.16), (.018, .065, .005), .006, 'ivory'))
     parts = [head, cylinder('neck', (0, .101, 0), .035, .037, 'rubber'), torso, chest,
              box('chest-status', (-.033, -.019, .106), (.016, .004, .0025), .002, 'amber'), backpack]
     for side in (-1, 1):
