@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cubey SDF — four sculpture experiments</title>
+<style>
+:root{color-scheme:dark;--bg:#11191c;--panel:#192529;--line:#34464b;--ink:#ecf1e9;--muted:#b6c3c3;--accent:#c2dc95}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,sans-serif}main{max-width:1280px;margin:auto;padding:48px 28px 64px}h1,h2,h3,p{margin-top:0}h1{font:clamp(2.6rem,6vw,4.8rem)/1.06 Georgia,serif;letter-spacing:-.04em;max-width:900px;margin-bottom:24px}h2{font:2rem/1.2 Georgia,serif;margin:0 0 12px}h3{font-size:1.1rem;margin:0 0 5px}p{max-width:80ch}.eyebrow{color:var(--accent);font-size:.78rem;text-transform:uppercase;letter-spacing:.15em}.lead{font-size:1.16rem;color:var(--muted);max-width:800px}a{color:var(--accent);text-underline-offset:3px}button,select,input{font:inherit}button,select{border:1px solid var(--line);border-radius:8px;padding:9px 13px;background:#243238;color:var(--ink);cursor:pointer}button:hover{border-color:var(--accent)}button[aria-pressed=true]{background:var(--accent);color:#162321;border-color:var(--accent)}button:disabled{opacity:.45;cursor:default}:focus-visible{outline:3px solid #e0a969;outline-offset:3px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:32px 0}.card{padding:0;text-align:left;overflow:hidden;background:var(--panel);border-radius:12px}.card img{width:100%;display:block;aspect-ratio:1;object-fit:cover}.card span{display:block;padding:12px 14px;font-size:.95rem}.section{border-top:1px solid var(--line);padding-top:32px;margin-top:40px}.columns{display:grid;grid-template-columns:1.08fr 1fr;gap:28px;align-items:start}.image-frame{margin:0;background:var(--panel);border-radius:12px;overflow:hidden}.image-frame img{display:block;width:100%;aspect-ratio:1;object-fit:contain}figcaption{padding:10px 14px;color:var(--muted);font-size:.87rem}.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}label{display:block;color:var(--muted);font-size:.88rem;margin-top:16px}select,input[type=range]{width:100%}input[type=range]{accent-color:var(--accent)}output{display:block;font-variant-numeric:tabular-nums}.muted,.note{color:var(--muted)}.note{font-size:.9rem}.facts{display:flex;flex-wrap:wrap;gap:12px 30px;margin:20px 0}.facts strong{display:block;font-size:1.3rem;color:var(--accent)}.facts small{color:var(--muted)}video{display:block;background:#182126;width:100%;aspect-ratio:4/3;border-radius:12px}.film-caption{min-height:3.5em;color:var(--muted);font-size:.88rem;margin:10px 0}.state-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px}#step-label{min-height:2.6em}.table-wrap{overflow:auto}table{border-collapse:collapse;min-width:680px;width:100%;font-size:.92rem}th,td{text-align:left;border-bottom:1px solid var(--line);padding:12px 10px}th{color:var(--muted);font-weight:500}.verdict{background:var(--panel);border-left:3px solid var(--accent);padding:16px 20px;margin-top:20px}details{border:1px solid var(--line);padding:16px 20px;border-radius:10px;margin:16px 0}summary{cursor:pointer;font-weight:600}pre{overflow:auto;padding:14px;background:#0e1417;border-radius:8px;font-size:.82rem}footer{margin-top:36px;font-size:.9rem;color:var(--muted)}#subject-panel{scroll-margin-top:20px}.source-links{font-size:.9rem;line-height:2}.chip{font-size:.78rem;color:var(--accent);border:1px solid var(--line);border-radius:30px;padding:4px 9px;display:inline-block}
+@media(max-width:800px){.columns{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}main{padding:28px 18px 48px}.section{margin-top:30px}.lead{font-size:1.02rem}h2{font-size:1.8rem}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s,border-color .15s}}
+</style></head><body><main>
+<p class="eyebrow">Cubey / signed distance fields / authored content study</p>
+<h1>Four ways to shape a solid.</h1>
+<p class="lead">A guardian, a pierced vessel, a carved arch and twisting driftwood. Each starts with broad masses and becomes a sculpture through blending, hollowing and cuts. Inspect the native renders or watch every real edit.</p>
+<span class="chip">Native SDF captures · plain materials · hard self-shadows · atmosphere sky</span>
+<nav class="cards" aria-label="Choose a sculpture" id="subjects"></nav>
+<section id="subject-panel" class="section">
+<p class="eyebrow" id="kicker"></p><h2 id="title"></h2><p id="description"></p>
+<div class="columns"><div>
+<figure class="image-frame"><a id="hero-link"><img id="hero" alt=""></a><figcaption id="view-caption"></figcaption></figure>
+<div class="controls" aria-label="Surface treatment"><button data-mode="material" aria-pressed="true">Material</button><button data-mode="clay" aria-pressed="false">Clay</button><button data-mode="blockout-clay" aria-pressed="false">First blockout</button></div>
+<label for="view">Inspection view</label><select id="view"></select>
+</div><div>
+<h3>Watch it take shape</h3><p class="note">Cuts preview in red before they commit. The final ten seconds orbit the completed object.</p>
+<video id="film" controls muted playsinline preload="none"></video>
+<div class="controls"><button id="load-film">Load construction film</button><a id="film-download">Download film</a></div>
+<p id="film-status" class="note" aria-live="polite">Choose a chapter to load the film.</p>
+<div class="controls" id="chapters" aria-label="Construction chapters"></div>
+<p class="film-caption" id="film-caption" aria-live="polite"></p>
+<div class="verdict"><h3>What this experiment showed</h3><p id="verdict"></p></div>
+</div></div>
+<div class="facts" id="facts"></div>
+</section>
+<section class="section"><div class="columns"><div>
+<div class="state-header"><h2>One edit at a time.</h2><output id="step-count" for="step"></output></div>
+<p class="note">Every image is a native render of a committed intermediate scene. Move backward, revisit a cut or open that moment in the film.</p>
+<label for="step">Committed authoring edit</label><input id="step" type="range" min="0" step="1">
+<div class="controls"><button id="previous">Previous edit</button><button id="next">Next edit</button><button id="watch-step">Watch this edit</button></div>
+<label for="step-select">Named edit</label><select id="step-select"></select><p id="step-label" aria-live="polite"></p>
+<p class="note">The history reveals additive and subtractive strokes in a saved CSG expression. It records no grab brush or freehand smoothing. Geometry rebuilds synchronously at each committed change.</p>
+</div><figure class="image-frame"><a id="state-link"><img id="state" alt=""></a><figcaption id="state-caption"></figcaption></figure></div></section>
+<section class="section"><h2>The results, with their limits.</h2>
+<p>These are four authored experiments for visual review. Technical qualification checks the fields and playback; it does not decide whether a sculpture is appealing. The finished surfaces could also be meshes—the SDF demonstration is the shaping sequence.</p>
+<div class="table-wrap"><table><thead><tr><th>Subject</th><th>Leaves</th><th>Active bricks</th><th>Build</th><th>1080p GPU median / p95</th></tr></thead><tbody id="results"></tbody></table></div>
+<p class="note">RTX 5070 Ti, hard shadows, 1920×1080 at 1×. Each profile has 148 completed samples after warmup. Frame times sum tracing/shading and shared post. Build time is a separate cold geometry measurement; capture/readback/encoding are excluded. Each scene uses one 912,882,864-byte field allocation.</p>
+<details><summary>What changed in the foundation</summary><p>Rounded tapered segments join endpoint spheres into horns, branches and cutters. Curves are sampled at authoring time into a bounded list of those segments. A surface-projection helper places grooves on the shape instead of leaving disconnected punctures. The analytic torus remained the better ceramic handle.</p>
+<p>No image textures, imported model, learned generation, terrain, ground plane or new lighting system was needed. The accepted robot remains available, and its matched hero reproduced with identical RGB pixels after the new primitive was added.</p>
+<p><a href="rounded-stroke-contract.md">Geometry contract</a> · <a href="foundation.json">Native primitive/material/legacy checks</a> · <a href="arch-negative-control.json">A deliberately restored arch-support mistake fails its design audit</a></p></details>
+<details><summary>Inspect the selected sculpture's evidence</summary><p id="evidence-summary"></p><div class="source-links" id="evidence-links"></div><pre id="commands"></pre><p id="source" class="note"></p>
+<p>Every committed state passes native history/ray and CPU/GPU distance/material/part checks. Reset/revisit, saved-scene reload, final replay and atlas relocation are checked separately. Every native video frame is decoded and screened for visible traversal exhaustion. Saved-tree solid/empty probes check selected connections and passages, with native inspection views as the visual check.</p>
+<p>The existing finite-grid tolerances are preserved. Ambiguous finite-grid rays are recorded separately in native logs. Desktop controls are exercised in a private display. User visual acceptance is pending.</p></details>
+</section><footer>From the <a href="http://starship:8787/reports/e05293386c1ae7bfeac7985541938ef1bc974b737f381d64ff09044422c99702/">accepted robot experiment</a> to sculptural forms. <a href="http://starship:8787/reports/#project=cubey">Cubey report catalog</a>.</footer>
+</main><script>
+const sculptures=__SCULPTURES__;
+const $=id=>document.getElementById(id), film=$('film');
+let selected=sculptures[0],mode='material',view='hero',step=0,mediaUrl=null,loadVersion=0,loadedSubject=null;
+function file(path){return `data/${selected.subject}/${path}`;}
+function button(text,action){const b=document.createElement('button');b.textContent=text;b.addEventListener('click',action);return b;}
+function showView(){const name=mode==='material'?view:mode;const path=file(`captures/${name}.png`);$('hero').src=path;$('hero-link').href=path;
+ const label=mode==='material'?selected.views.find(v=>v.name===view).label:mode==='clay'?'Plain clay, same hero camera':'First blockout in clay, same hero camera';
+ $('hero').alt=`${selected.title}: ${label}`;$('view-caption').textContent=label;$('view').disabled=mode!=='material';
+ document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));}
+function showStep(value){step=Math.max(0,Math.min(selected.count,Number(value)));const state=selected.steps[step];const path=file(`history/${state.capture}`);
+ $('step').value=step;$('step-select').value=step;$('step-count').textContent=`Edit ${step} / ${selected.count}`;$('step-label').textContent=state.label;
+ $('state').src=path;$('state-link').href=path;$('state').alt=`${selected.title}, edit ${step}: ${state.label}`;$('state-caption').textContent=state.label;
+ $('previous').disabled=step===0;$('next').disabled=step===selected.count;}
+function disposeFilm(){loadVersion++;film.pause();film.removeAttribute('src');film.load();if(mediaUrl)URL.revokeObjectURL(mediaUrl);mediaUrl=null;loadedSubject=null;}
+async function loadFilm(time=0){const subject=selected.subject;
+ if(loadedSubject===subject&&film.readyState>=1){film.currentTime=time;film.pause();return;}
+ const version=++loadVersion;$('film-status').textContent='Loading the native construction film…';$('load-film').disabled=true;
+ try{const url=file('history/presentation.mp4');const response=await fetch(url);if(!response.ok)throw new Error(`Download ${response.status}`);const blob=await response.blob();
+  if(version!==loadVersion)return;if(mediaUrl)URL.revokeObjectURL(mediaUrl);mediaUrl=URL.createObjectURL(blob);
+  await new Promise((resolve,reject)=>{film.addEventListener('loadedmetadata',resolve,{once:true});film.addEventListener('error',reject,{once:true});film.src=mediaUrl;film.load();});
+  if(version!==loadVersion)return;loadedSubject=subject;film.currentTime=Math.min(time,film.duration-.1);film.pause();$('film-status').textContent='Ready · play, scrub or choose a chapter.';
+ }catch(error){if(version===loadVersion)$('film-status').textContent='Film could not load here. Use the direct download link.';}
+ finally{if(version===loadVersion)$('load-film').disabled=false;}}
+function selectSubject(subject){selected=sculptures.find(s=>s.subject===subject);mode='material';view='hero';disposeFilm();
+ document.querySelectorAll('[data-subject]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.subject===subject)));
+ $('kicker').textContent=selected.kicker;$('title').textContent=selected.title;$('description').textContent=selected.description;$('verdict').textContent=selected.verdict;
+ $('view').replaceChildren(...selected.views.map(v=>new Option(v.label,v.name)));$('view').value='hero';showView();
+ $('film-download').href=file('history/presentation.mp4');film.poster=file('captures/hero.png');$('load-film').disabled=false;
+ $('film-status').textContent='Choose a chapter to load the film.';$('film-caption').textContent='';
+ $('chapters').replaceChildren(...selected.chapters.map(c=>button(c.label,()=>{showStep(c.step);loadFilm(c.time);})));
+ $('step').max=selected.count;$('step-select').replaceChildren(...selected.steps.map(s=>new Option(`${String(s.index).padStart(2,'0')} · ${s.label}`,s.index)));showStep(selected.count);
+ $('facts').replaceChildren(...[[selected.count,'authored edits'],[`${selected.gpu.median_ms.toFixed(2)} ms`,'median GPU frame'],[`${selected.build_ms.toFixed(1)} ms`,'cold geometry build']].map(([n,label])=>{const p=document.createElement('div'),strong=document.createElement('strong'),small=document.createElement('small');strong.textContent=n;small.textContent=label;p.append(strong,small);return p;}));
+ $('evidence-summary').textContent=`${selected.count+1} distinct scene states; ${selected.state_checks} native history checks including revisits; ${selected.intent_checks} design checks; ${selected.frames} decoded video frames.`;
+ $('evidence-links').replaceChildren(...[['Full native receipt','manifest.json'],['All-state ray checks','history/logs/history-validation.log'],['Saved explicit scene','scenes/source.json'],['Generator','scenes/author_sculptures.py'],['Design-intent audit','intent-audit.json'],['Video screening','history/video-check.json'],['History and previews','history/manifest.json']].map(([label,path])=>{const a=document.createElement('a');a.href=file(path);a.textContent=label;const span=document.createElement('span');span.append(a,document.createTextNode(' · '));return span;}));
+ const a=document.createElement('a');a.href=`controls/${subject}/windowed-interaction.json`;a.textContent='Desktop interaction receipt';$('evidence-links').append(a);
+ $('commands').textContent=`build/dev/projects/sdf/sdf --config ${selected.build_config}\n\npython3 projects/sdf/tools/qualify_sculpture.py --subject ${subject} --video --output outputs/sdf/${subject}-new`;
+ $('source').textContent=`Capture source ${selected.source}; worktree ${selected.dirty?'had recorded changes':'clean'} at start. Scene/config/generator and native binary/shader hashes are retained in the receipt.`;
+}
+$('subjects').replaceChildren(...sculptures.map(s=>{const b=button('',()=>selectSubject(s.subject));b.dataset.subject=s.subject;b.className='card';b.setAttribute('aria-label',s.title);b.setAttribute('aria-pressed','false');const img=document.createElement('img');img.src=`data/${s.subject}/captures/hero.png`;img.alt='';const span=document.createElement('span');span.textContent=s.title;b.append(img,span);return b;}));
+$('results').replaceChildren(...sculptures.map(s=>{const tr=document.createElement('tr');[s.title,s.count,`${s.bricks.toLocaleString()} / ${s.capacity.toLocaleString()}`,`${s.build_ms.toFixed(1)} ms`,`${s.gpu.median_ms.toFixed(3)} / ${s.gpu.p95_ms.toFixed(3)} ms`].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td);});return tr;}));
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;showView();}));
+$('view').addEventListener('change',e=>{view=e.target.value;showView();});$('step').addEventListener('input',e=>showStep(e.target.value));$('step-select').addEventListener('change',e=>showStep(e.target.value));
+$('previous').addEventListener('click',()=>showStep(step-1));$('next').addEventListener('click',()=>showStep(step+1));$('watch-step').addEventListener('click',()=>loadFilm(selected.steps[step].time*(selected.frames-1)/selected.frames));$('load-film').addEventListener('click',()=>loadFilm());
+function caption(){const event=selected.events.findLast(e=>e.time<=film.currentTime);$('film-caption').textContent=event?event.text:'';}film.addEventListener('timeupdate',caption);film.addEventListener('seeked',caption);window.addEventListener('pagehide',()=>{if(mediaUrl)URL.revokeObjectURL(mediaUrl);});
+selectSubject(selected.subject);
+</script></body></html>
