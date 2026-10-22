@@ -22,6 +22,12 @@ retains the full geometry qualification and cutter-mode comparison.
 mode control applies with Generate scene. See the
 [dense-bore evidence](../../docs/notes/sdf-dense-bore-evidence.md).
 
+The proposed next experiment is a
+[first authored robot](../../docs/notes/sdf-authored-content-plan.md): judge a
+gray blockout early, then add grouped shapes, a small primitive vocabulary and
+plain materials. Procedural patterns are optional; image textures and UV
+mapping are outside that plan. The procedural demo above remains settled.
+
 The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
 starts from a solid and carves intersecting through-holes with a deterministic
 sequence of thick box cutters. It includes a native seed audition, slow cutter

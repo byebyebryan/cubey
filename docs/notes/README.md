@@ -63,6 +63,9 @@ an implemented project or a new runtime dependency.
 - [SDF project implementation plan](sdf-projectr-port-plan.md): proposed renderer
   boundary, complete recipe model, native milestones, resource limits and
   visual/performance acceptance for the first procedural demo.
+- [SDF authored content plan](sdf-authored-content-plan.md): a first stylized
+  robot, early native blockout review, grouped composition, plain materials and
+  optional procedural patterns.
 
 ## Historical research and study records
 
