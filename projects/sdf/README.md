@@ -7,6 +7,14 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
+The latest [dense carving study](http://starship:8787/reports/3a21ce65daedf473f4596ca205421d3d2119e20f73ecb8d79388442b9baae090/)
+uses width 0.024 and 4,096 cuts, with a 2,048-cut comparison. Four long bores
+open the presentation before the dense shorter cuts; the first hole reveals
+sky. Run `--config projects/sdf/presets/negative-stick-ball-dense.json`, or add
+`--count 2048`. `--cutter-mode original|intro-bores|through` compares the
+treatments; the desktop mode control applies with Generate scene. See the
+[dense-bore evidence](../../docs/notes/sdf-dense-bore-evidence.md).
+
 The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
 starts from a solid and carves intersecting through-holes with a deterministic
 sequence of thick box cutters. It includes a native seed audition, slow cutter

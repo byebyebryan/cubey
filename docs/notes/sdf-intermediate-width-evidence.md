@@ -4,6 +4,10 @@ Date: 2026-10-21
 
 [Width/count comparison and carving video](http://starship:8787/reports/32adae0557e41e2a1b5d3d014b07ea67c4225c71dd33c9862dc740d9cbfcbcca/).
 
+The user subsequently preferred width 0.024 with 2k/4k cuts and a readable
+through-hole introduction. The [dense-bore follow-up](sdf-dense-bore-evidence.md)
+implements that direction; this record retains the earlier width audition.
+
 The user found the exact additive-width subtraction too subtle and requested
 a balance with the earlier broad cuts. This trial holds the radius-0.30 base,
 seed 42, stick centers, rotations, long box cores, camera and lighting fixed.
