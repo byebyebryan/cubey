@@ -42,7 +42,7 @@ class App {
             throw std::invalid_argument("--export-authored requires --authored-scene");
         if (config_.validate_history && (!authored_ || authored_->history.empty()))
             throw std::invalid_argument("--validate-history requires a saved authored history");
-        if (config_.debug > 7 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+        if (config_.debug > 8 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
             (config_.supersample != 1 && config_.supersample != 2) ||
@@ -294,6 +294,18 @@ class App {
                     if (field_->stats().build_count != before)
                         throw std::runtime_error("material-only edit rebuilt distance bricks");
                     std::cout << "sdf: material-only cache check passed builds=" << before << '\n';
+                    if (std::any_of(authored_->patterns.begin(), authored_->patterns.end(),
+                                    [](const auto& p) { return p.settings.x != 0; })) {
+                        auto changed = *displayed_authored_;
+                        changed.patterns[0].settings.y =
+                            std::fmod(changed.patterns[0].settings.y + 1, 65536.0F);
+                        field_->build(changed);
+                        if (field_->stats().build_count != before)
+                            throw std::runtime_error(
+                                "procedural material edit rebuilt distance bricks");
+                        std::cout << "sdf: procedural-only cache check passed builds=" << before
+                                  << '\n';
+                    }
                 }
                 std::cout << "sdf: authored geometry=" << std::hex
                           << authored_geometry_hash(*displayed_authored_)
@@ -420,9 +432,10 @@ class App {
                     seek(static_cast<std::size_t>(step));
             }
             int view = static_cast<int>(config_.debug);
-            const char* views[]{"Shaded",      "Normals",       "Ray distance", "Traversal work",
-                                "Brick cells", "Part identity", "Base color",   "Roughness"};
-            if (ImGui::Combo("View", &view, views, authored_ ? 8 : 5))
+            const char* views[]{"Shaded",         "Normals",     "Ray distance",
+                                "Traversal work", "Brick cells", "Part identity",
+                                "Base color",     "Roughness",   "Surface normals"};
+            if (ImGui::Combo("View", &view, views, authored_ ? 9 : 5))
                 config_.debug = static_cast<std::uint32_t>(view);
             int shadows = static_cast<int>(config_.shadows);
             const char* shadow_names[]{"Off", "Hard", "Soft (4 samples)"};
@@ -462,6 +475,25 @@ class App {
                         for (int channel = 0; channel < 3; ++channel)
                             material.emission[channel] =
                                 std::clamp(material.emission[channel], 0.0F, 32.0F);
+                        auto& pattern = authored_->patterns[i];
+                        if (pattern.settings.x > 0) {
+                            ImGui::Text("Procedural: %s",
+                                        pattern.settings.x == 1 ? "Limestone" : "Marble");
+                            ImGui::Checkbox("Surface pattern", &config_.procedural);
+                            ImGui::Checkbox("Bump detail", &config_.bump);
+                            materials_changed_ |=
+                                ImGui::ColorEdit3("Secondary color", &pattern.secondary.x);
+                            materials_changed_ |=
+                                ImGui::SliderFloat("Pattern scale", &pattern.settings.z, .25F, 32);
+                            materials_changed_ |=
+                                ImGui::SliderFloat("Color strength", &pattern.settings.w, 0, 1);
+                            materials_changed_ |= ImGui::SliderFloat("Roughness variation",
+                                                                     &pattern.secondary.w, 0, .5F);
+                            materials_changed_ |=
+                                ImGui::SliderFloat("Grain scale", &pattern.detail.y, 1, 512);
+                            materials_changed_ |= ImGui::SliderFloat(
+                                "Bump height", &pattern.detail.x, 0, .002F, "%.5f");
+                        }
                         ImGui::TreePop();
                     }
                     ImGui::PopID();

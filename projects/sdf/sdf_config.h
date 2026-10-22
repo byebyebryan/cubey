@@ -23,6 +23,7 @@ struct SdfConfig {
     bool ao = false;
     bool clay = false;
     bool cutter_cue = true;
+    bool procedural = true, bump = true, material_fast_path = true;
     bool ground = false, validate = false, validate_batches = false, occluder = false;
     bool validate_subtractions = false;
     bool validate_history = false;
@@ -75,6 +76,14 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto cue = option("cutter-cue", "Show cutter bounds during the slow carving introduction",
                       config::ValueType::Bool);
     cue.negative_cli_name = "--no-cutter-cue";
+    auto procedural =
+        option("procedural", "Procedural surface appearance", config::ValueType::Bool);
+    procedural.negative_cli_name = "--no-procedural";
+    auto bump = option("bump", "Procedural surface normal detail", config::ValueType::Bool);
+    bump.negative_cli_name = "--no-bump";
+    auto fast_path =
+        option("material-fast-path", "Uniform material shading shortcut", config::ValueType::Bool);
+    fast_path.negative_cli_name = "--no-material-fast-path";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
@@ -109,7 +118,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
               c.cutter_width)
         .bind(option("debug",
                      "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks, 5 parts, 6 base "
-                     "color, 7 roughness)",
+                     "color, 7 roughness, 8 surface normals)",
                      config::ValueType::UInt32),
               c.debug)
         .bind(option("shadows", "Shadows (0 off, 1 hard, 2 soft)", config::ValueType::UInt32),
@@ -140,6 +149,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
               c.shadow_softness)
         .bind(occluder, c.occluder)
         .bind(cue, c.cutter_cue)
+        .bind(procedural, c.procedural)
+        .bind(bump, c.bump)
+        .bind(fast_path, c.material_fast_path)
         .bind(option("yaw", "Yaw", config::ValueType::Float), c.yaw)
         .bind(option("pitch", "Pitch", config::ValueType::Float), c.pitch)
         .bind(option("distance", "Distance", config::ValueType::Float), c.distance)

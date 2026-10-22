@@ -33,6 +33,15 @@ struct alignas(16) SurfaceMaterial {
     math::Vec4 emission{0};
 };
 static_assert(sizeof(SurfaceMaterial) == 32);
+struct alignas(16) MaterialPattern {
+    math::Vec4 settings{0, 7, 6,
+                        .5F}; // kind (0 plain, 1 stone, 2 marble), seed, scale, color strength
+    math::Vec4 secondary{.2F, .18F, .15F, .08F}; // linear RGB, roughness variation
+    math::Vec4 veins{1, .3F, .2F, 5};            // direction, frequency
+    math::Vec4 detail{.0005F, 160, .10F, 5};     // bump height, grain scale, vein width, warp
+    math::Vec4 offset{0};                        // fixed model-space domain offset
+};
+static_assert(sizeof(MaterialPattern) == 80);
 struct AuthoredStep {
     std::vector<std::string> nodes;
     std::string label;
@@ -46,6 +55,7 @@ struct AuthoredScene {
     std::vector<std::string> part_names; // One name per instruction, including groups.
     std::vector<std::string> material_names;
     std::vector<SurfaceMaterial> materials;
+    std::vector<MaterialPattern> patterns;
     std::vector<AuthoredStep> history;
     std::size_t leaf_count = 0;
 };
@@ -53,6 +63,7 @@ struct SurfaceSample {
     float distance = 1000;
     SurfaceMaterial material;
     std::uint32_t part = 0;
+    math::Vec3 height_gradient{0};
 };
 [[nodiscard]] AuthoredScene parse_authored_scene(std::string_view text);
 [[nodiscard]] AuthoredScene load_authored_scene(const std::filesystem::path& path);
@@ -61,7 +72,8 @@ void save_authored_scene(const std::filesystem::path& path, const AuthoredScene&
 [[nodiscard]] std::uint64_t authored_geometry_hash(const AuthoredScene& scene);
 [[nodiscard]] std::uint64_t authored_appearance_hash(const AuthoredScene& scene);
 [[nodiscard]] float authored_distance(math::Vec3 point, const AuthoredScene& scene);
-[[nodiscard]] SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene);
+[[nodiscard]] SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene,
+                                             float footprint = 0);
 // Header followed by explicit vec4 instructions; suitable for a storage buffer.
 [[nodiscard]] std::vector<std::uint8_t> authored_program_bytes(const AuthoredScene* scene);
 } // namespace cubey::projects::sdf

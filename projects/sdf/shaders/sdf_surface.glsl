@@ -95,8 +95,11 @@ void main() {
     if (t<1e5) {
         vec3 p=camera.eye.xyz+direction*t;
         vec3 normal=object ? hitNormal(p,hit) : vec3(0,1,0);
+        // Conservative projected pixel footprint, avoiding derivatives inside
+        // divergent hit/miss control flow. Grain fades at distance/grazing angles.
+        float footprint=t*camera.forward.w/max(abs(dot(normal,-direction)),.2);
         bool exhausted=false;
-        if (camera.options.x<0.5) radiance=surfaceRadiance(p,normal,-direction,object,exhausted);
+        if (camera.options.x<0.5) radiance=surfaceRadiance(p,normal,-direction,object,footprint,exhausted);
         if (exhausted) { color=vec4(1,0,1,1); return; }
         if (camera.options.x>0.5 && camera.options.x<1.5) radiance=normal*0.5+0.5;
         if (camera.options.x>1.5 && camera.options.x<2.5) radiance=vec3(t/2.0);
@@ -108,10 +111,12 @@ void main() {
         if (camera.options.x>4.5) {
 #ifdef SDF_AUTHORED
             if (object && authoredHeader.x>0u) {
-                SceneSurface surface=authoredSurface(p);
+                SceneSurface surface=authoredSurface(p,footprint,lighting.surface_options.x>.5);
                 uint code=(surface.part+1u)*1664525u+1013904223u;
                 radiance=camera.options.x<5.5 ? vec3(uvec3(code,code>>8,code>>16)&255u)/255.0 :
-                    (camera.options.x<6.5 ? surface.material.base_roughness.xyz : vec3(surface.material.base_roughness.w));
+                    (camera.options.x<6.5 ? surface.material.base_roughness.xyz :
+                     camera.options.x<7.5 ? vec3(surface.material.base_roughness.w) :
+                     materialShadingNormal(normal,lighting.surface_options.y>.5 ? surface.height_gradient : vec3(0))*.5+.5);
             } else radiance=vec3(0.025);
 #else
             radiance=vec3(0.025);

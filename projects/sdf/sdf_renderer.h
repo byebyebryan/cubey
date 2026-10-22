@@ -18,8 +18,9 @@ struct LightingUniforms {
     math::Vec4 material;
     math::Vec4 quality; // roughness, softness, AO, ground height
     GpuEdit cutter;
-    math::Vec4 cutter_style;  // opacity, world line width, unused, unused
-    math::Vec4 preview_style; // opacity, primitive count, unused, unused
+    math::Vec4 cutter_style;    // opacity, world line width, unused, unused
+    math::Vec4 preview_style;   // opacity, primitive count, unused, unused
+    math::Vec4 surface_options; // procedural, bump, single-material shortcut, unused
 };
 static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
 static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);
@@ -40,7 +41,7 @@ class Renderer {
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
-    std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_;
+    std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_, scene_patterns_;
     std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
     render::HdrPostFrame post_;

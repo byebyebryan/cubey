@@ -16,6 +16,7 @@ layout(set=0,binding=2) uniform Lighting {
     Edit cutter;
     vec4 cutter_style;
     vec4 preview_style;
+    vec4 surface_options;
 } lighting;
 vec3 skyRadiance(vec3 direction) {
     AtmosphereParams a=lighting.atmosphere;
@@ -66,7 +67,7 @@ float environmentVisibility(vec3 p,vec3 n,inout bool exhausted) {
     }
     return visibility*0.25;
 }
-vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,inout bool exhausted) {
+vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprint,inout bool exhausted) {
     vec3 lightDirection=camera.sunlight.xyz;
     float visibility=shadowVisibility(p,n,lightDirection,int(camera.options.y+0.5),exhausted);
     float ambientVisibility=environmentVisibility(p,n,exhausted);
@@ -75,10 +76,13 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,inout bool exh
     vec3 emission=vec3(0);
 #ifdef SDF_AUTHORED
     if (object && authoredHeader.x>0u && lighting.material.w<0.5) {
-        SceneSurface surface=authoredSurface(p);
+        MaterialSample surface=authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,
+                                                       lighting.surface_options.z>.5);
         base=surface.material.base_roughness.xyz;
         roughness=surface.material.base_roughness.w;
         emission=surface.material.emission.xyz;
+        // Trace origins and AO above use the geometric normal, never bump.
+        if (lighting.surface_options.y>.5) n=materialShadingNormal(n,surface.height_gradient);
     }
 #endif
     vec3 halfVector=lightDirection+viewDirection;

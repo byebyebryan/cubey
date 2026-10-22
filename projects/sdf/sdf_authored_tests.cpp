@@ -47,6 +47,41 @@ void rejected(const Json& json) {
 } // namespace
 int main() {
     const auto ball = scene(sphere("ball", {}, .2F));
+    auto patterned_json = document(sphere("pattern-ball", {}, .2F));
+    patterned_json["materials"][0]["procedural"] = {{"type", "marble"},
+                                                    {"seed", 73},
+                                                    {"scale", 4.5},
+                                                    {"secondary_color", {.12, .16, .18}},
+                                                    {"offset", {.03, .04, .05}}};
+    const auto patterned = parse_authored_scene(patterned_json.dump());
+    const auto patterned_reload = parse_authored_scene(serialize_authored_scene(patterned));
+    require(authored_geometry_hash(patterned) == authored_geometry_hash(patterned_reload) &&
+                authored_appearance_hash(patterned) == authored_appearance_hash(patterned_reload),
+            "procedural material persistence changed identity");
+    auto changed_seed = patterned;
+    changed_seed.patterns[0].settings.y += 1;
+    require(authored_geometry_hash(changed_seed) == authored_geometry_hash(patterned) &&
+                authored_appearance_hash(changed_seed) != authored_appearance_hash(patterned),
+            "procedural edit changed geometry or lost appearance identity");
+    auto moved_pattern = patterned;
+    std::swap(moved_pattern.patterns[0], moved_pattern.patterns[1]);
+    require(authored_appearance_hash(moved_pattern) != authored_appearance_hash(patterned),
+            "pattern material ownership lost its appearance identity");
+    for (int mutation = 0; mutation < 5; ++mutation) {
+        auto bad = patterned_json;
+        auto& p = bad["materials"][0]["procedural"];
+        if (mutation == 0)
+            p["seed"] = .5;
+        if (mutation == 1)
+            p["type"] = "unknown";
+        if (mutation == 2)
+            p["grain_scale"] = 0;
+        if (mutation == 3)
+            p["vein_direction"] = {0, 0, 0};
+        if (mutation == 4)
+            p["bump_strength"] = .1;
+        rejected(bad);
+    }
     close(authored_distance({}, ball), -.2F);
     close(authored_distance({.3F, 0, 0}, ball), .1F);
     close(authored_distance({1, 0, 0}, ball), .8F); // Root clipping does not expand the shape.

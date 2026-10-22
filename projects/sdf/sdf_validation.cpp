@@ -1,5 +1,6 @@
 #include "sdf_validation.h"
 #include "sdf_history.h"
+#include "sdf_material.h"
 
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -315,23 +316,29 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
         program, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored program");
     auto materials = gpu.upload_device_buffer<SurfaceMaterial>(
         scene.materials, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored materials");
+    auto patterns = gpu.upload_device_buffer<MaterialPattern>(
+        scene.patterns, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored patterns");
+    for (std::size_t i = 0; i < points.size(); ++i)
+        points[i].w = std::array{0.0F, .0005F, .003F, .02F}[i % 4];
     auto point_buffer = gpu.upload_device_buffer<math::Vec4>(
         points, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored points");
     vulkan::Buffer results(
-        device, vulkan::device_local_buffer_config(points.size() * 3 * sizeof(math::Vec4),
+        device, vulkan::device_local_buffer_config(points.size() * 5 * sizeof(math::Vec4),
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
-    const std::array<vulkan::DescriptorSetBindingConfig, 4> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 5> bindings{
         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
-         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
+         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
+         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
     vulkan::DescriptorSetBundle descriptors(device, vulkan::DescriptorSetInfo(bindings));
     vulkan::DescriptorWriteBatch writes;
     writes.storage_buffer(descriptors.set(), 0, program_buffer.handle(), program_buffer.size());
     writes.storage_buffer(descriptors.set(), 1, materials.handle(), materials.size());
     writes.storage_buffer(descriptors.set(), 2, point_buffer.handle(), point_buffer.size());
     writes.storage_buffer(descriptors.set(), 3, results.handle(), results.size());
+    writes.storage_buffer(descriptors.set(), 4, patterns.handle(), patterns.size());
     writes.update(device);
     const std::array layouts{descriptors.layout()};
     const std::array<VkPushConstantRange, 1> push{{{VK_SHADER_STAGE_COMPUTE_BIT, 0, 4}}};
@@ -354,15 +361,21 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
          }}));
     const auto bytes =
         gpu.readback_buffer(results.handle(), results.size(), "sdf authored results");
-    float max_distance = 0, max_material = 0;
+    // Thin procedural vein ramps amplify ordinary CPU/GPU noise/trig rounding.
+    // Keep geometry/normal bounds unchanged and retain the tighter plain bound.
+    const float material_tolerance = std::any_of(scene.patterns.begin(), scene.patterns.end(),
+                                                 [](const auto& p) { return p.settings.x != 0; })
+                                         ? 2e-4F
+                                         : 2e-5F;
+    float max_distance = 0, max_material = 0, max_gradient = 0, max_normal = 0, max_fast = 0;
     for (std::size_t i = 0; i < points.size(); ++i) {
-        std::array<math::Vec4, 3> actual;
+        std::array<math::Vec4, 5> actual;
         std::memcpy(actual.data(), bytes.data() + i * sizeof(actual), sizeof(actual));
         for (const auto& lane : actual)
             for (int channel = 0; channel < 4; ++channel)
                 if (!std::isfinite(lane[channel]))
                     throw std::runtime_error("authored GPU evaluation returned a nonfinite value");
-        const auto expected = authored_surface(math::Vec3(points[i]), scene);
+        const auto expected = authored_surface(math::Vec3(points[i]), scene, points[i].w);
         max_distance = std::max({max_distance, std::abs(actual[0].x - expected.distance),
                                  std::abs(actual[0].y - expected.distance)});
         for (int channel = 0; channel < 4; ++channel)
@@ -370,18 +383,29 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
                 std::max({max_material,
                           std::abs(actual[1][channel] - expected.material.base_roughness[channel]),
                           std::abs(actual[2][channel] - expected.material.emission[channel])});
+        const auto normal = material_shading_normal(glm::normalize(math::Vec3{.2F, 1, .3F}),
+                                                    expected.height_gradient);
+        for (int channel = 0; channel < 3; ++channel) {
+            max_gradient = std::max(
+                max_gradient, std::abs(actual[3][channel] - expected.height_gradient[channel]));
+            max_normal = std::max(max_normal, std::abs(actual[4][channel] - normal[channel]));
+        }
+        max_fast = std::max(max_fast, actual[0].w);
         if (!std::isfinite(actual[0].x) || !std::isfinite(actual[0].y) ||
             static_cast<unsigned>(actual[0].z) != expected.part || max_distance > 2e-5F ||
-            max_material > 2e-5F)
-            throw std::runtime_error("authored CPU/GPU distance/material mismatch at point " +
-                                     std::to_string(i) + " CPU part=" + std::to_string(expected.part) +
-                                     " GPU part=" + std::to_string(static_cast<unsigned>(actual[0].z)) +
-                                     " distance_error=" + std::to_string(max_distance) +
-                                     " material_error=" + std::to_string(max_material));
+            max_material > material_tolerance || max_gradient > 2e-5F || max_normal > 2e-5F ||
+            max_fast > 2e-5F)
+            throw std::runtime_error(
+                "authored CPU/GPU distance/material mismatch at point " + std::to_string(i) +
+                " CPU part=" + std::to_string(expected.part) +
+                " GPU part=" + std::to_string(static_cast<unsigned>(actual[0].z)) +
+                " distance_error=" + std::to_string(max_distance) + " material_error=" +
+                std::to_string(max_material) + " gradient_error=" + std::to_string(max_gradient));
     }
     std::cout << "sdf: authored CPU/GPU points=" << points.size()
               << " max_distance_error=" << max_distance << " max_material_error=" << max_material
-              << " part_mismatches=0\n";
+              << " max_gradient_error=" << max_gradient << " max_normal_error=" << max_normal
+              << " max_shortcut_error=" << max_fast << " part_mismatches=0\n";
 }
 void validate_authored_lifecycle(vulkan::Device& device, ProjectGpuServices& gpu) {
     auto small = parse_authored_scene(R"({"format":"cubey.sdf.scene","version":2,"name":"lifecycle",

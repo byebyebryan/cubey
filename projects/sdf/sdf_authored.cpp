@@ -1,5 +1,6 @@
 #include "sdf_authored.h"
 #include "sdf_history.h"
+#include "sdf_material.h"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -111,7 +112,7 @@ float primitive_distance(math::Vec3 point, const SceneInstruction& node) {
         const math::Vec2 v{glm::length(math::Vec2{p.x, p.z}), p.y + node.parameters.z};
         if (std::abs(bottom - top) >= height) {
             distance = bottom >= top ? glm::length(v) - bottom
-                                    : glm::length(v - math::Vec2{0, height}) - top;
+                                     : glm::length(v - math::Vec2{0, height}) - top;
         } else {
             const float slope = (top - bottom) / height;
             const float radial = std::sqrt(std::max(0.0F, 1 - slope * slope));
@@ -158,6 +159,28 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         if (item.contains("emission"))
             m.emission = {vector(item.at("emission"), 0, 32), 0};
         result.materials.push_back(m);
+        MaterialPattern pattern;
+        if (item.contains("procedural")) {
+            const auto& p = item.at("procedural");
+            const auto type = p.at("type").get<std::string>();
+            if (type != "limestone" && type != "marble")
+                throw std::invalid_argument("unknown procedural material type");
+            pattern.settings = {type == "limestone" ? 1.0F : 2.0F, p.value("seed", 7.0F),
+                                p.value("scale", 6.0F), p.value("color_strength", .5F)};
+            pattern.secondary = {p.contains("secondary_color")
+                                     ? vector(p.at("secondary_color"), 0, 1)
+                                     : math::Vec3{pattern.secondary},
+                                 p.value("roughness_variation", .08F)};
+            pattern.veins = {p.contains("vein_direction") ? vector(p.at("vein_direction"))
+                                                          : math::Vec3{pattern.veins},
+                             p.value("vein_frequency", 5.0F)};
+            pattern.detail = {p.value("bump_strength", .0005F), p.value("grain_scale", 160.0F),
+                              p.value("vein_width", .10F), p.value("warp_strength", 5.0F)};
+            if (p.contains("offset"))
+                pattern.offset = {vector(p.at("offset")), 0};
+        }
+        validate_material_pattern(pattern);
+        result.patterns.push_back(pattern);
         result.material_names.push_back(name);
     }
     const auto material_index = [&](const std::string& name) {
@@ -217,7 +240,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         } else {
             if (++result.leaf_count > authored_max_leaves)
                 throw std::invalid_argument("authored SDF scene exceeds " +
-                                            std::to_string(authored_max_leaves) + " primitive leaves");
+                                            std::to_string(authored_max_leaves) +
+                                            " primitive leaves");
             SceneInstruction instruction;
             ShapeCode code;
             if (type == "box") {
@@ -259,7 +283,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         }
         if (result.program.size() > authored_max_instructions)
             throw std::invalid_argument("authored SDF program exceeds " +
-                                        std::to_string(authored_max_instructions) + " instructions");
+                                        std::to_string(authored_max_instructions) +
+                                        " instructions");
     };
     if (!json.at("root").is_null())
         compile(json.at("root"), {}, 0, 0);
@@ -300,6 +325,8 @@ std::uint64_t authored_geometry_hash(const AuthoredScene& scene) {
     return hash;
 }
 std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
+    if (scene.patterns.size() != scene.materials.size())
+        throw std::invalid_argument("authored material and pattern tables disagree");
     auto hash = authored_geometry_hash(scene);
     for (const auto& node : scene.program) {
         hash_float(hash, node.settings.z);
@@ -311,20 +338,38 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
             for (int i = 0; i < 4; ++i)
                 hash_float(hash, lane[i]);
     }
+    for (std::size_t index = 0; index < scene.patterns.size(); ++index) {
+        const auto& pattern = scene.patterns[index];
+        validate_material_pattern(pattern);
+        // Preserve all legacy plain-material fingerprints.
+        if (pattern.settings.x == 0)
+            continue;
+        hash_float(hash, static_cast<float>(index));
+        for (auto lane :
+             {pattern.settings, pattern.secondary, pattern.veins, pattern.detail, pattern.offset})
+            for (int i = 0; i < 4; ++i)
+                hash_float(hash, lane[i]);
+    }
     return hash;
 }
-SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
+static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& scene, float footprint,
+                                      bool patterns) {
     if (scene.program.empty())
         return {};
     std::array<SurfaceSample, 32> stack{};
+    std::array<MaterialSample, 16> materials;
+    for (std::size_t i = 0; i < scene.materials.size(); ++i)
+        materials[i] =
+            patterns ? sample_material(scene.materials[i], scene.patterns[i], point, footprint)
+                     : MaterialSample{scene.materials[i], {0, 0, 0}};
     std::size_t size = 0;
     for (std::size_t i = 0; i < scene.program.size(); ++i) {
         const auto& instruction = scene.program[i];
         const auto code = static_cast<ShapeCode>(static_cast<unsigned>(instruction.center_code.w));
         if (instruction.center_code.w < 10) {
-            stack[size++] = {primitive_distance(point, instruction),
-                             scene.materials.at(static_cast<unsigned>(instruction.settings.z)),
-                             static_cast<unsigned>(i)};
+            const auto& m = materials.at(static_cast<unsigned>(instruction.settings.z));
+            stack[size++] = {primitive_distance(point, instruction), m.material,
+                             static_cast<unsigned>(i), m.height_gradient};
         } else {
             const auto b = stack[--size];
             auto& a = stack[size - 1];
@@ -337,8 +382,9 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
                 const float distance = std::max(a.distance, -b.distance);
                 if (-b.distance > a.distance + 1e-6F) {
                     if (instruction.settings.w >= 0) {
-                        a.material =
-                            scene.materials.at(static_cast<unsigned>(instruction.settings.w));
+                        const auto& m = materials.at(static_cast<unsigned>(instruction.settings.w));
+                        a.material = m.material;
+                        a.height_gradient = m.height_gradient;
                         a.part = static_cast<unsigned>(i);
                     }
                 }
@@ -349,7 +395,9 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
                     std::clamp(.5F + .5F * (a.distance + b.distance) / radius, 0.0F, 1.0F);
                 const float distance = glm::mix(-b.distance, a.distance, h) + radius * h * (1 - h);
                 if (-b.distance > a.distance + 1e-6F && instruction.settings.w >= 0) {
-                    a.material = scene.materials.at(static_cast<unsigned>(instruction.settings.w));
+                    const auto& m = materials.at(static_cast<unsigned>(instruction.settings.w));
+                    a.material = m.material;
+                    a.height_gradient = m.height_gradient;
                     a.part = static_cast<unsigned>(i);
                 }
                 a.distance = distance;
@@ -362,8 +410,11 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
                     a.material.base_roughness =
                         glm::mix(b.material.base_roughness, a.material.base_roughness, h);
                     a.material.emission = glm::mix(b.material.emission, a.material.emission, h);
-                } else if (b.distance < a.distance - 1e-6F)
+                    a.height_gradient = glm::mix(b.height_gradient, a.height_gradient, h);
+                } else if (b.distance < a.distance - 1e-6F) {
                     a.material = b.material;
+                    a.height_gradient = b.height_gradient;
+                }
                 if (b.distance < a.distance - 1e-6F)
                     a.part = b.part;
                 a.distance = distance;
@@ -374,8 +425,11 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
     result.distance = std::max(result.distance, box_distance(point, math::Vec3{.499F}, 0));
     return result;
 }
+SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene, float footprint) {
+    return evaluate_surface(point, scene, footprint, true);
+}
 float authored_distance(math::Vec3 point, const AuthoredScene& scene) {
-    return authored_surface(point, scene).distance;
+    return evaluate_surface(point, scene, 0, false).distance;
 }
 std::string serialize_authored_scene(const AuthoredScene& scene) {
     auto json = Json::parse(scene.document);
@@ -386,6 +440,26 @@ std::string serialize_authored_scene(const AuthoredScene& scene) {
                                               m.base_roughness.z};
         json["materials"][i]["roughness"] = m.base_roughness.w;
         json["materials"][i]["emission"] = {m.emission.x, m.emission.y, m.emission.z};
+        const auto& p = scene.patterns.at(i);
+        validate_material_pattern(p);
+        if (p.settings.x == 0) {
+            json["materials"][i].erase("procedural");
+        } else {
+            json["materials"][i]["procedural"] = {
+                {"type", p.settings.x == 1 ? "limestone" : "marble"},
+                {"seed", static_cast<unsigned>(p.settings.y)},
+                {"scale", p.settings.z},
+                {"color_strength", p.settings.w},
+                {"secondary_color", {p.secondary.x, p.secondary.y, p.secondary.z}},
+                {"roughness_variation", p.secondary.w},
+                {"vein_direction", {p.veins.x, p.veins.y, p.veins.z}},
+                {"vein_frequency", p.veins.w},
+                {"bump_strength", p.detail.x},
+                {"grain_scale", p.detail.y},
+                {"vein_width", p.detail.z},
+                {"warp_strength", p.detail.w},
+                {"offset", {p.offset.x, p.offset.y, p.offset.z}}};
+        }
     }
     json["geometry_hash"] = hex(authored_geometry_hash(scene));
     json["appearance_hash"] = hex(authored_appearance_hash(scene));

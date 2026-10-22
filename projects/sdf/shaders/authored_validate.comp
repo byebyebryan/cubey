@@ -3,6 +3,7 @@
 #include "field.glsl"
 #define AUTHORED_BINDING 0
 #define AUTHORED_MATERIAL_BINDING 1
+#define AUTHORED_PATTERN_BINDING 4
 #include "authored.glsl"
 #include "authored_material.glsl"
 layout(local_size_x=64) in;
@@ -12,8 +13,13 @@ layout(push_constant) uniform Params { uint count; } pc;
 void main() {
     uint i=gl_GlobalInvocationID.x;
     if (i>=pc.count) return;
-    SceneSurface surface=authoredSurface(points[i].xyz);
-    results[i*3u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),0);
-    results[i*3u+1u]=surface.material.base_roughness;
-    results[i*3u+2u]=surface.material.emission;
+    SceneSurface surface=authoredSurface(points[i].xyz,points[i].w,true);
+    MaterialSample fast=sampleAuthoredMaterial(0u,points[i].xyz,points[i].w,true);
+    float error=authoredHeader.y==1u ? max(length(fast.material.base_roughness-surface.material.base_roughness),
+        length(fast.height_gradient-surface.height_gradient)) : 0.0;
+    results[i*5u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),error);
+    results[i*5u+1u]=surface.material.base_roughness;
+    results[i*5u+2u]=surface.material.emission;
+    results[i*5u+3u]=vec4(surface.height_gradient,0);
+    results[i*5u+4u]=vec4(materialShadingNormal(normalize(vec3(.2,1,.3)),surface.height_gradient),0);
 }

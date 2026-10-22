@@ -372,7 +372,55 @@ ordering as hard cuts. These appearance rules do not change geometry.
 Per-material edits upload a small table without rebuilding distance bricks.
 No appearance volume is allocated. The first piece uses dielectric direct
 lighting and sky diffuse irradiance; environment specular, metalness, glass,
-GI and procedural surface patterns remain outside this implementation.
+and GI remain outside this implementation.
+
+### Procedural stone surfaces
+
+Materials may include an optional `procedural` record with `type` set to
+`limestone` or `marble`. The bounded parameters are `seed` (integer 0–65535),
+`scale` (0.25–64), `color_strength` (0–1), linear `secondary_color`,
+`roughness_variation` (0–0.5), `bump_strength` (0–0.005 model units),
+`grain_scale` (1–512), `vein_direction` (nonzero vector), `vein_frequency`
+(0.25–32), `vein_width` (0.02–0.5), `warp_strength` (0–12), and fixed model-space
+`offset`. Omitted parameters use defaults; plain legacy materials retain their
+appearance fingerprints.
+
+Patterns use the scene's fixed model coordinates, continuously across primitive
+segments and mirrored sides. They do not normalize against current history
+bounds or follow individual moving parts. Subtractions expose the same volume;
+explicit cut materials and smooth material blending retain their existing
+ownership rules. Patterns are evaluated once per material at a surface query,
+not at every primitive or tracing sample. Normal detail blends using the same
+material weights. Color, roughness and analytic height gradients use the shared
+seeded value-noise family; fine grain fades with a conservative projected pixel
+footprint, and marble vein ramps broaden/average when unresolved.
+
+`--no-procedural` shows the material's flat base values, `--no-bump` retains its
+color/roughness pattern without normal detail, and `--clay` retains the existing
+shape inspection override. Debug 1 remains geometric normals; debug 8 shows
+surface shading normals. Shadow/AO traces and ray-origin offsets always use
+the geometric normal. Bump affects lighting without changing silhouettes, depth
+or distance bricks. Appearance edits retain the geometry cache and persist in
+the scene's appearance hash.
+
+One-material shaded scenes can skip the CSG material-ownership walk; part-ID
+and general multimaterial queries still use it. `--no-material-fast-path`
+exposes the full evaluator for qualification/performance comparison. Procedural
+color agreement uses a 0.0002 linear-value bound for thin vein-ramp sensitivity;
+plain materials, geometry, height gradients and shading normals retain their
+0.00002 direct CPU/GPU bounds. The actual errors are recorded in native logs.
+
+```json
+"procedural": {
+  "type": "limestone", "seed": 173, "scale": 9,
+  "secondary_color": [0.22, 0.18, 0.12],
+  "color_strength": 0.65, "roughness_variation": 0.12,
+  "bump_strength": 0.00035, "grain_scale": 240
+}
+```
+
+The [material audition plan](../../docs/notes/sdf-procedural-materials-plan.md)
+keeps limestone and honed marble separate from the retained plain guardian.
 Authored scenes support static/orbit playback. Scenes with an optional saved
 `history` additionally support construction and presentation. Carve continues
 to require a legacy edit sequence.

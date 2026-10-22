@@ -35,16 +35,18 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
     };
     scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction));
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
+    scene_patterns_ = host_buffer(16 * sizeof(MaterialPattern));
     update_authored(scene);
     for (std::uint32_t i = 0; i < slots; ++i)
         preview_buffers_.push_back(host_buffer(authored_max_leaves * sizeof(SceneInstruction)));
-    const std::array<vulkan::DescriptorSetBindingConfig, 6> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 7> bindings{
         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
+         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device, vulkan::DescriptorSetInfo(bindings, slots));
     update_field(device, field);
@@ -58,6 +60,8 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
                               scene_materials_->size());
         writes.storage_buffer(descriptors_->set(i), 5, preview_buffers_[i]->handle(),
                               preview_buffers_[i]->size());
+        writes.storage_buffer(descriptors_->set(i), 6, scene_patterns_->handle(),
+                              scene_patterns_->size());
         writes.update(device);
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
@@ -123,6 +127,7 @@ void Renderer::destroy() {
     pipeline_.reset();
     descriptors_.reset();
     scene_materials_.reset();
+    scene_patterns_.reset();
     scene_program_.reset();
     preview_buffers_.clear();
     lighting_.reset();
@@ -133,9 +138,13 @@ void Renderer::update_authored(const AuthoredScene* scene) {
     const auto bytes = authored_program_bytes(scene);
     scene_program_->upload(bytes.data(), bytes.size());
     const SurfaceMaterial fallback;
+    const MaterialPattern plain;
     scene_materials_->upload(scene ? scene->materials.data() : &fallback,
                              scene ? scene->materials.size() * sizeof(SurfaceMaterial)
                                    : sizeof(SurfaceMaterial));
+    scene_patterns_->upload(scene ? scene->patterns.data() : &plain,
+                            scene ? scene->patterns.size() * sizeof(MaterialPattern)
+                                  : sizeof(MaterialPattern));
 }
 void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
@@ -175,6 +184,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     uniforms.material =
         config.clay ? math::Vec4{0.42F, 0.42F, 0.42F, 1} : math::Vec4{0.55F, 0.27F, 0.095F, 0};
     uniforms.quality = {config.roughness, config.shadow_softness, config.ao ? 1.0F : 0.0F, -0.48F};
+    uniforms.surface_options = {config.procedural ? 1.0F : 0.0F, config.bump ? 1.0F : 0.0F,
+                                config.material_fast_path ? 1.0F : 0.0F, 0};
     if (cutter && config.cutter_cue && config.debug == 0) {
         uniforms.cutter = gpu_edit(*cutter);
         uniforms.cutter_style = {cutter_opacity, 0.0025F, 0, 0};
@@ -187,12 +198,14 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         uniforms.preview_style.y = static_cast<float>(previews.size());
     }
     lighting_->upload(slot, uniforms);
-    const Camera camera{glm::inverse(vp),
-                        {eye, static_cast<float>(field_->atlas_axis)},
-                        {light.primary_light_direction, 0},
-                        {static_cast<float>(config.debug), static_cast<float>(config.shadows),
-                         config.ground ? 1.0F : 0.0F, 0},
-                        {glm::normalize(target_point - eye), 0}};
+    const Camera camera{
+        glm::inverse(vp),
+        {eye, static_cast<float>(field_->atlas_axis)},
+        {light.primary_light_direction, 0},
+        {static_cast<float>(config.debug), static_cast<float>(config.shadows),
+         config.ground ? 1.0F : 0.0F, 0},
+        {glm::normalize(target_point - eye),
+         2.0F * std::tan(glm::radians(22.5F)) / static_cast<float>(scene_extent_.height)}};
     post_.upload(slot, render::hdr_post_uniforms(
                            target.format, config.debug ? 0.0F : config.exposure,
                            config.debug ? render::PbrTonemap::Linear : render::PbrTonemap::Aces));
@@ -232,6 +245,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         builder.import_buffer({"sdf.scene", scene_program_->size()}, scene_program_->handle());
     const auto materials = builder.import_buffer({"sdf.materials", scene_materials_->size()},
                                                  scene_materials_->handle());
+    const auto patterns =
+        builder.import_buffer({"sdf.patterns", scene_patterns_->size()}, scene_patterns_->handle());
     const auto previews_buffer =
         builder.import_buffer({"sdf.previews", preview_buffers_.at(slot.index)->size()},
                               preview_buffers_.at(slot.index)->handle());
@@ -241,6 +256,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         .read_uniform_buffer(lighting, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(program, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(materials, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        .read_storage_buffer(patterns, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(previews_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .write_color(scene)
         .write_depth(depth)
