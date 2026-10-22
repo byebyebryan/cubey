@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from qualify_authored import check_video
 
 
 def main():
@@ -15,6 +16,7 @@ def main():
     p.add_argument('--metadata',type=Path,default=Path('projects/sdf/guardian_organic.json'))
     p.add_argument('--version',nargs=2,action='append',metavar=('NAME','PRESET'),
                    help='Override comparison versions; repeat for matched views')
+    p.add_argument('--orbits',action='store_true',help='Also capture matched eight-second turntables')
     a=p.parse_args();root=Path(__file__).resolve().parents[3];out=a.output.resolve()
     out.mkdir(exist_ok=False,parents=True)
     binary=(root/a.binary).resolve();sha=lambda f:hashlib.sha256(f.read_bytes()).hexdigest()
@@ -49,6 +51,21 @@ def main():
             (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
             print(name,stem,'passed',flush=True)
         assert sha(scene_path)==row['scene_sha256'] and sha(config)==row['config_sha256']
+        if a.orbits:
+            video=directory/'native.mp4'
+            cmd=[str(binary),'--headless','--require-validation','--config',str(config),
+                 '--motion','orbit','--duration','8','--construction-seconds','4',
+                 '--capture','video','--fps','30','--frames','240','--width','1280','--height','960',
+                 '--output',str(video)]
+            run=subprocess.run(cmd,cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+            (directory/'logs/orbit.log').write_text(run.stdout)
+            assert run.returncode==0 and 'validation error' not in run.stdout.lower(),run.stdout
+            assert run.stdout.count('sdf: authored instructions=')==1
+            check_video(video,expected_frames=240)
+            row['orbit']=dict(command=cmd,capture=f'{name}/native.mp4',sha256=sha(video),frames=240,
+                              field_builds=1)
+            (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
+            print(name,'orbit passed',flush=True)
     for view in receipt['views']:
         configs_for_view=[]
         for name in configs:

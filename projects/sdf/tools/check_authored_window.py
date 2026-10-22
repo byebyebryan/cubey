@@ -12,9 +12,15 @@ parser.add_argument("--height",type=int,default=1000)
 parser.add_argument("--history-controls",action="store_true")
 parser.add_argument("--paired-step",type=int,action="append",default=[],
                     help="Also seek, undo and redo these atomic mirrored operations")
+parser.add_argument("--material-scroll",type=int,default=0,
+                    help="Wheel notches to expose an expanded material panel")
+parser.add_argument("--procedural-controls",action="store_true",
+                    help="Check pattern/bump toggles and grain editing after five material scroll notches")
 args=parser.parse_args()
 if not args.config or args.height != 1000:
     raise SystemExit("Authored material controls require --config and --height 1000")
+if args.procedural_controls and (args.history_controls or args.material_scroll!=5):
+    raise SystemExit('Procedural controls require static mode and --material-scroll 5')
 if os.environ.get("CUBEY_SDF_PRIVATE_XVFB")!="1":
     raise SystemExit("Run in a private xvfb-run display with CUBEY_SDF_PRIVATE_XVFB=1")
 D=C.c_void_p; W=C.c_ulong; U=C.c_uint; I=C.c_int
@@ -150,9 +156,22 @@ with log.open("w") as stream:
         else:
             click(110,600)
             capture("window-material-open.png")
+            if args.material_scroll:
+                t.XTestFakeMotionEvent(d,-1,250+20,580+20,0)
+                for _ in range(args.material_scroll):
+                    t.XTestFakeButtonEvent(d,5,1,0);t.XTestFakeButtonEvent(d,5,0,0)
+                    x.XSync(d,0);time.sleep(.12)
+                time.sleep(.3);capture('window-material-scrolled.png')
             # Coordinates come from inspection of this owned 900x1000 panel.
-            click(300,654)
+            click(300,654-65*args.material_scroll)
             capture("window-material-edited.png")
+            if args.procedural_controls:
+                # Positions inspected in this owned, five-notch scrolled panel.
+                click(102,410);capture('window-pattern-off.png')
+                click(102,410)
+                click(102,440);capture('window-bump-off.png')
+                click(102,440)
+                click(250,590);capture('window-procedural-edited.png')
         key("Escape")
         status=proc.wait(timeout=15)
         assert status==0,f"native app exit {status}"
@@ -178,7 +197,22 @@ else:
     assert all(row[0]==initial[1] for row in updates)
     assert any(row[1]!=initial[2] for row in updates)
     receipt={"passed":True,"command":command,"field_builds":builds,"updates":updates,
-    "actions":["resize twice","orbit","zoom","pause/reset","change ivory roughness from 0.52 without field rebuild","Escape"]}
+    "actions":["resize twice","orbit","zoom","pause/reset","change material roughness without field rebuild","Escape"]}
+    if args.procedural_controls:
+        def render_pixels(name):
+            return subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'captures'/name),
+                '-vf','crop=450:700:440:150','-f','rawvideo','-pix_fmt','rgb24','-'])
+        base=render_pixels('window-material-edited.png')
+        changed={}
+        for name in ('window-pattern-off.png','window-bump-off.png','window-procedural-edited.png'):
+            frame=render_pixels(name)
+            changed[name]=sum(base[i:i+3]!=frame[i:i+3] for i in range(0,len(base),3))
+            assert changed[name]>100,(name,changed[name])
+        assert len(updates)>=2
+        receipt['procedural_controls']=True
+        receipt['procedural_render_changed_pixels']=changed
+        receipt['actions'] += ['toggle procedural pattern off/on','toggle bump off/on',
+                               'edit grain scale without rebuilding','compare rendered model outside the UI']
 import hashlib
 receipt["binary_sha256"]=hashlib.sha256(Path(args.binary).read_bytes()).hexdigest()
 receipt["shader_sha256"]={p.name:hashlib.sha256(p.read_bytes()).hexdigest()

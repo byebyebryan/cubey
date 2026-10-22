@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cubey SDF · Stone and marble</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#11191c;color:#e6eae1}*{box-sizing:border-box}body{margin:0}main{max-width:1280px;margin:auto;padding:36px 24px 80px}a{color:#b6cfb7}h1{font-size:clamp(2.2rem,5vw,4rem);line-height:1.08;margin:12px 0 22px}h2{margin:42px 0 14px;font-size:1.5rem}p{max-width:920px;line-height:1.65;color:#c3cec4}.eyebrow{color:#b7b991;letter-spacing:.17em;font-size:.78rem;text-transform:uppercase}.lede{font-size:1.15rem}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:20px}figure{margin:0}img,video{display:block;width:100%;background:#1c282a;border-radius:8px}figcaption{font-size:.88rem;color:#bdc6b8;margin:10px 0 20px;line-height:1.55}figcaption strong{display:block;font-size:1.04rem;color:#e9e6d4;margin-bottom:3px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0}button,select{font:inherit;border:1px solid #596653;background:#26362c;color:#e8ede5;padding:8px 12px;border-radius:6px;cursor:pointer}button:disabled{opacity:.4;cursor:default}.detail{max-width:850px;margin:auto}.detail img{max-height:700px;object-fit:contain}video{max-height:75vh}.note{padding:16px 20px;border-left:3px solid #b1b78a;background:#202b24}.small{font-size:.88rem}table{border-collapse:collapse;width:100%;margin:20px 0}td,th{text-align:left;padding:12px;border-bottom:1px solid #3c493e}th{color:#d3ddc5}details{margin-top:28px}summary{cursor:pointer;color:#d3ddc5}code{font-size:.9em;overflow-wrap:anywhere}footer{border-top:1px solid #3c493e;margin-top:36px;padding-top:20px;font-size:.88rem;color:#b6c0b1}.badge{background:#27352d;border:1px solid #4a594b;padding:9px 14px;border-radius:6px;color:#d6dfc9}#pass-note{min-height:45px}@media(max-width:850px){.grid{grid-template-columns:1fr}.pair{grid-template-columns:1fr}main{padding:25px 16px}td,th{padding:8px;font-size:.87rem}.grid img{max-height:600px;object-fit:contain}}
+</style>
+<main>
+<div class="eyebrow">Cubey / SDF surface study</div>
+<h1>Stone and marble.</h1>
+<p class="lede">The same guardian, with two procedural surface treatments: porous carved limestone and pale honed marble. Grain and veins occupy a continuous 3D volume, including newly carved surfaces.</p>
+<div class="row"><span class="badge">1,011 primitives · unchanged</span><span class="badge">65 mirrored stroke operations</span><span class="badge">No UVs or image maps</span></div>
+<div class="row"><label for="view">Inspection view</label><select id="view"></select></div>
+<div class="grid">
+<figure><a id="plain-link" href="comparison/before/captures/hero.png"><img id="plain-image" src="comparison/before/captures/hero.png" alt="Plain mirrored guardian"></a><figcaption><strong>Plain material</strong>The retained surface and shape reference.</figcaption></figure>
+<figure><a id="limestone-link" href="comparison/limestone/captures/hero.png"><img id="limestone-image" src="comparison/limestone/captures/hero.png" alt="Carved limestone guardian"></a><figcaption><strong>Carved limestone</strong>Warm mottling, rough highlights and fine porous normal detail.</figcaption></figure>
+<figure><a id="marble-link" href="comparison/after/captures/hero.png"><img id="marble-image" src="comparison/after/captures/hero.png" alt="Honed marble guardian"></a><figcaption><strong>Honed marble</strong>Soft vein beds, thin secondary veins and a restrained satin finish.</figcaption></figure>
+</div>
+<p class="small">All columns use matching camera, atmosphere, hard self-shadows and exposure. Click an image for its native resolution. The clay view isolates the shared shape.</p>
+<h2>Inspect the surface layers</h2>
+<div class="row"><label for="material">Material</label><select id="material"><option value="limestone">Limestone</option><option value="marble">Marble</option></select><label for="pass">Saved native pass</label><select id="pass"><option value="full">Color, roughness and bump</option><option value="pattern">Color and roughness only</option><option value="flat">Flat base material</option></select></div>
+<p id="pass-note" class="small"></p><div class="detail"><img id="pass-image" src="foundation/captures/limestone.png" alt="Limestone with procedural normal detail"></div>
+<p>Roughness controls the highlights; bump perturbs the shading normal for fine grain. The geometric normal still controls shadow-ray offsets and occlusion. Bump does not add pores to the actual silhouette or distance field.</p>
+<h2>Turntables</h2>
+<div class="grid">
+<figure><video controls preload="metadata" poster="comparison/before/captures/hero.png"><source src="comparison/before/native.mp4" type="video/mp4"></video><figcaption>Plain · eight seconds, one field build.</figcaption></figure>
+<figure><video controls preload="metadata" poster="comparison/limestone/captures/hero.png"><source src="comparison/limestone/native.mp4" type="video/mp4"></video><figcaption>Limestone · fine grain fades with the projected pixel footprint.</figcaption></figure>
+<figure><video controls preload="metadata" poster="comparison/after/captures/hero.png"><source src="comparison/after/native.mp4" type="video/mp4"></video><figcaption>Marble · veins remain fixed in the sculpt's model coordinates.</figcaption></figure>
+</div>
+<h2>Carve through the material</h2>
+<p>The marble pattern stays fixed as the sculpture grows and cutters open the sockets, mouth and folds. Both mirrored tools preview in red. Newly exposed surfaces sample the same material volume, with no per-segment texture seams.</p>
+<video id="construction" controls preload="metadata" poster="comparison/after/captures/hero.png"><source src="marble-history/presentation.mp4" type="video/mp4"></video>
+<div id="chapters" class="row" aria-label="Construction chapters"></div>
+<div class="row"><label for="step">Committed marble operation</label><input id="step" type="range" min="0" max="65" value="21" style="flex:1;accent-color:#b9bd8c"><span id="step-count"></span></div>
+<p id="step-label" class="small"></p><div class="detail"><img id="step-image" src="marble-history/captures/step-21.png" alt="Marble after the paired socket cut"></div>
+<h2>Measured rendering cost</h2>
+<table><thead><tr><th>Same binary / 1080p</th><th>GPU median</th><th>GPU p95</th><th>Cold field build</th></tr></thead><tbody id="performance"></tbody></table>
+<p id="profile-note" class="small"></p>
+<p>The guardian has one material, so shaded hits can read it directly instead of walking the entire CSG program to find its owner. The plain and procedural rows above use that shortcut. Pattern and bump differences are smaller than this run's timing variation; they do not imply a rendering speedup.</p>
+<p class="small" id="full-cost"></p>
+<p class="note">Field construction remains synchronous at about 0.92 seconds for the finished model. Material edits preserve that field. Live construction can still skip operations while rebuilding; the offline film visits every operation.</p>
+<h2>Checks and limits</h2>
+<p id="qualification"></p>
+<p>Both new scenes preserve the original geometry and history. Geometric-normal and distance images are exact matches to the plain scene. Repeated renders, the one-material shortcut, disabled-pattern controls and export/reload pass native comparisons; seed edits change appearance without rebuilding distance bricks. A separate mixed-material fixture checks smooth blends and explicit cut materials.</p>
+<p>Desktop checks cover material editing, pattern/bump controls, and mirrored stroke seeking/undo/redo. Native images and film frames were inspected. Browser interaction review was unavailable because no browser was connected.</p>
+<p class="small">This is an opaque surface approximation. Specular sky reflections, subsurface scattering, true grain displacement, weathering layers and per-part material frames remain future work. The pattern uses fixed scene/model coordinates; it follows neither changing reveal bounds nor individual moving pieces.</p>
+<details><summary>Source, commands and receipts</summary>
+<p><a href="comparison/limestone/source/scene.json">Limestone scene</a> · <a href="comparison/after/source/scene.json">Marble scene</a> · <a href="comparison/manifest.json">Matched views and turntables</a> · <a href="foundation/manifest.json">Material regressions</a> · <a href="limestone-history/manifest.json">Limestone states</a> · <a href="marble-history/manifest.json">Marble states and film</a> · <a href="controls/windowed-interaction.json">Desktop material controls</a> · <a href="history-controls/windowed-interaction.json">Desktop stroke controls</a> · <a href="profile/manifest.json">Performance</a> · <a href="reproduction.json">Generator reproduction</a> · <a href="review.json">Review summary and bounds</a></p>
+<pre><code>python3 projects/sdf/tools/author_guardian_materials.py
+build/release/projects/sdf/sdf \
+  --config projects/sdf/presets/sculpture-guardian-marble-build.json
+# Use --no-bump or --no-procedural for the saved-pass comparisons.</code></pre>
+</details>
+<footer><a href="http://starship:8787/reports/28b97723efe9c303766c0ad148b500cfc49758af39d488a292e616d0ce512216/">Previous mirrored guardian review</a> · <a href="http://starship:8787/reports/#project=cubey">Cubey reports</a></footer>
+</main>
+<script>
+const data=__DATA__,byId=id=>document.getElementById(id);
+for(const view of data.views){const option=document.createElement('option');option.value=view.name;option.textContent=view.label;byId('view').append(option);}
+byId('view').onchange=()=>{for(const [kind,version]of Object.entries(data.versions)){const path=`comparison/${version}/captures/${byId('view').value}.png`;byId(kind+'-image').src=path;byId(kind+'-link').href=path;}};
+function surfacePass(){const kind=byId('material').value,mode=byId('pass').value;const suffix=mode==='pattern'?'-no-bump':mode==='flat'?'-no-pattern':'';byId('pass-image').src=`foundation/captures/${kind}${suffix}.png`;byId('pass-image').alt=`${kind}: ${mode} surface pass`;byId('pass-note').textContent=mode==='full'?'Seeded color and roughness variation with fine shading-normal detail.':mode==='pattern'?'The same color and roughness pattern, with bump disabled.':'The same base color and roughness, with all procedural appearance disabled.';}
+byId('material').onchange=surfacePass;byId('pass').onchange=surfacePass;surfacePass();
+for(const chapter of data.chapters){const b=document.createElement('button');b.textContent=chapter.label;b.onclick=()=>{byId('construction').currentTime=chapter.time};byId('chapters').append(b);}
+function showStep(){const n=Number(byId('step').value),step=data.marble_steps[n];byId('step-count').textContent=`${n} / ${data.count}`;byId('step-label').textContent=step.label;byId('step-image').src='marble-history/'+step.capture;byId('step-image').alt=step.label;}
+byId('step').oninput=showStep;showStep();
+const cases=[['plain','Plain / direct lookup'],['limestone-pattern','Limestone / color + roughness'],['limestone','Limestone / with bump'],['marble-pattern','Marble / color + roughness'],['marble','Marble / with bump']];
+for(const [key,label]of cases){const p=data.performance[key],row=document.createElement('tr');for(const value of [label,p.gpu_frame.median_ms.toFixed(2)+' ms',p.gpu_frame.p95_ms.toFixed(2)+' ms',p.cold_build_ms.toFixed(0)+' ms']){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}byId('performance').append(row);}
+byId('profile-note').textContent=`${data.device}. Release, 1920×1080, supersample 1, hard shadows; 30 warmup frames and 148 completed GPU samples per case. GPU frame time sums shading and shared post; field construction is separate. Field allocation stays ${(data.field_bytes/1048576).toFixed(1)} MiB; procedural parameters add a 1.25 KiB renderer table.`;
+byId('full-cost').textContent=`The diagnostic full-program material path costs ${data.performance['plain-full'].gpu_frame.median_ms.toFixed(2)} ms in this new binary. General multimaterial and part-identity queries still use the full evaluator. That row is not an old-version benchmark.`;
+byId('qualification').textContent=`${data.totals.states} material/history states across both treatments (${data.totals.checkpoints} checkpoints), ${data.totals.rays.toLocaleString()} sampled-field rays and ${data.totals.points.toLocaleString()} direct CPU/GPU points pass their bounds, with zero reported exhausted rays or material/part ownership disagreements. All ${data.frames.toLocaleString()} marble construction frames and 720 turntable frames decode and pass exhaustion-color screening. The construction visits all ${data.count} operations with ${data.count+1} builds.`;
+</script></html>
