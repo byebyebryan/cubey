@@ -12,19 +12,19 @@ from author_sculptures import SUBJECTS
 COPY = {
     'guardian': dict(kicker='Expression / blended masses',
         description='A broad stone face grows swept horns, then gains its expression through sockets, nostrils and surface-following mouth and cheek cuts.',
-        verdict='The most expressive subject. Blending works well for the broad face and horn roots; the mouth and cheek treatment remain deliberately stylized.',
+        verdict='The most expressive subject. Broad face and horn roots blend well; the cuts are stylized, and rear lighting still reveals some segment transitions in the horns.',
         chapters=[('Block the face','cranium'),('Carve the sockets','left-eye-socket'),('Shape the mouth','mouth-cut-0')]),
     'vessel': dict(kicker='Hollowing / pierced walls',
         description='A full asymmetric body becomes a hollow ceramic vessel. The handle fuses into the body and three piercings open through its front wall.',
         verdict='The clearest hollowing experiment. The simpler analytic handle and round openings read better than the more elaborate sampled alternatives.',
         chapters=[('Hollow the body','interior'),('Fuse the handle','handle-loop'),('Pierce the wall','piercing-0')]),
     'arch': dict(kicker='Carving / connected passages',
-        description='Two cavities approach from opposite sides of one solid mass. Their meeting opens a passage, followed by broad cuts and shallow erosion lines.',
+        description='Two cavities approach from opposite sides of one solid mass. Their meeting opens a passage; an undercut separates the feet, followed by broad cuts and shallow erosion lines.',
         verdict='The breakthrough sells the operation better than the finished object. The result is a stylized carved arch; convincing natural erosion needs a stronger study of large forms.',
-        chapters=[('Solid mass','solid-arch-core'),('Front alcove','front-cavity'),('Break through','rear-cavity'),('Shape exposed planes','crown-plane')]),
+        chapters=[('Solid mass','solid-arch-core'),('Front alcove','front-cavity'),('Break through','rear-cavity'),('Separate the feet','passage-floor-cut')]),
     'driftwood': dict(kicker='Curved strokes / fused branches',
         description='Tapered paths form a twisting trunk and branches, including one reaching behind the fork. Hollow ends, a knot recess and long grooves shape the retained wood.',
-        verdict='Useful evidence for curved authoring, with a readable fork and hollows. The grooves and simplified branch forms still feel stylized; an exact curve sweep remains a possible later improvement.',
+        verdict='Useful evidence for curved authoring, with a readable fork and hollows. Grooves and branch forms still feel stylized, and some tangent changes remain visible; an exact curve sweep is a possible later improvement.',
         chapters=[('Grow the fork','left-branch-0'),('Hollow the trunk','trunk-hollow'),('Follow the grain','grain-groove-0-0')]),
 }
 
@@ -38,6 +38,7 @@ def main():
     out=args.output.resolve()
     if out.exists():raise RuntimeError('Use a fresh report directory')
     repo=Path(__file__).resolve().parents[3]
+    foundation=json.loads((args.input_root/'sculpture-foundation/manifest.json').read_text())
     data=[]
     sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
     for subject in SUBJECTS:
@@ -51,6 +52,8 @@ def main():
         assert audit['passed'] and screen['passed'] and controls['passed']
         assert m['binary_sha256']==h['binary_sha256']==controls['binary_sha256']
         assert m['shader_sha256']==h['shader_sha256']==controls['shader_sha256']
+        assert m['binary_sha256']==foundation['binary_sha256']
+        assert m['shader_sha256']==foundation['shader_sha256']
         assert m['reloaded_scene_and_image_identical'] and m['atlas_80_image_identical']
         assert h['final_matches_static_fingerprints'] and h['video_builds']==m['edits']+1
         assert screen['decoded_frames']==h['frames']

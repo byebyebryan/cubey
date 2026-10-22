@@ -181,6 +181,10 @@ def arch(variant=0, detail=False):
         cut = s.leaf(capsule(name, start, end, r),
                      'Carve the front alcove' if name == 'front-cavity' else 'Meet the alcove and break through', 1.8)
         body = s.cut(f'{name}-carve', body, cut, .025)
+    if detail:
+        floor=s.leaf(capsule('passage-floor-cut',(0,-.29,.4),(0,-.29,-.4),.12),
+                     'Undercut the passage and separate the feet',1.4)
+        body=s.cut('open-arch-base',body,floor,.015)
     channel = s.stroke('wind-channel', [(-.34, .12, .155), (-.22, .17, .181),
                        (-.09, .19, .188), (.095, .16, .17)], [.035, .035, .027, .012],
                        'Sweep a channel along the crown', .012) if detail else s.leaf(

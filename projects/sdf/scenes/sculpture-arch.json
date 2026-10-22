@@ -101,7 +101,7 @@
                                     "children": [
                                       {
                                         "type": "smooth-subtract",
-                                        "name": "rear-cavity-carve",
+                                        "name": "open-arch-base",
                                         "position": [
                                           0,
                                           0,
@@ -110,7 +110,7 @@
                                         "children": [
                                           {
                                             "type": "smooth-subtract",
-                                            "name": "front-cavity-carve",
+                                            "name": "rear-cavity-carve",
                                             "position": [
                                               0,
                                               0,
@@ -118,8 +118,8 @@
                                             ],
                                             "children": [
                                               {
-                                                "type": "smooth-union",
-                                                "name": "rock-mass",
+                                                "type": "smooth-subtract",
+                                                "name": "front-cavity-carve",
                                                 "position": [
                                                   0,
                                                   0,
@@ -127,93 +127,122 @@
                                                 ],
                                                 "children": [
                                                   {
-                                                    "type": "capsule",
-                                                    "name": "left-support",
-                                                    "position": [
-                                                      -0.1975,
-                                                      -0.08499999999999999,
-                                                      -0.0125
-                                                    ],
-                                                    "radius": 0.105,
-                                                    "half_length": 0.16251922963145007,
-                                                    "rotation_xyzw": [
-                                                      -0.023164134670990683,
-                                                      0.0,
-                                                      -0.08493516046029916,
-                                                      0.9961171825556104
-                                                    ]
-                                                  },
-                                                  {
-                                                    "type": "capsule",
-                                                    "name": "right-support",
-                                                    "position": [
-                                                      0.18,
-                                                      -0.0925,
-                                                      0.0135
-                                                    ],
-                                                    "radius": 0.12,
-                                                    "half_length": 0.1496111626851419,
-                                                    "rotation_xyzw": [
-                                                      0.005030773652995439,
-                                                      0.0,
-                                                      0.08384622754992399,
-                                                      0.9964660061648358
-                                                    ]
-                                                  },
-                                                  {
-                                                    "type": "sphere",
-                                                    "name": "left-crown",
-                                                    "position": [
-                                                      -0.115,
-                                                      0.12,
-                                                      -0.015
-                                                    ],
-                                                    "radius": 0.185
-                                                  },
-                                                  {
-                                                    "type": "sphere",
-                                                    "name": "right-crown",
-                                                    "position": [
-                                                      0.115,
-                                                      0.09,
-                                                      -0.005
-                                                    ],
-                                                    "radius": 0.18
-                                                  },
-                                                  {
-                                                    "type": "box",
-                                                    "name": "solid-arch-core",
+                                                    "type": "smooth-union",
+                                                    "name": "rock-mass",
                                                     "position": [
                                                       0,
-                                                      -0.08,
+                                                      0,
                                                       0
                                                     ],
-                                                    "half_extent": [
-                                                      0.145,
-                                                      0.175,
-                                                      0.13
+                                                    "children": [
+                                                      {
+                                                        "type": "capsule",
+                                                        "name": "left-support",
+                                                        "position": [
+                                                          -0.1975,
+                                                          -0.08499999999999999,
+                                                          -0.0125
+                                                        ],
+                                                        "radius": 0.105,
+                                                        "half_length": 0.16251922963145007,
+                                                        "rotation_xyzw": [
+                                                          -0.023164134670990683,
+                                                          0.0,
+                                                          -0.08493516046029916,
+                                                          0.9961171825556104
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "capsule",
+                                                        "name": "right-support",
+                                                        "position": [
+                                                          0.18,
+                                                          -0.0925,
+                                                          0.0135
+                                                        ],
+                                                        "radius": 0.12,
+                                                        "half_length": 0.1496111626851419,
+                                                        "rotation_xyzw": [
+                                                          0.005030773652995439,
+                                                          0.0,
+                                                          0.08384622754992399,
+                                                          0.9964660061648358
+                                                        ]
+                                                      },
+                                                      {
+                                                        "type": "sphere",
+                                                        "name": "left-crown",
+                                                        "position": [
+                                                          -0.115,
+                                                          0.12,
+                                                          -0.015
+                                                        ],
+                                                        "radius": 0.185
+                                                      },
+                                                      {
+                                                        "type": "sphere",
+                                                        "name": "right-crown",
+                                                        "position": [
+                                                          0.115,
+                                                          0.09,
+                                                          -0.005
+                                                        ],
+                                                        "radius": 0.18
+                                                      },
+                                                      {
+                                                        "type": "box",
+                                                        "name": "solid-arch-core",
+                                                        "position": [
+                                                          0,
+                                                          -0.08,
+                                                          0
+                                                        ],
+                                                        "half_extent": [
+                                                          0.145,
+                                                          0.175,
+                                                          0.13
+                                                        ],
+                                                        "rounding": 0.04
+                                                      }
                                                     ],
-                                                    "rounding": 0.04
+                                                    "radius": 0.065,
+                                                    "blend_materials": false
+                                                  },
+                                                  {
+                                                    "type": "capsule",
+                                                    "name": "front-cavity",
+                                                    "position": [
+                                                      -0.019,
+                                                      -0.11,
+                                                      0.1825
+                                                    ],
+                                                    "radius": 0.145,
+                                                    "half_length": 0.16757759396769006,
+                                                    "rotation_xyzw": [
+                                                      -0.6964655402934024,
+                                                      0.0,
+                                                      0.004158003225632257,
+                                                      0.7175781923895087
+                                                    ]
                                                   }
                                                 ],
-                                                "radius": 0.065,
-                                                "blend_materials": false
+                                                "radius": 0.025
                                               },
                                               {
                                                 "type": "capsule",
-                                                "name": "front-cavity",
+                                                "name": "rear-cavity",
                                                 "position": [
-                                                  -0.019,
-                                                  -0.11,
-                                                  0.1825
+                                                  -0.0035000000000000014,
+                                                  -0.105,
+                                                  -0.1825
                                                 ],
-                                                "radius": 0.145,
-                                                "half_length": 0.16757759396769006,
+                                                "radius": 0.135,
+                                                "half_length": 0.16953908104033122,
                                                 "rotation_xyzw": [
-                                                  -0.6964655402934024,
+                                                  0.6696081398155135,
                                                   0.0,
-                                                  0.004158003225632257,
-                                                  0.7175781923895087
+                                                  0.08594970152855846,
+                                                  0.7377246016637642
                                                 ]
                                               }
                                             ],
@@ -221,23 +250,23 @@
                                           },
                                           {
                                             "type": "capsule",
-                                            "name": "rear-cavity",
+                                            "name": "passage-floor-cut",
                                             "position": [
-                                              -0.0035000000000000014,
-                                              -0.105,
-                                              -0.1825
-                                            ],
-                                            "radius": 0.135,
-                                            "half_length": 0.16953908104033122,
-                                            "rotation_xyzw": [
-                                              0.6696081398155135,
                                               0.0,
-                                              0.08594970152855846,
-                                              0.7377246016637642
+                                              -0.29,
+                                              0.0
+                                            ],
+                                            "radius": 0.12,
+                                            "half_length": 0.4,
+                                            "rotation_xyzw": [
+                                              -0.7071067811865475,
+                                              0.0,
+                                              -0.0,
+                                              0.7071067811865475
                                             ]
                                           }
                                         ],
-                                        "radius": 0.025
+                                        "radius": 0.015
                                       },
                                       {
                                         "type": "union",
@@ -1139,6 +1168,11 @@
       "node": "rear-cavity",
       "label": "Meet the alcove and break through",
       "seconds": 1.8
+    },
+    {
+      "node": "passage-floor-cut",
+      "label": "Undercut the passage and separate the feet",
+      "seconds": 1.4
     },
     {
       "node": "wind-channel-0",

@@ -96,7 +96,7 @@ an exact spline sweep or claim these sampled curves have no approximation.
 | --- | ---: | ---: | --- |
 | Guardian | 76 | 151 | Tapered swept horns, small ears, shoulder/neck mass and surface-following mouth/cheek/brow cuts. |
 | Vessel | 10 | 19 | Rounded hollow belly, open lip, fused analytic handle and three confirmed wall-to-interior piercings. |
-| Arch | 50 | 99 | A filled core, joined front/rear cavities, exposed rock planes and directed surface grooves, with both supports retained. |
+| Arch | 51 | 101 | A filled core, joined front/rear cavities, a lower undercut, exposed rock planes and directed surface grooves, with both supports retained. |
 | Driftwood | 94 | 187 | Curved tapered trunk/branches, a rear branch, hollow broken ends, a knot recess and tapered grooves following the form. |
 
 `sculptures.json` holds subject-specific inspection cameras and design-intent
@@ -139,3 +139,10 @@ The new saved-tree probes measure distance -0.170 at the initial center,
 +0.12152 at the opened rear sample in the final scene. Those sign changes test
 the intended operation, beyond checking the final object's appearance. The
 new arch and the vessel's explicit preview policy are requalified separately.
+
+The filled core also closes the base, initially producing a rock window. One
+subsequent capsule undercut opens the lower passage and separates the feet,
+restoring the intended arch silhouette. Its added empty-path check passes
+while both retained support paths remain solid. The native hero was inspected
+before the final capture. The intermediate closed-window qualification is
+retained at `outputs/sdf/sculpture-arch-window-qualified/`.
