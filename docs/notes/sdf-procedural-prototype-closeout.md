@@ -45,6 +45,20 @@ Receipts: `outputs/sdf/oblique-closeout-browser-review.json` and
 `outputs/sdf/oblique-closeout-delivery.json`. The publisher separately verifies
 HTTP 200 and entrypoint bytes. No user-browser acceptance is implied.
 
+### Pre-push review
+
+Review of the SDF changes against `origin/main` at `c3bcd715` found no blocking
+source issues. The SDF application/test build, recipe/timeline test, and four
+rendering/layer/build policy checks pass. A fresh native cut fixture with
+required Vulkan validation passes 263 CPU/GPU rays with zero mismatches,
+exhaustion or sampling ambiguities. `git diff --check` passes.
+
+The documentation preset passes eight of nine checks. The remaining CLI
+recipe check requires other applications that are not built in this checkout.
+Running the same checker with the SDF application selected passes all seven
+SDF documentation recipes, with display and Vulkan drivers disabled. This
+review retains that repository-wide documentation prerequisite as a limit.
+
 ## What remains useful
 
 The retained prototype demonstrates the ProjectR-to-Cubey port, ordered
