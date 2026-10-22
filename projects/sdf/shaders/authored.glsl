@@ -30,7 +30,7 @@ float authoredPrimitive(vec3 p,SceneInstruction node) {
         d=length(max(v,0.0))+min(max(v.x,v.y),0.0);
     } else if (code==5u) {
         d=length(vec2(length(p.xz)-node.parameters.x,p.y))-node.parameters.y;
-    } else {
+    } else if (code==6u) {
         float bottom=node.parameters.x,top=node.parameters.y,h=node.parameters.z;
         vec2 v=vec2(length(p.xz),p.y),a=vec2(bottom,-h),edge=vec2(top-bottom,2.0*h);
         vec2 side=v-a-edge*clamp(dot(v-a,edge)/dot(edge,edge),0.0,1.0);
@@ -39,6 +39,20 @@ float authoredPrimitive(vec3 p,SceneInstruction node) {
         float radius=bottom+(top-bottom)*(v.y+h)/(2.0*h);
         bool inside=abs(v.y)<=h && v.x<=radius;
         d=min(caps,length(side))*(inside ? -1.0 : 1.0);
+    } else {
+        float bottom=node.parameters.x,top=node.parameters.y,height=2.0*node.parameters.z;
+        vec2 v=vec2(length(p.xz),p.y+node.parameters.z);
+        if (abs(bottom-top)>=height) {
+            d=bottom>=top ? length(v)-bottom : length(v-vec2(0.0,height))-top;
+        } else {
+            float slope=(top-bottom)/height;
+            float radial=sqrt(max(0.0,1.0-slope*slope));
+            vec2 tangent=vec2(slope,radial),normal=vec2(radial,-slope);
+            float along=dot(v,tangent);
+            if (along<0.0) d=length(v)-bottom;
+            else if (along>height*radial) d=length(v-vec2(0.0,height))-top;
+            else d=dot(v,normal)-bottom;
+        }
     }
     return d*node.settings.x;
 }

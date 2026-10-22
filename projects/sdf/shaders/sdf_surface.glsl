@@ -56,6 +56,10 @@ float authoredCutPreview(vec3 origin,vec3 direction,float surfaceT) {
         vec3(node.parameters.x,node.parameters.y+(code==3u ? node.parameters.x : 0.0),node.parameters.x));
     if (code==5u) extent=vec3(node.parameters.x+node.parameters.y,node.parameters.y,node.parameters.x+node.parameters.y);
     if (code==6u) extent=vec3(max(node.parameters.x,node.parameters.y),node.parameters.z,max(node.parameters.x,node.parameters.y));
+    if (code==7u) {
+        float radius=max(node.parameters.x,node.parameters.y);
+        extent=vec3(radius,node.parameters.z+radius,radius);
+    }
     vec2 interval=rayBox(localOrigin,localDirection,-extent,extent);
     float t=max(interval.x,0.0),end=min(interval.y,surfaceT);
     // A color-only preview, depth limited by the currently published solid.

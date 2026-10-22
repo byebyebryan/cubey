@@ -242,7 +242,8 @@ Hashes are validated when present, so handwritten modifications to an exported
 file must remove its old fingerprints or supply recomputed values.
 
 Named nodes support box, sphere, Y-axis capsule, Y-axis capped cylinder, torus,
-capped cone, union, subtraction, polynomial smooth union and smooth subtraction.
+capped cone, rounded tapered segment (`round-cone`), union, subtraction,
+polynomial smooth union and smooth subtraction.
 Groups inherit material assignments
 and apply local position, forward `rotation_xyzw` and positive uniform scale.
 Boxes use core `half_extent` plus `rounding`; spheres use `radius`; capsules and
@@ -252,6 +253,10 @@ A capped cone uses `bottom_radius` at local Y = `-half_length` and `top_radius`
 at `+half_length`; radii are nonnegative with at least one positive. Equal radii
 give a cylinder, and a zero end radius gives a pointed cone. Torus and cone
 support the same inherited rotation, position and uniform scale as other nodes.
+`round-cone` uses the same endpoint-radius and half-length parameters as a
+capped cone, but describes the convex hull of spheres at Y = ±half-length.
+Equal radii give a capsule, and contained endpoints reduce to the larger
+sphere. See the [rounded stroke contract](../../docs/notes/sdf-rounded-stroke-contract.md).
 Union/smooth-union fold two or more children in order; both subtraction forms
 have exactly two. Scene limits are 128 primitive leaves, 256 instructions,
 16 materials, tree depth 24 and GPU stack depth 32.

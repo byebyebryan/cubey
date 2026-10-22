@@ -58,6 +58,14 @@ def capsule(name, start, end, radius, material=None):
                  rotation_xyzw=q, radius=radius, half_length=length/2)
 
 
+def round_cone(name, start, end, bottom_radius, top_radius, material=None):
+    """Convex hull of endpoint spheres; equal radii give an exact capsule."""
+    node = capsule(name, start, end, max(bottom_radius, top_radius), material)
+    node.update(type='round-cone', bottom_radius=bottom_radius, top_radius=top_radius)
+    del node['radius']
+    return node
+
+
 def union(name, *children, **options):
     return shape('union', name, children=list(children), **options)
 

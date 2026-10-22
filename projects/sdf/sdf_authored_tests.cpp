@@ -85,6 +85,63 @@ int main() {
     tip["top_radius"] = 0;
     close(authored_distance({}, scene(tip)), -.1F / std::sqrt(1.25F));
     close(authored_distance({0, .2F, 0}, scene(tip)), 0);
+    auto round_json = cone_json;
+    round_json["type"] = "round-cone";
+    const auto rounded = scene(round_json);
+    close(authored_distance({0, -.4F, 0}, rounded), 0);
+    close(authored_distance({0, .3F, 0}, rounded), 0);
+    // Independent reference: minimize distance to linearly interpolated
+    // endpoint spheres, rather than reusing the analytic tangent/cap split.
+    for (const auto radii : {cubey::math::Vec2{.2F, .1F}, cubey::math::Vec2{.03F, .14F},
+                             cubey::math::Vec2{.08F, 0}, cubey::math::Vec2{.3F, .01F}}) {
+        auto json = round_json;
+        json["bottom_radius"] = radii.x;
+        json["top_radius"] = radii.y;
+        json["half_length"] = .12;
+        const auto test = scene(json);
+        for (int x = 0; x <= 8; ++x) {
+            for (int y = -8; y <= 8; ++y) {
+                const Vec3 p{static_cast<float>(x) * .04F, static_cast<float>(y) * .04F, .017F};
+                const auto sphere_family = [&](double t) {
+                    const double dy = static_cast<double>(p.y) + .12 - .24 * t;
+                    return std::sqrt(static_cast<double>(p.x) * p.x + dy * dy +
+                                     static_cast<double>(p.z) * p.z) -
+                           (static_cast<double>(radii.x) * (1 - t) + radii.y * t);
+                };
+                double low = 0, high = 1;
+                for (int iteration = 0; iteration < 70; ++iteration) {
+                    const double left = (2 * low + high) / 3, right = (low + 2 * high) / 3;
+                    if (sphere_family(left) < sphere_family(right))
+                        high = right;
+                    else
+                        low = left;
+                }
+                const float reference = static_cast<float>(sphere_family((low + high) / 2));
+                close(authored_distance(p, test), reference, 2e-5F);
+                Vec3 gradient{0};
+                for (int axis = 0; axis < 3; ++axis) {
+                    auto a = p, b = p;
+                    a[axis] -= .0001F;
+                    b[axis] += .0001F;
+                    gradient[axis] = (authored_distance(b, test) - authored_distance(a, test)) / .0002F;
+                }
+                require(glm::length(gradient) < 1.003F, "rounded taper violates distance bound");
+            }
+        }
+    }
+    auto round_equal = round_json;
+    round_equal["bottom_radius"] = round_equal["top_radius"] = .05;
+    round_equal["half_length"] = .15;
+    for (const auto p : {Vec3{}, Vec3{.12F, .27F, .02F}, Vec3{.05F, -.1F, .02F}})
+        close(authored_distance(p, scene(round_equal)), authored_distance(p, capsule));
+    auto contained = round_json;
+    contained["half_length"] = .03;
+    const auto container_sphere = scene(sphere("container", {0, -.03F, 0}, .2F));
+    for (const auto p : {Vec3{}, Vec3{.2F, .1F, .02F}, Vec3{.05F, -.1F, .02F}})
+        close(authored_distance(p, scene(contained)), authored_distance(p, container_sphere));
+    auto invalid_round = round_json;
+    invalid_round["bottom_radius"] = invalid_round["top_radius"] = 0;
+    rejected(document(invalid_round));
     for (const auto kind : {0, 1, 2, 3}) {
         auto bad = kind < 2 ? torus_json : cone_json;
         if (kind == 0)

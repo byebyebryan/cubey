@@ -13,6 +13,7 @@ enum class ShapeCode : std::uint32_t {
     Cylinder = 4,
     Torus = 5,
     CappedCone = 6,
+    RoundCone = 7,
     Union = 10,
     Subtract = 11,
     SmoothUnion = 12,

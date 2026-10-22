@@ -103,6 +103,27 @@ float primitive_distance(math::Vec3 point, const SceneInstruction& node) {
         const float radius = bottom + (top - bottom) * (radial.y + h) / (2 * h);
         const bool inside = std::abs(radial.y) <= h && radial.x <= radius;
         distance = std::min(caps, glm::length(side)) * (inside ? -1.0F : 1.0F);
+    } else if (code == ShapeCode::RoundCone) {
+        // Convex hull of two endpoint spheres. In a meridian plane the outer
+        // boundary is a common tangent joined to the two circular caps.
+        const float bottom = node.parameters.x, top = node.parameters.y;
+        const float height = 2 * node.parameters.z;
+        const math::Vec2 v{glm::length(math::Vec2{p.x, p.z}), p.y + node.parameters.z};
+        if (std::abs(bottom - top) >= height) {
+            distance = bottom >= top ? glm::length(v) - bottom
+                                    : glm::length(v - math::Vec2{0, height}) - top;
+        } else {
+            const float slope = (top - bottom) / height;
+            const float radial = std::sqrt(std::max(0.0F, 1 - slope * slope));
+            const math::Vec2 tangent{slope, radial}, normal{radial, -slope};
+            const float along = glm::dot(v, tangent);
+            if (along < 0)
+                distance = glm::length(v) - bottom;
+            else if (along > height * radial)
+                distance = glm::length(v - math::Vec2{0, height}) - top;
+            else
+                distance = glm::dot(v, normal) - bottom;
+        }
     }
     return distance * node.settings.x;
 }
@@ -218,12 +239,12 @@ AuthoredScene parse_authored_scene(std::string_view text) {
                     throw std::invalid_argument(
                         "authored torus requires minor radius below major radius");
                 instruction.parameters = {major, minor, 0, 0};
-            } else if (type == "capped-cone") {
-                code = ShapeCode::CappedCone;
+            } else if (type == "capped-cone" || type == "round-cone") {
+                code = type == "capped-cone" ? ShapeCode::CappedCone : ShapeCode::RoundCone;
                 const float bottom = number(node.at("bottom_radius").get<float>(), 0, 10);
                 const float top = number(node.at("top_radius").get<float>(), 0, 10);
                 if (std::max(bottom, top) < .000001F)
-                    throw std::invalid_argument("authored capped cone needs a positive end radius");
+                    throw std::invalid_argument("authored cone needs a positive end radius");
                 instruction.parameters = {
                     bottom, top, number(node.at("half_length").get<float>(), .000001F, 10), 0};
             } else

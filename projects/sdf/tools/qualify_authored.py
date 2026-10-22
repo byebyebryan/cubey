@@ -10,7 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 from qualify import distribution
-from sdf_author import box, capped_cone, cylinder, material, rotation, smooth_subtract, smooth_union, sphere, subtract, torus, union, write_scene
+from sdf_author import box, capped_cone, cylinder, material, rotation, round_cone, smooth_subtract, smooth_union, sphere, subtract, torus, union, write_scene
 
 
 def check_video(path, width=1280, height=960, expected_frames=480):
@@ -112,6 +112,11 @@ def main():
         'capped-cone': capped_cone('taper', (0, 0, 0), .18, .07, .2, 'blue'),
         'cone-tip': capped_cone('tip', (0, 0, 0), .18, 0, .2, 'blue', rotation_xyzw=rotation((1, 0, 1), 34)),
         'cone-equal-ends': capped_cone('cylinder-equivalent', (0, 0, 0), .15, .15, .12, 'blue'),
+        'round-cone': round_cone('rounded-taper', (-.1, -.18, .02), (.1, .17, -.02), .1, .025, 'blue'),
+        'round-cone-contained': round_cone('contained', (0, -.035, 0), (0, .035, 0), .16, .02, 'blue'),
+        'round-cone-tip': round_cone('rounded-tip', (0, -.15, 0), (.08, .15, .02), .11, 0, 'blue'),
+        'round-cone-cut': smooth_subtract('rounded-gouge', sphere('body', (0, 0, 0), .25),
+            round_cone('gouge', (-.18, -.15, .23), (.15, .13, .18), .065, .015), .01, cut_material='blue'),
         'smooth-cut': union('assembly', smooth_subtract('recess', sphere('body', (0, 0, 0), .25),
             sphere('tool', (.1, 0, .2), .15), .04, cut_material='blue'), sphere('plug', (.1, 0, .2), .035)),
         'smooth-inherit-cut': smooth_subtract('recess', sphere('body', (0, 0, 0), .25),

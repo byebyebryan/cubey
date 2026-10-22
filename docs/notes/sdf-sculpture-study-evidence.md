@@ -44,3 +44,27 @@ python3 projects/sdf/tools/sculpture_audition.py \
 - [ ] Arch modeling, construction presentation and native qualification.
 - [ ] Driftwood modeling, construction presentation and native qualification.
 - [ ] Published comparison gallery, delivery review and study verdicts.
+
+## Shared foundation
+
+The [rounded tapered segment](sdf-rounded-stroke-contract.md) is implemented in
+the CPU evaluator, GPU evaluator and cutter preview. CPU numerical-reference,
+capsule-equivalence, containment and gradient checks pass. The six selected
+repository checks pass, including authored/recipe tests, shader dependencies,
+rendering and layer policy.
+
+`outputs/sdf/sculpture-foundation/` records the native authored regression
+matrix, including four new rounded-taper fixtures, existing expressions,
+lifecycle, legacy scenes, replay and material/cache checks. Every run passes.
+The receipt records binary/shader hashes and the source state used to build it;
+later content qualification will pin the committed source separately.
+
+`qualify_history.py` now accepts an export basename and uses the scene's title
+in video captions. The default export remains `robot.json` for compatibility.
+`qualify_sculpture.py` accepts per-subject view/build metadata and explicit
+occluded-cutter reasons, then reuses native history qualification. A first run
+on the nine-leaf vessel blockout passes all prefixes and preview visibility,
+static/replay and export/reload identity, an axis-80 atlas relocation and
+subject/robot performance captures. It is retained in
+`outputs/sdf/sculpture-foundation/generic-vessel/`. No robot-specific camera or
+hidden-preview exception is inherited by this workflow.

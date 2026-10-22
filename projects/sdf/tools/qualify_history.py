@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture and qualify the authored robot's native edit-by-edit presentation."""
+"""Capture and qualify an authored scene's native edit-by-edit presentation."""
 import argparse
 import datetime as dt
 import hashlib
@@ -16,9 +16,13 @@ def main():
     parser.add_argument('--video', action='store_true')
     parser.add_argument('--regressions', action='store_true')
     parser.add_argument('--config', type=Path, default=Path('projects/sdf/presets/survey-robot-build.json'))
+    parser.add_argument('--export-name', default='robot.json',
+                        help='Export basename (legacy robot.json remains the default)')
     parser.add_argument('--hidden-preview-node', action='append', default=[],
                         help='Named cutter expected to be occluded from the fixed camera')
     args = parser.parse_args()
+    if Path(args.export_name).name != args.export_name or not args.export_name.endswith('.json'):
+        parser.error('--export-name must be a JSON basename')
     root = Path(__file__).resolve().parents[3]
     out = args.output.resolve()
     if out.exists():
@@ -41,6 +45,8 @@ def main():
         device=subprocess.check_output(['nvidia-smi', '--query-gpu=name,driver_version', '--format=csv,noheader'], text=True).strip(),
         history=history, construction_seconds=construction, duration=duration, fps=fps, frames=frames,
         config=str(preset.relative_to(root) if preset.is_relative_to(root) else preset),
+        config_sha256=sha(preset), source_scene_sha256=sha(root/config['authored-scene']),
+        scene_name=scene['name'], exported_scene=f'scenes/{args.export_name}',
         runs={}, steps=[], previews=[])
     def save():
         (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
@@ -98,7 +104,7 @@ def main():
             manifest['previews'].append(dict(index=index+1, node=step['node'], time=time, label=step['label'],
                 on=on['capture'], off=off['capture']))
         start += step['seconds']
-    final = run('static-final', ['--motion', 'static', '--export-authored', out / 'scenes/robot.json', '--validate-field'])
+    final = run('static-final', ['--motion', 'static', '--export-authored', out / 'scenes' / args.export_name, '--validate-field'])
     identity = lambda row: next(s for s in row['stats'] if s.startswith('sdf: authored geometry='))
     assert identity(final) == identity(manifest['runs'][f'step-{len(history):02}'])
     manifest['final_matches_static_fingerprints'] = True
@@ -144,7 +150,7 @@ def main():
                 prefix = index+1
                 cursor += step['seconds']
             if time >= construction:
-                text = f'FINISHED  |  {len(history)} edits  |  Orbiting the robot'
+                text = f'FINISHED  |  {len(history)} edits  |  {scene["name"]}'
             elif preview_index is not None:
                 text = f'CUT PREVIEW  {preview_index+1:02} / {len(history)}  |  {history[preview_index]["label"]}'
             else:
@@ -168,7 +174,7 @@ def main():
             '-c:v', 'libx264', '-crf', '18', '-preset', 'medium', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
             'presentation.mp4'], cwd=out, check=True)
         manifest['presentation_sha256'] = sha(out / 'presentation.mp4')
-        for time in (1.2, 4.73, 5.8, 10.6, 18, 26, 35):
+        for time in (duration*f for f in (.025, .10, .20, .35, .50, .70, .90)):
             subprocess.run(['ffmpeg', '-v', 'error', '-ss', str(time), '-i', str(out / 'presentation.mp4'),
                 '-frames:v', '1', str(out / f'captures/video-{time}.png')], check=True)
     save()
