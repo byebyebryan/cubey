@@ -137,6 +137,22 @@ prefixes pass independent native field checks. At the tested 1080p settings,
 the detailed scene costs about 11 ms per frame and 0.9 seconds per full rebuild.
 Live playback can skip reveals while rebuilding; the offline film visits each.
 
+The [mirrored stroke study](../../docs/notes/sdf-mirror-evidence.md) adds an
+opt-in X reflection helper and atomic whole-stroke history. Its separate
+`sculpture-guardian-mirrored[-build].json` variant has 65 operations: 48 mirrored
+pairs and 17 single strokes/placements, retaining 1,011 explicit primitives.
+The original has 113 stroke placements represented by 1,011 segment reveals.
+Central forms retain their asymmetry; bilateral features reflect the original
+left stroke onto the right, including the formerly unequal horn tips.
+All 66 native states and paired horn/socket desktop undo/redo checks pass.
+Matched 1080p profiles measure 10.73 / 10.67 ms for original / mirrored scenes;
+both still take about 0.92 seconds to rebuild. The reduction is in authoring and
+replay actions, not steady evaluation cost. This is scripted authoring, not a
+new live brush editor.
+The [mirrored guardian review](http://starship:8787/reports/28b97723efe9c303766c0ad148b500cfc49758af39d488a292e616d0ce512216/)
+includes the construction film, all operation stills, paired red previews,
+matched inspection views and measurements.
+
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
 | Guardian | [Static](presets/sculpture-guardian.json) | [Build](presets/sculpture-guardian-build.json) | 76 |
@@ -146,6 +162,7 @@ Live playback can skip reveals while rebuilding; the offline film visits each.
 | Guardian, refined / chips removed | [Static](presets/sculpture-guardian-refined.json) | [Build](presets/sculpture-guardian-refined-build.json) | 106 |
 | Guardian, organic form | [Static](presets/sculpture-guardian-organic-form.json) | [Build](presets/sculpture-guardian-organic-form-build.json) | 197 |
 | Guardian, organic detail | [Static](presets/sculpture-guardian-organic.json) | [Build](presets/sculpture-guardian-organic-build.json) | 1,011 |
+| Guardian, mirrored strokes / 65 operations | [Static](presets/sculpture-guardian-mirrored.json) | [Build](presets/sculpture-guardian-mirrored-build.json) | 1,011 |
 | Driftwood, refined (retained experiment) | [Static](presets/sculpture-driftwood-refined.json) | [Build](presets/sculpture-driftwood-refined-build.json) | 100 |
 
 ```sh
@@ -163,8 +180,8 @@ python3 projects/sdf/tools/qualify_sculpture.py --subject guardian \
 probes. The authoring helper samples curved paths into rounded tapered segments
 and projects selected grooves onto the actual surface. It emits explicit scenes
 without an embedded Python dependency. This is scripted CSG authoring and
-leaf-reveal playback; a freehand brush editor and exact spline sweep remain
-separate work. Atmosphere, hard self-shadows and the absence of a ground plane
+leaf-reveal or grouped stroke playback; a freehand brush editor and exact spline
+sweep remain separate work. Atmosphere, hard self-shadows and the absence of a ground plane
 carry over from the robot/procedural studies.
 
 The refinement helper adds monotone radius interpolation and projection from
@@ -375,9 +392,33 @@ loading. Missing children reduce to transform groups or an empty root, keeping
 the original local coordinates and inherited materials. The final prefix
 retains the complete scene and its geometry/appearance fingerprints.
 
+`tools/mirror_author.py` exposes `reflect_x(subtree)` and
+`MirrorAuthor(mirror_x=True).edit(subtree, label)`. Build a complete curve/tool
+subtree, then register it as one operation. The returned subtree contains the
+original and reflected copy. `centerline=True` emits once; `mirror=False` or
+changing `author.mirror_x` disables mirroring for asymmetric finishing.
+Names must remain unique. Mirroring reflects nested positions and quaternion
+frames, retaining taper direction, Boolean structure, scale and materials.
+The helper exports ordinary geometry and a `nodes` history entry; its optional
+`mirror_axis` annotation is authoring metadata, not a runtime coordinate fold.
+Keep each operation's leaves uniformly additive or subtractive.
+
+```python
+from mirror_author import MirrorAuthor
+from sdf_author import capsule, sphere, subtract
+
+author = MirrorAuthor()
+head = author.edit(sphere('head', (0, 0, 0), .2), 'Head', centerline=True)
+tools = author.edit(capsule('groove', (.09, -.03, .18), (.1, .05, .18), .02),
+                    'Carve both grooves')
+root = subtract('carved-head', head, tools)
+# Pass root and author.history to write_scene(...).
+```
+
 `--construction-seconds` scales the saved weights, including a short opening
 hold, to the construction interval. The first 35% of a cut's interval previews
-all cutters in the operation in red; commitment then publishes the actual subtraction. Construction
+all cutters in the operation in red; commitment then publishes the actual
+subtraction. Construction
 holds the capture camera throughout. Presentation holds it during construction,
 then orbits the finished model without changing the shading view. The build
 preset uses 32 seconds of construction and ten seconds of orbit.

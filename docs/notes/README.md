@@ -38,6 +38,9 @@ the architecture and project guides remain current authority.
 - [SDF organic guardian evidence](sdf-guardian-organic-evidence.md): a separate
   1,011-leaf sculpt, organic form changes, normal-aware authoring and bounded
   capacity/history scaling after user review.
+- [SDF mirrored stroke evidence](sdf-mirror-evidence.md): atomic bilateral
+  authoring, the 65-operation guardian, paired previews/undo, native qualification
+  and measured rendering/build costs.
 - [SDF rounded stroke contract](sdf-rounded-stroke-contract.md): tapered endpoint spheres, conservative bounds and independent/native qualification for sculptural strokes.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
@@ -89,6 +92,8 @@ an implemented project or a new runtime dependency.
 - [SDF organic guardian plan](sdf-guardian-organic-plan.md): a separate organic
   sculpt, roughly 1,000 leaf reveals, bounded capacity and history-loading work,
   with native form and presentation checkpoints.
+- [SDF mirrored stroke plan](sdf-mirror-plan.md): implemented X mirror authoring
+  and grouped history, preserving explicit geometry and legacy leaf histories.
 
 ## Historical research and study records
 

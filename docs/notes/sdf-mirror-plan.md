@@ -1,6 +1,7 @@
 # Mirrored stroke authoring
 
-Status: implementation in progress, 2026-10-22.
+Status: implemented, qualified and published, 2026-10-22. See
+[evidence and review](sdf-mirror-evidence.md).
 
 The organic guardian demonstrates useful authored detail, but its history is
 1,011 segment reveals rather than 113 sculpting strokes. Bilateral features

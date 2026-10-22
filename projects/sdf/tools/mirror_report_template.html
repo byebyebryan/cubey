@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cubey SDF · Mirrored strokes</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#11191c;color:#e4ece8}*{box-sizing:border-box}body{margin:0}main{max-width:1180px;margin:auto;padding:32px 24px 70px}a{color:#9ccebc}h1{font-size:clamp(2rem,5vw,3.8rem);line-height:1.08;margin:12px 0 22px}h2{margin:38px 0 14px;font-size:1.5rem}p{max-width:850px;line-height:1.65;color:#c2cfca}.eyebrow{color:#92b8a7;letter-spacing:.17em;font-size:.78rem;text-transform:uppercase}.lede{font-size:1.15rem}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}.stat{background:#1b282b;border:1px solid #344440;padding:18px;border-radius:10px}.stat strong{font-size:1.9rem;display:block;color:#e9e8cb}.stat span{font-size:.87rem;color:#aebfb6}img,video{display:block;width:100%;background:#1c282a;border-radius:8px}video{max-height:75vh}.hero{width:100%;max-height:720px;object-fit:contain;background:#1b282b}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:15px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}figure{margin:0}figcaption{font-size:.87rem;color:#b1c2b9;margin:8px 0;line-height:1.5}button,select{font:inherit;border:1px solid #506259;background:#223730;color:#e4ece8;padding:8px 12px;border-radius:6px;cursor:pointer}button:disabled{opacity:.4;cursor:default}input[type=range]{flex:1;min-width:160px;accent-color:#a7c9ab}.note{padding:16px 20px;border-left:3px solid #8cae98;background:#192628}.small{font-size:.88rem}table{border-collapse:collapse;width:100%;margin:18px 0}td,th{text-align:left;padding:13px;border-bottom:1px solid #344440}th{color:#b9d7c9}code{font-size:.9em;overflow-wrap:anywhere}details{margin-top:26px}summary{cursor:pointer;color:#b8d5c7}.step-caption{min-height:50px;font-size:1rem}#edit-image{max-height:680px;object-fit:contain}#cue-status{color:#ef9584;font-size:.88rem}footer{border-top:1px solid #344440;margin-top:36px;padding-top:20px;font-size:.88rem;color:#adbbb3}@media(max-width:700px){.stats,.grid{grid-template-columns:1fr 1fr}main{padding:24px 15px}.grid{grid-template-columns:1fr}td,th{padding:8px;font-size:.88rem}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+<main>
+<div class="eyebrow">Cubey / signed distance field study</div>
+<h1>One stroke. Both sides.</h1>
+<p class="lede">The guardian now supports mirrored sculpting operations. A complete stroke and its reflected copy appear, undo and replay together.</p>
+<div class="stats"><div class="stat"><strong>65</strong><span>whole-stroke actions</span></div><div class="stat"><strong>48</strong><span>mirrored pairs</span></div><div class="stat"><strong>17</strong><span>single operations</span></div><div class="stat"><strong>1,011</strong><span>explicit primitives</span></div></div>
+<img class="hero" src="comparison/after/captures/hero.png" alt="Completed stone guardian with mirrored curved horns and facial carving">
+<h2>Watch the construction</h2>
+<p>Whole strokes replace the old segment-by-segment reveals. Both subtractive tools preview in red before the cut commits. The final twenty seconds orbit the completed sculpture under the shared atmosphere and sky.</p>
+<video id="film" controls preload="metadata" poster="comparison/after/captures/hero.png"><source src="history/presentation.mp4" type="video/mp4"></video>
+<div id="chapters" class="row" aria-label="Construction chapters"></div>
+<h2>Inspect an operation</h2>
+<div class="row"><button id="previous">Previous</button><input id="edit" type="range" min="0" max="65" value="21" aria-label="Committed operation"><button id="next">Next</button><button id="preview">Show red preview</button></div>
+<div id="edit-label" class="step-caption" aria-live="polite"></div><div id="cue-status"></div>
+<img id="edit-image" src="history/captures/step-21.png" alt="Committed mirrored socket cut">
+<p class="small">These are native rendered states. The slider changes a complete operation: the 72 horn segments, for example, belong to one mirrored horn stroke. Preview stills are supplied for the sockets and muzzle crease; the film previews every subtractive operation.</p>
+<h2>Original and mirrored</h2>
+<div class="row"><label for="view">Inspection view</label><select id="view"></select></div>
+<div class="grid"><figure><img id="before" src="comparison/before/captures/hero.png" alt="Original organic guardian"><figcaption>Original organic guardian · 113 stroke placements, presented as 1,011 segment reveals.</figcaption></figure><figure><img id="after" src="comparison/after/captures/hero.png" alt="Guardian with mirrored bilateral strokes"><figcaption>Mirrored guardian · 65 atomic operations, still 1,011 primitives.</figcaption></figure></div>
+<p>The mirrored variant reflects the original left-side strokes, including horn shape and projected carving, onto the right. Central and cross-face forms retain their authored asymmetry. It is a separate scene; the original remains unchanged.</p>
+<h2>What mirroring saves</h2>
+<p>Pairing reduces 113 separate stroke placements to 65 actions, a 42.5% reduction. Grouping curve segments into those strokes reduces the old 1,012-state construction to 66 states. This implementation expands ordinary primitives on both sides: it saves authoring and replay work, while the final rendering still evaluates the full model.</p>
+<table><thead><tr><th>Matched 1080p profile</th><th>GPU median</th><th>GPU p95</th><th>Cold field build</th></tr></thead><tbody id="performance"></tbody></table>
+<p class="small" id="profile-note"></p>
+<p class="note">This is scripted stroke authoring and native history playback. A live brush editor and an SDF coordinate-folding optimization are deferred. One field rebuild per committed operation remains synchronous.</p>
+<h2>Qualification</h2>
+<p id="qualification"></p>
+<p>The native desktop check seeks, undoes and redoes both the paired horn stroke and paired socket cut, and verifies their scene fingerprints against the qualified history. Export/reload renders match exactly. A small fixture independently demonstrates both red preview regions; the previous guardian hero image remains byte-identical.</p>
+<p class="small">Native captures and film frames were visually inspected. Browser interaction review was unavailable because no browser was connected.</p>
+<details><summary>Commands, source and evidence</summary>
+<p><a href="history/manifest.json">Full history commands and identities</a> · <a href="history/logs/history-validation.log">Every-state native validation</a> · <a href="controls/windowed-interaction.json">Desktop controls</a> · <a href="controls/captures/window-paired-21-undone.png">Socket operation undone</a> · <a href="controls/captures/window-paired-21-redone.png">Socket operation redone</a> · <a href="profile/manifest.json">Matched performance</a> · <a href="roundtrip/manifest.json">Export/reload</a> · <a href="reproduction/manifest.json">Generator reproduction</a> · <a href="fixture/paired-preview-check.json">Both preview regions</a> · <a href="fixture/captures/preview-02.png">Fixture preview</a> · <a href="history/scenes/guardian-mirrored.json">Saved scene and grouped history</a> · <a href="comparison/intent-audit.json">Structural probes</a> · <a href="review.json">Review summary</a></p>
+<pre><code>python3 projects/sdf/tools/author_guardian_mirrored.py
+build/release/projects/sdf/sdf \
+  --config projects/sdf/presets/sculpture-guardian-mirrored-build.json</code></pre>
+</details>
+<footer><a href="http://starship:8787/reports/1f385381082f8cb914e5deb57eec6cd42dd17508f7369cb69f250b36bb370931/">Previous organic guardian review</a> · <a href="http://starship:8787/reports/#project=cubey">Cubey reports</a></footer>
+</main>
+<script>
+const data=__DATA__;
+const byId=id=>document.getElementById(id),edit=byId('edit');let cue=false;
+function showEdit(){const index=Number(edit.value),step=data.steps[index],preview=data.previews.find(p=>p.index===index);byId('edit-label').textContent=`${index} / ${data.count} · ${step.label}`;byId('preview').disabled=!preview;byId('preview').textContent=cue&&preview?'Show committed edit':'Show red preview';byId('edit-image').src='history/'+(cue&&preview?preview.on:step.capture);byId('edit-image').alt=cue&&preview?'Red mirrored cutter preview before commitment':step.label;byId('cue-status').textContent=cue&&preview?'Pre-commit preview: both tools are shown over the preceding state.':'';byId('previous').disabled=index===0;byId('next').disabled=index===data.count;}
+edit.addEventListener('input',()=>{cue=false;showEdit()});byId('previous').onclick=()=>{edit.value=Math.max(0,Number(edit.value)-1);cue=false;showEdit()};byId('next').onclick=()=>{edit.value=Math.min(data.count,Number(edit.value)+1);cue=false;showEdit()};byId('preview').onclick=()=>{cue=!cue;showEdit()};showEdit();
+for(const chapter of data.chapters){const b=document.createElement('button');b.textContent=chapter.label;b.onclick=()=>{byId('film').currentTime=chapter.time};byId('chapters').append(b);}
+for(const view of data.views){const option=document.createElement('option');option.value=view.name;option.textContent=view.label;byId('view').append(option);}
+byId('view').onchange=()=>{const name=byId('view').value;byId('before').src=`comparison/before/captures/${name}.png`;byId('after').src=`comparison/after/captures/${name}.png`;};
+for(const [key,label] of [['before','Original organic'],['after','Mirrored strokes']]){const p=data.performance[key],row=document.createElement('tr');for(const value of [label,p.gpu_frame.median_ms.toFixed(2)+' ms',p.gpu_frame.p95_ms.toFixed(2)+' ms',p.cold_build_ms.toFixed(0)+' ms']){const cell=document.createElement('td');cell.textContent=value;row.append(cell);}byId('performance').append(row);}
+byId('profile-note').textContent=`${data.device}. Release, 1920×1080, supersample 1, hard shadows; 30 warmup frames, 148 completed GPU samples per version. GPU rendering is measured separately from field construction. Different geometry is not a normalized primitive-cost benchmark.`;
+byId('qualification').textContent=`${data.states} distinct states / ${data.checkpoints} checkpoints; ${data.rays.toLocaleString()} sampled-field rays and ${data.points.toLocaleString()} direct CPU/GPU points, with zero reported mismatches, exhausted rays, material or part disagreements. All ${data.frames.toLocaleString()} film frames decode, visit all ${data.count} operations in order, and use ${data.history_builds} field builds. Final replay and static pixels agree exactly.`;
+</script></html>
