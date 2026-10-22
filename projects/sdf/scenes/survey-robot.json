@@ -1,0 +1,891 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Survey robot",
+  "materials": [
+    {
+      "name": "ivory",
+      "base_color": [
+        0.8069522576692516,
+        0.7230551289219693,
+        0.5775804404296506
+      ],
+      "roughness": 0.52,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "teal",
+      "base_color": [
+        0.04091519690685319,
+        0.2704977910130658,
+        0.2874408377269175
+      ],
+      "roughness": 0.31,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "rubber",
+      "base_color": [
+        0.018500220128379697,
+        0.033104766570885055,
+        0.043735029256973465
+      ],
+      "roughness": 0.8,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "amber",
+      "base_color": [
+        0.9215818562772946,
+        0.39157247774972326,
+        0.043735029256973465
+      ],
+      "roughness": 0.29,
+      "emission": [
+        0.16588473412991303,
+        0.07048304599495019,
+        0.007872305266255224
+      ]
+    }
+  ],
+  "root": {
+    "type": "union",
+    "name": "survey-robot",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "union",
+        "name": "head",
+        "position": [
+          0,
+          0.232,
+          0
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "head-vent-2",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "subtract",
+                "name": "head-vent-1",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "subtract",
+                    "name": "head-vent-0",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "subtract",
+                        "name": "head-eye-socket",
+                        "position": [
+                          0,
+                          0,
+                          0
+                        ],
+                        "children": [
+                          {
+                            "type": "box",
+                            "name": "head-shell",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "half_extent": [
+                              0.145,
+                              0.082,
+                              0.065
+                            ],
+                            "rounding": 0.03
+                          },
+                          {
+                            "type": "cylinder",
+                            "name": "eye-socket-cut",
+                            "position": [
+                              -0.027,
+                              0.006,
+                              0.095
+                            ],
+                            "radius": 0.069,
+                            "half_length": 0.1,
+                            "rotation_xyzw": [
+                              0.7071067811865475,
+                              0.0,
+                              0.0,
+                              0.7071067811865476
+                            ]
+                          }
+                        ],
+                        "cut_material": "rubber"
+                      },
+                      {
+                        "type": "box",
+                        "name": "head-vent-cut-0",
+                        "position": [
+                          0.105,
+                          -0.026,
+                          0.087
+                        ],
+                        "half_extent": [
+                          0.022,
+                          0.0025,
+                          0.018
+                        ],
+                        "rounding": 0.002
+                      }
+                    ],
+                    "cut_material": "rubber"
+                  },
+                  {
+                    "type": "box",
+                    "name": "head-vent-cut-1",
+                    "position": [
+                      0.105,
+                      -0.011,
+                      0.087
+                    ],
+                    "half_extent": [
+                      0.022,
+                      0.0025,
+                      0.018
+                    ],
+                    "rounding": 0.002
+                  }
+                ],
+                "cut_material": "rubber"
+              },
+              {
+                "type": "box",
+                "name": "head-vent-cut-2",
+                "position": [
+                  0.105,
+                  0.004,
+                  0.087
+                ],
+                "half_extent": [
+                  0.022,
+                  0.0025,
+                  0.018
+                ],
+                "rounding": 0.002
+              }
+            ],
+            "cut_material": "rubber"
+          },
+          {
+            "type": "subtract",
+            "name": "optic-ring",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "cylinder",
+                "name": "optic-barrel",
+                "position": [
+                  -0.027,
+                  0.006,
+                  0.097
+                ],
+                "radius": 0.074,
+                "half_length": 0.026,
+                "material": "teal",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              },
+              {
+                "type": "cylinder",
+                "name": "optic-bore",
+                "position": [
+                  -0.027,
+                  0.006,
+                  0.1
+                ],
+                "radius": 0.058,
+                "half_length": 0.06,
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ],
+            "cut_material": "teal"
+          },
+          {
+            "type": "cylinder",
+            "name": "sensor-seat",
+            "position": [
+              -0.027,
+              0.006,
+              0.1
+            ],
+            "radius": 0.057,
+            "half_length": 0.014,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "sensor-amber",
+            "position": [
+              -0.027,
+              0.006,
+              0.119
+            ],
+            "radius": 0.046,
+            "half_length": 0.005,
+            "material": "amber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "sensor-pupil",
+            "position": [
+              -0.027,
+              0.006,
+              0.126
+            ],
+            "radius": 0.025,
+            "half_length": 0.003,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "sensor-glint",
+            "position": [
+              -0.041,
+              0.024,
+              0.131
+            ],
+            "radius": 0.006,
+            "material": "ivory"
+          },
+          {
+            "type": "box",
+            "name": "head-left-ear",
+            "position": [
+              -0.185,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          },
+          {
+            "type": "box",
+            "name": "head-right-ear",
+            "position": [
+              0.185,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          },
+          {
+            "type": "capsule",
+            "name": "antenna-stem",
+            "position": [
+              0.111,
+              0.1475,
+              -0.025
+            ],
+            "radius": 0.005,
+            "half_length": 0.04390045557850169,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.12629470927265898,
+              0.9919927653011057
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "antenna-tip",
+            "position": [
+              0.122,
+              0.2,
+              -0.025
+            ],
+            "radius": 0.015,
+            "material": "amber"
+          }
+        ],
+        "material": "ivory",
+        "rotation_xyzw": [
+          -0.0,
+          -0.0,
+          -0.03489949670250097,
+          0.9993908270190958
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "neck",
+        "position": [
+          0,
+          0.101,
+          0
+        ],
+        "radius": 0.035,
+        "half_length": 0.037,
+        "material": "rubber"
+      },
+      {
+        "type": "smooth-union",
+        "name": "torso-form",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "torso-shell",
+            "position": [
+              0,
+              -0.04,
+              0
+            ],
+            "half_extent": [
+              0.1,
+              0.11,
+              0.065
+            ],
+            "rounding": 0.027,
+            "material": "ivory"
+          },
+          {
+            "type": "sphere",
+            "name": "hip-housing",
+            "position": [
+              0,
+              -0.14,
+              0
+            ],
+            "radius": 0.075,
+            "material": "ivory"
+          }
+        ],
+        "radius": 0.025,
+        "blend_materials": false
+      },
+      {
+        "type": "subtract",
+        "name": "chest-panel",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "chest-accent",
+            "position": [
+              0,
+              -0.035,
+              0.089
+            ],
+            "half_extent": [
+              0.063,
+              0.048,
+              0.006
+            ],
+            "rounding": 0.014,
+            "material": "teal"
+          },
+          {
+            "type": "box",
+            "name": "chest-notch-cut",
+            "position": [
+              0.028,
+              -0.07,
+              0.1
+            ],
+            "half_extent": [
+              0.022,
+              0.007,
+              0.015
+            ],
+            "rounding": 0.003
+          }
+        ],
+        "cut_material": "rubber"
+      },
+      {
+        "type": "box",
+        "name": "chest-status",
+        "position": [
+          -0.033,
+          -0.019,
+          0.106
+        ],
+        "half_extent": [
+          0.016,
+          0.004,
+          0.0025
+        ],
+        "rounding": 0.002,
+        "material": "amber"
+      },
+      {
+        "type": "union",
+        "name": "backpack",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "backpack-case",
+            "position": [
+              0,
+              -0.035,
+              -0.11
+            ],
+            "half_extent": [
+              0.07,
+              0.08,
+              0.025
+            ],
+            "rounding": 0.018,
+            "material": "teal"
+          },
+          {
+            "type": "box",
+            "name": "backpack-spine",
+            "position": [
+              0,
+              -0.035,
+              -0.14
+            ],
+            "half_extent": [
+              0.018,
+              0.065,
+              0.005
+            ],
+            "rounding": 0.006,
+            "material": "ivory"
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "left-arm",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "sphere",
+            "name": "left-shoulder-joint",
+            "position": [
+              -0.151,
+              0.005,
+              0
+            ],
+            "radius": 0.035,
+            "material": "rubber"
+          },
+          {
+            "type": "capsule",
+            "name": "left-upper-arm",
+            "position": [
+              -0.17049999999999998,
+              -0.042499999999999996,
+              0.004
+            ],
+            "radius": 0.023,
+            "half_length": 0.05150242712727236,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.1970014526837239,
+              0.0,
+              0.9603820818331543,
+              0.19712098958334986
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "left-elbow",
+            "position": [
+              -0.19,
+              -0.09,
+              0.008
+            ],
+            "radius": 0.027,
+            "material": "rubber"
+          },
+          {
+            "type": "capsule",
+            "name": "left-forearm",
+            "position": [
+              -0.195,
+              -0.1335,
+              0.0255
+            ],
+            "radius": 0.027,
+            "half_length": 0.047154003011409325,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.9427126112363567,
+              0.0,
+              0.26934646035324505,
+              0.19683855544864007
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "left-hand",
+            "position": [
+              -0.2,
+              -0.194,
+              0.0475
+            ],
+            "radius": 0.026,
+            "half_length": 0.017585505395068975,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.9916413736481331,
+              0.0,
+              -0.0,
+              0.12902474983213122
+            ]
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "left-leg",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capsule",
+            "name": "left-hip-link",
+            "position": [
+              -0.075,
+              -0.20750000000000002,
+              0.0025
+            ],
+            "radius": 0.024,
+            "half_length": 0.03758324094593226,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.9994461360815323,
+              0.0,
+              -0.0,
+              0.0332779367103106
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "left-shin",
+            "position": [
+              -0.075,
+              -0.259,
+              0.008
+            ],
+            "radius": 0.031,
+            "half_length": 0.038,
+            "material": "ivory"
+          },
+          {
+            "type": "sphere",
+            "name": "left-ankle",
+            "position": [
+              -0.075,
+              -0.311,
+              0.018
+            ],
+            "radius": 0.024,
+            "material": "rubber"
+          },
+          {
+            "type": "box",
+            "name": "left-foot",
+            "position": [
+              -0.085,
+              -0.344,
+              0.045
+            ],
+            "half_extent": [
+              0.044,
+              0.024,
+              0.064
+            ],
+            "rounding": 0.015,
+            "material": "ivory"
+          },
+          {
+            "type": "box",
+            "name": "left-sole",
+            "position": [
+              -0.085,
+              -0.372,
+              0.045
+            ],
+            "half_extent": [
+              0.044,
+              0.006,
+              0.064
+            ],
+            "rounding": 0.01,
+            "material": "rubber"
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "right-arm",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "sphere",
+            "name": "right-shoulder-joint",
+            "position": [
+              0.151,
+              0.005,
+              0
+            ],
+            "radius": 0.035,
+            "material": "rubber"
+          },
+          {
+            "type": "capsule",
+            "name": "right-upper-arm",
+            "position": [
+              0.178,
+              -0.021,
+              0.011
+            ],
+            "radius": 0.023,
+            "half_length": 0.03906404996924922,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.3443103972890035,
+              0.0,
+              -0.845125520618463,
+              0.40891711228323574
+            ]
+          },
+          {
+            "type": "sphere",
+            "name": "right-elbow",
+            "position": [
+              0.205,
+              -0.047,
+              0.022
+            ],
+            "radius": 0.027,
+            "material": "rubber"
+          },
+          {
+            "type": "capsule",
+            "name": "right-forearm",
+            "position": [
+              0.22299999999999998,
+              -0.011,
+              0.0485
+            ],
+            "radius": 0.027,
+            "half_length": 0.04818972919616794,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.2941874060317164,
+              0.0,
+              -0.19982540787059982,
+              0.9346248319522003
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "right-hand",
+            "position": [
+              0.243,
+              0.0475,
+              0.0785
+            ],
+            "radius": 0.026,
+            "half_length": 0.022858258901324924,
+            "material": "ivory",
+            "rotation_xyzw": [
+              0.07686051410015757,
+              0.0,
+              -0.04392029377151862,
+              0.996074027955394
+            ]
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "right-leg",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capsule",
+            "name": "right-hip-link",
+            "position": [
+              0.075,
+              -0.20750000000000002,
+              0.0025
+            ],
+            "radius": 0.024,
+            "half_length": 0.03758324094593226,
+            "material": "rubber",
+            "rotation_xyzw": [
+              0.9994461360815323,
+              0.0,
+              -0.0,
+              0.0332779367103106
+            ]
+          },
+          {
+            "type": "cylinder",
+            "name": "right-shin",
+            "position": [
+              0.075,
+              -0.259,
+              0.008
+            ],
+            "radius": 0.031,
+            "half_length": 0.038,
+            "material": "ivory"
+          },
+          {
+            "type": "sphere",
+            "name": "right-ankle",
+            "position": [
+              0.075,
+              -0.311,
+              0.018
+            ],
+            "radius": 0.024,
+            "material": "rubber"
+          },
+          {
+            "type": "box",
+            "name": "right-foot",
+            "position": [
+              0.085,
+              -0.344,
+              0.045
+            ],
+            "half_extent": [
+              0.044,
+              0.024,
+              0.064
+            ],
+            "rounding": 0.015,
+            "material": "ivory"
+          },
+          {
+            "type": "box",
+            "name": "right-sole",
+            "position": [
+              0.085,
+              -0.372,
+              0.045
+            ],
+            "half_extent": [
+              0.044,
+              0.006,
+              0.064
+            ],
+            "rounding": 0.01,
+            "material": "rubber"
+          }
+        ]
+      }
+    ],
+    "material": "ivory"
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  }
+}

@@ -52,3 +52,30 @@ tie band; geometry still uses the actual min/max. This stabilizes material
 ownership without altering the distance bound. Nested smooth material blends
 evaluate parameters through the full expression instead of retaining only
 two material IDs. No image textures or UV coordinates were introduced.
+
+## First colored survey robot
+
+`tools/author_robot.py` uses the external `sdf_author.py` helper to emit the
+complete named scene at `projects/sdf/scenes/survey-robot.json`. The new
+`presets/survey-robot.json` selects it directly; no Python runtime is needed to
+load or render the saved scene. Regenerating the file is a build-time content
+operation.
+
+The first colored version has 43 primitive leaves and 85 instructions. It
+retains the survey blockout proportions, tilts the head, raises one arm and
+adds local eye/vent cuts, a backpack, joint separation, dark soles and four
+opaque materials. It uses capped cylinders for the optic and shins, capsules
+for limbs and the antenna, and a smooth union for the torso/hip transition.
+The material boundaries remain sharp on the robot.
+
+Its first native 960x960 hero passes 425 rays with zero mismatches or exhausted
+rays and four sampling ambiguities under the existing finite-grid oracle.
+Maximum surface residual is 0.000117736; the largest nominal first-hit
+difference is 0.0150168. Direct CPU/GPU evaluation passes 1,030 points with
+maximum distance error 5.96046e-8, zero material error and no part mismatch.
+The material-only cache check retains one field build. The field uses 124,114
+of 262,144 bricks in the axis-64 profile, allocating 912,874,672 bytes.
+
+These numbers identify the initial capture before the final multi-view,
+interaction and performance qualification. The image is
+`outputs/sdf/robot-first-colored.png`; its explicit exported scene is beside it.
