@@ -70,7 +70,10 @@ an implemented project or a new runtime dependency.
   visual/performance acceptance for the first procedural demo.
 - [SDF authored content plan](sdf-authored-content-plan.md): a first stylized
   robot, early native blockout review, grouped composition and plain materials;
-  implemented through native presentation, with user visual review pending.
+  implemented through native presentation and accepted as the first experiment.
+- [SDF sculpture study plan](sdf-sculpture-study-plan.md): a proposed four-subject
+  goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
+  with shared authoring gaps, construction presentation and native review gates.
 
 ## Historical research and study records
 

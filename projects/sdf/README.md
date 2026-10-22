@@ -14,8 +14,8 @@ a tilted head and raised arm, with ivory, teal, dark rubber and amber materials.
 Run `--config projects/sdf/presets/survey-robot.json`. The
 [authored evidence](../../docs/notes/sdf-authored-content-evidence.md) records
 the blockout audition, native inspection views, qualification and measurements.
-This is the first content attempt for visual review; its technical checks do
-not establish artistic success.
+The user accepted the authored robot experiment after the later detail and
+joint revisions described below. Each linked capture retains its original scope.
 
 The [edit-by-edit presentation](http://starship:8787/reports/5d6bfde3c2493278b5c68e1ddce68381942ff9d8ef60672a553aa4b6a52f0c7f/)
 builds the same robot from an empty workspace through 43 named additions and
@@ -97,6 +97,12 @@ mode control applies with Generate scene. See the
 The [authored content plan](../../docs/notes/sdf-authored-content-plan.md)
 sets the small primitive vocabulary and plain-material scope. The robot uses
 no procedural patterns, image textures or UV mapping.
+
+The proposed [sculpture study](../../docs/notes/sdf-sculpture-study-plan.md)
+plans four next subjects: a guardian bust, pierced ceramic vessel, carved rock
+arch and twisted driftwood. It focuses on continuous forms, hollowing and
+visible carving sequences; these scenes and any additional tooling are not yet
+implemented.
 
 The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
 starts from a solid and carves intersecting through-holes with a deterministic
