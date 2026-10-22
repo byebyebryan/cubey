@@ -12,6 +12,11 @@ and [development history](projectr-development-history.md) describe projectR;
 the [exploration record](sdf-projectr-port-exploration.md) retains broader
 rendering, authoring and AI-content experiments.
 
+The [procedural prototype closeout](sdf-procedural-prototype-closeout.md)
+settles the subsequent dense subtraction presentation. The procedural demo is
+retained as a technical and educational experiment. Authored content for a
+stronger visual showcase remains a separate future direction.
+
 The subsequent carving experiment is specified in the
 [negative-sticks plan](sdf-negative-sticks-plan.md) and its
 [implementation evidence](sdf-negative-sticks-evidence.md). It reuses the box

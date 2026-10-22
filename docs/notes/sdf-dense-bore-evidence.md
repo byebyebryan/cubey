@@ -4,6 +4,10 @@ Date: 2026-10-21
 
 [4k carving video and 2k/4k cutter-mode comparisons](http://starship:8787/reports/3a21ce65daedf473f4596ca205421d3d2119e20f73ecb8d79388442b9baae090/).
 
+The [prototype closeout](sdf-procedural-prototype-closeout.md) subsequently
+offsets the opening camera to reveal an inner wall. This note and its report
+retain the earlier aligned-camera captures and their geometry qualification.
+
 The user preferred width 0.024 and 2k/4k counts over the earlier 0.015 / 512
 candidate, and proposed longer cuts so the introduction produces through-holes.
 Both requested counts fit the existing axis-92 field profile.
@@ -24,10 +28,10 @@ The new `negative-stick-ball-dense.json` preset uses 4,096 cutters at width
 - Leave every cutter after the fourth exactly equal to the short-stick recipe.
 
 The long endpoints lie beyond the sphere in both directions. CPU samples
-check a continuous removed path across the entire sphere chord. The preset
-camera is calculated from the first cutter's center and local X axis: eye =
-center + axis × 1.1, looking at the sphere center. This makes sky visible
-through the first bore. It is seed-42 presentation framing, not automatic
+check a continuous removed path across the entire sphere chord. The camera
+in this study was calculated from the first cutter's center and local X axis:
+eye = center + axis × 1.1, looking at the sphere center. This made sky visible
+through the first bore. It was seed-42 presentation framing, not automatic
 camera alignment after changing seed.
 
 The other `--cutter-mode` values are `original` and `through`. Original retains
