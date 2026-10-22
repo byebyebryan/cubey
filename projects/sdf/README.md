@@ -17,6 +17,14 @@ the blockout audition, native inspection views, qualification and measurements.
 This is the first content attempt for visual review; its technical checks do
 not establish artistic success.
 
+The [edit-by-edit presentation](http://starship:8787/reports/5d6bfde3c2493278b5c68e1ddce68381942ff9d8ef60672a553aa4b6a52f0c7f/)
+builds the same robot from an empty workspace through 43 named additions and
+cuts. Run `--config projects/sdf/presets/survey-robot-build.json` for a steady
+construction view followed by the finished orbit. Previous/next buttons and
+the Edit scrubber inspect each committed state; cyan cut previews precede the
+six local removals. The static robot preset above remains available. See the
+[history evidence](../../docs/notes/sdf-authored-history-evidence.md).
+
 The [settled procedural demo](http://starship:8787/reports/1db7103651a39de3b013aabf8424bbcb06e0a236627b8af3c32dcb9306dc6aa1/)
 uses width 0.024 and 4,096 cuts, with a 2,048-cut comparison. Four long bores
 open the presentation before the dense shorter cuts; a slightly oblique
@@ -178,6 +186,8 @@ cylinders use `radius` and `half_length`. Union/smooth-union fold two or more
 children in order; subtraction has exactly two. Scene limits are 64 primitive
 leaves, 128 instructions, 16 materials, tree depth 24 and GPU stack depth 32.
 The composite is clipped to the existing workspace box of half-width 0.499.
+Unary `group` nodes preserve a single child's local transform/material scope;
+`root: null` represents an empty workspace.
 
 Materials store linear RGB `base_color`, scalar `roughness` (0.05–1) and RGB
 `emission` (0–32). The authoring helper converts sRGB hex colors to linear RGB.
@@ -191,8 +201,49 @@ Per-material edits upload a small table without rebuilding distance bricks.
 No appearance volume is allocated. The first piece uses dielectric direct
 lighting and sky diffuse irradiance; environment specular, metalness, glass,
 GI and procedural surface patterns remain outside this implementation.
-Static/orbit playback is supported for authored scenes; construction,
-presentation and carve require the legacy edit sequence.
+Authored scenes support static/orbit playback. Scenes with an optional saved
+`history` additionally support construction and presentation. Carve continues
+to require a legacy edit sequence.
+
+### Authoring history
+
+The optional `history` array lists each primitive leaf exactly once in the
+intended authoring order. Each entry contains `node` (the unique primitive name),
+`label` and an optional positive `seconds` weight (default 0.65, range 0.2–5).
+Groups/operators are derived from the final tree. Every revealed leaf must
+participate immediately; a cutter before its retained body is rejected while
+loading. Missing children reduce to transform groups or an empty root, keeping
+the original local coordinates and inherited materials. The final prefix
+retains the complete scene and its geometry/appearance fingerprints.
+
+`--construction-seconds` scales the saved weights, including a short opening
+hold, to the construction interval. The first 35% of a cut's interval previews
+the cutter; commitment then publishes the actual subtraction. Construction
+holds the capture camera throughout. Presentation holds it during construction,
+then orbits the finished model without changing the shading view. The build
+preset uses 32 seconds of construction and ten seconds of orbit.
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-build.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-build.json \
+  --headless --time 4.73 --output /tmp/sdf-robot-cut-preview.png
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-build.json \
+  --headless --time 32 --validate-history --validate-field --require-validation \
+  --output /tmp/sdf-robot-history.png
+```
+
+Previous edit, Next edit and the integer Edit slider seek to a committed state
+and pause. Play/Space resumes from that state; Restart/R returns to empty.
+Timeline covers the whole presentation. Camera input remains available while
+paused. Cut preview toggles the color-only, depth-aware cutter visualization;
+normal geometry and shadow queries use the published field. Export saves the
+complete assembly and history with current material values.
+
+Geometry rebuilds synchronously once per changed committed state. Camera,
+preview opacity and unchanged paused states reuse the field. A failed history
+build preserves the published state and pauses at the last successful edit.
+`--validate-history` checks every prefix through native ray/material comparison,
+then revisits midpoint, empty and final states and checks cache reuse.
 
 Reproduce the authored native checks and presentation in fresh directories:
 
@@ -209,6 +260,23 @@ fixtures and lifecycle/legacy checks, captures inspection views, replays the
 explicit scene, measures matched GPU treatments and records a 16-second orbit.
 It decodes all 480 video frames and screens the visible exhaustion color.
 The private Xvfb check exercises resize/input and a material roughness edit.
+
+Capture the build sequence, all 44 state images and its regression matrix:
+
+```sh
+python3 projects/sdf/tools/qualify_history.py --video --regressions \
+  --output outputs/sdf/history-review-new
+xvfb-run -a -s '-screen 0 1280x1100x24' env CUBEY_SDF_PRIVATE_XVFB=1 \
+  python3 projects/sdf/tools/check_authored_window.py --history-controls \
+  --config projects/sdf/presets/survey-robot-build.json --height 1000 \
+  --output outputs/sdf/history-controls-new
+python3 projects/sdf/tools/history_report.py --input outputs/sdf/history-review-new \
+  --controls outputs/sdf/history-controls-new --output outputs/sdf/history-report-new
+```
+
+The native video is retained separately from its labeled copy. The report's
+step viewer uses actual committed-state captures; labels are added to the video
+after capture, with frame timing derived from the same saved history.
 
 ## Procedural recipes
 

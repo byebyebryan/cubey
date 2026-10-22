@@ -9,6 +9,10 @@ the user's assessment of the resulting content.
 [Open the native robot review](http://starship:8787/reports/eafb4462b9072db9f445b21e5d9402466d78e11fd70e23fdcba7d2bf263c8540/)
 for the turntable, ten inspection views, blockout alternatives and receipts.
 
+The subsequent [authoring history presentation](sdf-authored-history-evidence.md)
+shows this same robot through 43 named additions and cuts, with native step
+controls, cut previews and a finished orbit.
+
 ## Robot blockout
 
 `projects/sdf/tools/robot_blockout.py` authors three original silhouettes using

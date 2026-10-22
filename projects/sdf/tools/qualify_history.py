@@ -4,7 +4,6 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-import math
 from pathlib import Path
 import re
 import subprocess

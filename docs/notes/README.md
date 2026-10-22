@@ -29,6 +29,7 @@ the architecture and project guides remain current authority.
 
 - [SDF implementation evidence](sdf-implementation-evidence.md): native field, traversal and batch checkpoints for the boxes-only port.
 - [SDF authored content evidence](sdf-authored-content-evidence.md): the first survey robot, grouped geometry/material contracts and native visual/performance qualification.
+- [SDF authored history evidence](sdf-authored-history-evidence.md): edit-by-edit robot construction, cut previews, step controls and native state/replay qualification.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
 - [Dynamic Environment Probe Coherence](dynamic-environment-probe-coherence.md): coherent full-cubemap publication and consumer handoff.
