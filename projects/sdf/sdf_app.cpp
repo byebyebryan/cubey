@@ -332,7 +332,7 @@ class App {
             int view = static_cast<int>(config_.debug);
             const char* views[]{"Shaded",      "Normals",       "Ray distance", "Traversal work",
                                 "Brick cells", "Part identity", "Base color",   "Roughness"};
-            if (ImGui::Combo("View", &view, views, 8))
+            if (ImGui::Combo("View", &view, views, authored_ ? 8 : 5))
                 config_.debug = static_cast<std::uint32_t>(view);
             int shadows = static_cast<int>(config_.shadows);
             const char* shadow_names[]{"Off", "Hard", "Soft (4 samples)"};
@@ -340,11 +340,16 @@ class App {
                 config_.shadows = static_cast<std::uint32_t>(shadows);
             ImGui::Checkbox("Local ambient occlusion", &config_.ao);
             ImGui::Checkbox("Clay inspection", &config_.clay);
+            ImGui::BeginDisabled(authored_.has_value());
             ImGui::Checkbox("Cutter bounds cue", &config_.cutter_cue);
+            ImGui::EndDisabled();
             ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
             ImGui::SliderFloat("Exposure", &config_.exposure, -3, 3, "%.1f stops");
-            ImGui::SliderFloat("Roughness", &config_.roughness, 0.05F, 1);
+            ImGui::BeginDisabled(authored_ && !config_.clay);
+            ImGui::SliderFloat(authored_ ? "Clay roughness" : "Roughness", &config_.roughness,
+                               0.05F, 1);
+            ImGui::EndDisabled();
             ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
             ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
             ImGui::Separator();
