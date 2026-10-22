@@ -231,6 +231,16 @@ focused next geometry experiment than a broad catalog of new shapes. These are
 four reviewable experimental results; technical passage does not imply user
 acceptance or four equally successful artworks.
 
+### User review and selected follow-up
+
+After delivery, the user ranked the guardian strongest and driftwood weakest,
+and requested planning a further detail pass on those two. The
+[refinement plan](sdf-guardian-driftwood-refinement-plan.md) develops the
+guardian's existing character and addresses driftwood's forms and wood identity
+before fine grain. This records the user's relative ranking, not acceptance of
+every modeling detail or an implemented second pass. Vessel and arch remain
+unchanged comparison subjects.
+
 ## Gallery delivery
 
 The gallery packages native material/clay/blockout views, all 235 state images,

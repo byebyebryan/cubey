@@ -77,6 +77,9 @@ an implemented project or a new runtime dependency.
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;
   implemented and delivered for visual review.
+- [SDF guardian and driftwood refinement plan](sdf-guardian-driftwood-refinement-plan.md):
+  proposed follow-up to user review, developing the guardian's sculpted detail
+  and revising driftwood's forms, broken ends and grain before fine detail.
 
 ## Historical research and study records
 

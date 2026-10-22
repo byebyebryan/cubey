@@ -108,6 +108,10 @@ See the [study evidence and visual verdicts](../../docs/notes/sdf-sculpture-stud
 and its [execution plan](../../docs/notes/sdf-sculpture-study-plan.md). These are
 delivered candidates for review; the arch/driftwood remain stylized, and some
 sampled stroke transitions are visible under inspection lighting.
+The user ranks the guardian strongest and driftwood weakest; a
+[proposed refinement pass](../../docs/notes/sdf-guardian-driftwood-refinement-plan.md)
+targets those two, with facial/structural detail for the guardian and stronger
+wood forms, broken ends and grain for driftwood. That pass is not implemented.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
