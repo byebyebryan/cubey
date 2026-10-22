@@ -174,8 +174,10 @@ User review accepted Balanced. It is now the default in the scripted generator
 and the guardian's native material panel, with Original, Denser and Fine also
 available. An independent body-color control adds restrained warm/cool mineral
 variation; the saved guardian uses 0.08, and zero retains the previous material.
-The [controls and color review](http://starship:8787/reports/182df0953d72e6c65e962feee540fc01b8c75e1524bec3bc5bc05c5ec8495cd6/)
-compares neutral, subtle and stronger tint without changing the balanced veins.
+The initial tint was too faint in user review. The
+[clearer color review](http://starship:8787/reports/967d2eb6fbd98ae3e61200739d2620da3e7d10eb4cc9a80736ab5f08f42423b3/)
+compares neutral, default and stronger cream/cool-gray variation without
+changing the balanced veins, including a matched 0.16 before/after pair.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -185,8 +187,9 @@ Geometry rebuilds remain about 0.92 seconds. The evidence separates shortcut,
 pattern-only and bump costs; material differences are within timing variation.
 Later material revisions retain their own appearance/history qualification
 scopes; those earlier timings keep their original material snapshots. A matched
-1080p pair for the configurable balanced material measures 1.76 ms with tint off
-and 1.78 ms at the default 0.08 tint; geometry rebuilds remain about 0.92 seconds.
+1080p pair before the color-visibility correction measured 1.76 ms with tint off
+and 1.78 ms at 0.08; geometry rebuilds remained about 0.92 seconds. That profile
+retains its earlier shader identity; the palette correction has no new profile.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -435,6 +438,8 @@ footprint, and marble vein ramps broaden/average when unresolved.
 
 For marble, `color_variation` adds low-frequency, filtered warm/cool body tint
 from an independent seeded noise field, fading towards neutral near veins.
+The noise blends cream and cool-gray mineral colors at 0.9 times the pattern
+scale, with enough contrast to show several soft patches across the face.
 It affects color only. Its default is zero for legacy scene compatibility; the
 guardian generator explicitly saves 0.08. No image maps or new appearance
 volume are allocated.

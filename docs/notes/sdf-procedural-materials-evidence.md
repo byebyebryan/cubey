@@ -13,6 +13,9 @@ the current preset to sit between the original and the denser trial.
 User review accepted Balanced; the
 [configurable marble and body-color follow-up](#configurable-marble-and-body-color)
 adds named detail choices and independent subtle tint.
+The first tint was too faint in user review; the
+[color visibility correction](#color-visibility-correction) retains those
+controls while making the warm/cool patches visible.
 
 ## Result and scope
 
@@ -416,3 +419,57 @@ Artifacts under `outputs/sdf/`:
 Static/dynamic report targets and JavaScript syntax pass. Documentation/layout
 checks and all 18 scoped SDF CLI recipes pass. The work is committed locally;
 no push is part of this follow-up.
+
+## Color visibility correction
+
+User review found even the stronger 0.16 trial hard to distinguish. The
+[clearer marble color review](http://starship:8787/reports/967d2eb6fbd98ae3e61200739d2620da3e7d10eb4cc9a80736ab5f08f42423b3/)
+shows neutral, revised 0.08 default and revised 0.16 stronger tint, plus a
+same-amount 0.16 before/after pair. Implemented in `f8f2c8df`.
+
+The original tint was a small signed RGB perturbation driven by one very broad
+noise sample. In the shaded close-up, its 0.08 and 0.16 cases both had a median
+largest-channel change of one 8-bit level from neutral. The 95th percentile
+was only two / four levels. The original source images and measurements are
+retained; numerical visibility alone did not establish a useful visual result.
+
+CPU and GLSL now blend between cream and cool-gray mineral multipliers, using
+contrast-shaped seeded noise. Color frequency rises from 0.45 to 0.9 times
+pattern scale, placing several soft patches across the face. The 0–0.25 amount
+maps linearly to 0–1 palette blend strength. Vein masking attenuates tint near
+veins, and footprint filtering fades unresolved variation to neutral. The saved
+0.08 amount, Balanced detail, parameter ranges, scene files, palette controls,
+roughness, bump, geometry and all 65 history operations remain unchanged.
+
+Compared with the matching neutral image, the revised default's shaded
+largest-channel change has median 6 / p95 11 levels; the revised 0.16 case has
+median 13 / p95 25. Base-color changes are larger. These statistics use changed
+pixels only; they are diagnostics, not a perceptual quality score. Native
+default/stronger close-ups were visually inspected, with cream cheeks/jaw and
+cooler brow regions now readable. User artistic acceptance remains separate.
+
+Five focused CPU suites and 36 native foundation render/validation runs pass.
+The latter retain plain/limestone regression, CPU/GPU agreement, deterministic
+rendering, shortcut/full equivalence, save/reload, material ownership, empty
+and short cut histories, and cache checks. Zero amount still matches the prior
+balanced PNG exactly. Roughness and shading-normal images remain exact across
+tint on/off. Maximum observed CPU/GPU color error is 0.0000147223; thresholds
+were unchanged. Fifteen matching stills, eight structural probes and all 720
+decoded orbit frames pass. This correction does not rerun the full guardian
+history, desktop controls or performance profiles; prior receipts keep their
+original binary/shader scope.
+
+Final native binary SHA-256:
+`5f17c0008da6b294037b41d4343f19bbca1ee27c860c08c51a57b9f192e72e8c`.
+Foundation and comparison manifests agree on that identity and all shader
+hashes. The old 0.16 image retains its prior receipt, and scene parameters and
+render settings match exactly across the before/after pair.
+
+Artifacts under `outputs/sdf/` are `marble-color-visibility-foundation/`,
+`marble-color-visibility-comparison/`, `marble-color-visibility-before.json`,
+`marble-color-visibility-after.json` and the 156-file / 28,540,512-byte
+`marble-color-visibility-report/`, including its builder. The
+`marble-color-visibility-served-review.json` receipt checks every served file's
+HTTP bytes/hash. Report targets, JavaScript syntax, documentation/layout policy
+checks and all 18 scoped SDF CLI recipes pass. Browser discovery returned no
+connected browsers, so browser interaction review remains unavailable.
