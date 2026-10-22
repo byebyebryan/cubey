@@ -109,9 +109,12 @@ and its [execution plan](../../docs/notes/sdf-sculpture-study-plan.md). These ar
 delivered candidates for review; the arch/driftwood remain stylized, and some
 sampled stroke transitions are visible under inspection lighting.
 The user ranks the guardian strongest and driftwood weakest; a
-[proposed refinement pass](../../docs/notes/sdf-guardian-driftwood-refinement-plan.md)
+[refinement pass](../../docs/notes/sdf-guardian-driftwood-refinement-plan.md)
 targets those two, with facial/structural detail for the guardian and stronger
-wood forms, broken ends and grain for driftwood. That pass is not implemented.
+wood forms, broken ends and grain for driftwood. Separate
+`sculpture-guardian-refined` and `sculpture-driftwood-refined` static/build presets
+are implemented; [full native qualification](../../docs/notes/sdf-guardian-driftwood-refinement-evidence.md)
+and comparison presentation are in progress.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -297,8 +300,8 @@ Unary `group` nodes preserve a single child's local transform/material scope;
 
 Materials store linear RGB `base_color`, scalar `roughness` (0.05–1) and RGB
 `emission` (0–32). The authoring helper converts sRGB hex colors to linear RGB.
-The desktop material controls expose those linear values. Hard unions preserve
-the earlier branch within a 1e-6 distance tie band. Subtraction inherits the
+The desktop material controls expose those linear values. Hard and smooth unions preserve
+the earlier branch within a 1e-6 world-distance tie band. Subtraction inherits the
 retained body material unless `cut_material` selects newly exposed surfaces.
 Smooth unions take a `radius` and `blend_materials` flag; nested blends evaluate
 the full material expression. Smooth subtraction also takes a positive `radius`:
@@ -306,7 +309,7 @@ it applies a polynomial smooth maximum to the body and negated cutter distances.
 It removes up to `radius / 4` more material than a hard subtraction and preserves
 the builder's 1-Lipschitz bound. Without `cut_material` the body owns appearance;
 with it the cutter-facing half of the blend selects that material and the
-operator's part ID. The body owns an exact tie. Geometry smoothing and cut
+operator's part ID. The body owns a tie within the same 1e-6 distance band. Geometry smoothing and cut
 appearance remain independent. Smooth cutters use the same preview/history
 ordering as hard cuts. These appearance rules do not change geometry.
 

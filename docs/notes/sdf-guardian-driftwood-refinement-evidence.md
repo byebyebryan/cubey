@@ -37,9 +37,43 @@ materials, lifecycle, maximum capacity, legacy scenes and export/reload.
 
 - [x] Preserve original inputs and compare curve treatments.
 - [x] Fix and qualify the exposed smooth-operation ownership instability.
-- [ ] Finish guardian native refinement and intent checks.
-- [ ] Finish driftwood native refinement and intent checks.
+- [x] Finish guardian native refinement and intent checks.
+- [x] Finish driftwood native refinement and intent checks.
 - [ ] Qualify both construction histories and publish matched comparisons.
 
 Artistic assessment and user acceptance will be recorded separately from the
 native correctness results.
+
+## Modeling checkpoints
+
+The opt-in `author_refinements.py` emits separate `sculpture-*-refined` scenes
+and static/build presets. All original blockouts and finished scenes, plus
+the two refinements, reproduce byte-identically; the receipt is
+`outputs/sdf/refinement-reproduction.json`. No original scene/preset changed.
+
+`outputs/sdf/refinement-audition-final/` retains two clay form variants per
+subject, with front, hero, profile and rear views and exact source inputs.
+The restrained guardian cheek treatment (A) retains more quiet face area and
+is selected. The compact wood fork (A) separates its rear limb more clearly
+than the leaning treatment (B). Earlier native revisions remain under
+`outputs/sdf/refinement-audition/` and `refinement-detail-{1,2}/`.
+
+The guardian now has resolved socket rims, cheekbones, muzzle/lip and nose
+wings, raised brow folds, inner ears, longitudinal horn flutes, neck/shoulder
+structure and a few chips/cracks. The correction pass restores readable
+nostrils after a first placement was too deeply buried. It uses 108 leaves /
+215 instructions. Five saved-volume connection/socket checks pass.
+
+Driftwood uses fewer dominant limbs, a rearward turn, oblique broken ends,
+broader worn planes, an elongated knot, two hollows, a real longitudinal split
+and grain extending to the side/rear. The correction pass trims the rear limb
+and shortens a rear scoop that cut too close to that junction. Its retained
+rear-limb probe now has over 0.021 workspace units of interior clearance.
+It uses 100 leaves / 199 instructions. Nine design checks pass, including
+solid-before/empty-after samples at the hollow and split. The split's front
+wall sample changes from -0.002384 to +0.009548 signed distance.
+
+`outputs/sdf/refinement-preflight/` records successful final native ray and
+CPU/GPU distance/material/part checks. The per-subject full history matrices,
+performance and films are the next qualification checkpoint; these preflight
+captures alone do not establish construction acceptance.

@@ -2,7 +2,8 @@
 
 Date: 2026-10-22
 
-Status: proposed refinement plan, pending implementation. The user ranks the
+Status: implementation in progress; see the
+[native evidence](sdf-guardian-driftwood-refinement-evidence.md). The user ranks the
 guardian strongest and driftwood weakest in the delivered
 [four-subject study](sdf-sculpture-study-evidence.md). This pass develops those
 two pieces; vessel and arch remain comparison subjects.

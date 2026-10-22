@@ -40,7 +40,8 @@ def main():
         source_scene_sha256=sha(scene_path), config_sha256=sha(preset),
         build_config_sha256=sha(build), metadata_sha256=sha(meta_path),
         edits=len(scene['history']),runs={})
-    generators=('author_sculptures.py','sdf_author.py','sdf_probe.py')
+    generators=meta.get('authoring_sources',('author_sculptures.py','sdf_author.py','sdf_probe.py'))
+    assert generators and all(Path(name).name==name and name.endswith('.py') for name in generators)
     manifest['authoring_sha256']={name:sha(root/'projects/sdf/tools'/name) for name in generators}
     def save():
         (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

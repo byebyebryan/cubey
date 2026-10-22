@@ -1,0 +1,1126 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Driftwood / refined",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.4019777798321958,
+        0.19120168274079138,
+        0.09084171118340768
+      ],
+      "roughness": 0.75,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "smooth-subtract",
+    "name": "weathered-planes",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "smooth-subtract",
+        "name": "broken-ends",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-union",
+            "name": "joined-root-fragment",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "union",
+                "name": "trunk",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-0",
+                    "position": [
+                      -0.134984375,
+                      -0.25658203125,
+                      0.00732421875
+                    ],
+                    "half_length": 0.01451207677468849,
+                    "rotation_xyzw": [
+                      0.08163218048523227,
+                      0.0,
+                      -0.17616087351771162,
+                      0.9809707099351659
+                    ],
+                    "bottom_radius": 0.103,
+                    "top_radius": 0.10124999999999999
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-1",
+                    "position": [
+                      -0.12285937499999999,
+                      -0.22392578125,
+                      0.013105468750000002
+                    ],
+                    "half_length": 0.020799176507934246,
+                    "rotation_xyzw": [
+                      0.08470947508523105,
+                      0.0,
+                      -0.1742047962204752,
+                      0.9810591184044758
+                    ],
+                    "bottom_radius": 0.10124999999999999,
+                    "top_radius": 0.09949999999999999
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-2",
+                    "position": [
+                      -0.107203125,
+                      -0.18302734375000002,
+                      0.01962890625
+                    ],
+                    "half_length": 0.023486470325063274,
+                    "rotation_xyzw": [
+                      0.06658756971357027,
+                      0.0,
+                      -0.18559694590228246,
+                      0.980367211422019
+                    ],
+                    "bottom_radius": 0.09949999999999999,
+                    "top_radius": 0.09775
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-3",
+                    "position": [
+                      -0.08932812500000001,
+                      -0.14068359375,
+                      0.02384765625
+                    ],
+                    "half_length": 0.022718997833285435,
+                    "rotation_xyzw": [
+                      0.025948642140110313,
+                      0.0,
+                      -0.21005205908672323,
+                      0.9773457936904995
+                    ],
+                    "bottom_radius": 0.09775,
+                    "top_radius": 0.096
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-4",
+                    "position": [
+                      -0.06951953125,
+                      -0.10091796874999999,
+                      0.02404296875
+                    ],
+                    "half_length": 0.02179174271735007,
+                    "rotation_xyzw": [
+                      -0.022674763725903983,
+                      0.0,
+                      -0.2483118003126545,
+                      0.9684147380722078
+                    ],
+                    "bottom_radius": 0.096,
+                    "top_radius": 0.09436931818181818
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-5",
+                    "position": [
+                      -0.04723828125,
+                      -0.06263671874999999,
+                      0.020761718749999998
+                    ],
+                    "half_length": 0.022655472440859727,
+                    "rotation_xyzw": [
+                      -0.05337075789183403,
+                      0.0,
+                      -0.2709799320861018,
+                      0.9611042808190289
+                    ],
+                    "bottom_radius": 0.09436931818181818,
+                    "top_radius": 0.09281818181818181
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-6",
+                    "position": [
+                      -0.023277343749999995,
+                      -0.024003906249999988,
+                      0.014628906249999999
+                    ],
+                    "half_length": 0.023238746791016774,
+                    "rotation_xyzw": [
+                      -0.08552046793645883,
+                      0.0,
+                      -0.2730515042935347,
+                      0.9581905476297325
+                    ],
+                    "bottom_radius": 0.09281818181818181,
+                    "top_radius": 0.09110795454545455
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-7",
+                    "position": [
+                      0.00044140625000000256,
+                      0.015214843750000009,
+                      0.005410156249999999
+                    ],
+                    "half_length": 0.023544071184989798,
+                    "rotation_xyzw": [
+                      -0.1197742765574463,
+                      0.0,
+                      -0.2558932016848257,
+                      0.9592563744936123
+                    ],
+                    "bottom_radius": 0.09110795454545455,
+                    "top_radius": 0.089
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-8",
+                    "position": [
+                      0.024308593750000003,
+                      0.05580078125000001,
+                      -0.008320312500000001
+                    ],
+                    "half_length": 0.025561721006429654,
+                    "rotation_xyzw": [
+                      -0.17090161286452488,
+                      0.0,
+                      -0.2528220573409004,
+                      0.9522991368484057
+                    ],
+                    "bottom_radius": 0.089,
+                    "top_radius": 0.08603972690615837
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-9",
+                    "position": [
+                      0.049652343749999994,
+                      0.09814453125,
+                      -0.0273828125
+                    ],
+                    "half_length": 0.02737534279804632,
+                    "rotation_xyzw": [
+                      -0.2075688686819823,
+                      0.0,
+                      -0.251875387197009,
+                      0.945237511992853
+                    ],
+                    "bottom_radius": 0.08603972690615837,
+                    "top_radius": 0.08224230205278592
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-10",
+                    "position": [
+                      0.07342578124999999,
+                      0.14068359375,
+                      -0.0487109375
+                    ],
+                    "half_length": 0.02584973326200478,
+                    "rotation_xyzw": [
+                      -0.21510516546910613,
+                      0.0,
+                      -0.2182007748614658,
+                      0.9519024055218919
+                    ],
+                    "bottom_radius": 0.08224230205278592,
+                    "top_radius": 0.07807372617302052
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-11",
+                    "position": [
+                      0.08958203125,
+                      0.18083984375,
+                      -0.0671484375
+                    ],
+                    "half_length": 0.021403574621819542,
+                    "rotation_xyzw": [
+                      -0.18842086463849883,
+                      0.0,
+                      -0.13001977077293456,
+                      0.973443597224325
+                    ],
+                    "bottom_radius": 0.07807372617302052,
+                    "top_radius": 0.074
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-12",
+                    "position": [
+                      0.09233203125,
+                      0.21798828125000003,
+                      -0.07916015625
+                    ],
+                    "half_length": 0.018654844400436386,
+                    "rotation_xyzw": [
+                      -0.11251296594957733,
+                      0.0,
+                      0.07215620257611392,
+                      0.9910268991924609
+                    ],
+                    "bottom_radius": 0.074,
+                    "top_radius": 0.0700725806451613
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-13",
+                    "position": [
+                      0.08117578125000001,
+                      0.25314453125,
+                      -0.08525390625
+                    ],
+                    "half_length": 0.019249126067697634,
+                    "rotation_xyzw": [
+                      -0.05164069504698142,
+                      0.0,
+                      0.22669743502442485,
+                      0.9725952454995919
+                    ],
+                    "bottom_radius": 0.0700725806451613,
+                    "top_radius": 0.06606451612903226
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-14",
+                    "position": [
+                      0.06290234375000002,
+                      0.28490234375,
+                      -0.08794921874999999
+                    ],
+                    "half_length": 0.01758388577477772,
+                    "rotation_xyzw": [
+                      -0.02264495792107558,
+                      0.0,
+                      0.2909006132938217,
+                      0.9564852529265839
+                    ],
+                    "bottom_radius": 0.06606451612903226,
+                    "top_radius": 0.062024193548387105
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "trunk-15",
+                    "position": [
+                      0.046558593750000016,
+                      0.30974609375000006,
+                      -0.08935546874999999
+                    ],
+                    "half_length": 0.01218905927024536,
+                    "rotation_xyzw": [
+                      -0.0275552125612106,
+                      0.0,
+                      0.28039516297134515,
+                      0.9594890634306257
+                    ],
+                    "bottom_radius": 0.062024193548387105,
+                    "top_radius": 0.058
+                  }
+                ]
+              },
+              {
+                "type": "union",
+                "name": "left-limb",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-0",
+                    "position": [
+                      -0.03759765625,
+                      -0.0023632812500000004,
+                      0.0070117187500000015
+                    ],
+                    "half_length": 0.014868336443222802,
+                    "rotation_xyzw": [
+                      0.0777644374768946,
+                      0.0,
+                      0.4869714774038543,
+                      0.8699491206151136
+                    ],
+                    "bottom_radius": 0.075,
+                    "top_radius": 0.07108333333333333
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-1",
+                    "position": [
+                      -0.06837890625000001,
+                      0.01623046875,
+                      0.01185546875
+                    ],
+                    "half_length": 0.021417750033079858,
+                    "rotation_xyzw": [
+                      0.07604885840118258,
+                      0.0,
+                      0.48828611842414493,
+                      0.8693636970164781
+                    ],
+                    "bottom_radius": 0.07108333333333333,
+                    "top_radius": 0.06722222222222222
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-2",
+                    "position": [
+                      -0.10623046875,
+                      0.03947265625,
+                      0.018222656249999997
+                    ],
+                    "half_length": 0.023457437808716557,
+                    "rotation_xyzw": [
+                      0.08632971256134075,
+                      0.0,
+                      0.48029845607331595,
+                      0.8728462486730783
+                    ],
+                    "bottom_radius": 0.06722222222222222,
+                    "top_radius": 0.06325
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-3",
+                    "position": [
+                      -0.14294921875,
+                      0.06337890625,
+                      0.02587890625
+                    ],
+                    "half_length": 0.021041919467527894,
+                    "rotation_xyzw": [
+                      0.11115440956487753,
+                      0.0,
+                      0.4598947845978106,
+                      0.8809889240700003
+                    ],
+                    "bottom_radius": 0.06325,
+                    "top_radius": 0.059
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-4",
+                    "position": [
+                      -0.17439453124999998,
+                      0.08662109374999999,
+                      0.03544921875
+                    ],
+                    "half_length": 0.019285910267313466,
+                    "rotation_xyzw": [
+                      0.15782315437863922,
+                      0.0,
+                      0.41690202429052725,
+                      0.8951449905375312
+                    ],
+                    "bottom_radius": 0.059,
+                    "top_radius": 0.0543125
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-5",
+                    "position": [
+                      -0.20236328124999997,
+                      0.11052734374999999,
+                      0.047480468750000004
+                    ],
+                    "half_length": 0.01945527214242304,
+                    "rotation_xyzw": [
+                      0.18729228794492594,
+                      0.0,
+                      0.38625560866980224,
+                      0.9031767289116098
+                    ],
+                    "bottom_radius": 0.0543125,
+                    "top_radius": 0.04927777777777778
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-6",
+                    "position": [
+                      -0.22740234375,
+                      0.13376953125,
+                      0.06025390625
+                    ],
+                    "half_length": 0.017024473189439084,
+                    "rotation_xyzw": [
+                      0.20058660694972646,
+                      0.0,
+                      0.3714332437838791,
+                      0.9065331535716613
+                    ],
+                    "bottom_radius": 0.04927777777777778,
+                    "top_radius": 0.044104166666666667
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "left-limb-7",
+                    "position": [
+                      -0.24693359375,
+                      0.15236328124999998,
+                      0.07072265625
+                    ],
+                    "half_length": 0.011903027035687377,
+                    "rotation_xyzw": [
+                      0.1983220447283951,
+                      0.0,
+                      0.374004586633914,
+                      0.9059740259806258
+                    ],
+                    "bottom_radius": 0.044104166666666667,
+                    "top_radius": 0.039
+                  }
+                ]
+              },
+              {
+                "type": "union",
+                "name": "rear-limb",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-0",
+                    "position": [
+                      0.0167578125,
+                      0.028027343750000003,
+                      -0.01552734375
+                    ],
+                    "half_length": 0.017706195777085612,
+                    "rotation_xyzw": [
+                      -0.3487316885925294,
+                      0.0,
+                      -0.3894925353111368,
+                      0.8524563181232842
+                    ],
+                    "bottom_radius": 0.067,
+                    "top_radius": 0.06108828125000001
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-1",
+                    "position": [
+                      0.045507812499999994,
+                      0.04755859375,
+                      -0.04130859375
+                    ],
+                    "half_length": 0.025568651722915194,
+                    "rotation_xyzw": [
+                      -0.35033690165244175,
+                      0.0,
+                      -0.39026005689836646,
+                      0.8514465005684452
+                    ],
+                    "bottom_radius": 0.06108828125000001,
+                    "top_radius": 0.05506875
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-2",
+                    "position": [
+                      0.0807421875,
+                      0.07205078125,
+                      -0.07267578125
+                    ],
+                    "half_length": 0.027588234580267358,
+                    "rotation_xyzw": [
+                      -0.34054119700957397,
+                      0.0,
+                      -0.38553391273568755,
+                      0.8575519198684111
+                    ],
+                    "bottom_radius": 0.05506875,
+                    "top_radius": 0.049264843749999995
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-3",
+                    "position": [
+                      0.11449218750000001,
+                      0.09751953125,
+                      -0.10189453125
+                    ],
+                    "half_length": 0.023832911276470387,
+                    "rotation_xyzw": [
+                      -0.31500371517654546,
+                      0.0,
+                      -0.37274657205689565,
+                      0.8728302540842678
+                    ],
+                    "bottom_radius": 0.049264843749999995,
+                    "top_radius": 0.044
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-4",
+                    "position": [
+                      0.14251953125,
+                      0.12281249999999999,
+                      -0.124453125
+                    ],
+                    "half_length": 0.020254885613978455,
+                    "rotation_xyzw": [
+                      -0.2582828532536299,
+                      0.0,
+                      -0.34206468788342326,
+                      0.9034831027852043
+                    ],
+                    "bottom_radius": 0.044,
+                    "top_radius": 0.039391406250000004
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-5",
+                    "position": [
+                      0.16642578125000002,
+                      0.14937499999999998,
+                      -0.14164062500000002
+                    ],
+                    "half_length": 0.01945611524771136,
+                    "rotation_xyzw": [
+                      -0.2151657425434315,
+                      0.0,
+                      -0.31677178763338476,
+                      0.9237745059240828
+                    ],
+                    "bottom_radius": 0.039391406250000004,
+                    "top_radius": 0.03518125
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-6",
+                    "position": [
+                      0.18724609374999998,
+                      0.17546875,
+                      -0.155390625
+                    ],
+                    "half_length": 0.01665978989192733,
+                    "rotation_xyzw": [
+                      -0.1935109273904069,
+                      0.0,
+                      -0.30346031795313816,
+                      0.9329873291788505
+                    ],
+                    "bottom_radius": 0.03518125,
+                    "top_radius": 0.03113046875
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "rear-limb-7",
+                    "position": [
+                      0.20333984374999997,
+                      0.19640625,
+                      -0.165703125
+                    ],
+                    "half_length": 0.011690738005042247,
+                    "rotation_xyzw": [
+                      -0.19730347437450418,
+                      0.0,
+                      -0.30582038528048144,
+                      0.9314210814377389
+                    ],
+                    "bottom_radius": 0.03113046875,
+                    "top_radius": 0.027
+                  }
+                ]
+              },
+              {
+                "type": "union",
+                "name": "root",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "round-cone",
+                    "name": "root-0",
+                    "position": [
+                      -0.11629629629629629,
+                      -0.21129629629629632,
+                      0.007592592592592591
+                    ],
+                    "half_length": 0.0212325939363868,
+                    "rotation_xyzw": [
+                      0.3696249475164915,
+                      0.0,
+                      0.7933413507671031,
+                      0.4837219235640029
+                    ],
+                    "bottom_radius": 0.078,
+                    "top_radius": 0.06770649895178196
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "root-1",
+                    "position": [
+                      -0.15555555555555556,
+                      -0.2380555555555556,
+                      0.02611111111111111
+                    ],
+                    "half_length": 0.029762001763510387,
+                    "rotation_xyzw": [
+                      0.3745059850516715,
+                      0.0,
+                      0.7870973245153784,
+                      0.4901255644232511
+                    ],
+                    "bottom_radius": 0.06770649895178196,
+                    "top_radius": 0.057412997903563946
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "root-2",
+                    "position": [
+                      -0.19925925925925927,
+                      -0.2642592592592593,
+                      0.048518518518518516
+                    ],
+                    "half_length": 0.026026260875201258,
+                    "rotation_xyzw": [
+                      0.4070398520707685,
+                      0.0,
+                      0.7352977972891297,
+                      0.5419000905406465
+                    ],
+                    "bottom_radius": 0.057412997903563946,
+                    "top_radius": 0.048
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "root-3",
+                    "position": [
+                      -0.23629629629629628,
+                      -0.2762962962962963,
+                      0.0725925925925926
+                    ],
+                    "half_length": 0.02063548025289183,
+                    "rotation_xyzw": [
+                      0.4457319777887978,
+                      0.0,
+                      0.5768296183149136,
+                      0.6845367743307568
+                    ],
+                    "bottom_radius": 0.048,
+                    "top_radius": 0.03988329839273236
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "root-4",
+                    "position": [
+                      -0.2666666666666666,
+                      -0.27416666666666667,
+                      0.09833333333333333
+                    ],
+                    "half_length": 0.019562472472008926,
+                    "rotation_xyzw": [
+                      0.4384129375446436,
+                      0.0,
+                      0.46928708807595637,
+                      0.7665270544205638
+                    ],
+                    "bottom_radius": 0.03988329839273236,
+                    "top_radius": 0.032441649196366176
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "root-5",
+                    "position": [
+                      -0.29037037037037033,
+                      -0.2678703703703704,
+                      0.12074074074074075
+                    ],
+                    "half_length": 0.013663918724038134,
+                    "rotation_xyzw": [
+                      0.4355929561076023,
+                      0.0,
+                      0.45301667435190757,
+                      0.7778397452872785
+                    ],
+                    "bottom_radius": 0.032441649196366176,
+                    "top_radius": 0.025
+                  }
+                ]
+              }
+            ],
+            "radius": 0.028,
+            "blend_materials": false
+          },
+          {
+            "type": "union",
+            "name": "broken-ends-tools",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "upper-break",
+                "position": [
+                  0.04,
+                  0.386,
+                  -0.09
+                ],
+                "half_extent": [
+                  0.12,
+                  0.09,
+                  0.14
+                ],
+                "rounding": 0.001,
+                "rotation_xyzw": [
+                  -0.0,
+                  -0.0,
+                  -0.1908089953765448,
+                  0.981627183447664
+                ]
+              },
+              {
+                "type": "box",
+                "name": "left-break",
+                "position": [
+                  -0.31,
+                  0.2,
+                  0.09
+                ],
+                "half_extent": [
+                  0.09,
+                  0.11,
+                  0.12
+                ],
+                "rounding": 0.001,
+                "rotation_xyzw": [
+                  -0.0,
+                  -0.0,
+                  -0.29237170472273677,
+                  0.9563047559630354
+                ]
+              },
+              {
+                "type": "box",
+                "name": "rear-break",
+                "position": [
+                  0.235,
+                  0.272,
+                  -0.185
+                ],
+                "half_extent": [
+                  0.09,
+                  0.06,
+                  0.09
+                ],
+                "rounding": 0.001,
+                "rotation_xyzw": [
+                  0.0,
+                  0.0,
+                  0.27563735581699916,
+                  0.9612616959383189
+                ]
+              }
+            ]
+          }
+        ],
+        "radius": 0.001
+      },
+      {
+        "type": "union",
+        "name": "weathered-planes-tools",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capsule",
+            "name": "trunk-scoop",
+            "position": [
+              -0.1225,
+              -0.165,
+              0.15
+            ],
+            "radius": 0.066,
+            "half_length": 0.13050383136138188,
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.3125907231622788,
+              0.949887909067635
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "back-scoop",
+            "position": [
+              0.02,
+              -0.1475,
+              -0.135
+            ],
+            "radius": 0.045,
+            "half_length": 0.07284401142166734,
+            "rotation_xyzw": [
+              0.03436050265515143,
+              0.0,
+              -0.0343605026551514,
+              0.998818658072911
+            ]
+          }
+        ]
+      }
+    ],
+    "radius": 0.01
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "trunk-0",
+      "label": "Pull the twisted trunk",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-1",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-2",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-3",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-4",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-5",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-6",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-7",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-8",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-9",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-10",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-11",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-12",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-13",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-14",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-15",
+      "label": "Pull the twisted trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-0",
+      "label": "Sweep the broad broken limb",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-1",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-2",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-3",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-4",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-5",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-6",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-limb-7",
+      "label": "Sweep the broad broken limb / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-0",
+      "label": "Turn the smaller limb into depth",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-1",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-2",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-3",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-4",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-5",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-6",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "rear-limb-7",
+      "label": "Turn the smaller limb into depth / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-0",
+      "label": "Twist the lower root forward",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-1",
+      "label": "Twist the lower root forward / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-2",
+      "label": "Twist the lower root forward / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-3",
+      "label": "Twist the lower root forward / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-4",
+      "label": "Twist the lower root forward / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-5",
+      "label": "Twist the lower root forward / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "upper-break",
+      "label": "Break the upper end obliquely",
+      "seconds": 1.2
+    },
+    {
+      "node": "left-break",
+      "label": "Break the side limb across its grain",
+      "seconds": 1.2
+    },
+    {
+      "node": "rear-break",
+      "label": "Break the rear limb at an unequal angle",
+      "seconds": 1.1
+    },
+    {
+      "node": "trunk-scoop",
+      "label": "Wear a broad trunk face",
+      "seconds": 0.65
+    },
+    {
+      "node": "back-scoop",
+      "label": "Weather a rear trunk plane",
+      "seconds": 0.65
+    }
+  ]
+}

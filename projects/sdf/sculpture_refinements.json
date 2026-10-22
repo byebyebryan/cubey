@@ -1,0 +1,451 @@
+{
+  "guardian": {
+    "config": "projects/sdf/presets/sculpture-guardian-refined.json",
+    "build_config": "projects/sdf/presets/sculpture-guardian-refined-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-guardian.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Face and carved expression",
+        "options": [
+          "--distance",
+          0.85,
+          "--target-y",
+          0.09,
+          "--pitch",
+          0.11
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "base through neck into skull",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            -0.28,
+            -0.025
+          ],
+          [
+            0,
+            -0.16,
+            -0.025
+          ],
+          [
+            0,
+            0.12,
+            -0.025
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "nose connects into face",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            0.04,
+            0.1
+          ],
+          [
+            0,
+            0.03,
+            0.17
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "both sockets remain hollow",
+        "expect": "empty",
+        "points": [
+          [
+            -0.08,
+            0.066,
+            0.13
+          ],
+          [
+            0.08,
+            0.066,
+            0.13
+          ]
+        ],
+        "path": false,
+        "margin": 0.008
+      },
+      {
+        "name": "horns attach to skull",
+        "expect": "solid",
+        "points": [
+          [
+            -0.115,
+            0.2,
+            -0.035
+          ],
+          [
+            -0.16,
+            0.23,
+            -0.045
+          ],
+          [
+            -0.2,
+            0.255,
+            -0.055
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "opposite horn attaches",
+        "expect": "solid",
+        "points": [
+          [
+            0.115,
+            0.2,
+            -0.035
+          ],
+          [
+            0.16,
+            0.23,
+            -0.045
+          ],
+          [
+            0.2,
+            0.255,
+            -0.055
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      }
+    ],
+    "authoring_sources": [
+      "author_refinements.py",
+      "refinement_author.py",
+      "author_sculptures.py",
+      "sdf_author.py",
+      "sdf_probe.py"
+    ]
+  },
+  "driftwood": {
+    "config": "projects/sdf/presets/sculpture-driftwood-refined.json",
+    "build_config": "projects/sdf/presets/sculpture-driftwood-refined-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-driftwood.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Broken lower end and trunk hollow",
+        "options": [
+          "--distance",
+          0.95,
+          "--target-y",
+          -0.14,
+          "--pitch",
+          -0.6,
+          "--yaw",
+          0.6,
+          "--sun-elevation",
+          15
+        ]
+      },
+      {
+        "name": "upper-end",
+        "label": "Upper hollow, split and broken rim",
+        "options": [
+          "--yaw",
+          0.55,
+          "--pitch",
+          0.8,
+          "--target-y",
+          0.18,
+          "--distance",
+          0.82
+        ]
+      },
+      {
+        "name": "grain",
+        "label": "Knot and flowing grain",
+        "options": [
+          "--yaw",
+          0.15,
+          "--pitch",
+          0.12,
+          "--target-y",
+          0.03,
+          "--distance",
+          0.85
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "retained trunk spine",
+        "expect": "solid",
+        "path": true,
+        "margin": 0.002,
+        "points": [
+          [
+            -0.14,
+            -0.25,
+            -0.04
+          ],
+          [
+            -0.075,
+            -0.12,
+            -0.03
+          ],
+          [
+            -0.01,
+            0.04,
+            -0.06
+          ],
+          [
+            0.012,
+            0.19,
+            -0.11
+          ]
+        ]
+      },
+      {
+        "name": "broad broken limb connects",
+        "expect": "solid",
+        "path": true,
+        "margin": 0.003,
+        "points": [
+          [
+            -0.01,
+            0.01,
+            -0.015
+          ],
+          [
+            -0.13,
+            0.067,
+            0.022
+          ],
+          [
+            -0.22,
+            0.13,
+            0.055
+          ]
+        ]
+      },
+      {
+        "name": "rear limb connects in depth",
+        "expect": "solid",
+        "path": true,
+        "margin": 0.003,
+        "points": [
+          [
+            0.01,
+            0.035,
+            -0.035
+          ],
+          [
+            0.115,
+            0.102,
+            -0.102
+          ],
+          [
+            0.173,
+            0.16,
+            -0.14
+          ]
+        ]
+      },
+      {
+        "name": "lower broken end is hollow",
+        "expect": "empty",
+        "path": true,
+        "margin": 0.004,
+        "points": [
+          [
+            -0.19,
+            -0.36,
+            0.03
+          ],
+          [
+            -0.105,
+            -0.2,
+            0.04
+          ]
+        ]
+      },
+      {
+        "name": "upper broken end is hollow",
+        "expect": "empty",
+        "path": true,
+        "margin": 0.004,
+        "points": [
+          [
+            0.02,
+            0.31,
+            -0.09
+          ],
+          [
+            0.05,
+            0.22,
+            -0.075
+          ]
+        ]
+      },
+      {
+        "name": "knot recess remains open",
+        "expect": "empty",
+        "margin": 0.015,
+        "points": [
+          [
+            0.02,
+            0.035,
+            0.1
+          ]
+        ]
+      },
+      {
+        "name": "upper stub solid before hollowing",
+        "expect": "solid",
+        "margin": 0.01,
+        "before_node": "upper-hollow",
+        "points": [
+          [
+            0.04,
+            0.24,
+            -0.075
+          ]
+        ]
+      },
+      {
+        "name": "split wall solid before splitting",
+        "expect": "solid",
+        "margin": 0.001,
+        "before_node": "end-split-0",
+        "points": [
+          [
+            0.078,
+            0.25,
+            -0.021
+          ]
+        ]
+      },
+      {
+        "name": "split opens the front wall",
+        "expect": "empty",
+        "margin": 0.002,
+        "points": [
+          [
+            0.078,
+            0.25,
+            -0.021
+          ]
+        ]
+      }
+    ],
+    "authoring_sources": [
+      "author_refinements.py",
+      "refinement_author.py",
+      "author_sculptures.py",
+      "sdf_author.py",
+      "sdf_probe.py"
+    ]
+  }
+}
