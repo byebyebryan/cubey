@@ -12,11 +12,18 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--binary',type=Path,default=Path('build/release/projects/sdf/sdf'))
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--metadata',type=Path,default=Path('projects/sdf/guardian_organic.json'))
+    p.add_argument('--version',nargs=2,action='append',metavar=('NAME','PRESET'),
+                   help='Override comparison versions; repeat for matched views')
     a=p.parse_args();root=Path(__file__).resolve().parents[3];out=a.output.resolve()
     out.mkdir(exist_ok=False,parents=True)
     binary=(root/a.binary).resolve();sha=lambda f:hashlib.sha256(f.read_bytes()).hexdigest()
-    metadata=root/'projects/sdf/guardian_organic.json';meta=json.loads(metadata.read_text())['guardian']
-    configs=dict(before=root/meta['blockout_config'],form=root/'projects/sdf/presets/sculpture-guardian-organic-form.json',after=root/meta['config'])
+    metadata=root/a.metadata;meta=json.loads(metadata.read_text())['guardian']
+    if a.version and (len({name for name,_ in a.version})!=len(a.version) or
+                      any(Path(name).name!=name for name,_ in a.version)):
+        p.error('Version names must be distinct basenames')
+    configs=({name:root/path for name,path in a.version} if a.version else
+             dict(before=root/meta['blockout_config'],form=root/'projects/sdf/presets/sculpture-guardian-organic-form.json',after=root/meta['config']))
     receipt=dict(binary_sha256=sha(binary),shader_sha256={f.name:sha(f) for f in sorted((binary.parent/'shaders').glob('*.spv'))},
         device=subprocess.check_output(['nvidia-smi','--query-gpu=name,driver_version','--format=csv,noheader'],text=True).strip(),
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
@@ -48,7 +55,7 @@ def main():
             config=json.loads((out/name/f'configs/{view["name"]}.json').read_text())
             for key in ('authored-scene','output','validate-field'):config.pop(key)
             configs_for_view.append(config)
-        assert configs_for_view[0]==configs_for_view[1]==configs_for_view[2]
+        assert all(config==configs_for_view[0] for config in configs_for_view)
     subprocess.run(['python3',str(root/'projects/sdf/tools/check_sculptures.py'),'--subject','guardian',
         '--metadata',str(metadata),'--output',str(out/'intent-audit.json')],cwd=root,check=True)
     shutil.copy2(metadata,out/'metadata.json')

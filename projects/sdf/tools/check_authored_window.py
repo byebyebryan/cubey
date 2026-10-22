@@ -10,6 +10,8 @@ parser.add_argument("--output",type=Path,default=Path("outputs/sdf/qualification
 parser.add_argument("--config",type=Path,help="scene preset; interactions use static motion")
 parser.add_argument("--height",type=int,default=1000)
 parser.add_argument("--history-controls",action="store_true")
+parser.add_argument("--paired-step",type=int,action="append",default=[],
+                    help="Also seek, undo and redo these atomic mirrored operations")
 args=parser.parse_args()
 if not args.config or args.height != 1000:
     raise SystemExit("Authored material controls require --config and --height 1000")
@@ -105,15 +107,32 @@ with log.open("w") as stream:
             preset=json.loads(args.config.read_text())
             authored=json.loads(Path(preset['authored-scene']).read_text())
             lines=max(1,len(textwrap.wrap(authored['history'][-1]['label'],width=47)))
-            midpoint_y=306+13*(lines-1)
-            control=x.XKeysymToKeycode(d,x.XStringToKeysym(b'Control_L'))
-            t.XTestFakeKeyEvent(d,control,1,0);x.XSync(d,0)
-            click(190,midpoint_y);key('a')
-            t.XTestFakeKeyEvent(d,control,0,0);x.XSync(d,0)
-            for digit in str(total//2):key(digit)
-            key('Return')
-            assert wait_step(lambda n:n==total//2)==total//2
+            def rows(count):
+                label=authored['history'][count-1]['label'] if count else 'Empty workspace'
+                return max(1,len(textwrap.wrap(label,width=47)))
+            def numeric_seek(count,prior):
+                slider_y=306+13*(rows(prior)-1)
+                control=x.XKeysymToKeycode(d,x.XStringToKeysym(b'Control_L'))
+                t.XTestFakeKeyEvent(d,control,1,0);x.XSync(d,0)
+                click(190,slider_y);key('a')
+                t.XTestFakeKeyEvent(d,control,0,0);x.XSync(d,0)
+                for digit in str(count):key(digit)
+                key('Return')
+                assert wait_step(lambda n:n==count)==count
+            numeric_seek(total//2,total)
             capture("window-step-middle.png")
+            prior=total//2
+            for paired in args.paired_step:
+                assert 1<=paired<=total and len(authored['history'][paired-1].get('nodes',[]))>1
+                numeric_seek(paired,prior)
+                capture(f'window-paired-{paired}.png')
+                click(125,277+13*(rows(paired)-1))
+                assert wait_step(lambda n:n==paired-1)==paired-1
+                capture(f'window-paired-{paired}-undone.png')
+                click(233,277+13*(rows(paired-1)-1))
+                assert wait_step(lambda n:n==paired)==paired
+                capture(f'window-paired-{paired}-redone.png')
+                prior=paired
             click(160,146);assert wait_step(lambda n:n==0)==0
             # Short histories have a longer scaled empty opening hold. Wait
             # for an actual committed edit instead of assuming robot timing.
@@ -147,6 +166,7 @@ if args.history_controls:
     assert builds>10,builds
     visits=[int(s) for s in re.findall(r'history (?:initial )?step=(\d+)/',text)]
     receipt={"passed":True,"command":command,"field_builds":builds,"history_visits":visits,
+        "paired_undo_redo_steps":args.paired_step,
         "actions":["resize twice","orbit","zoom","pause/reset","next edits 1 through 5",
                    "previous to 4 and next to 5","scrub to final and enter numeric midpoint","stable paused field",
                    "restart empty","resume and pause playback","Escape"]}
