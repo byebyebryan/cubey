@@ -1,0 +1,520 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Stone guardian",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.38132601143253014,
+        0.4620769996544071,
+        0.39157247774972326
+      ],
+      "roughness": 0.76,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "smooth-subtract",
+    "name": "nostril-carve-1",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "smooth-subtract",
+        "name": "nostril-carve--1",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-subtract",
+            "name": "mouth-carve",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "smooth-subtract",
+                "name": "right-socket-carve",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "smooth-subtract",
+                    "name": "left-socket-carve",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "smooth-union",
+                        "name": "fused-bust",
+                        "position": [
+                          0,
+                          0,
+                          0
+                        ],
+                        "children": [
+                          {
+                            "type": "box",
+                            "name": "bust-base",
+                            "position": [
+                              0,
+                              -0.275,
+                              -0.025
+                            ],
+                            "half_extent": [
+                              0.14,
+                              0.035,
+                              0.095
+                            ],
+                            "rounding": 0.025
+                          },
+                          {
+                            "type": "capsule",
+                            "name": "neck",
+                            "position": [
+                              0.0,
+                              -0.16,
+                              -0.0275
+                            ],
+                            "radius": 0.088,
+                            "half_length": 0.0800390529679106,
+                            "rotation_xyzw": [
+                              0.01561928156032121,
+                              0.0,
+                              -0.0,
+                              0.9998780115811826
+                            ]
+                          },
+                          {
+                            "type": "sphere",
+                            "name": "cranium",
+                            "position": [
+                              0,
+                              0.11,
+                              -0.035
+                            ],
+                            "radius": 0.169
+                          },
+                          {
+                            "type": "box",
+                            "name": "jaw",
+                            "position": [
+                              0,
+                              -0.065,
+                              0.045
+                            ],
+                            "half_extent": [
+                              0.082,
+                              0.052,
+                              0.065
+                            ],
+                            "rounding": 0.042
+                          },
+                          {
+                            "type": "sphere",
+                            "name": "left-cheek",
+                            "position": [
+                              -0.092,
+                              0.005,
+                              0.052
+                            ],
+                            "radius": 0.091
+                          },
+                          {
+                            "type": "capsule",
+                            "name": "left-brow",
+                            "position": [
+                              -0.0765,
+                              0.1185,
+                              0.083
+                            ],
+                            "radius": 0.035,
+                            "half_length": 0.055068139609033465,
+                            "rotation_xyzw": [
+                              -0.2168356488660359,
+                              0.0,
+                              0.6203908842556026,
+                              0.7537223972480828
+                            ]
+                          },
+                          {
+                            "type": "sphere",
+                            "name": "right-cheek",
+                            "position": [
+                              0.092,
+                              0.005,
+                              0.052
+                            ],
+                            "radius": 0.091
+                          },
+                          {
+                            "type": "capsule",
+                            "name": "right-brow",
+                            "position": [
+                              0.0765,
+                              0.1185,
+                              0.083
+                            ],
+                            "radius": 0.035,
+                            "half_length": 0.055068139609033465,
+                            "rotation_xyzw": [
+                              -0.2168356488660359,
+                              0.0,
+                              -0.6203908842556026,
+                              0.7537223972480828
+                            ]
+                          },
+                          {
+                            "type": "capsule",
+                            "name": "nose-bridge",
+                            "position": [
+                              0.0,
+                              0.054,
+                              0.1415
+                            ],
+                            "radius": 0.032,
+                            "half_length": 0.05825160941982632,
+                            "rotation_xyzw": [
+                              0.9594734168742128,
+                              0.0,
+                              -0.0,
+                              0.2817991524325848
+                            ]
+                          },
+                          {
+                            "type": "sphere",
+                            "name": "nose-tip",
+                            "position": [
+                              0,
+                              -0.003,
+                              0.174
+                            ],
+                            "radius": 0.045
+                          },
+                          {
+                            "type": "capsule",
+                            "name": "muzzle",
+                            "position": [
+                              0.0,
+                              -0.045,
+                              0.123
+                            ],
+                            "radius": 0.035,
+                            "half_length": 0.055,
+                            "rotation_xyzw": [
+                              0.0,
+                              0.0,
+                              -0.7071067811865475,
+                              0.7071067811865475
+                            ]
+                          },
+                          {
+                            "type": "smooth-union",
+                            "name": "left-horn",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "children": [
+                              {
+                                "type": "capsule",
+                                "name": "left-horn-0",
+                                "position": [
+                                  -0.16699999999999998,
+                                  0.22999999999999998,
+                                  -0.0425
+                                ],
+                                "radius": 0.0435,
+                                "half_length": 0.05030159043211258,
+                                "rotation_xyzw": [
+                                  -0.08616945233071852,
+                                  0.0,
+                                  0.49403819336278615,
+                                  0.8651595742889622
+                                ]
+                              },
+                              {
+                                "type": "capsule",
+                                "name": "left-horn-1",
+                                "position": [
+                                  -0.22849999999999998,
+                                  0.29500000000000004,
+                                  -0.0625
+                                ],
+                                "radius": 0.0215,
+                                "half_length": 0.04580938768418544,
+                                "rotation_xyzw": [
+                                  -0.1409776835671539,
+                                  0.0,
+                                  0.20864697167938787,
+                                  0.9677766963225867
+                                ]
+                              }
+                            ],
+                            "radius": 0.025,
+                            "blend_materials": false
+                          },
+                          {
+                            "type": "smooth-union",
+                            "name": "right-horn",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "children": [
+                              {
+                                "type": "capsule",
+                                "name": "right-horn-0",
+                                "position": [
+                                  0.16699999999999998,
+                                  0.22999999999999998,
+                                  -0.0425
+                                ],
+                                "radius": 0.0435,
+                                "half_length": 0.05030159043211258,
+                                "rotation_xyzw": [
+                                  -0.08616945233071852,
+                                  0.0,
+                                  -0.49403819336278615,
+                                  0.8651595742889622
+                                ]
+                              },
+                              {
+                                "type": "capsule",
+                                "name": "right-horn-1",
+                                "position": [
+                                  0.22849999999999998,
+                                  0.29500000000000004,
+                                  -0.0625
+                                ],
+                                "radius": 0.0215,
+                                "half_length": 0.04580938768418544,
+                                "rotation_xyzw": [
+                                  -0.1409776835671539,
+                                  0.0,
+                                  -0.20864697167938787,
+                                  0.9677766963225867
+                                ]
+                              }
+                            ],
+                            "radius": 0.025,
+                            "blend_materials": false
+                          }
+                        ],
+                        "radius": 0.042,
+                        "blend_materials": false
+                      },
+                      {
+                        "type": "capsule",
+                        "name": "left-eye-socket",
+                        "position": [
+                          -0.0835,
+                          0.0695,
+                          0.1335
+                        ],
+                        "radius": 0.039,
+                        "half_length": 0.031060424980994705,
+                        "rotation_xyzw": [
+                          -0.2446784239617711,
+                          0.0,
+                          0.606376963731346,
+                          0.7565972817183113
+                        ]
+                      }
+                    ],
+                    "radius": 0.008
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "right-eye-socket",
+                    "position": [
+                      0.0835,
+                      0.0695,
+                      0.1335
+                    ],
+                    "radius": 0.039,
+                    "half_length": 0.031060424980994705,
+                    "rotation_xyzw": [
+                      -0.2446784239617711,
+                      0.0,
+                      -0.606376963731346,
+                      0.7565972817183113
+                    ]
+                  }
+                ],
+                "radius": 0.008
+              },
+              {
+                "type": "capsule",
+                "name": "mouth-cut",
+                "position": [
+                  0.0,
+                  -0.067,
+                  0.151
+                ],
+                "radius": 0.013,
+                "half_length": 0.067,
+                "rotation_xyzw": [
+                  0.0,
+                  0.0,
+                  -0.7071067811865475,
+                  0.7071067811865475
+                ]
+              }
+            ],
+            "radius": 0.005
+          },
+          {
+            "type": "sphere",
+            "name": "nostril--1",
+            "position": [
+              -0.023,
+              -0.019,
+              0.204
+            ],
+            "radius": 0.013
+          }
+        ],
+        "radius": 0.003
+      },
+      {
+        "type": "sphere",
+        "name": "nostril-1",
+        "position": [
+          0.023,
+          -0.019,
+          0.204
+        ],
+        "radius": 0.013
+      }
+    ],
+    "radius": 0.003
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "bust-base",
+      "label": "Establish the cropped bust",
+      "seconds": 0.65
+    },
+    {
+      "node": "neck",
+      "label": "Raise the neck",
+      "seconds": 0.65
+    },
+    {
+      "node": "cranium",
+      "label": "Block the skull",
+      "seconds": 0.65
+    },
+    {
+      "node": "jaw",
+      "label": "Blend the jaw into the head",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-cheek",
+      "label": "Raise the cheek mass",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-brow",
+      "label": "Sweep the heavy brow",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-cheek",
+      "label": "Raise the cheek mass",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-brow",
+      "label": "Sweep the heavy brow",
+      "seconds": 0.65
+    },
+    {
+      "node": "nose-bridge",
+      "label": "Pull the nose bridge forward",
+      "seconds": 0.65
+    },
+    {
+      "node": "nose-tip",
+      "label": "Round the nose tip",
+      "seconds": 0.65
+    },
+    {
+      "node": "muzzle",
+      "label": "Blend a broad muzzle",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-horn-0",
+      "label": "Grow the swept horn",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-1",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-0",
+      "label": "Grow the swept horn",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-1",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-eye-socket",
+      "label": "Carve the eye socket",
+      "seconds": 1.2
+    },
+    {
+      "node": "right-eye-socket",
+      "label": "Carve the eye socket",
+      "seconds": 1.2
+    },
+    {
+      "node": "mouth-cut",
+      "label": "Carve the mouth and expression",
+      "seconds": 1.2
+    },
+    {
+      "node": "nostril--1",
+      "label": "Open a nostril",
+      "seconds": 0.8
+    },
+    {
+      "node": "nostril-1",
+      "label": "Open a nostril",
+      "seconds": 0.8
+    }
+  ]
+}

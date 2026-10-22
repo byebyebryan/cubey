@@ -1,0 +1,373 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Twisted driftwood",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.4019777798321958,
+        0.19120168274079138,
+        0.09084171118340768
+      ],
+      "roughness": 0.75,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "smooth-subtract",
+    "name": "open-knot",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "smooth-subtract",
+        "name": "hollowed-trunk",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-union",
+            "name": "fused-driftwood",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "smooth-union",
+                "name": "trunk",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "capsule",
+                    "name": "trunk-0",
+                    "position": [
+                      -0.1175,
+                      -0.1975,
+                      0.0
+                    ],
+                    "radius": 0.0975,
+                    "half_length": 0.07508328708840603,
+                    "rotation_xyzw": [
+                      0.03417032082952461,
+                      0.0,
+                      -0.22210708539191,
+                      0.9744233329478098
+                    ]
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "trunk-1",
+                    "position": [
+                      -0.0425,
+                      -0.0575,
+                      0.01
+                    ],
+                    "radius": 0.0875,
+                    "half_length": 0.0841872912024137,
+                    "rotation_xyzw": [
+                      0.03078327713773192,
+                      0.0,
+                      -0.26165785567072136,
+                      0.9646696618088813
+                    ]
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "trunk-2",
+                    "position": [
+                      0.0325,
+                      0.0925,
+                      -0.005000000000000001
+                    ],
+                    "radius": 0.0675,
+                    "half_length": 0.08638576271585499,
+                    "rotation_xyzw": [
+                      -0.11885659883904855,
+                      0.0,
+                      -0.19314197311345388,
+                      0.9739452177274938
+                    ]
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "trunk-3",
+                    "position": [
+                      0.045,
+                      0.2375,
+                      -0.042499999999999996
+                    ],
+                    "radius": 0.035,
+                    "half_length": 0.07254309064273454,
+                    "rotation_xyzw": [
+                      -0.12277054401506335,
+                      0.0,
+                      0.14030919316007243,
+                      0.9824666527862485
+                    ]
+                  }
+                ],
+                "radius": 0.035,
+                "blend_materials": false
+              },
+              {
+                "type": "smooth-union",
+                "name": "left-branch",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "capsule",
+                    "name": "left-branch-0",
+                    "position": [
+                      -0.07999999999999999,
+                      0.034999999999999996,
+                      0.0175
+                    ],
+                    "radius": 0.0625,
+                    "half_length": 0.07668930825088983,
+                    "rotation_xyzw": [
+                      0.056061320442720976,
+                      0.0,
+                      0.48586477717024845,
+                      0.8722342269456773
+                    ]
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "left-branch-1",
+                    "position": [
+                      -0.17875,
+                      0.13999999999999999,
+                      0.02
+                    ],
+                    "radius": 0.028,
+                    "half_length": 0.07341023430013012,
+                    "rotation_xyzw": [
+                      -0.03507458970921947,
+                      0.0,
+                      0.23675348053723144,
+                      0.9709364359267998
+                    ]
+                  }
+                ],
+                "radius": 0.03,
+                "blend_materials": false
+              },
+              {
+                "type": "smooth-union",
+                "name": "right-branch",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "capsule",
+                    "name": "right-branch-0",
+                    "position": [
+                      0.0975,
+                      0.095,
+                      0.015
+                    ],
+                    "radius": 0.0505,
+                    "half_length": 0.08189169677079601,
+                    "rotation_xyzw": [
+                      0.10840878947882887,
+                      0.0,
+                      -0.5239758158143396,
+                      0.844805823136555
+                    ]
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "right-branch-1",
+                    "position": [
+                      0.20187500000000003,
+                      0.195,
+                      0.017499999999999998
+                    ],
+                    "radius": 0.023,
+                    "half_length": 0.07346608486233631,
+                    "rotation_xyzw": [
+                      -0.0876354580118283,
+                      0.0,
+                      -0.2234704179301622,
+                      0.9707631012812423
+                    ]
+                  }
+                ],
+                "radius": 0.025,
+                "blend_materials": false
+              },
+              {
+                "type": "smooth-union",
+                "name": "root",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "capsule",
+                    "name": "root-0",
+                    "position": [
+                      -0.16999999999999998,
+                      -0.23500000000000001,
+                      0.012499999999999999
+                    ],
+                    "radius": 0.057499999999999996,
+                    "half_length": 0.08933784192602819,
+                    "rotation_xyzw": [
+                      0.3651433192932695,
+                      0.0,
+                      0.7864625338624265,
+                      0.4981435929590836
+                    ]
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "root-1",
+                    "position": [
+                      -0.275,
+                      -0.28500000000000003,
+                      0.0675
+                    ],
+                    "radius": 0.0245,
+                    "half_length": 0.04190763653560053,
+                    "rotation_xyzw": [
+                      0.40454125593987206,
+                      0.0,
+                      0.6292863981286899,
+                      0.6635849616837401
+                    ]
+                  }
+                ],
+                "radius": 0.025,
+                "blend_materials": false
+              }
+            ],
+            "radius": 0.045,
+            "blend_materials": false
+          },
+          {
+            "type": "capsule",
+            "name": "trunk-hollow",
+            "position": [
+              -0.1275,
+              -0.20500000000000002,
+              0.0325
+            ],
+            "radius": 0.045,
+            "half_length": 0.11763290356018591,
+            "rotation_xyzw": [
+              0.03277081044333912,
+              0.0,
+              -0.22939567310337383,
+              0.9727814241361401
+            ]
+          }
+        ],
+        "radius": 0.012
+      },
+      {
+        "type": "sphere",
+        "name": "knot-hollow",
+        "position": [
+          0.016,
+          0.035,
+          0.106
+        ],
+        "radius": 0.056
+      }
+    ],
+    "radius": 0.009
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "trunk-0",
+      "label": "Pull the twisting trunk",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-1",
+      "label": "Pull the twisting trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-2",
+      "label": "Pull the twisting trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-3",
+      "label": "Pull the twisting trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-branch-0",
+      "label": "Sweep the left branch",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-branch-1",
+      "label": "Sweep the left branch / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-branch-0",
+      "label": "Sweep the right branch",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-branch-1",
+      "label": "Sweep the right branch / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-0",
+      "label": "Flow a root away from the trunk",
+      "seconds": 0.42
+    },
+    {
+      "node": "root-1",
+      "label": "Flow a root away from the trunk / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "trunk-hollow",
+      "label": "Hollow the broken trunk end",
+      "seconds": 1.5
+    },
+    {
+      "node": "knot-hollow",
+      "label": "Carve a hollow knot at the fork",
+      "seconds": 1.4
+    }
+  ]
+}

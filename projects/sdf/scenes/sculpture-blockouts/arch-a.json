@@ -1,0 +1,247 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Wind-carved arch",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.5840784178911641,
+        0.33716361504833037,
+        0.17464740365558504
+      ],
+      "roughness": 0.84,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "subtract",
+    "name": "trimmed-arch",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "smooth-subtract",
+        "name": "wind-channel-carve",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-subtract",
+            "name": "rear-cavity-carve",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "smooth-subtract",
+                "name": "front-cavity-carve",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "smooth-union",
+                    "name": "rock-mass",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "capsule",
+                        "name": "left-support",
+                        "position": [
+                          -0.1975,
+                          -0.08499999999999999,
+                          -0.0125
+                        ],
+                        "radius": 0.105,
+                        "half_length": 0.16251922963145007,
+                        "rotation_xyzw": [
+                          -0.023164134670990683,
+                          0.0,
+                          -0.08493516046029916,
+                          0.9961171825556104
+                        ]
+                      },
+                      {
+                        "type": "capsule",
+                        "name": "right-support",
+                        "position": [
+                          0.18,
+                          -0.0925,
+                          0.0135
+                        ],
+                        "radius": 0.12,
+                        "half_length": 0.1496111626851419,
+                        "rotation_xyzw": [
+                          0.005030773652995439,
+                          0.0,
+                          0.08384622754992399,
+                          0.9964660061648358
+                        ]
+                      },
+                      {
+                        "type": "sphere",
+                        "name": "left-crown",
+                        "position": [
+                          -0.115,
+                          0.12,
+                          -0.015
+                        ],
+                        "radius": 0.185
+                      },
+                      {
+                        "type": "sphere",
+                        "name": "right-crown",
+                        "position": [
+                          0.115,
+                          0.09,
+                          -0.005
+                        ],
+                        "radius": 0.18
+                      }
+                    ],
+                    "radius": 0.065,
+                    "blend_materials": false
+                  },
+                  {
+                    "type": "capsule",
+                    "name": "front-cavity",
+                    "position": [
+                      -0.019,
+                      -0.11,
+                      0.1825
+                    ],
+                    "radius": 0.145,
+                    "half_length": 0.16757759396769006,
+                    "rotation_xyzw": [
+                      -0.6964655402934024,
+                      0.0,
+                      0.004158003225632257,
+                      0.7175781923895087
+                    ]
+                  }
+                ],
+                "radius": 0.025
+              },
+              {
+                "type": "capsule",
+                "name": "rear-cavity",
+                "position": [
+                  -0.0035000000000000014,
+                  -0.105,
+                  -0.1825
+                ],
+                "radius": 0.135,
+                "half_length": 0.16953908104033122,
+                "rotation_xyzw": [
+                  0.6696081398155135,
+                  0.0,
+                  0.08594970152855846,
+                  0.7377246016637642
+                ]
+              }
+            ],
+            "radius": 0.025
+          },
+          {
+            "type": "capsule",
+            "name": "wind-channel",
+            "position": [
+              -0.165,
+              0.14,
+              0.14500000000000002
+            ],
+            "radius": 0.052,
+            "half_length": 0.176210101867061,
+            "rotation_xyzw": [
+              0.019014237917134563,
+              0.0,
+              -0.6654983270997111,
+              0.7461571117291027
+            ]
+          }
+        ],
+        "radius": 0.015
+      },
+      {
+        "type": "box",
+        "name": "support-trim",
+        "position": [
+          0,
+          -0.49,
+          0
+        ],
+        "half_extent": [
+          0.45,
+          0.18,
+          0.4
+        ],
+        "rounding": 0.001
+      }
+    ]
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "left-support",
+      "label": "Build the broad left support",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-support",
+      "label": "Raise the narrower leaning support",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-crown",
+      "label": "Fuse the bridge crown",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-crown",
+      "label": "Carry the crown across the opening",
+      "seconds": 0.65
+    },
+    {
+      "node": "front-cavity",
+      "label": "Carve the front alcove",
+      "seconds": 1.8
+    },
+    {
+      "node": "rear-cavity",
+      "label": "Meet the alcove and break through",
+      "seconds": 1.8
+    },
+    {
+      "node": "wind-channel",
+      "label": "Sweep a channel along the crown",
+      "seconds": 1.4
+    },
+    {
+      "node": "support-trim",
+      "label": "Trim the exposed support bases",
+      "seconds": 0.65
+    }
+  ]
+}

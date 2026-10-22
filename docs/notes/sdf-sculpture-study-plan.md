@@ -2,9 +2,9 @@
 
 Date: 2026-10-22
 
-Status: proposed execution plan, following the user's acceptance of the survey
-robot experiment. This document plans the next goal loop; the four sculptures
-and the tooling changes below have not been implemented.
+Status: execution requested after the user's acceptance of the survey robot
+experiment. The [study evidence](sdf-sculpture-study-evidence.md) records completed
+checkpoints; the sections below retain the execution and acceptance plan.
 
 ## Objective and value
 
