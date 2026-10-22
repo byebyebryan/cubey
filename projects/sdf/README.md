@@ -170,6 +170,12 @@ The [balanced comparison](http://starship:8787/reports/f59ca1bd61e2982b7a4d83a45
 places it between the original and previous denser trial; the
 [follow-up evidence](../../docs/notes/sdf-procedural-materials-evidence.md#balanced-marble-follow-up)
 records the selection and native checks.
+User review accepted Balanced. It is now the default in the scripted generator
+and the guardian's native material panel, with Original, Denser and Fine also
+available. An independent body-color control adds restrained warm/cool mineral
+variation; the saved guardian uses 0.08, and zero retains the previous material.
+The [controls and color review](http://starship:8787/reports/182df0953d72e6c65e962feee540fc01b8c75e1524bec3bc5bc05c5ec8495cd6/)
+compares neutral, subtle and stronger tint without changing the balanced veins.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -178,7 +184,9 @@ above. General multimaterial and part-ID queries still use the full evaluator.
 Geometry rebuilds remain about 0.92 seconds. The evidence separates shortcut,
 pattern-only and bump costs; material differences are within timing variation.
 Later material revisions retain their own appearance/history qualification
-scopes; those earlier timings keep their original material snapshots.
+scopes; those earlier timings keep their original material snapshots. A matched
+1080p pair for the configurable balanced material measures 1.76 ms with tint off
+and 1.78 ms at the default 0.08 tint; geometry rebuilds remain about 0.92 seconds.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -410,8 +418,9 @@ Materials may include an optional `procedural` record with `type` set to
 `scale` (0.25–64), `color_strength` (0–1), linear `secondary_color`,
 `roughness_variation` (0–0.5), `bump_strength` (0–0.005 model units),
 `grain_scale` (1–512), `vein_direction` (nonzero vector), `vein_frequency`
-(0.25–32), `vein_width` (0.02–0.5), `warp_strength` (0–12), and fixed model-space
-`offset`. Omitted parameters use defaults; plain legacy materials retain their
+(0.25–32), `vein_width` (0.02–0.5), `warp_strength` (0–12), marble
+`color_variation` (0–0.25), and fixed model-space `offset`.
+Omitted parameters use defaults; plain legacy materials retain their
 appearance fingerprints.
 
 Patterns use the scene's fixed model coordinates, continuously across primitive
@@ -423,6 +432,21 @@ not at every primitive or tracing sample. Normal detail blends using the same
 material weights. Color, roughness and analytic height gradients use the shared
 seeded value-noise family; fine grain fades with a conservative projected pixel
 footprint, and marble vein ramps broaden/average when unresolved.
+
+For marble, `color_variation` adds low-frequency, filtered warm/cool body tint
+from an independent seeded noise field, fading towards neutral near veins.
+It affects color only. Its default is zero for legacy scene compatibility; the
+guardian generator explicitly saves 0.08. No image maps or new appearance
+volume are allocated.
+
+In the expanded body material, scroll to **Marble detail** for Original,
+Balanced, Denser or Fine. These choices set pattern scale, vein frequency,
+width, warp and grain scale, preserving palette, roughness, tint, orientation,
+seed and bump amplitude. Manual edits to those five controls display Custom.
+**Body color variation** is independent. Both types of edit retain distance
+bricks. To save interactive edits, launch with
+`--export-authored outputs/sdf/my-marble.json` and use **Export authored scene**
+after editing; the saved explicit values restore the inferred detail choice.
 
 `--no-procedural` shows the material's flat base values, `--no-bump` retains its
 color/roughness pattern without normal detail, and `--clay` retains the existing
@@ -449,7 +473,17 @@ plain materials, geometry, height gradients and shading normals retain their
 ```
 
 `author_guardian_materials.py` deterministically emits both material scenes and
-their static/build presets from the saved mirrored guardian. Use
+their static/build presets from the saved mirrored guardian. Its
+`--marble-detail original|balanced|denser|fine` flag defaults to balanced;
+`--marble-color-variation` defaults to 0.08 and accepts 0–0.25. These authoring
+flags rewrite the generated files. For example:
+
+```sh
+python3 projects/sdf/tools/author_guardian_materials.py \
+  --marble-detail balanced --marble-color-variation 0.08
+```
+
+Use
 `--config projects/sdf/presets/sculpture-guardian-limestone.json` or
 `--config projects/sdf/presets/sculpture-guardian-marble-build.json` to inspect
 them. The [material evidence](../../docs/notes/sdf-procedural-materials-evidence.md)

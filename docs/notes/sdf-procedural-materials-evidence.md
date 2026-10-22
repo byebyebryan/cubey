@@ -10,6 +10,9 @@ User review accepted the limestone appearance and found marble interesting,
 requesting more detail. After the [finer-marble audition](#finer-marble-follow-up)
 proved too busy, the [balanced follow-up](#balanced-marble-follow-up) revised
 the current preset to sit between the original and the denser trial.
+User review accepted Balanced; the
+[configurable marble and body-color follow-up](#configurable-marble-and-body-color)
+adds named detail choices and independent subtle tint.
 
 ## Result and scope
 
@@ -321,3 +324,95 @@ Artifacts under `outputs/sdf/` are `marble-balance-audition/`,
 standalone builder and both source receipts. `marble-balance-served-review.json`
 records HTTP/hash parity for every published file. Documentation/layout policy
 checks and all 18 scoped SDF CLI recipes pass.
+
+## Configurable marble and body color
+
+User review accepted Balanced and requested configurable detail, with Balanced
+as default, plus subtle color variation. Implemented in `c8ca487d`; the
+[controls and color comparison](http://starship:8787/reports/182df0953d72e6c65e962feee540fc01b8c75e1524bec3bc5bc05c5ec8495cd6/)
+shows balanced marble at color-variation amounts 0, 0.08 and 0.16. The saved
+guardian uses 0.08. Acceptance of the balanced pattern predates the new tint;
+artistic review of the tint remains separate.
+
+The native material panel offers Original, Balanced, Denser and Fine. These
+choices set only scale, vein frequency/width/warp and grain scale, retaining the
+artist's palette, roughness, seed, orientation, offset, tint and bump amplitude.
+Manual changes to those five controls display Custom. JSON continues to store
+explicit parameters; the UI infers the name instead of overwriting custom
+values at load. Save/export/reload retains the detail choice and tint.
+The scripted generator exposes `--marble-detail` and
+`--marble-color-variation`, defaulting to balanced and 0.08.
+
+The optional `color_variation` parameter is finite and bounded to 0–0.25.
+Omission defaults to zero, retaining existing scene appearance. One additional
+seeded value-noise sample makes broad warm/cool body patches at 0.45 times the
+pattern scale. Pixel-footprint filtering fades unresolved color towards neutral;
+the existing vein mask attenuates tint near veins. Color changes only: roughness,
+height gradients, normals and geometry stay intact. This uses the formerly
+reserved W component of the domain-offset vector, retaining the 80-byte pattern
+record and 1,280-byte renderer table. There is no added appearance volume.
+
+Final Release binary SHA-256:
+`45bc8ba67dafb44f62ac7dadfb77b7cd41f1566a045588ff633dc261aa3073cd`.
+All final native qualification, controls, comparison and profile manifests
+agree on this binary and their complete shader maps. The earlier working
+foundation folder was superseded after rebuilding the final UI binary; only
+`marble-controls-foundation-final/` is authoritative here.
+
+Five focused CPU suites pass. New tests cover four detail choices retaining
+unrelated appearance parameters, Custom detection, both signs of warm/cool
+variation, its filtered-away limit, unchanged roughness/gradients, finite bounds,
+appearance-only identity and persistence. The prior noise, geometry, nested-cut,
+mirror and normal-projection tests remain in the same passing suites.
+
+The expanded native foundation run passes plain-image regression, procedural
+determinism, shortcut/full agreement, save/reload/re-export, seed variation,
+material ownership through smooth/nested/explicit cuts, and empty/short cut
+histories including tinted marble. Zero tint reproduces the previous balanced
+PNG exactly. Tint on/off roughness and shading-normal PNGs agree exactly.
+Material, procedural and tint-only cache checks retain one field build.
+Maximum CPU/GPU color error across these fixtures is 0.0000147223, below the
+existing procedural bound; no tolerance changed. This does not requalify the
+complete 66-state guardian history.
+
+The desktop test selects Original, Denser, Fine and Balanced in order, then
+edits frequency to Custom and adjusts tint. Eight logged appearance updates
+retain geometry `d5fc89f0abe076f0` and report no rebuild; the process builds once.
+Tint changes 64,891 rendered pixels outside the UI. Default, restored and Custom
+states were visually inspected. The inspection driver initially assumed eight
+full wheel steps despite reaching the panel's scroll limit; its corrected
+coordinates and mouse selections are recorded in the passing final receipt.
+
+Fifteen matching native stills and three turntables cover neutral, subtle and
+stronger amounts. All eight design probes and 720 decoded frames pass. Native
+color/detail stills and UI states were inspected. Browser discovery returned
+no connected browsers; browser interaction review remains unavailable.
+
+Matched RTX 5070 Ti / driver 610.57.04 Release profiles use 1920×1080,
+supersample 1, hard shadows, 180 frames / 30 warmup and 148 completed samples
+per case. GPU timings sum shading and post; no competing owned GPU job ran.
+
+| Color amount | GPU median | GPU p95 | Cold field build |
+| --- | ---: | ---: | ---: |
+| 0 / neutral | 1.7597 ms | 1.8034 ms | 917.874 ms |
+| 0.08 / subtle default | 1.7763 ms | 1.8278 ms | 918.095 ms |
+
+This matched pair measures the default uniform-material sculpt. It does not
+establish a general cost model for multimaterial scenes or other hardware.
+
+Artifacts under `outputs/sdf/`:
+
+- `marble-controls-foundation-final/`: final native regression, tint invariants,
+  ownership, short histories, export and cache evidence.
+- `marble-live-controls/`: passing owned desktop captures, identities and logs.
+- `marble-colors-comparison/`, `marble-colors-inputs/`: matched saved inputs,
+  native images, orbits, hashes, video checks and design probes.
+- `marble-colors-profile/`: raw pass CSVs, traces, commands, logs and summary.
+- `marble-controls-reproduction.json`: six byte-identical generator outputs;
+  invalid NaN/out-of-range amounts rejected without edits.
+- `marble-colors-report/`: 185 files / 31,740,586 bytes, including its builder.
+- `marble-colors-served-review.json`: HTTP/hash parity for every published file.
+
+Static/dynamic report targets and JavaScript syntax pass. Documentation/layout
+checks and all 18 scoped SDF CLI recipes pass. The work is committed locally;
+no push is part of this follow-up.
