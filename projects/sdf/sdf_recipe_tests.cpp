@@ -130,6 +130,8 @@ int main() {
     require(make_recipe("negative-sphere", 42, 0).edits.size() == 1,
             "zero cutters must retain the spherical base");
     const auto thin_negative = make_recipe("negative-stick-ball", 42, 2048);
+    require(recipe_hash(thin_negative) == 0xddb62b0334b76e95ULL && !thin_negative.cutter_width,
+            "the published slender recipe and its metadata must remain unchanged");
     validate_carve_recipe(thin_negative);
     require(thin_negative.edits.size() == 2049,
             "negative stick ball must retain every slender cutter plus its base");
@@ -162,6 +164,35 @@ int main() {
         too_many_thin_cutters = true;
     }
     require(too_many_thin_cutters, "thin cutters plus base must fit the recipe loader limit");
+    const auto medium = make_recipe("negative-stick-ball", 42, 256, 0.015F);
+    for (std::size_t i = 1; i < medium.edits.size(); ++i) {
+        const auto& edit = medium.edits[i];
+        const auto& original = thin_negative.edits[i];
+        close(2 * (edit.half_extent.y + edit.rounding), 0.015F);
+        close(2 * (edit.half_extent.z + edit.rounding), 0.015F);
+        require(edit.center == original.center && edit.rotation == original.rotation &&
+                    edit.half_extent.x == original.half_extent.x,
+                "width tuning must preserve placement, orientation and long box core");
+    }
+    auto medium_prefix = make_recipe("negative-stick-ball", 42, 512, 0.015F);
+    medium_prefix.edits.resize(257);
+    require(recipe_hash(medium_prefix) == recipe_hash(medium),
+            "wider cutter counts must retain exact earlier cuts");
+    const auto medium_loaded = parse_recipe(serialize_recipe(medium));
+    require(recipe_hash(medium_loaded) == recipe_hash(medium) &&
+                medium_loaded.cutter_width == medium.cutter_width &&
+                medium_loaded.generator == medium.generator,
+            "width-tuned recipes must preserve geometry and generator parameters");
+    for (float width : {0.0F, -1.0F, 0.061F, std::numeric_limits<float>::infinity(),
+                        std::numeric_limits<float>::quiet_NaN()}) {
+        bool rejected_width = false;
+        try {
+            static_cast<void>(make_recipe("negative-stick-ball", 42, 256, width));
+        } catch (const std::invalid_argument&) {
+            rejected_width = true;
+        }
+        require(rejected_width, "invalid cutter widths must be rejected before field building");
+    }
     for (const auto extent : {Vec3{0, 0.1F, 0.1F}, Vec3{-0.1F}, Vec3{0}}) {
         bool rejected_core = false;
         try {

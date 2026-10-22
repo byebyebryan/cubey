@@ -15,6 +15,7 @@ struct SdfConfig {
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
     std::uint32_t supersample = 1;
+    float cutter_width = 0.003F;
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
     bool ao = false;
@@ -89,6 +90,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("count", "Sticks (negative scenes: cutters, excluding the base)",
                      config::ValueType::UInt32),
               c.count)
+        .bind(option("cutter-width", "Full cutter width for negative-stick-ball (0.003–0.06)",
+                     config::ValueType::Float),
+              c.cutter_width)
         .bind(option("debug", "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks)",
                      config::ValueType::UInt32),
               c.debug)

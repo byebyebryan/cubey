@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -39,6 +40,7 @@ struct Recipe {
     std::vector<BoxEdit> edits;
     std::string generator = "explicit";
     std::uint32_t seed = 0;
+    std::optional<float> cutter_width; // Generator metadata; explicit edits remain authoritative.
 };
 
 [[nodiscard]] GpuEdit gpu_edit(const BoxEdit& edit);
@@ -46,7 +48,8 @@ struct Recipe {
 [[nodiscard]] float box_distance(math::Vec3 point, math::Vec3 half_extent, float rounding);
 [[nodiscard]] float edit_distance(math::Vec3 point, const BoxEdit& edit);
 [[nodiscard]] float recipe_distance(math::Vec3 point, std::span<const BoxEdit> edits);
-[[nodiscard]] Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count);
+[[nodiscard]] Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count,
+                                 float cutter_width = 0.003F);
 void validate_carve_recipe(const Recipe& recipe);
 [[nodiscard]] std::uint64_t recipe_hash(const Recipe& recipe);
 [[nodiscard]] std::size_t construction_prefix(std::size_t count, double seconds, double duration);

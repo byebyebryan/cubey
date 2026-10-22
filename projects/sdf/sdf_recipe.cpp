@@ -98,11 +98,14 @@ float recipe_distance(math::Vec3 point, std::span<const BoxEdit> edits) {
     return distance;
 }
 
-Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count) {
+Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count,
+                   float cutter_width) {
     Recipe recipe;
     recipe.generator = scene == "sticks" ? "sticks-pcg32-v1" : std::string(scene);
     recipe.seed = seed;
     if (scene == "negative-stick-ball") {
+        if (!std::isfinite(cutter_width) || cutter_width < 0.003F || cutter_width > 0.06F)
+            throw std::invalid_argument("negative stick ball cutter width must be 0.003–0.06");
         if (count > 65535U)
             throw std::invalid_argument(
                 "negative scenes accept at most 65535 cutters plus their base");
@@ -110,8 +113,17 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
         // dimensions, transform and rounding, changing only its CSG operation.
         recipe = make_recipe("sticks", seed, count);
         recipe.generator = "negative-stick-ball-pcg32-v1";
-        for (auto& edit : recipe.edits)
+        const float scale = cutter_width / 0.003F;
+        if (cutter_width != 0.003F) {
+            recipe.generator = "negative-stick-ball-width-pcg32-v1";
+            recipe.cutter_width = cutter_width;
+        }
+        for (auto& edit : recipe.edits) {
             edit.operation = Operation::Remove;
+            edit.half_extent.y *= scale;
+            edit.half_extent.z *= scale;
+            edit.rounding *= scale;
+        }
         BoxEdit base;
         base.half_extent = math::Vec3{0.0F};
         base.rounding = 0.30F; // The additive stick centers occupy radii 0.29–0.30.
@@ -241,9 +253,16 @@ std::string serialize_recipe(const Recipe& recipe) {
     }
     std::ostringstream hash;
     hash << std::hex << std::setfill('0') << std::setw(16) << recipe_hash(recipe);
+    nlohmann::json generator{{"name", recipe.generator}, {"seed", recipe.seed}};
+    if (recipe.cutter_width) {
+        if (!std::isfinite(*recipe.cutter_width) || *recipe.cutter_width < 0.003F ||
+            *recipe.cutter_width > 0.06F)
+            throw std::invalid_argument("invalid cutter width metadata");
+        generator["cutter_width"] = *recipe.cutter_width;
+    }
     return nlohmann::json{{"format", "cubey.sdf.boxes"},
                           {"version", 1},
-                          {"generator", {{"name", recipe.generator}, {"seed", recipe.seed}}},
+                          {"generator", std::move(generator)},
                           {"hash_algorithm", "fnv1a64-gpu-lanes-le-v1"},
                           {"hash", hash.str()},
                           {"edits", std::move(edits)}}
@@ -260,6 +279,8 @@ Recipe parse_recipe(std::string_view text) {
     Recipe recipe;
     recipe.generator = json.at("generator").at("name").get<std::string>();
     recipe.seed = json.at("generator").at("seed").get<std::uint32_t>();
+    if (json.at("generator").contains("cutter_width"))
+        recipe.cutter_width = json.at("generator").at("cutter_width").get<float>();
     const auto vector = [](const nlohmann::json& values) {
         if (!values.is_array() || values.size() != 3)
             throw std::invalid_argument("SDF vector must contain exactly three numbers");
