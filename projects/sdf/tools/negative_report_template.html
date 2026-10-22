@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cubey SDF — carving with negative sticks</title>
+<link rel="icon" href="data:,">
 <style>
 :root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0e171d;color:#e5eef0;line-height:1.55}
 *{box-sizing:border-box}body{margin:0}main{max-width:1160px;margin:auto;padding:40px 24px 70px}h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.1;max-width:800px;margin:12px 0 20px}h2{font-size:1.5rem;margin:44px 0 15px}p{max-width:880px;color:#b9ced4}a{color:#7cdbf1}a:hover{color:white}.eyebrow{letter-spacing:.16em;text-transform:uppercase;color:#82becb;font-size:.78rem}.lead{font-size:1.15rem;max-width:760px}video,.viewer img{width:100%;display:block;border-radius:12px;background:#17262d}video{margin-top:25px}.chapters,.controls{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}button,select{background:#1b3039;color:#eaf4f6;border:1px solid #496771;border-radius:7px;padding:9px 12px;font:inherit;cursor:pointer}button:hover,button[aria-pressed=true]{background:#285364;border-color:#7cdbf1}label{display:flex;gap:12px;align-items:center}select{max-width:100%}.note,figcaption{font-size:.88rem;color:#9fb9c2}.callout{padding:16px 20px;background:#1b2c34;border-left:3px solid #e4b66b;margin:24px 0}.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0}.facts div{background:#172730;border-radius:8px;padding:16px}.facts strong{display:block;font-size:1.25rem}.facts small{color:#b4c8cf}figure{margin:0}figure img{display:block;width:100%;border-radius:7px}figcaption{padding:8px 2px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.tag{background:#446245;color:#d6f1cf;padding:2px 6px;border-radius:4px;font-size:.72rem;margin-left:5px}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;max-width:830px}th,td{border-bottom:1px solid #344b56;padding:12px;text-align:left}thead{color:#a7c9d2}code,pre{font-family:ui-monospace,monospace;font-size:.85rem}pre{overflow:auto;padding:16px;border-radius:8px;background:#081116;color:#b6d5de}details{border-top:1px solid #344b56;margin-top:20px;padding:15px 0}summary{cursor:pointer;color:#bce8f0}footer{margin-top:45px;color:#91aeb8}.wide{max-width:none}input[type=range]{accent-color:#7cdbf1;flex:1;min-width:150px}.stage-label{min-width:140px}.viewer{margin-top:15px}.caption{min-height:2.8em}
@@ -9,10 +10,12 @@
 <div class="eyebrow">Cubey · Procedural SDF experiment</div>
 <h1>Carving a solid with 72 sticks.</h1>
 <p class="lead">One rounded cube. Repeated cuts open holes, connect passages, and reveal the interior. A procedural sequel to the additive ball of sticks.</p>
-<video controls preload="metadata" poster="evidence/captures/hero.png" aria-label="Negative sticks carving presentation"><source src="evidence/presentation.mp4" type="video/mp4">Download the <a href="evidence/presentation.mp4">presentation video</a>.</video>
+<video controls preload="metadata" data-video-src="evidence/presentation.mp4" poster="evidence/captures/hero.png" aria-label="Negative sticks carving presentation">Download the <a href="evidence/presentation.mp4">presentation video</a>.</video>
 <div class="chapters" aria-label="Video chapters">
-<button data-time="0">Solid · 0s</button><button data-time="2.3">First cutter · 2.3s</button><button data-time="8">Four cuts · 8s</button><button data-time="12">Carving · 12s</button><button data-time="16">Orbit · 16s</button><button data-time="23.9">Opposite view · 23.9s</button>
+<button disabled data-time="0">Solid · 0s</button><button disabled data-time="2.3">First cutter · 2.3s</button><button disabled data-time="8">Four cuts · 8s</button><button disabled data-time="12">Carving · 12s</button><button disabled data-time="16">Orbit · 16s</button><button disabled data-time="23.9">Opposite view · 23.9s</button>
 </div>
+<p class="note" id="video-status" role="status">Preparing the video…</p>
+<p class="note"><a href="evidence/presentation.mp4">Download the native video</a>.</p>
 <p class="note">Native 1280×720 video · 24 seconds · 30 FPS · 2× internal sampling. Hard self-shadows and Cubey’s shared atmosphere sky. The cyan outline shows cutter bounds before the first four cuts. Capture playback is independent of live update speed.</p>
 
 <h2>Watch the solid change</h2>
@@ -58,6 +61,26 @@ python3 projects/sdf/tools/qualify_negative.py --video --output outputs/sdf/nega
 <footer>Compare the <a href="http://starship:8787/reports/ac8d841ecc3900e08a9eaa6cced9597a0d466c4ad511142376a65adfffe8f31b/">previous additive ball-of-sticks presentation</a>. The captures use different recipes and framing; the reports are not a controlled performance comparison.</footer>
 </main><script>
 const video=document.querySelector('video');
+const chapterButtons=[...document.querySelectorAll('[data-time]')];
+let mediaUrl=null;
+// The static publisher has no HTTP Range support. As in the previous SDF
+// report, one full download into a Blob gives the browser a seekable resource.
+async function prepareVideo(){
+  try{
+    let source=video.dataset.videoSrc;
+    if(location.protocol==='http:'||location.protocol==='https:'){
+      const response=await fetch(source);
+      if(!response.ok)throw new Error('Video download failed');
+      mediaUrl=URL.createObjectURL(await response.blob());
+      source=mediaUrl;
+    }
+    video.addEventListener('loadedmetadata',()=>{chapterButtons.forEach(button=>button.disabled=false);document.querySelector('#video-status').textContent='Ready · play the capture or inspect a chapter.';},{once:true});
+    video.src=source;
+    video.load();
+  }catch(error){video.src=video.dataset.videoSrc;video.load();document.querySelector('#video-status').textContent='Use the direct video download if chapter seeking is unavailable.';}
+}
+prepareVideo();
+window.addEventListener('pagehide',()=>{if(mediaUrl)URL.revokeObjectURL(mediaUrl);});
 document.querySelectorAll('[data-time]').forEach(button=>button.addEventListener('click',()=>{video.currentTime=Number(button.dataset.time);video.pause();}));
 const stages=[['base','0 cuts · intact'],['four','4 cuts'],['sixteen','16 cuts'],['middle','38 cuts'],['hero','72 cuts · final']];
 document.querySelector('#stage').addEventListener('input',event=>{const [file,label]=stages[Number(event.target.value)];const url=`evidence/captures/${file}.png`;document.querySelector('#stage-image').src=url;document.querySelector('#stage-image').alt=label;document.querySelector('#stage-link').href=url;document.querySelector('#stage-label').textContent=label;});

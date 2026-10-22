@@ -12,7 +12,7 @@ sequence of thick box cutters. It includes a native seed audition, slow cutter
 guides, accelerated carving and a final orbit. See its
 [qualification evidence](../../docs/notes/sdf-negative-sticks-evidence.md).
 
-[Watch the carving video and compare the seed audition](http://starship:8787/reports/f3eaf6fe52c25fcf3cc76eab484f45001632db7055cd5cde63ff267c9d2a5a70/).
+[Watch the carving video and compare the seed audition](http://starship:8787/reports/3d8baa7ee96f132b28062ace6e4878538982df72c66aea7c0094f884b2729f65/).
 
 ```sh
 build/dev/projects/sdf/sdf --config projects/sdf/presets/negative-sticks.json

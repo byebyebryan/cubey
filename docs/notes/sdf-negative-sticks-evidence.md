@@ -3,7 +3,7 @@
 Date: 2026-10-21
 
 Status: native implementation and qualification complete;
-[visual review published](http://starship:8787/reports/f3eaf6fe52c25fcf3cc76eab484f45001632db7055cd5cde63ff267c9d2a5a70/).
+[visual review published](http://starship:8787/reports/3d8baa7ee96f132b28062ace6e4878538982df72c66aea7c0094f884b2729f65/).
 User aesthetic acceptance remains separate.
 The [plan](sdf-negative-sticks-plan.md) defines the experiment and acceptance.
 
@@ -174,10 +174,21 @@ errors. `report-review.json` pins the reviewed HTML hash; desktop/mobile
 screenshots were also inspected. This checks report behavior, not the user's
 assessment of whether the sculpture is compelling.
 
-The published snapshot contains 217 intended files / 13,137,602 bytes. The
-shared publisher verified HTTP 200 and the entrypoint bytes at the visible
-`starship:8787` URL. The existing report server was reused; the earlier
-additive report remains linked and unchanged.
-An isolated Chrome check of the served URL also passed video metadata/seeking
-and native image decoding, and the served HTML matched the reviewed bytes;
-see `outputs/sdf/negative-delivery.json`.
+The initial published snapshot passed entrypoint-byte verification, but its
+HTTP chapter seeking failed despite passing in the local file export. The
+publisher returns the MP4 without HTTP Range support; Chrome buffered the
+video but exposed a seekable range of zero. The first served-browser pass
+statement was premature and was corrected.
+
+The revised report reuses the earlier SDF report's full-download-to-Blob
+approach, enables chapters after media metadata is ready, and retains a direct
+download fallback. All report controls, decoded playback and mobile layout
+passed again over a local HTTP server without Range support.
+
+The corrected published snapshot contains 217 intended files / 13,132,605
+bytes. The shared publisher verified HTTP 200 and matching entrypoint bytes.
+A separate isolated Chrome check at the actual served URL confirmed a seekable
+Blob, all six chapter seeks with decoded frames, and native image decoding;
+the HTML matched the reviewed hash. See `outputs/sdf/negative-delivery.json`.
+The existing report server was reused; the earlier additive report remains
+linked and unchanged.
