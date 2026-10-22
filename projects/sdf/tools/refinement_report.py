@@ -73,6 +73,11 @@ def main():
             build_ms=float(match[4]),frames=h['frames'],duration=h['duration'],config=m['metadata']['config'],
             build_config=m['metadata']['build_config'],hidden=h['hidden_preview_allowlist']))
     shutil.copytree(a.comparison,out/'comparison')
+    curves=a.input_root/'refinement-curves-final'
+    curve_manifest=json.loads((curves/'manifest.json').read_text())
+    assert curve_manifest['binary_sha256']==foundation['binary_sha256']
+    assert curve_manifest['shader_sha256']==foundation['shader_sha256']
+    shutil.copytree(curves,out/'curves')
     shutil.copy2(a.input_root/'refinement-foundation/manifest.json',out/'foundation.json')
     shutil.copy2(a.input_root/'refinement-reproduction.json',out/'reproduction.json')
     template=Path(__file__).with_name('refinement_report_template.html').read_text()
