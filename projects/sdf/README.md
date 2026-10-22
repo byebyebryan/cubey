@@ -25,6 +25,14 @@ At higher counts the broad cutters mostly erase the ball; a quarter-width
 trial instead reaches the field capacity at 256 cuts. See the
 [density evidence](../../docs/notes/sdf-negative-sphere-density-evidence.md).
 
+For the additive ball's actual slender geometry,
+[watch the matched comparison and carving video](http://starship:8787/reports/0254a0153dd18172f3e8ff11cb667a5b6219c4cf11a41f11c48121c817866851/) or run
+`--config projects/sdf/presets/negative-stick-ball.json`. This subtracts the
+exact original 2,048 sticks from a radius-0.30 sphere: full width 0.003 and
+length 0.101–0.401, including rounding. The result is a fine pattern of slots
+and punctures. Both 2,048 and 4,096 cutters fit the existing axis-92 profile.
+See the [thin-stick evidence](../../docs/notes/sdf-thin-negative-sticks-evidence.md).
+
 [Watch the carving video and compare the seed audition](http://starship:8787/reports/3d8baa7ee96f132b28062ace6e4878538982df72c66aea7c0094f884b2729f65/).
 
 ```sh
@@ -64,8 +72,9 @@ build/dev/projects/sdf/sdf --headless --count 2048 --atlas-axis 92 \
 
 Drag to orbit, scroll to zoom, R to reset, Space to pause playback and
 Escape to close. Static orbit/view changes reuse the existing field.
-`--scene` selects `box`, `rotated`, `cut`, `sticks`, `negative-sticks` or `negative-sphere`;
-`--seed` and `--count` specify the reproducible recipe. For either negative scene,
+`--scene` selects `box`, `rotated`, `cut`, `sticks`, `negative-sticks`, `negative-sphere`
+or `negative-stick-ball`;
+`--seed` and `--count` specify the reproducible recipe. For negative scenes,
 count means cutters, excluding the one initial Fill (zero cutters retains the
 solid; maximum 65,535). The original `sticks` generator is unchanged.
 `--yaw`, `--pitch` and `--distance`

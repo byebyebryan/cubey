@@ -94,6 +94,12 @@ This trial shows why finer negative sticks need a separate field-capacity or
 resolution decision: they add internal surface while leaving most of the
 solid intact. That renderer work is outside this count study.
 
+That conclusion applies to the long, quarter-width bores tried here. The
+subsequent [exact additive-size counterpart](sdf-thin-negative-sticks-evidence.md)
+uses much shorter, narrower sticks on the original placement shell; both
+2,048 and 4,096 cutters fit the unchanged atlas profile. The capacity failure
+above is not a general limit on slender subtraction.
+
 ## Report delivery
 
 The report preserves the full-fetch Blob setup for seekable video on the
