@@ -55,7 +55,7 @@ def main():
     if args.reuse_captures:
         prior = args.reuse_captures.resolve()
         previous = json.loads((prior/'manifest.json').read_text())
-        for key in ('binary_sha256', 'shader_sha256', 'config_sha256', 'source_scene_sha256',
+        for key in ('binary_sha256', 'shader_sha256', 'device', 'config_sha256', 'source_scene_sha256',
                     'history', 'construction_seconds', 'duration', 'fps', 'frames'):
             if previous[key] != manifest[key]:
                 raise RuntimeError('Capture reuse rejected: '+key+' differs')
