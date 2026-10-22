@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 from qualify import distribution
@@ -29,6 +30,8 @@ def main():
     presets = {'baseline': args.baseline_config.resolve(), 'detail': args.config.resolve()}
     scenes = {key: root/json.loads(path.read_text())['authored-scene'] for key,path in presets.items()}
     build_config = args.build_config.resolve()
+    limits_source=(root/'projects/sdf/sdf_authored.h').read_text()
+    limits={key:int(re.search(rf'authored_max_{key} = (\d+)',limits_source)[1]) for key in ('leaves','instructions')}
     assert (root/json.loads(build_config.read_text())['authored-scene']).resolve() == scenes['detail'].resolve()
     manifest = dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
         source_dirty=bool(subprocess.check_output(['git','status','--porcelain'],cwd=root,text=True).strip()),
@@ -37,7 +40,7 @@ def main():
         source_scene_sha256={name:sha(path) for name,path in scenes.items()},
         scene_counts={name:len(json.loads(path.read_text())['history']) for name,path in scenes.items()},
         configs={name:str(path.relative_to(root)) for name,path in presets.items()},
-        build_config=str(build_config.relative_to(root)), runs={}, views={})
+        build_config=str(build_config.relative_to(root)), authored_limits=limits, runs={}, views={})
     def save():
         (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     command=['python3',str(root/'projects/sdf/tools/qualify_history.py'),
@@ -76,6 +79,10 @@ def main():
         'backpack':('Backpack vents',['--yaw',3.49,'--pitch',.09,'--sun-azimuth',-20,'--distance',.82,'--target-y',-.015]),
         'side':('Side silhouette',['--yaw',1.5707963,'--pitch',.10]),
     }
+    if 'fieldkit' in args.config.stem:
+        views['face']=('Layered optic',views['face'][1])
+        views['upper']=('Service door and joints',views['upper'][1])
+        views['backpack']=('Power pods and vents',views['backpack'][1])
     for view,(label,options) in views.items():
         manifest['views'][view]=dict(label=label,options=options)
         for variant in ('baseline','detail'):

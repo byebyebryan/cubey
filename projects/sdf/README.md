@@ -48,6 +48,23 @@ Matched original/detail captures include close inspections and an extended
 edit history. The [detail evidence](../../docs/notes/sdf-robot-detail-evidence.md)
 records a sampler precision fix found while checking replay, and its cost.
 
+The [field-kit variant](http://starship:8787/reports/52b40ce5c726673b029f0f22ec2dd21d50d9a297e938beb2c161fe8deec734de/)
+continues the modeling with a rolled optic lip and
+seal, neck collars, tapered forearms and shins, wrist/ankle seals, elbow bearing
+caps, a recessed abdominal service door and two backpack power pods. Its 82
+shapes and 163 instructions use new torus, capped-cone and smooth-subtraction
+contracts, within a bounded 128-shape / 256-instruction budget. Both earlier
+robot scenes remain intact, including the cleaned lens in the detail model.
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit-build.json
+python3 projects/sdf/tools/author_robot_fieldkit.py
+```
+
+The field-kit build uses 50 seconds of construction followed by a twelve-second
+orbit. See the [field-kit evidence and vocabulary decisions](../../docs/notes/sdf-robot-fieldkit-evidence.md).
+
 The [settled procedural demo](http://starship:8787/reports/1db7103651a39de3b013aabf8424bbcb06e0a236627b8af3c32dcb9306dc6aa1/)
 uses width 0.024 and 4,096 cuts, with a 2,048-cut comparison. Four long bores
 open the presentation before the dense shorter cuts; a slightly oblique
@@ -204,13 +221,20 @@ desktop Export button uses that path; Reload reads the original input file.
 Hashes are validated when present, so handwritten modifications to an exported
 file must remove its old fingerprints or supply recomputed values.
 
-Named nodes support box, sphere, Y-axis capsule, Y-axis capped cylinder, union,
-subtraction and polynomial smooth union. Groups inherit material assignments
+Named nodes support box, sphere, Y-axis capsule, Y-axis capped cylinder, torus,
+capped cone, union, subtraction, polynomial smooth union and smooth subtraction.
+Groups inherit material assignments
 and apply local position, forward `rotation_xyzw` and positive uniform scale.
 Boxes use core `half_extent` plus `rounding`; spheres use `radius`; capsules and
-cylinders use `radius` and `half_length`. Union/smooth-union fold two or more
-children in order; subtraction has exactly two. Scene limits are 64 primitive
-leaves, 128 instructions, 16 materials, tree depth 24 and GPU stack depth 32.
+cylinders use `radius` and `half_length`. A torus revolves about local Y, using
+positive `major_radius` and `minor_radius`, with minor strictly below major.
+A capped cone uses `bottom_radius` at local Y = `-half_length` and `top_radius`
+at `+half_length`; radii are nonnegative with at least one positive. Equal radii
+give a cylinder, and a zero end radius gives a pointed cone. Torus and cone
+support the same inherited rotation, position and uniform scale as other nodes.
+Union/smooth-union fold two or more children in order; both subtraction forms
+have exactly two. Scene limits are 128 primitive leaves, 256 instructions,
+16 materials, tree depth 24 and GPU stack depth 32.
 The composite is clipped to the existing workspace box of half-width 0.499.
 Unary `group` nodes preserve a single child's local transform/material scope;
 `root: null` represents an empty workspace.
@@ -221,7 +245,14 @@ The desktop material controls expose those linear values. Hard unions preserve
 the earlier branch within a 1e-6 distance tie band. Subtraction inherits the
 retained body material unless `cut_material` selects newly exposed surfaces.
 Smooth unions take a `radius` and `blend_materials` flag; nested blends evaluate
-the full material expression. These appearance rules do not change geometry.
+the full material expression. Smooth subtraction also takes a positive `radius`:
+it applies a polynomial smooth maximum to the body and negated cutter distances.
+It removes up to `radius / 4` more material than a hard subtraction and preserves
+the builder's 1-Lipschitz bound. Without `cut_material` the body owns appearance;
+with it the cutter-facing half of the blend selects that material and the
+operator's part ID. The body owns an exact tie. Geometry smoothing and cut
+appearance remain independent. Smooth cutters use the same preview/history
+ordering as hard cuts. These appearance rules do not change geometry.
 
 Per-material edits upload a small table without rebuilding distance bricks.
 No appearance volume is allocated. The first piece uses dielectric direct
