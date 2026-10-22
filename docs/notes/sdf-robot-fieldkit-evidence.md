@@ -10,6 +10,10 @@ of this pass remains for the user.
 
 [Compare the field kit and watch its construction](http://starship:8787/reports/52b40ce5c726673b029f0f22ec2dd21d50d9a297e938beb2c161fe8deec734de/).
 
+The user subsequently found joint-orientation and leg-alignment problems in
+this pass. The [joint review](sdf-robot-joint-review.md) records their correction.
+The initial captures and measurements below retain their original pose.
+
 ## Content decisions
 
 `author_robot_fieldkit.py` builds on the cleaned detail scene, preserving its

@@ -32,6 +32,7 @@ the architecture and project guides remain current authority.
 - [SDF authored history evidence](sdf-authored-history-evidence.md): edit-by-edit robot construction, cut previews, step controls and native state/replay qualification.
 - [SDF robot detail evidence](sdf-robot-detail-evidence.md): the mechanical detail variant, matched visual comparisons and atlas-sampling precision correction.
 - [SDF robot field-kit evidence](sdf-robot-fieldkit-evidence.md): further authored assemblies, torus/cone/smooth-subtraction contracts and next vocabulary decisions.
+- [SDF robot joint review](sdf-robot-joint-review.md): pose-derived hinge frames, continuous leg centerlines and independent modeling-intent checks after user review.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
 - [Dynamic Environment Probe Coherence](dynamic-environment-probe-coherence.md): coherent full-cubemap publication and consumer handoff.

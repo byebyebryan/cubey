@@ -44,6 +44,12 @@ def main():
         build_config=str(build_config.relative_to(root)), authored_limits=limits, runs={}, views={})
     def save():
         (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+    if args.joint_views:
+        audit_command=['python3',str(root/'projects/sdf/tools/check_robot_joints.py'),
+            '--scene',str(scenes['detail']),'--output',str(out/'joint-audit.json')]
+        manifest['joint_audit_command']=audit_command
+        save()
+        subprocess.run(audit_command,cwd=root,check=True)
     command=['python3',str(root/'projects/sdf/tools/qualify_history.py'),
         '--config',str(build_config),
         '--output',str(out/'history')]

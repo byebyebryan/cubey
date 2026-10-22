@@ -65,6 +65,20 @@ python3 projects/sdf/tools/author_robot_fieldkit.py
 The field-kit build uses 50 seconds of construction followed by a twelve-second
 orbit. See the [field-kit evidence and vocabulary decisions](../../docs/notes/sdf-robot-fieldkit-evidence.md).
 
+The current field kit derives shoulder/elbow frames from the arm pivots and
+places each leg on a shared hip-to-ankle centerline. Neck, wrist, gripper and
+pod-collar frames are audited as well. See the
+[joint review](../../docs/notes/sdf-robot-joint-review.md) for the placement errors
+found after the initial modeling pass;
+[compare the revised elbows and front/profile leg views](http://starship:8787/reports/e05293386c1ae7bfeac7985541938ef1bc974b737f381d64ff09044422c99702/).
+
+```sh
+python3 projects/sdf/tools/check_robot_joints.py
+```
+
+`qualify_robot_detail.py --joint-views` runs this audit before native
+qualification and adds front/profile leg and opposite elbow inspection pairs.
+
 The [settled procedural demo](http://starship:8787/reports/1db7103651a39de3b013aabf8424bbcb06e0a236627b8af3c32dcb9306dc6aa1/)
 uses width 0.024 and 4,096 cuts, with a 2,048-cut comparison. Four long bores
 open the presentation before the dense shorter cuts; a slightly oblique

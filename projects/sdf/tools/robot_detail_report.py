@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Present the robot's mechanical detail pass with matched native comparisons."""
 import argparse
+import hashlib
 import html
 import json
 from pathlib import Path
@@ -16,7 +17,11 @@ def main():
     parser.add_argument('--sampling-audition',type=Path,help='Optional controlled sampler comparison receipt')
     parser.add_argument('--sampler-regression',type=Path,help='Optional existing-renderer regression output')
     parser.add_argument('--fieldkit',action='store_true',help='Present the field-kit variant against the preceding detail model')
+    parser.add_argument('--joints',action='store_true',help='Present the joint alignment correction against the previous field kit')
+    parser.add_argument('--joint-audit',type=Path)
+    parser.add_argument('--previous-joint-audit',type=Path)
     args=parser.parse_args()
+    args.fieldkit=args.fieldkit or args.joints
     source,out=args.input.resolve(),args.output.resolve()
     data=json.loads((source/'manifest.json').read_text())
     history=json.loads((source/'history/manifest.json').read_text())
@@ -38,6 +43,15 @@ def main():
                   'http://starship:8787/reports/5d6bfde3c2493278b5c68e1ddce68381942ff9d8ef60672a553aa4b6a52f0c7f/')
     shape_limit=data.get('authored_limits',{}).get('leaves',128 if args.fieldkit else 64)
     orbit=history['duration']-history['construction_seconds']
+    comparison_note=f'This version uses {count-baseline_count} more primitive leaves than the comparison model, reaching {count} of the study’s {shape_limit}-shape limit. The preceding scene and its generator output remain intact. The four plain materials carry across both models.'
+    if args.joints:
+        assert args.joint_audit and args.previous_joint_audit
+        baseline_label,detail_label='Previous joints','Revised joints'
+        title,heading='Survey robot joint alignment','Joints that follow the pose.'
+        lead='The elbow hardware now follows each arm’s bend plane. Shared pivots align the upper legs, tapered shins and ankle seals, with feet centered beneath them. Compare the front and profile close-ups as well as the full model.'
+        features='Elbow caps and complete retaining rings share a hinge axis perpendicular to both arm links. Shoulder covers follow the upper-arm swing plane and seat into the shoulder bearings. Each leg uses one hip-to-ankle centerline; its shin, ankle collar, foot and sole follow that placement. The tilted head and upper neck collar share the neck pivot.'
+        previous_url='http://starship:8787/reports/52b40ce5c726673b029f0f22ec2dd21d50d9a297e938beb2c161fe8deec734de/'
+        comparison_note=f'Both versions use {count} shapes, the same four materials and the same rendering settings. The generator now places the revised joints; the earlier field-kit capture remains available in the linked previous study.'
     assert data['replay_scene_bytes_identical'] and history['final_matches_static_fingerprints']
     assert history['video_builds']==count+1 and json.loads((source/'history/video-check.json').read_text())['passed']
     assert controls['passed'] and controls['binary_sha256']==data['binary_sha256']==history['binary_sha256']
@@ -55,7 +69,25 @@ def main():
         assert regression['binary_sha256']==data['binary_sha256'] and regression['shader_sha256']==data['shader_sha256']
         shutil.copytree(args.sampler_regression,out/'data/sampler-regression')
         sampler_links+=' · <a href="data/sampler-regression/manifest.json">Primitive, material and legacy regressions</a>'
-    if args.fieldkit:
+    if args.joints:
+        audit=json.loads(args.joint_audit.read_text())
+        previous_audit=json.loads(args.previous_joint_audit.read_text())
+        assert audit['passed'] and not previous_audit['passed']
+        assert audit['scene_sha256']==data['source_scene_sha256']['detail']
+        assert previous_audit['scene_sha256']==data['source_scene_sha256']['baseline']
+        shutil.copy2(args.joint_audit,out/'data/joint-audit.json')
+        shutil.copy2(args.previous_joint_audit,out/'data/previous-joint-audit.json')
+        repo=Path(__file__).resolve().parents[3]
+        for name,receipt in (('previous',previous_audit),('current',audit)):
+            scene_path=Path(receipt['scene'])
+            if not scene_path.is_absolute(): scene_path=repo/scene_path
+            assert hashlib.sha256(scene_path.read_bytes()).hexdigest()==receipt['scene_sha256']
+            shutil.copy2(scene_path,out/f'data/scenes/{name}-fieldkit.json')
+        shutil.copy2(Path(__file__).with_name('check_robot_joints.py'),out/'data/scenes/check_robot_joints.py')
+        passed=sum(check['passed'] for check in previous_audit['checks'])
+        technical_details=f'''<details open><summary>Checking modeling intent as well as SDF correctness</summary><p>The earlier model passed its renderer checks but had geometry mistakes: fixed forward-facing elbow axes, rings intersecting the bent forearms, independently placed leg segments and laterally offset feet. This pass derives their placements from shared joint pivots.</p><p>An independent audit reads the saved scene, composes its transforms and checks link endpoints, hinge-axis perpendicularity, bearing seating, collar axes, leg centerlines, centered feet and the head’s neck pivot. The preceding model passes {passed}/{len(previous_audit['checks'])} checks; the revision passes all {len(audit['checks'])}. Native front, side and opposite three-quarter inspections then check whether the assembled geometry reads clearly.</p><p><a href="data/joint-audit.json">Current joint audit</a> · <a href="data/previous-joint-audit.json">Previous model audit</a> · <a href="data/scenes/check_robot_joints.py">Audit script</a> · <a href="data/scenes/previous-fieldkit.json">Previous explicit scene</a> · <a href="data/scenes/current-fieldkit.json">Revised explicit scene</a>. Both models retain {count} primitive leaves and the same palette. These are static modeling constraints; the build history reveals the saved parts.</p></details>'''
+        foundation_note='This pass corrects authored joint placements and orientations on the existing renderer; binary and shaders match the preceding field-kit study.'
+    elif args.fieldkit:
         technical_details=f'''<details open><summary>What the extra vocabulary buys us</summary><p><strong>Torus:</strong> optic lips, seals and retaining rings in one primitive. <strong>Capped cone:</strong> tapered optics, forearms, shins and power pods without a stack of cylinders. <strong>Smooth subtraction:</strong> a softened display recess and service-door opening, scoped to their own bodies.</p><p>The torus uses distance to a revolved circle. The capped cone revolves the minimum distance to two cap segments and a side segment. Smooth subtraction uses a polynomial smooth maximum of the body distance and negated cutter distance. These retain the conservative distance bound needed by the existing brick builder. Cut materials stay explicit; the retained body owns ties.</p><p>The program budget is 128 shapes / 256 instructions, with the existing tree and stack depth limits. The field program buffer grows by 8 KiB. Atlas dimensions, palette and resolution carry over from the preceding model. Native fixtures cover pointed and equal-ended cones, transformed rings, cut-material inheritance and the 128-shape boundary. {sampler_links}</p></details>'''
         foundation_note='This pass adds the torus, capped cone and smooth-subtraction contracts to the existing authored geometry/material foundation.'
     else:
@@ -65,15 +97,27 @@ def main():
     css=template.split('<style>')[1].split('</style>')[0]
     video_js=template.split('<script>')[1].split('const stages=')[0]
     views=data['views']
-    if args.fieldkit:
+    if args.fieldkit and not args.joints:
         views={key:dict(value) for key,value in views.items()}
         for key,label in (('face','Layered optic'),('upper','Service door and joints'),('backpack','Power pods and vents')):
             views[key]['label']=label
-    view_buttons=''.join(f'<button data-view="{key}" aria-pressed="{str(key=="hero").lower()}">{html.escape(value["label"])}</button>' for key,value in views.items())
+    if args.joints:
+        order=['upper','arms-left','legs-front','legs-side','hero','front','side','rear','face','feet','backpack']
+        views={key:views[key] for key in order}
+    initial='upper' if args.joints else 'hero'
+    initial_label=html.escape(views[initial]['label'])
+    view_buttons=''.join(f'<button data-view="{key}" aria-pressed="{str(key==initial).lower()}">{html.escape(value["label"])}</button>' for key,value in views.items())
     def preview(node):return next(p['time'] for p in history['previews'] if p['node']==node)*(history['frames']-1)/history['frames']
     chapters=[(0,'Start'),(preview('head-left-fastener-cut'),'Head fastener'),
               (preview('chest-display-cut'),'Display recess'),(preview('right-gripper-slot'),'Open the gripper'),
               (history['construction_seconds'],'Finished orbit')]
+    if args.joints:
+        def committed(node):
+            index=next(i+1 for i,step in enumerate(history['history']) if step['node']==node)
+            return history['steps'][index]['time']*(history['frames']-1)/history['frames']
+        chapters=[(0,'Start'),(committed('right-shoulder-cap'),'Shoulder frame'),
+                  (committed('right-wrist-seal'),'Elbow and forearm'),
+                  (committed('right-sole'),'Leg and foot'),(history['construction_seconds'],'Finished orbit')]
     chapter_buttons=''.join(f'<button disabled data-time="{time}">{label}</button>' for time,label in chapters)
     step_options=''.join(f'<option value="{s["index"]}" {"selected" if s["index"]==count else ""}>{s["index"]:02} · {html.escape(s["label"])}</option>' for s in history['steps'])
     rows=''
@@ -97,13 +141,13 @@ button:disabled{{opacity:.45;cursor:default}}video{{height:auto;aspect-ratio:4/3
 <p class="lead">{lead}</p>
 <div class="controls" aria-label="Comparison treatment"><button data-mode="baseline" aria-pressed="false">{baseline_label}</button><button data-mode="detail" aria-pressed="true">{detail_label}</button><button data-mode="compare" aria-pressed="false">Compare</button></div>
 <div class="controls" aria-label="Native comparison view">{view_buttons}</div>
-<div id="comparison" class="stage" data-mode="detail" data-view="hero"><img id="baseline-image" src="data/captures/baseline-hero.png" alt="{baseline_label}, full model"><div class="overlay"><img id="detail-image" src="data/captures/detail-hero.png" alt="{detail_label}, full model"></div><span class="image-label old-label">{baseline_label}</span><span class="image-label new-label">{detail_label}</span><div class="split-line"></div></div>
+<div id="comparison" class="stage" data-mode="detail" data-view="{initial}"><img id="baseline-image" src="data/captures/baseline-{initial}.png" alt="{baseline_label}, {initial_label}"><div class="overlay"><img id="detail-image" src="data/captures/detail-{initial}.png" alt="{detail_label}, {initial_label}"></div><span class="image-label old-label">{baseline_label}</span><span class="image-label new-label">{detail_label}</span><div class="split-line"></div></div>
 <div id="split-controls" class="range-row" hidden><label for="split">Before / after</label><input id="split" type="range" min="0" max="100" value="50" aria-label="Before and after comparison split"></div>
-<p class="note" id="view-caption" aria-live="polite">Full model · identical camera and lighting for both versions.</p>
-<p class="note"><a id="baseline-link" href="data/captures/baseline-hero.png">{baseline_label} PNG</a> · <a id="detail-link" href="data/captures/detail-hero.png">{detail_label} PNG</a>. Rear and backpack inspections use a rear-facing sun; each pair shares the same settings.</p>
-<h2>Details with a job to do</h2>
+<p class="note" id="view-caption" aria-live="polite">{initial_label} · identical camera and lighting for both versions.</p>
+<p class="note"><a id="baseline-link" href="data/captures/baseline-{initial}.png">{baseline_label} PNG</a> · <a id="detail-link" href="data/captures/detail-{initial}.png">{detail_label} PNG</a>. Rear and backpack inspections use a rear-facing sun; each pair shares the same settings.</p>
+<h2>{'Connections that meet' if args.joints else 'Details with a job to do'}</h2>
 <p>{features}</p>
-<p>This version uses {count-baseline_count} more primitive leaves than the comparison model, reaching {count} of the study's {shape_limit}-shape limit. The preceding scene and its generator output remain intact. The four plain materials carry across both models.</p>
+<p>{comparison_note}</p>
 <h2>Watch the detailed robot take shape</h2>
 <div class="hero-video"><video controls preload="metadata" width="1280" height="960" data-video-src="data/history/presentation.mp4" poster="data/captures/detail-hero.png" aria-label="Native detailed robot construction and final orbit"></video></div>
 <p class="note" id="video-caption" aria-live="polite">Build the detailed robot from an empty workspace.</p>
