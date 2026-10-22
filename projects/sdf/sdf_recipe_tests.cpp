@@ -67,6 +67,8 @@ int main() {
                 "stick shell must match reference dimensions");
     }
     const auto negative = make_recipe("negative-sticks", 42, 72);
+    require(recipe_hash(negative) == 0xc92ff9ee08a5af98ULL,
+            "the published rounded-cube recipe must remain unchanged");
     require(negative.edits.size() == 73 && negative.edits.front().operation == Operation::Fill,
             "negative sticks must retain one solid plus every cutter");
     require(recipe_hash(negative) == recipe_hash(make_recipe("negative-sticks", 42, 72)),
@@ -102,6 +104,43 @@ int main() {
     require(too_many_cutters, "generated cutters plus base must fit the recipe loader limit");
     validate_carve_recipe(negative_loaded);
     validate_carve_recipe(intact);
+    const auto spherical = make_recipe("negative-sphere", 42, 72);
+    validate_carve_recipe(spherical);
+    const auto& sphere = spherical.edits.front();
+    close(edit_distance({0, 0, 0}, sphere), -0.36F);
+    for (const auto direction :
+         {Vec3{1, 0, 0}, Vec3{0, 1, 0}, Vec3{0, 0, -1}, glm::normalize(Vec3{1, 2, 3})}) {
+        close(edit_distance(direction * 0.36F, sphere), 0);
+        close(edit_distance(direction * 0.40F, sphere), 0.04F);
+    }
+    auto moved_sphere = sphere;
+    moved_sphere.center = {0.05F, -0.06F, 0.04F};
+    moved_sphere.rotation = cubey::math::euler_xyz_quat({0.3F, 0.7F, -0.4F});
+    close(edit_distance(moved_sphere.center + glm::normalize(Vec3{1, 2, 3}) * 0.36F, moved_sphere),
+          0);
+    auto spherical_tail = spherical;
+    auto box_tail = negative;
+    spherical_tail.edits.erase(spherical_tail.edits.begin());
+    box_tail.edits.erase(box_tail.edits.begin());
+    require(recipe_hash(spherical_tail) == recipe_hash(box_tail),
+            "sphere comparison must keep every cutter identical to the rounded cube");
+    const auto sphere_loaded = parse_recipe(serialize_recipe(spherical));
+    require(recipe_hash(sphere_loaded) == recipe_hash(spherical),
+            "zero-core spheres must survive explicit recipe serialization");
+    require(make_recipe("negative-sphere", 42, 0).edits.size() == 1,
+            "zero cutters must retain the spherical base");
+    for (const auto extent : {Vec3{0, 0.1F, 0.1F}, Vec3{-0.1F}, Vec3{0}}) {
+        bool rejected_core = false;
+        try {
+            auto invalid = sphere;
+            invalid.half_extent = extent;
+            invalid.rounding = glm::all(glm::equal(extent, Vec3{0})) ? 0.0F : 0.02F;
+            validate_edit(invalid);
+        } catch (const std::invalid_argument&) {
+            rejected_core = true;
+        }
+        require(rejected_core, "mixed-zero, negative, and unrounded point cores remain invalid");
+    }
     for (const auto& invalid : {first, Recipe{}}) {
         bool rejected_carve = false;
         try {

@@ -1,0 +1,23 @@
+{
+  "scene": "negative-sphere",
+  "seed": 42,
+  "count": 72,
+  "atlas-axis": 92,
+  "motion": "carve",
+  "duration": 24,
+  "construction-seconds": 16,
+  "orbit-turns": 0.5,
+  "cutter-cue": true,
+  "pitch": 0.4,
+  "yaw": 0.7,
+  "distance": 1.6,
+  "target-y": 0,
+  "sun-elevation": 35,
+  "sun-azimuth": 160,
+  "shadows": 1,
+  "ground": false,
+  "ao": false,
+  "roughness": 0.36,
+  "exposure": 0.7,
+  "supersample": 2
+}

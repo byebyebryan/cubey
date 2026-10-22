@@ -20,7 +20,7 @@ enum class Operation : std::uint32_t {
 struct BoxEdit {
     math::Vec3 center{0.0F};
     math::Quat rotation = math::identity_quat();
-    math::Vec3 half_extent{0.2F};
+    math::Vec3 half_extent{0.2F}; // Positive box core; all zero + rounding > 0 is an exact sphere.
     float rounding = 0.0005F;
     Operation operation = Operation::Fill;
 };

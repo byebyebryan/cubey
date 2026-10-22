@@ -10,6 +10,7 @@ parser.add_argument("--output",type=Path,default=Path("outputs/sdf/qualification
 parser.add_argument("--config",type=Path,help="scene preset; interactions use static motion")
 parser.add_argument("--height",type=int,default=600)
 parser.add_argument("--carving-controls",action="store_true",help="exercise carving scrub and explicit regeneration at 850px height")
+parser.add_argument("--expected-scene",choices=("negative-sticks","negative-sphere"),default="negative-sticks")
 args=parser.parse_args()
 if args.carving_controls and (not args.config or args.height != 850):
     raise SystemExit("Carving controls require --config and --height 850")
@@ -105,15 +106,15 @@ if args.carving_controls:
     import re
     prefixes=[int(re.search(r"edits=(\d+)",line)[1]) for line in build_lines]
     assert len(prefixes)==6 and prefixes[:3]==[73,1,73] and 36<=prefixes[3]<=42 and prefixes[4:]==[1,73],prefixes
-    assert "regenerated scene=negative-sticks" in text,text
+    assert f"regenerated scene={args.expected_scene}" in text,text
     old_hash=re.search(r"sdf: recipe hash=(\w+)",text)[1]
-    new_hash=re.search(r"regenerated scene=negative-sticks hash=(\w+)",text)[1]
+    new_hash=re.search(rf"regenerated scene={args.expected_scene} hash=(\w+)",text)[1]
     assert old_hash!=new_hash,"Seed editing/regeneration did not change the full recipe"
 else:
     assert builds==1,f"camera/resize/input rebuilt the geometry {builds} times"
 receipt={"passed":True,"display":"isolated Xvfb","command":command,"field_builds":builds,"actions":["resize twice","pointer orbit","scroll zoom","Space","R","Escape"],"log":str(log.relative_to(out))}
 if args.carving_controls:
     receipt.update(prefixes=prefixes,initial_hash=old_hash,regenerated_hash=new_hash)
-    receipt["actions"] += ["select Carve", "scrub to end", "scrub middle/back", "stage seed without regeneration", "explicitly regenerate negative sticks", "scrub regenerated recipe"]
+    receipt["actions"] += ["select Carve", "scrub to end", "scrub middle/back", "stage seed without regeneration", f"explicitly regenerate {args.expected_scene}", "scrub regenerated recipe"]
 (out/"windowed-interaction.json").write_text(json.dumps(receipt,indent=2)+"\n")
 print(json.dumps(receipt))

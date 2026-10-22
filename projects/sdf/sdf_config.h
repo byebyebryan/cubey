@@ -36,7 +36,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         return spec;
     };
     auto scene = option("scene", "Deterministic box recipe", config::ValueType::Enum);
-    scene.enum_values = {"box", "rotated", "cut", "sticks", "negative-sticks"};
+    scene.enum_values = {"box", "rotated", "cut", "sticks", "negative-sticks", "negative-sphere"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
     motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
@@ -80,7 +80,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("export-recipe", "Save the complete ordered recipe", config::ValueType::Path),
               c.export_recipe_path)
         .bind(option("seed", "Seed", config::ValueType::UInt32), c.seed)
-        .bind(option("count", "Sticks (negative-sticks: cutters, excluding the base)",
+        .bind(option("count", "Sticks (negative scenes: cutters, excluding the base)",
                      config::ValueType::UInt32),
               c.count)
         .bind(option("debug", "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks)",

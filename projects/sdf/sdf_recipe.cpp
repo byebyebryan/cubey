@@ -46,8 +46,12 @@ bool finite(math::Vec3 value) {
 void validate_edit(const BoxEdit& edit) {
     const auto q = edit.rotation;
     const auto norm_squared = glm::dot(q, q);
-    if (!finite(edit.center) || !finite(edit.half_extent) ||
-        glm::any(glm::lessThanEqual(edit.half_extent, math::Vec3{0.0F})) ||
+    const bool box_core = glm::all(glm::greaterThan(edit.half_extent, math::Vec3{0.0F}));
+    // box_distance(p, vec3(0), radius) is exactly length(p) - radius.
+    // Permit that sphere case explicitly, without epsilon extents or a GPU tag.
+    const bool sphere_core =
+        glm::all(glm::equal(edit.half_extent, math::Vec3{0.0F})) && edit.rounding > 0.0F;
+    if (!finite(edit.center) || !finite(edit.half_extent) || (!box_core && !sphere_core) ||
         !std::isfinite(edit.rounding) || edit.rounding < 0.0F || !std::isfinite(q.x) ||
         !std::isfinite(q.y) || !std::isfinite(q.z) || !std::isfinite(q.w) ||
         !std::isfinite(norm_squared) || norm_squared < 1.0e-12F ||
@@ -98,15 +102,16 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
     Recipe recipe;
     recipe.generator = scene == "sticks" ? "sticks-pcg32-v1" : std::string(scene);
     recipe.seed = seed;
-    if (scene == "negative-sticks") {
+    if (scene == "negative-sticks" || scene == "negative-sphere") {
         if (count > 65535U)
             throw std::invalid_argument(
-                "negative-sticks accepts at most 65535 cutters plus its base");
-        recipe.generator = "negative-sticks-pcg32-v1";
+                "negative scenes accept at most 65535 cutters plus their base");
+        const bool sphere = scene == "negative-sphere";
+        recipe.generator = sphere ? "negative-sphere-pcg32-v1" : "negative-sticks-pcg32-v1";
         recipe.edits.reserve(static_cast<std::size_t>(count) + 1);
         BoxEdit base;
-        base.half_extent = {0.27F, 0.27F, 0.27F};
-        base.rounding = 0.018F;
+        base.half_extent = sphere ? math::Vec3{0.0F} : math::Vec3{0.27F};
+        base.rounding = sphere ? 0.36F : 0.018F;
         recipe.edits.push_back(base);
         Random random(seed);
         constexpr float tau = 2.0F * std::numbers::pi_v<float>;
@@ -149,7 +154,7 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
     }
     if (scene != "sticks" || count > 65536U)
         throw std::invalid_argument("SDF scene must be box, rotated, cut, sticks or "
-                                    "negative-sticks (sticks count <= 65536)");
+                                    "negative-sticks or negative-sphere (sticks count <= 65536)");
     Random random(seed);
     constexpr float tau = 2.0F * std::numbers::pi_v<float>;
     recipe.edits.reserve(count);

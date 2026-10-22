@@ -274,23 +274,25 @@ class App {
             ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
             ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
             ImGui::Separator();
-            const char* scene_labels[]{"Sticks", "Negative sticks", "Box", "Rotated box",
-                                       "Cut fixture"};
-            const std::string scene_names[]{"sticks", "negative-sticks", "box", "rotated", "cut"};
+            const char* scene_labels[]{"Sticks", "Negative sticks", "Negative sphere",
+                                       "Box",    "Rotated box",     "Cut fixture"};
+            const std::string scene_names[]{"sticks", "negative-sticks", "negative-sphere",
+                                            "box",    "rotated",         "cut"};
             int scene = 0;
-            for (int i = 0; i < 5; ++i)
+            for (int i = 0; i < 6; ++i)
                 if (config_.scene == scene_names[i])
                     scene = i;
-            if (ImGui::Combo("Generator", &scene, scene_labels, 5))
+            if (ImGui::Combo("Generator", &scene, scene_labels, 6))
                 config_.scene = scene_names[scene];
             if (!config_.recipe_path.empty())
                 ImGui::TextWrapped("Loaded explicit recipe. Generate scene replaces it.");
             ImGui::InputScalar("Seed", ImGuiDataType_U32, &config_.seed);
-            ImGui::InputScalar(config_.scene == "negative-sticks" ? "Cutter count" : "Stick count",
-                               ImGuiDataType_U32, &config_.count);
+            const bool negative =
+                config_.scene == "negative-sticks" || config_.scene == "negative-sphere";
+            ImGui::InputScalar(negative ? "Cutter count" : "Stick count", ImGuiDataType_U32,
+                               &config_.count);
             if (ImGui::Button("Generate scene")) {
-                config_.count =
-                    std::min(config_.count, config_.scene == "negative-sticks" ? 65535U : 65536U);
+                config_.count = std::min(config_.count, negative ? 65535U : 65536U);
                 regenerate_requested_ = true;
             }
             if (!error_.empty())
