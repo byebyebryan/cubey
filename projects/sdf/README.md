@@ -1,19 +1,29 @@
 # SDF
 
-Procedural SDF rendering project derived from projectR, using rounded-box edits
-and exact spheres represented by zero-size box cores. The
+SDF rendering and authored-content experiment derived from projectR. Procedural
+rounded-box edits and named primitive CSG scenes share sparse distance bricks,
+mapless self-shadows and Cubey's atmosphere/HDR presentation. The original
 [implementation plan](../../docs/notes/sdf-projectr-port-plan.md) defines the
 checkpoints; the [source review](../../docs/notes/projectr-architecture-review.md)
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
+
+The first authored piece is a small survey robot: 43 shapes, grouped local cuts,
+a tilted head and raised arm, with ivory, teal, dark rubber and amber materials.
+[Watch the native turntable and inspect its views](http://starship:8787/reports/eafb4462b9072db9f445b21e5d9402466d78e11fd70e23fdcba7d2bf263c8540/).
+Run `--config projects/sdf/presets/survey-robot.json`. The
+[authored evidence](../../docs/notes/sdf-authored-content-evidence.md) records
+the blockout audition, native inspection views, qualification and measurements.
+This is the first content attempt for visual review; its technical checks do
+not establish artistic success.
 
 The [settled procedural demo](http://starship:8787/reports/1db7103651a39de3b013aabf8424bbcb06e0a236627b8af3c32dcb9306dc6aa1/)
 uses width 0.024 and 4,096 cuts, with a 2,048-cut comparison. Four long bores
 open the presentation before the dense shorter cuts; a slightly oblique
 opening view exposes the first hole's inner wall. Run
 `--config projects/sdf/presets/negative-stick-ball-dense.json`, or add
-`--count 2048`. This settles the procedural tech demo; an impressive visual
-showcase would need a separate authored-content effort. See the
+`--count 2048`. This settles the procedural tech demo that preceded the authored
+robot. See the
 [closeout note](../../docs/notes/sdf-procedural-prototype-closeout.md).
 
 The earlier [dense carving study](http://starship:8787/reports/3a21ce65daedf473f4596ca205421d3d2119e20f73ecb8d79388442b9baae090/)
@@ -22,11 +32,9 @@ retains the full geometry qualification and cutter-mode comparison.
 mode control applies with Generate scene. See the
 [dense-bore evidence](../../docs/notes/sdf-dense-bore-evidence.md).
 
-The proposed next experiment is a
-[first authored robot](../../docs/notes/sdf-authored-content-plan.md): judge a
-gray blockout early, then add grouped shapes, a small primitive vocabulary and
-plain materials. Procedural patterns are optional; image textures and UV
-mapping are outside that plan. The procedural demo above remains settled.
+The [authored content plan](../../docs/notes/sdf-authored-content-plan.md)
+sets the small primitive vocabulary and plain-material scope. The robot uses
+no procedural patterns, image textures or UV mapping.
 
 The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
 starts from a solid and carves intersecting through-holes with a deterministic
@@ -75,11 +83,14 @@ presentation preset use hard self-shadows against the shared atmosphere sky,
 with the ground plane disabled. The report links the earlier ground-plane
 study, whose downward camera and receiver hid the sky.
 
-The native renderer builds a four-stage hierarchy at depths 2/4/6/8, filters
-ordered box edits into leaf lists and samples 8-cubed R16F bricks. Paired fields
-promote only after a completed batch of at most 128 edits. The complete CPU
-recipe remains independent of those caches. Empty cells use conservative box
-exits; hits write surface depth, and exhaustion is visible in magenta.
+The native renderer builds a four-stage hierarchy at depths 2/4/6/8 and samples
+8-cubed R16F bricks. The procedural builder filters ordered box edits into leaf
+lists and promotes completed batches of at most 128 edits. The authored builder
+classifies and samples complete grouped expressions; geometry changes currently
+rebuild the entire field. Both publish a replacement only after successful
+construction. Complete CPU scene descriptions remain independent of those
+caches. Empty cells use conservative box exits; hits write surface depth, and
+exhaustion is visible in magenta.
 
 The scene uses Cubey's render graph, shared HDR post, atmosphere sky integration
 and atmosphere-derived direct light/diffuse irradiance. Construction, orbit and
@@ -90,8 +101,8 @@ See the [evidence record](../../docs/notes/sdf-implementation-evidence.md).
 
 ```sh
 cmake --preset dev
-cmake --build --preset dev --target cubey_project_sdf cubey_project_sdf_recipe_tests
-ctest --preset dev -R '^sdf_recipe_tests$'
+cmake --build --preset dev --target cubey_project_sdf cubey_project_sdf_recipe_tests cubey_project_sdf_authored_tests
+ctest --preset dev -R '^sdf_(recipe|authored)_tests$'
 build/dev/projects/sdf/sdf
 build/dev/projects/sdf/sdf --headless --scene cut --debug 1 --no-ground \
   --validate-field --require-validation --output /tmp/sdf-cut.png
@@ -109,6 +120,8 @@ solid; maximum 65,535). The original `sticks` generator is unchanged.
 `--yaw`, `--pitch` and `--distance`
 specify the capture camera in radians/workspace units. `--debug` selects shaded
 (0), normal (1), ray-distance (2), traversal-work (3) or brick-cell (4) display.
+Authored scenes additionally expose part identity (5), base color (6) and
+roughness (7).
 Hard mapless self-shadows are the default (`--shadows 1`); `--shadows 0` disables
 them. The ground plane is off by default; `--ground` enables it for diagnostics.
 `--shadows 2` explicitly selects
@@ -117,21 +130,87 @@ four-sample soft shadows, with angular radius controlled by `--shadow-softness`.
 environment visibility. Neither mode provides indirect bounced light.
 
 `--sun-elevation` and `--sun-azimuth` use degrees; `--exposure` uses stops.
-`--roughness` adjusts the plain material. `--supersample 2` renders at twice
+`--roughness` adjusts the legacy plain material or the `--clay` inspection
+override. Authored materials carry their own roughness. `--supersample 2` renders at twice
 the output width/height and filters through the shared post pass, useful for
 thin-feature captures. Default sampling is 1 for timing runs. The sky uses the
 foundation's backdrop horizon remapping; this does not remap surface lighting.
 
 `--occluder` draws a raster plane crossing the sculpture to check surface depth.
-`--validate-field` compares GPU rays against direct CPU box CSG, including axis
-parallel and inside-solid rays. `--validate-batches` checks empty/reset and
-128/129/256/257-edit scenes with an individually visible box per edit.
+`--validate-field` compares GPU rays against direct CPU CSG, including axis
+parallel and inside-solid rays. Authored scenes also compare direct GPU distance,
+material and part evaluation with the CPU and check material-only cache reuse.
+`--validate-batches` checks empty/reset and 128/129/256/257-edit scenes with an
+individually visible box per edit. In authored mode it additionally checks failed
+build rollback, recoloring and transitions between scene formats.
 
 `--export-recipe /path/scene.json` saves every ordered edit, including the final
 partial batch. `--recipe /path/scene.json` rebuilds from that explicit list.
 The versioned file stores forward quaternions as xyzw, generator metadata and
 a geometry hash; invalid geometry, unsupported versions and hash mismatches
 fail before upload. The generator seed alone is not the saved sculpture.
+
+## Authored scenes
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot.json \
+  --headless --validate-field --require-validation --output /tmp/sdf-robot.png
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot.json \
+  --export-authored /tmp/survey-robot.json
+python3 projects/sdf/tools/author_robot.py
+```
+
+`--authored-scene PATH` loads the separate version-2 `cubey.sdf.scene` format.
+The [explicit robot scene](scenes/survey-robot.json) and its
+[authoring helper](tools/sdf_author.py) demonstrate the contract. Loading the JSON
+does not require Python. `--export-authored PATH` saves the named tree with the
+current material values and separate geometry/appearance fingerprints. The
+desktop Export button uses that path; Reload reads the original input file.
+Hashes are validated when present, so handwritten modifications to an exported
+file must remove its old fingerprints or supply recomputed values.
+
+Named nodes support box, sphere, Y-axis capsule, Y-axis capped cylinder, union,
+subtraction and polynomial smooth union. Groups inherit material assignments
+and apply local position, forward `rotation_xyzw` and positive uniform scale.
+Boxes use core `half_extent` plus `rounding`; spheres use `radius`; capsules and
+cylinders use `radius` and `half_length`. Union/smooth-union fold two or more
+children in order; subtraction has exactly two. Scene limits are 64 primitive
+leaves, 128 instructions, 16 materials, tree depth 24 and GPU stack depth 32.
+The composite is clipped to the existing workspace box of half-width 0.499.
+
+Materials store linear RGB `base_color`, scalar `roughness` (0.05–1) and RGB
+`emission` (0–32). The authoring helper converts sRGB hex colors to linear RGB.
+The desktop material controls expose those linear values. Hard unions preserve
+the earlier branch within a 1e-6 distance tie band. Subtraction inherits the
+retained body material unless `cut_material` selects newly exposed surfaces.
+Smooth unions take a `radius` and `blend_materials` flag; nested blends evaluate
+the full material expression. These appearance rules do not change geometry.
+
+Per-material edits upload a small table without rebuilding distance bricks.
+No appearance volume is allocated. The first piece uses dielectric direct
+lighting and sky diffuse irradiance; environment specular, metalness, glass,
+GI and procedural surface patterns remain outside this implementation.
+Static/orbit playback is supported for authored scenes; construction,
+presentation and carve require the legacy edit sequence.
+
+Reproduce the authored native checks and presentation in fresh directories:
+
+```sh
+python3 projects/sdf/tools/qualify_authored.py --video --output outputs/sdf/robot-review-new
+xvfb-run -a -s '-screen 0 1280x1100x24' env CUBEY_SDF_PRIVATE_XVFB=1 \
+  python3 projects/sdf/tools/check_authored_window.py \
+  --config projects/sdf/presets/survey-robot.json --height 1000 \
+  --output outputs/sdf/robot-controls-new
+```
+
+The qualification pins native binary/shader hashes, runs eleven expression
+fixtures and lifecycle/legacy checks, captures inspection views, replays the
+explicit scene, measures matched GPU treatments and records a 16-second orbit.
+It decodes all 480 video frames and screens the visible exhaustion color.
+The private Xvfb check exercises resize/input and a material roughness edit.
+
+## Procedural recipes
 
 Use the [stick-ball preset](presets/stick-ball.json) for the main visual scene:
 

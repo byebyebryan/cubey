@@ -2,12 +2,20 @@
 
 Date: 2026-10-21
 
-Status: implementation in progress after the [procedural prototype closeout](sdf-procedural-prototype-closeout.md).
+Status: implemented through native presentation and qualification after the
+[procedural prototype closeout](sdf-procedural-prototype-closeout.md); user visual
+review of the first robot remains pending.
 The [authored content evidence](sdf-authored-content-evidence.md) records native
 checkpoints and visual decisions.
 The user selected a small stylized robot or mechanical toy as the first subject.
 Appearance uses plain materials and, optionally, procedural or noise patterns.
 Image textures and UV mapping are outside this experiment.
+
+The delivered robot has 43 leaves, 85 instructions and four plain materials.
+This slightly exceeds the initial 20–40-leaf content estimate while staying
+within the 64-leaf limit. Procedural patterns were left off. The sections below
+retain the approved design and acceptance plan; current behavior belongs in
+the [project guide](../../projects/sdf/README.md#authored-scenes).
 
 ## First piece
 

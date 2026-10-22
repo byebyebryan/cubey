@@ -13,6 +13,39 @@ from qualify import distribution
 from sdf_author import box, cylinder, material, rotation, smooth_union, sphere, subtract, union, write_scene
 
 
+def check_video(path, width=1280, height=960, expected_frames=480):
+    """Screen the encoded presentation's visible exhaustion color without NumPy."""
+    high = bytes(int(value > 180) for value in range(256))
+    low = bytes(int(value < 90) for value in range(256))
+    frames = maximum = 0
+    size = width * height * 3
+    with subprocess.Popen(['ffmpeg', '-v', 'error', '-i', str(path), '-f', 'rawvideo',
+                           '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE) as proc:
+        try:
+            while data := proc.stdout.read(size):
+                if len(data) != size:
+                    raise RuntimeError('Incomplete decoded video frame')
+                # One bit in each byte represents a pixel's threshold result.
+                # Integer AND/bit_count combines the three channels in C.
+                r = int.from_bytes(data[0::3].translate(high), 'little')
+                g = int.from_bytes(data[1::3].translate(low), 'little')
+                b = int.from_bytes(data[2::3].translate(high), 'little')
+                maximum = max(maximum, (r & g & b).bit_count())
+                frames += 1
+            if proc.wait() != 0:
+                raise RuntimeError('Video decoding failed')
+        except BaseException:
+            proc.kill()
+            raise
+    if frames != expected_frames or maximum:
+        raise RuntimeError(f'Video screening failed: {frames} frames, {maximum} magenta pixels')
+    receipt = dict(passed=True, decoded_frames=frames, maximum_magenta_pixels_per_frame=maximum,
+        criterion='R > 180, G < 90, B > 180 in decoded RGB24',
+        scope='Checks the visible traversal-exhaustion color in every encoded frame; native ray fixtures are separate.')
+    (path.parent / 'video-check.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    return receipt
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -134,6 +167,7 @@ def main():
             'stream=codec_name,width,height,nb_frames,r_frame_rate', '-show_entries', 'format=duration', '-of', 'json', str(out / 'turntable.mp4')], text=True))
         assert manifest['video_probe']['format']['duration'] == '16.000000'
         assert manifest['video_probe']['streams'][0]['nb_frames'] == '480'
+        check_video(out / 'turntable.mp4')
         for seconds in (0, 4, 8, 12, 15.9):
             subprocess.run(['ffmpeg', '-v', 'error', '-ss', str(seconds), '-i', str(out / 'turntable.mp4'),
                 '-frames:v', '1', '-y', str(out / f'captures/video-{seconds}.png')], check=True)

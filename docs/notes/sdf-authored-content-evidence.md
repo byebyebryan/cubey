@@ -6,6 +6,9 @@ Implementation follows the [authored content plan](sdf-authored-content-plan.md)
 This record distinguishes native checks and assistant visual selection from
 the user's assessment of the resulting content.
 
+[Open the native robot review](http://starship:8787/reports/eafb4462b9072db9f445b21e5d9402466d78e11fd70e23fdcba7d2bf263c8540/)
+for the turntable, ten inspection views, blockout alternatives and receipts.
+
 ## Robot blockout
 
 `projects/sdf/tools/robot_blockout.py` authors three original silhouettes using
@@ -79,3 +82,113 @@ of 262,144 bricks in the axis-64 profile, allocating 912,874,672 bytes.
 These numbers identify the initial capture before the final multi-view,
 interaction and performance qualification. The image is
 `outputs/sdf/robot-first-colored.png`; its explicit exported scene is beside it.
+
+## Final native qualification
+
+The final runtime source is `7c1a37eee963ffcb6d961aed810e6afe9c297420`,
+with a clean worktree at capture start. `outputs/sdf/robot-qualified/manifest.json`
+records the binary and 13 compiled shader hashes, applied settings, commands,
+device/driver, captures and timing samples. Final geometry fingerprint is
+`583e07fe12717184`; appearance fingerprint is `4a91b557ad4f421d`. The last
+content refinement exposes the previously buried ivory backpack spine.
+
+The qualification passes all eleven expression fixtures: sphere, capsule,
+cylinder, isolated local cut, inherited cut material, smooth union, nested
+material blending, transformed group, thin gap, workspace clipping and the
+64-leaf boundary. Each requires Vulkan validation, the sampled-field ray oracle
+and direct CPU/GPU distance/material/part agreement. The robot passes 425 rays
+with 242 hits, zero mismatches, zero exhaustion and four finite-grid sampling
+ambiguities. Its maximum nominal first-hit difference is 0.0150168; maximum
+surface residual is 0.000117736. Direct comparison passes 1,030 points with
+maximum distance difference 5.96046e-8, zero material error and no part mismatch.
+Those tolerances were not relaxed for the new content.
+
+Native lifecycle checks pass failed-build rollback, material-only cache reuse,
+legacy/authored transitions, sequential batch/reset boundaries and subtraction
+fixtures. The intentionally over-capacity authored build preserves the previous
+published nodes, statistics and build count. The explicit final scene exports,
+reloads and exports byte for byte, with both fingerprints retained. This is a
+scene-persistence result, not a claim of bit-identical replay images. The legacy
+cut and 2,048-stick scenes pass their ray checks; authored carve playback is
+explicitly rejected before capture.
+
+Final captures cover hero, front, side, rear, detail, clay, part identity,
+base color, roughness and normals. The 16-second 1280x960 turntable has 480
+frames at 30 FPS with 2x internal sampling. All encoded frames were decoded and
+screened for the visible magenta traversal-exhaustion color; none met the
+recorded RGB threshold. This screening supplements the native ray fixtures.
+Assistant inspection found no obvious assembly gaps in the fixed views or
+sampled turntable frames. The rear stays darker under the fixed sun. These
+observations are separate from the user's judgment of the design.
+
+`outputs/sdf/robot-controls/windowed-interaction.json` records an isolated Xvfb
+run of the final desktop application. Resize, orbit, zoom, pause/reset and
+Escape pass with Vulkan validation. A real ImGui roughness edit changes ivory
+from 0.52 to 0.922, changes the appearance fingerprint to `5157ef13bccbb94f`
+and retains geometry `583e07fe12717184` with one field build
+(`field_rebuilt=0`). The native screenshot records the edited control. The
+authored panel disables the legacy cutter cue and separates clay roughness
+from the material table.
+
+The CPU recipe/authored targets and four renderer/build policy checks pass
+(six selected CTests). Documentation navigation passes. All ten selected native
+SDF documentation recipes parse successfully with unavailable GPU/display
+environment variables, using the existing template early-exit check. This is
+parser evidence; native execution is covered above. The repository-wide CLI
+documentation matrix was not qualified because unrelated apps are unbuilt.
+
+## Costs and retained limits
+
+The selected device is NVIDIA GeForce RTX 5070 Ti, driver 610.57.04. Matched
+1920x1080, 1x, static-robot profiles submit 180 frames, discard 30 warmup frames
+and retain 148 completed GPU timestamps per treatment. Summed tracing and shared
+post times exclude field construction, readback and video encoding.
+
+| Treatment | Median GPU frame | p95 | Completed samples |
+| --- | ---: | ---: | ---: |
+| Authored materials, shadows off | 2.194 ms | 2.322 ms | 148 |
+| Authored materials, hard shadows | 2.505 ms | 2.602 ms | 148 |
+| Clay override, hard shadows | 2.341 ms | 2.492 ms | 148 |
+
+The clay comparison changes appearance on the same geometry/lighting; its
+roughly 0.16 ms difference is not an isolated material-stage timer. Legacy
+rendering has a separate compiled fragment variant so it does not carry the
+authored expression/material stack. Common surface code remains shared.
+
+The final field uses 125,200 of 262,144 bricks, allocating 912,874,672 bytes
+(870.6 MiB) for field resources. This excludes frame targets, material/render
+buffers and driver allocations. The new fixed field program buffer accounts
+for 8,208 bytes; no color/material atlas was added. The hero full build takes
+43.7644 ms wall time, with 0.671648 ms filtering and 42.0749 ms brick sampling
+GPU time. Geometry changes still wait for the GPU and rebuild synchronously.
+Material edits preserve the distance cache but also wait before uploading their
+small replacement data. The offline turntable does not qualify smooth geometry
+editing or interactive sculpting.
+
+The scene supports 64 primitive leaves, 128 instructions, 16 materials,
+rigid/uniform transforms, hard union/subtraction and one smooth-union operator.
+The robot uses four opaque dielectric materials with base color, roughness and
+small sensor emission. No procedural noise, UV/image textures, metallic or
+glass rendering, environment specular, GI, terrain, ground or part animation
+was added. Specialized generation/import and a general editor remain later
+experiments. The first authored object is ready for user visual review.
+
+## Delivered review
+
+`projects/sdf/tools/authored_report.py` assembles the dedicated static export at
+`outputs/sdf/robot-final-review/` from the qualified native outputs, blockout
+audition and windowed receipts. The report links the preceding procedural
+prototype and Cubey catalog. Publication verified the served HTML bytes; an
+isolated Chrome session also passes five decoded chapter seeks, playback, all
+ten view controls/image links, image decoding, local artifact links, a 390px
+layout and absence of page JavaScript errors. The static publisher's lack of
+Range support is handled by downloading the MP4 into a seekable browser Blob.
+Local and published-URL browser receipts are
+`outputs/sdf/robot-final-browser-review.json` and
+`outputs/sdf/robot-final-delivery.json`.
+
+The native runtime capture remains pinned to `7c1a37ee`. Subsequent changes
+only document/present the result and make the already-completed full-frame
+video screening reproducible in the qualification tool without NumPy. That
+standard-library screening reproduces the original screening receipt exactly.
+No native source, shader or scene changed after the recorded qualification.
