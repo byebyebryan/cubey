@@ -70,7 +70,7 @@ def guardian(variant=0,stage='final'):
     body=s.cuts('structural-carving',body,tools,.002)
     wear=[s.leaf(box('base-chip',(-.139,-.275,.083),(.022,.016,.022),.001,
                 rotation_xyzw=rotation((0,0,1),28)),'Chip an exposed base corner'),
-          s.leaf(box('jaw-chip',(.099,-.102,.105),(.015,.01,.018),.001,
+          s.leaf(box('jaw-chip',(.103,-.11,.148),(.015,.01,.018),.001,
                 rotation_xyzw=rotation((0,0,1),-23)),'Chip the jaw edge')]
     wear.append(s.groove('temple-crack',body,[(-.137,.148,0),(-.149,.12,0),(-.142,.105,0)],
                          [.001,.003,.001],'Cut a short weathered temple crack'))

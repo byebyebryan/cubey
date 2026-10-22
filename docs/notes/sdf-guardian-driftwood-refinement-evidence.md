@@ -62,7 +62,7 @@ The guardian now has resolved socket rims, cheekbones, muzzle/lip and nose
 wings, raised brow folds, inner ears, longitudinal horn flutes, neck/shoulder
 structure and a few chips/cracks. The correction pass restores readable
 nostrils after a first placement was too deeply buried. It uses 108 leaves /
-215 instructions. Five saved-volume connection/socket checks pass.
+215 instructions. Seven saved-volume connection/socket/chip checks pass.
 
 Driftwood uses fewer dominant limbs, a rearward turn, oblique broken ends,
 broader worn planes, an elongated knot, two hollows, a real longitudinal split
@@ -77,3 +77,21 @@ wall sample changes from -0.002384 to +0.009548 signed distance.
 CPU/GPU distance/material/part checks. The per-subject full history matrices,
 performance and films are the next qualification checkpoint; these preflight
 captures alone do not establish construction acceptance.
+
+## Construction visibility correction
+
+The first full guardian capture passes all native prefix checks but stops at
+the preview-visibility gate. Its retained attempt is
+`outputs/sdf/refinement-guardian-preview-attempt/`. Native on/off comparisons
+identify the far ear and eight rear-neck segments as fully occluded from the
+front build camera. These have individual reasons in
+`sculpture_refinements.json`; opposite/profile/rear inspection remains required.
+The analogous driftwood preflight finds all four side-grain previews visible,
+while six rear-grain segments are occluded and explicitly documented.
+
+The same check reveals that the original jaw-chip cutter was buried. It is
+moved onto the exposed jaw edge rather than exempted. An independent sample
+changes from -0.005944 before that cut to +0.009720 afterward, with a continuous
+empty path to the exterior. The revised native cutter preview is visible.
+These corrections retain the visibility threshold and original ray/material
+tolerances. The full guardian capture is rerun against the corrected scene.

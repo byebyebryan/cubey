@@ -64,7 +64,44 @@
         ]
       }
     ],
-    "hidden_previews": [],
+    "hidden_previews": [
+      {
+        "node": "left-inner-ear",
+        "reason": "Far-side inner ear is hidden by the skull in the fixed build view; the opposite and profile inspection views expose the ear."
+      },
+      {
+        "node": "left-rear-neck-0",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "left-rear-neck-1",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "left-rear-neck-2",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "left-rear-neck-3",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "right-rear-neck-0",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "right-rear-neck-1",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "right-rear-neck-2",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "right-rear-neck-3",
+        "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      }
+    ],
     "intent_checks": [
       {
         "name": "base through neck into skull",
@@ -170,6 +207,37 @@
         ],
         "path": true,
         "margin": 0.008
+      },
+      {
+        "name": "jaw edge solid before chip",
+        "expect": "solid",
+        "before_node": "jaw-chip",
+        "margin": 0.001,
+        "points": [
+          [
+            0.102,
+            -0.109,
+            0.14
+          ]
+        ]
+      },
+      {
+        "name": "jaw chip opens onto front",
+        "expect": "empty",
+        "path": true,
+        "margin": 0.002,
+        "points": [
+          [
+            0.102,
+            -0.109,
+            0.14
+          ],
+          [
+            0.102,
+            -0.109,
+            0.19
+          ]
+        ]
       }
     ],
     "authoring_sources": [
@@ -277,7 +345,32 @@
         ]
       }
     ],
-    "hidden_previews": [],
+    "hidden_previews": [
+      {
+        "node": "rear-grain-0",
+        "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      },
+      {
+        "node": "rear-grain-1",
+        "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      },
+      {
+        "node": "rear-grain-2",
+        "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      },
+      {
+        "node": "rear-grain-3",
+        "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      },
+      {
+        "node": "rear-grain-4",
+        "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      },
+      {
+        "node": "rear-grain-5",
+        "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      }
+    ],
     "intent_checks": [
       {
         "name": "retained trunk spine",
