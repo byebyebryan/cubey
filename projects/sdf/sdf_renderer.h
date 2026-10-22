@@ -18,6 +18,8 @@ struct LightingUniforms {
     math::Vec4 quality; // roughness, softness, AO, ground height
     GpuEdit cutter;
     math::Vec4 cutter_style; // opacity, world line width, unused, unused
+    SceneInstruction preview;
+    math::Vec4 preview_style; // opacity, unused
 };
 static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
 static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);
@@ -32,7 +34,7 @@ class Renderer {
                 render::FrameSlot slot, bool present, const SdfConfig& config, float yaw,
                 float pitch, float distance, profiling::ProfileRecorder* profile,
                 std::uint64_t frame_index, const BoxEdit* cutter = nullptr,
-                float cutter_opacity = 0);
+                float cutter_opacity = 0, const SceneInstruction* preview = nullptr);
 
   private:
     AtmosphereEnvironmentRuntime atmosphere_;

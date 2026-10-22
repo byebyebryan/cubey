@@ -9,6 +9,7 @@ layout(std430,set=0,binding=AUTHORED_MATERIAL_BINDING) readonly buffer AuthoredM
 };
 struct SceneSurface { float distance; SurfaceMaterial material; uint part; };
 SceneSurface authoredSurface(vec3 p) {
+    if (authoredHeader.x==0u) return SceneSurface(1000.0,SurfaceMaterial(vec4(0.5),vec4(0)),0u);
     SceneSurface stack[32];
     int size=0;
     for (uint i=0u;i<authoredHeader.x;++i) {

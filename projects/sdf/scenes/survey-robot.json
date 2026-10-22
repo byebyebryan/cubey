@@ -887,5 +887,222 @@
   "authoring": {
     "generator": "cubey-python-author-v1",
     "units": "workspace"
-  }
+  },
+  "history": [
+    {
+      "node": "torso-shell",
+      "label": "Start with a rounded box torso",
+      "seconds": 1.1
+    },
+    {
+      "node": "hip-housing",
+      "label": "Blend a sphere into the torso",
+      "seconds": 1.1
+    },
+    {
+      "node": "neck",
+      "label": "Add the neck joint",
+      "seconds": 0.65
+    },
+    {
+      "node": "head-shell",
+      "label": "Place the tilted head shell",
+      "seconds": 1.1
+    },
+    {
+      "node": "eye-socket-cut",
+      "label": "Cut the sensor socket",
+      "seconds": 1.8
+    },
+    {
+      "node": "head-vent-cut-0",
+      "label": "Cut face vent 1 of 3",
+      "seconds": 1.1
+    },
+    {
+      "node": "head-vent-cut-1",
+      "label": "Cut face vent 2 of 3",
+      "seconds": 1.1
+    },
+    {
+      "node": "head-vent-cut-2",
+      "label": "Cut face vent 3 of 3",
+      "seconds": 1.1
+    },
+    {
+      "node": "optic-barrel",
+      "label": "Fit the teal optic barrel",
+      "seconds": 0.85
+    },
+    {
+      "node": "optic-bore",
+      "label": "Bore through the optic barrel",
+      "seconds": 1.6
+    },
+    {
+      "node": "sensor-seat",
+      "label": "Insert the dark sensor seat",
+      "seconds": 0.65
+    },
+    {
+      "node": "sensor-amber",
+      "label": "Add the amber sensor",
+      "seconds": 0.65
+    },
+    {
+      "node": "sensor-pupil",
+      "label": "Add its dark pupil",
+      "seconds": 0.65
+    },
+    {
+      "node": "sensor-glint",
+      "label": "Place the small ivory glint",
+      "seconds": 0.65
+    },
+    {
+      "node": "head-left-ear",
+      "label": "Fit the left side cap",
+      "seconds": 0.65
+    },
+    {
+      "node": "head-right-ear",
+      "label": "Fit the right side cap",
+      "seconds": 0.65
+    },
+    {
+      "node": "chest-accent",
+      "label": "Attach the teal chest panel",
+      "seconds": 0.85
+    },
+    {
+      "node": "chest-notch-cut",
+      "label": "Cut the chest panel notch",
+      "seconds": 1.4
+    },
+    {
+      "node": "chest-status",
+      "label": "Add the amber status indicator",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-shoulder-joint",
+      "label": "Add the left shoulder joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-upper-arm",
+      "label": "Add the left upper arm",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-elbow",
+      "label": "Add the left elbow joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-forearm",
+      "label": "Add the left teal forearm",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-hand",
+      "label": "Add the left hand",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-hip-link",
+      "label": "Add the left hip link",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-shin",
+      "label": "Add the left shin",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-ankle",
+      "label": "Add the left ankle joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-foot",
+      "label": "Add the left rounded foot",
+      "seconds": 0.55
+    },
+    {
+      "node": "left-sole",
+      "label": "Add the left dark sole",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-shoulder-joint",
+      "label": "Add the right shoulder joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-upper-arm",
+      "label": "Add the right upper arm",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-elbow",
+      "label": "Add the right elbow joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-forearm",
+      "label": "Add the right teal forearm",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-hand",
+      "label": "Add the right hand",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-hip-link",
+      "label": "Add the right hip link",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-shin",
+      "label": "Add the right shin",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-ankle",
+      "label": "Add the right ankle joint",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-foot",
+      "label": "Add the right rounded foot",
+      "seconds": 0.55
+    },
+    {
+      "node": "right-sole",
+      "label": "Add the right dark sole",
+      "seconds": 0.55
+    },
+    {
+      "node": "backpack-case",
+      "label": "Attach the backpack on the rear",
+      "seconds": 0.8
+    },
+    {
+      "node": "backpack-spine",
+      "label": "Fit its ivory spine",
+      "seconds": 0.65
+    },
+    {
+      "node": "antenna-stem",
+      "label": "Add the antenna stem",
+      "seconds": 0.8
+    },
+    {
+      "node": "antenna-tip",
+      "label": "Finish with the amber antenna tip",
+      "seconds": 1.1
+    }
+  ]
 }

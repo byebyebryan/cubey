@@ -1,4 +1,5 @@
 #include "sdf_validation.h"
+#include "sdf_history.h"
 
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/immediate_commands.h>
@@ -416,5 +417,28 @@ void validate_authored_lifecycle(vulkan::Device& device, ProjectGpuServices& gpu
     validate_field(device, gpu, limited, Recipe{}, &small);
     std::cout << "sdf: authored lifecycle passed (capacity rollback, material-only cache, "
                  "legacy/authored transitions)\n";
+}
+void validate_authored_history(vulkan::Device& device, ProjectGpuServices& gpu, Field& field,
+                               const AuthoredScene& scene) {
+    if (scene.history.empty())
+        throw std::invalid_argument("--validate-history requires a saved authored history");
+    const auto check = [&](std::size_t count) {
+        const auto state = authored_history_scene(scene, count);
+        field.build(state);
+        validate_field(device, gpu, field, Recipe{}, &state);
+        validate_authored(device, gpu, state);
+        const auto before = field.stats().build_count;
+        field.build(state);
+        if (field.stats().build_count != before)
+            throw std::runtime_error("unchanged history state rebuilt the field");
+        std::cout << "sdf: history validated step=" << count << "/" << scene.history.size()
+                  << " geometry=" << std::hex << authored_geometry_hash(state)
+                  << " appearance=" << authored_appearance_hash(state) << std::dec << '\n';
+    };
+    for (std::size_t count = 0; count <= scene.history.size(); ++count)
+        check(count);
+    for (auto count : {scene.history.size() / 2, std::size_t{0}, scene.history.size()})
+        check(count);
+    std::cout << "sdf: authored history passed (all states, backward/reset, cache reuse)\n";
 }
 } // namespace cubey::projects::sdf

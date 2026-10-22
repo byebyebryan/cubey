@@ -32,6 +32,7 @@ float authoredPrimitive(vec3 p,SceneInstruction node) {
     return d*node.settings.x;
 }
 float authoredDistance(vec3 p) {
+    if (authoredHeader.x==0u) return 1000.0;
     float stack[32];
     int size=0;
     for (uint i=0u;i<authoredHeader.x;++i) {

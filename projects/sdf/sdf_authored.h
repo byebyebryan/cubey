@@ -1,6 +1,7 @@
 #pragma once
 #include "sdf_recipe.h"
 #include <array>
+#include <optional>
 
 namespace cubey::projects::sdf {
 enum class ShapeCode : std::uint32_t {
@@ -26,6 +27,11 @@ struct alignas(16) SurfaceMaterial {
     math::Vec4 emission{0};
 };
 static_assert(sizeof(SurfaceMaterial) == 32);
+struct AuthoredStep {
+    std::string node, label;
+    double seconds = 0.65;
+    std::optional<SceneInstruction> cutter;
+};
 struct AuthoredScene {
     std::string name;
     std::string document; // Explicit named tree; retained for faithful persistence.
@@ -33,6 +39,7 @@ struct AuthoredScene {
     std::vector<std::string> part_names; // One name per instruction, including groups.
     std::vector<std::string> material_names;
     std::vector<SurfaceMaterial> materials;
+    std::vector<AuthoredStep> history;
     std::size_t leaf_count = 0;
 };
 struct SurfaceSample {

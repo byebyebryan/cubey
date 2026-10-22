@@ -1,4 +1,5 @@
 #include "sdf_authored.h"
+#include "sdf_history.h"
 #include <algorithm>
 #include <bit>
 #include <cmath>
@@ -140,7 +141,12 @@ AuthoredScene parse_authored_scene(std::string_view text) {
                              ? material_index(node.at("material").get<std::string>())
                              : inherited;
         const auto type = node.at("type").get<std::string>();
-        if (type == "union" || type == "subtract" || type == "smooth-union") {
+        if (type == "group") {
+            const auto& children = node.at("children");
+            if (!children.is_array() || children.size() != 1)
+                throw std::invalid_argument("authored transform group requires one child");
+            compile(children.at(0), world, mat, depth + 1);
+        } else if (type == "union" || type == "subtract" || type == "smooth-union") {
             const auto& children = node.at("children");
             if (!children.is_array() || children.size() < 2 || children.size() > 64 ||
                 (type == "subtract" && children.size() != 2))
@@ -195,7 +201,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         if (result.program.size() > 128)
             throw std::invalid_argument("authored SDF program exceeds 128 instructions");
     };
-    compile(json.at("root"), {}, 0, 0);
+    if (!json.at("root").is_null())
+        compile(json.at("root"), {}, 0, 0);
     unsigned stack = 0;
     for (const auto& instruction : result.program) {
         if (instruction.center_code.w < 10)
@@ -208,7 +215,7 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         if (stack > 32)
             throw std::invalid_argument("authored SDF stack exceeds 32 entries");
     }
-    if (stack != 1)
+    if (stack != (json.at("root").is_null() ? 0U : 1U))
         throw std::invalid_argument("authored SDF program has no single root");
     result.document = json.dump();
     if (json.contains("geometry_hash") &&
@@ -217,6 +224,7 @@ AuthoredScene parse_authored_scene(std::string_view text) {
     if (json.contains("appearance_hash") &&
         json.at("appearance_hash") != hex(authored_appearance_hash(result)))
         throw std::invalid_argument("authored SDF appearance hash mismatch");
+    read_authored_history(result);
     return result;
 }
 
@@ -246,6 +254,8 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
     return hash;
 }
 SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
+    if (scene.program.empty())
+        return {};
     std::array<SurfaceSample, 32> stack{};
     std::size_t size = 0;
     for (std::size_t i = 0; i < scene.program.size(); ++i) {

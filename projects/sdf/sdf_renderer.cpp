@@ -135,7 +135,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
                       const SdfConfig& config, float yaw, float pitch, float distance,
                       profiling::ProfileRecorder* profile, std::uint64_t frame_index,
-                      const BoxEdit* cutter, float cutter_opacity) {
+                      const BoxEdit* cutter, float cutter_opacity,
+                      const SceneInstruction* preview) {
     auto environment = atmosphere_.environment();
     environment.sun_elevation_degrees = config.sun_elevation;
     environment.sun_azimuth_degrees = config.sun_azimuth;
@@ -171,6 +172,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     if (cutter && config.cutter_cue && config.debug == 0) {
         uniforms.cutter = gpu_edit(*cutter);
         uniforms.cutter_style = {cutter_opacity, 0.0025F, 0, 0};
+    }
+    if (preview && config.cutter_cue && config.debug == 0) {
+        uniforms.preview = *preview;
+        uniforms.preview_style.x = cutter_opacity;
     }
     lighting_->upload(slot, uniforms);
     const Camera camera{glm::inverse(vp),

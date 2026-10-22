@@ -40,6 +40,31 @@ float cutterOutline(vec3 origin,vec3 direction,float surfaceT) {
     }
     return alpha*lighting.cutter_style.x;
 }
+#ifdef SDF_AUTHORED
+float authoredCutPreview(vec3 origin,vec3 direction,float surfaceT) {
+    if (lighting.preview_style.x<=0.0) return 0.0;
+    SceneInstruction node=SceneInstruction(lighting.preview_center_code,
+        lighting.preview_inverse_rotation,lighting.preview_parameters,lighting.preview_settings);
+    vec4 q=node.inverse_rotation;
+    vec3 localOrigin=origin-node.center_code.xyz;
+    localOrigin=(localOrigin+2.0*cross(q.xyz,cross(q.xyz,localOrigin)+q.w*localOrigin))/node.settings.x;
+    vec3 localDirection=(direction+2.0*cross(q.xyz,cross(q.xyz,direction)+q.w*direction))/node.settings.x;
+    uint code=uint(node.center_code.w);
+    vec3 extent=code==1u ? node.parameters.xyz+node.parameters.w :
+        (code==2u ? vec3(node.parameters.x) :
+        vec3(node.parameters.x,node.parameters.y+(code==3u ? node.parameters.x : 0.0),node.parameters.x));
+    vec2 interval=rayBox(localOrigin,localDirection,-extent,extent);
+    float t=max(interval.x,0.0),end=min(interval.y,surfaceT);
+    // A color-only preview, depth limited by the currently published solid.
+    // The actual cut is committed by the history scene, never this overlay.
+    for (int i=0;i<80 && t<=end;++i) {
+        float d=authoredPrimitive(origin+direction*t,node);
+        if (d<0.0004) return lighting.preview_style.x;
+        t+=max(d,0.0002);
+    }
+    return 0.0;
+}
+#endif
 void main() {
     vec4 farPoint=camera.inverseVP*vec4(uv*2.0-1.0,1,1);
     vec3 direction=normalize(farPoint.xyz/farPoint.w-camera.eye.xyz);
@@ -82,5 +107,9 @@ void main() {
     } else if (camera.options.x<0.5) radiance=skyRadiance(direction);
     if (camera.options.x<0.5)
         radiance=mix(radiance,vec3(0.06,1.4,2.0),cutterOutline(camera.eye.xyz,direction,t));
+#ifdef SDF_AUTHORED
+    if (camera.options.x<0.5)
+        radiance=mix(radiance,vec3(0.06,1.4,2.0),authoredCutPreview(camera.eye.xyz,direction,t));
+#endif
     color=vec4(radiance,1);
 }

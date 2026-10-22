@@ -25,6 +25,7 @@ struct SdfConfig {
     bool cutter_cue = true;
     bool ground = false, validate = false, validate_batches = false, occluder = false;
     bool validate_subtractions = false;
+    bool validate_history = false;
     float yaw = 0.6F, pitch = 0.3F, distance = 1.35F;
     float target_y = 0;
 };
@@ -120,6 +121,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(validate, c.validate)
         .bind(batches, c.validate_batches)
         .bind(subtractions, c.validate_subtractions)
+        .bind(option("validate-history", "Check every authored history state and backward seeks",
+                     config::ValueType::Bool),
+              c.validate_history)
         .bind(ao, c.ao)
         .bind(option("clay", "Neutral clay material for shape inspection", config::ValueType::Bool),
               c.clay)

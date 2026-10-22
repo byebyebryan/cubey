@@ -1,4 +1,5 @@
 #include "sdf_authored.h"
+#include "sdf_history.h"
 #include <cmath>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -174,4 +175,75 @@ int main() {
     require(authored_program_bytes(nullptr).size() >= 16 &&
                 authored_program_bytes(&maximum).size() == 16 + 127 * sizeof(SceneInstruction),
             "GPU packing mismatch");
+    // History must retain transform/material inheritance when a Boolean has
+    // only its first visible child, and isolate later cuts from other parts.
+    auto history_json = document(
+        {{"name", "placed"},
+         {"type", "union"},
+         {"position", {.1, 0, 0}},
+         {"scale", .8},
+         {"material", "blue"},
+         {"children",
+          {{{"name", "shell"},
+            {"type", "subtract"},
+            {"children", {sphere("body", {}, .2F, "blue"), sphere("cut", {0, 0, .2F}, .1F)}}},
+           sphere("neighbor", {0, 0, .2F}, .04F)}}});
+    history_json["history"] = {{{"node", "body"}, {"label", "Body"}},
+                               {{"node", "cut"}, {"label", "Cut"}, {"seconds", 1.5}},
+                               {{"node", "neighbor"}, {"label", "Neighbor"}}};
+    const auto history = parse_authored_scene(history_json.dump());
+    const auto empty = authored_history_scene(history, 0);
+    require(empty.program.empty() && authored_distance({}, empty) == 1000,
+            "empty history state contains geometry");
+    require(parse_authored_scene(serialize_authored_scene(empty)).program.empty(),
+            "empty scene failed persistence");
+    const auto body = authored_history_scene(history, 1);
+    close(authored_distance({.1F, 0, .16F}, body), 0);
+    close(authored_surface({.1F, 0, .16F}, body).material.base_roughness.z, 1);
+    require(authored_distance({.1F, 0, .16F}, authored_history_scene(history, 2)) > 0,
+            "history cut did not remove its local body");
+    require(authored_distance({.1F, 0, .16F}, authored_history_scene(history, 3)) < 0,
+            "history local cut erased the neighbor");
+    require(authored_geometry_hash(authored_history_scene(history, 3)) ==
+                    authored_geometry_hash(history) &&
+                authored_appearance_hash(authored_history_scene(history, 3)) ==
+                    authored_appearance_hash(history),
+            "final history state differs from complete scene");
+    const auto history_roundtrip = parse_authored_scene(serialize_authored_scene(history));
+    require(history_roundtrip.history.size() == 3 && history_roundtrip.history[1].cutter,
+            "history persistence lost its cutter or steps");
+    TimelineConfig timeline{"presentation", 12, 8, 1};
+    for (std::size_t i = 0; i <= history.history.size(); ++i) {
+        const auto time = authored_history_seek(timeline, history, i);
+        const auto state = sample_authored_history(timeline, history, time);
+        require(state.timeline.prefix == i && !state.cutter && state.timeline.yaw == 0,
+                "history seek did not inspect the requested committed edit");
+    }
+    const auto final = sample_authored_history(timeline, history, timeline.duration);
+    require(final.timeline.prefix == 3 && final.timeline.yaw > 6.28F,
+            "history orbit did not retain the completed object");
+    bool saw_preview = false;
+    std::size_t prior = 0;
+    for (int frame = 0; frame <= 720; ++frame) {
+        const auto state = sample_authored_history(timeline, history, frame / 60.0);
+        require(state.timeline.prefix >= prior, "forward history skipped backwards");
+        prior = state.timeline.prefix;
+        if (state.cutter) {
+            require(state.timeline.prefix == 1, "cut preview committed the cut early");
+            saw_preview = true;
+        }
+    }
+    require(saw_preview, "history did not preview its subtractive edit");
+    for (const auto mutation : {0, 1, 2, 3}) {
+        auto bad = history_json;
+        if (mutation == 0)
+            std::swap(bad["history"][0], bad["history"][1]);
+        if (mutation == 1)
+            bad["history"][1]["node"] = "body";
+        if (mutation == 2)
+            bad["history"][1]["node"] = "shell";
+        if (mutation == 3)
+            bad["history"][1]["seconds"] = 0;
+        rejected(bad);
+    }
 }

@@ -65,10 +65,12 @@ def smooth_union(name, a, b, radius, blend_materials=False, **options):
                  blend_materials=blend_materials, **options)
 
 
-def write_scene(path, name, materials, root):
+def write_scene(path, name, materials, root, history=None):
     document = dict(format='cubey.sdf.scene', version=2, name=name,
                     materials=materials, root=root,
                     authoring=dict(generator='cubey-python-author-v1', units='workspace'))
+    if history is not None:
+        document['history'] = history
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(document, indent=2) + '\n')

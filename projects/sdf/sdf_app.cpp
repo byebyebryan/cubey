@@ -1,5 +1,6 @@
 #include "sdf_config.h"
 #include "sdf_field.h"
+#include "sdf_history.h"
 #include "sdf_renderer.h"
 #include "sdf_validation.h"
 
@@ -35,13 +36,12 @@ class App {
               config_.authored_path.empty()
                   ? std::nullopt
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
-        if (authored_ &&
-            (!config_.recipe_path.empty() || !config_.export_recipe_path.empty() ||
-             (config_.timeline.motion != "static" && config_.timeline.motion != "orbit")))
-            throw std::invalid_argument(
-                "Authored scenes support static/orbit motion and their own export format");
+        if (authored_)
+            validate_authored_motion(*authored_);
         if (!authored_ && !config_.export_authored_path.empty())
             throw std::invalid_argument("--export-authored requires --authored-scene");
+        if (config_.validate_history && (!authored_ || authored_->history.empty()))
+            throw std::invalid_argument("--validate-history requires a saved authored history");
         if (config_.debug > 7 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
@@ -61,8 +61,7 @@ class App {
         orbit_.set_home_distance(config_.distance);
         orbit_.set_distance(config_.distance);
         playback_seconds_ = std::max(config_.snapshot_time, 0.0);
-        timeline_ = sample_timeline(config_.timeline, recipe_.edits.size(), playback_seconds_,
-                                    config_.debug);
+        sample_time(playback_seconds_);
         if (!config_.export_recipe_path.empty())
             save_recipe(config_.export_recipe_path, recipe_);
         if (!config_.export_authored_path.empty())
@@ -75,24 +74,16 @@ class App {
                 initialize(ctx.device(), ctx.gpu(), ctx.render_target(),
                            host::headless_capture_frame_slot_count(config_.common));
             };
-            callbacks.record_frame = [&](host::HeadlessPngContext& ctx,
-                                         const host::HeadlessCaptureFrame& frame,
-                                         VkCommandBuffer command,
-                                         const host::HeadlessRenderTarget& target) {
-                const double time =
-                    config_.snapshot_time >= 0
-                        ? config_.snapshot_time
-                        : config_.timeline.duration *
-                              static_cast<double>(host::headless_capture_progress(frame));
-                const auto sample =
-                    sample_timeline(config_.timeline, recipe_.edits.size(), time, config_.debug);
-                auto view = config_;
-                view.debug = sample.debug;
-                renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
-                                 config_.yaw + orbit_.yaw() + sample.yaw, orbit_.pitch(),
-                                 orbit_.distance(), ctx.profile_recorder(), frame.index,
-                                 current_cutter(), sample.cutter_opacity);
-            };
+            callbacks.record_frame =
+                [&](host::HeadlessPngContext& ctx, const host::HeadlessCaptureFrame& frame,
+                    VkCommandBuffer command, const host::HeadlessRenderTarget& target) {
+                    auto view = config_;
+                    view.debug = timeline_.debug;
+                    renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
+                                     config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
+                                     orbit_.distance(), ctx.profile_recorder(), frame.index,
+                                     current_cutter(), timeline_.cutter_opacity, preview_cutter());
+                };
             callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
                                          const host::HeadlessCaptureFrame& frame) {
                 const double time =
@@ -109,9 +100,15 @@ class App {
                     (config_.timeline.motion == "construction" ||
                      config_.timeline.motion == "presentation" ||
                      config_.timeline.motion == "carve")) {
-                    auto prefix = recipe_;
-                    prefix.edits.resize(field_->displayed_edit_count());
-                    validate_field(ctx.device(), runtime_.gpu(), *field_, prefix);
+                    if (authored_) {
+                        validate_field(ctx.device(), runtime_.gpu(), *field_, Recipe{},
+                                       &*displayed_authored_);
+                        validate_authored(ctx.device(), runtime_.gpu(), *displayed_authored_);
+                    } else {
+                        auto prefix = recipe_;
+                        prefix.edits.resize(field_->displayed_edit_count());
+                        validate_field(ctx.device(), runtime_.gpu(), *field_, prefix);
+                    }
                 }
             };
             callbacks.shutdown = [&](host::HeadlessPngContext&) { shutdown(); };
@@ -143,12 +140,16 @@ class App {
                     auto next =
                         reload_authored_ ? load_authored_scene(config_.authored_path) : *authored_;
                     static_cast<void>(authored_appearance_hash(next));
-                    runtime_.gpu().wait_queue_idle("sdf authored publication");
+                    validate_authored_motion(next);
                     const auto before = field_->stats().build_count;
-                    field_->build(next);
+                    auto previous = *authored_;
                     authored_ = std::move(next);
-                    renderer_.update_field(ctx.device(), *field_);
-                    renderer_.update_authored(&*authored_);
+                    try {
+                        prepare_time(ctx.device(), playback_seconds_, true);
+                    } catch (...) {
+                        authored_ = std::move(previous);
+                        throw;
+                    }
                     error_.clear();
                     std::cout << "sdf: authored update geometry=" << std::hex
                               << authored_geometry_hash(*authored_)
@@ -204,7 +205,7 @@ class App {
                              frame.frame_slot, true, view,
                              config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
                              orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index,
-                             current_cutter(), timeline_.cutter_opacity);
+                             current_cutter(), timeline_.cutter_opacity, preview_cutter());
             recorder.end("sdf frame");
         };
         callbacks.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
@@ -220,8 +221,39 @@ class App {
     }
 
   private:
+    bool authored_build() const {
+        return authored_ && (config_.timeline.motion == "construction" ||
+                             config_.timeline.motion == "presentation");
+    }
+    void validate_authored_motion(const AuthoredScene& scene) const {
+        if (!config_.recipe_path.empty() || !config_.export_recipe_path.empty() ||
+            (config_.timeline.motion != "static" && config_.timeline.motion != "orbit" &&
+             !((config_.timeline.motion == "construction" ||
+                config_.timeline.motion == "presentation") &&
+               !scene.history.empty())))
+            throw std::invalid_argument(
+                "Authored scenes support static/orbit, or "
+                "construction/presentation with a saved history, and their own export format");
+    }
+    void sample_time(double time) {
+        history_cutter_.reset();
+        if (authored_build()) {
+            auto sample =
+                sample_authored_history(config_.timeline, *authored_, time, config_.debug);
+            timeline_ = sample.timeline;
+            history_cutter_ = sample.cutter;
+        } else {
+            timeline_ = sample_timeline(
+                config_.timeline, authored_ ? authored_->program.size() : recipe_.edits.size(),
+                time, config_.debug);
+        }
+    }
+    const SceneInstruction* preview_cutter() const {
+        return config_.cutter_cue && history_cutter_ ? &*history_cutter_ : nullptr;
+    }
     const BoxEdit* current_cutter() const {
-        if (timeline_.cutter_index == 0 || timeline_.cutter_index >= recipe_.edits.size() ||
+        if (authored_ || timeline_.cutter_index == 0 ||
+            timeline_.cutter_index >= recipe_.edits.size() ||
             field_->displayed_edit_count() != timeline_.prefix)
             return nullptr;
         return &recipe_.edits[timeline_.cutter_index];
@@ -237,14 +269,20 @@ class App {
                 validate_authored_lifecycle(device, runtime_.gpu());
             if (config_.validate_subtractions)
                 validate_subtractions(device, runtime_.gpu(), *field_);
+            if (config_.validate_history)
+                validate_authored_history(device, runtime_.gpu(), *field_, *authored_);
             active_prefix_ = timeline_.prefix;
             if (authored_) {
-                field_->build(*authored_);
+                displayed_authored_ = authored_build()
+                                          ? authored_history_scene(*authored_, timeline_.prefix)
+                                          : *authored_;
+                field_->build(*displayed_authored_);
                 if (config_.validate) {
-                    validate_field(device, runtime_.gpu(), *field_, Recipe{}, &*authored_);
-                    validate_authored(device, runtime_.gpu(), *authored_);
+                    validate_field(device, runtime_.gpu(), *field_, Recipe{},
+                                   &*displayed_authored_);
+                    validate_authored(device, runtime_.gpu(), *displayed_authored_);
                     const auto before = field_->stats().build_count;
-                    auto recolored = *authored_;
+                    auto recolored = *displayed_authored_;
                     recolored.materials[0].base_roughness.x *= .5F;
                     field_->build(recolored);
                     if (field_->stats().build_count != before)
@@ -252,9 +290,12 @@ class App {
                     std::cout << "sdf: material-only cache check passed builds=" << before << '\n';
                 }
                 std::cout << "sdf: authored geometry=" << std::hex
-                          << authored_geometry_hash(*authored_)
-                          << " appearance=" << authored_appearance_hash(*authored_) << std::dec
-                          << '\n';
+                          << authored_geometry_hash(*displayed_authored_)
+                          << " appearance=" << authored_appearance_hash(*displayed_authored_)
+                          << std::dec << '\n';
+                if (authored_build())
+                    std::cout << "sdf: history initial step=" << timeline_.prefix << "/"
+                              << authored_->history.size() << '\n';
             } else
                 field_->build(std::span<const BoxEdit>(recipe_.edits).first(active_prefix_));
             if (config_.validate && !authored_) {
@@ -267,15 +308,30 @@ class App {
                           << '\n';
         }
         renderer_.create(device, target.extent, target.format, slots, *field_, config_,
-                         authored_ ? &*authored_ : nullptr);
+                         displayed_authored_ ? &*displayed_authored_ : nullptr);
     }
-    void prepare_time(vulkan::Device& device, double time) {
+    void prepare_time(vulkan::Device& device, double time, bool force = false) {
+        sample_time(time);
         if (authored_) {
-            timeline_ =
-                sample_timeline(config_.timeline, authored_->program.size(), time, config_.debug);
+            if (!force && timeline_.prefix == active_prefix_)
+                return;
+            auto next = authored_build() ? authored_history_scene(*authored_, timeline_.prefix)
+                                         : *authored_;
+            runtime_.gpu().wait_queue_idle("sdf authored publication");
+            field_->build(next);
+            displayed_authored_ = std::move(next);
+            renderer_.update_field(device, *field_);
+            renderer_.update_authored(&*displayed_authored_);
+            active_prefix_ = timeline_.prefix;
+            error_.clear();
+            if (authored_build())
+                std::cout << "sdf: history step=" << active_prefix_ << "/"
+                          << authored_->history.size() << " geometry=" << std::hex
+                          << authored_geometry_hash(*displayed_authored_)
+                          << " appearance=" << authored_appearance_hash(*displayed_authored_)
+                          << std::dec << '\n';
             return;
         }
-        timeline_ = sample_timeline(config_.timeline, recipe_.edits.size(), time, config_.debug);
         if (timeline_.prefix == active_prefix_)
             return;
         runtime_.gpu().wait_queue_idle("sdf prefix publication");
@@ -313,7 +369,8 @@ class App {
             for (int i = 0; i < 5; ++i)
                 if (config_.timeline.motion == motion_names[i])
                     motion = i;
-            if (ImGui::Combo("Motion", &motion, motions, authored_ ? 2 : 5)) {
+            if (ImGui::Combo("Motion", &motion, motions,
+                             authored_ ? (authored_->history.empty() ? 2 : 4) : 5)) {
                 auto next = config_.timeline;
                 next.motion = motion_names[motion];
                 try {
@@ -329,6 +386,32 @@ class App {
             float progress = static_cast<float>(playback_seconds_ / config_.timeline.duration);
             if (ImGui::SliderFloat("Timeline", &progress, 0, 1, "%.2f"))
                 playback_seconds_ = static_cast<double>(progress) * config_.timeline.duration;
+            if (authored_build()) {
+                const auto total = authored_->history.size();
+                const auto shown = std::min(active_prefix_, total);
+                ImGui::Text("Edit %zu / %zu", shown, total);
+                const auto label_index = history_cutter_ ? shown : (shown ? shown - 1 : total);
+                ImGui::TextWrapped("%s", label_index < total
+                                             ? authored_->history[label_index].label.c_str()
+                                             : "Empty workspace");
+                const auto seek = [&](std::size_t count) {
+                    playback_seconds_ = authored_history_seek(config_.timeline, *authored_, count);
+                    if (!orbit_.paused())
+                        orbit_.toggle_pause();
+                };
+                ImGui::BeginDisabled(shown == 0);
+                if (ImGui::Button("Previous edit"))
+                    seek(shown - 1);
+                ImGui::EndDisabled();
+                ImGui::SameLine();
+                ImGui::BeginDisabled(shown == total);
+                if (ImGui::Button("Next edit"))
+                    seek(shown + 1);
+                ImGui::EndDisabled();
+                int step = static_cast<int>(shown);
+                if (ImGui::SliderInt("Edit", &step, 0, static_cast<int>(total)))
+                    seek(static_cast<std::size_t>(step));
+            }
             int view = static_cast<int>(config_.debug);
             const char* views[]{"Shaded",      "Normals",       "Ray distance", "Traversal work",
                                 "Brick cells", "Part identity", "Base color",   "Roughness"};
@@ -340,8 +423,8 @@ class App {
                 config_.shadows = static_cast<std::uint32_t>(shadows);
             ImGui::Checkbox("Local ambient occlusion", &config_.ao);
             ImGui::Checkbox("Clay inspection", &config_.clay);
-            ImGui::BeginDisabled(authored_.has_value());
-            ImGui::Checkbox("Cutter bounds cue", &config_.cutter_cue);
+            ImGui::BeginDisabled(authored_ && !authored_build());
+            ImGui::Checkbox(authored_ ? "Cut preview" : "Cutter bounds cue", &config_.cutter_cue);
             ImGui::EndDisabled();
             ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
@@ -436,6 +519,8 @@ class App {
     SdfConfig config_;
     Recipe recipe_;
     std::optional<AuthoredScene> authored_;
+    std::optional<AuthoredScene> displayed_authored_;
+    std::optional<SceneInstruction> history_cutter_;
     ProjectRuntimeAdapter runtime_{1};
     OrbitController orbit_{{.distance = 1.35F, .min_distance = 0.6F, .max_distance = 5.0F}};
     std::unique_ptr<Field> field_;
