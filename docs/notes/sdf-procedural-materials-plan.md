@@ -1,6 +1,12 @@
 # Procedural stone material audition
 
-Status: implementation in progress, 2026-10-22.
+Status: implemented and natively qualified, 2026-10-22. The
+[evidence and measured costs](sdf-procedural-materials-evidence.md) record the
+delivered boundary; the
+[published comparison](http://starship:8787/reports/65b3ef76be120d14f259412977d3e50fa6e59e435298cd415ece6edb84d1ec87/)
+contains matching views, material passes, turntables and the marble carving film.
+Native images and film frames were inspected. Browser interaction review was
+unavailable; artistic acceptance remains with the user.
 
 Compare carved limestone and honed marble with the plain mirrored guardian.
 Keep geometry, its 65 atomic operations, field resolution, hard self-shadows and

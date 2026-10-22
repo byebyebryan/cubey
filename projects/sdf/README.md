@@ -153,6 +153,23 @@ The [mirrored guardian review](http://starship:8787/reports/28b97723efe9c303766c
 includes the construction film, all operation stills, paired red previews,
 matched inspection views and measurements.
 
+The [procedural stone audition](../../docs/notes/sdf-procedural-materials-evidence.md)
+adds limestone and honed-marble variants of that same mirrored guardian.
+Seeded color, roughness and filtered fine-grain bump share a continuous model-space
+volume across the sculpt and its cuts. Geometry and all 65 operations remain
+identical; appearance edits retain the field cache. The
+[material comparison](http://starship:8787/reports/65b3ef76be120d14f259412977d3e50fa6e59e435298cd415ece6edb84d1ec87/)
+includes twelve matched views per material, three turntables, inspection passes
+and the complete marble construction film. Limestone reads more convincingly
+in native inspection; marble remains a stylized surface treatment.
+
+A separately qualified shortcut now skips the CSG material-ownership walk for
+one-material shaded hits. These three variants measure about 1.8 ms at the
+tested 1080p settings, superseding the earlier uniform guardian shading costs
+above. General multimaterial and part-ID queries still use the full evaluator.
+Geometry rebuilds remain about 0.92 seconds. The evidence separates shortcut,
+pattern-only and bump costs; material differences are within timing variation.
+
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
 | Guardian | [Static](presets/sculpture-guardian.json) | [Build](presets/sculpture-guardian-build.json) | 76 |
@@ -163,6 +180,8 @@ matched inspection views and measurements.
 | Guardian, organic form | [Static](presets/sculpture-guardian-organic-form.json) | [Build](presets/sculpture-guardian-organic-form-build.json) | 197 |
 | Guardian, organic detail | [Static](presets/sculpture-guardian-organic.json) | [Build](presets/sculpture-guardian-organic-build.json) | 1,011 |
 | Guardian, mirrored strokes / 65 operations | [Static](presets/sculpture-guardian-mirrored.json) | [Build](presets/sculpture-guardian-mirrored-build.json) | 1,011 |
+| Guardian, procedural limestone | [Static](presets/sculpture-guardian-limestone.json) | [Build](presets/sculpture-guardian-limestone-build.json) | 1,011 |
+| Guardian, honed marble | [Static](presets/sculpture-guardian-marble.json) | [Build](presets/sculpture-guardian-marble-build.json) | 1,011 |
 | Driftwood, refined (retained experiment) | [Static](presets/sculpture-driftwood-refined.json) | [Build](presets/sculpture-driftwood-refined-build.json) | 100 |
 
 ```sh
@@ -419,8 +438,13 @@ plain materials, geometry, height gradients and shading normals retain their
 }
 ```
 
-The [material audition plan](../../docs/notes/sdf-procedural-materials-plan.md)
-keeps limestone and honed marble separate from the retained plain guardian.
+`author_guardian_materials.py` deterministically emits both material scenes and
+their static/build presets from the saved mirrored guardian. Use
+`--config projects/sdf/presets/sculpture-guardian-limestone.json` or
+`--config projects/sdf/presets/sculpture-guardian-marble-build.json` to inspect
+them. The [material evidence](../../docs/notes/sdf-procedural-materials-evidence.md)
+records native qualification and the implemented
+[audition plan](../../docs/notes/sdf-procedural-materials-plan.md).
 Authored scenes support static/orbit playback. Scenes with an optional saved
 `history` additionally support construction and presentation. Carve continues
 to require a legacy edit sequence.

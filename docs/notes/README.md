@@ -41,6 +41,9 @@ the architecture and project guides remain current authority.
 - [SDF mirrored stroke evidence](sdf-mirror-evidence.md): atomic bilateral
   authoring, the 65-operation guardian, paired previews/undo, native qualification
   and measured rendering/build costs.
+- [SDF procedural material evidence](sdf-procedural-materials-evidence.md):
+  continuous limestone/marble surfaces, filtered bump, material cache controls,
+  the uniform-material shading shortcut and matching native presentation.
 - [SDF rounded stroke contract](sdf-rounded-stroke-contract.md): tapered endpoint spheres, conservative bounds and independent/native qualification for sculptural strokes.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
@@ -94,6 +97,9 @@ an implemented project or a new runtime dependency.
   with native form and presentation checkpoints.
 - [SDF mirrored stroke plan](sdf-mirror-plan.md): implemented X mirror authoring
   and grouped history, preserving explicit geometry and legacy leaf histories.
+- [SDF procedural material plan](sdf-procedural-materials-plan.md): implemented
+  limestone and honed-marble audition on the unchanged mirrored guardian,
+  with native surface/history qualification and separate pattern/bump costs.
 
 ## Historical research and study records
 
