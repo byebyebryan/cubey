@@ -40,6 +40,8 @@ def main():
         source_scene_sha256=sha(scene_path), config_sha256=sha(preset),
         build_config_sha256=sha(build), metadata_sha256=sha(meta_path),
         edits=len(scene['history']),runs={})
+    generators=('author_sculptures.py','sdf_author.py','sdf_probe.py')
+    manifest['authoring_sha256']={name:sha(root/'projects/sdf/tools'/name) for name in generators}
     def save():
         (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     def run(name, options=(), config=preset, capture=True):
@@ -62,6 +64,12 @@ def main():
         save()
         print(args.subject,name,'passed',flush=True)
         return row
+    save()
+    audit_command=['python3',str(root/'projects/sdf/tools/check_sculptures.py'),
+                   '--subject',args.subject,'--metadata',str(meta_path),'--output',str(out/'intent-audit.json')]
+    subprocess.run(audit_command,cwd=root,check=True)
+    manifest['intent_audit_command']=audit_command
+    assert json.loads((out/'intent-audit.json').read_text())['scene_sha256']==manifest['source_scene_sha256']
     save()
     history_command=['python3',str(root/'projects/sdf/tools/qualify_history.py'),
                      '--config',str(build),'--export-name','scene.json','--output',str(out/'history')]
@@ -105,11 +113,13 @@ def main():
         save()
     shutil.copy2(scene_path,out/'scenes/source.json')
     shutil.copy2(meta_path,out/'scenes/sculptures.json')
-    for filename in ('author_sculptures.py','sdf_author.py'):
+    for filename in generators:
         shutil.copy2(root/'projects/sdf/tools'/filename,out/'scenes'/filename)
+        assert sha(out/'scenes'/filename)==manifest['authoring_sha256'][filename]
     # Geometry evidence is immutable even if unrelated work continues later.
     assert sha(scene_path)==manifest['source_scene_sha256']
     assert sha(preset)==manifest['config_sha256'] and sha(build)==manifest['build_config_sha256']
+    assert sha(meta_path)==manifest['metadata_sha256']
     save()
     print(out/'manifest.json',flush=True)
 

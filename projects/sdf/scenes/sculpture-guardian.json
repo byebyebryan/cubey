@@ -1,0 +1,1880 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Stone guardian",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.38132601143253014,
+        0.4620769996544071,
+        0.39157247774972326
+      ],
+      "roughness": 0.76,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "smooth-subtract",
+    "name": "brow-expression-carve",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "smooth-subtract",
+        "name": "cheek-flow-1-carve",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-subtract",
+            "name": "cheek-flow--1-carve",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "smooth-subtract",
+                "name": "nostril-carve-1",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "smooth-subtract",
+                    "name": "nostril-carve--1",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "smooth-subtract",
+                        "name": "mouth-cut-carve",
+                        "position": [
+                          0,
+                          0,
+                          0
+                        ],
+                        "children": [
+                          {
+                            "type": "smooth-subtract",
+                            "name": "right-socket-carve",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "children": [
+                              {
+                                "type": "smooth-subtract",
+                                "name": "left-socket-carve",
+                                "position": [
+                                  0,
+                                  0,
+                                  0
+                                ],
+                                "children": [
+                                  {
+                                    "type": "smooth-union",
+                                    "name": "fused-bust",
+                                    "position": [
+                                      0,
+                                      0,
+                                      0
+                                    ],
+                                    "children": [
+                                      {
+                                        "type": "box",
+                                        "name": "bust-base",
+                                        "position": [
+                                          0,
+                                          -0.275,
+                                          -0.025
+                                        ],
+                                        "half_extent": [
+                                          0.14,
+                                          0.035,
+                                          0.095
+                                        ],
+                                        "rounding": 0.025
+                                      },
+                                      {
+                                        "type": "capsule",
+                                        "name": "neck",
+                                        "position": [
+                                          0.0,
+                                          -0.16,
+                                          -0.0275
+                                        ],
+                                        "radius": 0.088,
+                                        "half_length": 0.0800390529679106,
+                                        "rotation_xyzw": [
+                                          0.01561928156032121,
+                                          0.0,
+                                          -0.0,
+                                          0.9998780115811826
+                                        ]
+                                      },
+                                      {
+                                        "type": "sphere",
+                                        "name": "cranium",
+                                        "position": [
+                                          0,
+                                          0.11,
+                                          -0.035
+                                        ],
+                                        "radius": 0.169
+                                      },
+                                      {
+                                        "type": "box",
+                                        "name": "jaw",
+                                        "position": [
+                                          0,
+                                          -0.065,
+                                          0.045
+                                        ],
+                                        "half_extent": [
+                                          0.082,
+                                          0.052,
+                                          0.065
+                                        ],
+                                        "rounding": 0.042
+                                      },
+                                      {
+                                        "type": "sphere",
+                                        "name": "left-cheek",
+                                        "position": [
+                                          -0.092,
+                                          0.005,
+                                          0.052
+                                        ],
+                                        "radius": 0.091
+                                      },
+                                      {
+                                        "type": "capsule",
+                                        "name": "left-brow",
+                                        "position": [
+                                          -0.0765,
+                                          0.1185,
+                                          0.083
+                                        ],
+                                        "radius": 0.035,
+                                        "half_length": 0.055068139609033465,
+                                        "rotation_xyzw": [
+                                          -0.2168356488660359,
+                                          0.0,
+                                          0.6203908842556026,
+                                          0.7537223972480828
+                                        ]
+                                      },
+                                      {
+                                        "type": "sphere",
+                                        "name": "right-cheek",
+                                        "position": [
+                                          0.092,
+                                          0.005,
+                                          0.052
+                                        ],
+                                        "radius": 0.091
+                                      },
+                                      {
+                                        "type": "capsule",
+                                        "name": "right-brow",
+                                        "position": [
+                                          0.0765,
+                                          0.1185,
+                                          0.083
+                                        ],
+                                        "radius": 0.035,
+                                        "half_length": 0.055068139609033465,
+                                        "rotation_xyzw": [
+                                          -0.2168356488660359,
+                                          0.0,
+                                          -0.6203908842556026,
+                                          0.7537223972480828
+                                        ]
+                                      },
+                                      {
+                                        "type": "capsule",
+                                        "name": "nose-bridge",
+                                        "position": [
+                                          0.0,
+                                          0.054,
+                                          0.1415
+                                        ],
+                                        "radius": 0.032,
+                                        "half_length": 0.05825160941982632,
+                                        "rotation_xyzw": [
+                                          0.9594734168742128,
+                                          0.0,
+                                          -0.0,
+                                          0.2817991524325848
+                                        ]
+                                      },
+                                      {
+                                        "type": "sphere",
+                                        "name": "nose-tip",
+                                        "position": [
+                                          0,
+                                          -0.003,
+                                          0.174
+                                        ],
+                                        "radius": 0.045
+                                      },
+                                      {
+                                        "type": "capsule",
+                                        "name": "muzzle",
+                                        "position": [
+                                          0.0,
+                                          -0.045,
+                                          0.123
+                                        ],
+                                        "radius": 0.035,
+                                        "half_length": 0.055,
+                                        "rotation_xyzw": [
+                                          0.0,
+                                          0.0,
+                                          -0.7071067811865475,
+                                          0.7071067811865475
+                                        ]
+                                      },
+                                      {
+                                        "type": "capsule",
+                                        "name": "shoulder-mantle",
+                                        "position": [
+                                          0.0,
+                                          -0.217,
+                                          -0.035
+                                        ],
+                                        "radius": 0.065,
+                                        "half_length": 0.14,
+                                        "rotation_xyzw": [
+                                          0.0,
+                                          0.0,
+                                          -0.7071067811865475,
+                                          0.7071067811865475
+                                        ]
+                                      },
+                                      {
+                                        "type": "sphere",
+                                        "name": "chin",
+                                        "position": [
+                                          0,
+                                          -0.099,
+                                          0.073
+                                        ],
+                                        "radius": 0.057
+                                      },
+                                      {
+                                        "type": "round-cone",
+                                        "name": "left-ear",
+                                        "position": [
+                                          -0.17049999999999998,
+                                          0.0925,
+                                          -0.0285
+                                        ],
+                                        "half_length": 0.045986411036305054,
+                                        "rotation_xyzw": [
+                                          -0.14932550100983652,
+                                          0.0,
+                                          0.5258854600781199,
+                                          0.8373448379410873
+                                        ],
+                                        "bottom_radius": 0.043,
+                                        "top_radius": 0.012
+                                      },
+                                      {
+                                        "type": "union",
+                                        "name": "left-horn",
+                                        "position": [
+                                          0,
+                                          0,
+                                          0
+                                        ],
+                                        "children": [
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-0",
+                                            "position": [
+                                              -0.129724,
+                                              0.20356000000000002,
+                                              -0.035924000000000005
+                                            ],
+                                            "half_length": 0.006803789532312124,
+                                            "rotation_xyzw": [
+                                              -0.07780764050295536,
+                                              0.0,
+                                              0.48200317558324285,
+                                              0.8727078032234112
+                                            ],
+                                            "bottom_radius": 0.05,
+                                            "top_radius": 0.04680000000000001
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-1",
+                                            "position": [
+                                              -0.14373600000000003,
+                                              0.21208,
+                                              -0.038096000000000005
+                                            ],
+                                            "half_length": 0.009739098931626073,
+                                            "rotation_xyzw": [
+                                              -0.0737555731624946,
+                                              0.0,
+                                              0.48981265254066997,
+                                              0.8687022970146591
+                                            ],
+                                            "bottom_radius": 0.04680000000000001,
+                                            "top_radius": 0.0436
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-2",
+                                            "position": [
+                                              -0.16140000000000002,
+                                              0.22292,
+                                              -0.04088
+                                            ],
+                                            "half_length": 0.011173319649951836,
+                                            "rotation_xyzw": [
+                                              -0.07868295102191836,
+                                              0.0,
+                                              0.480293846862961,
+                                              0.873571298683777
+                                            ],
+                                            "bottom_radius": 0.0436,
+                                            "top_radius": 0.040400000000000005
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-3",
+                                            "position": [
+                                              -0.17976400000000003,
+                                              0.23512000000000002,
+                                              -0.04420399999999999
+                                            ],
+                                            "half_length": 0.011132092705327262,
+                                            "rotation_xyzw": [
+                                              -0.09070690606785103,
+                                              0.0,
+                                              0.45596961506590905,
+                                              0.8853609248934837
+                                            ],
+                                            "bottom_radius": 0.040400000000000005,
+                                            "top_radius": 0.0372
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-4",
+                                            "position": [
+                                              -0.19587600000000002,
+                                              0.24772000000000002,
+                                              -0.047996
+                                            ],
+                                            "half_length": 0.009705966824587834,
+                                            "rotation_xyzw": [
+                                              -0.11376112138740757,
+                                              0.0,
+                                              0.4044082977863721,
+                                              0.9074758046042927
+                                            ],
+                                            "bottom_radius": 0.0372,
+                                            "top_radius": 0.034
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-5",
+                                            "position": [
+                                              -0.208308,
+                                              0.260568,
+                                              -0.05222800000000001
+                                            ],
+                                            "half_length": 0.008733697498768768,
+                                            "rotation_xyzw": [
+                                              -0.1362797442374916,
+                                              0.0,
+                                              0.32467364560709294,
+                                              0.9359566523930282
+                                            ],
+                                            "bottom_radius": 0.034,
+                                            "top_radius": 0.030000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-6",
+                                            "position": [
+                                              -0.218092,
+                                              0.274312,
+                                              -0.05693200000000001
+                                            ],
+                                            "half_length": 0.008812498397162983,
+                                            "rotation_xyzw": [
+                                              -0.14749669129257628,
+                                              0.0,
+                                              0.2666377989602471,
+                                              0.9524437044903901
+                                            ],
+                                            "bottom_radius": 0.030000000000000002,
+                                            "top_radius": 0.026000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-7",
+                                            "position": [
+                                              -0.22613999999999998,
+                                              0.28878000000000004,
+                                              -0.06212
+                                            ],
+                                            "half_length": 0.00856080556957114,
+                                            "rotation_xyzw": [
+                                              -0.16461306601811201,
+                                              0.0,
+                                              0.21681337456367808,
+                                              0.9622341186563834
+                                            ],
+                                            "bottom_radius": 0.026000000000000002,
+                                            "top_radius": 0.022
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-8",
+                                            "position": [
+                                              -0.23230799999999996,
+                                              0.30298800000000004,
+                                              -0.067768
+                                            ],
+                                            "half_length": 0.00794923694451233,
+                                            "rotation_xyzw": [
+                                              -0.19098198997859026,
+                                              0.0,
+                                              0.16886554699741835,
+                                              0.9669593096615184
+                                            ],
+                                            "bottom_radius": 0.022,
+                                            "top_radius": 0.018000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-9",
+                                            "position": [
+                                              -0.236452,
+                                              0.315952,
+                                              -0.073852
+                                            ],
+                                            "half_length": 0.006991745990809447,
+                                            "rotation_xyzw": [
+                                              -0.233126873341084,
+                                              0.0,
+                                              0.11463799235451083,
+                                              0.9656655692501092
+                                            ],
+                                            "bottom_radius": 0.018000000000000002,
+                                            "top_radius": 0.014
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-10",
+                                            "position": [
+                                              -0.23798,
+                                              0.327292,
+                                              -0.08075199999999999
+                                            ],
+                                            "half_length": 0.006487154075555797,
+                                            "rotation_xyzw": [
+                                              -0.3035034793271434,
+                                              0.0,
+                                              -0.0016178223844724193,
+                                              0.9528289566795557
+                                            ],
+                                            "bottom_radius": 0.014,
+                                            "top_radius": 0.011400000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-11",
+                                            "position": [
+                                              -0.23642000000000002,
+                                              0.337448,
+                                              -0.088868
+                                            ],
+                                            "half_length": 0.006713761389861856,
+                                            "rotation_xyzw": [
+                                              -0.35000519913569106,
+                                              0.0,
+                                              -0.12351237549701286,
+                                              0.9285693585710603
+                                            ],
+                                            "bottom_radius": 0.011400000000000002,
+                                            "top_radius": 0.008799999999999999
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-12",
+                                            "position": [
+                                              -0.23260000000000003,
+                                              0.34658,
+                                              -0.09762
+                                            ],
+                                            "half_length": 0.006532133495267831,
+                                            "rotation_xyzw": [
+                                              -0.3694107533820014,
+                                              0.0,
+                                              -0.19194542336165887,
+                                              0.9092264018033439
+                                            ],
+                                            "bottom_radius": 0.008799999999999999,
+                                            "top_radius": 0.006200000000000001
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-13",
+                                            "position": [
+                                              -0.22808,
+                                              0.354352,
+                                              -0.105832
+                                            ],
+                                            "half_length": 0.005649654148706812,
+                                            "rotation_xyzw": [
+                                              -0.37600593901534707,
+                                              0.0,
+                                              -0.22025452494623066,
+                                              0.9000597080560251
+                                            ],
+                                            "bottom_radius": 0.006200000000000001,
+                                            "top_radius": 0.0035999999999999995
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "left-horn-14",
+                                            "position": [
+                                              -0.22442,
+                                              0.36042799999999997,
+                                              -0.112328
+                                            ],
+                                            "half_length": 0.003971292988435878,
+                                            "rotation_xyzw": [
+                                              -0.37064428486056644,
+                                              0.0,
+                                              -0.19697413342140693,
+                                              0.907647511351783
+                                            ],
+                                            "bottom_radius": 0.0035999999999999995,
+                                            "top_radius": 0.001
+                                          }
+                                        ]
+                                      },
+                                      {
+                                        "type": "round-cone",
+                                        "name": "right-ear",
+                                        "position": [
+                                          0.17049999999999998,
+                                          0.0925,
+                                          -0.0285
+                                        ],
+                                        "half_length": 0.045986411036305054,
+                                        "rotation_xyzw": [
+                                          -0.14932550100983652,
+                                          0.0,
+                                          -0.5258854600781199,
+                                          0.8373448379410873
+                                        ],
+                                        "bottom_radius": 0.043,
+                                        "top_radius": 0.012
+                                      },
+                                      {
+                                        "type": "union",
+                                        "name": "right-horn",
+                                        "position": [
+                                          0,
+                                          0,
+                                          0
+                                        ],
+                                        "children": [
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-0",
+                                            "position": [
+                                              0.129724,
+                                              0.20356000000000002,
+                                              -0.035924000000000005
+                                            ],
+                                            "half_length": 0.006803789532312124,
+                                            "rotation_xyzw": [
+                                              -0.07780764050295536,
+                                              0.0,
+                                              -0.48200317558324285,
+                                              0.8727078032234112
+                                            ],
+                                            "bottom_radius": 0.05,
+                                            "top_radius": 0.04680000000000001
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-1",
+                                            "position": [
+                                              0.14373600000000003,
+                                              0.21208,
+                                              -0.038096000000000005
+                                            ],
+                                            "half_length": 0.009739098931626073,
+                                            "rotation_xyzw": [
+                                              -0.0737555731624946,
+                                              0.0,
+                                              -0.48981265254066997,
+                                              0.8687022970146591
+                                            ],
+                                            "bottom_radius": 0.04680000000000001,
+                                            "top_radius": 0.0436
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-2",
+                                            "position": [
+                                              0.16140000000000002,
+                                              0.22292,
+                                              -0.04088
+                                            ],
+                                            "half_length": 0.011173319649951836,
+                                            "rotation_xyzw": [
+                                              -0.07868295102191836,
+                                              0.0,
+                                              -0.480293846862961,
+                                              0.873571298683777
+                                            ],
+                                            "bottom_radius": 0.0436,
+                                            "top_radius": 0.040400000000000005
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-3",
+                                            "position": [
+                                              0.17976400000000003,
+                                              0.23512000000000002,
+                                              -0.04420399999999999
+                                            ],
+                                            "half_length": 0.011132092705327262,
+                                            "rotation_xyzw": [
+                                              -0.09070690606785103,
+                                              0.0,
+                                              -0.45596961506590905,
+                                              0.8853609248934837
+                                            ],
+                                            "bottom_radius": 0.040400000000000005,
+                                            "top_radius": 0.0372
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-4",
+                                            "position": [
+                                              0.19587600000000002,
+                                              0.24772000000000002,
+                                              -0.047996
+                                            ],
+                                            "half_length": 0.009705966824587834,
+                                            "rotation_xyzw": [
+                                              -0.11376112138740757,
+                                              0.0,
+                                              -0.4044082977863721,
+                                              0.9074758046042927
+                                            ],
+                                            "bottom_radius": 0.0372,
+                                            "top_radius": 0.034
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-5",
+                                            "position": [
+                                              0.208308,
+                                              0.26047200000000004,
+                                              -0.05222800000000001
+                                            ],
+                                            "half_length": 0.008661733775636378,
+                                            "rotation_xyzw": [
+                                              -0.13760199425034628,
+                                              0.0,
+                                              -0.3278237816341273,
+                                              0.9346642495428118
+                                            ],
+                                            "bottom_radius": 0.034,
+                                            "top_radius": 0.030000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-6",
+                                            "position": [
+                                              0.218092,
+                                              0.273928,
+                                              -0.05693200000000001
+                                            ],
+                                            "half_length": 0.008656870566203458,
+                                            "rotation_xyzw": [
+                                              -0.1504612686569527,
+                                              0.0,
+                                              -0.27199702686127647,
+                                              0.9504625316196144
+                                            ],
+                                            "bottom_radius": 0.030000000000000002,
+                                            "top_radius": 0.026000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-7",
+                                            "position": [
+                                              0.22613999999999998,
+                                              0.28806000000000004,
+                                              -0.06212
+                                            ],
+                                            "half_length": 0.008438485172114752,
+                                            "rotation_xyzw": [
+                                              -0.16721234835050428,
+                                              0.0,
+                                              -0.2202369130929204,
+                                              0.9610076652506009
+                                            ],
+                                            "bottom_radius": 0.026000000000000002,
+                                            "top_radius": 0.022
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-8",
+                                            "position": [
+                                              0.23230799999999996,
+                                              0.30217200000000005,
+                                              -0.067768
+                                            ],
+                                            "half_length": 0.007991032974528361,
+                                            "rotation_xyzw": [
+                                              -0.1899091563854112,
+                                              0.0,
+                                              -0.16791695162688264,
+                                              0.9673357274893327
+                                            ],
+                                            "bottom_radius": 0.022,
+                                            "top_radius": 0.018000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-9",
+                                            "position": [
+                                              0.236452,
+                                              0.315568,
+                                              -0.073852
+                                            ],
+                                            "half_length": 0.007326447433783983,
+                                            "rotation_xyzw": [
+                                              -0.22171153687134065,
+                                              0.0,
+                                              -0.10902460580585681,
+                                              0.968998260961817
+                                            ],
+                                            "bottom_radius": 0.018000000000000002,
+                                            "top_radius": 0.014
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-10",
+                                            "position": [
+                                              0.23798,
+                                              0.32820400000000005,
+                                              -0.08075199999999999
+                                            ],
+                                            "half_length": 0.007250346198630806,
+                                            "rotation_xyzw": [
+                                              -0.26861926749759757,
+                                              0.0,
+                                              0.0014318724280250187,
+                                              0.9632453679465082
+                                            ],
+                                            "bottom_radius": 0.014,
+                                            "top_radius": 0.011400000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-11",
+                                            "position": [
+                                              0.23642000000000002,
+                                              0.34061600000000003,
+                                              -0.088868
+                                            ],
+                                            "half_length": 0.007743084656646851,
+                                            "rotation_xyzw": [
+                                              -0.29689901262191287,
+                                              0.0,
+                                              0.10477187888124329,
+                                              0.9491437350053085
+                                            ],
+                                            "bottom_radius": 0.011400000000000002,
+                                            "top_radius": 0.008799999999999999
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-12",
+                                            "position": [
+                                              0.23260000000000003,
+                                              0.35258,
+                                              -0.09762
+                                            ],
+                                            "half_length": 0.007588443845743328,
+                                            "rotation_xyzw": [
+                                              -0.30833655761988366,
+                                              0.0,
+                                              0.16021133805226326,
+                                              0.9376891246008048
+                                            ],
+                                            "bottom_radius": 0.008799999999999999,
+                                            "top_radius": 0.006200000000000001
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-13",
+                                            "position": [
+                                              0.22808,
+                                              0.36318399999999995,
+                                              -0.105832
+                                            ],
+                                            "half_length": 0.006568384885190571,
+                                            "rotation_xyzw": [
+                                              -0.31225491877750683,
+                                              0.0,
+                                              0.1829108310830603,
+                                              0.9322234139795872
+                                            ],
+                                            "bottom_radius": 0.006200000000000001,
+                                            "top_radius": 0.0035999999999999995
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "right-horn-14",
+                                            "position": [
+                                              0.22442,
+                                              0.37151599999999996,
+                                              -0.112328
+                                            ],
+                                            "half_length": 0.004614568235490739,
+                                            "rotation_xyzw": [
+                                              -0.30906640245028705,
+                                              0.0,
+                                              0.1642493605836091,
+                                              0.9367497565648538
+                                            ],
+                                            "bottom_radius": 0.0035999999999999995,
+                                            "top_radius": 0.001
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "radius": 0.042,
+                                    "blend_materials": false
+                                  },
+                                  {
+                                    "type": "capsule",
+                                    "name": "left-eye-socket",
+                                    "position": [
+                                      -0.0835,
+                                      0.0695,
+                                      0.1335
+                                    ],
+                                    "radius": 0.039,
+                                    "half_length": 0.031060424980994705,
+                                    "rotation_xyzw": [
+                                      -0.2446784239617711,
+                                      0.0,
+                                      0.606376963731346,
+                                      0.7565972817183113
+                                    ]
+                                  }
+                                ],
+                                "radius": 0.008
+                              },
+                              {
+                                "type": "capsule",
+                                "name": "right-eye-socket",
+                                "position": [
+                                  0.0835,
+                                  0.0695,
+                                  0.1335
+                                ],
+                                "radius": 0.039,
+                                "half_length": 0.031060424980994705,
+                                "rotation_xyzw": [
+                                  -0.2446784239617711,
+                                  0.0,
+                                  -0.606376963731346,
+                                  0.7565972817183113
+                                ]
+                              }
+                            ],
+                            "radius": 0.008
+                          },
+                          {
+                            "type": "union",
+                            "name": "mouth-cut",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "children": [
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-0",
+                                "position": [
+                                  -0.059500000000000004,
+                                  -0.07183333333333333,
+                                  0.15946982569694515
+                                ],
+                                "half_length": 0.00694881661457077,
+                                "rotation_xyzw": [
+                                  0.10290880396803477,
+                                  0.0,
+                                  -0.5775014568796917,
+                                  0.8098776730887832
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-1",
+                                "position": [
+                                  -0.0465,
+                                  -0.0675,
+                                  0.16205928630828856
+                                ],
+                                "half_length": 0.00699948056248196,
+                                "rotation_xyzw": [
+                                  0.12634374225033343,
+                                  0.0,
+                                  -0.5738151871615222,
+                                  0.8091806904375366
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-2",
+                                "position": [
+                                  -0.0335,
+                                  -0.06316666666666666,
+                                  0.16601011700630186
+                                ],
+                                "half_length": 0.007300210330313671,
+                                "rotation_xyzw": [
+                                  0.21431562477111007,
+                                  0.0,
+                                  -0.5528754490663778,
+                                  0.805231364763333
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-3",
+                                "position": [
+                                  -0.018000000000000002,
+                                  -0.061,
+                                  0.17040136284828186
+                                ],
+                                "half_length": 0.009192544707586478,
+                                "rotation_xyzw": [
+                                  0.14396660714846485,
+                                  0.0,
+                                  -0.6922959020723433,
+                                  0.7071067811865475
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-4",
+                                "position": [
+                                  -2.6020852139652106e-18,
+                                  -0.061,
+                                  0.17227296061515812
+                                ],
+                                "half_length": 0.009000000000000001,
+                                "rotation_xyzw": [
+                                  0.0,
+                                  0.0,
+                                  -0.7071067811865475,
+                                  0.7071067811865475
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-5",
+                                "position": [
+                                  0.018,
+                                  -0.061,
+                                  0.17040136284828186
+                                ],
+                                "half_length": 0.009192544707586481,
+                                "rotation_xyzw": [
+                                  -0.14396660714846482,
+                                  0.0,
+                                  -0.6922959020723434,
+                                  0.7071067811865476
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-6",
+                                "position": [
+                                  0.0335,
+                                  -0.06316666666666666,
+                                  0.16601011700630186
+                                ],
+                                "half_length": 0.007300210330313671,
+                                "rotation_xyzw": [
+                                  -0.29103724567924855,
+                                  0.0,
+                                  -0.7507961590378953,
+                                  0.5929607484491535
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-7",
+                                "position": [
+                                  0.0465,
+                                  -0.06749999999999999,
+                                  0.16205928630828856
+                                ],
+                                "half_length": 0.006999480562481955,
+                                "rotation_xyzw": [
+                                  -0.17399914530653965,
+                                  0.0,
+                                  -0.790251660681306,
+                                  0.5875598779894964
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              },
+                              {
+                                "type": "round-cone",
+                                "name": "mouth-cut-8",
+                                "position": [
+                                  0.0595,
+                                  -0.07183333333333333,
+                                  0.15946982569694515
+                                ],
+                                "half_length": 0.006948816614570775,
+                                "rotation_xyzw": [
+                                  -0.1420792923523713,
+                                  0.0,
+                                  -0.7973175779150689,
+                                  0.586598802106088
+                                ],
+                                "bottom_radius": 0.009,
+                                "top_radius": 0.009
+                              }
+                            ]
+                          }
+                        ],
+                        "radius": 0.003
+                      },
+                      {
+                        "type": "sphere",
+                        "name": "nostril--1",
+                        "position": [
+                          -0.023,
+                          -0.019,
+                          0.204
+                        ],
+                        "radius": 0.013
+                      }
+                    ],
+                    "radius": 0.003
+                  },
+                  {
+                    "type": "sphere",
+                    "name": "nostril-1",
+                    "position": [
+                      0.023,
+                      -0.019,
+                      0.204
+                    ],
+                    "radius": 0.013
+                  }
+                ],
+                "radius": 0.003
+              },
+              {
+                "type": "union",
+                "name": "cheek-flow--1",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "round-cone",
+                    "name": "cheek-flow--1-0",
+                    "position": [
+                      -0.14700000000000002,
+                      0.012166666666666666,
+                      0.12424109354019164
+                    ],
+                    "half_length": 0.007552910554899696,
+                    "rotation_xyzw": [
+                      0.7346332008646506,
+                      0.0,
+                      -0.5886243776715938,
+                      0.3373950239675842
+                    ],
+                    "bottom_radius": 0.0055,
+                    "top_radius": 0.0055
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "cheek-flow--1-1",
+                    "position": [
+                      -0.14100000000000001,
+                      0.0004999999999999996,
+                      0.13078480377197263
+                    ],
+                    "half_length": 0.007131991284294856,
+                    "rotation_xyzw": [
+                      0.6504614974395214,
+                      0.0,
+                      -0.6970332021968505,
+                      0.3017359033723697
+                    ],
+                    "bottom_radius": 0.0055,
+                    "top_radius": 0.0055
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "cheek-flow--1-2",
+                    "position": [
+                      -0.135,
+                      -0.011166666666666668,
+                      0.1353383423328399
+                    ],
+                    "half_length": 0.006790009390572328,
+                    "rotation_xyzw": [
+                      0.4866226000564332,
+                      0.0,
+                      -0.8323167159487048,
+                      0.265419158062638
+                    ],
+                    "bottom_radius": 0.0055,
+                    "top_radius": 0.0055
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "cheek-flow--1-3",
+                    "position": [
+                      -0.1275,
+                      -0.021833333333333337,
+                      0.13960336103439325
+                    ],
+                    "half_length": 0.007065155403815275,
+                    "rotation_xyzw": [
+                      0.44714416980746,
+                      0.0,
+                      -0.8013216423575935,
+                      0.39742385043744705
+                    ],
+                    "bottom_radius": 0.0055,
+                    "top_radius": 0.0055
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "cheek-flow--1-4",
+                    "position": [
+                      -0.1185,
+                      -0.0315,
+                      0.14462989225387568
+                    ],
+                    "half_length": 0.00706674036034569,
+                    "rotation_xyzw": [
+                      0.4477284767804675,
+                      0.0,
+                      -0.8009474245500078,
+                      0.39752035694609666
+                    ],
+                    "bottom_radius": 0.0055,
+                    "top_radius": 0.0055
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "cheek-flow--1-5",
+                    "position": [
+                      -0.10949999999999999,
+                      -0.04116666666666667,
+                      0.1494985915660858
+                    ],
+                    "half_length": 0.0070106125329733055,
+                    "rotation_xyzw": [
+                      0.42590216334014025,
+                      0.0,
+                      -0.8144463319248273,
+                      0.3940615683828892
+                    ],
+                    "bottom_radius": 0.0055,
+                    "top_radius": 0.0055
+                  }
+                ]
+              }
+            ],
+            "radius": 0.003
+          },
+          {
+            "type": "union",
+            "name": "cheek-flow-1",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "round-cone",
+                "name": "cheek-flow-1-0",
+                "position": [
+                  0.14700000000000002,
+                  0.012166666666666666,
+                  0.12424109354019164
+                ],
+                "half_length": 0.007552910554899696,
+                "rotation_xyzw": [
+                  0.7346332008646506,
+                  0.0,
+                  0.5886243776715938,
+                  0.3373950239675842
+                ],
+                "bottom_radius": 0.0055,
+                "top_radius": 0.0055
+              },
+              {
+                "type": "round-cone",
+                "name": "cheek-flow-1-1",
+                "position": [
+                  0.14100000000000001,
+                  0.0004999999999999996,
+                  0.13078480377197263
+                ],
+                "half_length": 0.007131991284294856,
+                "rotation_xyzw": [
+                  0.6504614974395214,
+                  0.0,
+                  0.6970332021968505,
+                  0.3017359033723697
+                ],
+                "bottom_radius": 0.0055,
+                "top_radius": 0.0055
+              },
+              {
+                "type": "round-cone",
+                "name": "cheek-flow-1-2",
+                "position": [
+                  0.135,
+                  -0.011166666666666668,
+                  0.1353383423328399
+                ],
+                "half_length": 0.006790009390572328,
+                "rotation_xyzw": [
+                  0.4866226000564332,
+                  0.0,
+                  0.8323167159487048,
+                  0.265419158062638
+                ],
+                "bottom_radius": 0.0055,
+                "top_radius": 0.0055
+              },
+              {
+                "type": "round-cone",
+                "name": "cheek-flow-1-3",
+                "position": [
+                  0.1275,
+                  -0.021833333333333337,
+                  0.13960336103439325
+                ],
+                "half_length": 0.007065155403815275,
+                "rotation_xyzw": [
+                  0.44714416980746,
+                  0.0,
+                  0.8013216423575935,
+                  0.39742385043744705
+                ],
+                "bottom_radius": 0.0055,
+                "top_radius": 0.0055
+              },
+              {
+                "type": "round-cone",
+                "name": "cheek-flow-1-4",
+                "position": [
+                  0.1185,
+                  -0.0315,
+                  0.14462989225387568
+                ],
+                "half_length": 0.00706674036034569,
+                "rotation_xyzw": [
+                  0.4477284767804675,
+                  0.0,
+                  0.8009474245500078,
+                  0.39752035694609666
+                ],
+                "bottom_radius": 0.0055,
+                "top_radius": 0.0055
+              },
+              {
+                "type": "round-cone",
+                "name": "cheek-flow-1-5",
+                "position": [
+                  0.10949999999999999,
+                  -0.04116666666666667,
+                  0.1494985915660858
+                ],
+                "half_length": 0.0070106125329733055,
+                "rotation_xyzw": [
+                  0.42590216334014025,
+                  0.0,
+                  0.8144463319248273,
+                  0.3940615683828892
+                ],
+                "bottom_radius": 0.0055,
+                "top_radius": 0.0055
+              }
+            ]
+          }
+        ],
+        "radius": 0.003
+      },
+      {
+        "type": "union",
+        "name": "brow-expression",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "round-cone",
+            "name": "brow-expression-0",
+            "position": [
+              -0.020833333333333336,
+              0.14583333333333331,
+              0.13857579493522643
+            ],
+            "half_length": 0.006932370598887209,
+            "rotation_xyzw": [
+              0.5897209741630234,
+              0.0,
+              -0.6728682420756135,
+              0.44662904231396366
+            ],
+            "bottom_radius": 0.005,
+            "top_radius": 0.005000000000000001
+          },
+          {
+            "type": "round-cone",
+            "name": "brow-expression-1",
+            "position": [
+              -0.012500000000000002,
+              0.1375,
+              0.14509654068946834
+            ],
+            "half_length": 0.006553865512150701,
+            "rotation_xyzw": [
+              0.5128807752056007,
+              0.0,
+              -0.7448703717520123,
+              0.42675688595560024
+            ],
+            "bottom_radius": 0.005000000000000001,
+            "top_radius": 0.005
+          },
+          {
+            "type": "round-cone",
+            "name": "brow-expression-2",
+            "position": [
+              -0.0041666666666666675,
+              0.12916666666666665,
+              0.14990006232261655
+            ],
+            "half_length": 0.006201995751949676,
+            "rotation_xyzw": [
+              0.3850211107886592,
+              0.0,
+              -0.829259983736891,
+              0.4050760713986425
+            ],
+            "bottom_radius": 0.005,
+            "top_radius": 0.005
+          },
+          {
+            "type": "round-cone",
+            "name": "brow-expression-3",
+            "position": [
+              0.004166666666666667,
+              0.12916666666666665,
+              0.15003261828422543
+            ],
+            "half_length": 0.006161935329868925,
+            "rotation_xyzw": [
+              -0.15972093341973867,
+              0.0,
+              -0.3693128518967971,
+              0.9154765102674027
+            ],
+            "bottom_radius": 0.005,
+            "top_radius": 0.005000000000000001
+          },
+          {
+            "type": "round-cone",
+            "name": "brow-expression-4",
+            "position": [
+              0.0125,
+              0.1375,
+              0.14546026253700256
+            ],
+            "half_length": 0.0065113025755671435,
+            "rotation_xyzw": [
+              -0.23493156293280634,
+              0.0,
+              -0.3533421840195827,
+              0.9055144735067574
+            ],
+            "bottom_radius": 0.005000000000000001,
+            "top_radius": 0.005
+          },
+          {
+            "type": "round-cone",
+            "name": "brow-expression-5",
+            "position": [
+              0.020833333333333336,
+              0.14583333333333331,
+              0.1390053811073303
+            ],
+            "half_length": 0.0069496758363439435,
+            "rotation_xyzw": [
+              -0.2964176341378621,
+              0.0,
+              -0.33520503006790137,
+              0.8943009415120226
+            ],
+            "bottom_radius": 0.005,
+            "top_radius": 0.005
+          }
+        ]
+      }
+    ],
+    "radius": 0.003
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "bust-base",
+      "label": "Establish the cropped bust",
+      "seconds": 0.65
+    },
+    {
+      "node": "neck",
+      "label": "Raise the neck",
+      "seconds": 0.65
+    },
+    {
+      "node": "cranium",
+      "label": "Block the skull",
+      "seconds": 0.65
+    },
+    {
+      "node": "jaw",
+      "label": "Blend the jaw into the head",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-cheek",
+      "label": "Raise the cheek mass",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-brow",
+      "label": "Sweep the heavy brow",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-cheek",
+      "label": "Raise the cheek mass",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-brow",
+      "label": "Sweep the heavy brow",
+      "seconds": 0.65
+    },
+    {
+      "node": "nose-bridge",
+      "label": "Pull the nose bridge forward",
+      "seconds": 0.65
+    },
+    {
+      "node": "nose-tip",
+      "label": "Round the nose tip",
+      "seconds": 0.65
+    },
+    {
+      "node": "muzzle",
+      "label": "Blend a broad muzzle",
+      "seconds": 0.65
+    },
+    {
+      "node": "shoulder-mantle",
+      "label": "Blend the shoulders into the cropped base",
+      "seconds": 0.65
+    },
+    {
+      "node": "chin",
+      "label": "Strengthen the chin",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-ear",
+      "label": "Pull a small pointed ear",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-horn-0",
+      "label": "Grow the swept horn",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-1",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-2",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-3",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-4",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-5",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-6",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-7",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-8",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-9",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-10",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-11",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-12",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-13",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-horn-14",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-ear",
+      "label": "Pull a small pointed ear",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-horn-0",
+      "label": "Grow the swept horn",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-1",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-2",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-3",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-4",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-5",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-6",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-7",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-8",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-9",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-10",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-11",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-12",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-13",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "right-horn-14",
+      "label": "Grow the swept horn / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "left-eye-socket",
+      "label": "Carve the eye socket",
+      "seconds": 1.2
+    },
+    {
+      "node": "right-eye-socket",
+      "label": "Carve the eye socket",
+      "seconds": 1.2
+    },
+    {
+      "node": "mouth-cut-0",
+      "label": "Carve the mouth and expression",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-1",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-2",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-3",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-4",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-5",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-6",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-7",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "mouth-cut-8",
+      "label": "Carve the mouth and expression / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "nostril--1",
+      "label": "Open a nostril",
+      "seconds": 0.8
+    },
+    {
+      "node": "nostril-1",
+      "label": "Open a nostril",
+      "seconds": 0.8
+    },
+    {
+      "node": "cheek-flow--1-0",
+      "label": "Carve the cheek flow",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow--1-1",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow--1-2",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow--1-3",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow--1-4",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow--1-5",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow-1-0",
+      "label": "Carve the cheek flow",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow-1-1",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow-1-2",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow-1-3",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow-1-4",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "cheek-flow-1-5",
+      "label": "Carve the cheek flow / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "brow-expression-0",
+      "label": "Sharpen the central brow crease",
+      "seconds": 0.42
+    },
+    {
+      "node": "brow-expression-1",
+      "label": "Sharpen the central brow crease / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "brow-expression-2",
+      "label": "Sharpen the central brow crease / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "brow-expression-3",
+      "label": "Sharpen the central brow crease / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "brow-expression-4",
+      "label": "Sharpen the central brow crease / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "brow-expression-5",
+      "label": "Sharpen the central brow crease / continue",
+      "seconds": 0.42
+    }
+  ]
+}

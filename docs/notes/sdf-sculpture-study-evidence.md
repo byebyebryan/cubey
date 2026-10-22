@@ -68,3 +68,42 @@ static/replay and export/reload identity, an axis-80 atlas relocation and
 subject/robot performance captures. It is retained in
 `outputs/sdf/sculpture-foundation/generic-vessel/`. No robot-specific camera or
 hidden-preview exception is inherited by this workflow.
+
+The accepted 82-shape field-kit robot was also captured with the new binary;
+its 960×960 RGB pixels match the preceding joint-review hero exactly (maximum
+channel difference zero). The comparison capture is
+`outputs/sdf/sculpture-foundation/robot-fieldkit.png`.
+
+## Modeling revisions
+
+Four native refinement passes are retained under
+`outputs/sdf/sculpture-refinement-{1,2,3,4}/`. The first pass exposed disconnected
+arch geometry and short punctures where long grooves were intended. The arch
+cut was reoriented. `sdf_probe.py` now places authoring cutters along the actual
+front surface of the saved expression. It is a build-time double-precision
+interpreter, not a replacement for the native CPU/GPU rendering oracle.
+
+The retained capsule blockouts reproduce unchanged. Finished curved strokes
+sample a Catmull-Rom authoring path into explicit rounded tapered segments.
+Hard union joins those segments; smooth union remains at major branch/root
+connections. Polynomial smoothing between every small segment inflated each
+join and made corrugations more apparent. A sampled curved ceramic handle and
+teardrop piercings were also less clean than the simpler analytic handle and
+round through-holes, so the vessel keeps the latter. This study does not add
+an exact spline sweep or claim these sampled curves have no approximation.
+
+| Candidate | Leaves | Instructions | Modeling changes |
+| --- | ---: | ---: | --- |
+| Guardian | 76 | 151 | Tapered swept horns, small ears, shoulder/neck mass and surface-following mouth/cheek/brow cuts. |
+| Vessel | 10 | 19 | Rounded hollow belly, open lip, fused analytic handle and three confirmed wall-to-interior piercings. |
+| Arch | 49 | 97 | Joined front/rear cavities, exposed rock planes and directed surface grooves, with both supports retained. |
+| Driftwood | 94 | 187 | Curved tapered trunk/branches, a rear branch, hollow broken ends, a knot recess and tapered grooves following the form. |
+
+`sculptures.json` holds subject-specific inspection cameras and design-intent
+probes. `check_sculptures.py` evaluates separately chosen world-space solid
+paths and empty passages against the saved scene. All current probes pass.
+Reintroducing the earlier arch cut's position/extent/orientation makes the
+right-support check fail; that negative control is recorded at
+`outputs/sdf/sculpture-arch-bad-support-audit.json`. These sampled intent checks
+complement native rays and visual inspections; they are not a complete topology
+proof or an artistic acceptance result. Full final qualification follows.

@@ -1,0 +1,1339 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Wind-carved arch",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.5840784178911641,
+        0.33716361504833037,
+        0.17464740365558504
+      ],
+      "roughness": 0.84,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "subtract",
+    "name": "trimmed-arch",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "smooth-subtract",
+        "name": "erosion-seam-3-carve",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "smooth-subtract",
+            "name": "erosion-seam-2-carve",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "smooth-subtract",
+                "name": "erosion-seam-1-carve",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "smooth-subtract",
+                    "name": "erosion-seam-0-carve",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "smooth-subtract",
+                        "name": "wind-face-carve",
+                        "position": [
+                          0,
+                          0,
+                          0
+                        ],
+                        "children": [
+                          {
+                            "type": "smooth-subtract",
+                            "name": "outer-right-plane-carve",
+                            "position": [
+                              0,
+                              0,
+                              0
+                            ],
+                            "children": [
+                              {
+                                "type": "smooth-subtract",
+                                "name": "crown-plane-carve",
+                                "position": [
+                                  0,
+                                  0,
+                                  0
+                                ],
+                                "children": [
+                                  {
+                                    "type": "smooth-subtract",
+                                    "name": "wind-channel-carve",
+                                    "position": [
+                                      0,
+                                      0,
+                                      0
+                                    ],
+                                    "children": [
+                                      {
+                                        "type": "smooth-subtract",
+                                        "name": "rear-cavity-carve",
+                                        "position": [
+                                          0,
+                                          0,
+                                          0
+                                        ],
+                                        "children": [
+                                          {
+                                            "type": "smooth-subtract",
+                                            "name": "front-cavity-carve",
+                                            "position": [
+                                              0,
+                                              0,
+                                              0
+                                            ],
+                                            "children": [
+                                              {
+                                                "type": "smooth-union",
+                                                "name": "rock-mass",
+                                                "position": [
+                                                  0,
+                                                  0,
+                                                  0
+                                                ],
+                                                "children": [
+                                                  {
+                                                    "type": "capsule",
+                                                    "name": "left-support",
+                                                    "position": [
+                                                      -0.1975,
+                                                      -0.08499999999999999,
+                                                      -0.0125
+                                                    ],
+                                                    "radius": 0.105,
+                                                    "half_length": 0.16251922963145007,
+                                                    "rotation_xyzw": [
+                                                      -0.023164134670990683,
+                                                      0.0,
+                                                      -0.08493516046029916,
+                                                      0.9961171825556104
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "capsule",
+                                                    "name": "right-support",
+                                                    "position": [
+                                                      0.18,
+                                                      -0.0925,
+                                                      0.0135
+                                                    ],
+                                                    "radius": 0.12,
+                                                    "half_length": 0.1496111626851419,
+                                                    "rotation_xyzw": [
+                                                      0.005030773652995439,
+                                                      0.0,
+                                                      0.08384622754992399,
+                                                      0.9964660061648358
+                                                    ]
+                                                  },
+                                                  {
+                                                    "type": "sphere",
+                                                    "name": "left-crown",
+                                                    "position": [
+                                                      -0.115,
+                                                      0.12,
+                                                      -0.015
+                                                    ],
+                                                    "radius": 0.185
+                                                  },
+                                                  {
+                                                    "type": "sphere",
+                                                    "name": "right-crown",
+                                                    "position": [
+                                                      0.115,
+                                                      0.09,
+                                                      -0.005
+                                                    ],
+                                                    "radius": 0.18
+                                                  }
+                                                ],
+                                                "radius": 0.065,
+                                                "blend_materials": false
+                                              },
+                                              {
+                                                "type": "capsule",
+                                                "name": "front-cavity",
+                                                "position": [
+                                                  -0.019,
+                                                  -0.11,
+                                                  0.1825
+                                                ],
+                                                "radius": 0.145,
+                                                "half_length": 0.16757759396769006,
+                                                "rotation_xyzw": [
+                                                  -0.6964655402934024,
+                                                  0.0,
+                                                  0.004158003225632257,
+                                                  0.7175781923895087
+                                                ]
+                                              }
+                                            ],
+                                            "radius": 0.025
+                                          },
+                                          {
+                                            "type": "capsule",
+                                            "name": "rear-cavity",
+                                            "position": [
+                                              -0.0035000000000000014,
+                                              -0.105,
+                                              -0.1825
+                                            ],
+                                            "radius": 0.135,
+                                            "half_length": 0.16953908104033122,
+                                            "rotation_xyzw": [
+                                              0.6696081398155135,
+                                              0.0,
+                                              0.08594970152855846,
+                                              0.7377246016637642
+                                            ]
+                                          }
+                                        ],
+                                        "radius": 0.025
+                                      },
+                                      {
+                                        "type": "union",
+                                        "name": "wind-channel",
+                                        "position": [
+                                          0,
+                                          0,
+                                          0
+                                        ],
+                                        "children": [
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-0",
+                                            "position": [
+                                              -0.33192,
+                                              0.12364,
+                                              0.15692
+                                            ],
+                                            "half_length": 0.009067656808679962,
+                                            "rotation_xyzw": [
+                                              0.12647536889656788,
+                                              0.0,
+                                              -0.5322505107730592,
+                                              0.8370862409837441
+                                            ],
+                                            "bottom_radius": 0.035,
+                                            "top_radius": 0.035
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-1",
+                                            "position": [
+                                              -0.31248,
+                                              0.13256,
+                                              0.16164
+                                            ],
+                                            "half_length": 0.012836198814290791,
+                                            "rotation_xyzw": [
+                                              0.12983484891277036,
+                                              0.0,
+                                              -0.5267585298746668,
+                                              0.8400406914025523
+                                            ],
+                                            "bottom_radius": 0.035,
+                                            "top_radius": 0.035
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-2",
+                                            "position": [
+                                              -0.28780000000000006,
+                                              0.1438,
+                                              0.16758
+                                            ],
+                                            "half_length": 0.014926607116153325,
+                                            "rotation_xyzw": [
+                                              0.12574772901341594,
+                                              0.0,
+                                              -0.5334266721206057,
+                                              0.8364469463859046
+                                            ],
+                                            "bottom_radius": 0.035,
+                                            "top_radius": 0.035
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-3",
+                                            "position": [
+                                              -0.26052000000000003,
+                                              0.15544000000000002,
+                                              0.17365999999999998
+                                            ],
+                                            "half_length": 0.0153553769084318,
+                                            "rotation_xyzw": [
+                                              0.115671653315556,
+                                              0.0,
+                                              -0.5492436327500558,
+                                              0.8276179677259112
+                                            ],
+                                            "bottom_radius": 0.035,
+                                            "top_radius": 0.035
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-4",
+                                            "position": [
+                                              -0.23328000000000002,
+                                              0.16556000000000004,
+                                              0.1788
+                                            ],
+                                            "half_length": 0.014174343018284843,
+                                            "rotation_xyzw": [
+                                              0.09577063289220021,
+                                              0.0,
+                                              -0.5781063658220071,
+                                              0.8103215507880184
+                                            ],
+                                            "bottom_radius": 0.035,
+                                            "top_radius": 0.035
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-5",
+                                            "position": [
+                                              -0.20776,
+                                              0.17336000000000001,
+                                              0.182508
+                                            ],
+                                            "half_length": 0.012782068064284434,
+                                            "rotation_xyzw": [
+                                              0.07423456939069102,
+                                              0.0,
+                                              -0.6025405366989793,
+                                              0.7946282969677614
+                                            ],
+                                            "bottom_radius": 0.035,
+                                            "top_radius": 0.033400000000000006
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-6",
+                                            "position": [
+                                              -0.18344,
+                                              0.17964000000000002,
+                                              0.185192
+                                            ],
+                                            "half_length": 0.01248342004420264,
+                                            "rotation_xyzw": [
+                                              0.05996763929858956,
+                                              0.0,
+                                              -0.6159941179650985,
+                                              0.7854649125641161
+                                            ],
+                                            "bottom_radius": 0.033400000000000006,
+                                            "top_radius": 0.0318
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-7",
+                                            "position": [
+                                              -0.15889999999999999,
+                                              0.18480000000000002,
+                                              0.18713999999999997
+                                            ],
+                                            "half_length": 0.012683263933231048,
+                                            "rotation_xyzw": [
+                                              0.039678466351130474,
+                                              0.0,
+                                              -0.6404063351490897,
+                                              0.7670106552121254
+                                            ],
+                                            "bottom_radius": 0.0318,
+                                            "top_radius": 0.0302
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-8",
+                                            "position": [
+                                              -0.13306,
+                                              0.18835999999999997,
+                                              0.18820799999999996
+                                            ],
+                                            "half_length": 0.01344821237191027,
+                                            "rotation_xyzw": [
+                                              0.014851847093446077,
+                                              0.0,
+                                              -0.6713436287510641,
+                                              0.740997405375529
+                                            ],
+                                            "bottom_radius": 0.0302,
+                                            "top_radius": 0.0286
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-9",
+                                            "position": [
+                                              -0.10483999999999999,
+                                              0.18983999999999998,
+                                              0.18825199999999997
+                                            ],
+                                            "half_length": 0.014843001852725066,
+                                            "rotation_xyzw": [
+                                              -0.01194085956452157,
+                                              0.0,
+                                              -0.7031839521330079,
+                                              0.7109076911494656
+                                            ],
+                                            "bottom_radius": 0.0286,
+                                            "top_radius": 0.027
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-10",
+                                            "position": [
+                                              -0.07178,
+                                              0.18836,
+                                              0.18685600000000002
+                                            ],
+                                            "half_length": 0.018329395407377734,
+                                            "rotation_xyzw": [
+                                              -0.046250523684694435,
+                                              0.0,
+                                              -0.7366123614817643,
+                                              0.6747318859896501
+                                            ],
+                                            "bottom_radius": 0.027,
+                                            "top_radius": 0.024
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-11",
+                                            "position": [
+                                              -0.03232,
+                                              0.18344,
+                                              0.183724
+                                            ],
+                                            "half_length": 0.02158351556165028,
+                                            "rotation_xyzw": [
+                                              -0.07072501258975696,
+                                              0.0,
+                                              -0.7556334343090718,
+                                              0.6511651753191785
+                                            ],
+                                            "bottom_radius": 0.024,
+                                            "top_radius": 0.020999999999999998
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-12",
+                                            "position": [
+                                              0.010299999999999991,
+                                              0.17620000000000002,
+                                              0.17942000000000002
+                                            ],
+                                            "half_length": 0.021866637967460835,
+                                            "rotation_xyzw": [
+                                              -0.08276096068277729,
+                                              0.0,
+                                              -0.7640023054394602,
+                                              0.6398836618245958
+                                            ],
+                                            "bottom_radius": 0.020999999999999998,
+                                            "top_radius": 0.018000000000000002
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-13",
+                                            "position": [
+                                              0.050319999999999976,
+                                              0.16856000000000004,
+                                              0.17497600000000005
+                                            ],
+                                            "half_length": 0.019118587395516425,
+                                            "rotation_xyzw": [
+                                              -0.08758403416901304,
+                                              0.0,
+                                              -0.7671834571947411,
+                                              0.6354200028055504
+                                            ],
+                                            "bottom_radius": 0.018000000000000002,
+                                            "top_radius": 0.015
+                                          },
+                                          {
+                                            "type": "round-cone",
+                                            "name": "wind-channel-14",
+                                            "position": [
+                                              0.08197999999999998,
+                                              0.16244000000000003,
+                                              0.17142400000000002
+                                            ],
+                                            "half_length": 0.013322979246399832,
+                                            "rotation_xyzw": [
+                                              -0.08362197397957853,
+                                              0.0,
+                                              -0.7645773182683264,
+                                              0.6390844152828115
+                                            ],
+                                            "bottom_radius": 0.015,
+                                            "top_radius": 0.012
+                                          }
+                                        ]
+                                      }
+                                    ],
+                                    "radius": 0.015
+                                  },
+                                  {
+                                    "type": "box",
+                                    "name": "crown-plane",
+                                    "position": [
+                                      -0.08,
+                                      0.345,
+                                      0
+                                    ],
+                                    "half_extent": [
+                                      0.32,
+                                      0.1,
+                                      0.3
+                                    ],
+                                    "rounding": 0.002,
+                                    "rotation_xyzw": [
+                                      0.0,
+                                      0.0,
+                                      0.10452846326765347,
+                                      0.9945218953682733
+                                    ]
+                                  }
+                                ],
+                                "radius": 0.007
+                              },
+                              {
+                                "type": "box",
+                                "name": "outer-right-plane",
+                                "position": [
+                                  0.39,
+                                  0.12,
+                                  0
+                                ],
+                                "half_extent": [
+                                  0.09,
+                                  0.38,
+                                  0.3
+                                ],
+                                "rounding": 0.002,
+                                "rotation_xyzw": [
+                                  0.0,
+                                  0.0,
+                                  0.08715574274765817,
+                                  0.9961946980917455
+                                ]
+                              }
+                            ],
+                            "radius": 0.007
+                          },
+                          {
+                            "type": "box",
+                            "name": "wind-face",
+                            "position": [
+                              0,
+                              0.12,
+                              0.28
+                            ],
+                            "half_extent": [
+                              0.5,
+                              0.45,
+                              0.13
+                            ],
+                            "rounding": 0.002,
+                            "rotation_xyzw": [
+                              0.0,
+                              0.0,
+                              0.0,
+                              1.0
+                            ]
+                          }
+                        ],
+                        "radius": 0.007
+                      },
+                      {
+                        "type": "union",
+                        "name": "erosion-seam-0",
+                        "position": [
+                          0,
+                          0,
+                          0
+                        ],
+                        "children": [
+                          {
+                            "type": "round-cone",
+                            "name": "erosion-seam-0-0",
+                            "position": [
+                              -0.2825,
+                              -0.20666666666666667,
+                              0.07583342299461363
+                            ],
+                            "half_length": 0.00959124627069903,
+                            "rotation_xyzw": [
+                              0.3151950256898695,
+                              0.0,
+                              -0.4763218800869045,
+                              0.8208346741767426
+                            ],
+                            "bottom_radius": 0.007,
+                            "top_radius": 0.007
+                          },
+                          {
+                            "type": "round-cone",
+                            "name": "erosion-seam-0-1",
+                            "position": [
+                              -0.2675,
+                              -0.2,
+                              0.08425288305282588
+                            ],
+                            "half_length": 0.008905535251772349,
+                            "rotation_xyzw": [
+                              0.23411104812057545,
+                              0.0,
+                              -0.507978833239636,
+                              0.828944824538029
+                            ],
+                            "bottom_radius": 0.007,
+                            "top_radius": 0.006999999999999999
+                          },
+                          {
+                            "type": "round-cone",
+                            "name": "erosion-seam-0-2",
+                            "position": [
+                              -0.2525,
+                              -0.19333333333333333,
+                              0.08998863682746883
+                            ],
+                            "half_length": 0.008517985253066716,
+                            "rotation_xyzw": [
+                              0.16040739911955024,
+                              0.0,
+                              -0.5278305065639556,
+                              0.8340649990547135
+                            ],
+                            "bottom_radius": 0.006999999999999999,
+                            "top_radius": 0.007
+                          },
+                          {
+                            "type": "round-cone",
+                            "name": "erosion-seam-0-3",
+                            "position": [
+                              -0.23750000000000002,
+                              -0.1875,
+                              0.09359793767929074
+                            ],
+                            "half_length": 0.008016797758379761,
+                            "rotation_xyzw": [
+                              0.10242651037665534,
+                              0.0,
+                              -0.5775692198820912,
+                              0.809890490262019
+                            ],
+                            "bottom_radius": 0.007,
+                            "top_radius": 0.007
+                          },
+                          {
+                            "type": "round-cone",
+                            "name": "erosion-seam-0-4",
+                            "position": [
+                              -0.22250000000000003,
+                              -0.1825,
+                              0.09529795751571653
+                            ],
+                            "half_length": 0.007914346086782986,
+                            "rotation_xyzw": [
+                              0.028815219386774713,
+                              0.0,
+                              -0.5841477978090498,
+                              0.8111356442954097
+                            ],
+                            "bottom_radius": 0.007,
+                            "top_radius": 0.006999999999999999
+                          },
+                          {
+                            "type": "round-cone",
+                            "name": "erosion-seam-0-5",
+                            "position": [
+                              -0.20750000000000002,
+                              -0.1775,
+                              0.09510776028633115
+                            ],
+                            "half_length": 0.007925514591606585,
+                            "rotation_xyzw": [
+                              -0.043574881354479,
+                              0.0,
+                              -0.5834233147341048,
+                              0.8109984374458515
+                            ],
+                            "bottom_radius": 0.006999999999999999,
+                            "top_radius": 0.007
+                          }
+                        ]
+                      }
+                    ],
+                    "radius": 0.003
+                  },
+                  {
+                    "type": "union",
+                    "name": "erosion-seam-1",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "round-cone",
+                        "name": "erosion-seam-1-0",
+                        "position": [
+                          -0.2875,
+                          -0.07116666666666666,
+                          0.03665229306221006
+                        ],
+                        "half_length": 0.014622721312882532,
+                        "rotation_xyzw": [
+                          0.5145013038676094,
+                          0.0,
+                          -0.32282170751690487,
+                          0.7944020099888971
+                        ],
+                        "bottom_radius": 0.007,
+                        "top_radius": 0.007
+                      },
+                      {
+                        "type": "round-cone",
+                        "name": "erosion-seam-1-1",
+                        "position": [
+                          -0.2725,
+                          -0.0635,
+                          0.0558649896144867
+                        ],
+                        "half_length": 0.011119550544284682,
+                        "rotation_xyzw": [
+                          0.39809254748706924,
+                          0.0,
+                          -0.41128244114358625,
+                          0.8199811444431073
+                        ],
+                        "bottom_radius": 0.007,
+                        "top_radius": 0.006999999999999999
+                      },
+                      {
+                        "type": "round-cone",
+                        "name": "erosion-seam-1-2",
+                        "position": [
+                          -0.2575,
+                          -0.05583333333333333,
+                          0.06855749831199646
+                        ],
+                        "half_length": 0.01002308897669978,
+                        "rotation_xyzw": [
+                          0.3259876508512616,
+                          0.0,
+                          -0.45000767118240526,
+                          0.8313995112877227
+                        ],
+                        "bottom_radius": 0.006999999999999999,
+                        "top_radius": 0.007
+                      },
+                      {
+                        "type": "round-cone",
+                        "name": "erosion-seam-1-3",
+                        "position": [
+                          -0.2425,
+                          -0.049166666666666664,
+                          0.07840630755424496
+                        ],
+                        "half_length": 0.009152968963525014,
+                        "rotation_xyzw": [
+                          0.29810431750912314,
+                          0.0,
+                          -0.5063171725811869,
+                          0.8091827584864945
+                        ],
+                        "bottom_radius": 0.007,
+                        "top_radius": 0.007
+                      },
+                      {
+                        "type": "round-cone",
+                        "name": "erosion-seam-1-4",
+                        "position": [
+                          -0.2275,
+                          -0.043500000000000004,
+                          0.08644858465194698
+                        ],
+                        "half_length": 0.00879939202389841,
+                        "rotation_xyzw": [
+                          0.25345796461036707,
+                          0.0,
+                          -0.5241784894193183,
+                          0.8130165874111372
+                        ],
+                        "bottom_radius": 0.007,
+                        "top_radius": 0.006999999999999999
+                      },
+                      {
+                        "type": "round-cone",
+                        "name": "erosion-seam-1-5",
+                        "position": [
+                          -0.2125,
+                          -0.03783333333333334,
+                          0.09317055449485775
+                        ],
+                        "half_length": 0.008594166293876734,
+                        "rotation_xyzw": [
+                          0.22086846302164886,
+                          0.0,
+                          -0.5351416843322669,
+                          0.8153775197615389
+                        ],
+                        "bottom_radius": 0.006999999999999999,
+                        "top_radius": 0.007
+                      }
+                    ]
+                  }
+                ],
+                "radius": 0.003
+              },
+              {
+                "type": "union",
+                "name": "erosion-seam-2",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "round-cone",
+                    "name": "erosion-seam-2-0",
+                    "position": [
+                      -0.1,
+                      0.1875,
+                      0.14649844989776606
+                    ],
+                    "half_length": 0.020155667736460416,
+                    "rotation_xyzw": [
+                      -0.0011503959106202615,
+                      0.0,
+                      -0.7496772452125192,
+                      0.6618026175528601
+                    ],
+                    "bottom_radius": 0.007,
+                    "top_radius": 0.007
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "erosion-seam-2-1",
+                    "position": [
+                      -0.06,
+                      0.1825,
+                      0.14428507075309746
+                    ],
+                    "half_length": 0.020273483420916585,
+                    "rotation_xyzw": [
+                      -0.08130670099476701,
+                      0.0,
+                      -0.7450141699799919,
+                      0.6620748499243657
+                    ],
+                    "bottom_radius": 0.007,
+                    "top_radius": 0.006999999999999999
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "erosion-seam-2-2",
+                    "position": [
+                      -0.02,
+                      0.1775,
+                      0.1382085834503173
+                    ],
+                    "half_length": 0.02052831379965728,
+                    "rotation_xyzw": [
+                      -0.1431213065954539,
+                      0.0,
+                      -0.7351243434820063,
+                      0.6626526173030325
+                    ],
+                    "bottom_radius": 0.006999999999999999,
+                    "top_radius": 0.007
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "erosion-seam-2-3",
+                    "position": [
+                      0.026666666666666665,
+                      0.1725,
+                      0.13878760204315183
+                    ],
+                    "half_length": 0.02715450615753386,
+                    "rotation_xyzw": [
+                      0.12223541220597513,
+                      0.0,
+                      -0.7287601659381074,
+                      0.6737708249432425
+                    ],
+                    "bottom_radius": 0.007,
+                    "top_radius": 0.007
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "erosion-seam-2-4",
+                    "position": [
+                      0.07999999999999999,
+                      0.16749999999999998,
+                      0.1449302099704742
+                    ],
+                    "half_length": 0.02683559785513393,
+                    "rotation_xyzw": [
+                      0.04620302431240009,
+                      0.0,
+                      -0.7378652996977293,
+                      0.6733647451763181
+                    ],
+                    "bottom_radius": 0.007,
+                    "top_radius": 0.006999999999999999
+                  },
+                  {
+                    "type": "round-cone",
+                    "name": "erosion-seam-2-5",
+                    "position": [
+                      0.13333333333333333,
+                      0.16249999999999998,
+                      0.14658822283744807
+                    ],
+                    "half_length": 0.026783600389595066,
+                    "rotation_xyzw": [
+                      -0.00032655852772039604,
+                      0.0,
+                      -0.7393715190576791,
+                      0.6732975940591709
+                    ],
+                    "bottom_radius": 0.006999999999999999,
+                    "top_radius": 0.007
+                  }
+                ]
+              }
+            ],
+            "radius": 0.003
+          },
+          {
+            "type": "union",
+            "name": "erosion-seam-3",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "round-cone",
+                "name": "erosion-seam-3-0",
+                "position": [
+                  0.19916666666666666,
+                  -0.17666666666666667,
+                  0.13075938925743102
+                ],
+                "half_length": 0.009760945213320622,
+                "rotation_xyzw": [
+                  -0.023164134697189358,
+                  0.0,
+                  -0.5733366653075865,
+                  0.8189923632596992
+                ],
+                "bottom_radius": 0.007,
+                "top_radius": 0.007
+              },
+              {
+                "type": "round-cone",
+                "name": "erosion-seam-3-1",
+                "position": [
+                  0.21750000000000003,
+                  -0.16999999999999998,
+                  0.1284393070697784
+                ],
+                "half_length": 0.009946875205339245,
+                "rotation_xyzw": [
+                  -0.1199535610181721,
+                  0.0,
+                  -0.5639630612251006,
+                  0.817041497583001
+                ],
+                "bottom_radius": 0.007,
+                "top_radius": 0.006999999999999999
+              },
+              {
+                "type": "round-cone",
+                "name": "erosion-seam-3-2",
+                "position": [
+                  0.23583333333333334,
+                  -0.16333333333333333,
+                  0.12278775558471677
+                ],
+                "half_length": 0.010432755601676088,
+                "rotation_xyzw": [
+                  -0.21842178940365284,
+                  0.0,
+                  -0.5408684376524314,
+                  0.812251965257779
+                ],
+                "bottom_radius": 0.006999999999999999,
+                "top_radius": 0.007
+              },
+              {
+                "type": "round-cone",
+                "name": "erosion-seam-3-3",
+                "position": [
+                  0.2516666666666667,
+                  -0.15666666666666668,
+                  0.11498390183448792
+                ],
+                "half_length": 0.008507773153948612,
+                "rotation_xyzw": [
+                  -0.28898793990797467,
+                  0.0,
+                  -0.4696665699157626,
+                  0.8342057801833471
+                ],
+                "bottom_radius": 0.007,
+                "top_radius": 0.007
+              },
+              {
+                "type": "round-cone",
+                "name": "erosion-seam-3-4",
+                "position": [
+                  0.265,
+                  -0.15000000000000002,
+                  0.1052680133342743
+                ],
+                "half_length": 0.009331182404007533,
+                "rotation_xyzw": [
+                  -0.36516054446888924,
+                  0.0,
+                  -0.4336417711902739,
+                  0.8237794553411407
+                ],
+                "bottom_radius": 0.007,
+                "top_radius": 0.006999999999999999
+              },
+              {
+                "type": "round-cone",
+                "name": "erosion-seam-3-5",
+                "position": [
+                  0.2783333333333333,
+                  -0.14333333333333334,
+                  0.09183057532310483
+                ],
+                "half_length": 0.01080573684654895,
+                "rotation_xyzw": [
+                  -0.4475616571715635,
+                  0.0,
+                  -0.3813784282607254,
+                  0.8088504543407408
+                ],
+                "bottom_radius": 0.006999999999999999,
+                "top_radius": 0.007
+              }
+            ]
+          }
+        ],
+        "radius": 0.003
+      },
+      {
+        "type": "box",
+        "name": "support-trim",
+        "position": [
+          0,
+          -0.49,
+          0
+        ],
+        "half_extent": [
+          0.45,
+          0.18,
+          0.4
+        ],
+        "rounding": 0.001
+      }
+    ]
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "node": "left-support",
+      "label": "Build the broad left support",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-support",
+      "label": "Raise the narrower leaning support",
+      "seconds": 0.65
+    },
+    {
+      "node": "left-crown",
+      "label": "Fuse the bridge crown",
+      "seconds": 0.65
+    },
+    {
+      "node": "right-crown",
+      "label": "Carry the crown across the opening",
+      "seconds": 0.65
+    },
+    {
+      "node": "front-cavity",
+      "label": "Carve the front alcove",
+      "seconds": 1.8
+    },
+    {
+      "node": "rear-cavity",
+      "label": "Meet the alcove and break through",
+      "seconds": 1.8
+    },
+    {
+      "node": "wind-channel-0",
+      "label": "Sweep a channel along the crown",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-1",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-2",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-3",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-4",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-5",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-6",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-7",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-8",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-9",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-10",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-11",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-12",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-13",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "wind-channel-14",
+      "label": "Sweep a channel along the crown / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "crown-plane",
+      "label": "Weather a broad exposed rock plane",
+      "seconds": 1.2
+    },
+    {
+      "node": "outer-right-plane",
+      "label": "Weather a broad exposed rock plane",
+      "seconds": 1.2
+    },
+    {
+      "node": "wind-face",
+      "label": "Weather a broad exposed rock plane",
+      "seconds": 1.2
+    },
+    {
+      "node": "erosion-seam-0-0",
+      "label": "Cut a directed erosion seam",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-0-1",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-0-2",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-0-3",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-0-4",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-0-5",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-1-0",
+      "label": "Cut a directed erosion seam",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-1-1",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-1-2",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-1-3",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-1-4",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-1-5",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-2-0",
+      "label": "Cut a directed erosion seam",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-2-1",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-2-2",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-2-3",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-2-4",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-2-5",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-3-0",
+      "label": "Cut a directed erosion seam",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-3-1",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-3-2",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-3-3",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-3-4",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "erosion-seam-3-5",
+      "label": "Cut a directed erosion seam / continue",
+      "seconds": 0.42
+    },
+    {
+      "node": "support-trim",
+      "label": "Trim the exposed support bases",
+      "seconds": 0.65
+    }
+  ]
+}

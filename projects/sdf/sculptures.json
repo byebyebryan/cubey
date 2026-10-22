@@ -1,0 +1,730 @@
+{
+  "guardian": {
+    "config": "projects/sdf/presets/sculpture-guardian.json",
+    "build_config": "projects/sdf/presets/sculpture-guardian-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-blockouts/guardian-a.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Face and carved expression",
+        "options": [
+          "--distance",
+          0.85,
+          "--target-y",
+          0.09,
+          "--pitch",
+          0.11
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "base through neck into skull",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            -0.28,
+            -0.025
+          ],
+          [
+            0,
+            -0.16,
+            -0.025
+          ],
+          [
+            0,
+            0.12,
+            -0.025
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "nose connects into face",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            0.04,
+            0.1
+          ],
+          [
+            0,
+            0.03,
+            0.17
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "both sockets remain hollow",
+        "expect": "empty",
+        "points": [
+          [
+            -0.08,
+            0.066,
+            0.13
+          ],
+          [
+            0.08,
+            0.066,
+            0.13
+          ]
+        ],
+        "path": false,
+        "margin": 0.008
+      },
+      {
+        "name": "horns attach to skull",
+        "expect": "solid",
+        "points": [
+          [
+            -0.115,
+            0.2,
+            -0.035
+          ],
+          [
+            -0.16,
+            0.23,
+            -0.045
+          ],
+          [
+            -0.2,
+            0.255,
+            -0.055
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "opposite horn attaches",
+        "expect": "solid",
+        "points": [
+          [
+            0.115,
+            0.2,
+            -0.035
+          ],
+          [
+            0.16,
+            0.23,
+            -0.045
+          ],
+          [
+            0.2,
+            0.255,
+            -0.055
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      }
+    ]
+  },
+  "vessel": {
+    "config": "projects/sdf/presets/sculpture-vessel.json",
+    "build_config": "projects/sdf/presets/sculpture-vessel-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-blockouts/vessel-a.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Interior, lip and handle",
+        "options": [
+          "--distance",
+          1.1,
+          "--target-y",
+          0.045,
+          "--pitch",
+          0.85
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "interior connects to open mouth",
+        "expect": "empty",
+        "points": [
+          [
+            0,
+            -0.16,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0.32,
+            0
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "base and unpierced walls remain solid",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            -0.267,
+            0
+          ],
+          [
+            0.147,
+            0.1,
+            0
+          ],
+          [
+            -0.19,
+            -0.1,
+            0
+          ],
+          [
+            0,
+            0,
+            -0.152
+          ]
+        ],
+        "path": false,
+        "margin": 0.002
+      },
+      {
+        "name": "handle loop remains open",
+        "expect": "empty",
+        "points": [
+          [
+            0.26,
+            0.035,
+            0
+          ]
+        ],
+        "path": false,
+        "margin": 0.02
+      },
+      {
+        "name": "handle attachments remain solid",
+        "expect": "solid",
+        "points": [
+          [
+            0.16,
+            0.165,
+            0
+          ],
+          [
+            0.15,
+            -0.12,
+            0
+          ]
+        ],
+        "path": false,
+        "margin": 0.005
+      },
+      {
+        "name": "piercing 1 reaches the interior",
+        "expect": "empty",
+        "points": [
+          [
+            -0.065,
+            0.055,
+            0.07
+          ],
+          [
+            -0.065,
+            0.055,
+            0.3
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "piercing 2 reaches the interior",
+        "expect": "empty",
+        "points": [
+          [
+            0.025,
+            0,
+            0.07
+          ],
+          [
+            0.025,
+            0,
+            0.3
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      },
+      {
+        "name": "piercing 3 reaches the interior",
+        "expect": "empty",
+        "points": [
+          [
+            -0.06,
+            -0.07,
+            0.07
+          ],
+          [
+            -0.06,
+            -0.07,
+            0.3
+          ]
+        ],
+        "path": true,
+        "margin": 0.008
+      }
+    ]
+  },
+  "arch": {
+    "config": "projects/sdf/presets/sculpture-arch.json",
+    "build_config": "projects/sdf/presets/sculpture-arch-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-blockouts/arch-a.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Arch passage and supporting mass",
+        "options": [
+          "--distance",
+          1.1,
+          "--target-y",
+          -0.04,
+          "--pitch",
+          0.05,
+          "--yaw",
+          -0.25
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "front and rear cavities form a passage",
+        "expect": "empty",
+        "points": [
+          [
+            0,
+            -0.115,
+            0.4
+          ],
+          [
+            0,
+            -0.115,
+            -0.4
+          ]
+        ],
+        "path": true,
+        "margin": 0.025
+      },
+      {
+        "name": "left support reaches the crown",
+        "expect": "solid",
+        "points": [
+          [
+            -0.225,
+            -0.25,
+            -0.01
+          ],
+          [
+            -0.19,
+            0.1,
+            -0.01
+          ],
+          [
+            -0.1,
+            0.18,
+            -0.01
+          ]
+        ],
+        "path": true,
+        "margin": 0.015
+      },
+      {
+        "name": "right support reaches the crown",
+        "expect": "solid",
+        "points": [
+          [
+            0.205,
+            -0.25,
+            0
+          ],
+          [
+            0.17,
+            0.1,
+            0
+          ],
+          [
+            0.1,
+            0.18,
+            -0.01
+          ]
+        ],
+        "path": true,
+        "margin": 0.015
+      },
+      {
+        "name": "crown connects the two supports",
+        "expect": "solid",
+        "points": [
+          [
+            -0.1,
+            0.18,
+            -0.01
+          ],
+          [
+            0.1,
+            0.18,
+            -0.01
+          ]
+        ],
+        "path": true,
+        "margin": 0.02
+      }
+    ]
+  },
+  "driftwood": {
+    "config": "projects/sdf/presets/sculpture-driftwood.json",
+    "build_config": "projects/sdf/presets/sculpture-driftwood-build.json",
+    "blockout_config": "projects/sdf/presets/sculpture-blockouts/driftwood-a.json",
+    "views": [
+      {
+        "name": "hero",
+        "label": "Hero",
+        "options": []
+      },
+      {
+        "name": "front",
+        "label": "Front silhouette",
+        "options": [
+          "--yaw",
+          0,
+          "--pitch",
+          0.02
+        ]
+      },
+      {
+        "name": "opposite",
+        "label": "Opposite three-quarter",
+        "options": [
+          "--yaw",
+          -0.6,
+          "--pitch",
+          0.22
+        ]
+      },
+      {
+        "name": "profile",
+        "label": "Profile",
+        "options": [
+          "--yaw",
+          1.5707963,
+          "--pitch",
+          0.1
+        ]
+      },
+      {
+        "name": "rear",
+        "label": "Rear inspection",
+        "options": [
+          "--yaw",
+          3.49,
+          "--pitch",
+          0.19,
+          "--sun-azimuth",
+          -30
+        ]
+      },
+      {
+        "name": "detail",
+        "label": "Broken lower end and trunk hollow",
+        "options": [
+          "--distance",
+          0.95,
+          "--target-y",
+          -0.14,
+          "--pitch",
+          -0.6,
+          "--yaw",
+          0.6,
+          "--sun-elevation",
+          15
+        ]
+      }
+    ],
+    "hidden_previews": [],
+    "intent_checks": [
+      {
+        "name": "trunk has a continuous retained spine",
+        "expect": "solid",
+        "points": [
+          [
+            -0.14,
+            -0.25,
+            -0.035
+          ],
+          [
+            -0.075,
+            -0.12,
+            -0.025
+          ],
+          [
+            0,
+            0.025,
+            -0.02
+          ],
+          [
+            0.065,
+            0.16,
+            -0.025
+          ]
+        ],
+        "path": true,
+        "margin": 0.005
+      },
+      {
+        "name": "left branch connects into fork",
+        "expect": "solid",
+        "points": [
+          [
+            0,
+            0.01,
+            0
+          ],
+          [
+            -0.14,
+            0.075,
+            0.02
+          ],
+          [
+            -0.215,
+            0.16,
+            0.015
+          ]
+        ],
+        "path": true,
+        "margin": 0.002
+      },
+      {
+        "name": "right branch connects into fork",
+        "expect": "solid",
+        "points": [
+          [
+            0.025,
+            0.06,
+            0
+          ],
+          [
+            0.17,
+            0.13,
+            0.03
+          ],
+          [
+            0.245,
+            0.215,
+            0.015
+          ]
+        ],
+        "path": true,
+        "margin": 0.002
+      },
+      {
+        "name": "lower broken end is hollow",
+        "expect": "empty",
+        "points": [
+          [
+            -0.19,
+            -0.36,
+            0.03
+          ],
+          [
+            -0.1,
+            -0.16,
+            0.035
+          ]
+        ],
+        "path": true,
+        "margin": 0.006
+      },
+      {
+        "name": "upper broken end is hollow",
+        "expect": "empty",
+        "points": [
+          [
+            0.027,
+            0.33,
+            -0.055
+          ],
+          [
+            0.05,
+            0.22,
+            -0.032
+          ]
+        ],
+        "path": true,
+        "margin": 0.004
+      },
+      {
+        "name": "knot recess remains open",
+        "expect": "empty",
+        "points": [
+          [
+            0.016,
+            0.035,
+            0.09
+          ]
+        ],
+        "path": false,
+        "margin": 0.02
+      }
+    ]
+  }
+}

@@ -13,6 +13,7 @@ from author_sculptures import SUBJECTS
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--stage', choices=('blockout','final'), default='blockout')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     out = args.output.resolve()
@@ -25,8 +26,9 @@ def main():
         binary_sha256=sha(binary), shader_sha256={p.name:sha(p) for p in sorted((binary.parent/'shaders').glob('*.spv'))},
         runs={})
     for subject in SUBJECTS:
-        for variant in 'ab':
-            config = Path(f'projects/sdf/presets/sculpture-blockouts/{subject}-{variant}.json')
+        for variant in ('ab' if args.stage == 'blockout' else ['final']):
+            config = Path(f'projects/sdf/presets/sculpture-blockouts/{subject}-{variant}.json' if args.stage == 'blockout'
+                          else f'projects/sdf/presets/sculpture-{subject}.json')
             for view, options in {'hero': [], 'front':['--yaw',0,'--pitch',.02],
                                   'profile':['--yaw',1.5707963,'--pitch',.06],
                                   'before-carve':[]}.items():
