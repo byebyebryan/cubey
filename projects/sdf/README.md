@@ -33,6 +33,14 @@ length 0.101–0.401, including rounding. The result is a fine pattern of slots
 and punctures. Both 2,048 and 4,096 cutters fit the existing axis-92 profile.
 See the [thin-stick evidence](../../docs/notes/sdf-thin-negative-sticks-evidence.md).
 
+The [intermediate-width comparison](http://starship:8787/reports/32adae0557e41e2a1b5d3d014b07ea67c4225c71dd33c9862dc740d9cbfcbcca/)
+balances visible cuts with an intact ball. Its candidate preset is
+`--config projects/sdf/presets/negative-stick-ball-balanced.json`: 512 cutters,
+full width 0.015. `--cutter-width` and the desktop width control tune this
+generator from 0.003 to 0.06; Generate scene applies staged changes. The
+report compares 16 width/count combinations under identical conditions.
+See the [width evidence](../../docs/notes/sdf-intermediate-width-evidence.md).
+
 [Watch the carving video and compare the seed audition](http://starship:8787/reports/3d8baa7ee96f132b28062ace6e4878538982df72c66aea7c0094f884b2729f65/).
 
 ```sh

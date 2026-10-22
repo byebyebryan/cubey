@@ -109,8 +109,8 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
         if (count > 65535U)
             throw std::invalid_argument(
                 "negative scenes accept at most 65535 cutters plus their base");
-        // Literal counterpart to the additive ball: retain every stick's
-        // dimensions, transform and rounding, changing only its CSG operation.
+        // Start with the literal additive counterpart. The default width keeps
+        // its dimensions; wider variants retain transforms and long box cores.
         recipe = make_recipe("sticks", seed, count);
         recipe.generator = "negative-stick-ball-pcg32-v1";
         const float scale = cutter_width / 0.003F;

@@ -4,6 +4,10 @@ Date: 2026-10-21
 
 [Matched comparison, count gallery and carving video](http://starship:8787/reports/0254a0153dd18172f3e8ff11cb667a5b6219c4cf11a41f11c48121c817866851/).
 
+The user found this original-width result too subtle. The subsequent
+[intermediate-width audition](sdf-intermediate-width-evidence.md) adds an
+adjustable width while preserving this default recipe and hash.
+
 The user pointed out that the earlier negative tests used much larger boxes
 than the additive ball of sticks. That comparison was misleading: even the
 quarter-width trial retained much wider, longer cutters. This experiment
