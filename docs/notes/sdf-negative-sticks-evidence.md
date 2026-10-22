@@ -2,8 +2,9 @@
 
 Date: 2026-10-21
 
-Status: native implementation and qualification complete; visual review report
-prepared. User aesthetic acceptance remains separate.
+Status: native implementation and qualification complete;
+[visual review published](http://starship:8787/reports/f3eaf6fe52c25fcf3cc76eab484f45001632db7055cd5cde63ff267c9d2a5a70/).
+User aesthetic acceptance remains separate.
 The [plan](sdf-negative-sticks-plan.md) defines the experiment and acceptance.
 
 ## Native geometry audition
@@ -172,3 +173,11 @@ images, local links, a 390px layout without overflow and no page JavaScript
 errors. `report-review.json` pins the reviewed HTML hash; desktop/mobile
 screenshots were also inspected. This checks report behavior, not the user's
 assessment of whether the sculpture is compelling.
+
+The published snapshot contains 217 intended files / 13,137,602 bytes. The
+shared publisher verified HTTP 200 and the entrypoint bytes at the visible
+`starship:8787` URL. The existing report server was reused; the earlier
+additive report remains linked and unchanged.
+An isolated Chrome check of the served URL also passed video metadata/seeking
+and native image decoding, and the served HTML matched the reviewed bytes;
+see `outputs/sdf/negative-delivery.json`.
