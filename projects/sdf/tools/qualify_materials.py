@@ -84,7 +84,14 @@ def main():
     fixture=out/'scenes/mixed.json'
     write_scene(fixture,'Mixed procedural fixture',[stone,marble,material('insert','A85B41')],placed)
     run('mixed','plain',['--authored-scene',fixture],True)
+    uniform=out/'scenes/uniform-history.json'
+    body=sphere('body',(0,0,0),.2,'stone')
+    tool=sphere('tool',(0,0,.18),.06,'stone')
+    write_scene(uniform,'Uniform procedural history',[stone],subtract('carved',body,tool),
+                [dict(node='body',label='Body'),dict(node='tool',label='Cut')])
+    run('uniform-history','plain',['--authored-scene',uniform,'--validate-history'],True)
     receipt['checks']['mixed_material_cpu_gpu_passed']=True
+    receipt['checks']['empty_uniform_history_passed']=True
     receipt['geometry_identities']={name:re.search(r'authored geometry=(\w+)',
         '\n'.join(receipt['runs'][name]['stats']))[1] for name in configs}
     assert len(set(receipt['geometry_identities'].values()))==1

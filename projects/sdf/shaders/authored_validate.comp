@@ -15,7 +15,7 @@ void main() {
     if (i>=pc.count) return;
     SceneSurface surface=authoredSurface(points[i].xyz,points[i].w,true);
     MaterialSample fast=sampleAuthoredMaterial(0u,points[i].xyz,points[i].w,true);
-    float error=authoredHeader.y==1u ? max(length(fast.material.base_roughness-surface.material.base_roughness),
+    float error=authoredHeader.x>0u && authoredHeader.y==1u ? max(length(fast.material.base_roughness-surface.material.base_roughness),
         length(fast.height_gradient-surface.height_gradient)) : 0.0;
     results[i*5u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),error);
     results[i*5u+1u]=surface.material.base_roughness;
