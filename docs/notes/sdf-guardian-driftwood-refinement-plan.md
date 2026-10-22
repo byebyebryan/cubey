@@ -2,7 +2,7 @@
 
 Date: 2026-10-22
 
-Status: implementation in progress; see the
+Status: implemented, qualified and delivered for visual review; see the
 [native evidence](sdf-guardian-driftwood-refinement-evidence.md). The user ranks the
 guardian strongest and driftwood weakest in the delivered
 [four-subject study](sdf-sculpture-study-evidence.md). This pass develops those
@@ -207,7 +207,7 @@ success. Review the report in the browser before publishing and keep its
 primary assets accessible within the publisher's 100 MiB limit. Commit as the
 implementation progresses; Git push requires authorization for that action.
 
-## Proposed goal-loop objective
+## Executed goal-loop objective
 
 > Refine the existing guardian and driftwood according to this plan: preserve
 > their first-pass baselines, resolve the visible curve/authoring limitations

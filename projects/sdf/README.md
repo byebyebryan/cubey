@@ -113,8 +113,10 @@ The user ranks the guardian strongest and driftwood weakest; a
 targets those two, with facial/structural detail for the guardian and stronger
 wood forms, broken ends and grain for driftwood. Separate
 `sculpture-guardian-refined` and `sculpture-driftwood-refined` static/build presets
-are implemented; [full native qualification](../../docs/notes/sdf-guardian-driftwood-refinement-evidence.md)
-and comparison presentation are in progress.
+are [qualified](../../docs/notes/sdf-guardian-driftwood-refinement-evidence.md).
+The [matched refinement gallery](http://starship:8787/reports/d66a4ee7ce92dd2f255e170b9dc67676551a1f5efec099ec99ccda304a4d7973/)
+pairs both versions in material/clay from every inspection angle, with all 210
+committed states and two construction films. Visual acceptance remains open.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -122,12 +124,18 @@ and comparison presentation are in progress.
 | Ceramic vessel | [Static](presets/sculpture-vessel.json) | [Build](presets/sculpture-vessel-build.json) | 10 |
 | Rock arch | [Static](presets/sculpture-arch.json) | [Build](presets/sculpture-arch-build.json) | 51 |
 | Driftwood | [Static](presets/sculpture-driftwood.json) | [Build](presets/sculpture-driftwood-build.json) | 94 |
+| Guardian, refined | [Static](presets/sculpture-guardian-refined.json) | [Build](presets/sculpture-guardian-refined-build.json) | 108 |
+| Driftwood, refined | [Static](presets/sculpture-driftwood-refined.json) | [Build](presets/sculpture-driftwood-refined-build.json) | 100 |
 
 ```sh
 build/dev/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-build.json
 python3 projects/sdf/tools/author_sculptures.py --stage final
 python3 projects/sdf/tools/qualify_sculpture.py --subject guardian --video \
   --output outputs/sdf/sculpture-guardian-new
+python3 projects/sdf/tools/author_refinements.py
+python3 projects/sdf/tools/qualify_sculpture.py --subject driftwood \
+  --metadata projects/sdf/sculpture_refinements.json --video \
+  --output outputs/sdf/driftwood-refined-new
 ```
 
 `sculptures.json` defines per-subject inspection views and solid/empty design
@@ -137,6 +145,16 @@ without an embedded Python dependency. This is scripted CSG authoring and
 leaf-reveal playback; a freehand brush editor and exact spline sweep remain
 separate work. Atmosphere, hard self-shadows and the absence of a ground plane
 carry over from the robot/procedural studies.
+
+The refinement helper adds monotone radius interpolation and projection from
+selected world-axis sides, still exporting existing rounded segments and CSG.
+It preserves first-pass generation. `qualify_history.py --reuse-captures` (or
+`qualify_sculpture.py --reuse-history`) can reuse verified stills/native checks
+only with matching scene, preset, history/timing, binary/shader and GPU identity.
+Each reused run retains its original command/provenance and verifies image/log
+evidence; films and export side effects run again. Selected minor fixed-camera
+preview exceptions have individual reasons and, where needed, required native
+close-up comparisons. The established oracle/image thresholds remain unchanged.
 
 The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
 starts from a solid and carves intersecting through-holes with a deterministic

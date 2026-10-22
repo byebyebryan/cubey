@@ -238,8 +238,9 @@ and requested planning a further detail pass on those two. The
 [refinement plan](sdf-guardian-driftwood-refinement-plan.md) develops the
 guardian's existing character and addresses driftwood's forms and wood identity
 before fine grain. This records the user's relative ranking, not acceptance of
-every modeling detail or an implemented second pass. Vessel and arch remain
-unchanged comparison subjects.
+every modeling detail. The subsequent implemented pass has its own
+[native evidence and comparison gallery](sdf-guardian-driftwood-refinement-evidence.md).
+Vessel and arch remain unchanged comparison subjects.
 
 ## Gallery delivery
 

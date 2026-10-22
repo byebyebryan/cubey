@@ -79,8 +79,9 @@ an implemented project or a new runtime dependency.
   with shared authoring gaps, construction presentation and native review gates;
   implemented and delivered for visual review.
 - [SDF guardian and driftwood refinement plan](sdf-guardian-driftwood-refinement-plan.md):
-  proposed follow-up to user review, developing the guardian's sculpted detail
-  and revising driftwood's forms, broken ends and grain before fine detail.
+  implemented follow-up to user review, developing the guardian's sculpted detail
+  and revising driftwood's forms, broken ends and grain before fine detail;
+  qualified and delivered as a matched native comparison gallery.
 
 ## Historical research and study records
 
