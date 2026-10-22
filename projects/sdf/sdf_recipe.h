@@ -47,6 +47,7 @@ struct Recipe {
 [[nodiscard]] float edit_distance(math::Vec3 point, const BoxEdit& edit);
 [[nodiscard]] float recipe_distance(math::Vec3 point, std::span<const BoxEdit> edits);
 [[nodiscard]] Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t count);
+void validate_carve_recipe(const Recipe& recipe);
 [[nodiscard]] std::uint64_t recipe_hash(const Recipe& recipe);
 [[nodiscard]] std::size_t construction_prefix(std::size_t count, double seconds, double duration);
 void validate_edit(const BoxEdit& edit);

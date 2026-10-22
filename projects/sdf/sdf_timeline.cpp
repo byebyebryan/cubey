@@ -11,9 +11,10 @@ void validate_timeline(const TimelineConfig& c) {
         ((c.motion == "construction" || c.motion == "presentation") &&
          c.construction_seconds > c.duration) ||
         !std::isfinite(c.orbit_turns) ||
+        (c.motion == "carve" && c.construction_seconds >= c.duration) ||
         (c.motion == "presentation" && c.construction_seconds >= c.duration * 5.0 / 6.0) ||
         (c.motion != "static" && c.motion != "orbit" && c.motion != "construction" &&
-         c.motion != "presentation"))
+         c.motion != "presentation" && c.motion != "carve"))
         throw std::invalid_argument("invalid SDF motion/duration/construction timeline");
 }
 TimelineSample sample_timeline(const TimelineConfig& c, std::size_t count, double seconds,
@@ -39,6 +40,35 @@ TimelineSample sample_timeline(const TimelineConfig& c, std::size_t count, doubl
                                                       0.0, 1.0));
         if (t >= orbit_end)
             result.debug = t < c.duration * 11.0 / 12.0 ? 3U : 4U;
+    }
+    if (c.motion == "carve") {
+        if (count == 0)
+            throw std::invalid_argument("Carve motion requires a base edit");
+        const std::size_t cuts = count - 1;
+        const std::size_t introduction = std::min<std::size_t>(cuts, 4);
+        const double hold_end = c.construction_seconds / 8.0;
+        const double intro_end = c.construction_seconds / 2.0;
+        result.prefix = 1;
+        if (t >= hold_end && t < intro_end && introduction > 0) {
+            const double progress =
+                (t - hold_end) / (intro_end - hold_end) * static_cast<double>(introduction);
+            const auto slot = std::min(static_cast<std::size_t>(progress), introduction - 1);
+            const double phase = progress - static_cast<double>(slot);
+            constexpr double commit_phase = 0.4;
+            result.prefix += slot + (phase >= commit_phase ? 1 : 0);
+            if (phase < commit_phase) {
+                result.cutter_index = slot + 1;
+                result.cutter_opacity =
+                    static_cast<float>(std::sin(std::numbers::pi_v<double> * phase / commit_phase));
+            }
+        } else if (t >= intro_end) {
+            result.prefix += introduction + construction_prefix(cuts - introduction, t - intro_end,
+                                                                c.construction_seconds - intro_end);
+        }
+        result.yaw =
+            tau * c.orbit_turns *
+            static_cast<float>(std::clamp(
+                (t - c.construction_seconds) / (c.duration - c.construction_seconds), 0.0, 1.0));
     }
     return result;
 }

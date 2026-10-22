@@ -37,7 +37,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     scene.enum_values = {"box", "rotated", "cut", "sticks", "negative-sticks"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
-    motion.enum_values = {"static", "orbit", "construction", "presentation"};
+    motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
     auto ground = option("ground", "Ground", config::ValueType::Bool);
     ground.negative_cli_name = "--no-ground";
     auto validate =

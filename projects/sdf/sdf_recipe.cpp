@@ -171,6 +171,14 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
     return recipe;
 }
 
+void validate_carve_recipe(const Recipe& recipe) {
+    if (recipe.edits.empty() || recipe.edits.front().operation != Operation::Fill ||
+        std::any_of(recipe.edits.begin() + 1, recipe.edits.end(),
+                    [](const BoxEdit& edit) { return edit.operation != Operation::Remove; }))
+        throw std::invalid_argument(
+            "Carve motion requires one initial fill followed only by removals");
+}
+
 std::uint64_t recipe_hash(const Recipe& recipe) {
     std::uint64_t hash = 14695981039346656037ULL;
     // Hash canonical GPU lanes in a specified little-endian byte order.

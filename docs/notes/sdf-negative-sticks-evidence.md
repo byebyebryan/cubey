@@ -2,7 +2,7 @@
 
 Date: 2026-10-21
 
-Status: checkpoint A complete; carving playback and final qualification pending.
+Status: checkpoints A/B complete; cutter cue and final qualification pending.
 The [plan](sdf-negative-sticks-plan.md) defines the experiment and acceptance.
 
 ## Native geometry audition
@@ -50,3 +50,20 @@ Audition manifests record the parent source revision with a dirty worktree
 because capture preceded the checkpoint commit. They pin the actual native
 binary and compiled shader hashes. Fresh final qualification will identify the
 committed implementation independently.
+
+## Carving timeline and desktop integration
+
+`carve` begins with the initial Fill already built. It holds the base, applies
+up to four slow introduction cuts, accelerates through the remaining removals,
+then orbits the unchanged final field. Timeline samples identify the next
+stored cutter and its cue opacity; rendering the cue is the next checkpoint.
+The motion validates the actual recipe's Fill/Remove sequence, including
+explicit recipes loaded independently of the CLI scene name.
+
+The focused CPU tests cover small recipes (0/1/3/4 cuts), all four slow commit
+boundaries, accelerated/final prefixes, backward seeking, shared 30/60 FPS
+logical times and incompatible recipes/timing. Native time-zero playback
+rendered one edit and passed 257 oracle rays without mismatches, exhaustion or
+sampling ambiguities. The desktop generator selection now controls regeneration;
+changing seed/count alone retains the loaded recipe until Generate scene.
+Windowed interaction qualification remains pending.

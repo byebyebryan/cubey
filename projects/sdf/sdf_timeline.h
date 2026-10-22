@@ -12,6 +12,8 @@ struct TimelineSample {
     std::size_t prefix = 0;
     float yaw = 0;
     std::uint32_t debug = 0;
+    std::size_t cutter_index = 0; // Recipe edit index; zero means no cutter cue.
+    float cutter_opacity = 0;
 };
 void validate_timeline(const TimelineConfig& config);
 [[nodiscard]] TimelineSample sample_timeline(const TimelineConfig& config, std::size_t count,

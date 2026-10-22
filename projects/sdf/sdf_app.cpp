@@ -40,6 +40,8 @@ class App {
             config_.shadow_softness > 0.3F)
             throw std::invalid_argument("invalid SDF view options");
         validate_timeline(config_.timeline);
+        if (config_.timeline.motion == "carve")
+            validate_carve_recipe(recipe_);
         if (!std::isfinite(config_.snapshot_time) || config_.snapshot_time < -1)
             throw std::invalid_argument("SDF time must be -1 or a nonnegative logical time");
         orbit_.set_pitch(config_.pitch);
@@ -89,7 +91,8 @@ class App {
                 prepare_time(ctx.device(), time);
                 if (config_.validate && frame.index + 1 == frame.count &&
                     (config_.timeline.motion == "construction" ||
-                     config_.timeline.motion == "presentation")) {
+                     config_.timeline.motion == "presentation" ||
+                     config_.timeline.motion == "carve")) {
                     auto prefix = recipe_;
                     prefix.edits.resize(field_->displayed_edit_count());
                     validate_field(ctx.device(), runtime_.gpu(), *field_, prefix);
@@ -120,10 +123,22 @@ class App {
                 orbit_.set_distance(config_.distance);
             }
             if (regenerate_requested_) {
-                recipe_ = make_recipe("sticks", config_.seed, config_.count);
                 regenerate_requested_ = false;
-                active_prefix_ = std::numeric_limits<std::size_t>::max();
-                playback_seconds_ = 0;
+                try {
+                    auto next = make_recipe(config_.scene, config_.seed, config_.count);
+                    if (config_.timeline.motion == "carve")
+                        validate_carve_recipe(next);
+                    recipe_ = std::move(next);
+                    config_.recipe_path.clear();
+                    active_prefix_ = std::numeric_limits<std::size_t>::max();
+                    playback_seconds_ = 0;
+                    std::cout << "sdf: regenerated scene=" << config_.scene << " hash=" << std::hex
+                              << recipe_hash(recipe_) << std::dec << '\n';
+                } catch (const std::invalid_argument& error) {
+                    error_ = error.what();
+                    if (!orbit_.paused())
+                        orbit_.toggle_pause();
+                }
             }
             if (config_.timeline.motion != "static" && !orbit_.paused())
                 playback_seconds_ =
@@ -197,22 +212,31 @@ class App {
         ImGui::SetNextWindowSize({340, 0}, ImGuiCond_FirstUseEver);
         if (ImGui::Begin("SDF study")) {
             ImGui::Text("%zu / %zu boxes", field_->displayed_edit_count(), recipe_.edits.size());
+            ImGui::Text("Recipe: %s", recipe_.generator.c_str());
+            if (config_.timeline.motion == "carve")
+                ImGui::Text("Cuts: %zu / %zu",
+                            field_->displayed_edit_count() > 0 ? field_->displayed_edit_count() - 1
+                                                               : 0,
+                            recipe_.edits.size() - 1);
             if (ImGui::Button(orbit_.paused() ? "Play" : "Pause"))
                 orbit_.toggle_pause();
             ImGui::SameLine();
             if (ImGui::Button("Restart"))
                 playback_seconds_ = 0;
-            const char* motions[]{"Static", "Orbit", "Construction", "Presentation"};
-            const std::string motion_names[]{"static", "orbit", "construction", "presentation"};
+            const char* motions[]{"Static", "Orbit", "Construction", "Presentation", "Carve"};
+            const std::string motion_names[]{"static", "orbit", "construction", "presentation",
+                                             "carve"};
             int motion = 0;
-            for (int i = 0; i < 4; ++i)
+            for (int i = 0; i < 5; ++i)
                 if (config_.timeline.motion == motion_names[i])
                     motion = i;
-            if (ImGui::Combo("Motion", &motion, motions, 4)) {
+            if (ImGui::Combo("Motion", &motion, motions, 5)) {
                 auto next = config_.timeline;
                 next.motion = motion_names[motion];
                 try {
                     validate_timeline(next);
+                    if (next.motion == "carve")
+                        validate_carve_recipe(recipe_);
                     config_.timeline = next;
                     playback_seconds_ = 0;
                 } catch (const std::invalid_argument& error) {
@@ -239,10 +263,23 @@ class App {
             ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
             ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
             ImGui::Separator();
+            const char* scene_labels[]{"Sticks", "Negative sticks", "Box", "Rotated box",
+                                       "Cut fixture"};
+            const std::string scene_names[]{"sticks", "negative-sticks", "box", "rotated", "cut"};
+            int scene = 0;
+            for (int i = 0; i < 5; ++i)
+                if (config_.scene == scene_names[i])
+                    scene = i;
+            if (ImGui::Combo("Generator", &scene, scene_labels, 5))
+                config_.scene = scene_names[scene];
+            if (!config_.recipe_path.empty())
+                ImGui::TextWrapped("Loaded explicit recipe. Generate scene replaces it.");
             ImGui::InputScalar("Seed", ImGuiDataType_U32, &config_.seed);
-            ImGui::InputScalar("Stick count", ImGuiDataType_U32, &config_.count);
-            if (ImGui::Button("Generate sticks")) {
-                config_.count = std::min(config_.count, 65536U);
+            ImGui::InputScalar(config_.scene == "negative-sticks" ? "Cutter count" : "Stick count",
+                               ImGuiDataType_U32, &config_.count);
+            if (ImGui::Button("Generate scene")) {
+                config_.count =
+                    std::min(config_.count, config_.scene == "negative-sticks" ? 65535U : 65536U);
                 regenerate_requested_ = true;
             }
             if (!error_.empty())
