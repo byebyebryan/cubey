@@ -115,6 +115,10 @@ report make this object's additions, smooth connection and local removals
 inspectable. User assessment of whether that presentation sells the experiment
 remains separate from its technical checks.
 
+The user subsequently described this result as great and asked to develop more
+authored detail. The [separate detail study](sdf-robot-detail-evidence.md) retains
+this accepted 43-shape version and extends the content within the existing cap.
+
 ## Delivered review
 
 `tools/history_report.py` assembles the dedicated export at

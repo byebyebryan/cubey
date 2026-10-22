@@ -25,6 +25,23 @@ the Edit scrubber inspect each committed state; cyan cut previews precede the
 six local removals. The static robot preset above remains available. See the
 [history evidence](../../docs/notes/sdf-authored-history-evidence.md).
 
+The separate [mechanical detail study](http://starship:8787/reports/8344b13c50933132bbf4db4a064de66a9f1197a9ff74fa8fdad91368966d5232/)
+adds open grippers, a recessed status gauge, head/joint fasteners, toe bumper
+seams and backpack vents. Its 62 shapes and 123 instructions fit the existing
+limits and retain the four-material palette. The original 43-shape scene and
+generator output remain intact.
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-detail.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-detail-build.json
+python3 projects/sdf/tools/author_robot.py --detailed
+```
+
+The detail build takes 44 logical seconds followed by a ten-second orbit.
+Matched original/detail captures include close inspections and an extended
+edit history. The [detail evidence](../../docs/notes/sdf-robot-detail-evidence.md)
+records a sampler precision fix found while checking replay, and its cost.
+
 The [settled procedural demo](http://starship:8787/reports/1db7103651a39de3b013aabf8424bbcb06e0a236627b8af3c32dcb9306dc6aa1/)
 uses width 0.024 and 4,096 cuts, with a 2,048-cut comparison. Four long bores
 open the presentation before the dense shorter cuts; a slightly oblique
@@ -99,6 +116,9 @@ rebuild the entire field. Both publish a replacement only after successful
 construction. Complete CPU scene descriptions remain independent of those
 caches. Empty cells use conservative box exits; hits write surface depth, and
 exhaustion is visible in magenta.
+Queries interpolate the eight neighboring R16F texels with brick-local weights.
+This preserves the sampled field while avoiding interpolation differences from
+normalized atlas coordinates when identical bricks occupy different addresses.
 
 The scene uses Cubey's render graph, shared HDR post, atmosphere sky integration
 and atmosphere-derived direct light/diffuse irradiance. Construction, orbit and
@@ -278,6 +298,25 @@ The native video is retained separately from its labeled copy. The report's
 step viewer uses actual committed-state captures; labels are added to the video
 after capture, with frame timing derived from the same saved history.
 
+Reproduce the detail study, matched views and profiles:
+
+```sh
+python3 projects/sdf/tools/qualify_robot_detail.py --video \
+  --output outputs/sdf/robot-detail-review-new
+xvfb-run -a -s '-screen 0 1280x1100x24' env CUBEY_SDF_PRIVATE_XVFB=1 \
+  python3 projects/sdf/tools/check_authored_window.py --history-controls \
+  --config projects/sdf/presets/survey-robot-detail-build.json --height 1000 \
+  --output outputs/sdf/robot-detail-controls-new
+python3 projects/sdf/tools/robot_detail_report.py --input outputs/sdf/robot-detail-review-new \
+  --controls outputs/sdf/robot-detail-controls-new --output outputs/sdf/robot-detail-report-new
+```
+
+`qualify_history.py --config PATH` can select another authored build preset.
+Preview visibility stays a gate; `--hidden-preview-node NAME` explicitly declares
+a cutter expected to be occluded from the fixed capture camera. Its on/off image
+difference remains recorded. The detail study declares the rear vent cuts and
+the potentially occluded far shoulder; only the three rear vents are hidden.
+
 ## Procedural recipes
 
 Use the [stick-ball preset](presets/stick-ball.json) for the main visual scene:
@@ -340,7 +379,7 @@ python3 projects/sdf/tools/negative_report.py \
 `--validate-subtractions` checks intersecting cavities and a perforated-plate
 fixture across promotion boundaries, backward/reset and 64/128-edit batching.
 The negative-sticks guide/recipe does not change the underlying CSG or tracer.
-Its final 1080p 1x rendering measured 1.83 ms primary and 2.25 ms hard-shadow
+The original hardware-filtered qualification measured 1.83 ms primary and 2.25 ms hard-shadow
 median GPU time on the selected device. Geometry updates still synchronously
 rebuild the field: roughly 48 ms median per build during logical carving.
 See the scene evidence for p95 values, frame counts and image replay tolerance.

@@ -13,6 +13,8 @@ def main():
     parser.add_argument('--input',type=Path,required=True)
     parser.add_argument('--controls',type=Path,required=True)
     parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--sampling-audition',type=Path,help='Optional controlled sampler comparison receipt')
+    parser.add_argument('--sampler-regression',type=Path,help='Optional existing-renderer regression output')
     args=parser.parse_args()
     source,out=args.input.resolve(),args.output.resolve()
     data=json.loads((source/'manifest.json').read_text())
@@ -27,6 +29,15 @@ def main():
     if out.exists():raise RuntimeError('Use a fresh report export directory')
     shutil.copytree(source,out/'data')
     shutil.copytree(args.controls,out/'controls')
+    sampler_links=''
+    if args.sampling_audition:
+        shutil.copy2(args.sampling_audition,out/'data/sampling-audition.json')
+        sampler_links+='<a href="data/sampling-audition.json">Controlled sampler comparison</a>'
+    if args.sampler_regression:
+        regression=json.loads((args.sampler_regression/'manifest.json').read_text())
+        assert regression['binary_sha256']==data['binary_sha256'] and regression['shader_sha256']==data['shader_sha256']
+        shutil.copytree(args.sampler_regression,out/'data/sampler-regression')
+        sampler_links+=' · <a href="data/sampler-regression/manifest.json">Primitive, material and legacy regressions</a>'
     template=Path(__file__).with_name('negative_report_template.html').read_text()
     css=template.split('<style>')[1].split('</style>')[0]
     video_js=template.split('<script>')[1].split('const stages=')[0]
@@ -82,7 +93,7 @@ button:disabled{{opacity:.45;cursor:default}}video{{height:auto;aspect-ratio:4/3
 <p>Matched 1920×1080, 1×, hard-shadow static profiles on the RTX 5070 Ti submit 180 frames, discard 30 warmup frames and report completed GPU trace-plus-post timestamps. Field construction, readback and encoding are excluded.</p>
 <div class="table-wrap"><table><thead><tr><th>Treatment</th><th>Median GPU frame</th><th>p95</th><th>Samples</th></tr></thead><tbody>{rows}</tbody></table></div>
 <p class="note">Geometry changes still rebuild synchronously. The axis-64 field allocation remains 912,874,672 bytes, excluding frame targets and driver resources. The sampling fix described below adds no field memory.</p>
-<details><summary>A small detail exposed an atlas precision issue</summary><p>The first hardware-filtered replay exceeded the existing image threshold at three pixels; the largest difference was 39 code values on a hard-shadow boundary. Geometry fingerprints and native ray checks still agreed. Brick-local trilinear interpolation removed dependence on normalized atlas coordinates. A controlled same-scene profile measured 2.634 ms median with hardware filtering and 3.073 ms with local interpolation. Replay became identical, and the original image threshold was retained. The new native captures use the corrected sampler.</p><p><a href="data/sampling-audition.json">Controlled sampler comparison</a> · <a href="data/sampler-regression/manifest.json">Primitive, material and legacy regressions</a></p></details>
+<details><summary>A small detail exposed an atlas precision issue</summary><p>The initial study's hardware-filtered replay exceeded the existing image threshold at three pixels; the largest difference was 39 code values near the antenna's hard-shadow edge. Geometry fingerprints and native ray checks still agreed. Brick-local trilinear interpolation removed dependence on normalized atlas coordinates. The recorded controlled same-scene profile measured 2.634 ms median with hardware filtering and 3.073 ms with local interpolation. Replay became identical, and the original image threshold was retained. The new native captures use the corrected sampler.</p><p>{sampler_links}</p></details>
 <details><summary>Run it and inspect the evidence</summary><pre>build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-detail.json
 build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-detail-build.json
 
