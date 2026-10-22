@@ -9,11 +9,12 @@ parser.add_argument("--binary",default="build/dev/projects/sdf/sdf")
 parser.add_argument("--output",type=Path,default=Path("outputs/sdf/qualification"))
 parser.add_argument("--config",type=Path,help="scene preset; interactions use static motion")
 parser.add_argument("--height",type=int,default=1000)
+parser.add_argument("--history-controls",action="store_true")
 args=parser.parse_args()
 if not args.config or args.height != 1000:
     raise SystemExit("Authored material controls require --config and --height 1000")
 if os.environ.get("CUBEY_SDF_PRIVATE_XVFB")!="1":
-    raise SystemExit("Use qualify.py --windowed to create an isolated display")
+    raise SystemExit("Run in a private xvfb-run display with CUBEY_SDF_PRIVATE_XVFB=1")
 D=C.c_void_p; W=C.c_ulong; U=C.c_uint; I=C.c_int
 x=C.CDLL(find_library("X11")); t=C.CDLL(find_library("Xtst"))
 def bind(lib,name,args,result=I):
@@ -31,7 +32,7 @@ root=x.XDefaultRootWindow(d)
 log=out/"logs/windowed-interaction.log"
 with log.open("w") as stream:
     command=["stdbuf","-oL",args.binary]
-    if args.config:command += ["--config",str(args.config),"--motion","static","--supersample","1"]
+    if args.config:command += ["--config",str(args.config),"--motion","construction" if args.history_controls else "static","--supersample","1"]
     command += ["--width","900","--height",str(args.height),"--require-validation"]
     proc=subprocess.Popen(command,stdout=stream,stderr=subprocess.STDOUT)
     try:
@@ -70,12 +71,37 @@ with log.open("w") as stream:
             t.XTestFakeMotionEvent(d,-1,cx+20,cy+20,0)
             t.XTestFakeButtonEvent(d,1,1,0);x.XSync(d,0);time.sleep(.07)
             t.XTestFakeButtonEvent(d,1,0,0);x.XSync(d,0);time.sleep(.35)
-        click(110,600)
-        capture("window-material-open.png")
-        # Coordinates come from inspection of this owned 900x1000 panel.
-        # Open the ivory material and change its actual roughness slider.
-        click(300,654)
-        capture("window-material-edited.png")
+        if args.history_controls:
+            import re
+            observed=[]
+            def step():
+                return int(re.findall(r'history (?:initial )?step=(\d+)/',log.read_text())[-1])
+            assert step()==0,log.read_text()
+            for index in range(1,6):
+                click(233,277)
+                observed.append(step())
+                assert observed[-1]==index,observed
+                if index in (4,5):capture(f"window-step-{index}.png")
+            click(125,277);assert step()==4
+            click(233,277);assert step()==5
+            click(304,306);assert step()==43
+            capture("window-step-final.png")
+            before=log.read_text().count("sdf: authored instructions=")
+            time.sleep(.4)
+            assert before==log.read_text().count("sdf: authored instructions=")
+            click(190,306);assert 20<=step()<=23
+            capture("window-step-middle.png")
+            click(160,146);assert step()==0
+            click(95,146);time.sleep(1.5);click(95,146)
+            assert step()>0
+            capture("window-playback-paused.png")
+            click(160,146);assert step()==0
+        else:
+            click(110,600)
+            capture("window-material-open.png")
+            # Coordinates come from inspection of this owned 900x1000 panel.
+            click(300,654)
+            capture("window-material-edited.png")
         key("Escape")
         status=proc.wait(timeout=15)
         assert status==0,f"native app exit {status}"
@@ -85,13 +111,24 @@ text=log.read_text()
 assert "validation error" not in text.lower(),text
 import re
 builds=sum(line.startswith("sdf: authored instructions=") for line in text.splitlines())
-assert builds==1,builds
-updates=re.findall(r"authored update geometry=(\w+) appearance=(\w+) field_rebuilt=(\d)",text)
-assert updates and all(row[2]=="0" for row in updates),text
-initial=re.search(r"sdf: authored geometry=(\w+) appearance=(\w+)",text)
-assert all(row[0]==initial[1] for row in updates)
-assert any(row[1]!=initial[2] for row in updates)
-receipt={"passed":True,"command":command,"field_builds":builds,"updates":updates,
-"actions":["resize twice","orbit","zoom","pause/reset","change ivory roughness from 0.52 without field rebuild","Escape"]}
+if args.history_controls:
+    assert builds>10,builds
+    visits=[int(s) for s in re.findall(r'history (?:initial )?step=(\d+)/',text)]
+    receipt={"passed":True,"command":command,"field_builds":builds,"history_visits":visits,
+        "actions":["resize twice","orbit","zoom","pause/reset","next edits 1 through 5",
+                   "previous to 4 and next to 5","scrub to final and midpoint","stable paused field",
+                   "restart empty","resume and pause playback","Escape"]}
+else:
+    assert builds==1,builds
+    updates=re.findall(r"authored update geometry=(\w+) appearance=(\w+) field_rebuilt=(\d)",text)
+    assert updates and all(row[2]=="0" for row in updates),text
+    initial=re.search(r"sdf: authored geometry=(\w+) appearance=(\w+)",text)
+    assert all(row[0]==initial[1] for row in updates)
+    assert any(row[1]!=initial[2] for row in updates)
+    receipt={"passed":True,"command":command,"field_builds":builds,"updates":updates,
+    "actions":["resize twice","orbit","zoom","pause/reset","change ivory roughness from 0.52 without field rebuild","Escape"]}
+import hashlib
+receipt["binary_sha256"]=hashlib.sha256(Path(args.binary).read_bytes()).hexdigest()
+receipt["source_commit"]=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
 (out/"windowed-interaction.json").write_text(json.dumps(receipt,indent=2)+"\n")
 print(json.dumps(receipt))

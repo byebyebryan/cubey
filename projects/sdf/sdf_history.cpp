@@ -147,6 +147,7 @@ AuthoredHistorySample sample_authored_history(const TimelineConfig& config,
 
 double authored_history_seek(const TimelineConfig& config, const AuthoredScene& scene,
                              std::size_t count) {
+    validate_timeline(config);
     if (scene.history.empty() || count > scene.history.size())
         throw std::invalid_argument("authored history seek outside the saved sequence");
     if (count == 0)

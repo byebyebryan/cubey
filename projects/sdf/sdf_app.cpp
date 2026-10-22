@@ -190,7 +190,13 @@ class App {
                 error_ = error.what();
                 if (!orbit_.paused())
                     orbit_.toggle_pause();
-                active_prefix_ = timeline_.prefix;
+                if (authored_build()) {
+                    playback_seconds_ =
+                        authored_history_seek(config_.timeline, *authored_, active_prefix_);
+                    sample_time(playback_seconds_);
+                } else {
+                    active_prefix_ = timeline_.prefix;
+                }
                 renderer_.update_field(ctx.device(), *field_);
             }
         };
