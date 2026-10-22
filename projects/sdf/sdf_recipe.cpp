@@ -98,6 +98,39 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
     Recipe recipe;
     recipe.generator = scene == "sticks" ? "sticks-pcg32-v1" : std::string(scene);
     recipe.seed = seed;
+    if (scene == "negative-sticks") {
+        if (count > 65535U)
+            throw std::invalid_argument(
+                "negative-sticks accepts at most 65535 cutters plus its base");
+        recipe.generator = "negative-sticks-pcg32-v1";
+        recipe.edits.reserve(static_cast<std::size_t>(count) + 1);
+        BoxEdit base;
+        base.half_extent = {0.27F, 0.27F, 0.27F};
+        base.rounding = 0.018F;
+        recipe.edits.push_back(base);
+        Random random(seed);
+        constexpr float tau = 2.0F * std::numbers::pi_v<float>;
+        for (std::uint32_t i = 0; i < count; ++i) {
+            const float u = random.unit();
+            const float a = random.range(0.0F, tau);
+            const float b = random.range(0.0F, tau);
+            BoxEdit cutter;
+            cutter.operation = Operation::Remove;
+            cutter.rotation =
+                math::Quat{std::sqrt(u) * std::cos(b), std::sqrt(1.0F - u) * std::sin(a),
+                           std::sqrt(1.0F - u) * std::cos(a), std::sqrt(u) * std::sin(b)};
+            const float radius = 0.20F * std::sqrt(random.unit());
+            const float angle = random.range(0.0F, tau);
+            cutter.center =
+                cutter.rotation * math::Vec3{0, radius * std::cos(angle), radius * std::sin(angle)};
+            const float low = i < 4 ? 0.04F : (i < 16 ? 0.03F : 0.02F);
+            const float high = i < 4 ? 0.05F : (i < 16 ? 0.04F : 0.03F);
+            cutter.half_extent = {0.65F, random.range(low, high), random.range(low, high)};
+            cutter.rounding = 0.004F;
+            recipe.edits.push_back(cutter);
+        }
+        return recipe;
+    }
     if (scene == "box" || scene == "rotated" || scene == "cut") {
         BoxEdit box;
         box.half_extent = {0.24F, 0.19F, 0.22F};
@@ -115,8 +148,8 @@ Recipe make_recipe(std::string_view scene, std::uint32_t seed, std::uint32_t cou
         return recipe;
     }
     if (scene != "sticks" || count > 65536U)
-        throw std::invalid_argument(
-            "SDF scene must be box, rotated, cut or sticks (count <= 65536)");
+        throw std::invalid_argument("SDF scene must be box, rotated, cut, sticks or "
+                                    "negative-sticks (sticks count <= 65536)");
     Random random(seed);
     constexpr float tau = 2.0F * std::numbers::pi_v<float>;
     recipe.edits.reserve(count);

@@ -66,6 +66,40 @@ int main() {
         require(radius >= 0.28999F && radius <= 0.30001F,
                 "stick shell must match reference dimensions");
     }
+    const auto negative = make_recipe("negative-sticks", 42, 72);
+    require(negative.edits.size() == 73 && negative.edits.front().operation == Operation::Fill,
+            "negative sticks must retain one solid plus every cutter");
+    require(recipe_hash(negative) == recipe_hash(make_recipe("negative-sticks", 42, 72)),
+            "negative sticks must reproduce the explicit recipe");
+    require(recipe_hash(negative) != recipe_hash(make_recipe("negative-sticks", 7, 72)),
+            "negative sticks seed must change geometry");
+    auto prefix = negative;
+    prefix.edits.resize(25);
+    require(recipe_hash(prefix) == recipe_hash(make_recipe("negative-sticks", 42, 24)),
+            "increasing cutter count must retain the earlier cuts unchanged");
+    for (std::size_t i = 1; i < negative.edits.size(); ++i) {
+        const auto& cutter = negative.edits[i];
+        validate_edit(cutter);
+        require(cutter.operation == Operation::Remove &&
+                    edit_distance(cutter.center, negative.edits.front()) < 0,
+                "every cutter must intersect the initial solid");
+        require(recipe_distance(cutter.center, std::span(negative.edits).first(i + 1)) > 0,
+                "applying a cutter must leave its center empty");
+    }
+    const auto intact = make_recipe("negative-sticks", 42, 0);
+    require(intact.edits.size() == 1 && recipe_distance({0, 0, 0}, intact.edits) < 0,
+            "zero cuts must produce the intact solid");
+    const auto negative_loaded = parse_recipe(serialize_recipe(negative));
+    require(recipe_hash(negative_loaded) == recipe_hash(negative) &&
+                negative_loaded.generator == negative.generator,
+            "subtractive recipes must roundtrip all operations and metadata");
+    bool too_many_cutters = false;
+    try {
+        static_cast<void>(make_recipe("negative-sticks", 42, 65536));
+    } catch (const std::invalid_argument&) {
+        too_many_cutters = true;
+    }
+    require(too_many_cutters, "generated cutters plus base must fit the recipe loader limit");
     for (const auto count : {128U, 129U, 256U, 257U}) {
         require(construction_prefix(count, 8.0, 8.0) == count,
                 "last frame must contain every edit");
