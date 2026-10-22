@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--config', type=Path, default=Path('projects/sdf/presets/survey-robot-detail.json'))
     parser.add_argument('--build-config', type=Path, default=Path('projects/sdf/presets/survey-robot-detail-build.json'))
     parser.add_argument('--baseline-config', type=Path, default=Path('projects/sdf/presets/survey-robot.json'))
+    parser.add_argument('--joint-views', action='store_true', help='Add front/profile leg and opposite elbow inspections')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     out = args.output.resolve()
@@ -83,6 +84,16 @@ def main():
         views['face']=('Layered optic',views['face'][1])
         views['upper']=('Service door and joints',views['upper'][1])
         views['backpack']=('Power pods and vents',views['backpack'][1])
+    if args.joint_views:
+        views['upper']=('Shoulders and elbows',views['upper'][1])
+        views['face']=('Head and neck',views['face'][1])
+        views['feet']=('Legs, three-quarter',views['feet'][1])
+        views.update({
+            'arms-left':('Elbows, opposite view',['--yaw',-.65,'--pitch',.08,'--distance',.68,'--target-y',-.03,'--width',1200]),
+            'legs-front':('Legs, front',['--yaw',0,'--pitch',.02,'--distance',.64,'--target-y',-.27]),
+            'legs-side':('Legs, profile',['--yaw',1.5707963,'--pitch',.02,'--distance',.64,'--target-y',-.27]),
+            'front':('Full front',['--yaw',0,'--pitch',.02]),
+        })
     for view,(label,options) in views.items():
         manifest['views'][view]=dict(label=label,options=options)
         for variant in ('baseline','detail'):
