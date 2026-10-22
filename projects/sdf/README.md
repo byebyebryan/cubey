@@ -117,6 +117,9 @@ Its arbitrary jaw/base chips have been removed, retaining the facial carving,
 inner ears, horn flutes and neck structure. The
 [review and native evidence](../../docs/notes/sdf-guardian-driftwood-refinement-evidence.md)
 distinguish this correction from the historical 108-leaf version.
+The [corrected guardian review](http://starship:8787/reports/03f1f69693d68ebc71535c764fec08fcdf6763228fa37da7fc11639e393fe2a4/)
+shows matched before/after views, all 107 revised states and a fresh construction
+film without those two cuts.
 The earlier [matched refinement gallery](http://starship:8787/reports/d66a4ee7ce92dd2f255e170b9dc67676551a1f5efec099ec99ccda304a4d7973/)
 retains both prior versions, their 210 states and two films as the review record.
 

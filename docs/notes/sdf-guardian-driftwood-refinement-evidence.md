@@ -29,6 +29,49 @@ further polish is planned. Its source, presets, technical receipts and published
 films remain available as an unsuccessful content experiment. The earlier
 assistant assessment of its improvement did not establish artistic acceptance.
 
+### Corrected guardian: native qualification and delivery
+
+[Open the guardian chip review](http://starship:8787/reports/03f1f69693d68ebc71535c764fec08fcdf6763228fa37da7fc11639e393fe2a4/).
+It compares the prior 108-leaf refinement against the corrected 106-leaf scene,
+with six matched inspection views plus a clay hero pair, all 107 current state
+images and a fresh 50-second construction/orbit film. Source comparison verifies
+that every remaining primitive, history entry and material is unchanged; all
+paired rendering configurations match apart from output paths.
+
+`outputs/sdf/guardian-cleanup-qualified/` records the fresh qualification from
+clean source `f895d451`, using the same native binary, shaders and GPU as the
+prior refinement. Capture reuse is not used because the expression and history
+changed. All 107 distinct states and 110 history checkpoints pass. The history
+validation log records 52,504 field rays and 123,942 direct CPU/GPU points with
+zero ray mismatches, exhaustion, ambiguous samples or part disagreements.
+
+All seven design probes pass, including the restored jaw/base interior samples
+at signed distances -0.005944 and -0.012. The 44 subtractive preview pairs retain
+the ten previously documented fixed-camera exceptions. The tiny temple endpoint
+still passes its required close-up with 164 changed channels. Final replay and
+static pixels are identical, export/reload is exact, and the axis-80 image matches
+the normal axis-64 image. The film screens all 1,500 decoded frames and records
+107 geometry builds. The bounded 1080p profile has 148 GPU samples, median
+2.324 ms / p95 2.432 ms; this art correction makes no general speedup claim.
+
+The report is assembled by `guardian_review_report.py`; its 678 files total
+55,114,937 bytes. Publication verifies the entrypoint, and a separate HTTP pass
+hash-verifies every served asset. Hero, face detail, rear and final-state native
+images were inspected directly. No browser was connected for this turn, so the
+new report's interactions have static-link/syntax checks but no browser acceptance.
+Receipts are `outputs/sdf/guardian-cleanup-{delivery,review}.json`.
+
+```sh
+python3 projects/sdf/tools/author_refinements.py --subject guardian
+python3 projects/sdf/tools/qualify_sculpture.py --subject guardian \
+  --metadata projects/sdf/sculpture_refinements.json --video \
+  --output outputs/sdf/guardian-cleanup-new
+python3 projects/sdf/tools/guardian_review_report.py \
+  --before outputs/sdf/refinement-guardian-qualified \
+  --after outputs/sdf/guardian-cleanup-new \
+  --output outputs/sdf/guardian-review-new
+```
+
 The sections below describe the historical two-subject delivery, including its
 108-leaf guardian with chips. They are not measurements of the corrected scene.
 
