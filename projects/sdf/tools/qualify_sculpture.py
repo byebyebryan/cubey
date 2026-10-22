@@ -17,6 +17,8 @@ def main():
     parser.add_argument('--metadata', type=Path, default=Path('projects/sdf/sculptures.json'))
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--video', action='store_true')
+    parser.add_argument('--reuse-history', type=Path,
+                        help='Prior history directory; reuse requires identical scene/config/native artifacts')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     meta_path = args.metadata.resolve()
@@ -79,6 +81,8 @@ def main():
         history_command += ['--hidden-preview-node',preview['node']]
     if args.video:
         history_command.append('--video')
+    if args.reuse_history:
+        history_command += ['--reuse-captures',str(args.reuse_history.resolve())]
     manifest['history_command']=history_command
     save()
     subprocess.run(history_command,cwd=root,check=True)
@@ -100,6 +104,21 @@ def main():
     run('atlas-80',['--atlas-axis',80,'--validate-field'])
     assert pixels(out/'captures/hero.png')==pixels(out/'captures/atlas-80.png')
     manifest['atlas_80_image_identical']=True
+    manifest['supplemental_previews']=[]
+    for preview in meta.get('supplemental_previews',[]):
+        index=next(i for i,h in enumerate(scene['history']) if h['node']==preview['node'])
+        total=.65+sum(h['seconds'] for h in scene['history'])
+        duration=json.loads(build.read_text())['construction-seconds']
+        time=(.65+sum(h['seconds'] for h in scene['history'][:index])
+              +.175*scene['history'][index]['seconds'])/total*duration
+        options=['--time',time,*preview['options']]
+        on=run(preview['name'],options,build)
+        off=run(preview['name']+'-off',[*options,'--no-cutter-cue'],build)
+        changed=sum(a!=b for a,b in zip(pixels(out/on['capture']),pixels(out/off['capture'])))
+        assert changed>100,(preview['node'],changed)
+        manifest['supplemental_previews'].append(dict(**preview,time=time,changed_channels=changed,
+                                                     on=on['capture'],off=off['capture']))
+        save()
     for name, config in [('subject',preset),('robot',root/'projects/sdf/presets/survey-robot-fieldkit.json')]:
         prefix=out/f'profiles/{name}'
         row=run('profile-'+name,['--headless-render-only','--frames',180,'--profile-warmup-frames',30,

@@ -100,6 +100,10 @@
       {
         "node": "right-rear-neck-3",
         "reason": "This rear neck groove is behind the solid bust in the fixed front build camera; the rear inspection view exposes the completed carving."
+      },
+      {
+        "node": "temple-crack-3",
+        "reason": "The tiny tapered crack endpoint changes 69 color channels in the fixed 960px build view, below the unchanged 100-channel gate; the native face-close-up preview passes that gate. The earlier crack segments remain visible."
       }
     ],
     "intent_checks": [
@@ -246,6 +250,21 @@
       "author_sculptures.py",
       "sdf_author.py",
       "sdf_probe.py"
+    ],
+    "supplemental_previews": [
+      {
+        "node": "temple-crack-3",
+        "name": "temple-preview",
+        "options": [
+          "--distance",
+          0.85,
+          "--target-y",
+          0.09,
+          "--pitch",
+          0.11
+        ],
+        "reason": "The tapered crack endpoint is below the fixed build camera size gate; require a visible close-up with the same unchanged 100-channel gate."
+      }
     ]
   },
   "driftwood": {
@@ -369,6 +388,10 @@
       {
         "node": "rear-grain-5",
         "reason": "Rear grain lies behind the solid trunk in the fixed front build camera. The rear inspection and final orbit expose these channels; all primary hollowing/splitting and side-grain previews remain required."
+      },
+      {
+        "node": "end-split-5",
+        "reason": "The terminal split segment extends the connected void inside the trunk behind the front wall. Five preceding split segments preview visibly; separate before/after and empty-path probes verify this internal continuation."
       }
     ],
     "intent_checks": [
@@ -529,6 +552,49 @@
             0.078,
             0.25,
             -0.021
+          ]
+        ]
+      },
+      {
+        "name": "terminal split previously solid",
+        "expect": "solid",
+        "before_node": "end-split-5",
+        "margin": 0.0003,
+        "points": [
+          [
+            0.058,
+            0.161,
+            0.014
+          ]
+        ]
+      },
+      {
+        "name": "terminal split joins the opening",
+        "expect": "empty",
+        "path": true,
+        "margin": 0.0004,
+        "points": [
+          [
+            0.058,
+            0.161,
+            0.014
+          ],
+          [
+            0.072,
+            0.22,
+            -0.011
+          ]
+        ]
+      },
+      {
+        "name": "same upper stub sample becomes empty",
+        "expect": "empty",
+        "margin": 0.005,
+        "points": [
+          [
+            0.04,
+            0.24,
+            -0.075
           ]
         ]
       }

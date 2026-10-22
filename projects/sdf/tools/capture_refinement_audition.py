@@ -13,6 +13,7 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     args=parser.parse_args();root=Path(__file__).resolve().parents[3]
     out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
+    (out/'configs').mkdir();(out/'scenes').mkdir()
     binary=root/'build/dev/projects/sdf/sdf'
     sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
     manifest=dict(source=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
@@ -22,7 +23,7 @@ def main():
         for variant in 'ab':
             config=root/f'projects/sdf/presets/refinement-auditions/{subject}-form-{variant}.json'
             scene=root/json.loads(config.read_text())['authored-scene']
-            shutil.copy2(config,out/config.name);shutil.copy2(scene,out/scene.name)
+            shutil.copy2(config,out/'configs'/config.name);shutil.copy2(scene,out/'scenes'/scene.name)
             for view,opts in dict(hero=[],front=['--yaw',0,'--pitch',.02],
                 profile=['--yaw',1.5707963,'--pitch',.1],
                 rear=['--yaw',3.49,'--pitch',.19,'--sun-azimuth',-30]).items():

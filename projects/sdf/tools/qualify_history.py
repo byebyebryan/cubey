@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 from qualify_authored import check_video
 
@@ -15,6 +16,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--video', action='store_true')
     parser.add_argument('--regressions', action='store_true')
+    parser.add_argument('--reuse-captures', type=Path,
+                        help='Reuse hash-verified stills/checks for identical scene, preset and native artifacts; always recapture video')
     parser.add_argument('--config', type=Path, default=Path('projects/sdf/presets/survey-robot-build.json'))
     parser.add_argument('--export-name', default='robot.json',
                         help='Export basename (legacy robot.json remains the default)')
@@ -48,12 +51,48 @@ def main():
         config_sha256=sha(preset), source_scene_sha256=sha(root/config['authored-scene']),
         scene_name=scene['name'], exported_scene=f'scenes/{args.export_name}',
         runs={}, steps=[], previews=[])
+    reusable = None
+    if args.reuse_captures:
+        prior = args.reuse_captures.resolve()
+        previous = json.loads((prior/'manifest.json').read_text())
+        for key in ('binary_sha256', 'shader_sha256', 'config_sha256', 'source_scene_sha256',
+                    'history', 'construction_seconds', 'duration', 'fps', 'frames'):
+            if previous[key] != manifest[key]:
+                raise RuntimeError('Capture reuse rejected: '+key+' differs')
+        reusable = (prior, previous)
+        manifest['reused_capture_source'] = dict(path=str(prior),
+            manifest_sha256=sha(prior/'manifest.json'), source_commit=previous['source_commit'],
+            source_dirty=previous['source_dirty'],
+            scope='Only identical-command stills and native checks; exact scene/config/binary/shader hashes required. Video and export side effects run again.')
     def save():
         (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     def run(name, options=(), expected_step=None, video=False):
         output = out / ('native.mp4' if video else f'captures/{name}.png')
         command = [str(binary), '--headless', '--require-validation', '--config', str(preset),
                    '--width', '960', '--height', '960', *map(str, options), '--output', str(output)]
+        if reusable and not video and '--export-authored' not in command:
+            prior, previous = reusable
+            row = previous['runs'].get(name)
+            def normalized(cmd):
+                cmd = list(cmd)
+                cmd[cmd.index('--output')+1] = '<capture>'
+                return cmd
+            if row and normalized(row['command']) == normalized(command):
+                original = prior/row['capture']
+                assert row['exit_code'] == 0 and sha(original) == row['capture_sha256']
+                log = (prior/f'logs/{name}.log').read_text()
+                assert 'validation error' not in log.lower()
+                assert row['stats'] == [s for s in log.splitlines() if s.startswith('sdf:')]
+                if expected_step is not None:
+                    assert f'sdf: history initial step={expected_step}/{len(history)}' in log
+                shutil.copy2(original, output)
+                shutil.copy2(prior/f'logs/{name}.log', out/f'logs/{name}.log')
+                shutil.copy2(prior/f'configs/{name}.json', out/f'configs/{name}.json')
+                row = dict(row, reused_from=str(prior), reused_log_sha256=sha(prior/f'logs/{name}.log'))
+                manifest['runs'][name] = row
+                save()
+                print(name, 'reused verified capture', flush=True)
+                return row
         subprocess.run([*command, '--write-config-template', str(out / f'configs/{name}.json')], cwd=root,
                        check=True, stdout=subprocess.DEVNULL)
         result = subprocess.run(command, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

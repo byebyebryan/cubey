@@ -69,7 +69,7 @@ broader worn planes, an elongated knot, two hollows, a real longitudinal split
 and grain extending to the side/rear. The correction pass trims the rear limb
 and shortens a rear scoop that cut too close to that junction. Its retained
 rear-limb probe now has over 0.021 workspace units of interior clearance.
-It uses 100 leaves / 199 instructions. Nine design checks pass, including
+It uses 100 leaves / 199 instructions. Twelve design checks pass, including
 solid-before/empty-after samples at the hollow and split. The split's front
 wall sample changes from -0.002384 to +0.009548 signed distance.
 
@@ -95,3 +95,26 @@ changes from -0.005944 before that cut to +0.009720 afterward, with a continuous
 empty path to the exterior. The revised native cutter preview is visible.
 These corrections retain the visibility threshold and original ray/material
 tolerances. The full guardian capture is rerun against the corrected scene.
+
+That rerun finds one final minor exception: the tapered temple-crack endpoint
+changes 69 color channels at the fixed build camera, below the unchanged
+100-channel visibility gate. Its native face-close-up changes 164 channels
+and passes the same gate; this supplemental on/off comparison is required by
+the subject metadata. The second attempt is retained at
+`outputs/sdf/refinement-guardian-small-tip-attempt/`.
+
+Driftwood's five initial split segments have visible previews. The sixth
+extends the void inside the trunk behind the front wall and is documented
+individually. Its sample changes from -0.011887 before that segment to an open
+interior, with a retained empty path into the visible split. The upper hollow
+also has an explicit same-point solid-before/empty-after check.
+
+The history qualifier can now reuse prior stills/native checks only when the
+scene, preset, complete history/timing, binary and shader hashes match. It
+additionally verifies the command, PNG hash and native log statistics for each
+reused run. The new receipt identifies the original source and capture
+manifest. Video and export side effects run again. Different-scene and corrupt
+image negative controls both reject reuse before native execution, recorded in
+`outputs/sdf/refinement-reuse-negative-controls.json`. This avoids recapturing
+identical geometry solely to revise visibility metadata; it does not waive any
+native oracle or preview requirement.

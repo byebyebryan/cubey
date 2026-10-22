@@ -71,7 +71,8 @@ def main():
             gpu=m['runs']['profile-subject']['gpu_frame'],baseline_gpu=comparison['subjects'][subject]['baseline']['gpu_frame'],
             source=m['source_commit'],dirty=m['source_dirty'],bricks=int(match[1]),peak=peak,capacity=int(match[2]),
             build_ms=float(match[4]),frames=h['frames'],duration=h['duration'],config=m['metadata']['config'],
-            build_config=m['metadata']['build_config'],hidden=h['hidden_preview_allowlist']))
+            build_config=m['metadata']['build_config'],hidden=h['hidden_preview_allowlist'],
+            supplemental=m.get('supplemental_previews',[]),reuse=h.get('reused_capture_source')))
     shutil.copytree(a.comparison,out/'comparison')
     curves=a.input_root/'refinement-curves-final'
     curve_manifest=json.loads((curves/'manifest.json').read_text())
