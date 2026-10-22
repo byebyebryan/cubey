@@ -172,12 +172,13 @@ places it between the original and previous denser trial; the
 records the selection and native checks.
 User review accepted Balanced. It is now the default in the scripted generator
 and the guardian's native material panel, with Original, Denser and Fine also
-available. An independent body-color control adds restrained warm/cool mineral
-variation; the saved guardian uses 0.08, and zero retains the previous material.
-The initial tint was too faint in user review. The
-[clearer color review](http://starship:8787/reports/967d2eb6fbd98ae3e61200739d2620da3e7d10eb4cc9a80736ab5f08f42423b3/)
-compares neutral, default and stronger cream/cool-gray variation without
-changing the balanced veins, including a matched 0.16 before/after pair.
+available. An independent body-color control adds cream mineral variation to
+the original pale material; the saved guardian uses 0.08, and zero retains the
+previous material. The initial tint was too faint; later user review retained
+cream but rejected the bluish cool-gray end. The
+[original and cream review](http://starship:8787/reports/de9be4cc6f48d9b5723fb4e0f6378d222bce6ae528c5844b3dbdb8927a1f136b/)
+compares original color, default and stronger cream variation, including a
+matched 0.16 comparison with the previous cool endpoint.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -436,10 +437,10 @@ material weights. Color, roughness and analytic height gradients use the shared
 seeded value-noise family; fine grain fades with a conservative projected pixel
 footprint, and marble vein ramps broaden/average when unresolved.
 
-For marble, `color_variation` adds low-frequency, filtered warm/cool body tint
+For marble, `color_variation` adds low-frequency, filtered cream body tint
 from an independent seeded noise field, fading towards neutral near veins.
-The noise blends cream and cool-gray mineral colors at 0.9 times the pattern
-scale, with enough contrast to show several soft patches across the face.
+The noise blends cream with the original material color at 0.9 times the
+pattern scale, showing soft warm patches without a blue/dark mineral endpoint.
 It affects color only. Its default is zero for legacy scene compatibility; the
 guardian generator explicitly saves 0.08. No image maps or new appearance
 volume are allocated.

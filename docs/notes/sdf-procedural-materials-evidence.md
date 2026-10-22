@@ -16,6 +16,8 @@ adds named detail choices and independent subtle tint.
 The first tint was too faint in user review; the
 [color visibility correction](#color-visibility-correction) retains those
 controls while making the warm/cool patches visible.
+User review then retained cream and rejected the bluish cool-gray end; the
+[original and cream palette](#original-and-cream-palette) is the current result.
 
 ## Result and scope
 
@@ -473,3 +475,45 @@ Artifacts under `outputs/sdf/` are `marble-color-visibility-foundation/`,
 HTTP bytes/hash. Report targets, JavaScript syntax, documentation/layout policy
 checks and all 18 scoped SDF CLI recipes pass. Browser discovery returned no
 connected browsers, so browser interaction review remains unavailable.
+
+## Original and cream palette
+
+User review accepted the cream direction but found the cool-gray end bluish
+and dirty, requesting cream plus the original color. Implemented in `c9e30022`.
+The [original and cream review](http://starship:8787/reports/de9be4cc6f48d9b5723fb4e0f6378d222bce6ae528c5844b3dbdb8927a1f136b/)
+compares no variation, default 0.08 and stronger 0.16 amounts. A matched 0.16
+before/after pair shows the replaced endpoint.
+
+CPU and GLSL replace the cool multiplier with identity RGB `(1,1,1)`, retaining
+the existing cream endpoint, noise placement/contrast, vein attenuation and
+filtering. The original pale material now occupies the uncolored portions.
+Balanced detail, amount/range, scene files, roughness, bump, geometry and all
+65 operations remain unchanged. Lighting can still produce cool shadows; the
+material itself adds no blue endpoint. The generator help text now describes
+original/cream variation.
+
+Five CPU suites pass. The material suite now requires one-sided color movement
+relative to the untinted sample: red does not decrease and green/blue do not
+increase beyond rounding tolerance. Warm and untouched samples must both occur;
+roughness, gradients and the filtered-away limit retain their checks.
+All 36 native foundation render/validation runs pass, including exact zero-tint
+agreement with the prior balanced image, tint-on/off roughness and normal
+invariants, persistence, ownership, short histories and material cache reuse.
+Maximum CPU/GPU color error is 0.0000147223, with unchanged bounds.
+
+Fifteen fresh matching stills, eight design probes and all 720 decoded turntable
+frames pass. Default/stronger shaded close-ups and the base-color view were
+visually inspected. Native binary SHA-256 is
+`d469869b009e320a2b58dbcdce905bdeedc06bdc8526686defe19d867213d757`;
+foundation and comparison manifests agree on that and all shader identities.
+The old cool-palette image retains its previous receipt, with equal saved
+scene parameters and render settings. The full guardian history, desktop
+controls and performance profiles are not rerun for this endpoint change.
+
+Artifacts under `outputs/sdf/` are `marble-cream-foundation/`,
+`marble-cream-comparison/`, the 156-file / 28,482,528-byte `marble-cream-report/`
+(including its builder), and `marble-cream-served-review.json` for complete
+HTTP/hash verification. Static/dynamic targets, JavaScript syntax, five
+documentation/layout checks and all 18 scoped SDF CLI recipes pass. Browser
+discovery returned no connected browser, so browser interaction review remains
+unavailable. Artistic acceptance of this palette revision remains separate.
