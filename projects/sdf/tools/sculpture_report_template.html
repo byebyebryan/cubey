@@ -62,14 +62,14 @@ function showStep(value){step=Math.max(0,Math.min(selected.count,Number(value)))
  $('step').value=step;$('step-select').value=step;$('step-count').textContent=`Edit ${step} / ${selected.count}`;$('step-label').textContent=state.label;
  $('state').src=path;$('state-link').href=path;$('state').alt=`${selected.title}, edit ${step}: ${state.label}`;$('state-caption').textContent=state.label;
  $('previous').disabled=step===0;$('next').disabled=step===selected.count;}
-function disposeFilm(){loadVersion++;film.pause();film.removeAttribute('src');film.load();if(mediaUrl)URL.revokeObjectURL(mediaUrl);mediaUrl=null;loadedSubject=null;}
+function disposeFilm(){loadVersion++;film.controls=false;film.pause();film.removeAttribute('src');film.load();if(mediaUrl)URL.revokeObjectURL(mediaUrl);mediaUrl=null;loadedSubject=null;}
 async function loadFilm(time=0){const subject=selected.subject;
  if(loadedSubject===subject&&film.readyState>=1){film.currentTime=time;film.pause();return;}
  const version=++loadVersion;$('film-status').textContent='Loading the native construction film…';$('load-film').disabled=true;
  try{const url=file('history/presentation.mp4');const response=await fetch(url);if(!response.ok)throw new Error(`Download ${response.status}`);const blob=await response.blob();
   if(version!==loadVersion)return;if(mediaUrl)URL.revokeObjectURL(mediaUrl);mediaUrl=URL.createObjectURL(blob);
   await new Promise((resolve,reject)=>{film.addEventListener('loadedmetadata',resolve,{once:true});film.addEventListener('error',reject,{once:true});film.src=mediaUrl;film.load();});
-  if(version!==loadVersion)return;loadedSubject=subject;film.currentTime=Math.min(time,film.duration-.1);film.pause();$('film-status').textContent='Ready · play, scrub or choose a chapter.';
+  if(version!==loadVersion)return;loadedSubject=subject;film.controls=true;film.currentTime=Math.min(time,film.duration-.1);film.pause();$('film-status').textContent='Ready · play, scrub or choose a chapter.';
  }catch(error){if(version===loadVersion)$('film-status').textContent='Film could not load here. Use the direct download link.';}
  finally{if(version===loadVersion)$('load-film').disabled=false;}}
 function selectSubject(subject){selected=sculptures.find(s=>s.subject===subject);mode='material';view='hero';disposeFilm();
@@ -92,6 +92,6 @@ $('results').replaceChildren(...sculptures.map(s=>{const tr=document.createEleme
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;showView();}));
 $('view').addEventListener('change',e=>{view=e.target.value;showView();});$('step').addEventListener('input',e=>showStep(e.target.value));$('step-select').addEventListener('change',e=>showStep(e.target.value));
 $('previous').addEventListener('click',()=>showStep(step-1));$('next').addEventListener('click',()=>showStep(step+1));$('watch-step').addEventListener('click',()=>loadFilm(selected.steps[step].time*(selected.frames-1)/selected.frames));$('load-film').addEventListener('click',()=>loadFilm());
-function caption(){const event=selected.events.findLast(e=>e.time<=film.currentTime);$('film-caption').textContent=event?event.text:'';}film.addEventListener('timeupdate',caption);film.addEventListener('seeked',caption);window.addEventListener('pagehide',()=>{if(mediaUrl)URL.revokeObjectURL(mediaUrl);});
+function caption(){const event=loadedSubject===selected.subject?selected.events.findLast(e=>e.time<=film.currentTime):null;$('film-caption').textContent=event?event.text:'';}film.addEventListener('timeupdate',caption);film.addEventListener('seeked',caption);window.addEventListener('pagehide',()=>{if(mediaUrl)URL.revokeObjectURL(mediaUrl);});
 selectSubject(selected.subject);
 </script></body></html>
