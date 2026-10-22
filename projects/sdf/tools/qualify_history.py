@@ -15,6 +15,9 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--video', action='store_true')
     parser.add_argument('--regressions', action='store_true')
+    parser.add_argument('--config', type=Path, default=Path('projects/sdf/presets/survey-robot-build.json'))
+    parser.add_argument('--hidden-preview-node', action='append', default=[],
+                        help='Named cutter expected to be occluded from the fixed camera')
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     out = args.output.resolve()
@@ -23,7 +26,7 @@ def main():
     for folder in ('captures', 'logs', 'configs', 'scenes'):
         (out / folder).mkdir(parents=True)
     binary = root / 'build/dev/projects/sdf/sdf'
-    preset = root / 'projects/sdf/presets/survey-robot-build.json'
+    preset = args.config.resolve()
     config = json.loads(preset.read_text())
     scene = json.loads((root / config['authored-scene']).read_text())
     history = scene['history']
@@ -36,7 +39,9 @@ def main():
         source_dirty=bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=root, text=True).strip()),
         binary_sha256=sha(binary), shader_sha256={p.name: sha(p) for p in sorted((binary.parent / 'shaders').glob('*.spv'))},
         device=subprocess.check_output(['nvidia-smi', '--query-gpu=name,driver_version', '--format=csv,noheader'], text=True).strip(),
-        history=history, construction_seconds=construction, duration=duration, runs={}, steps=[], previews=[])
+        history=history, construction_seconds=construction, duration=duration, fps=fps, frames=frames,
+        config=str(preset.relative_to(root) if preset.is_relative_to(root) else preset),
+        runs={}, steps=[], previews=[])
     def save():
         (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     def run(name, options=(), expected_step=None, video=False):
@@ -90,7 +95,7 @@ def main():
             on = manifest['runs'][f'preview-{index+1:02}']
             identity = lambda row: next(s for s in row['stats'] if s.startswith('sdf: authored geometry='))
             assert identity(on) == identity(off)
-            manifest['previews'].append(dict(index=index+1, time=time, label=step['label'],
+            manifest['previews'].append(dict(index=index+1, node=step['node'], time=time, label=step['label'],
                 on=on['capture'], off=off['capture']))
         start += step['seconds']
     final = run('static-final', ['--motion', 'static', '--export-authored', out / 'scenes/robot.json', '--validate-field'])
@@ -111,7 +116,12 @@ def main():
     manifest['final_image_comparison'] = metrics
     for preview in manifest['previews']:
         preview['image_comparison'] = compare(preview['on'], preview['off'])
-        assert preview['image_comparison']['changed'] > 100, preview
+        # A fixed construction camera can hide rear-facing cutters. Record
+        # visibility separately; field/fingerprint checks still apply to all.
+        preview['visible_from_capture_camera'] = preview['image_comparison']['changed'] > 100
+        assert preview['visible_from_capture_camera'] or preview['node'] in args.hidden_preview_node, preview
+    assert set(args.hidden_preview_node).issubset(cutters)
+    manifest['hidden_preview_allowlist'] = args.hidden_preview_node
     if args.video:
         row = run('video', ['--capture', 'video', '--fps', fps, '--frames', frames,
                             '--width', 1280, '--height', 960], video=True)

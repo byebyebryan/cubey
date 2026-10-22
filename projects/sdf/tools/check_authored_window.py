@@ -76,6 +76,7 @@ with log.open("w") as stream:
             observed=[]
             def step():
                 return int(re.findall(r'history (?:initial )?step=(\d+)/',log.read_text())[-1])
+            total=int(re.findall(r'history (?:initial )?step=\d+/(\d+)',log.read_text())[-1])
             assert step()==0,log.read_text()
             for index in range(1,6):
                 click(233,277)
@@ -84,12 +85,12 @@ with log.open("w") as stream:
                 if index in (4,5):capture(f"window-step-{index}.png")
             click(125,277);assert step()==4
             click(233,277);assert step()==5
-            click(304,306);assert step()==43
+            click(304,306);assert step()==total
             capture("window-step-final.png")
             before=log.read_text().count("sdf: authored instructions=")
             time.sleep(.4)
             assert before==log.read_text().count("sdf: authored instructions=")
-            click(190,306);assert 20<=step()<=23
+            click(190,306);assert abs(step()-total/2)<2
             capture("window-step-middle.png")
             click(160,146);assert step()==0
             click(95,146);time.sleep(1.5);click(95,146)
