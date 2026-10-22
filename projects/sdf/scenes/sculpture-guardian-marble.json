@@ -19,7 +19,7 @@
       "procedural": {
         "type": "marble",
         "seed": 47,
-        "scale": 4.5,
+        "scale": 12,
         "secondary_color": [
           0.1301364766903643,
           0.14126329114027164,
@@ -28,15 +28,15 @@
         "color_strength": 0.88,
         "roughness_variation": 0.055,
         "bump_strength": 8e-05,
-        "grain_scale": 220,
+        "grain_scale": 360,
         "vein_direction": [
           0.67,
           0.63,
           0.19
         ],
-        "vein_frequency": 5.5,
-        "vein_width": 0.08,
-        "warp_strength": 5.0,
+        "vein_frequency": 12,
+        "vein_width": 0.05,
+        "warp_strength": 8.5,
         "offset": [
           0.17,
           -0.08,
