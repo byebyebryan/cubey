@@ -12,10 +12,12 @@ and [development history](projectr-development-history.md) describe projectR;
 the [exploration record](sdf-projectr-port-exploration.md) retains broader
 rendering, authoring and AI-content experiments.
 
-The next proposed presentation experiment is specified in the
-[negative-sticks plan](sdf-negative-sticks-plan.md). It reuses the implemented
-box fill/remove path to carve a solid, with image audition before presentation
-work. The first deliverable below records the additive V1 baseline.
+The subsequent carving experiment is specified in the
+[negative-sticks plan](sdf-negative-sticks-plan.md) and its
+[implementation evidence](sdf-negative-sticks-evidence.md). It reuses the box
+fill/remove path to carve a solid, with native image audition, carving playback
+and scene-specific qualification. The first deliverable below records the
+additive V1 baseline.
 
 ## First deliverable
 

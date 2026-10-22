@@ -9,7 +9,10 @@ parser.add_argument("--binary",default="build/dev/projects/sdf/sdf")
 parser.add_argument("--output",type=Path,default=Path("outputs/sdf/qualification"))
 parser.add_argument("--config",type=Path,help="scene preset; interactions use static motion")
 parser.add_argument("--height",type=int,default=600)
+parser.add_argument("--carving-controls",action="store_true",help="exercise carving scrub and explicit regeneration at 850px height")
 args=parser.parse_args()
+if args.carving_controls and (not args.config or args.height != 850):
+    raise SystemExit("Carving controls require --config and --height 850")
 if os.environ.get("CUBEY_SDF_PRIVATE_XVFB")!="1":
     raise SystemExit("Use qualify.py --windowed to create an isolated display")
 D=C.c_void_p; W=C.c_ulong; U=C.c_uint; I=C.c_int
@@ -23,11 +26,12 @@ bind(x,"XMoveWindow",[D,W,I,I]);bind(x,"XResizeWindow",[D,W,U,U]);bind(x,"XSetIn
 bind(x,"XSync",[D,I]);bind(x,"XStringToKeysym",[C.c_char_p],W);bind(x,"XKeysymToKeycode",[D,W],C.c_ubyte)
 bind(t,"XTestFakeKeyEvent",[D,U,I,W]);bind(t,"XTestFakeButtonEvent",[D,U,I,W]);bind(t,"XTestFakeMotionEvent",[D,I,I,I,W])
 out=args.output.resolve();d=x.XOpenDisplay(None)
+(out/"windowed-interaction.json").unlink(missing_ok=True)
 assert d,"Xvfb display unavailable"
 root=x.XDefaultRootWindow(d)
 log=out/"logs/windowed-interaction.log"
 with log.open("w") as stream:
-    command=[args.binary]
+    command=["stdbuf","-oL",args.binary]
     if args.config:command += ["--config",str(args.config),"--motion","static","--supersample","1"]
     command += ["--width","900","--height",str(args.height),"--require-validation"]
     proc=subprocess.Popen(command,stdout=stream,stderr=subprocess.STDOUT)
@@ -62,15 +66,54 @@ with log.open("w") as stream:
         def key(name):
             code=x.XKeysymToKeycode(d,x.XStringToKeysym(name.encode()))
             t.XTestFakeKeyEvent(d,code,1,0);t.XTestFakeKeyEvent(d,code,0,0);x.XSync(d,0)
-        key("space");key("r");time.sleep(.3);capture("window-reset.png");key("Escape")
+        key("space");key("r");time.sleep(.3);capture("window-reset.png")
+        if args.carving_controls:
+            # Coordinates are from the inspected native panel in this isolated
+            # 900x850 window, never from the user's desktop. Receipts below check
+            # actual field prefixes and generator identity, not just key delivery.
+            def click(cx,cy):
+                t.XTestFakeMotionEvent(d,-1,cx+20,cy+20,0)
+                t.XTestFakeButtonEvent(d,1,1,0);x.XSync(d,0);time.sleep(.07)
+                t.XTestFakeButtonEvent(d,1,0,0);x.XSync(d,0);time.sleep(.25)
+            click(190,176);capture("window-motion-menu.png")
+            click(110,286);capture("window-carve-base.png")
+            click(300,226);capture("window-carve-end.png")
+            click(190,226);capture("window-carve-middle.png")
+            click(76,226);capture("window-carve-back.png")
+            before_seed=sum(line.startswith("sdf: edits=") for line in log.read_text().splitlines())
+            click(130,594)
+            modifier=x.XKeysymToKeycode(d,x.XStringToKeysym(b"Control_L"))
+            t.XTestFakeKeyEvent(d,modifier,1,0);key("a");t.XTestFakeKeyEvent(d,modifier,0,0)
+            key("4");key("3");key("Return");time.sleep(.2)
+            capture("window-seed-staged.png")
+            staged_log=log.read_text()
+            assert sum(line.startswith("sdf: edits=") for line in staged_log.splitlines())==before_seed
+            assert "sdf: regenerated" not in staged_log,"Seed edit regenerated without the button"
+            click(140,655);capture("window-regenerated-base.png")
+            click(300,226);capture("window-regenerated-end.png")
+            click(750,780)
+        key("Escape")
         status=proc.wait(timeout=15)
         assert status==0,f"native app exit {status}"
     finally:
         if proc.poll() is None:proc.terminate();proc.wait(timeout=10)
 text=log.read_text()
 assert "validation error" not in text.lower(),text
-builds=sum(line.startswith("sdf: edits=") for line in text.splitlines())
-assert builds==1,f"camera/resize/input rebuilt the geometry {builds} times"
+build_lines=[line for line in text.splitlines() if line.startswith("sdf: edits=")]
+builds=len(build_lines)
+if args.carving_controls:
+    import re
+    prefixes=[int(re.search(r"edits=(\d+)",line)[1]) for line in build_lines]
+    assert len(prefixes)==6 and prefixes[:3]==[73,1,73] and 36<=prefixes[3]<=42 and prefixes[4:]==[1,73],prefixes
+    assert "regenerated scene=negative-sticks" in text,text
+    old_hash=re.search(r"sdf: recipe hash=(\w+)",text)[1]
+    new_hash=re.search(r"regenerated scene=negative-sticks hash=(\w+)",text)[1]
+    assert old_hash!=new_hash,"Seed editing/regeneration did not change the full recipe"
+else:
+    assert builds==1,f"camera/resize/input rebuilt the geometry {builds} times"
 receipt={"passed":True,"display":"isolated Xvfb","command":command,"field_builds":builds,"actions":["resize twice","pointer orbit","scroll zoom","Space","R","Escape"],"log":str(log.relative_to(out))}
+if args.carving_controls:
+    receipt.update(prefixes=prefixes,initial_hash=old_hash,regenerated_hash=new_hash)
+    receipt["actions"] += ["select Carve", "scrub to end", "scrub middle/back", "stage seed without regeneration", "explicitly regenerate negative sticks", "scrub regenerated recipe"]
 (out/"windowed-interaction.json").write_text(json.dumps(receipt,indent=2)+"\n")
 print(json.dumps(receipt))

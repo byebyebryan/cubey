@@ -20,11 +20,12 @@ def main():
     parser.add_argument("--binary", type=Path, default=Path("build/dev/projects/sdf/sdf"))
     parser.add_argument("--output", type=Path, default=Path("outputs/sdf/negative-qualification"))
     parser.add_argument("--video", action="store_true")
+    parser.add_argument("--resume", action="store_true", help="reuse verified runs only when native source/artifacts match")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[3]
     binary = args.binary.resolve()
     output = args.output.resolve()
-    if (output / "manifest.json").exists():
+    if (output / "manifest.json").exists() and not args.resume:
         raise RuntimeError("Use a fresh output directory to preserve previous qualification")
     for folder in ("captures", "logs", "configs", "profiles"):
         (output / folder).mkdir(parents=True, exist_ok=True)
@@ -41,20 +42,49 @@ def main():
                                             "--format=csv,noheader"], text=True).strip(),
         "runs": {}, "checks": {},
     }
+    if args.resume:
+        previous = json.loads((output / "manifest.json").read_text())
+        for key in ("binary_sha256", "shader_sha256", "source_sha256"):
+            if previous[key] != receipt[key]:
+                raise RuntimeError(f"Cannot resume: {key} changed; use a fresh output directory")
+        receipt = previous
+        receipt["verification_resumed_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    receipt["verification_context"] = {
+        "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
+        "source_dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=root, text=True).strip()),
+    }
+    receipt["verification_script_sha256"] = sha256(Path(__file__))
 
     def save():
         (output / "manifest.json").write_text(json.dumps(receipt, indent=2) + "\n")
 
     def run(name, options, *, preset=True, capture=True, expected_error=None):
         image = output / "captures" / f"{name}.png"
-        if expected_error:
-            image.unlink(missing_ok=True)
         command = [str(binary), "--headless", "--require-validation"]
         if preset:
             command += ["--config", str(root / "projects/sdf/presets/negative-sticks.json")]
         command += ["--width", "1280", "--height", "720", *map(str, options)]
         if capture:
             command += ["--output", str(image)]
+        cached = receipt["runs"].get(name)
+        if cached:
+            if cached["command"] != command or not (output / cached["log"]).exists():
+                raise RuntimeError(f"Cached run contract changed: {name}; use a fresh output directory")
+            if capture and not expected_error and sha256(image) != cached["capture_sha256"]:
+                raise RuntimeError(f"Cached capture changed: {name}")
+            # The command can name a preset whose contents changed without the
+            # path changing. Compare its fully applied settings before reuse.
+            check_config = output / "configs" / f"{name}.verify.json"
+            subprocess.run([*command, "--write-config-template", str(check_config)], cwd=root,
+                           check=True, stdout=subprocess.DEVNULL)
+            matches = json.loads(check_config.read_text()) == json.loads((output / cached["config"]).read_text())
+            check_config.unlink()
+            if not matches:
+                raise RuntimeError(f"Applied settings changed: {name}; use a fresh output directory")
+            print(f"{name}: verified existing receipt", flush=True)
+            return cached
+        if expected_error:
+            image.unlink(missing_ok=True)
         config = output / "configs" / f"{name}.json"
         subprocess.run([*command, "--write-config-template", str(config)], cwd=root, check=True,
                        stdout=subprocess.DEVNULL)
@@ -110,15 +140,40 @@ def main():
         ("cue-60fps", ["--time", 2.3, "--fps", 60]),
         ("replay-middle", ["--recipe", output / "recipe.json", "--scene", "sticks", "--time", 12,
                            "--validate-field"]),
+        ("middle-repeat", ["--time", 12, "--validate-field"]),
         ("zero-cuts", ["--count", 0, "--time", 24, "--validate-field"]),
         ("one-cut", ["--count", 1, "--time", 24, "--validate-field"]),
     ):
         run(name, options)
-    for left, right in (("middle", "replay-middle"), ("cue-off", "base"), ("cue", "cue-60fps")):
-        if receipt["runs"][left]["capture_sha256"] != receipt["runs"][right]["capture_sha256"]:
-            raise RuntimeError(f"Native pixels differ: {left} / {right}")
-    if receipt["runs"]["cue"]["capture_sha256"] == receipt["runs"]["cue-off"]["capture_sha256"]:
-        raise RuntimeError("Cutter guide did not change the preview image")
+    def pixels(name):
+        return subprocess.check_output(["ffmpeg", "-v", "error", "-i",
+            str(output / receipt["runs"][name]["capture"]), "-f", "rawvideo", "-pix_fmt", "rgba", "-"])
+
+    def compare(left, right):
+        a, b = pixels(left), pixels(right)
+        if len(a) != len(b):
+            raise RuntimeError("Capture extents differ")
+        delta = [abs(x - y) for x, y in zip(a, b)]
+        return {"channels": len(delta), "changed": sum(d > 0 for d in delta),
+                "max_abs": max(delta), "mean_abs": sum(delta) / len(delta),
+                "fraction_above_1": sum(d > 1 for d in delta) / len(delta)}
+
+    comparisons = {}
+    for left, right in (("middle", "replay-middle"), ("middle", "middle-repeat"),
+                         ("cue-off", "base"), ("cue", "cue-60fps")):
+        metrics = compare(left, right)
+        # Identical-input GPU rebuilds also show tiny sampled-image differences.
+        # Geometry remains checked by the CPU oracle;
+        # this is a separately recorded 8-bit image comparison, not that oracle's tolerance.
+        limit = 16 if left == "middle" else 1
+        metrics["limits"] = {"max_abs": limit, "mean_abs": 0.002, "fraction_above_1": 0.0001}
+        comparisons[f"{left}/{right}"] = metrics
+        if metrics["max_abs"] > limit or metrics["mean_abs"] > 0.002 or metrics["fraction_above_1"] > 0.0001:
+            raise RuntimeError(f"Native image comparison failed: {left}/{right}: {metrics}")
+    comparisons["cue/cue-off"] = compare("cue", "cue-off")
+    if comparisons["cue/cue-off"]["changed"] < 100:
+        raise RuntimeError("Cutter guide did not visibly change the preview image")
+    receipt["image_comparisons"] = comparisons
     receipt["checks"]["native_replay_cue_and_logical_time"] = "passed"
     run("capacity-64", ["--motion", "static", "--atlas-axis", 64, "--supersample", 1],
         expected_error="SDF field capacity exceeded")

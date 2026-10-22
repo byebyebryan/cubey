@@ -6,10 +6,15 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
-The proposed next visual experiment is [negative sticks](../../docs/notes/sdf-negative-sticks-plan.md):
-start from a solid and carve intersecting through-holes with a deterministic
-sequence of thick box cutters. Its plan begins with a native image audition;
-the scene and carving playback are not implemented yet.
+The [negative-sticks experiment](../../docs/notes/sdf-negative-sticks-plan.md)
+starts from a solid and carves intersecting through-holes with a deterministic
+sequence of thick box cutters. It includes a native seed audition, slow cutter
+guides, accelerated carving and a final orbit. See its
+[qualification evidence](../../docs/notes/sdf-negative-sticks-evidence.md).
+
+```sh
+build/dev/projects/sdf/sdf --config projects/sdf/presets/negative-sticks.json
+```
 
 [Watch the native demo and review the captures](http://starship:8787/reports/ac8d841ecc3900e08a9eaa6cced9597a0d466c4ad511142376a65adfffe8f31b/).
 The review includes the 24-second presentation, lighting comparisons, explicit
@@ -44,8 +49,11 @@ build/dev/projects/sdf/sdf --headless --count 2048 --atlas-axis 92 \
 
 Drag to orbit, scroll to zoom, R to reset, Space to pause playback and
 Escape to close. Static orbit/view changes reuse the existing field.
-`--scene` selects `box`, `rotated`, `cut` or `sticks`; `--seed` and `--count`
-specify the reproducible stick recipe. `--yaw`, `--pitch` and `--distance`
+`--scene` selects `box`, `rotated`, `cut`, `sticks` or `negative-sticks`;
+`--seed` and `--count` specify the reproducible recipe. For `negative-sticks`,
+count means cutters, excluding the one initial Fill (zero cutters retains the
+solid; maximum 65,535). The original `sticks` generator is unchanged.
+`--yaw`, `--pitch` and `--distance`
 specify the capture camera in radians/workspace units. `--debug` selects shaded
 (0), normal (1), ray-distance (2), traversal-work (3) or brick-cell (4) display.
 Hard mapless self-shadows are the default (`--shadows 1`); `--shadows 0` disables
@@ -82,7 +90,13 @@ build/dev/projects/sdf/sdf --headless --motion construction --time 4 \
   --count 257 --output /tmp/sdf-half.png
 ```
 
-`--motion` selects `static`, `orbit`, `construction` or `presentation`.
+`--motion` selects `static`, `orbit`, `construction`, `presentation` or `carve`.
+Carve requires one initial Fill followed only by removals, including when
+loading an explicit recipe independently of the CLI scene name. The new preset
+holds the solid for two seconds, shows four slow cuts through eight seconds,
+accelerates until sixteen seconds and then orbits to twenty-four seconds.
+`--no-cutter-cue` disables the introduction's depth-aware cutter-bounds outline.
+Use `--motion static` with that preset for a completed-scene still or profile.
 The default presentation is 24 logical seconds: eight for construction,
 twelve for orbit, then traversal and brick diagnostics. `--duration`,
 `--construction-seconds` and `--orbit-turns` adjust the timeline. `--time`
@@ -104,6 +118,32 @@ FFmpeg. The headless matrix needs the app and CPU-test targets built above.
 Receipts, applied configs, profiles, recipe and captures go under
 the selected output directory; `report.py` prepares a separate static export.
 Use a fresh `--output` directory when the binary or shaders change.
+
+Negative-sticks captures use a separate bounded qualification path:
+
+```sh
+python3 projects/sdf/tools/negative_sticks.py \
+  --output outputs/sdf/negative-capacity-new
+python3 projects/sdf/tools/negative_sticks.py --atlas-axis 92 --details \
+  --output outputs/sdf/negative-audition-new
+python3 projects/sdf/tools/qualify_negative.py --video \
+  --output outputs/sdf/negative-qualification-new
+xvfb-run -a -s '-screen 0 1280x1024x24' env CUBEY_SDF_PRIVATE_XVFB=1 \
+  python3 projects/sdf/tools/check_window.py \
+  --config projects/sdf/presets/negative-sticks.json --height 850 --carving-controls \
+  --output outputs/sdf/negative-qualification-new
+python3 projects/sdf/tools/negative_report.py \
+  --input outputs/sdf/negative-qualification-new --audition outputs/sdf/negative-audition-new \
+  --capacity outputs/sdf/negative-capacity-new --output outputs/sdf/negative-review-new
+```
+
+`--validate-subtractions` checks intersecting cavities and a perforated-plate
+fixture across promotion boundaries, backward/reset and 64/128-edit batching.
+The negative-sticks guide/recipe does not change the underlying CSG or tracer.
+Its final 1080p 1x rendering measured 1.83 ms primary and 2.25 ms hard-shadow
+median GPU time on the selected device. Geometry updates still synchronously
+rebuild the field: roughly 48 ms median per build during logical carving.
+See the scene evidence for p95 values, frame counts and image replay tolerance.
 
 The fixed 1080p matrix uses 1× sampling and a closer default camera. The current
 ground-disabled run measured 3.25 ms for primary rendering, 5.14 ms with hard

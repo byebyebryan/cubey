@@ -2,8 +2,10 @@
 
 Date: 2026-10-21
 
-Status: proposed next visual experiment; implementation has not started.
-Reviewed against the native V1 source at `42ef34da`. The additive demonstration
+Status: implemented through native qualification and desktop interaction checks;
+see the [evidence record](sdf-negative-sticks-evidence.md) for final decisions,
+measurements and visual acceptance limits. The sections below retain the plan
+reviewed against native V1 source at `42ef34da`. The additive demonstration
 and its [qualification evidence](sdf-implementation-evidence.md) remain the
 comparison baseline. This plan follows the user's choice of a negative ball
 of sticks after reviewing other procedural directions.

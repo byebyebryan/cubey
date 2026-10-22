@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cubey SDF — carving with negative sticks</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0e171d;color:#e5eef0;line-height:1.55}
+*{box-sizing:border-box}body{margin:0}main{max-width:1160px;margin:auto;padding:40px 24px 70px}h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.1;max-width:800px;margin:12px 0 20px}h2{font-size:1.5rem;margin:44px 0 15px}p{max-width:880px;color:#b9ced4}a{color:#7cdbf1}a:hover{color:white}.eyebrow{letter-spacing:.16em;text-transform:uppercase;color:#82becb;font-size:.78rem}.lead{font-size:1.15rem;max-width:760px}video,.viewer img{width:100%;display:block;border-radius:12px;background:#17262d}video{margin-top:25px}.chapters,.controls{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}button,select{background:#1b3039;color:#eaf4f6;border:1px solid #496771;border-radius:7px;padding:9px 12px;font:inherit;cursor:pointer}button:hover,button[aria-pressed=true]{background:#285364;border-color:#7cdbf1}label{display:flex;gap:12px;align-items:center}select{max-width:100%}.note,figcaption{font-size:.88rem;color:#9fb9c2}.callout{padding:16px 20px;background:#1b2c34;border-left:3px solid #e4b66b;margin:24px 0}.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0}.facts div{background:#172730;border-radius:8px;padding:16px}.facts strong{display:block;font-size:1.25rem}.facts small{color:#b4c8cf}figure{margin:0}figure img{display:block;width:100%;border-radius:7px}figcaption{padding:8px 2px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.tag{background:#446245;color:#d6f1cf;padding:2px 6px;border-radius:4px;font-size:.72rem;margin-left:5px}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;max-width:830px}th,td{border-bottom:1px solid #344b56;padding:12px;text-align:left}thead{color:#a7c9d2}code,pre{font-family:ui-monospace,monospace;font-size:.85rem}pre{overflow:auto;padding:16px;border-radius:8px;background:#081116;color:#b6d5de}details{border-top:1px solid #344b56;margin-top:20px;padding:15px 0}summary{cursor:pointer;color:#bce8f0}footer{margin-top:45px;color:#91aeb8}.wide{max-width:none}input[type=range]{accent-color:#7cdbf1;flex:1;min-width:150px}.stage-label{min-width:140px}.viewer{margin-top:15px}.caption{min-height:2.8em}
+@media(max-width:650px){main{padding:25px 15px 45px}.grid{grid-template-columns:1fr}.facts{grid-template-columns:1fr}.controls label{flex-wrap:wrap}.stage-label{min-width:0}}
+</style></head><body><main>
+<div class="eyebrow">Cubey · Procedural SDF experiment</div>
+<h1>Carving a solid with 72 sticks.</h1>
+<p class="lead">One rounded cube. Repeated cuts open holes, connect passages, and reveal the interior. A procedural sequel to the additive ball of sticks.</p>
+<video controls preload="metadata" poster="evidence/captures/hero.png" aria-label="Negative sticks carving presentation"><source src="evidence/presentation.mp4" type="video/mp4">Download the <a href="evidence/presentation.mp4">presentation video</a>.</video>
+<div class="chapters" aria-label="Video chapters">
+<button data-time="0">Solid · 0s</button><button data-time="2.3">First cutter · 2.3s</button><button data-time="8">Four cuts · 8s</button><button data-time="12">Carving · 12s</button><button data-time="16">Orbit · 16s</button><button data-time="23.9">Opposite view · 23.9s</button>
+</div>
+<p class="note">Native 1280×720 video · 24 seconds · 30 FPS · 2× internal sampling. Hard self-shadows and Cubey’s shared atmosphere sky. The cyan outline shows cutter bounds before the first four cuts. Capture playback is independent of live update speed.</p>
+
+<h2>Watch the solid change</h2>
+<div class="controls"><label class="wide" for="stage"><span class="stage-label" id="stage-label">72 cuts · final</span><input id="stage" type="range" min="0" max="4" step="1" value="4" aria-label="Carving stage"></label></div>
+<div class="viewer"><a id="stage-link" href="evidence/captures/hero.png"><img id="stage-image" src="evidence/captures/hero.png" alt="Completed 72-cut sculpture"></a></div>
+<p class="note">The intermediate captures use the same seed and unchanged earlier cuts. Drag the slider to inspect the intact solid and its progressively carved surface.</p>
+
+<h2>Surface, interior and cutter guide</h2>
+<label for="view">View <select id="view" aria-label="Native capture view"><option value="hero">Final shaded</option><option value="opposite">Opposite shaded</option><option value="normals">Surface normals</option><option value="steps">Traversal work</option><option value="cue">Cutter guide on</option><option value="cue-off">Cutter guide off</option></select></label>
+<div class="viewer"><a id="view-link" href="evidence/captures/hero.png"><img id="view-image" src="evidence/captures/hero.png" alt="Final shaded sculpture"></a></div>
+<p class="note caption" id="view-caption">The chosen seed retains broad walls and shows connected openings across adjacent faces.</p>
+<p>The effect demonstrates ordered solid subtraction and changing connectivity. The cached field supplies the surface, normals and mapless shadow queries. Polygon Boolean systems can produce these shapes too; this experiment does not claim an exclusive SDF effect or a mesh performance advantage.</p>
+
+<h2>Nine recipes, one set of rules</h2>
+<p>Rows show seeds 7, 42 and 91; columns show 24, 48 and 72 cuts. Seed 42 / 72 cuts was selected after inspecting intermediate stages and the opposite side. Geometry stayed at the planned starting values; moving the existing sun made the visible faces easier to read.</p>
+<div class="grid">__AUDITION__</div>
+<p class="note">These audition images precede the cutter-guide implementation; their own manifests pin their runtime artifacts. <a href="audition/manifest.json">Audition receipts</a>. The final scene below was qualified independently.</p>
+
+<h2>What the implementation costs</h2>
+<div class="facts"><div><strong>73 edits</strong><small>One fill + 72 ordered removals</small></div><div><strong>__BRICKS__</strong><small>Active bricks / axis-92 capacity</small></div><div><strong>__MEMORY__</strong><small>Allocated field resources; excludes frame targets and driver</small></div></div>
+<p>__DEVICE__. Static final geometry at 1920×1080, 1× sampling, 180 submitted frames with 30 warmup frames. Completed GPU timestamps cover tracing and shared post; construction, capture and encoding are excluded.</p>
+<div class="table-wrap"><table><thead><tr><th>Rendering</th><th>Median</th><th>p95</th><th>Completed samples</th></tr></thead><tbody>__GPU_ROWS__</tbody></table></div>
+<div class="callout"><strong>Carving still has synchronous update stalls.</strong><br>__UPDATE_TEXT__. Changed prefixes wait for the GPU and rebuild a partial tail. These are offline logical-playback measurements, not a qualification of smooth desktop carving. The final orbit reuses the completed field.</div>
+<p class="note">The axis-64 atlas rejected all nine initial recipes explicitly. Subtraction removes volume while adding internal surface area. The selected scene uses the explicitly larger profile; the builder did not drop cuts or silently enlarge it. <a href="capacity/manifest.json">Capacity-failure receipts</a>.</p>
+
+<h2>Checks and reproducibility</h2>
+<p>CPU recipe/timeline tests, intersecting-cavity rays, visible late cuts across 128/129 and 256/257 total edits, backward/reset and 64/128 batching, additive regressions, native replay, cue comparisons and expected rejections passed with Vulkan validation enabled. Sampling ambiguities remain separately reported under the finite-grid oracle tolerance.</p>
+<pre>__ORACLE__</pre>
+<p class="note">Replay images are not bit identical: rebuilding the same input also produces tiny sampled-image differences. Recipe hashes match, and GPU rays pass the unchanged geometric tolerance. Separately recorded 8-bit image limits are max 16 code values, mean 0.002, and at most 0.01% of channels differing by more than one; base/cue and 30/60 FPS cue comparisons require max one. These limits do not relax the ray oracle.</p>
+<p><strong>Desktop check:</strong> __WINDOW__</p>
+<p class="note">Automated geometry and runtime checks, agent inspection of native images, and your judgment of the visual result are separate. The opposite face remains darker under the fixed sun. No terrain, ground plane, GI, smooth Boolean blending or destruction physics was added.</p>
+<details><summary>Run it and inspect the receipts</summary>
+<pre>cmake --build --preset dev --target cubey_project_sdf
+build/dev/projects/sdf/sdf --config projects/sdf/presets/negative-sticks.json
+
+# Complete native qualification (use a fresh output directory):
+python3 projects/sdf/tools/qualify_negative.py --video --output outputs/sdf/negative-qualification-new</pre>
+<p>Drag to orbit, scroll to zoom, Space to pause, R to restart. Use the timeline to seek. Generator changes take effect with Generate scene. An explicit loaded recipe stays intact until regeneration.</p>
+<p>Native source: <code>__COMMIT__</code> · worktree __DIRTY__ at qualification start. Recipe geometry hash: <code>__RECIPE_HASH__</code>.</p>
+<p><a href="evidence/recipe.json">Explicit recipe</a> · <a href="evidence/configs/hero.json">Hero capture settings</a> · <a href="evidence/manifest.json">Full manifest, commands and artifact hashes</a> · <a href="evidence/profiles/hard.passes.csv">Hard-shadow timing samples</a> · <a href="evidence/profiles/carving.passes.csv">Carving timing samples</a> · <a href="evidence/logs/subtraction-matrix.log">Subtraction fixture log</a></p>
+<pre>__CHECKS__</pre></details>
+<details><summary>Measured image differences and limits</summary><pre>__IMAGE_COMPARISONS__</pre></details>
+<footer>Compare the <a href="http://starship:8787/reports/ac8d841ecc3900e08a9eaa6cced9597a0d466c4ad511142376a65adfffe8f31b/">previous additive ball-of-sticks presentation</a>. The captures use different recipes and framing; the reports are not a controlled performance comparison.</footer>
+</main><script>
+const video=document.querySelector('video');
+document.querySelectorAll('[data-time]').forEach(button=>button.addEventListener('click',()=>{video.currentTime=Number(button.dataset.time);video.pause();}));
+const stages=[['base','0 cuts · intact'],['four','4 cuts'],['sixteen','16 cuts'],['middle','38 cuts'],['hero','72 cuts · final']];
+document.querySelector('#stage').addEventListener('input',event=>{const [file,label]=stages[Number(event.target.value)];const url=`evidence/captures/${file}.png`;document.querySelector('#stage-image').src=url;document.querySelector('#stage-image').alt=label;document.querySelector('#stage-link').href=url;document.querySelector('#stage-label').textContent=label;});
+const descriptions={hero:'The chosen seed retains broad walls and shows connected openings across adjacent faces.',opposite:'The opposite side under the same fixed sun. The walls are darker; some passages reveal the sky.',normals:'Surface normals, including the newly exposed interior walls. This is a native diagnostic capture.',steps:'Traversal work in the same final field. Warm colors indicate more trace steps, not surface temperature.',cue:'At 2.3 seconds: cutter bounds are visible outside the solid and hidden behind it. The first cut has not committed.', 'cue-off':'The same state with the guide disabled, matching the intact base within the recorded 8-bit image tolerance.'};
+document.querySelector('#view').addEventListener('change',event=>{const file=event.target.value;const url=`evidence/captures/${file}.png`;document.querySelector('#view-image').src=url;document.querySelector('#view-image').alt=event.target.selectedOptions[0].textContent;document.querySelector('#view-link').href=url;document.querySelector('#view-caption').textContent=descriptions[file];});
+</script></body></html>

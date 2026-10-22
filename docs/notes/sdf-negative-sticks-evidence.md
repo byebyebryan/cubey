@@ -2,7 +2,8 @@
 
 Date: 2026-10-21
 
-Status: checkpoints A/B/C complete; final qualification and report pending.
+Status: native implementation and qualification complete; visual review report
+prepared. User aesthetic acceptance remains separate.
 The [plan](sdf-negative-sticks-plan.md) defines the experiment and acceptance.
 
 ## Native geometry audition
@@ -82,3 +83,92 @@ An initial native capture contains 720 H.264 frames at 1280x720 / 30 FPS, with
 2x internal sampling. The introductory guide and a decoded twelve-second
 frame were inspected. The final qualification will recapture the video from
 committed source and inspect the remaining phases.
+
+## Final native qualification
+
+`outputs/sdf/negative-qualification/manifest.json` pins the native source at
+`ad9948f5`, clean at the qualification start, plus binary, compiled shader and
+native source-file hashes. Verification scripts were subsequently refined to
+measure bounded image comparisons and safely reuse unchanged native runs;
+the manifest separately records that verification context/script hash. Applied
+capture settings are saved per run. No native source or runtime artifact
+changed during that verification/report work.
+
+The selected scene retains hash `c92ff9ee08a5af98`, 73 edits and 555,062 active
+bricks. The final-scene oracle passed 547 rays / 372 hits, with zero mismatches,
+exhaustion or sampling ambiguities and maximum surface residual 0.000120123.
+Intersecting-cavity and perforated-plate checks passed at 128/129 and 256/257
+total edits, including backward/reset and 64/128-edit batching. The plate gives
+each late cut a distinct visible hole. Original additive batch, primitive and
+2,048-stick checks also passed. Vulkan validation reported no errors.
+
+The expected axis-64 rejection and incompatible-carve recipe rejection both
+failed explicitly without producing successful captures. The chosen field
+allocation remains 1,974,880,928 bytes (1.84 GiB), excluding frame targets and
+driver allocations.
+
+On NVIDIA GeForce RTX 5070 Ti / driver 610.57.04, fixed final-scene 1920x1080,
+1x sampling, 180 submitted frames, 30 warmup and 148 completed GPU samples:
+
+| Rendering path | Median trace + post | p95 |
+| --- | --- | --- |
+| Primary | 1.833248 ms | 2.006112 ms |
+| Hard self-shadows | 2.249264 ms | 2.427456 ms |
+
+Rendering meets the original steady 60 FPS primary / 30 FPS lit planning
+targets on this device. These measurements exclude construction and encoding;
+they are not a matched performance comparison with the differently framed
+additive scene.
+
+Logical carving profiling submitted 720 frames, with 688 completed GPU samples
+and 690 post-warmup CPU preparation samples. Its 73 builds measured 47.8793 ms
+median / 52.7165 ms p95 / 53.0569 ms maximum. The `sdf.prepare_geometry` CPU
+span had p95 50.412477 ms and maximum 55.40626 ms, including queue waits.
+Unchanged frames reuse the completed field. These periodic stalls remain a
+limit on live carving; a smooth offline video does not qualify smooth desktop
+updates. No asynchronous builder or update optimization was introduced.
+
+## Image replay boundary
+
+Explicit save/load and generated recipes have matching geometry hashes and
+pass the unchanged geometric oracle. Byte-identical PNGs proved too strong an
+image acceptance rule: independently rebuilding the same input also changes a
+small number of sampled image values. The precise hardware/numerical cause
+was not isolated; allocation order and normalized atlas interpolation remain
+possible contributors, not established diagnoses.
+
+At the fixed 38-cut middle state, generated versus loaded images differed in
+2,088 of 3,686,400 RGBA channels, with mean absolute difference 0.0005778 on
+the 0–255 scale, maximum 11, and only 16 channels differing by more than one.
+An identical-input rebuild had maximum 6 and similarly small mean difference.
+The recorded image check requires maximum <=16, mean <=0.002 and <=0.01% of
+channels differing by more than one. This separate image check does not relax
+the SDF ray/sampling tolerance or establish exact pixel reproducibility.
+
+The cue-disabled base and 30/60 FPS cue captures differ by at most one code
+value. The guide visibly changes the preview while the requested geometry
+prefix remains one. Logical prefix/cue state tests are deterministic.
+
+## Desktop and presentation review
+
+The isolated Xvfb desktop check passed resize/orbit/scroll, pause/reset,
+selection of Carve, scrubbing to end/middle/base, seed editing without an
+implicit regeneration, and explicit negative-sticks regeneration. Observed
+field prefixes were `[73, 1, 73, 39, 1, 73]`; camera/resize and staged seed
+editing caused no extra builds. Seed 43 changed the complete recipe hash to
+`293678f5fc53d17f`, retaining 73 total edits and the selected generator.
+See `windowed-interaction.json`, its command/log and native screenshots.
+
+The fresh video has 720 H.264 frames, 1280x720 at 30 FPS for 24 seconds,
+with 2x internal sampling. Decoded images at 0/2.3/3/8/12/16/20/23.9 seconds
+show the base, guide, cutting and orbit against the shared atmosphere sky.
+The back faces remain darker under the fixed sun. No ground plane, terrain,
+GI or smooth Boolean operators were added.
+
+The connected browser service was unavailable. An isolated headless Chrome
+check instead passed all six video chapters, actual decoded playback, six
+capture views, five keyboard-operated carving stages, nine decoded audition
+images, local links, a 390px layout without overflow and no page JavaScript
+errors. `report-review.json` pins the reviewed HTML hash; desktop/mobile
+screenshots were also inspected. This checks report behavior, not the user's
+assessment of whether the sculpture is compelling.
