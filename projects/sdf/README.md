@@ -6,6 +6,11 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
+The proposed next visual experiment is [negative sticks](../../docs/notes/sdf-negative-sticks-plan.md):
+start from a solid and carve intersecting through-holes with a deterministic
+sequence of thick box cutters. Its plan begins with a native image audition;
+the scene and carving playback are not implemented yet.
+
 [Watch the native demo and review the captures](http://starship:8787/reports/ac8d841ecc3900e08a9eaa6cced9597a0d466c4ad511142376a65adfffe8f31b/).
 The review includes the 24-second presentation, lighting comparisons, explicit
 recipe, applied configurations and qualification receipts. The app and current
