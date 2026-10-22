@@ -1,13 +1,14 @@
 #pragma once
 #include "sdf_authored.h"
 #include "sdf_timeline.h"
+#include <span>
 
 namespace cubey::projects::sdf {
 void read_authored_history(AuthoredScene& scene);
 [[nodiscard]] AuthoredScene authored_history_scene(const AuthoredScene& scene, std::size_t count);
 struct AuthoredHistorySample {
     TimelineSample timeline;
-    std::optional<SceneInstruction> cutter;
+    std::span<const SceneInstruction> cutters;
 };
 [[nodiscard]] AuthoredHistorySample sample_authored_history(const TimelineConfig& config,
                                                             const AuthoredScene& scene,

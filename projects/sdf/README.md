@@ -363,8 +363,12 @@ to require a legacy edit sequence.
 ### Authoring history
 
 The optional `history` array lists each primitive leaf exactly once in the
-intended authoring order. Each entry contains `node` (the unique primitive name),
+intended authoring order. Each entry contains either `node` (one unique primitive
+name) or nonempty `nodes` (all primitive names in an atomic stroke),
 `label` and an optional positive `seconds` weight (default 0.65, range 0.2–5).
+An atomic stroke commits and undoes all its segments together. Names must be
+unique across all entries, cover every primitive, and have the same additive or
+subtractive polarity within an entry. Legacy single-leaf histories remain valid.
 Groups/operators are derived from the final tree. Every revealed leaf must
 participate immediately; a cutter before its retained body is rejected while
 loading. Missing children reduce to transform groups or an empty root, keeping
@@ -373,7 +377,7 @@ retains the complete scene and its geometry/appearance fingerprints.
 
 `--construction-seconds` scales the saved weights, including a short opening
 hold, to the construction interval. The first 35% of a cut's interval previews
-the cutter; commitment then publishes the actual subtraction. Construction
+all cutters in the operation in red; commitment then publishes the actual subtraction. Construction
 holds the capture camera throughout. Presentation holds it during construction,
 then orbits the finished model without changing the shading view. The build
 preset uses 32 seconds of construction and ten seconds of orbit.

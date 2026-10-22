@@ -124,7 +124,8 @@ int main() {
                     auto a = p, b = p;
                     a[axis] -= .0001F;
                     b[axis] += .0001F;
-                    gradient[axis] = (authored_distance(b, test) - authored_distance(a, test)) / .0002F;
+                    gradient[axis] =
+                        (authored_distance(b, test) - authored_distance(a, test)) / .0002F;
                 }
                 require(glm::length(gradient) < 1.003F, "rounded taper violates distance bound");
             }
@@ -317,8 +318,8 @@ int main() {
         maximum_history_json["history"].push_back(
             {{"node", "s" + std::to_string(i)}, {"label", "Capacity stroke"}});
     const auto maximum_history = parse_authored_scene(maximum_history_json.dump());
-    for (const auto count : {std::size_t{0}, std::size_t{1}, authored_max_leaves / 2,
-                             authored_max_leaves})
+    for (const auto count :
+         {std::size_t{0}, std::size_t{1}, authored_max_leaves / 2, authored_max_leaves})
         require(authored_history_scene(maximum_history, count).leaf_count == count,
                 "maximum history lost leaves on seek/reset");
     close(authored_distance({}, maximum_history), -.01F);
@@ -326,15 +327,18 @@ int main() {
     // Check the dependency proof against exhaustive prefix compilation for
     // every ordering of overlapping bodies, a nested negative tool and a
     // separate cut. This oracle uses the original reveal implementation.
-    const Json masses = {{"name", "masses"}, {"type", "union"},
+    const Json masses = {{"name", "masses"},
+                         {"type", "union"},
                          {"children", {sphere("a", {}, .2F), sphere("b", {}, .1F)}}};
-    const Json tool = {{"name", "tool"}, {"type", "subtract"},
+    const Json tool = {{"name", "tool"},
+                       {"type", "subtract"},
                        {"children", {sphere("c", {}, .08F), sphere("d", {}, .03F)}}};
     const Json shell = {{"name", "shell"}, {"type", "subtract"}, {"children", {masses, tool}}};
-    const Json other = {{"name", "other"}, {"type", "subtract"},
+    const Json other = {{"name", "other"},
+                        {"type", "subtract"},
                         {"children", {sphere("e", {}, .15F), sphere("f", {}, .04F)}}};
-    const auto order_fixture = document(
-        {{"name", "all"}, {"type", "union"}, {"children", {shell, other}}});
+    const auto order_fixture =
+        document({{"name", "all"}, {"type", "union"}, {"children", {shell, other}}});
     std::array<std::string, 6> order{"a", "b", "c", "d", "e", "f"};
     do {
         auto reference = parse_authored_scene(order_fixture.dump());
@@ -342,7 +346,7 @@ int main() {
         candidate["history"] = Json::array();
         for (const auto& name : order) {
             reference.history.push_back(
-                {.node = name, .label = name, .seconds = .65, .cutter = std::nullopt});
+                {.nodes = {name}, .label = name, .seconds = .65, .cutters = {}});
             candidate["history"].push_back({{"node", name}, {"label", name}});
         }
         bool expected = true;
@@ -391,13 +395,13 @@ int main() {
                     authored_appearance_hash(history),
             "final history state differs from complete scene");
     const auto history_roundtrip = parse_authored_scene(serialize_authored_scene(history));
-    require(history_roundtrip.history.size() == 3 && history_roundtrip.history[1].cutter,
+    require(history_roundtrip.history.size() == 3 && !history_roundtrip.history[1].cutters.empty(),
             "history persistence lost its cutter or steps");
     auto soft_history_json = history_json;
     soft_history_json["root"]["children"][0]["type"] = "smooth-subtract";
     soft_history_json["root"]["children"][0]["radius"] = .02;
     const auto soft_history = parse_authored_scene(soft_history_json.dump());
-    require(soft_history.history[1].cutter.has_value(), "smooth subtraction lost its cut preview");
+    require(!soft_history.history[1].cutters.empty(), "smooth subtraction lost its cut preview");
     require(authored_history_scene(soft_history, 1).leaf_count == 1 &&
                 authored_history_scene(soft_history, 2).leaf_count == 2,
             "smooth subtraction lost body-first reveal semantics");
@@ -408,7 +412,7 @@ int main() {
     for (std::size_t i = 0; i <= history.history.size(); ++i) {
         const auto time = authored_history_seek(timeline, history, i);
         const auto state = sample_authored_history(timeline, history, time);
-        require(state.timeline.prefix == i && !state.cutter && state.timeline.yaw == 0,
+        require(state.timeline.prefix == i && state.cutters.empty() && state.timeline.yaw == 0,
                 "history seek did not inspect the requested committed edit");
     }
     const auto final = sample_authored_history(timeline, history, timeline.duration);
@@ -420,12 +424,77 @@ int main() {
         const auto state = sample_authored_history(timeline, history, frame / 60.0);
         require(state.timeline.prefix >= prior, "forward history skipped backwards");
         prior = state.timeline.prefix;
-        if (state.cutter) {
+        if (!state.cutters.empty()) {
             require(state.timeline.prefix == 1, "cut preview committed the cut early");
             saw_preview = true;
         }
     }
     require(saw_preview, "history did not preview its subtractive edit");
+    // One sculpting action may contain both reflected strokes and many
+    // segments. Prefixes and previews must treat that action atomically.
+    auto paired_json = history_json;
+    paired_json["root"]["children"][0]["children"][1] = {
+        {"name", "paired-tools"},
+        {"type", "union"},
+        {"children",
+         {sphere("cut-left", {-.08F, 0, .18F}, .08F), sphere("cut-right", {.08F, 0, .18F}, .08F)}}};
+    paired_json["history"][1].erase("node");
+    paired_json["history"][1]["nodes"] = {"cut-left", "cut-right"};
+    const auto paired = parse_authored_scene(paired_json.dump());
+    require(paired.history.size() == 3 && paired.leaf_count == 4 &&
+                paired.history[1].cutters.size() == 2,
+            "grouped history did not collect both transformed cutters");
+    const auto paired_before = authored_history_scene(paired, 1);
+    const auto paired_after = authored_history_scene(paired, 2);
+    require(paired_before.leaf_count == 1 && paired_after.leaf_count == 3,
+            "grouped history exposed half an operation");
+    for (float x : {-.08F, .08F}) {
+        const Vec3 point{.1F + .8F * x, 0, .8F * .18F};
+        require(authored_distance(point, paired_before) < 0 &&
+                    authored_distance(point, paired_after) > 0 &&
+                    authored_distance(point, authored_history_scene(paired, 1)) < 0,
+                "paired cut/undo failed on a reflected side");
+    }
+    const auto paired_reload = parse_authored_scene(serialize_authored_scene(paired));
+    require(paired_reload.history[1].nodes == paired.history[1].nodes &&
+                paired_reload.history[1].cutters.size() == 2 &&
+                authored_geometry_hash(paired_reload) == authored_geometry_hash(paired),
+            "grouped history failed persistence");
+    bool paired_preview = false;
+    for (int frame = 0; frame <= 720; ++frame) {
+        const auto state = sample_authored_history(timeline, paired, frame / 60.0);
+        if (!state.cutters.empty()) {
+            require(state.cutters.size() == 2 && state.timeline.prefix == 1,
+                    "paired preview omitted a side or committed early");
+            paired_preview = true;
+        }
+    }
+    require(paired_preview, "paired history never previewed its cutters");
+    for (std::size_t i = 0; i <= paired.history.size(); ++i) {
+        const auto state =
+            sample_authored_history(timeline, paired, authored_history_seek(timeline, paired, i));
+        require(state.timeline.prefix == i && state.cutters.empty(),
+                "grouped seek did not land on a committed operation");
+    }
+    for (int mutation = 0; mutation < 6; ++mutation) {
+        auto bad = paired_json;
+        auto& step = bad["history"][1];
+        if (mutation == 0)
+            step["node"] = "cut-left"; // Ambiguous encoding.
+        if (mutation == 1)
+            step["nodes"] = Json::array();
+        if (mutation == 2)
+            step["nodes"] = {"cut-left"}; // Missing primitive.
+        if (mutation == 3)
+            step["nodes"] = {"cut-left", "cut-left", "cut-right"};
+        if (mutation == 4)
+            step["nodes"] = {"cut-left", "unknown"};
+        if (mutation == 5) { // Mixed-polarity preview would hide an addition.
+            step["nodes"] = {"body", "cut-left", "cut-right"};
+            bad["history"].erase(bad["history"].begin());
+        }
+        rejected(bad);
+    }
     for (const auto mutation : {0, 1, 2, 3}) {
         auto bad = history_json;
         if (mutation == 0)

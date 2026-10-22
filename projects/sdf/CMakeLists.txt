@@ -24,4 +24,6 @@ if (BUILD_TESTING)
     add_test(NAME sdf_authored_tests COMMAND cubey_project_sdf_authored_tests)
     add_test(NAME sdf_normal_projection_tests
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/normal_projection_tests.py")
+    add_test(NAME sdf_mirror_author_tests
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/mirror_author_tests.py")
 endif()

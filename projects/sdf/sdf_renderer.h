@@ -8,6 +8,7 @@
 #include <cubey/render/render_graph_frame.h>
 #include <cubey/render/uniform_buffer.h>
 #include <cubey/vulkan/gpu_timestamps.h>
+#include <span>
 
 namespace cubey::projects::sdf {
 struct LightingUniforms {
@@ -17,9 +18,8 @@ struct LightingUniforms {
     math::Vec4 material;
     math::Vec4 quality; // roughness, softness, AO, ground height
     GpuEdit cutter;
-    math::Vec4 cutter_style; // opacity, world line width, unused, unused
-    SceneInstruction preview;
-    math::Vec4 preview_style; // opacity, unused
+    math::Vec4 cutter_style;  // opacity, world line width, unused, unused
+    math::Vec4 preview_style; // opacity, primitive count, unused, unused
 };
 static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
 static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);
@@ -34,13 +34,14 @@ class Renderer {
                 render::FrameSlot slot, bool present, const SdfConfig& config, float yaw,
                 float pitch, float distance, profiling::ProfileRecorder* profile,
                 std::uint64_t frame_index, const BoxEdit* cutter = nullptr,
-                float cutter_opacity = 0, const SceneInstruction* preview = nullptr);
+                float cutter_opacity = 0, std::span<const SceneInstruction> previews = {});
 
   private:
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
     std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_;
+    std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
     render::HdrPostFrame post_;
     render::RenderGraphFrameExecutor executor_;

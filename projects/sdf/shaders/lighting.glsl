@@ -15,7 +15,6 @@ layout(set=0,binding=2) uniform Lighting {
     vec4 quality;
     Edit cutter;
     vec4 cutter_style;
-    vec4 preview_center_code, preview_inverse_rotation, preview_parameters, preview_settings;
     vec4 preview_style;
 } lighting;
 vec3 skyRadiance(vec3 direction) {

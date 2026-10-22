@@ -42,10 +42,10 @@ float cutterOutline(vec3 origin,vec3 direction,float surfaceT) {
     return alpha*lighting.cutter_style.x;
 }
 #ifdef SDF_AUTHORED
-float authoredCutPreview(vec3 origin,vec3 direction,float surfaceT) {
-    if (lighting.preview_style.x<=0.0) return 0.0;
-    SceneInstruction node=SceneInstruction(lighting.preview_center_code,
-        lighting.preview_inverse_rotation,lighting.preview_parameters,lighting.preview_settings);
+layout(std430,set=0,binding=5) readonly buffer AuthoredPreviews {
+    SceneInstruction previewNodes[];
+};
+float authoredPrimitivePreview(vec3 origin,vec3 direction,float surfaceT,SceneInstruction node) {
     vec4 q=node.inverse_rotation;
     vec3 localOrigin=origin-node.center_code.xyz;
     localOrigin=(localOrigin+2.0*cross(q.xyz,cross(q.xyz,localOrigin)+q.w*localOrigin))/node.settings.x;
@@ -69,6 +69,14 @@ float authoredCutPreview(vec3 origin,vec3 direction,float surfaceT) {
         if (d<0.0004) return lighting.preview_style.x;
         t+=max(d,0.0002);
     }
+    return 0.0;
+}
+float authoredCutPreview(vec3 origin,vec3 direction,float surfaceT) {
+    if (lighting.preview_style.x<=0.0) return 0.0;
+    uint count=min(uint(lighting.preview_style.y),1024u);
+    for (uint i=0u;i<count;++i)
+        if (authoredPrimitivePreview(origin,direction,surfaceT,previewNodes[i])>0.0)
+            return lighting.preview_style.x;
     return 0.0;
 }
 #endif

@@ -82,7 +82,7 @@ class App {
                     renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
                                      config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
                                      orbit_.distance(), ctx.profile_recorder(), frame.index,
-                                     current_cutter(), timeline_.cutter_opacity, preview_cutter());
+                                     current_cutter(), timeline_.cutter_opacity, preview_cutters());
                 };
             callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
                                          const host::HeadlessCaptureFrame& frame) {
@@ -211,7 +211,7 @@ class App {
                              frame.frame_slot, true, view,
                              config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
                              orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index,
-                             current_cutter(), timeline_.cutter_opacity, preview_cutter());
+                             current_cutter(), timeline_.cutter_opacity, preview_cutters());
             recorder.end("sdf frame");
         };
         callbacks.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
@@ -242,20 +242,20 @@ class App {
                 "construction/presentation with a saved history, and their own export format");
     }
     void sample_time(double time) {
-        history_cutter_.reset();
+        history_cutters_ = {};
         if (authored_build()) {
             auto sample =
                 sample_authored_history(config_.timeline, *authored_, time, config_.debug);
             timeline_ = sample.timeline;
-            history_cutter_ = sample.cutter;
+            history_cutters_ = sample.cutters;
         } else {
             timeline_ = sample_timeline(
                 config_.timeline, authored_ ? authored_->program.size() : recipe_.edits.size(),
                 time, config_.debug);
         }
     }
-    const SceneInstruction* preview_cutter() const {
-        return config_.cutter_cue && history_cutter_ ? &*history_cutter_ : nullptr;
+    std::span<const SceneInstruction> preview_cutters() const {
+        return config_.cutter_cue ? history_cutters_ : std::span<const SceneInstruction>{};
     }
     const BoxEdit* current_cutter() const {
         if (authored_ || timeline_.cutter_index == 0 ||
@@ -396,7 +396,8 @@ class App {
                 const auto total = authored_->history.size();
                 const auto shown = std::min(active_prefix_, total);
                 ImGui::Text("Edit %zu / %zu", shown, total);
-                const auto label_index = history_cutter_ ? shown : (shown ? shown - 1 : total);
+                const auto label_index =
+                    !history_cutters_.empty() ? shown : (shown ? shown - 1 : total);
                 ImGui::TextWrapped("%s", label_index < total
                                              ? authored_->history[label_index].label.c_str()
                                              : "Empty workspace");
@@ -526,7 +527,7 @@ class App {
     Recipe recipe_;
     std::optional<AuthoredScene> authored_;
     std::optional<AuthoredScene> displayed_authored_;
-    std::optional<SceneInstruction> history_cutter_;
+    std::span<const SceneInstruction> history_cutters_;
     ProjectRuntimeAdapter runtime_{1};
     OrbitController orbit_{{.distance = 1.35F, .min_distance = 0.6F, .max_distance = 5.0F}};
     std::unique_ptr<Field> field_;

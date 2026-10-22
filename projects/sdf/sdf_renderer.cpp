@@ -36,12 +36,15 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
     scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction));
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
     update_authored(scene);
-    const std::array<vulkan::DescriptorSetBindingConfig, 5> bindings{
+    for (std::uint32_t i = 0; i < slots; ++i)
+        preview_buffers_.push_back(host_buffer(authored_max_leaves * sizeof(SceneInstruction)));
+    const std::array<vulkan::DescriptorSetBindingConfig, 6> bindings{
         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
+         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device, vulkan::DescriptorSetInfo(bindings, slots));
     update_field(device, field);
@@ -53,6 +56,8 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
                               scene_program_->size());
         writes.storage_buffer(descriptors_->set(i), 4, scene_materials_->handle(),
                               scene_materials_->size());
+        writes.storage_buffer(descriptors_->set(i), 5, preview_buffers_[i]->handle(),
+                              preview_buffers_[i]->size());
         writes.update(device);
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
@@ -119,6 +124,7 @@ void Renderer::destroy() {
     descriptors_.reset();
     scene_materials_.reset();
     scene_program_.reset();
+    preview_buffers_.clear();
     lighting_.reset();
     atmosphere_.destroy();
     field_ = nullptr;
@@ -136,7 +142,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       const SdfConfig& config, float yaw, float pitch, float distance,
                       profiling::ProfileRecorder* profile, std::uint64_t frame_index,
                       const BoxEdit* cutter, float cutter_opacity,
-                      const SceneInstruction* preview) {
+                      std::span<const SceneInstruction> previews) {
     auto environment = atmosphere_.environment();
     environment.sun_elevation_degrees = config.sun_elevation;
     environment.sun_azimuth_degrees = config.sun_azimuth;
@@ -173,9 +179,12 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         uniforms.cutter = gpu_edit(*cutter);
         uniforms.cutter_style = {cutter_opacity, 0.0025F, 0, 0};
     }
-    if (preview && config.cutter_cue && config.debug == 0) {
-        uniforms.preview = *preview;
+    if (!previews.empty() && config.cutter_cue && config.debug == 0) {
+        if (previews.size() > authored_max_leaves)
+            throw std::invalid_argument("authored preview exceeds primitive capacity");
+        preview_buffers_.at(slot.index)->upload(previews.data(), previews.size_bytes());
         uniforms.preview_style.x = cutter_opacity;
+        uniforms.preview_style.y = static_cast<float>(previews.size());
     }
     lighting_->upload(slot, uniforms);
     const Camera camera{glm::inverse(vp),
@@ -223,12 +232,16 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         builder.import_buffer({"sdf.scene", scene_program_->size()}, scene_program_->handle());
     const auto materials = builder.import_buffer({"sdf.materials", scene_materials_->size()},
                                                  scene_materials_->handle());
+    const auto previews_buffer =
+        builder.import_buffer({"sdf.previews", preview_buffers_.at(slot.index)->size()},
+                              preview_buffers_.at(slot.index)->handle());
     builder.add_pass("sdf.trace", render::RenderGraphQueueDomain::Graphics)
         .read_texture(atlas, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(nodes, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_uniform_buffer(lighting, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(program, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(materials, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        .read_storage_buffer(previews_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .write_color(scene)
         .write_depth(depth)
         .execute([&, camera, scene, depth](const render::RenderGraphExecutionContext& ctx) {

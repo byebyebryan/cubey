@@ -58,7 +58,7 @@ AuthoredScene authored_history_scene(const AuthoredScene& scene, std::size_t cou
     json.erase("appearance_hash");
     std::set<std::string> visible;
     for (std::size_t i = 0; i < count; ++i)
-        visible.insert(scene.history[i].node);
+        visible.insert(scene.history[i].nodes.begin(), scene.history[i].nodes.end());
     json["root"] = reveal(json.at("root"), visible);
     return parse_authored_scene(json.dump());
 }
@@ -68,7 +68,7 @@ void read_authored_history(AuthoredScene& scene) {
     if (!json.contains("history"))
         return;
     const auto& history = json.at("history");
-    if (!history.is_array() || history.empty() || history.size() != scene.leaf_count)
+    if (!history.is_array() || history.empty() || history.size() > scene.leaf_count)
         throw std::invalid_argument("authored history must reveal every primitive exactly once");
     std::map<std::string, bool> primitives;
     std::function<void(const Json&, bool)> collect = [&](const Json& node, bool negative) {
@@ -89,36 +89,50 @@ void read_authored_history(AuthoredScene& scene) {
     collect(json.at("root"), false);
     for (const auto& item : history) {
         AuthoredStep step;
-        step.node = item.at("node").get<std::string>();
+        if (item.contains("node") == item.contains("nodes"))
+            throw std::invalid_argument("history item needs exactly one of node or nodes");
+        step.nodes = item.contains("node")
+                         ? std::vector<std::string>{item.at("node").get<std::string>()}
+                         : item.at("nodes").get<std::vector<std::string>>();
         step.label = item.at("label").get<std::string>();
         step.seconds = item.value("seconds", .65);
-        const auto found = primitives.find(step.node);
-        if (found == primitives.end() || step.label.empty() || step.label.size() > 160 ||
+        if (step.nodes.empty() || step.label.empty() || step.label.size() > 160 ||
             !std::isfinite(step.seconds) || step.seconds < .2 || step.seconds > 5)
             throw std::invalid_argument("invalid authored history node, label or duration");
-        if (found->second) {
-            const auto part =
-                std::find(scene.part_names.begin(), scene.part_names.end(), step.node);
-            step.cutter =
-                scene.program.at(static_cast<std::size_t>(part - scene.part_names.begin()));
+        std::optional<bool> negative;
+        for (const auto& name : step.nodes) {
+            const auto found = primitives.find(name);
+            if (found == primitives.end())
+                throw std::invalid_argument("history must reveal each primitive exactly once");
+            if (negative && *negative != found->second)
+                throw std::invalid_argument(
+                    "history operation mixes additive and subtractive leaves");
+            negative = found->second;
+            if (found->second) {
+                const auto part = std::find(scene.part_names.begin(), scene.part_names.end(), name);
+                step.cutters.push_back(
+                    scene.program.at(static_cast<std::size_t>(part - scene.part_names.begin())));
+            }
+            primitives.erase(found);
         }
-        primitives.erase(found);
         scene.history.push_back(std::move(step));
     }
+    if (!primitives.empty())
+        throw std::invalid_argument("authored history must reveal every primitive exactly once");
     // A subtraction is visible as soon as its body is visible. Requiring the
     // first body leaf before the first tool leaf at every subtraction proves
     // that every prefix participates immediately, including nested tools.
     // This avoids serializing/recompiling all N prefixes on every scene load.
     std::map<std::string, std::size_t> order;
     for (std::size_t i = 0; i < scene.history.size(); ++i)
-        order.emplace(scene.history[i].node, i);
+        for (const auto& name : scene.history[i].nodes)
+            order.emplace(name, i);
     std::function<std::size_t(const Json&)> first = [&](const Json& node) {
         if (!node.contains("children"))
             return order.at(node.at("name").get<std::string>());
         const auto& children = node.at("children");
         auto earliest = first(children.at(0));
-        const bool subtract = node.at("type") == "subtract" ||
-                              node.at("type") == "smooth-subtract";
+        const bool subtract = node.at("type") == "subtract" || node.at("type") == "smooth-subtract";
         for (std::size_t i = 1; i < children.size(); ++i) {
             const auto next = first(children.at(i));
             if (subtract && next < earliest)
@@ -146,8 +160,8 @@ AuthoredHistorySample sample_authored_history(const TimelineConfig& config,
         if (history_time < begin)
             break;
         const double phase = (history_time - begin) / step.seconds;
-        if (step.cutter && phase < .35) {
-            result.cutter = step.cutter;
+        if (!step.cutters.empty() && phase < .35) {
+            result.cutters = step.cutters;
             result.timeline.cutter_opacity =
                 .45F * static_cast<float>(std::sin(std::numbers::pi_v<double> *
                                                    std::clamp(phase / .35, 0.0, 1.0)));

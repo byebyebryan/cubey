@@ -34,9 +34,10 @@ struct alignas(16) SurfaceMaterial {
 };
 static_assert(sizeof(SurfaceMaterial) == 32);
 struct AuthoredStep {
-    std::string node, label;
+    std::vector<std::string> nodes;
+    std::string label;
     double seconds = 0.65;
-    std::optional<SceneInstruction> cutter;
+    std::vector<SceneInstruction> cutters;
 };
 struct AuthoredScene {
     std::string name;

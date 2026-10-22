@@ -11,6 +11,10 @@ import subprocess
 from qualify_authored import check_video
 
 
+def step_nodes(step):
+    return step['nodes'] if 'nodes' in step else [step['node']]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -149,14 +153,16 @@ def main():
         raise ValueError('--preview-node must identify saved cutter leaves')
     start = .65
     for index, step in enumerate(history):
-        if step['node'] in cutters and (args.preview_node is None or step['node'] in args.preview_node):
+        cut_nodes=set(step_nodes(step)) & cutters
+        if cut_nodes and (args.preview_node is None or cut_nodes.intersection(args.preview_node)):
             time = (start + .175 * step['seconds']) / total * construction
             run(f'preview-{index+1:02}', ['--time', time], index)
             off = run(f'preview-{index+1:02}-off', ['--time', time, '--no-cutter-cue'], index)
             on = manifest['runs'][f'preview-{index+1:02}']
             identity = lambda row: next(s for s in row['stats'] if s.startswith('sdf: authored geometry='))
             assert identity(on) == identity(off)
-            manifest['previews'].append(dict(index=index+1, node=step['node'], time=time, label=step['label'],
+            manifest['previews'].append(dict(index=index+1, node=next(n for n in step_nodes(step) if n in cutters),
+                nodes=step_nodes(step), time=time, label=step['label'],
                 on=on['capture'], off=off['capture']))
         start += step['seconds']
     final = run('static-final', ['--motion', 'static', '--export-authored', out / 'scenes' / args.export_name, '--validate-field'])
@@ -199,7 +205,7 @@ def main():
             for index, step in enumerate(history):
                 progress = (time / construction * total - cursor) / step['seconds']
                 if progress < 0: break
-                if step['node'] in cutters and progress < .35:
+                if set(step_nodes(step)).intersection(cutters) and progress < .35:
                     preview_index = index
                     break
                 prefix = index+1
