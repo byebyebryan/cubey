@@ -130,6 +130,8 @@ else:
     "actions":["resize twice","orbit","zoom","pause/reset","change ivory roughness from 0.52 without field rebuild","Escape"]}
 import hashlib
 receipt["binary_sha256"]=hashlib.sha256(Path(args.binary).read_bytes()).hexdigest()
+receipt["shader_sha256"]={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+    for p in sorted((Path(args.binary).parent/"shaders").glob("*.spv"))}
 receipt["source_commit"]=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
 (out/"windowed-interaction.json").write_text(json.dumps(receipt,indent=2)+"\n")
 print(json.dumps(receipt))

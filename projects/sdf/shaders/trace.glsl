@@ -13,8 +13,20 @@ vec2 rayBox(vec3 origin,vec3 direction,vec3 low,vec3 high) {
 }
 float sampleBrick(vec3 p,ivec3 cell,uint pointer) {
     vec3 local = clamp((p+0.5)*256.0-vec3(cell),0.0,1.0)*7.0;
-    return textureLod(atlas,(vec3(brickOrigin(pointer,atlasAxis))+local+0.5)/
-        float(atlasAxis*8u),0.0).r;
+    // Interpolate in brick-local coordinates. Normalized atlas filtering
+    // rounds weights differently at different physical brick locations.
+    ivec3 lo=ivec3(floor(local)),hi=min(lo+1,ivec3(7));
+    ivec3 base=brickOrigin(pointer,atlasAxis);
+    vec3 f=local-vec3(lo);
+    float x00=mix(texelFetch(atlas,base+ivec3(lo.x,lo.y,lo.z),0).r,
+                  texelFetch(atlas,base+ivec3(hi.x,lo.y,lo.z),0).r,f.x);
+    float x10=mix(texelFetch(atlas,base+ivec3(lo.x,hi.y,lo.z),0).r,
+                  texelFetch(atlas,base+ivec3(hi.x,hi.y,lo.z),0).r,f.x);
+    float x01=mix(texelFetch(atlas,base+ivec3(lo.x,lo.y,hi.z),0).r,
+                  texelFetch(atlas,base+ivec3(hi.x,lo.y,hi.z),0).r,f.x);
+    float x11=mix(texelFetch(atlas,base+ivec3(lo.x,hi.y,hi.z),0).r,
+                  texelFetch(atlas,base+ivec3(hi.x,hi.y,hi.z),0).r,f.x);
+    return mix(mix(x00,x10,f.y),mix(x01,x11,f.y),f.z);
 }
 struct Hit { float t; int status; uint steps; ivec3 cell; uint pointer; };
 uint lookup(vec3 p,vec3 direction,out ivec3 cell,out uint level) {

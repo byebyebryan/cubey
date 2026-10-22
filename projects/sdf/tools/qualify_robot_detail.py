@@ -75,6 +75,17 @@ def main():
         '--export-authored',out/'scenes/robot-reloaded.json','--validate-field'])
     assert (out/'history/scenes/robot.json').read_bytes()==(out/'scenes/robot-reloaded.json').read_bytes()
     manifest['replay_scene_bytes_identical']=True
+    def pixels(path):
+        return subprocess.check_output(['ffmpeg','-v','error','-i',str(path),'-f','rawvideo','-pix_fmt','rgb24','-'])
+    canonical=pixels(out/'captures/detail-hero.png')
+    manifest['atlas_relocation_checks']={}
+    for axis in (80,92):
+        name=f'detail-atlas-{axis}'
+        run(name,'detail',['--atlas-axis',axis,'--validate-field'])
+        candidate=pixels(out/f'captures/{name}.png')
+        assert canonical==candidate, f'Brick relocation changed the rendered image at axis {axis}'
+        manifest['atlas_relocation_checks'][str(axis)]=dict(passed=True,max_abs=0)
+        save()
     for variant in ('baseline','detail'):
         prefix=out/f'profiles/{variant}'
         row=run(f'profile-{variant}',variant,['--headless-render-only','--frames',180,
