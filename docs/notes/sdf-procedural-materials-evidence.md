@@ -7,8 +7,9 @@ contains plain, limestone and marble views, three native turntables, inspection
 passes, the 80-second marble carving film and raw qualification receipts.
 The [implementation plan](sdf-procedural-materials-plan.md) records the checkpoints.
 User review accepted the limestone appearance and found marble interesting,
-requesting more detail. The [finer-marble follow-up](#finer-marble-follow-up)
-below records the subsequently revised marble preset and its comparison.
+requesting more detail. After the [finer-marble audition](#finer-marble-follow-up)
+proved too busy, the [balanced follow-up](#balanced-marble-follow-up) revised
+the current preset to sit between the original and the denser trial.
 
 ## Result and scope
 
@@ -214,7 +215,8 @@ python3 projects/sdf/tools/qualify_history.py \
 After the initial material audition, user review accepted limestone and
 requested more detail / higher frequency in marble. The
 [finer marble comparison](http://starship:8787/reports/b34aab013e54f0baca6966075de69df69f10bf56e88543b2a13eb60d7dec96b0/)
-shows the original, an intermediate denser trial and the revised current preset.
+shows the original, an intermediate denser trial and the fine revision from
+that pass. Both denser versions were subsequently too busy in user review.
 The earlier report and its full carving film preserve the original treatment.
 
 This is a five-parameter material revision, implemented in `dc6c7d4f`:
@@ -240,8 +242,9 @@ match the initial final qualification. Six matched views per treatment cover
 hero, rear, detail, grazing light, color and clay; all eight structural probes
 pass. Three native turntables build once each, and all 720 decoded frames pass
 screening. Native close-ups, grazing-light and extracted rear orbit frames were
-visually inspected before selection. The finest version was selected for the
-current preset; user artistic review of that revision remains separate.
+visually inspected before selection. The finest version was initially selected;
+user review then rejected its density and found even the intermediate trial too
+busy. The balanced follow-up below supersedes that selection.
 
 The revised material's full history passes 66 distinct states / 69 checkpoints,
 148,031 sampled-field rays and 279,378 direct CPU/GPU points, with zero
@@ -279,3 +282,42 @@ python3 projects/sdf/tools/marble_frequency_report.py \
   --history outputs/sdf/marble-frequency-history \
   --output outputs/sdf/marble-frequency-report-new
 ```
+
+## Balanced marble follow-up
+
+User review found both the fine revision and the denser trial too busy, asking
+for something between the original and denser trial. The
+[balanced marble comparison](http://starship:8787/reports/f59ca1bd61e2982b7a4d83a45fd0dc4c821e33078218a3cbf52cbbe1aadec403/)
+shows original, balanced revision and previous denser trial in that order.
+The balanced version is now the current preset, pending further artistic review.
+
+Two quieter hero/detail candidates were rendered. The more restrained candidate
+was selected: scale 6, vein frequency 7.25, width 0.07, warp strength 5.5 and
+grain scale 280. Its axial frequency is about 1.76 times the original, compared
+with 4 times in the denser trial. Increasing both scale and vein frequency in
+the previous pass had compounded the density increase. Gentler warp now keeps
+more quiet space around the facial carving. Base colors, roughness amounts,
+seed, direction, offset and bump amplitude remain unchanged, as does limestone.
+
+The exact geometry and 65-operation history match the earlier snapshots.
+The renderer/shaders are unchanged. Six fresh matching views and a 240-frame
+turntable pass native validation and video screening; eight structural probes
+pass. Final-state checks cover 4,297 sampled-field rays and 7,806 direct CPU/GPU
+points, without mismatches, exhaustion, sampling ambiguities or part
+disagreements. Maximum CPU/GPU color error is 0.0000147223. Both material-cache
+checks retain a single field build. All six generator outputs reproduce exactly.
+Hero/detail stills and an extracted rear orbit frame were visually inspected.
+
+This bounded appearance adjustment does not rerun the entire history, desktop
+controls or profiles. The previous complete history receipts retain their
+original material snapshots. Original and denser comparison assets are reused
+only after checking their recorded hashes, binary/shaders/GPU, source geometry
+and matching render settings. Static/dynamic report assets and JavaScript
+syntax pass checks; browser interaction review was not performed.
+
+Artifacts under `outputs/sdf/` are `marble-balance-audition/`,
+`marble-balance-native/`, `marble-balance-reproduction.json` and the
+78-file, 15,986,434-byte `marble-balance-report/`. The report includes its
+standalone builder and both source receipts. `marble-balance-served-review.json`
+records HTTP/hash parity for every published file. Documentation/layout policy
+checks and all 18 scoped SDF CLI recipes pass.

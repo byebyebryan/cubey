@@ -163,10 +163,13 @@ includes twelve matched views per material, three turntables, inspection passes
 and the complete marble construction film. Limestone reads more convincingly
 in native inspection; marble remains a stylized surface treatment.
 User review accepted the limestone appearance and requested finer marble.
-The current marble preset raises pattern scale and vein frequency, adds smaller
-bends and finer grain, and preserves its pale colors and restrained bump.
-The [follow-up evidence](../../docs/notes/sdf-procedural-materials-evidence.md#finer-marble-follow-up)
-compares the original, an intermediate trial and this revised treatment.
+The denser trials then proved too busy in user review. The current marble
+preset adds a modest amount of detail to the original: scale 6, vein frequency
+7.25 and gentler warping, retaining its pale colors and restrained bump.
+The [balanced comparison](http://starship:8787/reports/f59ca1bd61e2982b7a4d83a45fd0dc4c821e33078218a3cbf52cbbe1aadec403/)
+places it between the original and previous denser trial; the
+[follow-up evidence](../../docs/notes/sdf-procedural-materials-evidence.md#balanced-marble-follow-up)
+records the selection and native checks.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -174,8 +177,8 @@ about 1.8 ms at the tested 1080p settings, superseding the earlier shading costs
 above. General multimaterial and part-ID queries still use the full evaluator.
 Geometry rebuilds remain about 0.92 seconds. The evidence separates shortcut,
 pattern-only and bump costs; material differences are within timing variation.
-The later marble frequency revision requalifies appearance and history; it does
-not add a new performance measurement.
+Later material revisions retain their own appearance/history qualification
+scopes; those earlier timings keep their original material snapshots.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
