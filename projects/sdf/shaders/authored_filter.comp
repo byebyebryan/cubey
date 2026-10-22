@@ -1,0 +1,30 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+layout(local_size_x=4,local_size_y=4,local_size_z=4) in;
+layout(std430,set=0,binding=1) buffer Nodes { uint nodes[]; };
+layout(std430,set=0,binding=5) readonly buffer InputNodes { uint inputs[]; };
+layout(std430,set=0,binding=6) writeonly buffer OutputNodes { uint outputs[]; };
+layout(std430,set=0,binding=7) buffer Counters { uint outputCount; uint unused; uint overflow; uint updated; };
+layout(push_constant) uniform Params { uint depth; uint count; uint capacity; uint refCapacity; uint atlasAxis; } pc;
+void main() {
+    uint index=gl_WorkGroupID.x+gl_WorkGroupID.y*1024u;
+    if (index>=pc.count) return;
+    uint code=((inputs[index]-LEVEL[pc.depth-2])<<6)|morton(ivec3(gl_LocalInvocationID));
+    uint ptr=LEVEL[pc.depth]+code;
+    float size=1.0/float(1u<<pc.depth);
+    vec3 p=(vec3(unmorton(code))+0.5)*size-0.5;
+    float d=authoredDistance(p);
+    // All compiled operators preserve a 1-Lipschitz bound. Keep a small
+    // floating-point margin before classifying a cell as uniform.
+    float radius=size*0.866025404+2e-6;
+    uint header=d>radius ? 0u : (d<-radius ? FILLED : SUBDIVIDED);
+    nodes[ptr]=header;
+    if (header==SUBDIVIDED) {
+        uint outputIndex=atomicAdd(outputCount,1u);
+        if (outputIndex>=pc.capacity) { atomicOr(overflow,1u); return; }
+        outputs[outputIndex]=ptr;
+    }
+}

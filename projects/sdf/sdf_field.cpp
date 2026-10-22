@@ -84,6 +84,7 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
     references_ = buffer(reference_capacity_ * 4ULL);
     edits_ = buffer(128 * sizeof(GpuEdit), true);
     counters_ = buffer(16, true);
+    authored_program_ = buffer(16 + 128 * sizeof(SceneInstruction), true);
     if (stats_.allocation_bytes > 2ULL * 1024 * 1024 * 1024)
         throw std::runtime_error("SDF field exceeds 2 GiB allocation budget");
     std::vector<vulkan::DescriptorSetBindingConfig> bindings;
@@ -91,6 +92,7 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
         bindings.push_back({i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
     bindings.push_back({8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT});
     bindings.push_back({9, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT});
+    bindings.push_back({10, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
     descriptors_ =
         std::make_unique<vulkan::DescriptorSetBundle>(device, vulkan::DescriptorSetInfo(bindings));
     profiler_.emplace(device, 1, 1);
@@ -98,6 +100,12 @@ Field::Field(vulkan::Device& device, ProjectGpuServices& gpu, std::uint32_t axis
         {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(Parameters)}}};
     for (auto [pipeline, name] : {std::pair{&filter_pipeline_, "filter.comp.spv"},
                                   std::pair{&brick_pipeline_, "bricks.comp.spv"}})
+        render::emplace_single_set_compute_pipeline_resource(
+            *pipeline, device,
+            render::compute_shader_file(std::filesystem::path(CUBEY_SDF_SHADER_DIR) / name),
+            descriptors_->layout(), push);
+    for (auto [pipeline, name] : {std::pair{&authored_filter_, "authored_filter.comp.spv"},
+                                  std::pair{&authored_bricks_, "authored_bricks.comp.spv"}})
         render::emplace_single_set_compute_pipeline_resource(
             *pipeline, device,
             render::compute_shader_file(std::filesystem::path(CUBEY_SDF_SHADER_DIR) / name),
@@ -130,13 +138,15 @@ void Field::update_descriptors(std::uint32_t input, std::uint32_t output) {
     writes.combined_image_sampler(set, 8, atlases_[committed_]->sampler().handle(),
                                   atlases_[committed_]->view(), VK_IMAGE_LAYOUT_GENERAL);
     writes.storage_image(set, 9, atlases_[working]->view());
+    writes.storage_buffer(set, 10, authored_program_->handle(), authored_program_->size());
     writes.update(device_);
 }
 
 void Field::dispatch(bool bricks, std::uint32_t level, std::uint32_t count, std::uint32_t input,
                      std::uint32_t output) {
     update_descriptors(input, output);
-    const auto& pipeline = bricks ? *brick_pipeline_ : *filter_pipeline_;
+    const auto& pipeline = authored_dispatch_ ? (bricks ? *authored_bricks_ : *authored_filter_)
+                                              : (bricks ? *brick_pipeline_ : *filter_pipeline_);
     static_cast<void>(gpu_.submit_and_wait(
         {.label = bricks ? "sdf build bricks" : "sdf filter nodes",
          .work = [&](vulkan::GpuOwnerContext& owner) {
@@ -166,6 +176,14 @@ void Field::dispatch(bool bricks, std::uint32_t level, std::uint32_t count, std:
 }
 
 void Field::build(std::span<const BoxEdit> edits) {
+    authored_dispatch_ = false;
+    if (authored_committed_) {
+        authored_hash_.reset();
+        authored_committed_ = false;
+        has_last_requested_ = false;
+        // Force the legacy path to reset the authored field, even for an empty recipe.
+        committed_edits_.assign(1, GpuEdit{});
+    }
     const auto start = std::chrono::steady_clock::now();
     const auto packed = gpu_edits(edits);
     stats_.batch_count = 0;
@@ -264,6 +282,7 @@ void Field::build(std::span<const BoxEdit> edits) {
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
     last_requested_ = packed;
     has_last_requested_ = true;
+    ++stats_.build_count;
     stats_.other_wall_ms =
         std::max(0.0, stats_.build_ms - stats_.filter_gpu_ms - stats_.brick_gpu_ms);
     std::cout << "sdf: edits=" << edits.size() << " batches=" << stats_.batch_count
@@ -274,5 +293,74 @@ void Field::build(std::span<const BoxEdit> edits) {
               << " brick_gpu_ms=" << stats_.brick_gpu_ms
               << " other_wall_ms=" << stats_.other_wall_ms << " copied=" << stats_.copied_bricks
               << " updated=" << stats_.updated_bricks << '\n';
+}
+void Field::build(const AuthoredScene& scene) {
+    const auto hash = authored_geometry_hash(scene);
+    if (authored_hash_ && *authored_hash_ == hash)
+        return;
+    const auto start = std::chrono::steady_clock::now();
+    const auto previous = stats_;
+    // Keep the actually displayed field intact until the whole new scene is
+    // complete, including when the previous view was a legacy partial batch.
+    committed_ = displayed_;
+    authored_committed_ = true;
+    authored_dispatch_ = true;
+    stats_ = {};
+    stats_.allocation_bytes = previous.allocation_bytes;
+    stats_.build_count = previous.build_count;
+    const auto bytes = authored_program_bytes(&scene);
+    try {
+        static_cast<void>(gpu_.submit_and_wait(
+            {.label = "sdf begin authored scene", .work = [&](vulkan::GpuOwnerContext& owner) {
+                 authored_program_->upload(bytes.data(), bytes.size());
+                 vulkan::ImmediateCommands commands(owner);
+                 const auto command = commands.command_buffer();
+                 vkCmdFillBuffer(command, nodes_[1U - committed_]->handle(), 0, VK_WHOLE_SIZE, 0);
+                 vkCmdFillBuffer(command, frontiers_[0]->handle(), 0, 4, 0);
+                 vkCmdFillBuffer(command, counters_->handle(), 0, 16, 0);
+                 barrier(command);
+                 commands.submit_and_wait();
+             }}));
+        std::uint32_t count = 1, input = 0;
+        for (std::uint32_t level = 2; level <= depth && count > 0; level += 2) {
+            dispatch(false, level, count, input, 1U - input);
+            std::array<std::uint32_t, 4> counters{};
+            counters_->download(counters.data(), 16);
+            if (counters[2] || counters[0] > capacity)
+                throw CapacityExceeded("SDF authored field capacity exceeded: frontier=" +
+                                       std::to_string(counters[0]) +
+                                       ", capacity=" + std::to_string(capacity));
+            count = counters[0];
+            input = 1U - input;
+        }
+        if (count > 0)
+            dispatch(true, depth, count, input, 1U - input);
+        committed_ = 1U - committed_;
+        displayed_ = committed_;
+        displayed_edit_count_ = scene.program.size();
+        committed_edits_.clear();
+        last_requested_.clear();
+        has_last_requested_ = false;
+        base_brick_count_ = count;
+        authored_hash_ = hash;
+        stats_.brick_count = count;
+        stats_.updated_bricks = count;
+        stats_.batch_count = 1;
+        ++stats_.build_count;
+        stats_.build_ms =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
+                .count();
+        stats_.other_wall_ms =
+            std::max(0.0, stats_.build_ms - stats_.filter_gpu_ms - stats_.brick_gpu_ms);
+        std::cout << "sdf: authored instructions=" << scene.program.size()
+                  << " leaves=" << scene.leaf_count << " bricks=" << count << "/" << capacity
+                  << " allocated=" << stats_.allocation_bytes << " build_ms=" << stats_.build_ms
+                  << " filter_gpu_ms=" << stats_.filter_gpu_ms
+                  << " brick_gpu_ms=" << stats_.brick_gpu_ms << " builds=" << stats_.build_count
+                  << '\n';
+    } catch (...) {
+        stats_ = previous;
+        throw;
+    }
 }
 } // namespace cubey::projects::sdf

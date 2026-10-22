@@ -1,0 +1,23 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+layout(local_size_x=8,local_size_y=8,local_size_z=8) in;
+layout(std430,set=0,binding=1) buffer Nodes { uint nodes[]; };
+layout(std430,set=0,binding=5) readonly buffer InputNodes { uint inputs[]; };
+layout(std430,set=0,binding=7) buffer Counters { uint outputCount; uint unused; uint overflow; uint updated; };
+layout(r16f,set=0,binding=9) writeonly uniform image3D atlas;
+layout(push_constant) uniform Params { uint depth; uint count; uint capacity; uint refCapacity; uint atlasAxis; } pc;
+void main() {
+    uint index=gl_WorkGroupID.x+gl_WorkGroupID.y*1024u;
+    if (index>=pc.count) return;
+    uint ptr=inputs[index];
+    ivec3 samplePoint=ivec3(gl_LocalInvocationID);
+    vec3 p=(vec3(unmorton(ptr-LEVEL[pc.depth]))+vec3(samplePoint)/7.0)/float(1u<<pc.depth)-0.5;
+    imageStore(atlas,brickOrigin(index,pc.atlasAxis)+samplePoint,vec4(authoredDistance(p)));
+    if (gl_LocalInvocationIndex==0) {
+        nodes[ptr]=SUBDIVIDED|index;
+        atomicAdd(updated,1u);
+    }
+}

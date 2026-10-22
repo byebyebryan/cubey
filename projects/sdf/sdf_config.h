@@ -11,6 +11,7 @@ struct SdfConfig {
     TimelineConfig timeline;
     double snapshot_time = -1;
     std::filesystem::path recipe_path, export_recipe_path;
+    std::filesystem::path authored_path, export_authored_path;
     std::string scene = "sticks";
     std::string cutter_mode = "original";
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
@@ -92,6 +93,12 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
               c.recipe_path)
         .bind(option("export-recipe", "Save the complete ordered recipe", config::ValueType::Path),
               c.export_recipe_path)
+        .bind(option("authored-scene", "Load a named version-2 authored scene",
+                     config::ValueType::Path),
+              c.authored_path)
+        .bind(
+            option("export-authored", "Save the explicit authored scene", config::ValueType::Path),
+            c.export_authored_path)
         .bind(option("seed", "Seed", config::ValueType::UInt32), c.seed)
         .bind(option("count", "Sticks (negative scenes: cutters, excluding the base)",
                      config::ValueType::UInt32),
@@ -99,7 +106,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("cutter-width", "Full cutter width for negative-stick-ball (0.003–0.06)",
                      config::ValueType::Float),
               c.cutter_width)
-        .bind(option("debug", "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks)",
+        .bind(option("debug",
+                     "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks, 5 parts, 6 base "
+                     "color, 7 roughness)",
                      config::ValueType::UInt32),
               c.debug)
         .bind(option("shadows", "Shadows (0 off, 1 hard, 2 soft)", config::ValueType::UInt32),

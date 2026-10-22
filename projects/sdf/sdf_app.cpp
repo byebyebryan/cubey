@@ -26,11 +26,23 @@ class App {
   public:
     explicit App(SdfConfig config)
         : config_(std::move(config)),
-          recipe_(config_.recipe_path.empty()
+          recipe_(!config_.authored_path.empty() ? Recipe{}
+                  : config_.recipe_path.empty()
                       ? make_recipe(config_.scene, config_.seed, config_.count,
                                     config_.cutter_width, config_.cutter_mode)
-                      : load_recipe(config_.recipe_path)) {
-        if (config_.debug > 4 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+                      : load_recipe(config_.recipe_path)),
+          authored_(
+              config_.authored_path.empty()
+                  ? std::nullopt
+                  : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
+        if (authored_ &&
+            (!config_.recipe_path.empty() || !config_.export_recipe_path.empty() ||
+             (config_.timeline.motion != "static" && config_.timeline.motion != "orbit")))
+            throw std::invalid_argument(
+                "Authored scenes support static/orbit motion and their own export format");
+        if (!authored_ && !config_.export_authored_path.empty())
+            throw std::invalid_argument("--export-authored requires --authored-scene");
+        if (config_.debug > 7 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
             (config_.supersample != 1 && config_.supersample != 2) ||
@@ -53,6 +65,8 @@ class App {
                                     config_.debug);
         if (!config_.export_recipe_path.empty())
             save_recipe(config_.export_recipe_path, recipe_);
+        if (!config_.export_authored_path.empty())
+            save_authored_scene(config_.export_authored_path, *authored_);
     }
     int run() {
         if (config_.common.headless) {
@@ -123,6 +137,29 @@ class App {
                 playback_seconds_ = 0;
                 orbit_.set_pitch(config_.pitch);
                 orbit_.set_distance(config_.distance);
+            }
+            if (authored_ && (reload_authored_ || materials_changed_)) {
+                try {
+                    auto next =
+                        reload_authored_ ? load_authored_scene(config_.authored_path) : *authored_;
+                    static_cast<void>(authored_appearance_hash(next));
+                    runtime_.gpu().wait_queue_idle("sdf authored publication");
+                    const auto before = field_->stats().build_count;
+                    field_->build(next);
+                    authored_ = std::move(next);
+                    renderer_.update_field(ctx.device(), *field_);
+                    renderer_.update_authored(&*authored_);
+                    error_.clear();
+                    std::cout << "sdf: authored update geometry=" << std::hex
+                              << authored_geometry_hash(*authored_)
+                              << " appearance=" << authored_appearance_hash(*authored_) << std::dec
+                              << " field_rebuilt=" << (field_->stats().build_count != before)
+                              << '\n';
+                } catch (const std::exception& error) {
+                    error_ = error.what();
+                }
+                reload_authored_ = false;
+                materials_changed_ = false;
             }
             if (regenerate_requested_) {
                 regenerate_requested_ = false;
@@ -199,18 +236,43 @@ class App {
             if (config_.validate_subtractions)
                 validate_subtractions(device, runtime_.gpu(), *field_);
             active_prefix_ = timeline_.prefix;
-            field_->build(std::span<const BoxEdit>(recipe_.edits).first(active_prefix_));
-            if (config_.validate) {
+            if (authored_) {
+                field_->build(*authored_);
+                if (config_.validate) {
+                    validate_field(device, runtime_.gpu(), *field_, Recipe{}, &*authored_);
+                    validate_authored(device, runtime_.gpu(), *authored_);
+                    const auto before = field_->stats().build_count;
+                    auto recolored = *authored_;
+                    recolored.materials[0].base_roughness.x *= .5F;
+                    field_->build(recolored);
+                    if (field_->stats().build_count != before)
+                        throw std::runtime_error("material-only edit rebuilt distance bricks");
+                    std::cout << "sdf: material-only cache check passed builds=" << before << '\n';
+                }
+                std::cout << "sdf: authored geometry=" << std::hex
+                          << authored_geometry_hash(*authored_)
+                          << " appearance=" << authored_appearance_hash(*authored_) << std::dec
+                          << '\n';
+            } else
+                field_->build(std::span<const BoxEdit>(recipe_.edits).first(active_prefix_));
+            if (config_.validate && !authored_) {
                 auto prefix = recipe_;
                 prefix.edits.resize(active_prefix_);
                 validate_field(device, runtime_.gpu(), *field_, prefix);
             }
-            std::cout << "sdf: recipe hash=" << std::hex << recipe_hash(recipe_) << std::dec
-                      << '\n';
+            if (!authored_)
+                std::cout << "sdf: recipe hash=" << std::hex << recipe_hash(recipe_) << std::dec
+                          << '\n';
         }
-        renderer_.create(device, target.extent, target.format, slots, *field_, config_);
+        renderer_.create(device, target.extent, target.format, slots, *field_, config_,
+                         authored_ ? &*authored_ : nullptr);
     }
     void prepare_time(vulkan::Device& device, double time) {
+        if (authored_) {
+            timeline_ =
+                sample_timeline(config_.timeline, authored_->program.size(), time, config_.debug);
+            return;
+        }
         timeline_ = sample_timeline(config_.timeline, recipe_.edits.size(), time, config_.debug);
         if (timeline_.prefix == active_prefix_)
             return;
@@ -223,8 +285,15 @@ class App {
     void draw_ui() {
         ImGui::SetNextWindowSize({340, 0}, ImGuiCond_FirstUseEver);
         if (ImGui::Begin("SDF study")) {
-            ImGui::Text("%zu / %zu boxes", field_->displayed_edit_count(), recipe_.edits.size());
-            ImGui::Text("Recipe: %s", recipe_.generator.c_str());
+            if (authored_) {
+                ImGui::Text("%s", authored_->name.c_str());
+                ImGui::Text("%zu shapes / %zu instructions", authored_->leaf_count,
+                            authored_->program.size());
+            } else {
+                ImGui::Text("%zu / %zu boxes", field_->displayed_edit_count(),
+                            recipe_.edits.size());
+                ImGui::Text("Recipe: %s", recipe_.generator.c_str());
+            }
             if (config_.timeline.motion == "carve")
                 ImGui::Text("Cuts: %zu / %zu",
                             field_->displayed_edit_count() > 0 ? field_->displayed_edit_count() - 1
@@ -242,7 +311,7 @@ class App {
             for (int i = 0; i < 5; ++i)
                 if (config_.timeline.motion == motion_names[i])
                     motion = i;
-            if (ImGui::Combo("Motion", &motion, motions, 5)) {
+            if (ImGui::Combo("Motion", &motion, motions, authored_ ? 2 : 5)) {
                 auto next = config_.timeline;
                 next.motion = motion_names[motion];
                 try {
@@ -259,15 +328,16 @@ class App {
             if (ImGui::SliderFloat("Timeline", &progress, 0, 1, "%.2f"))
                 playback_seconds_ = static_cast<double>(progress) * config_.timeline.duration;
             int view = static_cast<int>(config_.debug);
-            const char* views[]{"Shaded", "Normals", "Ray distance", "Traversal work",
-                                "Brick cells"};
-            if (ImGui::Combo("View", &view, views, 5))
+            const char* views[]{"Shaded",      "Normals",       "Ray distance", "Traversal work",
+                                "Brick cells", "Part identity", "Base color",   "Roughness"};
+            if (ImGui::Combo("View", &view, views, 8))
                 config_.debug = static_cast<std::uint32_t>(view);
             int shadows = static_cast<int>(config_.shadows);
             const char* shadow_names[]{"Off", "Hard", "Soft (4 samples)"};
             if (ImGui::Combo("Shadows", &shadows, shadow_names, 3))
                 config_.shadows = static_cast<std::uint32_t>(shadows);
             ImGui::Checkbox("Local ambient occlusion", &config_.ao);
+            ImGui::Checkbox("Clay inspection", &config_.clay);
             ImGui::Checkbox("Cutter bounds cue", &config_.cutter_cue);
             ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
@@ -276,40 +346,66 @@ class App {
             ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
             ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
             ImGui::Separator();
-            const char* scene_labels[]{
-                "Sticks",      "Negative sticks", "Negative sphere",    "Box",
-                "Rotated box", "Cut fixture",     "Negative stick ball"};
-            const std::string scene_names[]{
-                "sticks", "negative-sticks",    "negative-sphere", "box", "rotated",
-                "cut",    "negative-stick-ball"};
-            int scene = 0;
-            for (int i = 0; i < 7; ++i)
-                if (config_.scene == scene_names[i])
-                    scene = i;
-            if (ImGui::Combo("Generator", &scene, scene_labels, 7))
-                config_.scene = scene_names[scene];
-            if (!config_.recipe_path.empty())
-                ImGui::TextWrapped("Loaded explicit recipe. Generate scene replaces it.");
-            ImGui::InputScalar("Seed", ImGuiDataType_U32, &config_.seed);
-            const bool negative = config_.scene == "negative-sticks" ||
-                                  config_.scene == "negative-sphere" ||
-                                  config_.scene == "negative-stick-ball";
-            ImGui::InputScalar(negative ? "Cutter count" : "Stick count", ImGuiDataType_U32,
-                               &config_.count);
-            if (config_.scene == "negative-stick-ball") {
-                ImGui::SliderFloat("Cutter width", &config_.cutter_width, 0.003F, 0.06F, "%.3f");
-                const char* mode_labels[]{"Original sticks", "Intro bores", "All through"};
-                const std::string mode_names[]{"original", "intro-bores", "through"};
-                int mode = 0;
-                for (int i = 0; i < 3; ++i)
-                    if (config_.cutter_mode == mode_names[i])
-                        mode = i;
-                if (ImGui::Combo("Cutter mode", &mode, mode_labels, 3))
-                    config_.cutter_mode = mode_names[mode];
-            }
-            if (ImGui::Button("Generate scene")) {
-                config_.count = std::min(config_.count, negative ? 65535U : 65536U);
-                regenerate_requested_ = true;
+            if (authored_) {
+                if (ImGui::Button("Reload authored scene"))
+                    reload_authored_ = true;
+                if (!config_.export_authored_path.empty() && ImGui::Button("Export authored scene"))
+                    save_authored_scene(config_.export_authored_path, *authored_);
+                for (std::size_t i = 0; i < authored_->materials.size(); ++i) {
+                    ImGui::PushID(static_cast<int>(i));
+                    auto& material = authored_->materials[i];
+                    if (ImGui::TreeNode(authored_->material_names[i].c_str())) {
+                        materials_changed_ |=
+                            ImGui::ColorEdit3("Base color", &material.base_roughness.x);
+                        materials_changed_ |=
+                            ImGui::SliderFloat("Roughness", &material.base_roughness.w, .05F, 1);
+                        materials_changed_ |=
+                            ImGui::ColorEdit3("Emission", &material.emission.x,
+                                              ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
+                        for (int channel = 0; channel < 3; ++channel)
+                            material.emission[channel] =
+                                std::clamp(material.emission[channel], 0.0F, 32.0F);
+                        ImGui::TreePop();
+                    }
+                    ImGui::PopID();
+                }
+            } else {
+                const char* scene_labels[]{
+                    "Sticks",      "Negative sticks", "Negative sphere",    "Box",
+                    "Rotated box", "Cut fixture",     "Negative stick ball"};
+                const std::string scene_names[]{
+                    "sticks", "negative-sticks",    "negative-sphere", "box", "rotated",
+                    "cut",    "negative-stick-ball"};
+                int scene = 0;
+                for (int i = 0; i < 7; ++i)
+                    if (config_.scene == scene_names[i])
+                        scene = i;
+                if (ImGui::Combo("Generator", &scene, scene_labels, 7))
+                    config_.scene = scene_names[scene];
+                if (!config_.recipe_path.empty())
+                    ImGui::TextWrapped("Loaded explicit recipe. Generate scene replaces it.");
+                ImGui::InputScalar("Seed", ImGuiDataType_U32, &config_.seed);
+                const bool negative = config_.scene == "negative-sticks" ||
+                                      config_.scene == "negative-sphere" ||
+                                      config_.scene == "negative-stick-ball";
+                ImGui::InputScalar(negative ? "Cutter count" : "Stick count", ImGuiDataType_U32,
+                                   &config_.count);
+                if (config_.scene == "negative-stick-ball") {
+                    ImGui::SliderFloat("Cutter width", &config_.cutter_width, 0.003F, 0.06F,
+                                       "%.3f");
+                    const char* mode_labels[]{"Original sticks", "Intro bores", "All through"};
+                    const std::string mode_names[]{"original", "intro-bores", "through"};
+                    int mode = 0;
+                    for (int i = 0; i < 3; ++i)
+                        if (config_.cutter_mode == mode_names[i])
+                            mode = i;
+                    if (ImGui::Combo("Cutter mode", &mode, mode_labels, 3))
+                        config_.cutter_mode = mode_names[mode];
+                }
+                if (ImGui::Button("Generate scene")) {
+                    config_.count = std::min(config_.count, negative ? 65535U : 65536U);
+                    regenerate_requested_ = true;
+                }
             }
             if (!error_.empty())
                 ImGui::TextWrapped("%s", error_.c_str());
@@ -332,6 +428,7 @@ class App {
     }
     SdfConfig config_;
     Recipe recipe_;
+    std::optional<AuthoredScene> authored_;
     ProjectRuntimeAdapter runtime_{1};
     OrbitController orbit_{{.distance = 1.35F, .min_distance = 0.6F, .max_distance = 5.0F}};
     std::unique_ptr<Field> field_;
@@ -340,6 +437,7 @@ class App {
     std::size_t active_prefix_ = std::numeric_limits<std::size_t>::max();
     double playback_seconds_ = 0;
     bool regenerate_requested_ = false;
+    bool reload_authored_ = false, materials_changed_ = false;
     std::string error_;
 };
 } // namespace

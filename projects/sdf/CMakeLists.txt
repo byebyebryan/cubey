@@ -6,6 +6,8 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_timeline.cpp sdf_authored.cpp
     SHADERS shaders/sdf.vert shaders/sdf.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
+        shaders/authored_filter.comp shaders/authored_bricks.comp
+        shaders/authored_validate.comp
         shaders/occluder.vert shaders/occluder.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"

@@ -23,3 +23,32 @@ pose and more deliberate detail. This selection is not user visual acceptance.
 The new `--clay` option supplies a neutral base color for shape inspection.
 Existing scene defaults and recipe geometry remain unchanged. The blockout
 renders use hard self-shadows, the shared atmosphere and no ground.
+
+## Grouped geometry and material foundation
+
+The version-2 `cubey.sdf.scene` format retains named CSG structure, transforms
+and a material table. Its bounded postfix program supports boxes, spheres,
+capsules, capped cylinders, union, subtraction and polynomial smooth union.
+Rigid transforms and positive uniform scale preserve the selected distance
+bound. The elementary primitive formulas were implemented directly from their
+Euclidean definitions; no external primitive/operator source was copied.
+
+The authored builder classifies complete composite expressions and samples the
+same R16F brick representation. The existing batch builder remains available
+for legacy recipes. Both use the shared tracer and HDR/atmosphere presentation.
+Materials are resolved at surface hits without additional appearance atlases.
+Opaque base color, roughness and emission are supported. Native part/base-color/
+roughness diagnostics and desktop material editing expose that result.
+
+Fixtures in `outputs/sdf/authored-fixtures/` pass required Vulkan validation,
+the sampled-field CPU ray oracle and direct CPU/GPU expression/material checks.
+They cover sphere, capsule, cylinder, isolated group cuts and smooth blending.
+The material-only cache check retains one field build. The legacy cut fixture
+still passes 263 rays without mismatch, exhaustion or sampling ambiguity.
+The recipe/timeline and authored scene CPU test targets pass.
+
+Coincident material selection keeps the earlier branch within a 1e-6 distance
+tie band; geometry still uses the actual min/max. This stabilizes material
+ownership without altering the distance bound. Nested smooth material blends
+evaluate parameters through the full expression instead of retaining only
+two material IDs. No image textures or UV coordinates were introduced.

@@ -71,6 +71,13 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,inout bool exh
     float ambientVisibility=environmentVisibility(p,n,exhausted);
     vec3 base=object ? lighting.material.xyz : vec3(0.12,0.14,0.16);
     float roughness=object ? lighting.quality.x : 0.8;
+    vec3 emission=vec3(0);
+    if (object && authoredHeader.x>0u && lighting.material.w<0.5) {
+        SceneSurface surface=authoredSurface(p);
+        base=surface.material.base_roughness.xyz;
+        roughness=surface.material.base_roughness.w;
+        emission=surface.material.emission.xyz;
+    }
     vec3 halfVector=lightDirection+viewDirection;
     vec3 h=dot(halfVector,halfVector)>1e-8 ? normalize(halfVector) : n;
     float nl=max(dot(n,lightDirection),0.0),nv=max(dot(n,viewDirection),0.001);
@@ -79,5 +86,5 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,inout bool exh
     float v=cubey_pbr_visibility_smith_ggx_correlated(nv,nl,roughness);
     vec3 direct=((1.0-f)*base/3.141592654+f*d*v)*lighting.direct_color.xyz*nl*visibility;
     vec3 ambient=base*environmentIrradiance(n)/3.141592654*ambientVisibility;
-    return direct+ambient;
+    return direct+ambient+emission;
 }

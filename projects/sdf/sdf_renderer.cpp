@@ -19,15 +19,29 @@ static_assert(sizeof(Camera) == 128);
 constexpr auto hdr_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 } // namespace
 void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format,
-                      std::uint32_t slots, const Field& field, const SdfConfig& config) {
+                      std::uint32_t slots, const Field& field, const SdfConfig& config,
+                      const AuthoredScene* scene) {
     field_ = &field;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
     lighting_.emplace(device, slots);
-    const std::array<vulkan::DescriptorSetBindingConfig, 3> bindings{
+    const auto host_buffer = [&](std::size_t bytes) {
+        return std::make_unique<vulkan::Buffer>(
+            device,
+            vulkan::BufferConfig{.size = bytes,
+                                 .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                 .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+    };
+    scene_program_ = host_buffer(16 + 128 * sizeof(SceneInstruction));
+    scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
+    update_authored(scene);
+    const std::array<vulkan::DescriptorSetBindingConfig, 5> bindings{
         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
          {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
+         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device, vulkan::DescriptorSetInfo(bindings, slots));
     update_field(device, field);
@@ -35,6 +49,10 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
         vulkan::DescriptorWriteBatch writes;
         writes.uniform_buffer(descriptors_->set(i), 2, lighting_->buffer({i, slots}).handle(),
                               sizeof(LightingUniforms));
+        writes.storage_buffer(descriptors_->set(i), 3, scene_program_->handle(),
+                              scene_program_->size());
+        writes.storage_buffer(descriptors_->set(i), 4, scene_materials_->handle(),
+                              scene_materials_->size());
         writes.update(device);
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
@@ -98,9 +116,19 @@ void Renderer::destroy() {
     occluder_pipeline_.reset();
     pipeline_.reset();
     descriptors_.reset();
+    scene_materials_.reset();
+    scene_program_.reset();
     lighting_.reset();
     atmosphere_.destroy();
     field_ = nullptr;
+}
+void Renderer::update_authored(const AuthoredScene* scene) {
+    const auto bytes = authored_program_bytes(scene);
+    scene_program_->upload(bytes.data(), bytes.size());
+    const SurfaceMaterial fallback;
+    scene_materials_->upload(scene ? scene->materials.data() : &fallback,
+                             scene ? scene->materials.size() * sizeof(SurfaceMaterial)
+                                   : sizeof(SurfaceMaterial));
 }
 void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
@@ -136,8 +164,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     uniforms.direct_color = {light.primary_light_color * light.primary_light_intensity, 0};
     for (unsigned i = 0; i < 9; ++i)
         uniforms.irradiance[i] = {light.diffuse_irradiance_sh[i], 0};
-    uniforms.material = config.clay ? math::Vec4{0.42F, 0.42F, 0.42F, 0}
-                                    : math::Vec4{0.55F, 0.27F, 0.095F, 0};
+    uniforms.material =
+        config.clay ? math::Vec4{0.42F, 0.42F, 0.42F, 1} : math::Vec4{0.55F, 0.27F, 0.095F, 0};
     uniforms.quality = {config.roughness, config.shadow_softness, config.ao ? 1.0F : 0.0F, -0.48F};
     if (cutter && config.cutter_cue && config.debug == 0) {
         uniforms.cutter = gpu_edit(*cutter);
@@ -185,10 +213,16 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT});
     const auto lighting = builder.import_buffer({"sdf.lighting", sizeof(LightingUniforms)},
                                                 lighting_->buffer(slot).handle());
+    const auto program =
+        builder.import_buffer({"sdf.scene", scene_program_->size()}, scene_program_->handle());
+    const auto materials = builder.import_buffer({"sdf.materials", scene_materials_->size()},
+                                                 scene_materials_->handle());
     builder.add_pass("sdf.trace", render::RenderGraphQueueDomain::Graphics)
         .read_texture(atlas, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(nodes, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_uniform_buffer(lighting, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        .read_storage_buffer(program, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        .read_storage_buffer(materials, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .write_color(scene)
         .write_depth(depth)
         .execute([&, camera, scene, depth](const render::RenderGraphExecutionContext& ctx) {

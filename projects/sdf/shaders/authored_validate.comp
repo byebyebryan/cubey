@@ -1,0 +1,19 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 0
+#define AUTHORED_MATERIAL_BINDING 1
+#include "authored.glsl"
+#include "authored_material.glsl"
+layout(local_size_x=64) in;
+layout(std430,set=0,binding=2) readonly buffer Points { vec4 points[]; };
+layout(std430,set=0,binding=3) writeonly buffer Results { vec4 results[]; };
+layout(push_constant) uniform Params { uint count; } pc;
+void main() {
+    uint i=gl_GlobalInvocationID.x;
+    if (i>=pc.count) return;
+    SceneSurface surface=authoredSurface(points[i].xyz);
+    results[i*3u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),0);
+    results[i*3u+1u]=surface.material.base_roughness;
+    results[i*3u+2u]=surface.material.emission;
+}

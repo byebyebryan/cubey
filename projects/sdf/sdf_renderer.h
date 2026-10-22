@@ -24,9 +24,10 @@ static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUnifo
 class Renderer {
   public:
     void create(vulkan::Device& device, VkExtent2D extent, VkFormat format, std::uint32_t slots,
-                const Field& field, const SdfConfig& config);
+                const Field& field, const SdfConfig& config, const AuthoredScene* scene = nullptr);
     void destroy();
     void update_field(vulkan::Device& device, const Field& field);
+    void update_authored(const AuthoredScene* scene);
     void record(vulkan::Device& device, VkCommandBuffer command, render::ColorTargetView target,
                 render::FrameSlot slot, bool present, const SdfConfig& config, float yaw,
                 float pitch, float distance, profiling::ProfileRecorder* profile,
@@ -37,6 +38,7 @@ class Renderer {
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
+    std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
     render::HdrPostFrame post_;
     render::RenderGraphFrameExecutor executor_;

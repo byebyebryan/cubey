@@ -259,17 +259,20 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene) {
             const auto b = stack[--size];
             auto& a = stack[size - 1];
             if (code == ShapeCode::Union) {
-                if (b.distance < a.distance)
+                const float distance = std::min(a.distance, b.distance);
+                if (b.distance < a.distance - 1e-6F)
                     a = b;
+                a.distance = distance;
             } else if (code == ShapeCode::Subtract) {
-                if (-b.distance > a.distance) {
-                    a.distance = -b.distance;
+                const float distance = std::max(a.distance, -b.distance);
+                if (-b.distance > a.distance + 1e-6F) {
                     if (instruction.settings.w >= 0) {
                         a.material =
                             scene.materials.at(static_cast<unsigned>(instruction.settings.w));
                         a.part = static_cast<unsigned>(i);
                     }
                 }
+                a.distance = distance;
             } else {
                 const float radius = instruction.settings.y;
                 const float h =

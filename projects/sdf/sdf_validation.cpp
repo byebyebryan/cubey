@@ -16,13 +16,13 @@ namespace {
 struct Ray {
     math::Vec4 origin, direction;
 };
-float reference_trace(const Ray& ray, const Recipe& recipe, float threshold) {
+template <class Distance>
+float reference_trace(const Ray& ray, const Distance& distance, float threshold) {
     float t = 0;
-    const bool inside = recipe_distance(math::Vec3(ray.origin), recipe.edits) < 0;
+    const bool inside = distance(math::Vec3(ray.origin)) < 0;
     for (unsigned step = 0; step < 16384 && t < 3.0F; ++step) {
-        const float d =
-            (inside ? -1.0F : 1.0F) *
-            recipe_distance(math::Vec3(ray.origin) + math::Vec3(ray.direction) * t, recipe.edits);
+        const float d = (inside ? -1.0F : 1.0F) *
+                        distance(math::Vec3(ray.origin) + math::Vec3(ray.direction) * t);
         if (d < threshold)
             return t;
         t += std::max((d - threshold) * 0.9F, 1.0e-6F);
@@ -33,7 +33,10 @@ float reference_trace(const Ray& ray, const Recipe& recipe, float threshold) {
 }
 } // namespace
 void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field& field,
-                    const Recipe& recipe) {
+                    const Recipe& recipe, const AuthoredScene* authored) {
+    const auto distance = [&](math::Vec3 p) {
+        return authored ? authored_distance(p, *authored) : recipe_distance(p, recipe.edits);
+    };
     std::vector<Ray> rays;
     for (float yaw : {0.0F, 0.8F, 2.5F}) {
         const math::Vec3 eye = math::Vec3{std::sin(yaw), 0.3F, std::cos(yaw)} * 1.4F;
@@ -53,6 +56,16 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
     if (!recipe.edits.empty()) {
         const auto center = recipe.edits.back().center;
         rays.push_back({{center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
+    }
+    if (authored) {
+        for (const auto& node : authored->program) {
+            if (node.center_code.w >= 10)
+                continue;
+            const auto center = math::Vec3(node.center_code);
+            rays.push_back({{center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
+            for (const auto axis : {math::Vec3{1, 0, 0}, math::Vec3{0, 1, 0}, math::Vec3{0, 0, 1}})
+                rays.push_back({{center, 0}, {axis, 0}});
+        }
     }
     const auto probe_edit = [&](const BoxEdit& edit) {
         rays.push_back({{edit.center + math::Vec3{0, 0, 1.2F}, 0}, {0, 0, -1, 0}});
@@ -141,9 +154,9 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
         // Trilinear interpolation of a 1-Lipschitz box CSG field has a
         // sqrt(3)/2 sample-spacing error bound. Add 0.01 sample for R16F.
         constexpr float bound = 0.8761F * voxel;
-        const float expected = reference_trace(rays[i], recipe, iso);
-        const float outer = reference_trace(rays[i], recipe, iso + bound);
-        const float inner = reference_trace(rays[i], recipe, iso - bound);
+        const float expected = reference_trace(rays[i], distance, iso);
+        const float outer = reference_trace(rays[i], distance, iso + bound);
+        const float inner = reference_trace(rays[i], distance, iso - bound);
         if (result.y > 1.5F) {
             ++exhausted;
             continue;
@@ -155,7 +168,7 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
                 max_error = std::max(max_error, error);
             const auto point =
                 math::Vec3(rays[i].origin) + math::Vec3(rays[i].direction) * result.x;
-            const float surface_error = std::abs(recipe_distance(point, recipe.edits));
+            const float surface_error = std::abs(distance(point));
             max_surface_error = std::max(max_surface_error, surface_error);
             // A spatial sampling tolerance translates to a larger ray distance
             // at grazing incidence. Bound both, rather than hiding depth errors
@@ -167,8 +180,7 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
                 auto a = expected_point, b = expected_point;
                 a[axis] -= 1e-5F;
                 b[axis] += 1e-5F;
-                gradient[axis] =
-                    recipe_distance(b, recipe.edits) - recipe_distance(a, recipe.edits);
+                gradient[axis] = distance(b) - distance(a);
             }
             const float incidence = std::max(
                 0.02F, std::abs(glm::dot(glm::normalize(gradient), math::Vec3(rays[i].direction))));
@@ -231,7 +243,7 @@ void validate_batches(vulkan::Device& device, ProjectGpuServices& gpu, Field& fi
         }
         if (!rejected || limited.displayed_edit_count() != 0)
             throw std::runtime_error("SDF capacity failure was silently published");
-        limited.build({});
+        limited.build(std::span<const BoxEdit>{});
         validate_field(device, gpu, limited, Recipe{});
     }
     std::cout << "sdf: batch/reset matrix passed (forward, unchanged, backward, reset, 64/128 edit "
@@ -279,5 +291,88 @@ void validate_subtractions(vulkan::Device& device, ProjectGpuServices& gpu, Fiel
     validate_field(device, gpu, smaller_batches, last);
     std::cout << "sdf: subtraction matrix passed (intersecting cavities, visible late cuts, "
                  "128/129/256/257 total edits, backward/reset, 64/128 batches)\n";
+}
+void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
+                       const AuthoredScene& scene) {
+    std::vector<math::Vec4> points;
+    for (int x = -4; x <= 4; ++x)
+        for (int y = -4; y <= 4; ++y)
+            for (int z = -4; z <= 4; ++z)
+                points.push_back({static_cast<float>(x) * .1F, static_cast<float>(y) * .1F,
+                                  static_cast<float>(z) * .1F, 0});
+    for (const auto& node : scene.program) {
+        if (node.center_code.w >= 10)
+            continue;
+        points.push_back({math::Vec3(node.center_code), 0});
+        for (const auto axis : {math::Vec3{1, 0, 0}, math::Vec3{0, 1, 0}, math::Vec3{0, 0, 1}}) {
+            points.push_back({math::Vec3(node.center_code) + axis * .025F, 0});
+            points.push_back({math::Vec3(node.center_code) - axis * .025F, 0});
+        }
+    }
+    const auto program = authored_program_bytes(&scene);
+    auto program_buffer = gpu.upload_device_buffer<std::uint8_t>(
+        program, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored program");
+    auto materials = gpu.upload_device_buffer<SurfaceMaterial>(
+        scene.materials, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored materials");
+    auto point_buffer = gpu.upload_device_buffer<math::Vec4>(
+        points, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored points");
+    vulkan::Buffer results(
+        device, vulkan::device_local_buffer_config(points.size() * 3 * sizeof(math::Vec4),
+                                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
+    const std::array<vulkan::DescriptorSetBindingConfig, 4> bindings{
+        {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
+         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
+         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
+         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
+    vulkan::DescriptorSetBundle descriptors(device, vulkan::DescriptorSetInfo(bindings));
+    vulkan::DescriptorWriteBatch writes;
+    writes.storage_buffer(descriptors.set(), 0, program_buffer.handle(), program_buffer.size());
+    writes.storage_buffer(descriptors.set(), 1, materials.handle(), materials.size());
+    writes.storage_buffer(descriptors.set(), 2, point_buffer.handle(), point_buffer.size());
+    writes.storage_buffer(descriptors.set(), 3, results.handle(), results.size());
+    writes.update(device);
+    const std::array layouts{descriptors.layout()};
+    const std::array<VkPushConstantRange, 1> push{{{VK_SHADER_STAGE_COMPUTE_BIT, 0, 4}}};
+    const render::ComputePipelineResource pipeline(
+        device, {.shader_stage = render::compute_shader_file(
+                     std::filesystem::path(CUBEY_SDF_SHADER_DIR) / "authored_validate.comp.spv"),
+                 .descriptor_set_layouts = layouts,
+                 .push_constants = push});
+    static_cast<void>(gpu.submit_and_wait(
+        {.label = "sdf authored CPU GPU check", .work = [&](vulkan::GpuOwnerContext& owner) {
+             vulkan::ImmediateCommands commands(owner);
+             const vulkan::CommandRecorder recorder(commands.command_buffer());
+             recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
+             recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
+                                          descriptors.set());
+             recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                     static_cast<std::uint32_t>(points.size()));
+             recorder.dispatch(static_cast<std::uint32_t>((points.size() + 63) / 64), 1, 1);
+             commands.submit_and_wait();
+         }}));
+    const auto bytes =
+        gpu.readback_buffer(results.handle(), results.size(), "sdf authored results");
+    float max_distance = 0, max_material = 0;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+        std::array<math::Vec4, 3> actual;
+        std::memcpy(actual.data(), bytes.data() + i * sizeof(actual), sizeof(actual));
+        const auto expected = authored_surface(math::Vec3(points[i]), scene);
+        max_distance = std::max({max_distance, std::abs(actual[0].x - expected.distance),
+                                 std::abs(actual[0].y - expected.distance)});
+        for (int channel = 0; channel < 4; ++channel)
+            max_material =
+                std::max({max_material,
+                          std::abs(actual[1][channel] - expected.material.base_roughness[channel]),
+                          std::abs(actual[2][channel] - expected.material.emission[channel])});
+        if (!std::isfinite(actual[0].x) || !std::isfinite(actual[0].y) ||
+            static_cast<unsigned>(actual[0].z) != expected.part || max_distance > 2e-5F ||
+            max_material > 2e-5F)
+            throw std::runtime_error("authored CPU/GPU distance/material mismatch at point " +
+                                     std::to_string(i));
+    }
+    std::cout << "sdf: authored CPU/GPU points=" << points.size()
+              << " max_distance_error=" << max_distance << " max_material_error=" << max_material
+              << " part_mismatches=0\n";
 }
 } // namespace cubey::projects::sdf
