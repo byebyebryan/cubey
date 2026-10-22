@@ -31,7 +31,7 @@ def main():
     sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
     comparison=json.loads((a.comparison/'manifest.json').read_text())
     foundation=json.loads((a.input_root/'refinement-foundation/manifest.json').read_text())
-    assert comparison['robot_pixels_identical']
+    assert comparison['robot_image_regression']['passed']
     data=[]
     for subject,copy in COPY.items():
         src=a.input_root/f'refinement-{subject}-qualified'

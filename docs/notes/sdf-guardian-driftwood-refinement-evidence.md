@@ -118,3 +118,24 @@ image negative controls both reject reuse before native execution, recorded in
 `outputs/sdf/refinement-reuse-negative-controls.json`. This avoids recapturing
 identical geometry solely to revise visibility metadata; it does not waive any
 native oracle or preview requirement.
+
+## Legacy robot image boundary
+
+The matched comparison initially demands exact old/new robot pixels and stops:
+the smooth-operation ownership fix changes two channels of one pixel at
+(411, 508), from G/B = 62/65 to 64/69. Repeated current captures are identical.
+The robot scene/preset remain byte unchanged. Current native field checks pass
+with zero mismatches/exhaustion and the same five finite-grid ambiguities
+recorded in the earlier joint-review hero/reload/atlas logs. Direct CPU/GPU
+evaluation passes 1,303 points with zero material/part disagreement.
+
+The comparison now records this bounded difference under the already
+established image gate (maximum channel error 16, mean 0.002, fraction above
+one of 0.0001), rather than claiming exact legacy pixels. Observed maximum is
+4, mean is 0.00000217, and two channels exceed one. These are the existing
+history-image limits, not enlarged thresholds selected for this result. The
+matched capture receipt preserves exact metrics, commands and old/new RGB
+hashes. New sculpture static/replay and export/reload identity remain separate
+checks. A finish-existing option verifies every saved image and exact
+scene/config/native hashes before completing this comparison, without rerunning
+the already completed baseline profiles.
