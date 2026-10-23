@@ -104,6 +104,8 @@ an implemented project or a new runtime dependency.
   cores, cream shoulders and pockets through the existing warped structure;
   implemented with native visual, filtering, compatibility and performance
   checkpoints.
+- [SDF marble region plan](sdf-marble-regions-plan.md): a native swatch study
+  for cream regions with their own boundaries, partially correlated with veins.
 
 ## Historical research and study records
 
