@@ -50,6 +50,9 @@ the architecture and project guides remain current authority.
 - [SDF material-set evidence](sdf-material-study-evidence.md): shared sphere/
   guardian catalog, opt-in generated IBL, matte clay, ceramic and bronze,
   with qualified sphere glass and the guardian's explicit transport limit.
+- [SDF environment presentation evidence](sdf-environment-presentation-evidence.md):
+  measured glass budgets, shared atmosphere/cloud integration and the qualified
+  horizon/sampling follow-up on the accepted material set.
 - [SDF guardian closeout](sdf-guardian-closeout.md): settled organic mirrored
   sculpture, limestone and subtle stylized marble, with the whole-piece review,
   evidence map, accepted limits and separate presentation follow-up boundary.
@@ -77,6 +80,12 @@ the architecture and project guides remain current authority.
 These records retain proposed experiments and their scope. They do not imply
 an implemented project or a new runtime dependency.
 
+- [Material and SDF demo roadmap](material-demo-roadmap.md): proposed mesh PBR
+  material workshop, SDF material workshop and authored-content showcase, with
+  shared material recipes/evaluation and separate completion boundaries.
+- [PBR material demo plan](pbr-material-demo-plan.md): proposed seven-material
+  mesh workshop, portable procedural content, bounded live editing, retained
+  environment integration and native presentation/acceptance checkpoints.
 - [projectR architecture and source review](projectr-architecture-review.md):
   edit representation, hierarchy and brick construction, renderer generations,
   interaction, persistence and source-level correctness findings.
@@ -120,9 +129,9 @@ an implemented project or a new runtime dependency.
   sphere-first material foundation and unchanged guardian comparison, with
   dry clay, ceramic, bronze, bounded glass and retained effort/acceptance gates.
 - [SDF environment presentation plan](sdf-environment-presentation-plan.md):
-- [SDF environment presentation evidence](sdf-environment-presentation-evidence.md) — native integration, glass budgets and presentation qualification.
-  proposed 4/8/16 glass comparison, opt-in shared atmosphere/cloud reflections,
-  and a bounded low-sun presentation on the accepted material set.
+  implemented 4/8/16 glass comparison, opt-in shared atmosphere/cloud reflections,
+  and a bounded low-sun presentation on the accepted material set, followed by
+  restoration of shared cloud horizon handling and a visible-backdrop correction.
 
 ## Historical research and study records
 

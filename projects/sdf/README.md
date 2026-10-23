@@ -8,6 +8,13 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
+The proposed [material and SDF demo roadmap](../../docs/notes/material-demo-roadmap.md)
+separates a mesh PBR material workshop, an SDF material workshop and this
+authored-content showcase. The [PBR materials plan](../../docs/notes/pbr-material-demo-plan.md)
+is the first implementation candidate: shared standalone material recipes and
+procedural evaluation, preserving the accepted SDF content. No runtime or
+project-layout split is implemented by those planning records.
+
 The guardian sculpture is now settled as an authored SDF rendering/replay demo:
 the organic mirrored sculpt, limestone and subtle Balanced marble are retained.
 The [guardian closeout](../../docs/notes/sdf-guardian-closeout.md) records the

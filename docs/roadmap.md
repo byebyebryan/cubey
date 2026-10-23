@@ -49,6 +49,23 @@ film is optional presentation work; continuous brush editing remains separate.
 Its native receipts do not extend the repository-wide runtime qualification
 above.
 
+## Material and SDF demo direction
+
+The [material and SDF roadmap](notes/material-demo-roadmap.md), captured for
+review on 2026-10-23, separates three demo goals: a mesh PBR material workshop,
+an SDF material workshop using the same recipes, and an SDF authored-content
+showcase led by construction playback. Existing SDF content remains runnable;
+this direction does not require immediate project moves or a new sculpting UI.
+
+The proposed foundation addition is shared parameterized material content:
+portable recipes and procedural surface evaluation. PBR shading, material
+factors, atmosphere, clouds and environment products already exist. The
+[PBR materials V1 plan](notes/pbr-material-demo-plan.md) is the first implementation
+candidate, with retained SDF looks as its reference and compatibility consumer.
+It also addresses bounded live parameter publication through the current
+immutable material-resource model. These are planning records, not implemented
+projects or an extension of repository-wide runtime qualification.
+
 ## Public presentation
 
 Five highlights are now published in the order Ocean, glTF + Terrain, Water 3D,
