@@ -9,6 +9,7 @@ import re
 import subprocess
 
 from sdf_author import capsule, material, rotation, smooth_union, sphere, subtract, union, write_scene
+from author_guardian_materials import MARBLE_DETAILS
 
 
 def main():
@@ -111,6 +112,15 @@ def main():
     receipt['checks']['marble_color_variation']=dict(zero_matches_prior_png=True,
         roughness_and_shading_normals_exact=True,color_visible=True,
         empty_cut_history_passed=True,variation_edit_keeps_one_build=True)
+    # Thin colored cores and irregular shoulders must agree across every named
+    # detail choice, including the maximum supported color amount and another seed.
+    for detail,parameters in MARBLE_DETAILS.items():
+        extreme=copy.deepcopy(documents['marble'])
+        extreme['materials'][0]['procedural'].update(parameters,color_variation=.25,seed=118)
+        source=out/'scenes'/f'marble-{detail}-max-color.json'
+        source.write_text(json.dumps(extreme))
+        run(f'marble-{detail}-max-color','marble',['--authored-scene',source],True)
+    receipt['checks']['marble_colored_details_max_amount_passed']=list(MARBLE_DETAILS)
     receipt['geometry_identities']={name:re.search(r'authored geometry=(\w+)',
         '\n'.join(receipt['runs'][name]['stats']))[1] for name in configs}
     assert len(set(receipt['geometry_identities'].values()))==1

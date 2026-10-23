@@ -69,20 +69,36 @@ MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 
         mask=mix(mask,clamp(width*.63662+.025,0.0,1.0),smoothstep(.7,2.0,coverage));
         if (pattern.offset.w>0.0) {
             float frequency=scale*4.0;
-            vec4 pocket=surfaceNoise(p*frequency,seed+9091u);
-            vec4 fine=surfaceNoise(p*(frequency*2.43),seed+10093u);
-            float fineFade=surfaceFade(footprint,frequency*2.43);
-            float field=.7*pocket.w+.3*fine.w*fineFade-.3*band;
-            vec3 fieldGradient=frequency*(.7*pocket.xyz+.3*2.43*fineFade*fine.xyz);
-            float edge=max(.065,footprint*(length(fieldGradient)+.3*length(phaseGradient)));
-            mineral=smoothstep(.015-edge,.015+edge,field)*
-                (.6+.4*smoothstep(.015,.65,field))*surfaceFade(footprint,frequency);
+            vec4 fine=surfaceNoise(p*frequency,seed+9091u);
+            float fineFade=surfaceFade(footprint,frequency);
+            vec3 fineGradient=frequency*fineFade*fine.xyz;
+            float edgeFrequency=scale*11.0;
+            vec4 edgeNoise=surfaceNoise(p*edgeFrequency,seed+10093u);
+            float edgeFade=surfaceFade(footprint,edgeFrequency);
+            vec3 edgeGradient=edgeFrequency*edgeFade*edgeNoise.xyz;
+            float field=.65*variation+.35*fine.w*fineFade;
+            vec3 fieldGradient=.65*variationGradient+.35*fineGradient;
+            float selectionAA=max(.025,footprint*length(fieldGradient));
+            float selected=smoothstep(-.05-selectionAA,.35+selectionAA,field);
+            float deposit=.5+.5*field;
+            float growth=1.8+8.0*deposit*deposit*deposit*deposit;
+            float jitter=1.0+.5*edgeNoise.w*edgeFade;
+            float bankWidth=min(.55,width*growth*jitter);
+            vec3 widthGradient=2.5*pattern.detail.z*cloud*variationGradient;
+            vec3 growthGradient=16.0*deposit*deposit*deposit*fieldGradient;
+            vec3 bankGradient=widthGradient*growth*jitter+
+                width*(growthGradient*jitter+growth*.5*edgeGradient);
+            float bankAA=max(.025,footprint*(length(phaseGradient)+length(bankGradient)));
+            float shoulder=1.0-smoothstep(bankWidth*.45,bankWidth+bankAA,band);
+            float primary=(.85*core+.8*shoulder)*(1.0-smoothstep(.35,1.0,coverage));
+            float wisps=.5*secondary*(1.0-smoothstep(.35,1.0,secondaryCoverage));
+            mineral=selected*clamp(primary+wisps,0.0,1.0)*variationFade;
         }
     }
     vec3 color=mix(base.base_roughness.xyz,pattern.secondary.xyz,pattern.settings.w*mask);
     if (pattern.settings.x==2.0 && pattern.offset.w>0.0) {
         vec3 palette=mix(vec3(1),vec3(1.13,.83,.47),mineral);
-        float tint=4.0*pattern.offset.w*(1.0-mask);
+        float tint=4.0*pattern.offset.w;
         color*=mix(vec3(1),palette,tint);
     }
     result.material.base_roughness=vec4(clamp(color,0.0,1.0),

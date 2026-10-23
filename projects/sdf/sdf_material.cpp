@@ -114,27 +114,48 @@ MaterialSample sample_material(const SurfaceMaterial& base, const MaterialPatter
         mask = glm::mix(mask, std::clamp(width * .63662F + .025F, 0.0F, 1.0F),
                         glm::smoothstep(.7F, 2.0F, coverage));
         if (pattern.offset.w > 0) {
-            // Smaller mineral pockets favor the same warped strata as the
-            // veins. A second scale breaks up their edges and interior color.
+            // Noise selects deposits and varies their width; the existing
+            // vein coordinates determine every warm core, shoulder and wisp.
             const float frequency = scale * 4;
-            const auto pocket = material_noise(p * frequency, seed + 9091U);
-            const auto fine = material_noise(p * (frequency * 2.43F), seed + 10093U);
-            const float fine_fade = fade(footprint, frequency * 2.43F);
-            const float field = .7F * pocket.value + .3F * fine.value * fine_fade - .3F * band;
-            const auto field_gradient =
-                frequency * (.7F * pocket.gradient + .3F * 2.43F * fine_fade * fine.gradient);
-            const float edge = std::max(.065F, footprint * (glm::length(field_gradient) +
-                                                            .3F * glm::length(phase_gradient)));
-            mineral = glm::smoothstep(.015F - edge, .015F + edge, field) *
-                      (.6F + .4F * glm::smoothstep(.015F, .65F, field)) *
-                      fade(footprint, frequency);
+            const auto fine = material_noise(p * frequency, seed + 9091U);
+            const float fine_fade = fade(footprint, frequency);
+            const auto fine_gradient = frequency * fine_fade * fine.gradient;
+            const float edge_frequency = scale * 11;
+            const auto edge_noise = material_noise(p * edge_frequency, seed + 10093U);
+            const float edge_fade = fade(footprint, edge_frequency);
+            const auto edge_gradient = edge_frequency * edge_fade * edge_noise.gradient;
+            const float field = .65F * variation + .35F * fine.value * fine_fade;
+            const auto field_gradient = .65F * variation_gradient + .35F * fine_gradient;
+            const float selection_aa = std::max(.025F, footprint * glm::length(field_gradient));
+            const float selected =
+                glm::smoothstep(-.05F - selection_aa, .35F + selection_aa, field);
+            const float deposit = .5F + .5F * field;
+            const float growth = 1.8F + 8 * deposit * deposit * deposit * deposit;
+            const float jitter = 1 + .5F * edge_noise.value * edge_fade;
+            const float bank_width = std::min(.55F, width * growth * jitter);
+            const auto width_gradient = 2.5F * pattern.detail.z * cloud * variation_gradient;
+            const auto growth_gradient = 16 * deposit * deposit * deposit * field_gradient;
+            // Using the uncapped derivative overestimates the footprint where
+            // bank width is capped, conservatively broadening that boundary.
+            const auto bank_gradient =
+                width_gradient * growth * jitter +
+                width * (growth_gradient * jitter + growth * .5F * edge_gradient);
+            const float bank_aa = std::max(
+                .025F, footprint * (glm::length(phase_gradient) + glm::length(bank_gradient)));
+            const float shoulder =
+                1 - glm::smoothstep(bank_width * .45F, bank_width + bank_aa, band);
+            const float primary =
+                (.85F * core + .8F * shoulder) * (1 - glm::smoothstep(.35F, 1.0F, coverage));
+            const float wisps =
+                .5F * secondary * (1 - glm::smoothstep(.35F, 1.0F, secondary_coverage));
+            mineral = selected * std::clamp(primary + wisps, 0.0F, 1.0F) * variation_fade;
         }
     }
     auto color = glm::mix(math::Vec3{base.base_roughness}, math::Vec3{pattern.secondary},
                           pattern.settings.w * mask);
     if (pattern.settings.x == 2 && pattern.offset.w > 0) {
         const auto palette = glm::mix(math::Vec3{1}, math::Vec3{1.13F, .83F, .47F}, mineral);
-        const float tint = 4 * pattern.offset.w * (1 - mask);
+        const float tint = 4 * pattern.offset.w;
         color *= glm::mix(math::Vec3{1}, palette, tint);
     }
     result.material.base_roughness = {
