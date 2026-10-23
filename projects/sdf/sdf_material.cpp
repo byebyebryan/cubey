@@ -81,7 +81,7 @@ MaterialSample sample_material(const SurfaceMaterial& base, const MaterialPatter
     const auto p = point + math::Vec3{pattern.offset};
     const float scale = pattern.settings.z;
     const auto macro = fractal(p * scale, seed, footprint * scale);
-    float mask = .5F + .5F * macro.value;
+    float mask = .5F + .5F * macro.value, mineral = 0;
     if (pattern.settings.x == 2) {
         const auto direction = glm::normalize(math::Vec3{pattern.veins});
         const float phase =
@@ -113,17 +113,28 @@ MaterialSample sample_material(const SurfaceMaterial& base, const MaterialPatter
                           0.0F, 1.0F);
         mask = glm::mix(mask, std::clamp(width * .63662F + .025F, 0.0F, 1.0F),
                         glm::smoothstep(.7F, 2.0F, coverage));
+        if (pattern.offset.w > 0) {
+            // Smaller mineral pockets favor the same warped strata as the
+            // veins. A second scale breaks up their edges and interior color.
+            const float frequency = scale * 4;
+            const auto pocket = material_noise(p * frequency, seed + 9091U);
+            const auto fine = material_noise(p * (frequency * 2.43F), seed + 10093U);
+            const float fine_fade = fade(footprint, frequency * 2.43F);
+            const float field = .7F * pocket.value + .3F * fine.value * fine_fade - .3F * band;
+            const auto field_gradient =
+                frequency * (.7F * pocket.gradient + .3F * 2.43F * fine_fade * fine.gradient);
+            const float edge = std::max(.065F, footprint * (glm::length(field_gradient) +
+                                                            .3F * glm::length(phase_gradient)));
+            mineral = glm::smoothstep(.015F - edge, .015F + edge, field) *
+                      (.6F + .4F * glm::smoothstep(.015F, .65F, field)) *
+                      fade(footprint, frequency);
+        }
     }
     auto color = glm::mix(math::Vec3{base.base_roughness}, math::Vec3{pattern.secondary},
                           pattern.settings.w * mask);
     if (pattern.settings.x == 2 && pattern.offset.w > 0) {
-        // Broad cream mineral variation, independent of the vein mask.
-        // Keep veins mostly neutral and fade unresolved tint towards the base.
-        const float frequency = scale * .9F;
-        const float temperature = material_noise(p * frequency, seed + 9091U).value;
-        const float mineral = glm::smoothstep(-.45F, .45F, temperature);
         const auto palette = glm::mix(math::Vec3{1}, math::Vec3{1.13F, .83F, .47F}, mineral);
-        const float tint = 4 * pattern.offset.w * fade(footprint, frequency) * (1 - mask);
+        const float tint = 4 * pattern.offset.w * (1 - mask);
         color *= glm::mix(math::Vec3{1}, palette, tint);
     }
     result.material.base_roughness = {

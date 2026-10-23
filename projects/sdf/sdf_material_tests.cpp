@@ -90,6 +90,22 @@ int main() {
         untinted |= glm::length(delta) < 1e-7F;
         require(sample_material(base, neutral, point, 100).material.base_roughness ==
                 sample_material(base, p, point, 100).material.base_roughness);
+        // Pocket boundaries broaden as they approach a pixel footprint. This
+        // must retain the color-only, bounded, one-sided palette contract.
+        for (float footprint : {.005F, .02F, .06F, .2F}) {
+            const auto flat = sample_material(base, neutral, point, footprint);
+            const auto filtered = sample_material(base, p, point, footprint);
+            require(flat.height_gradient == filtered.height_gradient &&
+                    flat.material.base_roughness.w == filtered.material.base_roughness.w);
+            const auto change =
+                Vec3{filtered.material.base_roughness - flat.material.base_roughness};
+            require(glm::length(change) < .1F && change.x >= -1e-7F && change.y <= 1e-7F &&
+                    change.z <= 1e-7F);
+            for (int channel = 0; channel < 3; ++channel) {
+                const float value = filtered.material.base_roughness[channel];
+                require(std::isfinite(value) && value >= 0 && value <= 1);
+            }
+        }
     }
     require(warm && untinted);
 }

@@ -46,7 +46,7 @@ MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 
     uint seed=uint(pattern.settings.y);vec3 p=point+pattern.offset.xyz;
     float scale=pattern.settings.z;
     vec4 macro=surfaceFractal(p*scale,seed,footprint*scale);
-    float mask=.5+.5*macro.w;
+    float mask=.5+.5*macro.w,mineral=0.0;
     if (pattern.settings.x==2.0) {
         vec3 direction=normalize(pattern.veins.xyz);
         float phase=dot(p*scale,direction)*pattern.veins.w+pattern.detail.w*macro.w;
@@ -67,14 +67,22 @@ MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 
         secondary=mix(secondary,width*.146,smoothstep(.7,2.0,secondaryCoverage));
         mask=clamp((.65*core+.18*halo)*(.5+.5*cloud)+.16*secondary+.045*cloud,0.0,1.0);
         mask=mix(mask,clamp(width*.63662+.025,0.0,1.0),smoothstep(.7,2.0,coverage));
+        if (pattern.offset.w>0.0) {
+            float frequency=scale*4.0;
+            vec4 pocket=surfaceNoise(p*frequency,seed+9091u);
+            vec4 fine=surfaceNoise(p*(frequency*2.43),seed+10093u);
+            float fineFade=surfaceFade(footprint,frequency*2.43);
+            float field=.7*pocket.w+.3*fine.w*fineFade-.3*band;
+            vec3 fieldGradient=frequency*(.7*pocket.xyz+.3*2.43*fineFade*fine.xyz);
+            float edge=max(.065,footprint*(length(fieldGradient)+.3*length(phaseGradient)));
+            mineral=smoothstep(.015-edge,.015+edge,field)*
+                (.6+.4*smoothstep(.015,.65,field))*surfaceFade(footprint,frequency);
+        }
     }
     vec3 color=mix(base.base_roughness.xyz,pattern.secondary.xyz,pattern.settings.w*mask);
     if (pattern.settings.x==2.0 && pattern.offset.w>0.0) {
-        float frequency=scale*.9;
-        float temperature=surfaceNoise(p*frequency,seed+9091u).w;
-        float mineral=smoothstep(-.45,.45,temperature);
         vec3 palette=mix(vec3(1),vec3(1.13,.83,.47),mineral);
-        float tint=4.0*pattern.offset.w*surfaceFade(footprint,frequency)*(1.0-mask);
+        float tint=4.0*pattern.offset.w*(1.0-mask);
         color*=mix(vec3(1),palette,tint);
     }
     result.material.base_roughness=vec4(clamp(color,0.0,1.0),
