@@ -1,5 +1,6 @@
 #pragma once
 #include "sdf_recipe.h"
+#include <cubey/procedural/surface_material.h>
 #include <array>
 #include <optional>
 
@@ -28,28 +29,11 @@ struct alignas(16) SceneInstruction {
     math::Vec4 settings{}; // scale, blend radius, material index, cut material / blend flag
 };
 static_assert(sizeof(SceneInstruction) == 64);
-struct alignas(16) SurfaceMaterial {
-    math::Vec4 base_roughness{0.5F, 0.5F, 0.5F, 0.5F};
-    math::Vec4 emission{0};
-};
-static_assert(sizeof(SurfaceMaterial) == 32);
-struct alignas(16) MaterialPattern {
-    math::Vec4 settings{0, 7, 6,
-                        .5F}; // kind (0 plain, 1 stone, 2 marble, 3 grain), seed, scale, color strength
-    math::Vec4 secondary{.2F, .18F, .15F, .08F}; // linear RGB, roughness variation
-    math::Vec4 veins{1, .3F, .2F, 5};            // direction, frequency
-    math::Vec4 detail{.0005F, 160, .10F, 5};     // bump height, grain scale, vein width, warp
-    math::Vec4 offset{0}; // fixed model-space domain offset XYZ, marble body color variation
-};
-static_assert(sizeof(MaterialPattern) == 80);
-struct alignas(16) MaterialOptics {
-    math::Vec4 settings{0, 0, 1.5F, 1}; // metallic, transmission, IOR, attenuation distance
-    math::Vec4 attenuation{1, 1, 1,
-                           0}; // RGB transmittance, diffuse roughness (0 Lambert, 1 sigma=90deg)
-};
-static_assert(sizeof(MaterialOptics) == 32);
-[[nodiscard]] bool default_optics(const MaterialOptics& optics);
-void validate_material_optics(const MaterialOptics& optics);
+using procedural::SurfaceMaterial;
+using procedural::MaterialPattern;
+using procedural::MaterialOptics;
+using procedural::default_optics;
+using procedural::validate_material_optics;
 struct AuthoredStep {
     std::vector<std::string> nodes;
     std::string label;

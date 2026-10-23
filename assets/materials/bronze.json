@@ -1,0 +1,40 @@
+{
+  "format": "cubey.material.recipe",
+  "version": 1,
+  "id": "bronze",
+  "label": "Satin bronze",
+  "surface": {
+    "base_color": [
+      0.6795424696330938,
+      0.386429433787049,
+      0.13843161503245183
+    ],
+    "roughness": 0.32,
+    "emission": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "optics": {
+      "metallic": 1
+    }
+  },
+  "material_from_object": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ]
+}

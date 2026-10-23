@@ -19,7 +19,7 @@ cubey_add_app_target(
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/atmosphere.frag"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere_reflection_prefilter.frag"
     SHADER_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/shaders"
-    SHADER_DEPENDS shaders/field.glsl shaders/trace.glsl ${CUBEY_SDF_ATMOSPHERE_DEPENDS} ${CUBEY_SDF_CLOUD_DEPENDS}
+    SHADER_DEPENDS "${PROJECT_SOURCE_DIR}/shaders/cubey/procedural/surface_material.glsl" shaders/field.glsl shaders/trace.glsl ${CUBEY_SDF_ATMOSPHERE_DEPENDS} ${CUBEY_SDF_CLOUD_DEPENDS}
 )
 
 if (BUILD_TESTING)

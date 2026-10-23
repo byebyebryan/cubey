@@ -33,6 +33,7 @@ add_library(cubey_core STATIC
     procedural/patch_domain.cpp
     procedural/sample_domain.cpp
     procedural/seed.cpp
+    procedural/surface_material.cpp
     procedural/source_fields.cpp
 )
 add_library(cubey::core ALIAS cubey_core)
@@ -118,6 +119,7 @@ target_link_libraries(
 )
 
 add_library(cubey_asset STATIC
+    asset/material_recipe.cpp
     asset/file_digest.cpp
     asset/terrain_landscape_catalog.cpp
     asset/terrain_site_water.cpp

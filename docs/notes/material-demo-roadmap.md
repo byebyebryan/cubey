@@ -2,9 +2,9 @@
 
 Date: 2026-10-23
 
-Status: roadmap captured for review. The three demo goals and shared material
-content direction come from the current project discussion. The sequencing and
-V1 scopes below are proposed; this record does not start implementation.
+Status: implementation of Stages A and B authorized on 2026-10-23. Plans committed
+as `b35d1a89`; local milestone commits and native qualification are in progress.
+Stage C remains deferred. No push is included in this loop.
 
 ## Purpose
 

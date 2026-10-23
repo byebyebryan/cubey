@@ -1,0 +1,56 @@
+{
+  "format": "cubey.material.recipe",
+  "version": 1,
+  "id": "limestone",
+  "label": "Limestone",
+  "surface": {
+    "base_color": [
+      0.47353149614800955,
+      0.4178850708481375,
+      0.35153259950043936
+    ],
+    "roughness": 0.82,
+    "emission": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "procedural": {
+      "type": "limestone",
+      "seed": 173,
+      "scale": 9,
+      "secondary_color": [
+        0.2232279573168085,
+        0.17788841598362912,
+        0.12213877222960187
+      ],
+      "color_strength": 0.65,
+      "roughness_variation": 0.12,
+      "bump_strength": 0.00035,
+      "grain_scale": 240,
+      "offset": [
+        0.13,
+        -0.07,
+        0.09
+      ]
+    }
+  },
+  "material_from_object": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ]
+}

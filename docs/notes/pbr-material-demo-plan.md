@@ -2,10 +2,9 @@
 
 Date: 2026-10-23
 
-Status: proposed implementation plan for review. Stage A of the
-[material and SDF demo roadmap](material-demo-roadmap.md). Material roster,
-specimens, controls and numeric gates below are proposed V1 choices.
-Implementation and source moves are outside this documentation task.
+Status: implementation of Stages A and B authorized on 2026-10-23. Plans committed
+as `b35d1a89`; local milestone commits and native qualification are in progress.
+Stage C remains deferred. No push is included in this loop.
 
 ## Goal and V1 result
 

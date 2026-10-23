@@ -1,0 +1,37 @@
+{
+  "format": "cubey.material.recipe",
+  "version": 1,
+  "id": "plain",
+  "label": "Neutral gray",
+  "surface": {
+    "base_color": [
+      0.184474994500441,
+      0.184474994500441,
+      0.184474994500441
+    ],
+    "roughness": 0.76,
+    "emission": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "material_from_object": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ]
+}

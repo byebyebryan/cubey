@@ -1,0 +1,59 @@
+{
+  "format": "cubey.material.recipe",
+  "version": 1,
+  "id": "clay",
+  "label": "Dry terracotta",
+  "surface": {
+    "base_color": [
+      0.4793201831008268,
+      0.17464740365558504,
+      0.08650046203654976
+    ],
+    "roughness": 1.0,
+    "emission": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "optics": {
+      "diffuse_roughness": 0.6
+    },
+    "procedural": {
+      "type": "granular",
+      "seed": 293,
+      "scale": 32,
+      "secondary_color": [
+        0.4793201831008268,
+        0.17464740365558504,
+        0.08650046203654976
+      ],
+      "color_strength": 0,
+      "roughness_variation": 0.04,
+      "bump_strength": 0.00035,
+      "grain_scale": 320,
+      "offset": [
+        0.13,
+        -0.07,
+        0.09
+      ]
+    }
+  },
+  "material_from_object": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ]
+}

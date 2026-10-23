@@ -1,0 +1,47 @@
+{
+  "format": "cubey.material.recipe",
+  "version": 1,
+  "id": "glass",
+  "label": "Tinted glass",
+  "surface": {
+    "base_color": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "roughness": 0.05,
+    "emission": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "optics": {
+      "transmission": 1,
+      "ior": 1.5,
+      "attenuation_color": [
+        0.65,
+        0.9,
+        0.76
+      ],
+      "attenuation_distance": 0.5
+    }
+  },
+  "material_from_object": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1
+  ]
+}
