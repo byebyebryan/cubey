@@ -8,6 +8,9 @@ on both subjects, qualified homogeneous sphere glass and an experimental
 guardian glass comparison that fails the original crossing-cap admission gate.
 The [guardian closeout](sdf-guardian-closeout.md) remains settled. The following
 sections retain the authorized execution boundary and original checkpoints.
+The later [environment presentation plan](sdf-environment-presentation-plan.md)
+proposes a separately qualified 8/16-crossing option; it does not change the
+four-crossing result or quality gates recorded for this completed study.
 
 ## Objective and completion boundary
 

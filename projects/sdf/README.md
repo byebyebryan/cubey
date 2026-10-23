@@ -607,6 +607,11 @@ rejects these opaque-only modes. Normals/roughness keep their raw debug display.
 The `granular` procedural type reuses the established filtered grain sampler
 without the stone-specific name; clay uses zero procedural color strength.
 
+The next [environment presentation plan](../../docs/notes/sdf-environment-presentation-plan.md)
+proposes a separate atmosphere/cloud material route and a measured 4/8/16
+glass-crossing comparison. Those options are not implemented yet; the current
+material presets still use the fixed generated environment.
+
 ### Authoring history
 
 The optional `history` array lists each primitive leaf exactly once in the

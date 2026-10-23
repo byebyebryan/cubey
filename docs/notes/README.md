@@ -119,6 +119,9 @@ an implemented project or a new runtime dependency.
 - [SDF material set and showcase plan](sdf-material-study-plan.md): implemented
   sphere-first material foundation and unchanged guardian comparison, with
   dry clay, ceramic, bronze, bounded glass and retained effort/acceptance gates.
+- [SDF environment presentation plan](sdf-environment-presentation-plan.md):
+  proposed 4/8/16 glass comparison, opt-in shared atmosphere/cloud reflections,
+  and a bounded low-sun presentation on the accepted material set.
 
 ## Historical research and study records
 
