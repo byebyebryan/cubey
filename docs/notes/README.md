@@ -44,6 +44,9 @@ the architecture and project guides remain current authority.
 - [SDF procedural material evidence](sdf-procedural-materials-evidence.md):
   continuous limestone/marble surfaces, filtered bump, material cache controls,
   the uniform-material shading shortcut and matching native presentation.
+- [SDF material contrast pass](sdf-material-contrast-pass.md): neutral reference,
+  ivory ceramic and granular rough-diffuse terracotta, with component diagnostics
+  and paired before/after review.
 - [SDF material-set evidence](sdf-material-study-evidence.md): shared sphere/
   guardian catalog, opt-in generated IBL, matte clay, ceramic and bronze,
   with qualified sphere glass and the guardian's explicit transport limit.

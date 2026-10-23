@@ -43,6 +43,8 @@ def main():
         match=re.search(r'bricks=(\d+)/(\d+) allocated=(\d+) build_ms=([\d.]+)',result.stdout);assert match
         receipt['runs'][name]=dict(scene_sha256=sha(scene),command=cmd,gpu_frame=distribution(list(frames.values())),
             active_bricks=int(match[1]),capacity=int(match[2]),field_bytes=int(match[3]),cold_build_ms=float(match[4]))
+        setup=re.search(r'study IBL setup_ms=([\d.]+)',result.stdout)
+        if setup:receipt['runs'][name]['ibl_setup_ms']=float(setup[1])
         print(name,json.dumps(receipt['runs'][name]['gpu_frame']),flush=True)
     (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(out/'manifest.json',flush=True)

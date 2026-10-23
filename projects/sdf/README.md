@@ -543,17 +543,20 @@ to require a legacy edit sequence.
 
 The [bounded material study](../../docs/notes/sdf-material-study-evidence.md)
 adds separate `material-study/` presets for a radius-0.25 sphere and the unchanged
-guardian. Both use identical material records: plain, accepted limestone and
-subtle marble, dry terracotta clay, teal ceramic, satin bronze and tinted glass.
+guardian. Both use identical material records: neutral gray, accepted limestone and
+subtle marble, granular terracotta, ivory ceramic, satin bronze and tinted glass.
 The six opaque looks are qualified on both subjects. Homogeneous sphere glass
 is qualified; the guardian glass comparison remains experimental because its
 worst sampled view reaches the four-crossing cap on 1.1068% of visible glass
 pixels, above the declared 1% admission limit. No extra transport passes were
 added to hide that result.
 
-The [paired material report](http://starship:8787/reports/f9ff89a12a4569c7f1c934cd5c9996570b316afc9ffcbed89d9931ed016983ca/index.html)
+The [updated paired material report](http://starship:8787/reports/d7311c3fe7081ab555c02dad8742497d9cc57fb04424c652a350adf95641eb51/index.html)
 includes normal/detail views, native orbits, glass diagnostics and separate
-shading/build/environment measurements for each material.
+shading/build/environment measurements for each material. It also includes the
+three-material contrast pass and the clay component diagnosis. The
+[first material report](http://starship:8787/reports/f9ff89a12a4569c7f1c934cd5c9996570b316afc9ffcbed89d9931ed016983ca/index.html)
+retains the original gray-green, teal and uniform-clay comparison.
 
 ```sh
 build/release/projects/sdf/sdf --config projects/sdf/presets/material-study/sphere-ceramic.json
@@ -570,10 +573,15 @@ from GPU frame and cold field measurements.
 
 Materials may add an optional `optics` record with `metallic` in [0,1], binary
 `transmission`, `ior` in [1,2.5], positive finite `attenuation_distance` and
-linear RGB `attenuation_color` in (0,1]. Defaults (0, 0, 1.5, 1 and white)
+linear RGB `attenuation_color` in (0,1], plus `diffuse_roughness` in [0,1].
+The latter defaults to zero (Lambert) and maps 1 to Oren–Nayar sigma 90 degrees.
+Direct diffuse uses Oren–Nayar; environment diffuse uses its conservative A term
+with the existing irradiance cube, without full angular integration.
+Defaults (0, 0, 1.5, 1, white and zero diffuse roughness)
 preserve legacy hashes and exports. Non-default optics require study lighting,
 participate in the appearance hash and preserve geometry/field caching. A
-parallel 32-byte table leaves the prior material/pattern/geometry layouts intact.
+parallel 32-byte table leaves the prior material/pattern/geometry layouts intact;
+the formerly reserved attenuation W lane stores diffuse roughness.
 Opaque blend/cut ownership applies to optics on CPU and GPU.
 
 Glass requires one plain homogeneous material: white base, zero metallic and
@@ -588,8 +596,16 @@ render alone does not establish admission.
 
 The old `--clay` option still produces the same gray inspection material at
 roughness 0.36. Its UI label is now **Neutral inspection**. The dry clay catalog
-entry is a separate roughness-0.90 material. Optics are initially authored in
+entry now has near-maximal specular roughness, filtered granular bump and
+opt-in diffuse roughness 0.6. The [contrast-pass record](../../docs/notes/sdf-material-contrast-pass.md)
+explains the old clay diagnosis and the bounded corrective work. Optics are initially authored in
 saved scenes/presets; no general optics editor or material graph is added.
+`--debug 10` and `--debug 11` inspect opaque diffuse and reflection contributions
+under study lighting, with the presentation exposure/tone map. They exclude
+emission; the displayed images do not add linearly after tone mapping. Glass
+rejects these opaque-only modes. Normals/roughness keep their raw debug display.
+The `granular` procedural type reuses the established filtered grain sampler
+without the stone-specific name; clay uses zero procedural color strength.
 
 ### Authoring history
 

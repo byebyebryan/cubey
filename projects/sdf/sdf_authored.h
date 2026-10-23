@@ -35,7 +35,7 @@ struct alignas(16) SurfaceMaterial {
 static_assert(sizeof(SurfaceMaterial) == 32);
 struct alignas(16) MaterialPattern {
     math::Vec4 settings{0, 7, 6,
-                        .5F}; // kind (0 plain, 1 stone, 2 marble), seed, scale, color strength
+                        .5F}; // kind (0 plain, 1 stone, 2 marble, 3 grain), seed, scale, color strength
     math::Vec4 secondary{.2F, .18F, .15F, .08F}; // linear RGB, roughness variation
     math::Vec4 veins{1, .3F, .2F, 5};            // direction, frequency
     math::Vec4 detail{.0005F, 160, .10F, 5};     // bump height, grain scale, vein width, warp
