@@ -1,0 +1,55 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / glass",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "roughness": 0.05,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "optics": {
+        "transmission": 1,
+        "ior": 1.5,
+        "attenuation_color": [
+          0.65,
+          0.9,
+          0.76
+        ],
+        "attenuation_distance": 0.5
+      }
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "glass",
+    "shared_material_sha256": "97a3ccf0f77b4da440a59fb1c99dae07ee4653b0b81907435c8f6b540a46015d"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / limestone",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.47353149614800955,
+        0.4178850708481375,
+        0.35153259950043936
+      ],
+      "roughness": 0.82,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "procedural": {
+        "type": "limestone",
+        "seed": 173,
+        "scale": 9,
+        "secondary_color": [
+          0.2232279573168085,
+          0.17788841598362912,
+          0.12213877222960187
+        ],
+        "color_strength": 0.65,
+        "roughness_variation": 0.12,
+        "bump_strength": 0.00035,
+        "grain_scale": 240,
+        "offset": [
+          0.13,
+          -0.07,
+          0.09
+        ]
+      }
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "limestone",
+    "shared_material_sha256": "e598c667b1883b1eae43df7298e35ed97be6d3e69ac488f10ed82db6dd430c7f"
+  }
+}

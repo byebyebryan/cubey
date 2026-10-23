@@ -26,8 +26,9 @@ static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
 static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);
 class Renderer {
   public:
-    void create(vulkan::Device& device, VkExtent2D extent, VkFormat format, std::uint32_t slots,
-                const Field& field, const SdfConfig& config, const AuthoredScene* scene = nullptr);
+    void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent, VkFormat format,
+                std::uint32_t slots, const Field& field, const SdfConfig& config,
+                const AuthoredScene* scene = nullptr);
     void destroy();
     void update_field(vulkan::Device& device, const Field& field);
     void update_authored(const AuthoredScene* scene);
@@ -39,6 +40,8 @@ class Renderer {
 
   private:
     AtmosphereEnvironmentRuntime atmosphere_;
+    std::optional<render::GeneratedPbrEnvironment> study_environment_;
+    std::unique_ptr<vulkan::Buffer> scene_optics_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
     std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_, scene_patterns_;

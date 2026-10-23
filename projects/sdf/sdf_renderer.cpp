@@ -5,6 +5,7 @@
 #include <cubey/render/render_graph_resolve.h>
 #include <cubey/vulkan/command_recorder.h>
 
+#include <chrono>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
@@ -18,9 +19,9 @@ struct Camera {
 static_assert(sizeof(Camera) == 128);
 constexpr auto hdr_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 } // namespace
-void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format,
-                      std::uint32_t slots, const Field& field, const SdfConfig& config,
-                      const AuthoredScene* scene) {
+void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent,
+                      VkFormat format, std::uint32_t slots, const Field& field,
+                      const SdfConfig& config, const AuthoredScene* scene) {
     field_ = &field;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
@@ -36,17 +37,34 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
     scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction));
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
     scene_patterns_ = host_buffer(16 * sizeof(MaterialPattern));
+    const bool study = config.lighting != "atmosphere";
+    if (study) {
+        const auto start = std::chrono::steady_clock::now();
+        study_environment_.emplace(render::create_generated_pbr_environment(device, gpu));
+        std::cout << "sdf: study IBL setup_ms="
+                  << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() -
+                                                               start)
+                         .count()
+                  << '\n';
+        scene_optics_ = host_buffer(16 * sizeof(MaterialOptics));
+    }
     update_authored(scene);
     for (std::uint32_t i = 0; i < slots; ++i)
         preview_buffers_.push_back(host_buffer(authored_max_leaves * sizeof(SceneInstruction)));
-    const std::array<vulkan::DescriptorSetBindingConfig, 7> bindings{
-        {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}}};
+    std::vector<vulkan::DescriptorSetBindingConfig> bindings{
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
+    if (study) {
+        bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
+        for (std::uint32_t binding = 8; binding <= 10; ++binding)
+            bindings.push_back(
+                {binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT});
+    }
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device, vulkan::DescriptorSetInfo(bindings, slots));
     update_field(device, field);
@@ -62,12 +80,24 @@ void Renderer::create(vulkan::Device& device, VkExtent2D extent, VkFormat format
                               preview_buffers_[i]->size());
         writes.storage_buffer(descriptors_->set(i), 6, scene_patterns_->handle(),
                               scene_patterns_->size());
+        if (study_environment_) {
+            writes.storage_buffer(descriptors_->set(i), 7, scene_optics_->handle(),
+                                  scene_optics_->size());
+            const auto textures = render::pbr_environment_texture_bindings(*study_environment_);
+            writes.combined_image_sampler(descriptors_->set(i), 8, textures.irradiance_sampler,
+                                          textures.irradiance_view, textures.irradiance_layout);
+            writes.combined_image_sampler(descriptors_->set(i), 9, textures.prefiltered_sampler,
+                                          textures.prefiltered_view, textures.prefiltered_layout);
+            writes.combined_image_sampler(descriptors_->set(i), 10, textures.brdf_lut_sampler,
+                                          textures.brdf_lut_view, textures.brdf_lut_layout);
+        }
         writes.update(device);
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
-    const std::array stages{
-        render::vertex_shader_file(path / "sdf.vert.spv"),
-        render::fragment_shader_file(path / (scene ? "sdf_authored.frag.spv" : "sdf.frag.spv"))};
+    const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
+                            render::fragment_shader_file(path / (study   ? "material_study.frag.spv"
+                                                                 : scene ? "sdf_authored.frag.spv"
+                                                                         : "sdf.frag.spv"))};
     const std::array layouts{descriptors_->layout()};
     render::MaterialPassInfo pass{
         .label = "sdf.trace",
@@ -126,6 +156,8 @@ void Renderer::destroy() {
     occluder_pipeline_.reset();
     pipeline_.reset();
     descriptors_.reset();
+    scene_optics_.reset();
+    study_environment_.reset();
     scene_materials_.reset();
     scene_patterns_.reset();
     scene_program_.reset();
@@ -135,8 +167,18 @@ void Renderer::destroy() {
     field_ = nullptr;
 }
 void Renderer::update_authored(const AuthoredScene* scene) {
+    if (!scene_optics_ && scene &&
+        std::any_of(scene->optics.begin(), scene->optics.end(),
+                    [](const auto& o) { return !default_optics(o); }))
+        throw std::invalid_argument("non-default material optics require material-study lighting");
     const auto bytes = authored_program_bytes(scene);
     scene_program_->upload(bytes.data(), bytes.size());
+    if (scene_optics_) {
+        const MaterialOptics fallback_optics;
+        scene_optics_->upload(scene ? scene->optics.data() : &fallback_optics,
+                              scene ? scene->optics.size() * sizeof(MaterialOptics)
+                                    : sizeof(MaterialOptics));
+    }
     const SurfaceMaterial fallback;
     const MaterialPattern plain;
     scene_materials_->upload(scene ? scene->materials.data() : &fallback,
@@ -184,8 +226,13 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     uniforms.material =
         config.clay ? math::Vec4{0.42F, 0.42F, 0.42F, 1} : math::Vec4{0.55F, 0.27F, 0.095F, 0};
     uniforms.quality = {config.roughness, config.shadow_softness, config.ao ? 1.0F : 0.0F, -0.48F};
+    if (study_environment_)
+        uniforms.direct_color = {1.8F, 1.6F, 1.3F, 0};
     uniforms.surface_options = {config.procedural ? 1.0F : 0.0F, config.bump ? 1.0F : 0.0F,
-                                config.material_fast_path ? 1.0F : 0.0F, 0};
+                                config.material_fast_path ? 1.0F : 0.0F,
+                                config.lighting == "material-furnace" ? 1.0F : 0.0F};
+    if (config.lighting == "material-furnace")
+        uniforms.direct_color = math::Vec4{0};
     if (cutter && config.cutter_cue && config.debug == 0) {
         uniforms.cutter = gpu_edit(*cutter);
         uniforms.cutter_style = {cutter_opacity, 0.0025F, 0, 0};
@@ -201,7 +248,9 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     const Camera camera{
         glm::inverse(vp),
         {eye, static_cast<float>(field_->atlas_axis)},
-        {light.primary_light_direction, 0},
+        {study_environment_ ? glm::normalize(math::Vec3{-.35F, .42F, .84F})
+                            : light.primary_light_direction,
+         0},
         {static_cast<float>(config.debug), static_cast<float>(config.shadows),
          config.ground ? 1.0F : 0.0F, 0},
         {glm::normalize(target_point - eye),

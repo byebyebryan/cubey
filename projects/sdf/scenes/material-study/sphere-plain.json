@@ -1,0 +1,45 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / plain",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.38132601143253014,
+        0.4620769996544071,
+        0.39157247774972326
+      ],
+      "roughness": 0.76,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "plain",
+    "shared_material_sha256": "d62784abd7ceed942b3e55e2723825211a2d52613dcf9783f37bcbb51fa32fd5"
+  }
+}

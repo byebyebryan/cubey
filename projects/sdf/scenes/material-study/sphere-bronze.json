@@ -1,0 +1,48 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / bronze",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.6795424696330938,
+        0.386429433787049,
+        0.13843161503245183
+      ],
+      "roughness": 0.32,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "optics": {
+        "metallic": 1
+      }
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "bronze",
+    "shared_material_sha256": "fa504723885c395c7123709859a7dfad71cc4b6256c87f54055935088d0ab7d4"
+  }
+}

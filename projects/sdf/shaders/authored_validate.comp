@@ -4,6 +4,8 @@
 #define AUTHORED_BINDING 0
 #define AUTHORED_MATERIAL_BINDING 1
 #define AUTHORED_PATTERN_BINDING 4
+#define SDF_OPTICS
+#define AUTHORED_OPTICS_BINDING 5
 #include "authored.glsl"
 #include "authored_material.glsl"
 layout(local_size_x=64) in;
@@ -17,9 +19,11 @@ void main() {
     MaterialSample fast=sampleAuthoredMaterial(0u,points[i].xyz,points[i].w,true);
     float error=authoredHeader.x>0u && authoredHeader.y==1u ? max(length(fast.material.base_roughness-surface.material.base_roughness),
         length(fast.height_gradient-surface.height_gradient)) : 0.0;
-    results[i*5u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),error);
-    results[i*5u+1u]=surface.material.base_roughness;
-    results[i*5u+2u]=surface.material.emission;
-    results[i*5u+3u]=vec4(surface.height_gradient,0);
-    results[i*5u+4u]=vec4(materialShadingNormal(normalize(vec3(.2,1,.3)),surface.height_gradient),0);
+    results[i*7u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),error);
+    results[i*7u+1u]=surface.material.base_roughness;
+    results[i*7u+2u]=surface.material.emission;
+    results[i*7u+3u]=vec4(surface.height_gradient,0);
+    results[i*7u+5u]=surface.optics.settings;
+    results[i*7u+6u]=surface.optics.attenuation;
+    results[i*7u+4u]=vec4(materialShadingNormal(normalize(vec3(.2,1,.3)),surface.height_gradient),0);
 }

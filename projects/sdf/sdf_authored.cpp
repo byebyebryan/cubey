@@ -159,6 +159,22 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         if (item.contains("emission"))
             m.emission = {vector(item.at("emission"), 0, 32), 0};
         result.materials.push_back(m);
+        MaterialOptics optics;
+        if (item.contains("optics")) {
+            const auto& o = item.at("optics");
+            optics.settings = {o.value("metallic", 0.0F), o.value("transmission", 0.0F),
+                               o.value("ior", 1.5F), o.value("attenuation_distance", 1.0F)};
+            if (o.contains("attenuation_color"))
+                optics.attenuation = {vector(o.at("attenuation_color")), 0};
+        }
+        validate_material_optics(optics);
+        if (optics.settings.y > 0 &&
+            (json.at("materials").size() != 1 || optics.settings.x != 0 ||
+             m.base_roughness.w != .05F || math::Vec3{m.base_roughness} != math::Vec3{1} ||
+             math::Vec3{m.emission} != math::Vec3{0} || item.contains("procedural")))
+            throw std::invalid_argument("glass requires one plain neutral material, zero "
+                                        "metallic/emission and roughness 0.05");
+        result.optics.push_back(optics);
         MaterialPattern pattern;
         if (item.contains("procedural")) {
             const auto& p = item.at("procedural");
@@ -326,7 +342,8 @@ std::uint64_t authored_geometry_hash(const AuthoredScene& scene) {
     return hash;
 }
 std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
-    if (scene.patterns.size() != scene.materials.size())
+    if (scene.patterns.size() != scene.materials.size() ||
+        scene.optics.size() != scene.materials.size())
         throw std::invalid_argument("authored material and pattern tables disagree");
     auto hash = authored_geometry_hash(scene);
     for (const auto& node : scene.program) {
@@ -351,6 +368,17 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
             for (int i = 0; i < 4; ++i)
                 hash_float(hash, lane[i]);
     }
+    for (std::size_t i = 0; i < scene.optics.size(); ++i) {
+        const auto& optics = scene.optics[i];
+        validate_material_optics(optics);
+        if (default_optics(optics))
+            continue;
+        hash_float(hash, -731.0F); // explicit optics-domain marker; legacy hashes stay exact
+        hash_float(hash, static_cast<float>(i));
+        for (auto lane : {optics.settings, optics.attenuation})
+            for (int c = 0; c < 4; ++c)
+                hash_float(hash, lane[c]);
+    }
     return hash;
 }
 static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& scene, float footprint,
@@ -370,7 +398,8 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
         if (instruction.center_code.w < 10) {
             const auto& m = materials.at(static_cast<unsigned>(instruction.settings.z));
             stack[size++] = {primitive_distance(point, instruction), m.material,
-                             static_cast<unsigned>(i), m.height_gradient};
+                             static_cast<unsigned>(i), m.height_gradient,
+                             scene.optics.at(static_cast<unsigned>(instruction.settings.z))};
         } else {
             const auto b = stack[--size];
             auto& a = stack[size - 1];
@@ -385,6 +414,7 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
                     if (instruction.settings.w >= 0) {
                         const auto& m = materials.at(static_cast<unsigned>(instruction.settings.w));
                         a.material = m.material;
+                        a.optics = scene.optics.at(static_cast<unsigned>(instruction.settings.w));
                         a.height_gradient = m.height_gradient;
                         a.part = static_cast<unsigned>(i);
                     }
@@ -398,6 +428,7 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
                 if (-b.distance > a.distance + 1e-6F && instruction.settings.w >= 0) {
                     const auto& m = materials.at(static_cast<unsigned>(instruction.settings.w));
                     a.material = m.material;
+                    a.optics = scene.optics.at(static_cast<unsigned>(instruction.settings.w));
                     a.height_gradient = m.height_gradient;
                     a.part = static_cast<unsigned>(i);
                 }
@@ -411,9 +442,12 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
                     a.material.base_roughness =
                         glm::mix(b.material.base_roughness, a.material.base_roughness, h);
                     a.material.emission = glm::mix(b.material.emission, a.material.emission, h);
+                    a.optics.settings = glm::mix(b.optics.settings, a.optics.settings, h);
+                    a.optics.attenuation = glm::mix(b.optics.attenuation, a.optics.attenuation, h);
                     a.height_gradient = glm::mix(b.height_gradient, a.height_gradient, h);
                 } else if (b.distance < a.distance - 1e-6F) {
                     a.material = b.material;
+                    a.optics = b.optics;
                     a.height_gradient = b.height_gradient;
                 }
                 if (b.distance < a.distance - 1e-6F)
@@ -441,6 +475,18 @@ std::string serialize_authored_scene(const AuthoredScene& scene) {
                                               m.base_roughness.z};
         json["materials"][i]["roughness"] = m.base_roughness.w;
         json["materials"][i]["emission"] = {m.emission.x, m.emission.y, m.emission.z};
+        const auto& optics = scene.optics.at(i);
+        validate_material_optics(optics);
+        if (default_optics(optics))
+            json["materials"][i].erase("optics");
+        else
+            json["materials"][i]["optics"] = {
+                {"metallic", optics.settings.x},
+                {"transmission", optics.settings.y},
+                {"ior", optics.settings.z},
+                {"attenuation_distance", optics.settings.w},
+                {"attenuation_color",
+                 {optics.attenuation.x, optics.attenuation.y, optics.attenuation.z}}};
         const auto& p = scene.patterns.at(i);
         validate_material_pattern(p);
         if (p.settings.x == 0) {

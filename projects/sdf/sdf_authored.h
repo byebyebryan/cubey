@@ -42,6 +42,13 @@ struct alignas(16) MaterialPattern {
     math::Vec4 offset{0}; // fixed model-space domain offset XYZ, marble body color variation
 };
 static_assert(sizeof(MaterialPattern) == 80);
+struct alignas(16) MaterialOptics {
+    math::Vec4 settings{0, 0, 1.5F, 1}; // metallic, transmission, IOR, attenuation distance
+    math::Vec4 attenuation{1, 1, 1, 0}; // linear RGB transmittance at that distance
+};
+static_assert(sizeof(MaterialOptics) == 32);
+[[nodiscard]] bool default_optics(const MaterialOptics& optics);
+void validate_material_optics(const MaterialOptics& optics);
 struct AuthoredStep {
     std::vector<std::string> nodes;
     std::string label;
@@ -56,6 +63,7 @@ struct AuthoredScene {
     std::vector<std::string> material_names;
     std::vector<SurfaceMaterial> materials;
     std::vector<MaterialPattern> patterns;
+    std::vector<MaterialOptics> optics;
     std::vector<AuthoredStep> history;
     std::size_t leaf_count = 0;
 };
@@ -64,6 +72,7 @@ struct SurfaceSample {
     SurfaceMaterial material;
     std::uint32_t part = 0;
     math::Vec3 height_gradient{0};
+    MaterialOptics optics;
 };
 [[nodiscard]] AuthoredScene parse_authored_scene(std::string_view text);
 [[nodiscard]] AuthoredScene load_authored_scene(const std::filesystem::path& path);

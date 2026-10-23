@@ -318,20 +318,23 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
         scene.materials, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored materials");
     auto patterns = gpu.upload_device_buffer<MaterialPattern>(
         scene.patterns, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored patterns");
+    auto optics = gpu.upload_device_buffer<MaterialOptics>(
+        scene.optics, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored optics");
     for (std::size_t i = 0; i < points.size(); ++i)
         points[i].w = std::array{0.0F, .0005F, .003F, .02F}[i % 4];
     auto point_buffer = gpu.upload_device_buffer<math::Vec4>(
         points, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored points");
     vulkan::Buffer results(
-        device, vulkan::device_local_buffer_config(points.size() * 5 * sizeof(math::Vec4),
+        device, vulkan::device_local_buffer_config(points.size() * 7 * sizeof(math::Vec4),
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
-    const std::array<vulkan::DescriptorSetBindingConfig, 5> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 6> bindings{
         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
-         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
+         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
+         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
     vulkan::DescriptorSetBundle descriptors(device, vulkan::DescriptorSetInfo(bindings));
     vulkan::DescriptorWriteBatch writes;
     writes.storage_buffer(descriptors.set(), 0, program_buffer.handle(), program_buffer.size());
@@ -339,6 +342,7 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
     writes.storage_buffer(descriptors.set(), 2, point_buffer.handle(), point_buffer.size());
     writes.storage_buffer(descriptors.set(), 3, results.handle(), results.size());
     writes.storage_buffer(descriptors.set(), 4, patterns.handle(), patterns.size());
+    writes.storage_buffer(descriptors.set(), 5, optics.handle(), optics.size());
     writes.update(device);
     const std::array layouts{descriptors.layout()};
     const std::array<VkPushConstantRange, 1> push{{{VK_SHADER_STAGE_COMPUTE_BIT, 0, 4}}};
@@ -369,7 +373,7 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
                                          : 2e-5F;
     float max_distance = 0, max_material = 0, max_gradient = 0, max_normal = 0, max_fast = 0;
     for (std::size_t i = 0; i < points.size(); ++i) {
-        std::array<math::Vec4, 5> actual;
+        std::array<math::Vec4, 7> actual;
         std::memcpy(actual.data(), bytes.data() + i * sizeof(actual), sizeof(actual));
         for (const auto& lane : actual)
             for (int channel = 0; channel < 4; ++channel)
@@ -390,6 +394,10 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
                 max_gradient, std::abs(actual[3][channel] - expected.height_gradient[channel]));
             max_normal = std::max(max_normal, std::abs(actual[4][channel] - normal[channel]));
         }
+        for (int channel = 0; channel < 4; ++channel)
+            if (std::abs(actual[5][channel] - expected.optics.settings[channel]) > 2e-5F ||
+                std::abs(actual[6][channel] - expected.optics.attenuation[channel]) > 2e-5F)
+                throw std::runtime_error("authored CPU/GPU optics mismatch");
         max_fast = std::max(max_fast, actual[0].w);
         if (!std::isfinite(actual[0].x) || !std::isfinite(actual[0].y) ||
             static_cast<unsigned>(actual[0].z) != expected.part || max_distance > 2e-5F ||

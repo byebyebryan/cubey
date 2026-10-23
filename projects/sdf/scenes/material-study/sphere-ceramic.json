@@ -1,0 +1,45 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / ceramic",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.03954623527673284,
+        0.20507873639031693,
+        0.184474994500441
+      ],
+      "roughness": 0.22,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "ceramic",
+    "shared_material_sha256": "bacf5c1cfa20dd692facba117827f49034c196798cbad109885dcf4a57d12a4e"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / marble",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.6866853124353135,
+        0.6795424696330938,
+        0.6172065624196511
+      ],
+      "roughness": 0.42,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "procedural": {
+        "type": "marble",
+        "seed": 47,
+        "secondary_color": [
+          0.1301364766903643,
+          0.14126329114027164,
+          0.11443537382697373
+        ],
+        "color_strength": 0.88,
+        "roughness_variation": 0.055,
+        "bump_strength": 8e-05,
+        "vein_direction": [
+          0.67,
+          0.63,
+          0.19
+        ],
+        "offset": [
+          0.17,
+          -0.08,
+          0.13
+        ],
+        "color_variation": 0.08,
+        "scale": 6,
+        "vein_frequency": 7.25,
+        "vein_width": 0.07,
+        "warp_strength": 5.5,
+        "grain_scale": 280
+      }
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "marble",
+    "shared_material_sha256": "152e95063590eb84e353bdf1eaad15cb2d4410ad98baa7d904401e39d7dfd5e4"
+  }
+}

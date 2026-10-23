@@ -1,0 +1,45 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Material study / sphere / clay",
+  "materials": [
+    {
+      "name": "body",
+      "base_color": [
+        0.4793201831008268,
+        0.17464740365558504,
+        0.08650046203654976
+      ],
+      "roughness": 0.9,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "sphere",
+    "name": "material-sphere",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "radius": 0.25,
+    "material": "body"
+  },
+  "history": [
+    {
+      "node": "material-sphere",
+      "label": "Establish the material sphere",
+      "seconds": 1
+    }
+  ],
+  "authoring": {
+    "generator": "cubey-material-study-v1",
+    "subject": "sphere",
+    "material": "clay",
+    "shared_material_sha256": "1b3180a38ac820d2663a988c2aa32e4cbf7ae6e6613c69172c3eca150dea6085"
+  }
+}

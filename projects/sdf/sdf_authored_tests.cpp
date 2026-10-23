@@ -47,6 +47,39 @@ void rejected(const Json& json) {
 } // namespace
 int main() {
     const auto ball = scene(sphere("ball", {}, .2F));
+    auto optical_json = document(sphere("optical-ball", {}, .2F));
+    optical_json["materials"][0]["optics"] = {{"metallic", 0}, {"ior", 1.5}};
+    const auto defaults = parse_authored_scene(optical_json.dump());
+    require(authored_appearance_hash(defaults) == authored_appearance_hash(ball),
+            "default optics changed legacy appearance identity");
+    require(!Json::parse(serialize_authored_scene(defaults))["materials"][0].contains("optics"),
+            "default optics leaked into legacy exports");
+    optical_json["materials"][0]["optics"]["metallic"] = 1;
+    const auto metal = parse_authored_scene(optical_json.dump());
+    require(authored_geometry_hash(metal) == authored_geometry_hash(ball) &&
+                authored_appearance_hash(metal) != authored_appearance_hash(ball),
+            "optics changed geometry or lost appearance identity");
+    close(authored_surface({}, metal).optics.settings.x, 1);
+    close(parse_authored_scene(serialize_authored_scene(metal)).optics[0].settings.x, 1);
+    for (auto bad : {-.1, 1.1}) {
+        auto invalid_optics = optical_json;
+        invalid_optics["materials"][0]["optics"]["metallic"] = bad;
+        rejected(invalid_optics);
+    }
+    auto invalid_optics = optical_json;
+    invalid_optics["materials"][0]["optics"]["transmission"] = .5;
+    rejected(invalid_optics);
+    invalid_optics = optical_json;
+    invalid_optics["materials"][0]["optics"]["attenuation_color"] = {0, 1, 1};
+    rejected(invalid_optics);
+    auto blend_json = document(
+        {{"type", "smooth-union"},
+         {"name", "blend"},
+         {"radius", .1},
+         {"children", {sphere("a", {-.1F, 0, 0}, .2F), sphere("b", {.1F, 0, 0}, .2F, "blue")}}});
+    blend_json["materials"][1]["optics"] = {{"metallic", 1}};
+    close(authored_surface({}, parse_authored_scene(blend_json.dump())).optics.settings.x, .5F);
+
     auto patterned_json = document(sphere("pattern-ball", {}, .2F));
     patterned_json["materials"][0]["procedural"] = {{"type", "marble"},
                                                     {"seed", 73},

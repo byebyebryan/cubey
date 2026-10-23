@@ -5,6 +5,23 @@
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
+bool default_optics(const MaterialOptics& optics) {
+    const MaterialOptics defaults;
+    return optics.settings == defaults.settings && optics.attenuation == defaults.attenuation;
+}
+void validate_material_optics(const MaterialOptics& optics) {
+    for (int i = 0; i < 4; ++i)
+        if (!std::isfinite(optics.settings[i]) || !std::isfinite(optics.attenuation[i]))
+            throw std::invalid_argument("nonfinite material optics");
+    if (optics.settings.x < 0 || optics.settings.x > 1 ||
+        (optics.settings.y != 0 && optics.settings.y != 1) || optics.settings.z < 1 ||
+        optics.settings.z > 2.5F || optics.settings.w <= 0 || optics.attenuation.w != 0)
+        throw std::invalid_argument("invalid material optics");
+    for (int i = 0; i < 3; ++i)
+        if (optics.attenuation[i] <= 0 || optics.attenuation[i] > 1)
+            throw std::invalid_argument("invalid material attenuation");
+}
+
 namespace {
 float fade(float footprint, float frequency) {
     return 1 - glm::smoothstep(.15F, .65F, footprint * frequency);

@@ -39,6 +39,16 @@ class App {
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
         if (authored_)
             validate_authored_motion(*authored_);
+        if (config_.lighting != "atmosphere" && !authored_)
+            throw std::invalid_argument("material-study lighting requires an authored scene");
+        if (authored_ && config_.lighting == "atmosphere" &&
+            std::any_of(authored_->optics.begin(), authored_->optics.end(),
+                        [](const auto& o) { return !default_optics(o); }))
+            throw std::invalid_argument(
+                "non-default material optics require material-study lighting");
+        if (authored_ && std::any_of(authored_->optics.begin(), authored_->optics.end(),
+                                     [](const auto& o) { return o.settings.y > 0; }))
+            throw std::invalid_argument("glass transport is not enabled in the opaque checkpoint");
         if (!authored_ && !config_.export_authored_path.empty())
             throw std::invalid_argument("--export-authored requires --authored-scene");
         if (config_.validate_history && (!authored_ || authored_->history.empty()))
@@ -295,6 +305,12 @@ class App {
                     if (field_->stats().build_count != before)
                         throw std::runtime_error("material-only edit rebuilt distance bricks");
                     std::cout << "sdf: material-only cache check passed builds=" << before << '\n';
+                    auto optical_edit = *displayed_authored_;
+                    optical_edit.optics[0].attenuation.x *= .9F;
+                    field_->build(optical_edit);
+                    if (field_->stats().build_count != before)
+                        throw std::runtime_error("optics-only edit rebuilt distance bricks");
+                    std::cout << "sdf: optics-only cache check passed builds=" << before << '\n';
                     if (std::any_of(authored_->patterns.begin(), authored_->patterns.end(),
                                     [](const auto& p) { return p.settings.x != 0; })) {
                         auto changed = *displayed_authored_;
@@ -339,7 +355,7 @@ class App {
                 std::cout << "sdf: recipe hash=" << std::hex << recipe_hash(recipe_) << std::dec
                           << '\n';
         }
-        renderer_.create(device, target.extent, target.format, slots, *field_, config_,
+        renderer_.create(device, gpu, target.extent, target.format, slots, *field_, config_,
                          displayed_authored_ ? &*displayed_authored_ : nullptr);
     }
     void prepare_time(vulkan::Device& device, double time, bool force = false) {
@@ -456,7 +472,7 @@ class App {
             if (ImGui::Combo("Shadows", &shadows, shadow_names, 3))
                 config_.shadows = static_cast<std::uint32_t>(shadows);
             ImGui::Checkbox("Local ambient occlusion", &config_.ao);
-            ImGui::Checkbox("Clay inspection", &config_.clay);
+            ImGui::Checkbox("Neutral inspection", &config_.clay);
             ImGui::BeginDisabled(authored_ && !authored_build());
             ImGui::Checkbox(authored_ ? "Cut preview" : "Cutter bounds cue", &config_.cutter_cue);
             ImGui::EndDisabled();
@@ -464,7 +480,7 @@ class App {
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
             ImGui::SliderFloat("Exposure", &config_.exposure, -3, 3, "%.1f stops");
             ImGui::BeginDisabled(authored_ && !config_.clay);
-            ImGui::SliderFloat(authored_ ? "Clay roughness" : "Roughness", &config_.roughness,
+            ImGui::SliderFloat(authored_ ? "Inspection roughness" : "Roughness", &config_.roughness,
                                0.05F, 1);
             ImGui::EndDisabled();
             ImGui::SliderFloat("Focus height", &config_.target_y, -0.3F, 0.3F);
@@ -479,6 +495,7 @@ class App {
                     ImGui::PushID(static_cast<int>(i));
                     auto& material = authored_->materials[i];
                     if (ImGui::TreeNode(authored_->material_names[i].c_str())) {
+                        ImGui::BeginDisabled(authored_->optics[i].settings.y > 0);
                         materials_changed_ |=
                             ImGui::ColorEdit3("Base color", &material.base_roughness.x);
                         materials_changed_ |=
@@ -489,6 +506,7 @@ class App {
                         for (int channel = 0; channel < 3; ++channel)
                             material.emission[channel] =
                                 std::clamp(material.emission[channel], 0.0F, 32.0F);
+                        ImGui::EndDisabled();
                         auto& pattern = authored_->patterns[i];
                         if (pattern.settings.x > 0) {
                             ImGui::Text("Procedural: %s",

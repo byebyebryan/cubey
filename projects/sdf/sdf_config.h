@@ -13,6 +13,7 @@ struct SdfConfig {
     std::filesystem::path recipe_path, export_recipe_path;
     std::filesystem::path authored_path, export_authored_path;
     std::string scene = "sticks";
+    std::string lighting = "atmosphere";
     std::string cutter_mode = "original";
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
@@ -52,6 +53,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto cutter_mode =
         option("cutter-mode", "Cutter treatment for negative-stick-ball", config::ValueType::Enum);
     cutter_mode.enum_values = {"original", "intro-bores", "through"};
+    auto lighting = option("lighting", "Lighting route", config::ValueType::Enum);
+    lighting.enum_values = {"atmosphere", "material-study", "material-furnace"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
     motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
@@ -87,6 +90,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
+        .bind(lighting, c.lighting)
         .bind(cutter_mode, c.cutter_mode)
         .bind(motion, c.timeline.motion)
         .bind(option("duration", "Logical clip duration in seconds", config::ValueType::Float),
@@ -134,7 +138,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
                      config::ValueType::Bool),
               c.validate_history)
         .bind(ao, c.ao)
-        .bind(option("clay", "Neutral clay material for shape inspection", config::ValueType::Bool),
+        .bind(option("clay", "Neutral inspection material (legacy clay)", config::ValueType::Bool),
               c.clay)
         .bind(option("supersample", "Internal resolution multiplier (1 or 2)",
                      config::ValueType::UInt32),

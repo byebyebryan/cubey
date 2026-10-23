@@ -18,7 +18,15 @@ layout(set=0,binding=2) uniform Lighting {
     vec4 preview_style;
     vec4 surface_options;
 } lighting;
+#ifdef SDF_MATERIAL_STUDY
+layout(set=0,binding=8) uniform samplerCube studyDiffuse;
+layout(set=0,binding=9) uniform samplerCube studySpecular;
+layout(set=0,binding=10) uniform sampler2D studyDfg;
+#endif
 vec3 skyRadiance(vec3 direction) {
+#ifdef SDF_MATERIAL_STUDY
+    return lighting.surface_options.w>.5 ? vec3(1) : textureLod(studySpecular,direction,0).rgb;
+#else
     AtmosphereParams a=lighting.atmosphere;
     CubeyAtmosphereMedium medium=CubeyAtmosphereMedium(vec3(0),a.radii_ground.x,a.radii_ground.y,
         a.rayleigh.xyz,a.rayleigh.w,a.mie.x,a.mie.y,a.mie.z,a.mie.w,a.ozone.xyz,a.ozone.w,
@@ -28,6 +36,7 @@ vec3 skyRadiance(vec3 direction) {
     direction=sky_background_sample_direction(direction,origin,vec3(0));
     CubeyAtmosphereSample sampleValue=cubey_atmosphere_integrate_view(medium,origin,direction,-1.0);
     return sampleValue.color;
+#endif
 }
 vec3 environmentIrradiance(vec3 n) {
     float x=n.x,y=n.y,z=n.z;
@@ -67,7 +76,42 @@ float environmentVisibility(vec3 p,vec3 n,inout bool exhausted) {
     }
     return visibility*0.25;
 }
+#ifdef SDF_MATERIAL_STUDY
+vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprint,inout bool exhausted) {
+    MaterialSample sampleValue=authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,lighting.surface_options.z>.5);
+    MaterialOptics optics=authoredHeader.y==1u ? materialOptics(0u) : authoredSurface(p,footprint,lighting.surface_options.x>.5).optics;
+    vec3 base=sampleValue.material.base_roughness.rgb;
+    float roughness=sampleValue.material.base_roughness.a;
+    vec3 n=lighting.surface_options.y>.5 ? materialShadingNormal(geometricNormal,sampleValue.height_gradient) : geometricNormal;
+    if(lighting.material.w>.5) { base=lighting.material.rgb;roughness=lighting.quality.x;n=geometricNormal;optics=MaterialOptics(vec4(0,0,1.5,1),vec4(1,1,1,0)); }
+    float metallic=optics.settings.x,ior=optics.settings.z;
+    float dielectric=pow((ior-1)/(ior+1),2);
+    vec3 f0=mix(vec3(dielectric),base,metallic);
+    vec3 l=camera.sunlight.xyz,halfVector=l+viewDirection;
+    vec3 h=dot(halfVector,halfVector)>1e-8 ? normalize(halfVector) : n;
+    float nl=max(dot(n,l),0),nv=max(dot(n,viewDirection),.001);
+    vec3 dfg=texture(studyDfg,vec2(nv,roughness)).rgb;
+    vec3 compensation=cubey_pbr_energy_compensation(f0,dfg.b);
+    vec3 f=cubey_pbr_fresnel_schlick(max(dot(h,viewDirection),0),f0);
+    float d=cubey_pbr_distribution_ggx(max(dot(n,h),0),roughness);
+    float v=cubey_pbr_visibility_smith_ggx_correlated(nv,nl,roughness);
+    float shadow=shadowVisibility(p,geometricNormal,l,int(camera.options.y+.5),exhausted);
+    vec3 diffuse=base*(1-metallic);
+    vec3 direct=((1-f)*diffuse/3.141592654+f*d*v*compensation)*lighting.direct_color.rgb*nl*shadow;
+    vec3 fv=cubey_pbr_fresnel_schlick(nv,f0);
+    float visibility=environmentVisibility(p,geometricNormal,exhausted);
+    vec3 indirect=(1-fv)*diffuse*(lighting.surface_options.w>.5 ? vec3(1) : texture(studyDiffuse,n).rgb)*visibility;
+    vec3 reflected=lighting.surface_options.w>.5 ? vec3(1) : textureLod(studySpecular,reflect(-viewDirection,n),roughness*4).rgb;
+    vec3 result=direct+indirect+reflected*(f0*dfg.x+dfg.y)*compensation+sampleValue.material.emission.rgb;
+    // Furnace mode is a diagnostic: flag excess energy before HDR output clips it.
+    if (lighting.surface_options.w>.5 && any(greaterThan(result,vec3(1.02)))) return vec3(20,0,20);
+    return result;
+}
+#endif
 vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprint,inout bool exhausted) {
+#ifdef SDF_MATERIAL_STUDY
+    return studyRadiance(p,n,viewDirection,footprint,exhausted);
+#else
     vec3 lightDirection=camera.sunlight.xyz;
     float visibility=shadowVisibility(p,n,lightDirection,int(camera.options.y+0.5),exhausted);
     float ambientVisibility=environmentVisibility(p,n,exhausted);
@@ -94,4 +138,5 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     vec3 direct=((1.0-f)*base/3.141592654+f*d*v)*lighting.direct_color.xyz*nl*visibility;
     vec3 ambient=base*environmentIrradiance(n)/3.141592654*ambientVisibility;
     return direct+ambient+emission;
+#endif
 }
