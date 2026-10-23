@@ -2,8 +2,8 @@
 
 Date: 2026-10-23
 
-Status: native implementation and comparison complete; report delivery closeout
-is being recorded below. See the
+Status: complete with clear sky ready for visual review and clouds explicitly
+experimental. See the
 [reviewed plan](sdf-environment-presentation-plan.md) for scope and gates.
 Commits remain local; no push is authorized for this loop.
 
@@ -153,3 +153,19 @@ Report packaging checks cover all 24 environment/material/view control
 combinations, film visibility, diagnostic/table construction, JavaScript
 syntax and relative asset paths. This is source/interaction-logic evidence,
 not a replacement for a connected browser layout or playback review.
+
+
+## Published delivery
+
+The [shared sky, glass budgets and frozen-cloud report](http://starship:8787/reports/e4177f559cdff0f9f13544c57affe21ef70f6c3db3afe7aad74a64afd582ac1c/index.html)
+contains the 24-case gallery, 48 stills, six native movies, calibration controls,
+selected diagnostic masks, numeric sweeps, profiles, native interaction receipts
+and source snapshots. The immutable bundle is 86,329,668 bytes (82.33 MiB),
+575 files. Every file was fetched over HTTP from Starship and matched its local
+SHA-256. The publisher reused the shared report server. Delivery receipt:
+`outputs/sdf/environment-delivery.json`.
+
+Carbon SSH timed out at connection establishment, so Carbon client reachability
+remains unverified. Browser discovery likewise had no connected browser. These
+limits do not change the native validation or Starship served-byte checks.
+Commits remain local; no push occurred.

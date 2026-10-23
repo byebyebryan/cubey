@@ -625,7 +625,9 @@ build/release/projects/sdf/sdf --config projects/sdf/presets/environment-study/g
 
 The `environment-study/` presets compare fixed reference, clear low sun and
 experimental frozen broken cumulus on bronze, glass, marble and terracotta.
-All reuse accepted scene/material files and exposure +0.6. The new low-sun
+The [paired environment report](http://starship:8787/reports/e4177f559cdff0f9f13544c57affe21ef70f6c3db3afe7aad74a64afd582ac1c/index.html)
+contains 48 stills, six native orbits and the scoped performance/validation
+evidence. All reuse accepted scene/material files and exposure +0.6. The new low-sun
 routes use elevation 8 degrees and azimuth -155 degrees. Clear sky is the main
 presentation; clouds retain visible horizon/sampling artifacts and are an
 integration experiment. No ground plane or terrain is added. Shared distant
