@@ -12,7 +12,12 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('comparison','previous','foundation','profile','output'):
         parser.add_argument('--'+name,type=Path,required=True)
+    parser.add_argument('--swatch',type=Path,help='Current native material-swatch receipt')
+    parser.add_argument('--previous-swatch',type=Path,help='Swatch captured before changing evaluation')
     args=parser.parse_args();root=Path(__file__).resolve().parents[3]
+    if bool(args.swatch)!=bool(args.previous_swatch):
+        parser.error('--swatch and --previous-swatch must be provided together')
+    regions=bool(args.swatch)
     read=lambda p:json.loads(p.read_text())
     sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
     c=read(args.comparison/'manifest.json');old=read(args.previous/'manifest.json')
@@ -56,16 +61,39 @@ def main():
     data=dict(views=common,current_views=c['views'],binary_sha256=c['binary_sha256'],
         shader_sha256=c['shader_sha256'],foundation_runs=len(f['runs']),max_color_error=max_color,
         checks=f['checks'],performance=p['runs'],source_commit=c['source_commit'])
+    if regions:
+        s=read(args.swatch/'manifest.json');previous_s=read(args.previous_swatch/'manifest.json')
+        for key in ('binary_sha256','shader_sha256','device'):
+            assert s[key]==c[key] and previous_s[key]==old[key]
+        assert s['paired_settings_match'] and previous_s['paired_settings_match']
+        assert s['views']==previous_s['views']
+        for directory,receipt in ((args.swatch,s),(args.previous_swatch,previous_s)):
+            assert set(receipt['versions'])==names
+            for name,row in receipt['versions'].items():
+                assert sha(directory/name/'source/scene.json')==row['scene_sha256']
+                for run in row['runs'].values():assert sha(directory/run['capture'])==run['sha256']
+        for name in names:
+            assert s['versions'][name]['scene_sha256']==previous_s['versions'][name]['scene_sha256']
+            for view in s['views']:
+                stem=view['name']
+                assert settings(args.swatch/name/f'configs/{stem}.json')==settings(args.previous_swatch/name/f'configs/{stem}.json')
+                if name=='before':
+                    assert (args.swatch/name/f'captures/{stem}.png').read_bytes()==(args.previous_swatch/name/f'captures/{stem}.png').read_bytes()
+        assert s['versions']['after']['runs']['unlit']['sha256']!=previous_s['versions']['after']['runs']['unlit']['sha256']
+        data['swatch_views']=s['views']
     out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
     for source,target in ((args.comparison,'comparison'),(args.previous,'previous'),
                           (args.foundation,'foundation'),(args.profile,'profile')):
         shutil.copytree(source,out/target)
+    if regions:
+        shutil.copytree(args.swatch,out/'swatch');shutil.copytree(args.previous_swatch,out/'previous-swatch')
     implementation=out/'implementation';implementation.mkdir()
     for source in ('projects/sdf/sdf_material.cpp','projects/sdf/sdf_material_tests.cpp',
                    'projects/sdf/shaders/surface_pattern.glsl','projects/sdf/tools/qualify_materials.py'):
         shutil.copy2(root/source,implementation/Path(source).name)
     (implementation/'hashes.json').write_text(json.dumps({f.name:sha(f) for f in sorted(implementation.iterdir())},indent=2)+'\n')
-    shutil.copy2(root/'docs/notes/sdf-marble-minerals-plan.md',out/'plan.md')
+    plan='sdf-marble-regions-plan.md' if regions else 'sdf-marble-minerals-plan.md'
+    shutil.copy2(root/'docs/notes'/plan,out/'plan.md')
     shutil.copy2(__file__,out/'build_report.py')
     (out/'review.json').write_text(json.dumps(data,indent=2)+'\n')
     neutral=p['runs']['before']['gpu_frame'];colored=p['runs']['subtle']['gpu_frame']
@@ -104,6 +132,43 @@ $('play').addEventListener('click',async()=>{try{const films=[$('old-film'),$('n
     for key,value in dict(FIGURES=figures,RUNS=str(len(f['runs'])),ERROR=str(max_color),
                           TIMINGS=timings,DATA=json.dumps(data).replace('</','<\\/')).items():
         html=html.replace('__'+key+'__',value)
+    if regions:
+        changes={
+            'Cubey SDF — coherent marble color':'Cubey SDF — marble mineral regions',
+            'Color follows the veins.':'Color beyond the veins.',
+            'Warm cores, cream edges and occasional wider pockets now come from the existing marbling. The material keeps pale intervals and gray-only veins. Noise selects deposits and breaks up their edges.':
+                'Cream regions now have their own boundaries and internal streaks, sharing a broad flow with the marbling. Narrow veins can cross pale and cream stone. The study starts with a flat native SDF slab, then checks the same material on the guardian.',
+            'Previous · pockets biased toward veins':'Previous · warmth confined to vein paths',
+            'Current · colored cores and attached cream edges':'Current · partially correlated mineral regions',
+            'Previous independent cream pockets, stronger face detail':'Previous vein-bound color, stronger face detail',
+            'Current connected mineral color, stronger face detail':'Current mineral regions, stronger face detail',
+            'One mineral structure.':'Shared flow, different boundaries.',
+            'The main warped vein coordinate places both colored cores and surrounding cream. Noise selects warm segments, widens some edges into pockets and varies their boundaries. Existing thin secondary veins carry some warmth too. Dark cores can take color, without the former suppression factor.':
+                'Independent seeded fields place the cream regions and their finer directional streaks. They share the existing large-scale deformation with the veins. Some warm seams remain, while color also occurs away from either narrow vein family. Region gradients include the deformation and anisotropic scaling; pixel footprints filter the spatial scales and boundaries.',
+            'The first native trial established the color/vein relationship but its warm edges were too smooth. A finer, filtered noise scale now varies those edges, and the existing secondary wisps carry more warmth. Default and stronger shaded/unlit views and the rear were inspected. The underlying marbling remains smooth and contour-like in places; this pass preserves the user\'s accepted density and flow. Human artistic acceptance remains pending.':
+                'The first swatch trial was too broad and soft. The second used smaller, more defined regions; the selected third trial adds finer directional interior streaks. Swatch views, default/stronger guardian views and motion frames were inspected. The smooth, closed vein topology remains a visible limitation. This is a stylized trial based on reference relationships, not a measured reproduction; human artistic acceptance is pending.',
+            'A controlled unwarped field checks that warm and gray-only vein cores both occur and that samples well between both vein families retain the pale material.':
+                'The revised controlled field requires both warm and pale samples away from the narrow main and secondary vein paths. Warm and gray-only core samples still occur. The previous requirement that every inter-vein sample stay pale has been removed.',
+            'Eighteen current stills, eight structural probes and all 720 current orbit frames pass.':
+                'Eighteen current guardian stills, twelve current swatch stills, eight structural probes and all 720 current orbit frames pass. All ten neutral guardian/swatch images match their older counterparts exactly.',
+            'shows vein edges widening into irregular pockets':'shows broad cream regions and isolated flecks alongside narrow veins',
+            'http://starship:8787/reports/2fe7ca71500f4f1a4318deafb4429b80d10cb192f38a5776a1e1414520b4eb96/':
+                'http://starship:8787/reports/0feff6f5a8207ee1f3ed7b6933cbb434b55ff191e8365f248e414699972978ec/',
+            'Previous mineral-pocket review':'Previous vein-bound color review',
+        }
+        for before,after in changes.items():
+            assert before in html,before
+            html=html.replace(before,after)
+        swatches='''<section><h2>Start with a flat material.</h2>
+<figure style="max-width:800px;margin-bottom:24px"><a href="https://www.antolini.com/en/c3/exclusive-collection/m1559/calacatta-macchia-vecchia-original"><img style="aspect-ratio:3/2;object-fit:contain" src="https://www.antolini.com/image/imgfull1-calacatta-macchia-vecchia-originalcu263.jpg" alt="Antolini Macchia Vecchia close-up with thin dark lines, broader pale-gold regions and isolated flecks"></a><figcaption>Selected reference close-up · photograph hosted by <a href="https://www.antolini.com/en/c3/exclusive-collection/m1559/calacatta-macchia-vecchia-original">Antolini</a>. Compare the wider cream regions, thin lines and small flecks. This guides shape relationships; it is not a calibrated color or physical-scale fit.</figcaption></figure>
+<label for="swatch-view">Native swatch view</label><select id="swatch-view"></select>
+<div class="pair"><figure><a id="old-swatch-link" href="previous-swatch/after/captures/unlit.png"><img id="old-swatch" src="previous-swatch/after/captures/unlit.png" alt="Previous vein-bound marble on a flat slab"></a><figcaption>Before · native SDF slab</figcaption></figure><figure><a id="new-swatch-link" href="swatch/after/captures/unlit.png"><img id="new-swatch" src="swatch/after/captures/unlit.png" alt="Current mineral regions on the same flat slab"></a><figcaption>Current · same coordinates, camera and amount</figcaption></figure></div>
+<p class="note">The amount selector above controls both comparisons. Unlit removes lighting; close and distant views inspect the same volume at different footprints. All four zero-amount swatch PNGs match the old renderer exactly. These are native slab captures, with no image maps.</p>
+<p><a href="swatch/manifest.json">Current swatch receipt</a> · <a href="previous-swatch/manifest.json">Before-change swatch receipt</a> · <a href="swatch/authoring/capture_marble_swatch.py">Swatch capture driver</a></p></section><h2>On the guardian.</h2>'''
+        html=html.replace('<select id="view"></select></div></div>', '<select id="view"></select></div></div>'+swatches)
+        extra="""function showSwatches(){const version=$('amount').value,view=$('swatch-view').value;for(const [id,folder] of [['old','previous-swatch'],['new','swatch']]){const path=`${folder}/${version}/captures/${view}.png`;$(id+'-swatch').src=path;$(id+'-swatch').alt=`${id} marble swatch, ${version}, ${view}`;$(id+'-swatch-link').href=path;}}
+$('swatch-view').replaceChildren(...data.swatch_views.map(v=>new Option(v.label,v.name)));$('swatch-view').value='unlit';$('swatch-view').addEventListener('change',showSwatches);$('amount').addEventListener('change',showSwatches);showSwatches();"""
+        html=html.replace('</script>',extra+'</script>')
     (out/'index.html').write_text(html)
     assets={str(f.relative_to(out)):dict(bytes=f.stat().st_size,sha256=sha(f)) for f in sorted(out.rglob('*')) if f.is_file()}
     (out/'assets.json').write_text(json.dumps(assets,indent=2)+'\n')

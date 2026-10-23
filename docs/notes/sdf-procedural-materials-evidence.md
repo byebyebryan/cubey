@@ -20,8 +20,12 @@ User review then retained cream and rejected the bluish cool-gray end; the
 [original and cream palette](#original-and-cream-palette) replaced that endpoint.
 Further review found the soft placement stain-like; the
 [defined mineral pockets](#defined-mineral-pockets) improved the placement.
-The [coherent mineral color](#coherent-mineral-color) now derives colored
-cores, cream shoulders and pockets directly from the marbling.
+The [coherent mineral color](#coherent-mineral-color) derived colored cores,
+cream shoulders and pockets directly from the marbling. User review found
+that relationship too strict; the latest
+[partially correlated mineral regions](#partially-correlated-mineral-regions)
+give cream regions their own boundaries and internal streaks, first reviewed
+on flat native swatches and then on the guardian.
 
 ## Result and scope
 
@@ -709,3 +713,109 @@ All 265 served files match the local bytes and hashes, recorded in
 `marble-connected-served-review.json`. Five documentation/layout checks and
 all 18 scoped SDF CLI recipes pass. The plan, implementation and presentation
 are committed as local milestones; no push is included.
+
+## Partially correlated mineral regions
+
+User review found the preceding color placement too strictly tied to veins.
+The [revised plan](sdf-marble-regions-plan.md), committed in `0707df80`, starts
+with native flat SDF swatches before reviewing the same material on the
+guardian. The selected implementation is committed in `6d870222`. The
+[swatch and guardian review](http://starship:8787/reports/0a7461860a17aeccae6adc3f5e16cdafa358f9d28031cbd5b6fa3299ceb2a1ca/)
+pairs the previous vein-bound color with the new regions at identical amounts,
+scene parameters, coordinates, cameras and lighting. Saved variation remains
+0.08; the initial 0.16 comparison makes the placement easier to inspect.
+
+### Reference and selected trial
+
+The primary reference is Antolini's
+[Macchia Vecchia Original](https://www.antolini.com/en/c3/exclusive-collection/m1559/calacatta-macchia-vecchia-original)
+close-up: broad cream areas, narrow dark lines and isolated flecks have
+different boundaries. Supplementary
+[Cremo Fantasy](https://www.antolini.com/en/c6/natural-stone-collection/m2264/calacatta-cremo-fantasy)
+and [Nuvolato](https://www.antolini.com/en/c6/natural-stone-collection/m2253/calacatta-nuvolato)
+photographs show directional bands and larger regions crossed by separate
+lines. Partial correlation is an inferred procedural direction from those
+photographs, not a measured color/scale fit or geological reconstruction.
+
+The pre-edit binary was captured on a rounded flat SDF slab at amounts
+0 / 0.08 / 0.16, using unlit, shaded, close and distant views. Its identity is
+the previous `ea0046e1…` binary recorded in the preceding section. The first
+new swatch trial was broad and soft. The second used smaller, more defined
+regions but had flatter interiors. The selected third trial adds finer
+directional interior streaks. Native swatches, shaded and unlit guardian
+details, the default rear view and extracted motion frames were inspected.
+The result remains stylized: the existing smooth, closed vein topology is
+still visible, and human artistic acceptance remains pending.
+
+### Evaluation and compatibility
+
+Cream regions use independently seeded, anisotropic fields for their extent
+and internal streaks. They share the veins' larger deformation, rather than
+being restricted to the narrow main/secondary masks. An independent fine
+scale breaks up their edges. A weighted union retains selected warm seams,
+while allowing veins through pale and cream areas. Analytic derivatives
+include the common deformation and anisotropic scaling. Each spatial scale
+and the region threshold use the conservative pixel footprint.
+
+The revised controlled spatial test requires both warm and pale samples away
+from either narrow vein family. Warm and gray-only core samples still occur.
+The former requirement that every inter-vein sample remain exactly pale has
+been removed. Existing bounded, finite, cream-only color, filtering and
+unchanged roughness/gradient checks remain. Five focused CPU suites pass.
+
+All 40 native foundation render/validation runs pass. Maximum observed
+CPU/GPU color error is 0.0000432134, within the unchanged 0.0002 bound;
+geometry/gradient/normal bounds remain 0.00002. Neutral/plain regressions,
+deterministic seeds, shortcut/full equality, export/reload, mixed ownership,
+short cut histories and one-build appearance edits pass. All four named
+detail choices pass at maximum 0.25 color amount with another seed.
+Tint-on/off roughness and shading-normal PNGs match exactly. Limestone,
+the 80-byte pattern record, palette endpoints, detail controls, scene fields,
+geometry/history and material-only caching retain their contracts.
+
+There are 18 current guardian stills and 12 selected current swatch stills.
+All ten zero-amount guardian/swatch PNGs match their previous counterparts
+exactly. Eight structural probes and all 720 current orbit frames pass;
+old films retain their original receipts. Guardian geometry remains
+`d5fc89f0abe076f0`: 1,011 primitives, 2,021 instructions and 65 operations.
+Full guardian history and unchanged desktop controls were not rerun for this
+color-only edit. There are no image maps, new volumes or lighting changes.
+
+### Cost, identity and delivery
+
+Fresh RTX 5070 Ti / driver 610.57.04 profiles use 1920×1080, supersample 1,
+hard shadows, 180 submitted frames / 30 warmup and 148 completed GPU samples
+per case. Shading-plus-post medians for variation 0 / 0.08 / 0.16 are
+1.781056 / 1.799376 / 1.794608 ms; p95 values are
+1.837152 / 1.851520 / 1.844128 ms. Cold field builds are
+916.685 / 917.307 / 916.864 ms. No competing owned GPU job ran. These compare
+amounts within the revised build, not old/new shader performance. Field
+construction, readback and encoding are excluded from GPU frame measurements.
+
+The final native binary SHA-256 is
+`ba2ae1e8fb00b99e914943a73c62942343b16f3284e0497b272fdf01e0b1e037`.
+Foundation, selected swatch, guardian comparison and profile receipts agree
+on that identity and all shader hashes. Foundation qualification preceded
+the implementation commit; its artifact hashes match the committed source
+snapshots and final captures. The report includes exact implementation and
+capture-driver snapshots.
+
+Artifacts under `outputs/sdf/` include `marble-regions-swatch-before/`, three
+retained swatch trials (selected: `marble-regions-swatch-trial-c/`),
+`marble-regions-comparison/`, `marble-regions-foundation/`,
+`marble-regions-profile/`, `marble-regions-motion-review/` and the
+364-file / 57,913,975-byte `marble-regions-report/`.
+The extended `projects/sdf/tools/marble_mineral_report.py` verifies native
+capture hashes, matching old/new scenes/settings and exact neutral images
+before packaging the swatches ahead of the guardian comparison.
+
+All 32 static local targets, 60 dynamic image targets and JavaScript syntax
+checks pass, recorded in `marble-regions-static-review.json`. The attributed
+reference close-up is loaded from Antolini's server, rather than copied into
+the published bundle; a fresh download matched the previously inspected
+photograph. Browser discovery found no connected browser, so browser
+interaction review remains unverified. All 364 served local files match
+their source bytes/hashes, recorded in `marble-regions-served-review.json`.
+Five documentation/layout checks and all 18 scoped SDF CLI recipes pass.
+Plan, implementation and presentation are local commit milestones; no push
+is included.

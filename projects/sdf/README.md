@@ -183,15 +183,22 @@ User review then found the soft placement stain-like. The
 [mineral-pocket review](http://starship:8787/reports/2fe7ca71500f4f1a4318deafb4429b80d10cb192f38a5776a1e1414520b4eb96/)
 compares the broad tint with smaller, more defined cream pockets that favor
 the warped vein bands. It includes natural-marble references, a same-amount
-0.16 pair, neutral/default/stronger views and native turntables. The current
-follow-up connects the color directly to the marbling: warm vein cores,
+0.16 pair, neutral/default/stronger views and native turntables. A later
+follow-up connected the color directly to the marbling: warm vein cores,
 irregular cream shoulders, attached pockets and colored secondary wisps.
 The [coherent-color plan](../../docs/notes/sdf-marble-minerals-plan.md) defines
 the boundary; the
 [native review](http://starship:8787/reports/0feff6f5a8207ee1f3ed7b6933cbb434b55ff191e8365f248e414699972978ec/)
 pairs both revisions at equal amounts and adds an unlit face close-up.
-Default 0.08 remains restrained. The smooth, stylized vein flow remains;
-human artistic acceptance of the new color placement is pending.
+User review found that placement too strictly tied to veins. The
+[partially correlated region study](../../docs/notes/sdf-marble-regions-plan.md)
+gives cream regions their own boundaries and fine internal streaks, sharing
+the larger deformation with the marbling. Veins can cross pale and cream
+regions, and selected warm seams remain. The
+[current native review](http://starship:8787/reports/0a7461860a17aeccae6adc3f5e16cdafa358f9d28031cbd5b6fa3299ceb2a1ca/)
+starts with matched flat SDF swatches before the guardian views and turntables.
+Default 0.08 remains restrained. The smooth, closed vein topology remains a
+visible limitation; human artistic acceptance of the new placement is pending.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -204,8 +211,8 @@ scopes; those earlier timings keep their original material snapshots. A matched
 1080p pair before the color-visibility correction measured 1.76 ms with tint off
 and 1.78 ms at 0.08; geometry rebuilds remained about 0.92 seconds. That profile
 retains its earlier shader identity; the palette correction has no new profile.
-The current coherent-color revision has a fresh matched tint-off/on pair:
-1.783 / 1.792 ms median at 1080p, with about 0.92-second cold field builds.
+The current mineral-region revision has a fresh matched tint-off/on pair:
+1.781 / 1.799 ms median at 1080p, with about 0.92-second cold field builds.
 The stronger 0.16 amount measures 1.795 ms. These measure cases within the
 revised build; previous shader timings retain their earlier receipt scope.
 
@@ -454,18 +461,19 @@ material weights. Color, roughness and analytic height gradients use the shared
 seeded value-noise family; fine grain fades with a conservative projected pixel
 footprint, and marble vein ramps broaden/average when unresolved.
 
-For marble, `color_variation` colors selected vein cores, irregular cream
-shoulders and existing secondary wisps. The warped vein coordinates place all
-of these features. Seeded noise selects warm segments and varies their width;
-wider shoulders form attached pockets. Noise at 11 times pattern scale adds
-finer edge breakup. Pale intervals and gray-only veins remain, and the former
-color suppression at dark cores is removed. The original pale/cream
-multipliers and amount control retain their values. Analytic gradients broaden
-narrow color boundaries with pixel footprint; unresolved warm structure fades
-towards neutral. This is a stylized procedural treatment, not a geological
-simulation. It affects color only. Its default is zero for legacy scene
-compatibility; the guardian generator explicitly saves 0.08. It introduces no
-separate control, scene field, image map or appearance volume.
+For marble, `color_variation` adds seeded cream mineral regions with their own
+boundaries, finer directional interior streaks and edge breakup. They share
+the larger deformation with the veins, while their support extends between
+the narrow vein paths. Veins cross pale and cream regions; selected warm
+cores, shoulders and secondary wisps remain. The original pale/cream
+multipliers and amount control retain their values. Analytic gradients account
+for the shared deformation and anisotropic scales. Pixel footprints filter
+spatial frequencies and broaden narrow color boundaries; unresolved warm
+structure fades towards neutral. This affects color only, preserving roughness
+and bump. Zero retains the accepted neutral Balanced material exactly, and
+remains the default for legacy scenes; the guardian explicitly saves 0.08.
+It introduces no separate control, scene field, image map or appearance volume.
+This is a stylized treatment with smooth, closed vein paths still visible.
 
 In the expanded body material, scroll to **Marble detail** for Original,
 Balanced, Denser or Fine. These choices set pattern scale, vein frequency,

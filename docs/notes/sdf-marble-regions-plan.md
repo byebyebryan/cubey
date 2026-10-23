@@ -1,6 +1,9 @@
 # Partially correlated marble regions
 
-Status: planned; another implementation goal loop authorized on 2026-10-22.
+Status: implemented and natively qualified on 2026-10-22. The selected third
+swatch candidate has also been inspected on the guardian. Human artistic
+acceptance remains pending; the evidence record separates native correctness,
+visual inspection and delivery scope.
 
 ## Revised target
 
