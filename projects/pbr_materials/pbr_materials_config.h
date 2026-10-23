@@ -14,7 +14,13 @@ using PbrMaterialsPbrConfig = cubey::PbrStaticIblOptions;
 struct PbrMaterialsConfig {
     cubey::host::CommonRunConfig common;
     std::string debug_view;
-    PbrMaterialsPbrConfig pbr;
+    PbrMaterialsPbrConfig pbr = [] { PbrMaterialsPbrConfig c; c.exposure=.6F; return c; }();
+    std::string material = "gallery", specimen = "sphere", environment = "studio";
+    std::filesystem::path recipe_input, recipe_output;
+    float yaw = 0, pitch = .15F, distance = 1.05F, roughness = -1, pattern_scale = -1;
+    float orbit_degrees = 0;
+    bool pattern = true, bump = true;
+    std::uint32_t stress_edits = 0;
 };
 
 inline cubey::config::OptionSpec pbr_materials_option(std::string path, std::string cli_name,
@@ -43,6 +49,24 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
                                     "Project-specific debug view name.",
                                     cubey::config::ValueType::String),
               config.debug_view);
+
+    auto bind = [&](auto& value, const char* name, const char* cli, cubey::config::ValueType type) {
+        builder.bind(pbr_materials_option(name, cli, name, "Workshop", "Material workshop setting.", type), value);
+    };
+    bind(config.material,"material","--material",cubey::config::ValueType::String);
+    bind(config.specimen,"specimen","--specimen",cubey::config::ValueType::String);
+    bind(config.environment,"environment","--lighting",cubey::config::ValueType::String);
+    bind(config.recipe_input,"recipe_input","--recipe-input",cubey::config::ValueType::Path);
+    bind(config.recipe_output,"recipe_output","--recipe-output",cubey::config::ValueType::Path);
+    bind(config.yaw,"yaw","--yaw",cubey::config::ValueType::Float);
+    bind(config.pitch,"pitch","--pitch",cubey::config::ValueType::Float);
+    bind(config.distance,"distance","--distance",cubey::config::ValueType::Float);
+    bind(config.roughness,"roughness","--roughness",cubey::config::ValueType::Float);
+    bind(config.pattern_scale,"pattern_scale","--pattern-scale",cubey::config::ValueType::Float);
+    bind(config.orbit_degrees,"orbit_degrees","--orbit-degrees",cubey::config::ValueType::Float);
+    bind(config.pattern,"pattern","--pattern",cubey::config::ValueType::Bool);
+    bind(config.bump,"bump","--bump",cubey::config::ValueType::Bool);
+    bind(config.stress_edits,"stress_edits","--stress-edits",cubey::config::ValueType::UInt32);
     builder.compose(cubey::pbr_static_ibl_schema(config.pbr));
     return std::move(builder).build();
 }

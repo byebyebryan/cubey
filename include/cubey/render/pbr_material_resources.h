@@ -106,6 +106,9 @@ pbr_material_uniform_block_layout(VkDeviceSize uniform_byte_size,
 // configuration only controls bounded pooled allocation.
 struct PbrMaterialTableConfig {
     std::uint32_t block_capacity = kDefaultPbrMaterialBlockCapacity;
+    // Caller owns a separate table per in-flight frame and waits its fence
+    // before updating. Immutable publication remains the default.
+    bool editable_after_retire = false;
 };
 
 // Validates the complete sampled-image portion of the canonical PBR material
@@ -131,7 +134,7 @@ struct PbrMaterialTableMetrics {
 class PbrMaterialRecord {
   public:
     PbrMaterialRecord(PbrMaterialDefinition definition, VkDescriptorSet descriptor_set,
-                      std::uint32_t descriptor_set_index, VkDeviceSize uniform_offset);
+                      std::uint32_t descriptor_set_index, VkDeviceSize uniform_offset, std::size_t block_index = 0);
 
     PbrMaterialRecord(const PbrMaterialRecord&) = delete;
     PbrMaterialRecord& operator=(const PbrMaterialRecord&) = delete;
@@ -152,7 +155,9 @@ class PbrMaterialRecord {
     }
 
   private:
-    const PbrMaterialDefinition definition_;
+    friend class PbrMaterialTable;
+    PbrMaterialDefinition definition_;
+    std::size_t block_index_ = 0;
     VkDescriptorSet descriptor_set_ = VK_NULL_HANDLE;
     std::uint32_t descriptor_set_index_ = 0;
     VkDeviceSize uniform_offset_ = 0;
@@ -178,6 +183,10 @@ class PbrMaterialTable {
     [[nodiscard]] PbrMaterialRecord&
     emplace(MaterialHandle material, PbrMaterialDefinition definition,
             std::span<const SampledImageMaterialBinding> sampled_images);
+    // Requires the table's GPU readers to have retired. Updates CPU definition
+    // and existing UBO range together, without allocating. Routing is fixed:
+    // choose a different prepublished handle for opaque/transmission changes.
+    void update_after_retire(MaterialHandle material, PbrMaterialDefinition definition);
     [[nodiscard]] PbrMaterialRecord& record(MaterialHandle material);
     [[nodiscard]] const PbrMaterialRecord& record(MaterialHandle material) const;
     [[nodiscard]] VkDescriptorSetLayout descriptor_set_layout() const;

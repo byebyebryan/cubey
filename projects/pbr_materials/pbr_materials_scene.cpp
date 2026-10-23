@@ -17,7 +17,7 @@ namespace cubey::projects::pbr_materials::detail {
 namespace {
 
 const cubey::math::Vec3 kLightDirection =
-    glm::normalize(cubey::math::Vec3{0.45F, 0.82F, 0.35F});
+    glm::normalize(cubey::math::Vec3{-.35F, .42F, .84F});
 
 cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target) {
     const cubey::math::Vec3 forward = glm::normalize(target - eye);
@@ -77,7 +77,7 @@ void PbrMaterialsApp::create_scene() {
     camera_entity_ = cubey::scene::create_camera_entity_3d(
         setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{
                    .distance = kCameraDistance,
-               }));
+               }), cubey::Camera3D({.fovy_radians = glm::radians(45.0F), .near_z = .01F, .far_z = 100}));
     const cubey::math::Vec3 light_eye = kLightDirection * 9.0F;
     light_camera_entity_ = cubey::scene::create_camera_entity_3d(
         setup, look_at_transform(light_eye, {0.0F, 0.0F, 0.0F}),
@@ -87,11 +87,14 @@ void PbrMaterialsApp::create_scene() {
             .near_z = 0.1F,
             .far_z = 32.0F,
         }));
-    cubey::Light3D light =
-        cubey::directional_light_3d(kLightDirection, {1.0F, 0.94F, 0.82F}, 1.2F);
+    const auto& sky = atmosphere_.lighting();
+    cubey::Light3D light = config_.environment == "studio"
+        ? cubey::directional_light_3d(kLightDirection, {1.8F,1.6F,1.3F},1)
+        : cubey::directional_light_3d(sky.primary_light_direction, sky.primary_light_color, sky.primary_light_intensity);
     light.casts_shadows = false;
     light_entity_ = cubey::scene::create_directional_light_entity_3d(setup, light);
     setup.commit();
+    refresh_specimens();
 }
 
 void PbrMaterialsApp::update_scene_transform(const FrameTiming& timing) {
@@ -100,7 +103,7 @@ void PbrMaterialsApp::update_scene_transform(const FrameTiming& timing) {
     edits.transforms3d().set_local_transform(camera_entity_,
                                              cubey::orbit_camera_transform(cubey::OrbitCameraState{
                                                  .distance = orbit_controller_.distance(),
-                                                 .yaw = orbit_controller_.yaw(),
+                                                 .yaw = config_.yaw + orbit_controller_.yaw(),
                                                  .pitch = orbit_controller_.pitch(),
                                              }));
     scene().commit(edits);
@@ -120,10 +123,7 @@ PbrMaterialsApp::current_frame_plan(const cubey::SceneReadView& view,
         .width = color_extent.width,
         .height = color_extent.height,
         .environment =
-            cubey::scene::Environment3D{
-                .ambient_color = {0.035F, 0.038F, 0.045F},
-                .ambient_intensity = 1.0F,
-            },
+            config_.environment == "studio" ? cubey::scene::Environment3D{.ambient_color={0,0,0}, .ambient_intensity=0} : atmosphere_.scene_environment(),
         .culling_enabled = false,
     };
     cubey::scene::FrameRenderPlan3D frame_plan({
@@ -140,9 +140,6 @@ PbrMaterialsApp::current_frame_plan(const cubey::SceneReadView& view,
                                                                    engine_.render_resources()),
         },
     });
-    if (frame_plan.passes()[1].frame_plan.draw_packets.size() != kMaterialCubeCount) {
-        throw std::runtime_error("pbr_materials scene should produce one packet per cube");
-    }
     return frame_plan;
 }
 
@@ -150,8 +147,8 @@ cubey::LightPacket3D PbrMaterialsApp::fallback_light_packet() const {
     return cubey::LightPacket3D{
         .entity = light_entity_,
         .kind = cubey::LightKind3D::Directional,
-        .color = {1.0F, 0.94F, 0.82F},
-        .intensity = 1.2F,
+        .color = {1.8F, 1.6F, 1.3F},
+        .intensity = 1.0F,
         .direction = kLightDirection,
     };
 }

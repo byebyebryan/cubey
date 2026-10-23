@@ -427,6 +427,10 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialDefinition& definitio
                 0.0F,
             },
         .texture_transforms = factors.texture_transforms,
+        .surface_options = {factors.diffuse_roughness, factors.pattern_enabled ? 1.0F : 0.0F,
+                            factors.bump_enabled ? 1.0F : 0.0F, 0},
+        .surface_pattern = factors.surface_pattern,
+        .material_from_object = factors.material_from_object,
     };
 }
 

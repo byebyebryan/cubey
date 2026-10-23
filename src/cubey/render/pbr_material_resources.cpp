@@ -305,8 +305,8 @@ void validate_pbr_uniform_range(const cubey::vulkan::Device& device) {
 PbrMaterialRecord::PbrMaterialRecord(PbrMaterialDefinition definition,
                                      VkDescriptorSet descriptor_set,
                                      std::uint32_t descriptor_set_index,
-                                     VkDeviceSize uniform_offset)
-    : definition_(std::move(definition)), descriptor_set_(descriptor_set),
+                                     VkDeviceSize uniform_offset, std::size_t block_index)
+    : definition_(std::move(definition)), block_index_(block_index), descriptor_set_(descriptor_set),
       descriptor_set_index_(descriptor_set_index), uniform_offset_(uniform_offset) {
     if (descriptor_set_ == VK_NULL_HANDLE) {
         throw std::runtime_error("PBR material record requires a static descriptor set");
@@ -471,7 +471,7 @@ PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definit
         writes.update(*state.device_);
         PbrMaterialRecord& record =
             records_.emplace(material, std::move(definition), allocation.descriptor_set,
-                             state.descriptor_schema_.set, allocation.uniform_offset);
+                             state.descriptor_schema_.set, allocation.uniform_offset, state.blocks_.size() - 1);
         ++state.material_count_;
         return record;
     } catch (...) {
@@ -483,6 +483,21 @@ PbrMaterialTable::emplace(MaterialHandle material, PbrMaterialDefinition definit
         }
         throw;
     }
+}
+
+void PbrMaterialTable::update_after_retire(MaterialHandle material, PbrMaterialDefinition definition) {
+    if (!state_ || !state_->config_.editable_after_retire)
+        throw std::runtime_error("PBR material table was published immutable");
+    auto& r = records_.at(material);
+    const auto old = pbr_material_info(r.definition_);
+    const auto next = pbr_material_info(definition);
+    if (old.alpha_mode != next.alpha_mode || old.optical_mode != next.optical_mode ||
+        old.blend != next.blend || old.cull_mode != next.cull_mode || old.sort_key != next.sort_key ||
+        old.pass_mask.bits != next.pass_mask.bits)
+        throw std::runtime_error("PBR live update cannot change registry routing; select a prepublished handle");
+    const auto uniforms = pbr_material_uniforms(definition);
+    state_->blocks_.at(r.block_index_)->write_uniforms(uniforms, r.uniform_offset_);
+    r.definition_ = std::move(definition);
 }
 
 PbrMaterialRecord& PbrMaterialTable::record(MaterialHandle material) {

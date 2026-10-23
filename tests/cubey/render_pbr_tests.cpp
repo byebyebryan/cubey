@@ -639,15 +639,16 @@ void test_pbr_material_table_public_api_is_immutable() {
 
 void test_pbr_material_uniform_block_layout_is_checked() {
     const cubey::render::PbrMaterialTableConfig default_config{};
+    require(!default_config.editable_after_retire, "PBR material tables remain immutable by default");
     require(default_config.block_capacity == cubey::render::kDefaultPbrMaterialBlockCapacity,
             "PBR material table defaults should retain bounded block capacity");
 
     const cubey::render::PbrMaterialUniformBlockLayout aligned =
         cubey::render::pbr_material_uniform_block_layout(sizeof(cubey::render::PbrMaterialUniforms),
                                                          256U, 64U);
-    require(aligned.uniform_stride == 768U,
+    require(aligned.uniform_stride == 1024U,
             "PBR material uniform stride should satisfy uniform-buffer alignment");
-    require(aligned.uniform_block_byte_size == 49'152U,
+    require(aligned.uniform_block_byte_size == 65'536U,
             "PBR material uniform block should reserve one aligned slot per material");
 
     const cubey::render::PbrMaterialUniformBlockLayout zero_alignment =

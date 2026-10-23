@@ -14,7 +14,9 @@ using cubey::host::FrameStatsSample;
 PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {
-    orbit_controller_.set_home_distance(kCameraDistance);
+    orbit_controller_.set_home_distance(config_.material == "gallery" ? kCameraDistance : config_.distance);
+    orbit_controller_.set_pitch(config_.pitch);
+    if (config_.specimen != "sphere" && config_.specimen != "block") throw std::invalid_argument("specimen must be sphere or block");
 }
 
 int PbrMaterialsApp::run() {
@@ -30,6 +32,7 @@ int PbrMaterialsApp::run() {
         (void)context;
         destroy_swapchain_resources();
     };
+    callbacks.draw_ui = [this](cubey::host::WindowedAppContext&) { draw_ui(); };
     callbacks.update = [this](cubey::host::WindowedAppContext& context, const FrameTiming& timing) {
         const auto input = context.filtered_input();
         if (input.key_pressed(cubey::input::Key::D)) {
@@ -77,11 +80,17 @@ int PbrMaterialsApp::run_headless() {
         create_global_resources_if_needed(ctx.device(), ctx.gpu(),
             cubey::host::headless_capture_frame_slot_count(config_.common));
         create_swapchain_resources(ctx.device(), ctx.render_target().extent, ctx.render_target().format);
+        update_scene_transform({});
     };
     callbacks.record_frame = [this](cubey::host::HeadlessPngContext& ctx,
         const cubey::host::HeadlessCaptureFrame& f, VkCommandBuffer cmd,
         const cubey::host::HeadlessRenderTarget& target) {
-        record_frame(ctx.device(), cmd, target, f.frame_slot, false);
+        // Capture motion derives from frame progress, never wall time.
+        const auto saved_yaw = config_.yaw;
+        config_.yaw += glm::radians(config_.orbit_degrees) * cubey::host::headless_capture_progress(f);
+        update_scene_transform(f.timing);
+        record_frame(ctx.device(), cmd, target, f.frame_slot, false, ctx.profile_recorder(), f.index);
+        config_.yaw = saved_yaw;
     };
     callbacks.shutdown = [this](cubey::host::HeadlessPngContext&) { destroy_all_resources(); };
     return cubey::host::HeadlessPngHost({.run_config = config_.common,

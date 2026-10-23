@@ -36,6 +36,8 @@ layout(location = 5) out vec2 frag_uv1;
 layout(location = 6) out vec4 frag_color0;
 layout(location = 7) out vec4 frag_shadow_position;
 layout(location = 8) out vec3 frag_model_scale;
+layout(location = 9) out vec3 frag_object_position;
+layout(location = 10) flat out mat3 frag_world_from_object;
 
 vec3 safeNormalize(vec3 value, vec3 fallback) {
     const float length_squared = dot(value, value);
@@ -56,6 +58,8 @@ void main() {
 
     gl_Position = scene.view_projection * world_position;
     frag_world_position = world_position.xyz;
+    frag_object_position = in_position;
+    frag_world_from_object = model;
     frag_normal = normal;
     frag_tangent = tangent;
     frag_bitangent = bitangent;

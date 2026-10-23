@@ -1,5 +1,7 @@
 cubey_forward_pbr_shader_sources(CUBEY_FORWARD_PBR_SHADERS)
 cubey_forward_pbr_shader_depends(CUBEY_FORWARD_PBR_SHADER_DEPENDS)
+cubey_cloud_layer_shader_sources(CUBEY_WORKSHOP_CLOUD_SHADERS COMPOSITE background-depth)
+cubey_cloud_layer_shader_depends(CUBEY_WORKSHOP_CLOUD_DEPENDS)
 
 cubey_add_app_target(
     cubey_project_pbr_materials
@@ -13,13 +15,19 @@ cubey_add_app_target(
         pbr_materials_render.cpp
         pbr_materials_resources.cpp
         pbr_materials_scene.cpp
+        pbr_materials_workshop.cpp
+        pbr_materials_environment.cpp
     SHADERS
         ${CUBEY_FORWARD_PBR_SHADERS}
+        ${CUBEY_WORKSHOP_CLOUD_SHADERS}
     SHADER_INCLUDE_DIRS
         "${CMAKE_SOURCE_DIR}/shaders"
     SHADER_DEPENDS
         ${CUBEY_FORWARD_PBR_SHADER_DEPENDS}
+        ${CUBEY_WORKSHOP_CLOUD_DEPENDS}
 )
+
+target_compile_definitions(cubey_project_pbr_materials PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
 
 if(BUILD_TESTING)
     add_executable(cubey_material_recipe_tests material_recipe_tests.cpp)

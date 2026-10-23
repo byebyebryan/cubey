@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/pbr.glsl"
+#include "cubey/procedural/surface_material.glsl"
 
 layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     mat4 view_projection;
@@ -78,6 +79,9 @@ layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     PbrTextureTransform iridescence_thickness_transform;
     PbrTextureTransform transmission_transform;
     PbrTextureTransform volume_thickness_transform;
+    vec4 surface_options;
+    MaterialPattern surface_pattern;
+    mat4 material_from_object;
 } material;
 
 const uint CUBEY_PBR_TEXTURE_SPECULAR = 1u;
@@ -118,6 +122,8 @@ layout(location = 5) in vec2 frag_uv1;
 layout(location = 6) in vec4 frag_color0;
 layout(location = 7) in vec4 frag_shadow_position;
 layout(location = 8) in vec3 frag_model_scale;
+layout(location = 9) in vec3 frag_object_position;
+layout(location = 10) flat in mat3 frag_world_from_object;
 
 layout(location = 0) out vec4 out_color;
 
@@ -515,6 +521,23 @@ void main() {
         1.0;
     sampled_normal.xy *= normal_scale;
     vec3 normal = normalize(tbn * sampled_normal);
+    if (material.surface_options.y > 0.5 && material.surface_pattern.settings.x > 0.0) {
+        vec3 p = (material.material_from_object * vec4(frag_object_position, 1)).xyz;
+        float footprint = max(length(dFdx(p)), length(dFdy(p)));
+        MaterialSample surface_sample = surfacePattern(
+            SurfaceMaterial(vec4(base_color.rgb, perceptual_roughness), material.emissive_alpha_cutoff),
+            material.surface_pattern, p, footprint);
+        base_color.rgb = surface_sample.material.base_roughness.rgb;
+        perceptual_roughness = surface_sample.material.base_roughness.w;
+        roughness = max(perceptual_roughness, 0.04);
+        if (material.surface_options.z > 0.5) {
+            // Chain rule: material -> object -> world covector. Object scale is
+            // intentionally not used to normalize the material coordinates.
+            vec3 gradient = transpose(inverse(frag_world_from_object)) *
+                transpose(mat3(material.material_from_object)) * surface_sample.height_gradient;
+            normal = materialShadingNormal(normal, gradient);
+        }
+    }
     float occlusion = mix(
         1.0, texture(occlusion_texture, cubey_pbr_transformed_uv(material.occlusion_transform)).r,
         occlusion_strength);
@@ -668,6 +691,15 @@ void main() {
     vec3 diffuse_direct = cubey_pbr_lambert_diffuse(diffuse_color) *
                           (1.0 - max(max(f.r, f.g), f.b));
 
+    float rough_diffuse_a = 1.0;
+    if (material.surface_options.x > 0.0) {
+        float sigma = material.surface_options.x * 1.570796327;
+        float s2 = sigma * sigma;
+        rough_diffuse_a = 1.0 - 0.5 * s2 / (s2 + 0.33);
+        float b = 0.45 * s2 / (s2 + 0.09);
+        diffuse_direct *= rough_diffuse_a + b * max(0.0,
+            dot(light_direction, view_direction) - ndotl * ndotv) / max(max(ndotl, ndotv), 0.001);
+    }
     vec3 radiance = scene.light_color_intensity.rgb * scene.light_color_intensity.a;
     float visibility = shadow_visibility(frag_shadow_position, normal, light_direction);
     vec3 emissive =
@@ -710,6 +742,7 @@ void main() {
     vec3 ibl_fresnel = cubey_pbr_fresnel_schlick(ndotv, f0, f90);
     float diffuse_ibl_attenuation = 1.0 - max(max(ibl_fresnel.r, ibl_fresnel.g), ibl_fresnel.b);
     vec3 diffuse_ibl = irradiance * diffuse_color * diffuse_ibl_attenuation;
+    if (material.surface_options.x > 0.0) diffuse_ibl *= rough_diffuse_a;
     vec3 ibl_normal = anisotropy_strength > 0.0
                           ? cubey_pbr_anisotropic_bent_normal(
                                 normal, view_direction, anisotropy_bitangent, roughness,
@@ -773,6 +806,7 @@ void main() {
                                   scene.ambient_color_intensity.a * diffuse_color *
                                   diffuse_ibl_attenuation * sheen_view_attenuation *
                                   clearcoat_attenuation * occlusion;
+    if (material.surface_options.x > 0.0) legacy_ambient_diffuse *= rough_diffuse_a;
     ambient += legacy_ambient_diffuse;
     vec3 color = ambient + direct + (emissive * clearcoat_attenuation);
     if (transmission > 0.0) {

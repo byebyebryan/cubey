@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cubey/core/math.h>
+#include <cubey/procedural/surface_material.h>
 #include <cubey/render/material.h>
 #include <cubey/render/primitive_mesh.h>
 
@@ -161,6 +162,12 @@ struct PbrMaterialFactors {
     bool unlit = false;
     std::uint32_t texture_flags = 0U;
     PbrMaterialTextureTransforms texture_transforms{};
+    // Opt-in geometry-neutral procedural content. Legacy/image users remain neutral.
+    procedural::MaterialPattern surface_pattern{};
+    math::Mat4 material_from_object{1};
+    float diffuse_roughness = 0;
+    bool pattern_enabled = true;
+    bool bump_enabled = true;
 };
 
 // Immutable PBR material input. Keep raster routing inputs alongside the
@@ -188,6 +195,9 @@ struct PbrMaterialUniforms {
     math::Vec4 volume_thickness_attenuation_distance{0.0F, 0.0F, 0.0F, 0.0F};
     math::Vec4 volume_attenuation_color{1.0F, 1.0F, 1.0F, 0.0F};
     PbrMaterialTextureTransforms texture_transforms{};
+    math::Vec4 surface_options{0, 1, 1, 0};
+    procedural::MaterialPattern surface_pattern{};
+    math::Mat4 material_from_object{1};
 };
 
 struct PbrPushConstants {
@@ -198,7 +208,7 @@ static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
 static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 34U);
 static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
 static_assert(sizeof(PbrSceneUniforms) == (sizeof(math::Mat4) * 2U) + (sizeof(math::Vec4) * 19U));
-static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 46U);
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 56U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));

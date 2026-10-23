@@ -3,6 +3,10 @@
 #include "pbr_materials_app.h"
 
 #include <cubey/core/math.h>
+#include <cubey/asset/material_recipe.h>
+#include <cubey/engine/material_recipe.h>
+#include <cubey/engine/atmosphere_environment_runtime.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
 #include <cubey/host/windowed_app.h>
@@ -79,7 +83,7 @@ class PbrMaterialsApp {
     void destroy_scene_if_needed();
 
     int run_headless();
-    void record_frame(const cubey::vulkan::Device&, VkCommandBuffer, cubey::render::ColorTargetView, cubey::render::FrameSlot, bool);
+    void record_frame(const cubey::vulkan::Device&, VkCommandBuffer, cubey::render::ColorTargetView, cubey::render::FrameSlot, bool, cubey::profiling::ProfileRecorder*, std::uint64_t);
     void record_cube_frame(cubey::host::WindowedAppContext& context,
                            const cubey::host::WindowedRenderFrame& frame);
 
@@ -98,7 +102,27 @@ class PbrMaterialsApp {
     cubey::render::MeshHandle cube_mesh_handle_{};
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
-    cubey::render::PbrMaterialTable materials_;
+    std::vector<cubey::render::PbrMaterialTable> materials_;
+    std::vector<cubey::asset::MaterialRecipe> recipes_, originals_;
+    std::vector<std::uint64_t> published_revision_;
+    std::vector<bool> stress_done_;
+    std::uint64_t revision_ = 1;
+    int selected_ = -1;
+    cubey::render::MeshHandle block_mesh_handle_{};
+    std::optional<vulkan::GpuTimestampProfiler> whole_profiler_, pass_profiler_;
+    AtmosphereEnvironmentRuntime atmosphere_;
+    std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;
+    render::CloudLayerRuntimeShaderFiles cloud_shaders_{};
+    void create_environment(const vulkan::Device&, vulkan::GpuRuntime&, std::uint32_t);
+    void create_environment_targets(const vulkan::Device&, VkExtent2D, std::uint32_t);
+    CloudEnvironmentRuntimeFrame cloud_frame(VkExtent2D) const;
+    render::ViewRayBasis3D view_rays(VkExtent2D) const;
+    std::string ui_error_;
+    char recipe_path_[512] = "outputs/material-recipe.json";
+    void draw_ui();
+    void refresh_specimens();
+    void publish_materials(cubey::render::FrameSlot slot);
+    cubey::render::PbrMaterialDefinition material_definition(std::size_t index) const;
     std::vector<cubey::render::MaterialHandle> material_handles_;
     std::vector<MaterialCube> cubes_;
     std::optional<cubey::render::PbrDefaultTextureSet> default_textures_;
