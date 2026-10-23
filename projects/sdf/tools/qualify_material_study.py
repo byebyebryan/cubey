@@ -77,6 +77,7 @@ def main():
         run(subject+'-glass-diagnostics', cfg, ['--debug',9], validate=False)
     cfg = read(root/'projects/sdf/presets/material-study/sphere-glass.json')
     exported = out/'glass-export.json'
+    run('glass-empty-history', cfg, ['--validate-history'], validate=False)
     original = run('glass-export', cfg, ['--export-authored',str(exported)], validate=False)
     restored = run('glass-reload', dict(cfg, **{'authored-scene':str(exported)}), validate=False)
     assert original.read_bytes()==restored.read_bytes()

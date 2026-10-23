@@ -27,7 +27,7 @@ MaterialSample sampleAuthoredMaterial(uint i,vec3 p,float footprint,bool pattern
         MaterialSample(authoredMaterials[i],vec3(0));
 }
 SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
-    if (authoredHeader.x==0u) return SceneSurface(1000.0,SurfaceMaterial(vec4(0.5),vec4(0)),0u,vec3(0),materialOptics(0u));
+    if (authoredHeader.x==0u) return SceneSurface(1000.0,SurfaceMaterial(vec4(0.5),vec4(0)),0u,vec3(0),MaterialOptics(vec4(0,0,1.5,1),vec4(1,1,1,0)));
     MaterialSample materials[16];
     for (uint i=0u;i<authoredHeader.y;++i) materials[i]=sampleAuthoredMaterial(i,p,footprint,patterns);
     SceneSurface stack[32];
