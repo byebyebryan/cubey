@@ -139,7 +139,7 @@ void main() {
 #endif
         float viewZ=dot(p-camera.eye.xyz,camera.forward.xyz);
         gl_FragDepth=clamp(100.0/99.99-(1.0/99.99)/viewZ,0.0,1.0);
-    } else if (camera.options.x<0.5) radiance=skyRadiance(direction);
+    } else if (camera.options.x<0.5) radiance=backgroundRadiance(direction);
     if (camera.options.x<0.5)
         radiance=mix(radiance,SUBTRACTION_HIGHLIGHT,cutterOutline(camera.eye.xyz,direction,t));
 #ifdef SDF_AUTHORED

@@ -2,6 +2,7 @@
 #include "sdf_config.h"
 #include "sdf_field.h"
 
+#include <chrono>
 #include <cubey/core/profiling.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/render/hdr_post_frame.h>
@@ -40,7 +41,15 @@ class Renderer {
                 float cutter_opacity = 0, std::span<const SceneInstruction> previews = {});
 
   private:
+    void create_environment(vulkan::Device& device, vulkan::GpuRuntime& gpu,
+                            const SdfConfig& config, std::uint32_t slots);
+    void prepare_environment(vulkan::Device& device, VkCommandBuffer command,
+                             render::FrameSlot slot, const SdfConfig& config);
+    void bind_environment(const vulkan::Device& device, render::FrameSlot slot);
     AtmosphereEnvironmentRuntime atmosphere_;
+    std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;
+    bool material_atmosphere_ = false;
+    std::chrono::steady_clock::time_point environment_clock_{};
     std::optional<render::GeneratedPbrEnvironment> study_environment_;
     std::unique_ptr<vulkan::Buffer> scene_optics_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
@@ -51,6 +60,7 @@ class Renderer {
     render::HdrPostFrame post_;
     render::RenderGraphFrameExecutor executor_;
     std::optional<vulkan::GpuTimestampProfiler> profiler_;
+    std::optional<vulkan::GpuTimestampProfiler> whole_profiler_;
     std::vector<std::optional<std::uint64_t>> recorded_frames_;
     const Field* field_ = nullptr;
     VkExtent2D scene_extent_{};

@@ -22,6 +22,8 @@ struct AtmosphereEnvironmentRuntimeResourceConfig {
     VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
     std::uint32_t frame_slot_count = 1;
     render::AtmosphereBackgroundTextureBindings atmosphere_textures{};
+    render::AtmosphereEnvironmentGroundMode reflection_ground_mode =
+        render::AtmosphereEnvironmentGroundMode::SkyOnly;
 };
 
 struct AtmosphereEnvironmentRuntimePipelineConfig {

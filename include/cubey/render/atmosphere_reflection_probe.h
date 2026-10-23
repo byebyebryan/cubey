@@ -42,6 +42,7 @@ struct AtmosphereReflectionProbeConfig {
     VkFormat format = VK_FORMAT_R16G16B16A16_SFLOAT;
     std::uint32_t frame_slot_count = 1;
     AtmosphereBackgroundTextureBindings atmosphere_textures{};
+    AtmosphereEnvironmentGroundMode ground_mode = AtmosphereEnvironmentGroundMode::SkyOnly;
 };
 
 struct AtmosphereReflectionProbePipelineConfig {
@@ -157,6 +158,7 @@ class AtmosphereReflectionProbe {
                                                            std::uint32_t face_index) const;
 
     std::uint32_t extent_ = 0;
+    AtmosphereEnvironmentGroundMode ground_mode_ = AtmosphereEnvironmentGroundMode::SkyOnly;
     std::uint32_t mip_levels_ = 0;
     VkFormat format_ = VK_FORMAT_UNDEFINED;
     std::optional<TextureCube> sky_radiance_cube_{};

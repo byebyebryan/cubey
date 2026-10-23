@@ -48,6 +48,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                   << '\n';
         scene_optics_ = host_buffer(16 * sizeof(MaterialOptics));
     }
+    create_environment(device, gpu, config, slots);
     update_authored(scene);
     for (std::uint32_t i = 0; i < slots; ++i)
         preview_buffers_.push_back(host_buffer(authored_max_leaves * sizeof(SceneInstruction)));
@@ -61,7 +62,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
     if (study) {
         bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
-        for (std::uint32_t binding = 8; binding <= 10; ++binding)
+        for (std::uint32_t binding = 8; binding <= 12; ++binding)
             bindings.push_back(
                 {binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT});
     }
@@ -92,6 +93,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                                           textures.brdf_lut_view, textures.brdf_lut_layout);
         }
         writes.update(device);
+        if (study_environment_)
+            bind_environment(device, {i, slots});
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
     const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
@@ -127,14 +130,10 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     post_.create_pipeline(
         device, {.extent = extent, .color_format = format, .shader_stage_files = post_stages});
     if (!config.common.profile_output_prefix.empty() || config.common.print_frame_stats)
-        profiler_.emplace(device, slots, 4);
+        profiler_.emplace(device, slots, material_atmosphere_ ? 16 : 4);
+    if (profiler_ && material_atmosphere_)
+        whole_profiler_.emplace(device, slots, 1);
     recorded_frames_.resize(slots);
-    render::AtmosphereEnvironmentConfig environment;
-    environment.sun_elevation_degrees = config.sun_elevation;
-    environment.sun_azimuth_degrees = config.sun_azimuth;
-    environment.moon.enabled = false;
-    environment.reference_geometry_enabled = false;
-    atmosphere_.set_environment(environment);
 }
 void Renderer::update_field(vulkan::Device& device, const Field& field) {
     field_ = &field;
@@ -151,6 +150,7 @@ void Renderer::update_field(vulkan::Device& device, const Field& field) {
 void Renderer::destroy() {
     executor_.clear();
     profiler_.reset();
+    whole_profiler_.reset();
     recorded_frames_.clear();
     post_.destroy();
     occluder_pipeline_.reset();
@@ -164,6 +164,8 @@ void Renderer::destroy() {
     preview_buffers_.clear();
     lighting_.reset();
     atmosphere_.destroy();
+    atmosphere_textures_.reset();
+    material_atmosphere_ = false;
     field_ = nullptr;
 }
 void Renderer::update_authored(const AuthoredScene* scene) {
@@ -194,10 +196,6 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       profiling::ProfileRecorder* profile, std::uint64_t frame_index,
                       const BoxEdit* cutter, float cutter_opacity,
                       std::span<const SceneInstruction> previews) {
-    auto environment = atmosphere_.environment();
-    environment.sun_elevation_degrees = config.sun_elevation;
-    environment.sun_azimuth_degrees = config.sun_azimuth;
-    atmosphere_.set_environment(environment);
     if (profiler_) {
         profiler_->collect(slot.index);
         if (recorded_frames_[slot.index] && profile)
@@ -205,8 +203,20 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                 profile->record_gpu_span(*recorded_frames_[slot.index], timing.label,
                                          timing.milliseconds);
         profiler_->begin_frame(command, slot.index);
-        recorded_frames_[slot.index] = frame_index;
     }
+    if (whole_profiler_) {
+        whole_profiler_->collect(slot.index);
+        if (recorded_frames_[slot.index] && profile)
+            for (const auto& timing : whole_profiler_->latest_timings())
+                profile->record_gpu_span(*recorded_frames_[slot.index], timing.label,
+                                         timing.milliseconds);
+        whole_profiler_->begin_frame(command, slot.index);
+    }
+    if (profiler_)
+        recorded_frames_[slot.index] = frame_index;
+    const vulkan::GpuTimestampScope whole(whole_profiler_ ? &*whole_profiler_ : nullptr, command,
+                                          slot.index, "sdf.whole_scene");
+    prepare_environment(device, command, slot, config);
     const math::Vec3 target_point{0, config.target_y, 0};
     const math::Vec3 eye =
         target_point + math::Vec3{std::cos(pitch) * std::sin(yaw), std::sin(pitch),
@@ -226,12 +236,22 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     uniforms.material =
         config.clay ? math::Vec4{0.42F, 0.42F, 0.42F, 1} : math::Vec4{0.55F, 0.27F, 0.095F, 0};
     uniforms.quality = {config.roughness, config.shadow_softness, config.ao ? 1.0F : 0.0F, -0.48F};
-    if (study_environment_)
+    if (study_environment_ && !material_atmosphere_)
         uniforms.direct_color = {1.8F, 1.6F, 1.3F, 0};
     uniforms.surface_options = {config.procedural ? 1.0F : 0.0F, config.bump ? 1.0F : 0.0F,
                                 config.material_fast_path ? 1.0F : 0.0F,
                                 config.lighting == "material-furnace" ? 1.0F : 0.0F};
-    uniforms.transport_options = {static_cast<float>(config.glass_crossings), 0, 0, 0};
+    const auto environment_bindings =
+        study_environment_
+            ? (material_atmosphere_ ? atmosphere_.pbr_environment_bindings(*study_environment_)
+                                    : render::pbr_environment_texture_bindings(*study_environment_))
+            : render::PbrEnvironmentTextureBindings{};
+    uniforms.transport_options = {
+        static_cast<float>(config.glass_crossings), environment_bindings.prefiltered_blend,
+        static_cast<float>(environment_bindings.prefiltered_mip_levels
+                               ? environment_bindings.prefiltered_mip_levels - 1
+                               : 4),
+        material_atmosphere_ ? 1.0F : 0.0F};
     if (config.lighting == "material-furnace")
         uniforms.direct_color = math::Vec4{0};
     if (cutter && config.cutter_cue && config.debug == 0) {
@@ -249,8 +269,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     const Camera camera{
         glm::inverse(vp),
         {eye, static_cast<float>(field_->atlas_axis)},
-        {study_environment_ ? glm::normalize(math::Vec3{-.35F, .42F, .84F})
-                            : light.primary_light_direction,
+        {study_environment_ && !material_atmosphere_ ? glm::normalize(math::Vec3{-.35F, .42F, .84F})
+                                                     : light.primary_light_direction,
          0},
         {static_cast<float>(config.debug), static_cast<float>(config.shadows),
          config.ground ? 1.0F : 0.0F, 0},

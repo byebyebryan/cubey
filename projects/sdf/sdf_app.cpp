@@ -59,7 +59,8 @@ class App {
             throw std::invalid_argument("--export-authored requires --authored-scene");
         if (config_.validate_history && (!authored_ || authored_->history.empty()))
             throw std::invalid_argument("--validate-history requires a saved authored history");
-        if ((config_.glass_crossings != 4 && config_.glass_crossings != 8 &&
+        if ((config_.environment_extent != 64 && config_.environment_extent != 128) ||
+            (config_.glass_crossings != 4 && config_.glass_crossings != 8 &&
              config_.glass_crossings != 16) ||
             config_.debug > 11 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
@@ -497,10 +498,13 @@ class App {
             ImGui::BeginDisabled(authored_ && !authored_build());
             ImGui::Checkbox(authored_ ? "Cut preview" : "Cutter bounds cue", &config_.cutter_cue);
             ImGui::EndDisabled();
-            if (config_.lighting != "atmosphere")
+            if (config_.lighting == "material-study" || config_.lighting == "material-furnace")
                 ImGui::TextUnformatted("Fixed generated study environment");
-            ImGui::BeginDisabled(config_.lighting != "atmosphere");
-            ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
+            if (config_.lighting == "material-atmosphere")
+                ImGui::TextUnformatted("Shared atmosphere / reflection probe");
+            ImGui::BeginDisabled(config_.lighting == "material-study" ||
+                                 config_.lighting == "material-furnace");
+            ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, -6, 85, "%.0f deg");
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
             ImGui::EndDisabled();
             ImGui::SliderFloat("Exposure", &config_.exposure, -3, 3, "%.1f stops");

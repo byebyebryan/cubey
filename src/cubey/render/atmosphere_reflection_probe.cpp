@@ -203,6 +203,7 @@ void AtmosphereReflectionProbe::create_resources(const cubey::vulkan::Device& de
     validate_atmosphere_background_texture_bindings(config.atmosphere_textures);
 
     extent_ = config.extent;
+    ground_mode_ = config.ground_mode;
     mip_levels_ = config.mip_levels;
     format_ = config.format;
     const cubey::vulkan::SamplerConfig cube_sampler{
@@ -469,7 +470,7 @@ void AtmosphereReflectionProbe::record_sky_face(const cubey::vulkan::CommandReco
     const std::array<ViewRayBasis3D, 6> face_view_rays =
         atmosphere_reflection_probe_cube_face_view_rays();
     AtmosphereEnvironmentConfig sky_environment = environment;
-    sky_environment.ground_mode = AtmosphereEnvironmentGroundMode::SkyOnly;
+    sky_environment.ground_mode = ground_mode_;
     sky_environment.reference_geometry_enabled = false;
     const FrameUniformMaterialInstance<AtmosphereEnvironmentFrameUniforms>& material =
         sky_face_material(face_index);

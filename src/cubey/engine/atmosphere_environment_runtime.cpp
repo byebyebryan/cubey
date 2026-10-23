@@ -99,6 +99,7 @@ void AtmosphereEnvironmentRuntime::create_resources(
                                            .format = config.format,
                                            .frame_slot_count = config.frame_slot_count,
                                            .atmosphere_textures = config.atmosphere_textures,
+                                           .ground_mode = config.reflection_ground_mode,
                                        });
 }
 

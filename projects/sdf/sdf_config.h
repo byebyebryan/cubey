@@ -19,6 +19,7 @@ struct SdfConfig {
     std::uint32_t atlas_axis = 64;
     std::uint32_t supersample = 1;
     std::uint32_t glass_crossings = 4;
+    std::uint32_t environment_extent = 128;
     float cutter_width = 0.003F;
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
@@ -55,7 +56,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         option("cutter-mode", "Cutter treatment for negative-stick-ball", config::ValueType::Enum);
     cutter_mode.enum_values = {"original", "intro-bores", "through"};
     auto lighting = option("lighting", "Lighting route", config::ValueType::Enum);
-    lighting.enum_values = {"atmosphere", "material-study", "material-furnace"};
+    lighting.enum_values = {"atmosphere", "material-study", "material-furnace",
+                            "material-atmosphere"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
     motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
@@ -92,6 +94,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
+        .bind(option("environment-extent", "Atmosphere reflection face extent (64 or 128)",
+                     config::ValueType::UInt32),
+              c.environment_extent)
         .bind(option("glass-crossings", "Glass interfaces including primary hit (4, 8 or 16)",
                      config::ValueType::UInt32),
               c.glass_crossings)

@@ -30,3 +30,24 @@ raising the crossing budget does not implement extra internal reflection
 bounces. The prior four-crossing experimental verdict remains historical.
 Artifacts: `outputs/sdf/environment-glass-budget/` and its `profiles/`, with
 native commands, configs, hashes, diagnostic images and compatibility receipt.
+
+## Clear-sky integration checkpoint
+
+`material-atmosphere` reuses the shared atmosphere reflection runtime with
+previous/current bindings, actual mip counts and a separately normalized SH
+diffuse response. The fixed key is replaced by shared primary-light state.
+The old generated environment and legacy atmosphere remain separate routes.
+The new route synchronously settles its first complete probe through an owned
+GPU submission before frame zero; this setup cost is logged separately.
+
+The first native daylight capture exposed the probe's hardcoded `SkyOnly`
+ground mode: the lower hemisphere was black. An additive probe ground-mode
+policy now defaults to that old behavior for existing consumers, while SDF
+selects the existing shared `SkyOnlyNoGroundOcclusion` presentation. This
+removes the black lower half without adding ground geometry or local sky math.
+
+Native 128/64-face daylight and low-sun glass captures pass validation. Fixed
+guardian clay and four-crossing glass still match the accepted PNGs exactly.
+The shared core suite passes after rebuilding against the additive policy.
+Artifacts are `outputs/sdf/environment-clear-{check,qualified}/`; the first
+directory retains the rejected black-horizon integration trial.

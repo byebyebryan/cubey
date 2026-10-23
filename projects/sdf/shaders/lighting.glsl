@@ -23,10 +23,17 @@ layout(set=0,binding=2) uniform Lighting {
 layout(set=0,binding=8) uniform samplerCube studyDiffuse;
 layout(set=0,binding=9) uniform samplerCube studySpecular;
 layout(set=0,binding=10) uniform sampler2D studyDfg;
+layout(set=0,binding=11) uniform samplerCube studyPrevious;
+layout(set=0,binding=12) uniform samplerCube environmentBackground;
+vec3 reflectedEnvironment(vec3 direction,float lod) {
+    vec3 current=textureLod(studySpecular,direction,lod).rgb;
+    if(lighting.transport_options.w<.5) return current;
+    return mix(textureLod(studyPrevious,direction,lod).rgb,current,lighting.transport_options.y);
+}
 #endif
 vec3 skyRadiance(vec3 direction) {
 #ifdef SDF_MATERIAL_STUDY
-    return lighting.surface_options.w>.5 ? vec3(1) : textureLod(studySpecular,direction,0).rgb;
+    return lighting.surface_options.w>.5 ? vec3(1) : reflectedEnvironment(direction,0);
 #else
     AtmosphereParams a=lighting.atmosphere;
     CubeyAtmosphereMedium medium=CubeyAtmosphereMedium(vec3(0),a.radii_ground.x,a.radii_ground.y,
@@ -38,6 +45,12 @@ vec3 skyRadiance(vec3 direction) {
     CubeyAtmosphereSample sampleValue=cubey_atmosphere_integrate_view(medium,origin,direction,-1.0);
     return sampleValue.color;
 #endif
+}
+vec3 backgroundRadiance(vec3 direction) {
+#ifdef SDF_MATERIAL_STUDY
+    if(lighting.transport_options.w>.5) return textureLod(environmentBackground,direction,0).rgb;
+#endif
+    return skyRadiance(direction);
 }
 vec3 environmentIrradiance(vec3 n) {
     float x=n.x,y=n.y,z=n.z;
@@ -140,7 +153,8 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
     vec3 direct=((1-f)*diffuse/3.141592654+f*d*v*compensation)*lighting.direct_color.rgb*nl*shadow;
     vec3 fv=cubey_pbr_fresnel_schlick(nv,f0);
     float visibility=environmentVisibility(p,geometricNormal,exhausted);
-    vec3 indirect=(1-fv)*diffuse*(lighting.surface_options.w>.5 ? vec3(1) : texture(studyDiffuse,n).rgb)*visibility;
+    vec3 diffuseEnvironment=lighting.transport_options.w>.5 ? environmentIrradiance(n) : texture(studyDiffuse,n).rgb;
+    vec3 indirect=(1-fv)*diffuse*(lighting.surface_options.w>.5 ? vec3(1) : diffuseEnvironment)*visibility;
     float diffuseFactor=1;
     if(optics.attenuation.w>0) {
         diffuseFactor=roughDiffuseFactor(nl,nv,dot(l,viewDirection),optics.attenuation.w);
@@ -149,7 +163,7 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
         // Retain a conservative A-only approximation for the environment lobe.
         indirect*=roughDiffuseFactor(1,1,1,optics.attenuation.w);
     }
-    vec3 reflected=lighting.surface_options.w>.5 ? vec3(1) : textureLod(studySpecular,reflect(-viewDirection,n),roughness*4).rgb;
+    vec3 reflected=lighting.surface_options.w>.5 ? vec3(1) : reflectedEnvironment(reflect(-viewDirection,n),roughness*lighting.transport_options.z);
     // Opaque component views retain the normal exposure/tone map. They expose
     // the actual lobes; they do not change the material or the combined path.
     if(camera.options.x>10.5)
