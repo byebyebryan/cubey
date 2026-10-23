@@ -179,6 +179,12 @@ cream but rejected the bluish cool-gray end. The
 [original and cream review](http://starship:8787/reports/de9be4cc6f48d9b5723fb4e0f6378d222bce6ae528c5844b3dbdb8927a1f136b/)
 compares original color, default and stronger cream variation, including a
 matched 0.16 comparison with the previous cool endpoint.
+User review then found the soft placement stain-like. The
+[mineral-pocket review](http://starship:8787/reports/2fe7ca71500f4f1a4318deafb4429b80d10cb192f38a5776a1e1414520b4eb96/)
+compares the broad tint with smaller, more defined cream pockets that favor
+the warped vein bands. It includes natural-marble references, a same-amount
+0.16 pair, neutral/default/stronger views and native turntables. The current
+0.08 default remains subtle; visual acceptance of the new placement is pending.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -191,6 +197,9 @@ scopes; those earlier timings keep their original material snapshots. A matched
 1080p pair before the color-visibility correction measured 1.76 ms with tint off
 and 1.78 ms at 0.08; geometry rebuilds remained about 0.92 seconds. That profile
 retains its earlier shader identity; the palette correction has no new profile.
+The later mineral-pocket revision has a fresh matched tint-off/on pair:
+1.754 / 1.769 ms median at 1080p, with about 0.92-second cold field builds.
+This measures both cases within that revised build, rather than old/new shaders.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -437,13 +446,17 @@ material weights. Color, roughness and analytic height gradients use the shared
 seeded value-noise family; fine grain fades with a conservative projected pixel
 footprint, and marble vein ramps broaden/average when unresolved.
 
-For marble, `color_variation` adds low-frequency, filtered cream body tint
-from an independent seeded noise field, fading towards neutral near veins.
-The noise blends cream with the original material color at 0.9 times the
-pattern scale, showing soft warm patches without a blue/dark mineral endpoint.
-It affects color only. Its default is zero for legacy scene compatibility; the
-guardian generator explicitly saves 0.08. No image maps or new appearance
-volume are allocated.
+For marble, `color_variation` adds smaller, defined cream mineral pockets.
+Seeded noise at 4 times pattern scale, plus finer breakup at 2.43 times that
+frequency, is biased toward the existing warped vein bands. Thresholded edges
+separate the pockets from untouched pale areas; warmth also varies inside each
+pocket. The original pale/cream palette and amount control retain their values,
+with attenuation at dark vein cores. Pixel footprints broaden unresolved edges
+and fade small-scale color towards neutral. This is a stylized procedural
+treatment, not a geological simulation. It affects color only. Its default is
+zero for legacy scene compatibility; the guardian generator explicitly saves
+0.08. Pocket placement follows the existing pattern scale, without adding a
+separate control, scene field, image map or appearance volume.
 
 In the expanded body material, scroll to **Marble detail** for Original,
 Balanced, Denser or Fine. These choices set pattern scale, vein frequency,

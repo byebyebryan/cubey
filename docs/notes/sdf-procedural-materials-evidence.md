@@ -17,7 +17,9 @@ The first tint was too faint in user review; the
 [color visibility correction](#color-visibility-correction) retains those
 controls while making the warm/cool patches visible.
 User review then retained cream and rejected the bluish cool-gray end; the
-[original and cream palette](#original-and-cream-palette) is the current result.
+[original and cream palette](#original-and-cream-palette) replaced that endpoint.
+Further review found the soft placement stain-like; the
+[defined mineral pockets](#defined-mineral-pockets) are the current trial.
 
 ## Result and scope
 
@@ -517,3 +519,91 @@ HTTP/hash verification. Static/dynamic targets, JavaScript syntax, five
 documentation/layout checks and all 18 scoped SDF CLI recipes pass. Browser
 discovery returned no connected browser, so browser interaction review remains
 unavailable. Artistic acceptance of this palette revision remains separate.
+
+## Defined mineral pockets
+
+User review liked the cream/original colors but found their placement dirty
+rather than marble-like, requesting higher frequency and more definition.
+Implemented in `9acb410e`. The
+[mineral-pocket review](http://starship:8787/reports/2fe7ca71500f4f1a4318deafb4429b80d10cb192f38a5776a1e1414520b4eb96/)
+leads with matched 0.16 before/after images, followed by neutral, default 0.08
+and stronger 0.16 stills and native turntables.
+
+### Reference and interpretation
+
+The slab and close-up of
+[Antolini Calacatta Macchia Vecchia Original](https://www.antolini.com/en/c3/exclusive-collection/m1559/calacatta-macchia-vecchia-original)
+were inspected as a natural-marble reference. Warm color appears near veins
+and in irregular pockets, with pale areas between them. This observation
+describes that chosen cream/white look; marble has many other appearances.
+The manufacturer photographs are linked, not redistributed in the report.
+
+[PBRT's MarbleTexture discussion](https://www.pbr-book.org/3ed-2018/Texture/Noise)
+organizes color using a noise-perturbed strata coordinate. The implementation
+inference is to relate warm pockets to the existing warped vein structure,
+rather than overlay an unrelated cloud. This is an artistic approximation,
+not a geological simulation or a measured fit to the reference slab.
+
+### Placement change
+
+The old tint smoothly covered much of the surface, using one noise sample at
+0.9 times pattern scale. The current pocket field uses 4 times pattern scale
+(about 4.4 times the former frequency) plus finer noise at another factor of
+2.43. Subtracting a term from the existing warped vein-band coordinate favors
+warm pockets near those bands. A narrower threshold defines the boundaries;
+interior color strength varies instead of making every island a flat swatch.
+The first native trial was rejected during assistant inspection because its
+larger, nearly uniform islands resembled painted patches. The refined trial
+reduces their size and varies their interior warmth. User artistic acceptance
+remains pending; this is still a stylized surface treatment.
+
+Analytic noise gradients and a conservative vein-gradient bound broaden the
+pocket threshold with projected pixel footprint. Fine noise and the complete
+pocket color fade as their respective scales become unresolved. CPU and GLSL
+share the calculation. The cream/original multipliers, amount/range, saved
+0.08 value, Balanced veins, roughness, bump, seed, geometry, 80-byte pattern
+record and all 65 history operations retain their values. No new control or
+scene parameter is introduced; pocket scale follows pattern scale.
+
+### Fresh qualification
+
+Five CPU suites pass. The material suite additionally checks four intermediate
+footprints over 200 points: finite/bounded colors, one-sided cream movement
+and unchanged roughness/height gradients relative to untinted samples.
+All 36 native foundation runs pass, including CPU/GPU agreement, plain-image
+preservation, shortcut/full equality, persistence, material ownership, short
+histories and one-build appearance edits. Zero variation still matches the
+previously accepted Balanced image exactly. Roughness and shading-normal
+images match exactly with tint on/off. Maximum observed CPU/GPU color error
+is 0.0000158548; the existing 0.0002 color and 0.00002 geometry/gradient/normal
+bounds were retained.
+
+Fifteen matching stills, eight structural probes and all 720 decoded orbit
+frames pass. Default/stronger shaded close-ups, the rear and unlit base colors
+were visually inspected. The before images retain their original binary
+receipt; the 0.16 scene parameters and render settings match across revisions.
+Full guardian history and desktop-control qualification were not rerun for
+this color-only change.
+
+The fresh RTX 5070 Ti / driver 610.57.04 profile uses 1920×1080, supersample 1,
+hard shadows, 180 submitted frames / 30 warmup and 148 completed GPU samples
+per case. Shading-plus-post medians are 1.753920 ms at variation 0 and
+1.769168 ms at 0.08; p95 values are 1.814080 / 1.826816 ms. Cold field builds
+are 917.658 / 918.631 ms. No competing owned GPU job ran. This compares tint
+off/on within the revised build; it is not a performance comparison against
+the previous shader. Field construction, readback and encoding are excluded
+from the GPU frame measurements.
+
+Native binary SHA-256 is
+`94b2d37731813c1c695f9d0caa6a23deb1496e5e8971d4dfbbd87bc5f4623967`.
+Foundation, comparison and profile manifests agree on that identity and every
+shader hash. Artifacts under `outputs/sdf/` are `marble-minerals-foundation/`,
+`marble-minerals-comparison/`, `marble-minerals-profile/`, research provenance
+in `marble-minerals-research/`, and the 193-file / 33,017,269-byte
+`marble-minerals-report/`, including its builder and implementation snapshots.
+Browser discovery found no connected browser, so browser interaction review
+was not performed. Static/dynamic report targets and JavaScript syntax pass.
+All 193 served files match the local bytes and hashes, recorded in
+`marble-minerals-served-review.json`. Five documentation/layout checks and all
+18 scoped SDF CLI recipes pass. Changes are committed locally; no push is
+included in this follow-up.
