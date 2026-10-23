@@ -122,7 +122,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
               c.cutter_width)
         .bind(option("debug",
                      "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks, 5 parts, 6 base "
-                     "color, 7 roughness, 8 surface normals)",
+                     "color, 7 roughness, 8 surface normals, 9 glass transport diagnostics)",
                      config::ValueType::UInt32),
               c.debug)
         .bind(option("shadows", "Shadows (0 off, 1 hard, 2 soft)", config::ValueType::UInt32),

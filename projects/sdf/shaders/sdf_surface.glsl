@@ -122,6 +122,17 @@ void main() {
             radiance=vec3(0.025);
 #endif
         }
+#ifdef SDF_MATERIAL_STUDY
+        if(camera.options.x>8.5) {
+            radiance=vec3(0);
+            if(object) {
+                bool glassExhausted=false;
+                studyRadiance(p,normal,-direction,footprint,glassExhausted);
+                if(glassExhausted) { color=vec4(1,0,1,1);return; }
+                radiance=glassDiagnostics;
+            }
+        }
+#endif
         float viewZ=dot(p-camera.eye.xyz,camera.forward.xyz);
         gl_FragDepth=clamp(100.0/99.99-(1.0/99.99)/viewZ,0.0,1.0);
     } else if (camera.options.x<0.5) radiance=skyRadiance(direction);

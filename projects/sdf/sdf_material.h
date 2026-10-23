@@ -29,4 +29,12 @@ void apply_marble_detail(MaterialPattern& pattern, std::size_t index);
 [[nodiscard]] math::Vec3 material_shading_normal(math::Vec3 geometric_normal,
                                                  math::Vec3 height_gradient);
 void validate_material_pattern(const MaterialPattern& pattern);
+struct OpticalInterface {
+    math::Vec3 reflected, transmitted;
+    float fresnel;
+    bool tir;
+};
+[[nodiscard]] OpticalInterface optical_interface(math::Vec3 incident, math::Vec3 outward,
+                                                 bool inside, float ior);
+[[nodiscard]] math::Vec3 optical_absorption(const MaterialOptics& optics, float distance);
 } // namespace cubey::projects::sdf

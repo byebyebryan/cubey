@@ -12,6 +12,21 @@ void require(bool value) {
 }
 } // namespace
 int main() {
+    // Independent Snell-law, normal-incidence Fresnel and Beer-Lambert checks.
+    const auto normal_interface = optical_interface({0, 0, -1}, {0, 0, 1}, false, 1.5F);
+    require(!normal_interface.tir && std::abs(normal_interface.fresnel - .04F) < 1e-6F);
+    const auto thirty = optical_interface({.5F, 0, -std::sqrt(.75F)}, {0, 0, 1}, false, 1.5F);
+    require(std::abs(thirty.transmitted.x - 1.0F / 3) < 1e-6F &&
+            std::abs(thirty.transmitted.z + std::sqrt(8.0F / 9)) < 1e-6F);
+    const auto tir = optical_interface({.8F, 0, -.6F}, {0, 0, -1}, true, 1.5F);
+    require(tir.tir && tir.fresnel == 1 && glm::length(tir.transmitted) == 0);
+    MaterialOptics absorption;
+    absorption.attenuation = {.5F, .8F, 1, 0};
+    absorption.settings.w = .5F;
+    const auto once = optical_absorption(absorption, .5F),
+               twice = optical_absorption(absorption, 1);
+    require(glm::length(once - Vec3{.5F, .8F, 1}) < 1e-6F &&
+            glm::length(twice - once * once) < 1e-6F);
     std::mt19937 random(781);
     std::uniform_real_distribution<float> coordinate(-2, 2);
     for (unsigned i = 0; i < 400; ++i) {

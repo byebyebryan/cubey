@@ -5,6 +5,19 @@
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
+OpticalInterface optical_interface(math::Vec3 incident, math::Vec3 outward, bool inside,
+                                   float ior) {
+    const auto normal = inside ? -outward : outward;
+    const float cosine = std::clamp(-glm::dot(incident, normal), 0.0F, 1.0F);
+    const auto transmitted = glm::refract(incident, normal, inside ? ior : 1 / ior);
+    const bool tir = glm::dot(transmitted, transmitted) < 1e-12F;
+    const float f0 = std::pow((ior - 1) / (ior + 1), 2.0F);
+    return {glm::reflect(incident, normal), transmitted,
+            tir ? 1 : f0 + (1 - f0) * std::pow(1 - cosine, 5.0F), tir};
+}
+math::Vec3 optical_absorption(const MaterialOptics& optics, float distance) {
+    return glm::exp(glm::log(math::Vec3{optics.attenuation}) * (distance / optics.settings.w));
+}
 bool default_optics(const MaterialOptics& optics) {
     const MaterialOptics defaults;
     return optics.settings == defaults.settings && optics.attenuation == defaults.attenuation;

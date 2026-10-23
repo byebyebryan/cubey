@@ -8,6 +8,7 @@
 #define AUTHORED_OPTICS_BINDING 5
 #include "authored.glsl"
 #include "authored_material.glsl"
+#include "optics_math.glsl"
 layout(local_size_x=64) in;
 layout(std430,set=0,binding=2) readonly buffer Points { vec4 points[]; };
 layout(std430,set=0,binding=3) writeonly buffer Results { vec4 results[]; };
@@ -19,11 +20,17 @@ void main() {
     MaterialSample fast=sampleAuthoredMaterial(0u,points[i].xyz,points[i].w,true);
     float error=authoredHeader.x>0u && authoredHeader.y==1u ? max(length(fast.material.base_roughness-surface.material.base_roughness),
         length(fast.height_gradient-surface.height_gradient)) : 0.0;
-    results[i*7u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),error);
-    results[i*7u+1u]=surface.material.base_roughness;
-    results[i*7u+2u]=surface.material.emission;
-    results[i*7u+3u]=vec4(surface.height_gradient,0);
-    results[i*7u+5u]=surface.optics.settings;
-    results[i*7u+6u]=surface.optics.attenuation;
-    results[i*7u+4u]=vec4(materialShadingNormal(normalize(vec3(.2,1,.3)),surface.height_gradient),0);
+    results[i*10u]=vec4(surface.distance,authoredDistance(points[i].xyz),float(surface.part),error);
+    results[i*10u+1u]=surface.material.base_roughness;
+    results[i*10u+2u]=surface.material.emission;
+    results[i*10u+3u]=vec4(surface.height_gradient,0);
+    bool inside=points[i].y>0;
+    OpticalInterface face=opticalInterface(normalize(vec3(points[i].x*3,.2,-1)),
+        inside ? vec3(0,0,-1) : vec3(0,0,1),inside,surface.optics.settings.z);
+    results[i*10u+7u]=vec4(face.transmitted,face.fresnel);
+    results[i*10u+8u]=vec4(face.reflected,face.tir ? 1 : 0);
+    results[i*10u+9u]=vec4(opticalAbsorption(surface.optics.attenuation.rgb,surface.optics.settings.w,.37),0);
+    results[i*10u+5u]=surface.optics.settings;
+    results[i*10u+6u]=surface.optics.attenuation;
+    results[i*10u+4u]=vec4(materialShadingNormal(normalize(vec3(.2,1,.3)),surface.height_gradient),0);
 }

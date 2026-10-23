@@ -71,9 +71,19 @@ def main():
             rgb = subprocess.check_output(['ffmpeg','-v','error','-i',str(image),'-f','rawvideo','-pix_fmt','rgb24','-'])
             excess = sum(r>180 and g<90 and b>180 for r,g,b in zip(rgb[::3],rgb[1::3],rgb[2::3]))
             assert excess == 0, ('white furnace energy exceeded 1.02', metal, rough, excess)
+    for subject in ['sphere', 'guardian']:
+        cfg = read(root/f'projects/sdf/presets/material-study/{subject}-glass.json')
+        run(subject+'-glass', cfg)
+        run(subject+'-glass-diagnostics', cfg, ['--debug',9], validate=False)
+    cfg = read(root/'projects/sdf/presets/material-study/sphere-glass.json')
+    exported = out/'glass-export.json'
+    original = run('glass-export', cfg, ['--export-authored',str(exported)], validate=False)
+    restored = run('glass-reload', dict(cfg, **{'authored-scene':str(exported)}), validate=False)
+    assert original.read_bytes()==restored.read_bytes()
     receipt['passed'] = True
     receipt['checks'] = dict(opaque_shortcut_exact=True,mixed_optics=True,explicit_cut=True,
-                             white_furnace_max_energy=1.02,appearance_cache=True)
+                             white_furnace_max_energy=1.02,appearance_cache=True,
+                             optical_interface_and_absorption_gpu=True,glass_roundtrip_exact=True)
     (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
 
 

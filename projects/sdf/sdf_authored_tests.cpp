@@ -72,6 +72,26 @@ int main() {
     invalid_optics = optical_json;
     invalid_optics["materials"][0]["optics"]["attenuation_color"] = {0, 1, 1};
     rejected(invalid_optics);
+    auto glass_json = document(sphere("glass", {}, .25F));
+    glass_json["materials"] = {{{"name", "red"},
+                                {"base_color", {1, 1, 1}},
+                                {"roughness", .05},
+                                {"optics",
+                                 {{"transmission", 1},
+                                  {"attenuation_color", {.65, .9, .76}},
+                                  {"attenuation_distance", .5}}}}};
+    const auto glass_scene = parse_authored_scene(glass_json.dump());
+    require(parse_authored_scene(serialize_authored_scene(glass_scene)).optics[0].settings.y == 1,
+            "glass optics did not survive persistence");
+    auto bad_glass = glass_json;
+    bad_glass["materials"][0]["roughness"] = .2;
+    rejected(bad_glass);
+    bad_glass = glass_json;
+    bad_glass["materials"][0]["optics"]["metallic"] = 1;
+    rejected(bad_glass);
+    bad_glass = glass_json;
+    bad_glass["materials"][0]["procedural"] = {{"type", "limestone"}};
+    rejected(bad_glass);
     auto blend_json = document(
         {{"type", "smooth-union"},
          {"name", "blend"},

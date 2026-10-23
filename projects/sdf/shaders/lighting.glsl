@@ -77,9 +77,47 @@ float environmentVisibility(vec3 p,vec3 n,inout bool exhausted) {
     return visibility*0.25;
 }
 #ifdef SDF_MATERIAL_STUDY
+#include "optics_math.glsl"
+vec3 glassDiagnostics=vec3(0);
+vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,inout bool exhausted) {
+    vec3 result=vec3(0),throughput=vec3(1);
+    bool inside=dot(direction,outward)>0;
+    glassDiagnostics=vec3(0,0,.25);
+    if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(point-camera.eye.xyz));
+    for(int crossing=0;crossing<4;++crossing) {
+        OpticalInterface face=opticalInterface(direction,outward,inside,optics.settings.z);
+        if(face.tir) {
+            glassDiagnostics.y=1;
+            return result+throughput*skyRadiance(face.reflected);
+        }
+        result+=throughput*face.fresnel*skyRadiance(face.reflected);
+        throughput*=1-face.fresnel;
+        direction=normalize(face.transmitted);
+        inside=!inside;
+        vec3 origin=point+outward*(inside ? -VOXEL : VOXEL);
+        Hit next=trace(origin,direction,5);
+        if(next.status==2) { exhausted=true;return vec3(0); }
+        if(next.status==0) return result+throughput*skyRadiance(direction);
+        vec3 nextPoint=origin+direction*next.t;
+        if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(nextPoint-point));
+        if(crossing==3) {
+            glassDiagnostics.x=1;
+            return result+throughput*skyRadiance(direction);
+        }
+        // The next trace starts at an offset origin. A small local t can be
+        // a valid adjacent interface; test world-space progress instead.
+        if(length(nextPoint-point)<EPSILON*.5 || any(isnan(nextPoint)) || any(isinf(nextPoint))) {
+            exhausted=true;return vec3(0);
+        }
+        point=nextPoint;outward=hitNormal(point,next);
+    }
+    return result;
+}
 vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprint,inout bool exhausted) {
     MaterialSample sampleValue=authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,lighting.surface_options.z>.5);
     MaterialOptics optics=authoredHeader.y==1u ? materialOptics(0u) : authoredSurface(p,footprint,lighting.surface_options.x>.5).optics;
+    if(optics.settings.y>.5 && lighting.material.w<.5)
+        return glassRadiance(p,geometricNormal,-viewDirection,optics,exhausted);
     vec3 base=sampleValue.material.base_roughness.rgb;
     float roughness=sampleValue.material.base_roughness.a;
     vec3 n=lighting.surface_options.y>.5 ? materialShadingNormal(geometricNormal,sampleValue.height_gradient) : geometricNormal;

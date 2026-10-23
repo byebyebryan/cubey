@@ -46,14 +46,16 @@ class App {
                         [](const auto& o) { return !default_optics(o); }))
             throw std::invalid_argument(
                 "non-default material optics require material-study lighting");
-        if (authored_ && std::any_of(authored_->optics.begin(), authored_->optics.end(),
-                                     [](const auto& o) { return o.settings.y > 0; }))
-            throw std::invalid_argument("glass transport is not enabled in the opaque checkpoint");
+        if (config_.lighting != "atmosphere" && (config_.ground || config_.occluder))
+            throw std::invalid_argument("material study supports environment-only composition");
+        if (config_.debug == 9 && config_.lighting == "atmosphere")
+            throw std::invalid_argument(
+                "glass transport diagnostics require material-study lighting");
         if (!authored_ && !config_.export_authored_path.empty())
             throw std::invalid_argument("--export-authored requires --authored-scene");
         if (config_.validate_history && (!authored_ || authored_->history.empty()))
             throw std::invalid_argument("--validate-history requires a saved authored history");
-        if (config_.debug > 8 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+        if (config_.debug > 9 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
             (config_.supersample != 1 && config_.supersample != 2) ||
@@ -476,8 +478,12 @@ class App {
             ImGui::BeginDisabled(authored_ && !authored_build());
             ImGui::Checkbox(authored_ ? "Cut preview" : "Cutter bounds cue", &config_.cutter_cue);
             ImGui::EndDisabled();
+            if (config_.lighting != "atmosphere")
+                ImGui::TextUnformatted("Fixed generated study environment");
+            ImGui::BeginDisabled(config_.lighting != "atmosphere");
             ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, 5, 85, "%.0f deg");
             ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -180, 180, "%.0f deg");
+            ImGui::EndDisabled();
             ImGui::SliderFloat("Exposure", &config_.exposure, -3, 3, "%.1f stops");
             ImGui::BeginDisabled(authored_ && !config_.clay);
             ImGui::SliderFloat(authored_ ? "Inspection roughness" : "Roughness", &config_.roughness,
@@ -495,6 +501,9 @@ class App {
                     ImGui::PushID(static_cast<int>(i));
                     auto& material = authored_->materials[i];
                     if (ImGui::TreeNode(authored_->material_names[i].c_str())) {
+                        if (authored_->optics[i].settings.y > 0)
+                            ImGui::TextUnformatted(
+                                "Bounded glass: environment-only, four crossings");
                         ImGui::BeginDisabled(authored_->optics[i].settings.y > 0);
                         materials_changed_ |=
                             ImGui::ColorEdit3("Base color", &material.base_roughness.x);

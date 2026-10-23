@@ -104,6 +104,30 @@ void validate_field(vulkan::Device& device, ProjectGpuServices& gpu, const Field
         if (!recipe.edits.empty())
             rays.push_back({{recipe.edits.front().center, 0}, {direction, 0}});
     }
+    if (authored && authored->optics.size() == 1 && authored->optics[0].settings.y > 0) {
+        const auto count = std::min<std::size_t>(rays.size(), 243);
+        constexpr float voxel = 1.0F / (256 * 7);
+        for (std::size_t i = 0; i < count; ++i) {
+            const float t = reference_trace(rays[i], distance, voxel * .2F);
+            if (t < 0)
+                continue;
+            const auto point = math::Vec3{rays[i].origin} + math::Vec3{rays[i].direction} * t;
+            math::Vec3 gradient;
+            for (int axis = 0; axis < 3; ++axis) {
+                auto a = point, b = point;
+                a[axis] -= voxel * .5F;
+                b[axis] += voxel * .5F;
+                gradient[axis] = distance(b) - distance(a);
+            }
+            if (glm::length(gradient) < 1e-8F)
+                continue;
+            const auto normal = glm::normalize(gradient);
+            const auto face = optical_interface(math::Vec3{rays[i].direction}, normal, false,
+                                                authored->optics[0].settings.z);
+            if (!face.tir)
+                rays.push_back({{point - normal * voxel, 0}, {face.transmitted, 0}});
+        }
+    }
     auto ray_buffer =
         gpu.upload_device_buffer<Ray>(rays, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf oracle rays");
     vulkan::Buffer result_buffer(
@@ -325,7 +349,7 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
     auto point_buffer = gpu.upload_device_buffer<math::Vec4>(
         points, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored points");
     vulkan::Buffer results(
-        device, vulkan::device_local_buffer_config(points.size() * 7 * sizeof(math::Vec4),
+        device, vulkan::device_local_buffer_config(points.size() * 10 * sizeof(math::Vec4),
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
     const std::array<vulkan::DescriptorSetBindingConfig, 6> bindings{
@@ -373,7 +397,7 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
                                          : 2e-5F;
     float max_distance = 0, max_material = 0, max_gradient = 0, max_normal = 0, max_fast = 0;
     for (std::size_t i = 0; i < points.size(); ++i) {
-        std::array<math::Vec4, 7> actual;
+        std::array<math::Vec4, 10> actual;
         std::memcpy(actual.data(), bytes.data() + i * sizeof(actual), sizeof(actual));
         for (const auto& lane : actual)
             for (int channel = 0; channel < 4; ++channel)
@@ -398,6 +422,17 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
             if (std::abs(actual[5][channel] - expected.optics.settings[channel]) > 2e-5F ||
                 std::abs(actual[6][channel] - expected.optics.attenuation[channel]) > 2e-5F)
                 throw std::runtime_error("authored CPU/GPU optics mismatch");
+        const bool optical_inside = points[i].y > 0;
+        const auto optical =
+            optical_interface(glm::normalize(math::Vec3{points[i].x * 3, .2F, -1}),
+                              optical_inside ? math::Vec3{0, 0, -1} : math::Vec3{0, 0, 1},
+                              optical_inside, expected.optics.settings.z);
+        if (glm::length(math::Vec3{actual[7]} - optical.transmitted) > 2e-5F ||
+            glm::length(math::Vec3{actual[8]} - optical.reflected) > 2e-5F ||
+            std::abs(actual[7].w - optical.fresnel) > 2e-5F || (actual[8].w > .5F) != optical.tir)
+            throw std::runtime_error("CPU/GPU optical interface mismatch");
+        if (glm::length(math::Vec3{actual[9]} - optical_absorption(expected.optics, .37F)) > 2e-5F)
+            throw std::runtime_error("CPU/GPU optical absorption mismatch");
         max_fast = std::max(max_fast, actual[0].w);
         if (!std::isfinite(actual[0].x) || !std::isfinite(actual[0].y) ||
             static_cast<unsigned>(actual[0].z) != expected.part || max_distance > 2e-5F ||
