@@ -93,6 +93,23 @@ MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 
             float primary=(.85*core+.8*shoulder)*(1.0-smoothstep(.35,1.0,coverage));
             float wisps=.5*secondary*(1.0-smoothstep(.35,1.0,secondaryCoverage));
             mineral=selected*clamp(primary+wisps,0.0,1.0)*variationFade;
+            float warp=pattern.detail.w/pattern.veins.w;
+            vec3 q=p*scale+direction*(warp*macro.w);
+            vec3 regionPoint=q*1.8+direction*(1.6*dot(q,direction));
+            float regionFrequency=scale*3.4*(1.0+warp*length(macro.xyz));
+            vec4 regionNoise=surfaceNoise(regionPoint+vec3(5.3,1.7,9.1),seed+12007u);
+            vec3 detailPoint=q*4.5+direction*(13.5*dot(q,direction));
+            vec4 regionDetail=surfaceNoise(detailPoint+vec3(1.3,8.9,2.1),seed+13001u);
+            float regionDetailFade=surfaceFade(footprint,regionFrequency*(18.0/3.4));
+            float regionField=.6*regionNoise.w+.3*regionDetail.w*regionDetailFade+.1*edgeNoise.w*edgeFade;
+            vec3 mainGradient=regionNoise.xyz*1.8+direction*(1.6*dot(regionNoise.xyz,direction));
+            vec3 detailGradient=regionDetail.xyz*4.5+direction*(13.5*dot(regionDetail.xyz,direction));
+            vec3 stretchedGradient=.6*mainGradient+(.3*regionDetailFade)*detailGradient;
+            vec3 regionGradient=scale*(stretchedGradient+macro.xyz*(warp*dot(stretchedGradient,direction)))+.1*edgeGradient;
+            float regionAA=max(.025,footprint*length(regionGradient));
+            float region=smoothstep(.08-regionAA,.26+regionAA,regionField)*
+                (.3+.7*(.5+.5*regionDetail.w*regionDetailFade))*surfaceFade(footprint,regionFrequency);
+            mineral=1.0-(1.0-.9*region)*(1.0-.55*mineral);
         }
     }
     vec3 color=mix(base.base_roughness.xyz,pattern.secondary.xyz,pattern.settings.w*mask);

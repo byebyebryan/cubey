@@ -109,7 +109,8 @@ int main() {
     }
     require(warm && untinted);
     // In a controlled, unwarped field, mineral color reaches main vein
-    // centers. Regions well between both vein families stay untouched.
+    // centers. Mineral regions may also color samples away from either vein
+    // family, while other off-vein samples retain the pale material.
     MaterialPattern strata = p;
     strata.settings.z = 6;
     strata.settings.y = 47;
@@ -118,7 +119,7 @@ int main() {
     strata.offset = {0, 0, 0, .08F};
     auto pale = strata;
     pale.offset.w = 0;
-    bool warm_core = false, gray_core = false, pale_interval = false;
+    bool warm_core = false, gray_core = false, warm_interval = false, pale_interval = false;
     constexpr float pi = 3.14159265358979323846F;
     for (unsigned i = 0; i < 200; ++i) {
         Vec3 point{0, coordinate(random), coordinate(random)};
@@ -133,10 +134,12 @@ int main() {
                 .value;
         // Midway between main veins; also exclude the secondary wisp path.
         if (std::abs(std::sin(pi * .5F * 1.93F + variation * 2.5F)) > .9F) {
-            require(sample_material(base, strata, point, .0005F).material.base_roughness ==
-                    sample_material(base, pale, point, .0005F).material.base_roughness);
-            pale_interval = true;
+            const auto interval_delta =
+                Vec3{sample_material(base, strata, point, .0005F).material.base_roughness -
+                     sample_material(base, pale, point, .0005F).material.base_roughness};
+            warm_interval |= interval_delta.x > 1e-5F && interval_delta.z < -1e-5F;
+            pale_interval |= glm::length(interval_delta) < 1e-7F;
         }
     }
-    require(warm_core && gray_core && pale_interval);
+    require(warm_core && gray_core && warm_interval && pale_interval);
 }

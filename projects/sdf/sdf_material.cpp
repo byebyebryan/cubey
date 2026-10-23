@@ -149,6 +149,39 @@ MaterialSample sample_material(const SurfaceMaterial& base, const MaterialPatter
             const float wisps =
                 .5F * secondary * (1 - glm::smoothstep(.35F, 1.0F, secondary_coverage));
             mineral = selected * std::clamp(primary + wisps, 0.0F, 1.0F) * variation_fade;
+            // Region boundaries share the large-scale vein deformation, but
+            // have their own support. Gray lines can cross cream or pale stone.
+            const float warp = pattern.detail.w / pattern.veins.w;
+            const auto q = p * scale + direction * (warp * macro.value);
+            const auto region_point = q * 1.8F + direction * (1.6F * glm::dot(q, direction));
+            const float region_frequency = scale * 3.4F * (1 + warp * glm::length(macro.gradient));
+            const auto region_noise =
+                material_noise(region_point + math::Vec3{5.3F, 1.7F, 9.1F}, seed + 12007U);
+            const auto detail_point = q * 4.5F + direction * (13.5F * glm::dot(q, direction));
+            const auto region_detail =
+                material_noise(detail_point + math::Vec3{1.3F, 8.9F, 2.1F}, seed + 13001U);
+            const float region_detail_fade = fade(footprint, region_frequency * (18.0F / 3.4F));
+            const float region_field = .6F * region_noise.value +
+                                       .3F * region_detail.value * region_detail_fade +
+                                       .1F * edge_noise.value * edge_fade;
+            const auto main_gradient =
+                region_noise.gradient * 1.8F +
+                direction * (1.6F * glm::dot(region_noise.gradient, direction));
+            const auto detail_gradient =
+                region_detail.gradient * 4.5F +
+                direction * (13.5F * glm::dot(region_detail.gradient, direction));
+            const auto stretched_gradient =
+                .6F * main_gradient + (.3F * region_detail_fade) * detail_gradient;
+            const auto region_gradient =
+                scale * (stretched_gradient +
+                         macro.gradient * (warp * glm::dot(stretched_gradient, direction))) +
+                .1F * edge_gradient;
+            const float region_aa = std::max(.025F, footprint * glm::length(region_gradient));
+            const float region =
+                glm::smoothstep(.08F - region_aa, .26F + region_aa, region_field) *
+                (.3F + .7F * (.5F + .5F * region_detail.value * region_detail_fade)) *
+                fade(footprint, region_frequency);
+            mineral = 1 - (1 - .9F * region) * (1 - .55F * mineral);
         }
     }
     auto color = glm::mix(math::Vec3{base.base_roughness}, math::Vec3{pattern.secondary},
