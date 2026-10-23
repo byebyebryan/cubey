@@ -41,6 +41,14 @@ requalification. The [checkpoint archive](archive/foundation-checkpoints.md)
 retains the implementation narrative and original measurements; executable
 validation entry points are in [getting started](getting-started.md#configure-build-and-test).
 
+The separately scoped [SDF guardian checkpoint](notes/sdf-guardian-closeout.md)
+is settled by user review on 2026-10-22: organic mirrored geometry, limestone
+and subtle stylized marble are retained as an authored rendering/replay demo.
+Further modeling and material realism are deferred. A refreshed construction
+film is optional presentation work; continuous brush editing remains separate.
+Its native receipts do not extend the repository-wide runtime qualification
+above.
+
 ## Public presentation
 
 Five highlights are now published in the order Ocean, glTF + Terrain, Water 3D,

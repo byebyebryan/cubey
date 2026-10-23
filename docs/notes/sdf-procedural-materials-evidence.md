@@ -26,6 +26,11 @@ that relationship too strict; the latest
 [partially correlated mineral regions](#partially-correlated-mineral-regions)
 give cream regions their own boundaries and internal streaks, first reviewed
 on flat native swatches and then on the guardian.
+Subsequent user review accepts the current subtle marble and settles the
+guardian's sculpt and materials. The
+[guardian closeout](sdf-guardian-closeout.md) records that decision and the
+remaining presentation boundary; earlier sections retain their review-time
+acceptance status and artifact scope.
 
 ## Result and scope
 
@@ -819,3 +824,17 @@ their source bytes/hashes, recorded in `marble-regions-served-review.json`.
 Five documentation/layout checks and all 18 scoped SDF CLI recipes pass.
 Plan, implementation and presentation are local commit milestones; no push
 is included.
+
+## Guardian settlement
+
+After the final comparison, the user accepts the new placement while keeping
+it subtle, and chooses to stop pursuing greater marble realism. Balanced detail
+and saved color variation 0.08 remain unchanged. The smooth repeated veins,
+limited branching and stylized fine relief are accepted limits of this content
+experiment. Limestone and the plain mirrored sculpt remain available.
+
+The [guardian closeout](sdf-guardian-closeout.md) records the whole-piece review,
+native evidence and rendering/build costs. It also distinguishes the current
+finished views from the older complete construction film, which has identical
+geometry/history but the earlier marble appearance. No renderer, geometry,
+material parameter or published artifact changes in this closeout.

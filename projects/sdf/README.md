@@ -8,6 +8,14 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
+The guardian sculpture is now settled as an authored SDF rendering/replay demo:
+the organic mirrored sculpt, limestone and subtle Balanced marble are retained.
+The [guardian closeout](../../docs/notes/sdf-guardian-closeout.md) records the
+accepted appearance, review, technical limits and evidence map. Further model
+and material realism work is deferred. The full construction film retains its
+earlier marble appearance; current finished views and turntables show the
+accepted material.
+
 The first authored piece is a small survey robot: 43 shapes, grouped local cuts,
 a tilted head and raised arm, with ivory, teal, dark rubber and amber materials.
 [Watch the native turntable and inspect its views](http://starship:8787/reports/eafb4462b9072db9f445b21e5d9402466d78e11fd70e23fdcba7d2bf263c8540/).
@@ -198,7 +206,9 @@ regions, and selected warm seams remain. The
 [current native review](http://starship:8787/reports/0a7461860a17aeccae6adc3f5e16cdafa358f9d28031cbd5b6fa3299ceb2a1ca/)
 starts with matched flat SDF swatches before the guardian views and turntables.
 Default 0.08 remains restrained. The smooth, closed vein topology remains a
-visible limitation; human artistic acceptance of the new placement is pending.
+visible limitation. User review accepts the current result as stylized honed
+marble and settles further color/vein refinement; see the
+[closeout](../../docs/notes/sdf-guardian-closeout.md).
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure

@@ -103,8 +103,8 @@ Active projects:
 - [Ocean](../projects/ocean/README.md)
 - [Fractal 2D](../projects/fractal_2d/README.md)
 - [SDF](../projects/sdf/README.md): procedural demos, an authored robot and four
-  sculpture studies, with sparse field rendering, plain materials and
-  construction/orbit playback.
+  sculpture studies, including the settled guardian, with sparse field
+  rendering, plain/procedural stone materials and construction/orbit playback.
 
 Internal validation:
 

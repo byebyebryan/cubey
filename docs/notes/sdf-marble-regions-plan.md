@@ -1,9 +1,10 @@
 # Partially correlated marble regions
 
-Status: implemented and natively qualified on 2026-10-22. The selected third
-swatch candidate has also been inspected on the guardian. Human artistic
-acceptance remains pending; the evidence record separates native correctness,
-visual inspection and delivery scope.
+Status: implemented, natively qualified and settled by user review on
+2026-10-22. Retain the selected third candidate at the saved subtle 0.08
+amount. The [guardian closeout](sdf-guardian-closeout.md) accepts the stylized
+material and defers further realism work. The checkpoints below retain the
+original plan and its separate correctness, inspection and delivery gates.
 
 ## Revised target
 

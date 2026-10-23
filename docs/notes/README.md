@@ -44,6 +44,9 @@ the architecture and project guides remain current authority.
 - [SDF procedural material evidence](sdf-procedural-materials-evidence.md):
   continuous limestone/marble surfaces, filtered bump, material cache controls,
   the uniform-material shading shortcut and matching native presentation.
+- [SDF guardian closeout](sdf-guardian-closeout.md): settled organic mirrored
+  sculpture, limestone and subtle stylized marble, with the whole-piece review,
+  evidence map, accepted limits and separate presentation follow-up boundary.
 - [SDF rounded stroke contract](sdf-rounded-stroke-contract.md): tapered endpoint spheres, conservative bounds and independent/native qualification for sculptural strokes.
 
 - [glTF Viewer V1 Closure](gltf-viewer-v1-closure.md): closed single-asset milestone, accepted limits and reopen gates.
@@ -106,7 +109,7 @@ an implemented project or a new runtime dependency.
   checkpoints.
 - [SDF marble region plan](sdf-marble-regions-plan.md): implemented native
   swatch study for cream regions with their own boundaries and internal
-  streaks, partially correlated with veins; artistic acceptance pending.
+  streaks, partially correlated with veins; settled at subtle strength.
 
 ## Historical research and study records
 
