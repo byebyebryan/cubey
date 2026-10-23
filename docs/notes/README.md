@@ -44,6 +44,9 @@ the architecture and project guides remain current authority.
 - [SDF procedural material evidence](sdf-procedural-materials-evidence.md):
   continuous limestone/marble surfaces, filtered bump, material cache controls,
   the uniform-material shading shortcut and matching native presentation.
+- [SDF material-set evidence](sdf-material-study-evidence.md): shared sphere/
+  guardian catalog, opt-in generated IBL, matte clay, ceramic and bronze,
+  with qualified sphere glass and the guardian's explicit transport limit.
 - [SDF guardian closeout](sdf-guardian-closeout.md): settled organic mirrored
   sculpture, limestone and subtle stylized marble, with the whole-piece review,
   evidence map, accepted limits and separate presentation follow-up boundary.
@@ -110,9 +113,9 @@ an implemented project or a new runtime dependency.
 - [SDF marble region plan](sdf-marble-regions-plan.md): implemented native
   swatch study for cream regions with their own boundaries and internal
   streaks, partially correlated with veins; settled at subtle strength.
-- [SDF material set and showcase plan](sdf-material-study-plan.md): proposed
+- [SDF material set and showcase plan](sdf-material-study-plan.md): implemented
   sphere-first material foundation and unchanged guardian comparison, with
-  dry clay, ceramic, bronze, bounded glass and explicit effort/acceptance gates.
+  dry clay, ceramic, bronze, bounded glass and retained effort/acceptance gates.
 
 ## Historical research and study records
 

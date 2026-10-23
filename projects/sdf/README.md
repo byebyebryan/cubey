@@ -444,10 +444,10 @@ operator's part ID. The body owns a tie within the same 1e-6 distance band. Geom
 appearance remain independent. Smooth cutters use the same preview/history
 ordering as hard cuts. These appearance rules do not change geometry.
 
-Per-material edits upload a small table without rebuilding distance bricks.
-No appearance volume is allocated. The first piece uses dielectric direct
-lighting and sky diffuse irradiance; environment specular, metalness, glass,
-and GI remain outside this implementation.
+Per-material edits upload small tables without rebuilding distance bricks.
+No appearance volume is allocated. The default atmosphere route uses dielectric
+direct lighting and sky diffuse irradiance. The separate material-study route
+below adds optical properties and generated specular IBL; GI remains deferred.
 
 ### Procedural stone surfaces
 
@@ -538,6 +538,58 @@ records native qualification and the implemented
 Authored scenes support static/orbit playback. Scenes with an optional saved
 `history` additionally support construction and presentation. Carve continues
 to require a legacy edit sequence.
+
+### Sphere and guardian material set
+
+The [bounded material study](../../docs/notes/sdf-material-study-evidence.md)
+adds separate `material-study/` presets for a radius-0.25 sphere and the unchanged
+guardian. Both use identical material records: plain, accepted limestone and
+subtle marble, dry terracotta clay, teal ceramic, satin bronze and tinted glass.
+The six opaque looks are qualified on both subjects. Homogeneous sphere glass
+is qualified; the guardian glass comparison remains experimental because its
+worst sampled view reaches the four-crossing cap on 1.1068% of visible glass
+pixels, above the declared 1% admission limit. No extra transport passes were
+added to hide that result.
+
+The [paired material report](http://starship:8787/reports/f9ff89a12a4569c7f1c934cd5c9996570b316afc9ffcbed89d9931ed016983ca/index.html)
+includes normal/detail views, native orbits, glass diagnostics and separate
+shading/build/environment measurements for each material.
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/material-study/sphere-ceramic.json
+build/release/projects/sdf/sdf --config projects/sdf/presets/material-study/guardian-bronze.json
+```
+
+`--lighting atmosphere` remains the default and retains accepted old images.
+`--lighting material-study` selects the fixed shared generated IBL environment,
+including its visible background, diffuse response, prefiltered reflections and
+DFG lookup. It uses one frozen direct-light setup and no ground/raster-occluder
+composition. `material-furnace` is the constant-white diagnostic route, which
+flags energy above 1.02 before output clipping. Environment setup is separate
+from GPU frame and cold field measurements.
+
+Materials may add an optional `optics` record with `metallic` in [0,1], binary
+`transmission`, `ior` in [1,2.5], positive finite `attenuation_distance` and
+linear RGB `attenuation_color` in (0,1]. Defaults (0, 0, 1.5, 1 and white)
+preserve legacy hashes and exports. Non-default optics require study lighting,
+participate in the appearance hash and preserve geometry/field caching. A
+parallel 32-byte table leaves the prior material/pattern/geometry layouts intact.
+Opaque blend/cut ownership applies to optics on CPU and GPU.
+
+Glass requires one plain homogeneous material: white base, zero metallic and
+emission, fixed roughness 0.05 and no procedural/bump pattern. Geometric normals
+control refraction. Measured in-medium distance controls Beer-Lambert tint.
+At most four interfaces are processed, with environment fallback for total
+internal reflection and crossing-budget limits. This is not recursive optical
+transport, rough glass, caustics or transmission through other opaque objects.
+`--debug 9` shows crossing-cap/TIR flags and coverage. The report and evidence
+separate the qualified sphere from the experimental guardian; a successful
+render alone does not establish admission.
+
+The old `--clay` option still produces the same gray inspection material at
+roughness 0.36. Its UI label is now **Neutral inspection**. The dry clay catalog
+entry is a separate roughness-0.90 material. Optics are initially authored in
+saved scenes/presets; no general optics editor or material graph is added.
 
 ### Authoring history
 

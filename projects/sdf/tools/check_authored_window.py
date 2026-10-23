@@ -9,6 +9,10 @@ parser.add_argument("--binary",default="build/dev/projects/sdf/sdf")
 parser.add_argument("--output",type=Path,default=Path("outputs/sdf/qualification"))
 parser.add_argument("--config",type=Path,help="scene preset; interactions use static motion")
 parser.add_argument("--height",type=int,default=1000)
+parser.add_argument("--material-y-offset",type=int,default=0,
+                    help="Inspected material-row offset for the fixed study-environment label")
+parser.add_argument("--readonly-material",action="store_true",
+                    help="Verify the bounded glass material controls remain disabled")
 parser.add_argument("--history-controls",action="store_true")
 parser.add_argument("--paired-step",type=int,action="append",default=[],
                     help="Also seek, undo and redo these atomic mirrored operations")
@@ -158,7 +162,7 @@ with log.open("w") as stream:
             capture("window-playback-paused.png")
             click(160,146);assert wait_step(lambda n:n==0)==0
         else:
-            click(110,600)
+            click(110,600+args.material_y_offset)
             capture("window-material-open.png")
             if args.material_scroll:
                 t.XTestFakeMotionEvent(d,-1,250+20,580+20,0)
@@ -168,7 +172,7 @@ with log.open("w") as stream:
                 time.sleep(.3);capture('window-material-scrolled.png')
             # Coordinates come from inspection of this owned 900x1000 panel.
             # The longer marble panel reaches its scroll limit before 8 full notches.
-            click(300,155 if args.marble_controls else 654-65*args.material_scroll)
+            click(300,155 if args.marble_controls else 654+args.material_y_offset-65*args.material_scroll)
             capture("window-material-edited.png")
             if args.marble_controls:
                 capture('window-marble-balanced.png')
@@ -208,12 +212,23 @@ if args.history_controls:
 else:
     assert builds==1,builds
     updates=re.findall(r"authored update geometry=(\w+) appearance=(\w+) field_rebuilt=(\d)",text)
-    assert updates and all(row[2]=="0" for row in updates),text
+    assert (updates or args.readonly_material) and all(row[2]=="0" for row in updates),text
     initial=re.search(r"sdf: authored geometry=(\w+) appearance=(\w+)",text)
     assert all(row[0]==initial[1] for row in updates)
-    assert any(row[1]!=initial[2] for row in updates)
+    if args.readonly_material:
+        assert all(row[1]==initial[2] for row in updates)
+        def model_pixels(name):
+            return subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'captures'/name),
+                '-vf','crop=450:700:440:150','-f','rawvideo','-pix_fmt','rgb24','-'])
+        assert model_pixels('window-material-open.png')==model_pixels('window-material-edited.png')
+    else:
+        assert any(row[1]!=initial[2] for row in updates)
     receipt={"passed":True,"command":command,"field_builds":builds,"updates":updates,
     "actions":["resize twice","orbit","zoom","pause/reset","change material roughness without field rebuild","Escape"]}
+    if args.readonly_material:
+        receipt['readonly_material']=True
+        receipt['actions']=['resize twice','orbit','zoom','pause/reset',
+            'attempt disabled glass material edit','unchanged model pixels','Escape']
     if args.marble_controls:
         choices=re.findall(r'marble detail preset=(\w+)',text)
         assert choices==['Original','Denser','Fine','Balanced'],choices

@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
-from sdf_author import material, sphere, smooth_union, subtract
+from sdf_author import material, sphere, smooth_union, subtract, union
 
 
 def main():
@@ -76,6 +76,12 @@ def main():
         run(subject+'-glass', cfg)
         run(subject+'-glass-diagnostics', cfg, ['--debug',9], validate=False)
     cfg = read(root/'projects/sdf/presets/material-study/sphere-glass.json')
+    for name,tree in [('separated',union('pair',sphere('front',[0,0,.13],.09,'body'),sphere('back',[0,0,-.13],.09,'body'))),
+                      ('cavity',subtract('shell',sphere('outside',[0,0,0],.25,'body'),sphere('inside',[0,0,0],.18,'body')))]:
+        fixture=read(root/'projects/sdf/scenes/material-study/sphere-glass.json')
+        fixture['root']=tree;fixture.pop('history',None)
+        run('glass-'+name,cfg,fixture=fixture)
+        run('glass-'+name+'-diagnostics',cfg,['--debug',9],fixture=fixture,validate=False)
     exported = out/'glass-export.json'
     run('glass-empty-history', cfg, ['--validate-history'], validate=False)
     original = run('glass-export', cfg, ['--export-authored',str(exported)], validate=False)

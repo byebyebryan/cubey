@@ -2,10 +2,12 @@
 
 Date: 2026-10-22
 
-Status: implementation loop authorized on 2026-10-22. The
-[guardian closeout](sdf-guardian-closeout.md) remains settled. This is a separate
-material experiment on fixed subjects, with local commit milestones and a
-separately gated glass verdict.
+Status: implemented and natively qualified on 2026-10-23. The
+[evidence](sdf-material-study-evidence.md) records the result: six opaque looks
+on both subjects, qualified homogeneous sphere glass and an experimental
+guardian glass comparison that fails the original crossing-cap admission gate.
+The [guardian closeout](sdf-guardian-closeout.md) remains settled. The following
+sections retain the authorized execution boundary and original checkpoints.
 
 ## Objective and completion boundary
 
