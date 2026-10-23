@@ -629,15 +629,30 @@ The [paired environment report](http://starship:8787/reports/e4177f559cdff0f9f13
 contains 48 stills, six native orbits and the scoped performance/validation
 evidence. All reuse accepted scene/material files and exposure +0.6. The new low-sun
 routes use elevation 8 degrees and azimuth -155 degrees. Clear sky is the main
-presentation; clouds retain visible horizon/sampling artifacts and are an
-integration experiment. No ground plane or terrain is added. Shared distant
+presentation. The cloud follow-up softens the physical cutoff and improves
+sampling; clouds remain a bounded stylized presentation. No ground plane or terrain is added. Shared distant
 planet radiance contributes the lower reflection hemisphere; the separate
 visible sky uses the shared backdrop horizon policy.
 
 `--environment-extent 64|128` selects reflection face resolution (default 128).
 `--clouds` requires material-atmosphere; `--cloud-coverage` is in [0,1] and
 `--cloud-time` is a nonnegative frozen weather time. The presentation uses
-coverage 0.28 at 300 seconds. `--no-cloud-backdrop` is a compositor diagnostic
+coverage 0.28 at 300 seconds.
+The cloud follow-up restores shared Auto horizon handling and selects two
+single-frame samples with the existing terrain-post filter at half resolution.
+The visible cloud composite fades into the sky-only backdrop near the physical
+horizon, while probe radiance and all cloud ray directions remain physical.
+Other shared consumers retain their default composition. The first report's
+local-only cutoff is retained as historical evidence.
+
+`--cloud-distance-mode auto|local`, `--cloud-quality half|full`,
+`--cloud-view-samples 1|2|4` and `--cloud-resolve-mode terrain-post|metadata-bilateral`
+expose the existing shared comparison choices. `--no-cloud-sky-only` disables
+the visible horizon fade for diagnosis. `--cloud-debug-view` supports `final`,
+`raw-final`, `cloud-alpha`, `edge-mask`, `horizon-handoff` and
+`integrated-horizon-alpha`. These startup controls preserve material/geometry
+records and do not add a weather or shading editor.
+ `--no-cloud-backdrop` is a compositor diagnostic
 that retains clouded reflections while hiding the visible layer.
 Sky/cloud resources settle before frame zero, then reuse their probes while
 the camera/material changes. Native sun controls update the environment without

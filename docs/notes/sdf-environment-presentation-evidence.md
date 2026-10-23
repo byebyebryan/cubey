@@ -204,3 +204,53 @@ sampling remains off. `--no-cloud-sky-only` isolates the physical cutoff, and
 the first integration's visible settings for comparisons.
 
 Final native qualification, cost and delivery receipts are recorded below.
+
+
+Follow-up validation passes 30 native foundation captures, the 17 focused
+core/SDF/policy checks, both shared cloud GPU lifecycle/synchronization checks,
+and all 22 documentation recipes. New cloud controls reject five invalid cases
+and preserve config write/reload values. Native sun, resize, orbit, roughness
+and Escape checks pass with one field build. Frozen frames remain byte-identical,
+and settled orbit films capture the sky/cloud probes once. All 28 accepted
+catalog source files retain their hashes.
+
+The explicit Local/one-sample/no-fade controls reproduce all four prior cloud
+comparison PNGs exactly. Matched initial/selected foreground interior comparisons
+test 386,832 color channels for bronze and the same number for glass, each with
+maximum error zero. Thus the background improvements do not retune reflection,
+refraction or surface appearance. The prior SDF/glass/cloud-march/probe SPIR-V
+hashes also remain exact: only the cloud depth compositor changes among SDF's
+29 shaders. The physical probe and raw density paths are unchanged.
+
+The final study has seven variants across four subjects (28 stills), six
+handoff/alpha diagnostics, and four fully decoded 240-frame before/after native
+orbits. Artifacts are `outputs/sdf/cloud-handoff-{comparison,foundation,controls,
+films,admission}/`. Runtime edits captured before their milestone commit are
+explicitly identified in the comparison receipt; source bytes match `9905506f`.
+The rejected mirrored-ray trial remains only in local working evidence.
+
+Fresh sequential 1080p/1x/hard-shadow runs use 180 frames, 30 warmup and 148
+completed GPU samples. All owned capture/UI jobs finished before profiling.
+The enclosing whole-scene GPU timestamp includes sky, SDF, visible clouds,
+composition and post, excluding setup/build/encoding.
+
+| Variant | Guardian bronze median / p95 | Guardian glass median / p95 |
+| --- | --- | --- |
+| Initial Local / half / 1 sample | 2.381 / 2.479 ms | 3.356 / 3.514 ms |
+| Auto / half / 1 sample | 2.680 / 2.775 ms | 3.651 / 3.810 ms |
+| Auto / half / 2 samples | 2.954 / 3.029 ms | 3.924 / 4.064 ms |
+| Auto / full / 1 sample | 4.139 / 4.221 ms | 5.131 / 5.255 ms |
+| Auto / half / bilateral | 3.214 / 3.302 ms | 4.197 / 4.341 ms |
+| Reference Auto / full / 2 samples | 5.058 / 5.135 ms | 6.042 / 6.167 ms |
+| Selected Auto / half / 2 samples / fade | 2.941 / 3.044 ms | 3.932 / 4.065 ms |
+
+The selected setting adds about 0.56–0.58 ms against matched initial controls;
+it remains below the retained 16.7 ms provisional full-scene budget. Faint edge
+patterns and soft pale twilight shading remain within this bounded stylized
+presentation. No new density, lighting model or material tuning is attempted.
+Profiles and setup/build observations are in `outputs/sdf/cloud-handoff-profile/`.
+The first new compositor launch observed 12.12 s environment setup; later launches
+were warm. That is a startup observation, not an isolated compilation benchmark.
+
+Browser discovery again finds no connected browser, so layout/playback acceptance
+remains separate from native film decoding and source-level interaction checks.
