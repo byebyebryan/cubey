@@ -2,6 +2,7 @@
 #define CUBEY_CLOUD_COMMON_GLSL
 
 #include "cubey/procedural/operators.glsl"
+#include "cubey/atmosphere/sky_background_direction.glsl"
 
 const float CLOUD_PI = 3.14159265359;
 
@@ -147,6 +148,15 @@ vec3 cloud_view_direction(vec2 position) {
     float tan_half_fovy = params.camera_up_tan_half_fovy.w;
     return normalize(forward + right * (position.x * aspect * tan_half_fovy) -
                      up * (position.y * tan_half_fovy));
+}
+
+// Presentation only: physical clouds fade where the external sky-only backdrop
+// replaces the planet horizon. Do not remap structured cloud rays or probe IBL.
+float cloud_external_background_visibility(vec3 direction) {
+    if (params.background_options.w <= 1.5) return 1.0;
+    vec3 origin = params.camera_position_radius.xyz;
+    vec3 center = vec3(origin.x, -params.camera_position_radius.w, origin.z);
+    return sky_background_horizon_visibility(direction, origin, center);
 }
 
 vec3 cloud_planet_up() {

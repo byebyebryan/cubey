@@ -7,6 +7,9 @@ vec3 atmosphere_camera_up(vec3 ray_origin, vec3 planet_center) {
     if (dot(up, up) <= 0.000001) return vec3(0.0, 1.0, 0.0);
     return normalize(up);
 }
+float sky_background_horizon_visibility(vec3 direction, vec3 ray_origin, vec3 planet_center) {
+    return smoothstep(0.0, 0.080, dot(direction, atmosphere_camera_up(ray_origin, planet_center)));
+}
 vec3 horizon_direction_for_up(vec3 direction, vec3 local_up) {
     vec3 horizon = direction - local_up * dot(direction, local_up);
     float length_squared = dot(horizon, horizon);

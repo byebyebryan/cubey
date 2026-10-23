@@ -22,6 +22,10 @@ struct SdfConfig {
     std::uint32_t environment_extent = 128;
     bool clouds = false;
     bool cloud_backdrop = true;
+    bool cloud_sky_only = true;
+    std::string cloud_distance = "auto", cloud_quality = "half", cloud_resolve = "terrain-post";
+    std::string cloud_debug = "final";
+    std::uint32_t cloud_view_samples = 2;
     float cloud_coverage = .45F;
     double cloud_time = 0;
     float cutter_width = 0.003F;
@@ -74,6 +78,22 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         option("cloud-backdrop", "Visible cloud layer (off: inspect clouded IBL without composite)",
                config::ValueType::Bool);
     cloud_backdrop.negative_cli_name = "--no-cloud-backdrop";
+    auto cloud_sky_only = option("cloud-sky-only", "Fade clouds into the sky-only backdrop horizon",
+                                 config::ValueType::Bool);
+    cloud_sky_only.negative_cli_name = "--no-cloud-sky-only";
+    auto cloud_distance =
+        option("cloud-distance-mode", "Cloud horizon route", config::ValueType::Enum);
+    cloud_distance.enum_values = {"auto", "local"};
+    auto cloud_quality =
+        option("cloud-quality", "Visible cloud resolution", config::ValueType::Enum);
+    cloud_quality.enum_values = {"half", "full"};
+    auto cloud_resolve =
+        option("cloud-resolve-mode", "Shared cloud edge filter", config::ValueType::Enum);
+    cloud_resolve.enum_values = {"terrain-post", "metadata-bilateral"};
+    auto cloud_debug =
+        option("cloud-debug-view", "Shared cloud diagnostics", config::ValueType::Enum);
+    cloud_debug.enum_values = {"final",     "raw-final",       "cloud-alpha",
+                               "edge-mask", "horizon-handoff", "integrated-horizon-alpha"};
     auto validate =
         option("validate-field", "Compare GPU rays with the CPU recipe", config::ValueType::Bool);
     validate.negative_cli_name = "--no-validate-field";
@@ -107,6 +127,14 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(lighting, c.lighting)
         .bind(clouds, c.clouds)
         .bind(cloud_backdrop, c.cloud_backdrop)
+        .bind(cloud_sky_only, c.cloud_sky_only)
+        .bind(cloud_distance, c.cloud_distance)
+        .bind(cloud_quality, c.cloud_quality)
+        .bind(cloud_resolve, c.cloud_resolve)
+        .bind(cloud_debug, c.cloud_debug)
+        .bind(option("cloud-view-samples", "Single-frame cloud samples (1, 2 or 4)",
+                     config::ValueType::UInt32),
+              c.cloud_view_samples)
         .bind(option("cloud-coverage", "Frozen cloud coverage", config::ValueType::Float),
               c.cloud_coverage)
         .bind(option("cloud-time", "Frozen weather time in seconds", config::ValueType::Float),

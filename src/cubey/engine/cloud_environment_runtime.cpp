@@ -27,6 +27,7 @@ cloud_environment_runtime_frame(const CloudEnvironmentConfig& config, double ela
         .temporal_frame_index = temporal_frame_index,
         .camera_mode = 0.0F,
         .external_background = view.external_background,
+        .sky_only_background = view.sky_only_background,
         .near_plane_m = view.near_plane_m,
         .far_plane_m = view.far_plane_m,
         .scene_depth_mode = view.scene_depth_mode,

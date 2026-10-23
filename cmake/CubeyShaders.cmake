@@ -259,6 +259,7 @@ function(cubey_cloud_layer_shader_depends out_var)
     set(
         cloud_layer_shader_depends
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_common.glsl"
+        "${CMAKE_SOURCE_DIR}/shaders/cubey/atmosphere/sky_background_direction.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_composite_post.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_noise_common.glsl"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/cloud/cloud_resolve_common.glsl"

@@ -172,6 +172,7 @@ void Renderer::destroy() {
     atmosphere_textures_.reset();
     material_atmosphere_ = false;
     clouds_enabled_ = false;
+    cloud_sky_only_ = false;
     cloud_sky_generation_ = 0;
     field_ = nullptr;
 }

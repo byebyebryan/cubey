@@ -54,6 +54,7 @@ class Renderer {
     render::AtmosphereBackgroundFrame sky_background_;
     bool material_atmosphere_ = false;
     bool clouds_enabled_ = false;
+    bool cloud_sky_only_ = false;
     std::uint64_t cloud_sky_generation_ = 0;
     render::CloudLayerRuntimeShaderFiles cloud_shaders_;
     std::chrono::steady_clock::time_point environment_clock_{};

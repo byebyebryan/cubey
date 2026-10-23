@@ -169,3 +169,38 @@ Carbon SSH timed out at connection establishment, so Carbon client reachability
 remains unverified. Browser discovery likewise had no connected browser. These
 limits do not change the native validation or Starship served-byte checks.
 Commits remain local; no push occurred.
+
+
+## Follow-up: restore shared cloud horizon quality
+
+The initial SDF integration forced `Local` distance mode, bypassing the accepted
+shared `Auto` lower-sky horizon handoff. Temporal off, terrain-post edge resolve,
+SurfaceVolume density and the improved optical-depth/twilight shading were
+already active. The previous explanation placed too much weight on disabled
+temporal reconstruction: it is also off in the shared production baseline.
+
+A matched native study compares local/auto, half/full quality, one/two samples,
+and terrain-post/metadata-bilateral filtering on unchanged weather, cameras,
+exposure, materials and geometry. Auto restores the integrated horizon source,
+but cannot alone remove the hard physical planet cutoff against a sky-only
+backdrop. The alpha/handoff diagnostics distinguish those two issues.
+
+A trial applying the sky backdrop's ray remapping to structured clouds produced
+mirroring and stretched horizon streaks and was rejected. The final correction
+keeps cloud rays physical and fades only the visible composite across the same
+0–0.08 up-direction interval used by the sky presentation. This is an opt-in
+external-backdrop policy. Other shared consumers default to physical composition;
+reflection probes explicitly clear external-background state and retain physical
+radiance/opacity. The existing uniform ABI is unchanged (background W: standalone
+0, external physical 1, external sky-only 2). Foreground depth bypass remains
+before cloud filtering/composition.
+
+SDF now defaults to Auto, half resolution, two single-frame samples, terrain-post
+resolve and the sky-only backdrop fade. Updated cloud presets save these choices.
+No material, density, lighting-response, exposure or weather tuning is included.
+Full quality and alternate filtering remain bounded comparison options. Temporal
+sampling remains off. `--no-cloud-sky-only` isolates the physical cutoff, and
+`--cloud-distance-mode local --cloud-view-samples 1 --no-cloud-sky-only` restores
+the first integration's visible settings for comparisons.
+
+Final native qualification, cost and delivery receipts are recorded below.

@@ -20,5 +20,10 @@
   "environment-extent": 128,
   "clouds": true,
   "cloud-time": 300,
-  "cloud-coverage": 0.28
+  "cloud-coverage": 0.28,
+  "cloud-distance-mode": "auto",
+  "cloud-quality": "half",
+  "cloud-view-samples": 2,
+  "cloud-resolve-mode": "terrain-post",
+  "cloud-sky-only": true
 }

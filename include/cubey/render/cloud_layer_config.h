@@ -281,6 +281,9 @@ struct CloudLayerFrameInfo {
     std::uint32_t temporal_frame_index = 0;
     float camera_mode = 0.0F;
     bool external_background = false;
+    // Fade visible clouds into an external SkyOnlyNoGroundOcclusion backdrop.
+    // Probe/standalone frames always retain physical radiance and opacity.
+    bool sky_only_background = false;
     float near_plane_m = 1.0F;
     float far_plane_m = 1000.0F;
     CloudLayerSceneDepthMode scene_depth_mode = CloudLayerSceneDepthMode::Disabled;

@@ -18,6 +18,10 @@ def main():
                         'sun-elevation':4 if a.stage=='initial' else 8,'sun-azimuth':70 if a.stage=='initial' else -155,'exposure':-.4 if a.stage=='initial' else .6,
                         'clouds':environment=='clouds','cloud-time':300,
                         'cloud-coverage':.28})
+                if environment=='clouds':
+                    cfg.update({'cloud-distance-mode':'auto','cloud-quality':'half',
+                        'cloud-view-samples':2,'cloud-resolve-mode':'terrain-post',
+                        'cloud-sky-only':True})
                 (out/f'{subject}-{material}-{environment}.json').write_text(json.dumps(cfg,indent=2)+'\n')
     print('Authored 30 presentation presets; accepted scene/material files unchanged.')
 

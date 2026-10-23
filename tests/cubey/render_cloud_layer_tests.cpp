@@ -243,6 +243,13 @@ void test_cloud_layer_scene_depth_modes_match_shader_contract() {
         cubey::render::cloud_layer_frame_uniforms(config, frame);
     require_near(external_background_uniforms.background_options.w, 1.0F, 0.0001F,
                  "cloud uniforms should identify external atmosphere composition");
+    frame.sky_only_background = true;
+    require_near(cubey::render::cloud_layer_frame_uniforms(config, frame).background_options.w,
+                 2.0F, 0.0001F, "sky-only cloud views should opt into the backdrop horizon fade");
+    frame.external_background = false;
+    require_near(cubey::render::cloud_layer_frame_uniforms(config, frame).background_options.w,
+                 0.0F, 0.0001F,
+                 "probe/standalone frames must keep physical opacity with sky-only requested");
     require(common.find("float cloud_internal_star_visibility()") != std::string::npos &&
                 common.find("return 1.0 - step(0.5, params.background_options.w);") !=
                     std::string::npos &&

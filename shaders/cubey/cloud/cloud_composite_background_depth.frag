@@ -74,6 +74,11 @@ void main() {
     float edge_mask = cloud_resolve_edge_mask(uv, raw_cloud, raw_metadata, direction);
     float resolve_strength = cloud_resolve_strength(uv, raw_cloud, raw_metadata, direction);
     vec4 cloud = final_view ? mix(raw_cloud, resolved_cloud, resolve_strength) : raw_cloud;
+    if (final_view || raw_final_view) {
+        float visibility = cloud_external_background_visibility(direction);
+        cloud.rgb *= visibility;
+        cloud.a = mix(1.0, cloud.a, visibility);
+    }
     float cloud_alpha = 1.0 - clamp(cloud.a, 0.0, 1.0);
 
     if (final_view || raw_final_view) {

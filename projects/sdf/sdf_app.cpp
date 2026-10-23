@@ -44,6 +44,8 @@ class App {
         if (config_.clouds && config_.lighting != "material-atmosphere")
             throw std::invalid_argument("SDF clouds require material-atmosphere lighting");
         if (!std::isfinite(config_.cloud_time) || config_.cloud_time < 0 ||
+            (config_.cloud_view_samples != 1 && config_.cloud_view_samples != 2 &&
+             config_.cloud_view_samples != 4) ||
             !std::isfinite(config_.cloud_coverage) || config_.cloud_coverage < 0 ||
             config_.cloud_coverage > 1)
             throw std::invalid_argument("invalid frozen SDF cloud options");

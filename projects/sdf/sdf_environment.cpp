@@ -125,21 +125,31 @@ CloudEnvironmentRuntimeFrame Renderer::cloud_frame(math::Vec3 eye, math::Vec3 ta
          .target_extent = scene_extent_,
          .near_plane_m = .01F,
          .far_plane_m = 100,
+         .sky_only_background = cloud_sky_only_,
          .scene_depth_mode = render::CloudLayerSceneDepthMode::OpaqueForeground},
         atmosphere_.lighting());
 }
 void Renderer::create_clouds(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                              const SdfConfig& config, std::uint32_t slots) {
     clouds_enabled_ = true;
+    cloud_sky_only_ = config.cloud_sky_only;
     CloudEnvironmentConfig cloud;
     apply_cloud_environment_weather_preset(cloud, CloudEnvironmentWeatherPreset::BrokenCumulus);
     cloud.layer.planet_radius_m = atmosphere_.environment().bottom_radius_km * 1000;
-    cloud.layer.distance_mode = render::CloudLayerDistanceMode::Local;
+    cloud.layer.distance_mode = cloud_environment_distance_mode_from_name(config.cloud_distance);
     cloud.layer.background_mode = render::CloudLayerBackgroundMode::Atmosphere;
     cloud.layer.coverage = config.cloud_coverage;
-    cloud.layer.quality = render::CloudLayerQuality::Half;
+    cloud.layer.quality = cloud_environment_quality_from_name(config.cloud_quality);
+    cloud.layer.view_samples = static_cast<std::int32_t>(config.cloud_view_samples);
+    cloud.layer.resolve_mode = cloud_environment_resolve_mode_from_name(config.cloud_resolve);
+    cloud.layer.debug_view = render::cloud_layer_debug_view_from_name(config.cloud_debug);
     cloud.layer.view_steps_override = 64;
     cloud.layer.temporal_enabled = false;
+    std::cout << "sdf: cloud view distance=" << config.cloud_distance
+              << " horizon_layer=" << cloud.layer.horizon_layer_enabled
+              << " sky_only_background=" << cloud_sky_only_ << " quality=" << config.cloud_quality
+              << " samples=" << config.cloud_view_samples << " resolve=" << config.cloud_resolve
+              << " debug=" << config.cloud_debug << '\n';
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
     cloud_shaders_ = render::cloud_layer_runtime_shader_files(
         path, render::CloudLayerCompositeMode::ExternalBackgroundSceneDepth);

@@ -491,7 +491,11 @@ CloudLayerFrameUniforms cloud_layer_frame_uniforms(const CloudLayerConfig& confi
         .background_options = {background_mode_value(config.background_mode),
                                config.horizon_layer_enabled ? 1.0F : 0.0F,
                                config.local_volume_enabled ? 1.0F : 0.0F,
-                               frame.external_background ? 1.0F : 0.0F},
+                               // 0: standalone/physical probe, 1: external physical,
+                               // 2: external sky-only backdrop (same uniform ABI).
+                               frame.external_background
+                                   ? (frame.sky_only_background ? 2.0F : 1.0F)
+                                   : 0.0F},
         .distance_options = {distance_mode_value(config.distance_mode),
                              config.orbit_transition_start_m, config.orbit_transition_end_m,
                              config.orbit_detail_strength},

@@ -21,6 +21,7 @@ struct CloudEnvironmentSurfaceViewInfo {
     float near_plane_m = 1.0F;
     float far_plane_m = 400000.0F;
     bool external_background = true;
+    bool sky_only_background = false;
     render::CloudLayerSceneDepthMode scene_depth_mode =
         render::CloudLayerSceneDepthMode::Disabled;
     float scene_depth_fade_m = 500.0F;
