@@ -75,6 +75,7 @@ the architecture and project guides remain current authority.
 - [Terrain Rendering Envelope V1](terrain-rendering-envelope-v1.md): far-backdrop geometry/detail limits.
 - [Terrain Visual Fidelity Strategy](terrain-visual-fidelity-strategy.md): bounded evidence required before reopening the accepted backdrop.
 
+- [Material workshops evidence](material-workshops-evidence.md): implemented mesh/SDF front doors, shared content, native qualification, measured costs and review report.
 - [SDF material workshop contract](sdf-material-workshop-plan.md): shared recipes and compact CSG inspection on the existing renderer.
 
 ## Exploration candidates

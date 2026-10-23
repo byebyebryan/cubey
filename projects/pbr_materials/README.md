@@ -31,7 +31,14 @@ handles. Routing changes within a handle are rejected before publication.
 `--stress-edits 1000` exercises each used slot without growing UBO or descriptor
 residency. Existing imported materials remain immutable by default.
 
-Initial qualification: furnace, IOR and glTF control PNGs were byte-identical
-with the shared shader extension; the retained SDF CPU tests and all 29 SDF
-shader binaries also remained unchanged after extraction. Full visual/cost
-qualification follows in the material workshop report.
+[Qualification and native review report](../../docs/notes/material-workshops-evidence.md):
+98 images, five eight-second films, retained control images/fingerprints,
+shared recipe round trips, native editing checks and measured 1080p costs.
+The seven-material mesh gallery measures 0.303 ms in studio and 2.607 ms with
+clouds on the qualified RTX 5070 Ti run; setup and encoding are separate.
+New visual presentation remains open to user review.
+
+Reproduce the bounded native matrix with
+`python3 projects/pbr_materials/tools/qualify_workshops.py --stage all`.
+The report builder is `projects/pbr_materials/tools/build_workshops_report.py`;
+its compatibility/diagnostic inputs are documented in the evidence record.

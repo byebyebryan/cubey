@@ -2,9 +2,10 @@
 
 Date: 2026-10-23
 
-Status: implementation of Stages A and B authorized on 2026-10-23. Plans committed
-as `b35d1a89`; local milestone commits and native qualification are in progress.
-Stage C remains deferred. No push is included in this loop.
+Status: implemented and qualified on 2026-10-23, alongside the SDF material
+workshop. The [closeout evidence](material-workshops-evidence.md) records native
+results and the review report. The original accepted implementation contract
+below is retained; authored showcase expansion remains deferred. No push.
 
 ## Goal and V1 result
 

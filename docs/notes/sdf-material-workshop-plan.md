@@ -1,6 +1,7 @@
 # SDF material workshop implementation contract
 
-Date: 2026-10-23. Status: authorized alongside the PBR material workshop.
+Date: 2026-10-23. Status: implemented and qualified alongside the PBR material workshop.
+See the [closeout evidence](material-workshops-evidence.md) for native results and limits.
 
 Stage B uses an explicit workshop mode in the existing SDF executable, retaining
 one renderer, field implementation and accepted scene path. The shared recipe

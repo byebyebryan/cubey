@@ -6,6 +6,9 @@ source identities and command/log receipts are kept outside tracked source.
 GPU work is deliberately sequential.
 """
 import argparse
+import csv
+import statistics
+from collections import defaultdict
 import hashlib
 import json
 import subprocess
@@ -17,6 +20,26 @@ IDS = ("plain", "limestone", "marble", "clay", "ceramic", "bronze", "glass")
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_timing_summary(output):
+    summary = {}
+    for path in sorted(output.glob("profile-*.passes.csv")):
+        frames = defaultdict(dict)
+        for row in csv.DictReader(path.open()):
+            if row["kind"] == "gpu":
+                frames[int(row["frame_index"])][row["label"]] = float(row["duration_ms"])
+        samples = list(frames.values())
+        keys = sorted({key for frame in samples for key in frame})
+        passes = {}
+        for key in keys:
+            values = sorted(frame[key] for frame in samples if key in frame)
+            passes[key] = dict(count=len(values), median_ms=statistics.median(values), p95_ms=values[int((len(values)-1)*.95)])
+        totals = sorted(frame.get("material workshop whole scene", frame.get("sdf.whole_scene", sum(frame.values()))) for frame in samples)
+        summary[path.name.removesuffix(".passes.csv")] = dict(passes=passes,
+            median_ms=statistics.median(totals), p95_ms=totals[int((len(totals)-1)*.95)], samples=len(totals),
+            whole_method="whole scene GPU scope" if any("whole" in key for key in keys) else "sum of trace and display GPU scopes")
+    (output / "timings.json").write_text(json.dumps(summary, indent=2)+"\n")
 
 
 def main():
@@ -81,6 +104,7 @@ def main():
                 name=f"profile-{renderer}-{material}-{lighting}"
                 run(name,renderer,material,lighting,specimen,extra=("--headless-render-only","--frames","112","--profile-warmup-frames","16","--profile-output",str(output/name)),dimensions=(1920,1080))
         run("stress","mesh","clay","studio",extra=("--headless-render-only","--frames","32","--stress-edits","1000"))
+        write_timing_summary(output)
     if args.stage in ("films", "all"):
         for material in ("bronze","glass"):
             for lighting in ("studio","clouds"):

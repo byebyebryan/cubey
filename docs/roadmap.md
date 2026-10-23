@@ -51,20 +51,21 @@ above.
 
 ## Material and SDF demo direction
 
-The [material and SDF roadmap](notes/material-demo-roadmap.md), captured for
-review on 2026-10-23, separates three demo goals: a mesh PBR material workshop,
-an SDF material workshop using the same recipes, and an SDF authored-content
-showcase led by construction playback. Existing SDF content remains runnable;
-this direction does not require immediate project moves or a new sculpting UI.
+The [material and SDF roadmap](notes/material-demo-roadmap.md) separates a mesh
+PBR material workshop, an SDF material workshop using the same recipes, and an
+SDF authored-content showcase led by construction playback.
 
-The proposed foundation addition is shared parameterized material content:
-portable recipes and procedural surface evaluation. PBR shading, material
-factors, atmosphere, clouds and environment products already exist. The
-[PBR materials V1 plan](notes/pbr-material-demo-plan.md) is the first implementation
-candidate, with retained SDF looks as its reference and compatibility consumer.
-It also addresses bounded live parameter publication through the current
-immutable material-resource model. These are planning records, not implemented
-projects or an extension of repository-wide runtime qualification.
+The first two stages are implemented and [qualified](notes/material-workshops-evidence.md):
+`pbr_materials` provides an ordinary-mesh gallery and parameter workshop;
+`sdf --workshop sphere|block|csg` provides matched specimens and CSG inspection.
+[Shared recipes and procedural evaluation](architecture/material-recipes.md)
+now sit outside SDF. PBR editing uses bounded retired-frame tables; existing
+immutable material consumers and accepted SDF content retain their behavior.
+
+Stage C and further material realism remain deferred. The workshop evidence is
+a bounded native checkpoint, not a repository-wide performance or artistic
+acceptance claim. Reopen shared content/renderer work when a concrete authored
+piece or another consumer needs a missing material or transport capability.
 
 ## Public presentation
 

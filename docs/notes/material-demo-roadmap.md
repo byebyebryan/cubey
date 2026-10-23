@@ -2,9 +2,10 @@
 
 Date: 2026-10-23
 
-Status: implementation of Stages A and B authorized on 2026-10-23. Plans committed
-as `b35d1a89`; local milestone commits and native qualification are in progress.
-Stage C remains deferred. No push is included in this loop.
+Status: Stages A and B implemented and qualified on 2026-10-23. The
+[workshop evidence](material-workshops-evidence.md) records current front doors,
+compatibility, measured costs and the native review report. Stage C remains
+deferred. Milestone commits are local; no push is included in this loop.
 
 ## Purpose
 
@@ -22,9 +23,10 @@ outcomes without requiring a novel rendering algorithm.
 
 The SDF work already contains parts of all three demos. Separate their purpose
 and ownership before deciding which source directories or executables to split.
-The first implementation candidate is the [PBR materials demo](pbr-material-demo-plan.md).
+The [PBR materials demo](../../projects/pbr_materials/README.md) and explicit
+[SDF workshop mode](../../projects/sdf/README.md#material-workshop) now implement the first two stages.
 
-## Starting point
+## Starting point before shared-material promotion
 
 The [shared PBR renderer](../architecture/pbr-ibl.md) already provides a material
 data model as well as shading: factors, texture inputs, optical properties,
@@ -77,7 +79,7 @@ graph, asset database or renderer-wide material-manager redesign.
 
 ## A PBR material workshop
 
-Proposed working front door: `projects/pbr_materials`, executable `pbr_materials`.
+Implemented working front door: `projects/pbr_materials`, executable `pbr_materials`.
 It uses `ForwardPbrRenderer3D` and ordinary meshes, with no SDF runtime dependency.
 
 Provide a curated gallery that looks useful immediately and a focused specimen
@@ -116,8 +118,7 @@ label those differences instead of claiming identical transport.
 
 Keep SDF v2 inline materials and old fingerprints readable. A shared-recipe
 adapter must preserve CSG ownership, model-space patterns, history behavior and
-geometry caching. Whether this becomes a separate executable or an explicit
-workshop mode/front door on the current SDF runtime is a Stage B decision.
+geometry caching. Stage B uses an explicit `--workshop` front door on the current SDF runtime.
 Avoid duplicating the SDF renderer merely to obtain a second application name.
 
 ## C SDF sculpting and authored content showcase
