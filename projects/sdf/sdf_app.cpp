@@ -4,6 +4,7 @@
 #include "sdf_material.h"
 #include "sdf_renderer.h"
 #include "sdf_validation.h"
+#include "sdf_workshop.h"
 
 #include <cubey/engine/project_runtime.h>
 #include <cubey/host/headless_png_host.h>
@@ -28,13 +29,15 @@ class App {
   public:
     explicit App(SdfConfig config)
         : config_(std::move(config)),
-          recipe_(!config_.authored_path.empty() ? Recipe{}
+          recipe_((!config_.authored_path.empty() || !config_.workshop.empty()) ? Recipe{}
                   : config_.recipe_path.empty()
                       ? make_recipe(config_.scene, config_.seed, config_.count,
                                     config_.cutter_width, config_.cutter_mode)
                       : load_recipe(config_.recipe_path)),
           authored_(
-              config_.authored_path.empty()
+              !config_.workshop.empty()
+                  ? std::optional<AuthoredScene>{make_material_workshop(config_)}
+              : config_.authored_path.empty()
                   ? std::nullopt
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
         if (authored_)
@@ -163,10 +166,11 @@ class App {
                 orbit_.set_pitch(config_.pitch);
                 orbit_.set_distance(config_.distance);
             }
-            if (authored_ && (reload_authored_ || materials_changed_)) {
+            if (authored_ && (reload_authored_ || materials_changed_ || workshop_changed_)) {
                 try {
-                    auto next =
-                        reload_authored_ ? load_authored_scene(config_.authored_path) : *authored_;
+                    auto next = workshop_changed_  ? make_material_workshop(config_)
+                                : reload_authored_ ? load_authored_scene(config_.authored_path)
+                                                   : *authored_;
                     static_cast<void>(authored_appearance_hash(next));
                     validate_authored_motion(next);
                     const auto before = field_->stats().build_count;
@@ -189,6 +193,7 @@ class App {
                 }
                 reload_authored_ = false;
                 materials_changed_ = false;
+                workshop_changed_ = false;
             }
             if (regenerate_requested_) {
                 regenerate_requested_ = false;
@@ -408,6 +413,53 @@ class App {
     void draw_ui() {
         ImGui::SetNextWindowSize({340, 0}, ImGuiCond_FirstUseEver);
         if (ImGui::Begin("SDF study")) {
+            if (!config_.workshop.empty()) {
+                const char* specimens[]{"sphere", "block", "csg"};
+                int shape =
+                    config_.workshop == "sphere" ? 0 : (config_.workshop == "block" ? 1 : 2);
+                if (ImGui::Combo("Workshop specimen", &shape, specimens, 3)) {
+                    config_.workshop = specimens[shape];
+                    workshop_changed_ = true;
+                }
+                const char* ids[]{"plain",   "limestone", "marble", "clay",
+                                  "ceramic", "bronze",    "glass"};
+                int material = 0;
+                for (int i = 0; i < 7; ++i)
+                    if (config_.workshop_material == ids[i])
+                        material = i;
+                if (ImGui::Combo("Shared recipe", &material, ids, 7)) {
+                    config_.workshop_material = ids[material];
+                    config_.material_recipe_path.clear();
+                    workshop_changed_ = true;
+                }
+                workshop_changed_ |=
+                    ImGui::Checkbox("Contrasting cut material", &config_.workshop_cut_material);
+                workshop_changed_ |=
+                    ImGui::Checkbox("Smooth material blending", &config_.workshop_blend_materials);
+                if (ImGui::Button("Reset workshop material")) {
+                    config_.material_recipe_path.clear();
+                    workshop_changed_ = true;
+                }
+                ImGui::InputText("Recipe file", workshop_recipe_path_,
+                                 sizeof(workshop_recipe_path_));
+                if (ImGui::Button("Save shared recipe")) {
+                    try {
+                        asset::save_material_recipe(workshop_recipe_path_,
+                                                    workshop_material_recipe(config_, *authored_));
+                        error_.clear();
+                    } catch (const std::exception& e) {
+                        error_ = e.what();
+                    }
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Load shared recipe")) {
+                    config_.material_recipe_path = workshop_recipe_path_;
+                    workshop_changed_ = true;
+                }
+                ImGui::TextWrapped(
+                    "Patterns use common material coordinates across fusion and cuts. Glass "
+                    "measures interface segments; the mesh workshop estimates thickness.");
+            }
             if (authored_) {
                 ImGui::Text("%s", authored_->name.c_str());
                 ImGui::Text("%zu shapes / %zu instructions", authored_->leaf_count,
@@ -547,6 +599,21 @@ class App {
                             material.emission[channel] =
                                 std::clamp(material.emission[channel], 0.0F, 32.0F);
                         ImGui::EndDisabled();
+                        auto& optics = authored_->optics[i];
+                        ImGui::BeginDisabled(optics.settings.y > 0);
+                        materials_changed_ |=
+                            ImGui::SliderFloat("Diffuse roughness", &optics.attenuation.w, 0, 1);
+                        ImGui::EndDisabled();
+                        if (optics.settings.y > 0) {
+                            materials_changed_ |=
+                                ImGui::SliderFloat("IOR", &optics.settings.z, 1, 2.5F);
+                            materials_changed_ |=
+                                ImGui::ColorEdit3("Attenuation color", &optics.attenuation.x);
+                            for (int k = 0; k < 3; ++k)
+                                optics.attenuation[k] = std::max(.001F, optics.attenuation[k]);
+                            materials_changed_ |= ImGui::SliderFloat("Attenuation distance",
+                                                                     &optics.settings.w, .01F, 4);
+                        }
                         auto& pattern = authored_->patterns[i];
                         if (pattern.settings.x > 0) {
                             ImGui::Text("Procedural: %s",
@@ -672,11 +739,14 @@ class App {
     std::size_t active_prefix_ = std::numeric_limits<std::size_t>::max();
     double playback_seconds_ = 0;
     bool regenerate_requested_ = false;
-    bool reload_authored_ = false, materials_changed_ = false;
+    bool reload_authored_ = false, materials_changed_ = false, workshop_changed_ = false;
+    char workshop_recipe_path_[512] = "outputs/sdf-material-recipe.json";
     std::string error_;
 };
 } // namespace
 int run_sdf(const SdfConfig& config) {
+    if (!config.workshop.empty() && (!config.authored_path.empty() || !config.recipe_path.empty()))
+        throw std::invalid_argument("workshop selects its own specimen");
     return App(config).run();
 }
 } // namespace cubey::projects::sdf

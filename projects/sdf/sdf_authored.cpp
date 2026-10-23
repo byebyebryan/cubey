@@ -201,6 +201,16 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         }
         validate_material_pattern(pattern);
         result.patterns.push_back(pattern);
+        math::Mat4 domain{1};
+        if (item.contains("material_from_object")) {
+            const auto& d = item.at("material_from_object");
+            if (!d.is_array() || d.size() != 16)
+                throw std::invalid_argument("material domain needs 16 numbers");
+            for (int k = 0; k < 16; ++k)
+                domain[k / 4][k % 4] = d.at(static_cast<std::size_t>(k)).get<float>();
+        }
+        procedural::validate_material_domain(domain);
+        result.material_domains.push_back(domain);
         result.material_names.push_back(name);
     }
     const auto material_index = [&](const std::string& name) {
@@ -348,6 +358,8 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
     if (scene.patterns.size() != scene.materials.size() ||
         scene.optics.size() != scene.materials.size())
         throw std::invalid_argument("authored material and pattern tables disagree");
+    if (!scene.material_domains.empty() && scene.material_domains.size() != scene.materials.size())
+        throw std::invalid_argument("authored material domain table disagrees");
     auto hash = authored_geometry_hash(scene);
     for (const auto& node : scene.program) {
         hash_float(hash, node.settings.z);
@@ -382,6 +394,16 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
             for (int c = 0; c < 4; ++c)
                 hash_float(hash, lane[c]);
     }
+    for (std::size_t i = 0; i < scene.material_domains.size(); ++i) {
+        const auto& d = scene.material_domains[i];
+        procedural::validate_material_domain(d);
+        if (d == math::Mat4{1})
+            continue;
+        hash_float(hash, -739.0F);
+        hash_float(hash, static_cast<float>(i));
+        for (int k = 0; k < 16; ++k)
+            hash_float(hash, d[k / 4][k % 4]);
+    }
     return hash;
 }
 static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& scene, float footprint,
@@ -391,9 +413,12 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
     std::array<SurfaceSample, 32> stack{};
     std::array<MaterialSample, 16> materials;
     for (std::size_t i = 0; i < scene.materials.size(); ++i)
-        materials[i] =
-            patterns ? sample_material(scene.materials[i], scene.patterns[i], point, footprint)
-                     : MaterialSample{scene.materials[i], {0, 0, 0}};
+        materials[i] = patterns ? procedural::sample_material_domain(
+                                      scene.materials[i], scene.patterns[i],
+                                      scene.material_domains.empty() ? math::Mat4{1}
+                                                                     : scene.material_domains.at(i),
+                                      point, footprint)
+                                : MaterialSample{scene.materials[i], {0, 0, 0}};
     std::size_t size = 0;
     for (std::size_t i = 0; i < scene.program.size(); ++i) {
         const auto& instruction = scene.program[i];
@@ -472,6 +497,17 @@ float authored_distance(math::Vec3 point, const AuthoredScene& scene) {
 std::string serialize_authored_scene(const AuthoredScene& scene) {
     auto json = Json::parse(scene.document);
     for (std::size_t i = 0; i < scene.materials.size(); ++i) {
+        const auto domain =
+            scene.material_domains.empty() ? math::Mat4{1} : scene.material_domains.at(i);
+        if (domain == math::Mat4{1})
+            json["materials"][i].erase("material_from_object");
+        else {
+            procedural::validate_material_domain(domain);
+            auto values = Json::array();
+            for (int k = 0; k < 16; ++k)
+                values.push_back(domain[k / 4][k % 4]);
+            json["materials"][i]["material_from_object"] = values;
+        }
         const auto& m = scene.materials[i];
         validate_material(m);
         json["materials"][i]["base_color"] = {m.base_roughness.x, m.base_roughness.y,

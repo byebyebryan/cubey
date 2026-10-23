@@ -1,7 +1,7 @@
-#include <cubey/procedural/surface_material.h>
 #include <algorithm>
 #include <cmath>
 #include <cubey/procedural/noise.h>
+#include <cubey/procedural/surface_material.h>
 #include <stdexcept>
 
 namespace cubey::procedural {
@@ -270,5 +270,27 @@ void validate_material_pattern(const MaterialPattern& p) {
     range(p.detail.z, .02F, .5F);
     range(p.detail.w, 0, 12);
     range(p.offset.w, 0, .25F);
+}
+void validate_material_domain(const math::Mat4& m) {
+    for (int c = 0; c < 4; ++c)
+        for (int r = 0; r < 4; ++r)
+            if (!std::isfinite(m[c][r]) || std::abs(m[c][r]) > 1000)
+                throw std::invalid_argument("invalid material domain");
+    if (m[0][3] != 0 || m[1][3] != 0 || m[2][3] != 0 || m[3][3] != 1 ||
+        std::abs(glm::determinant(math::Mat3{m})) < 1e-6F)
+        throw std::invalid_argument("material domain must be an invertible affine transform");
+}
+MaterialSample sample_material_domain(const SurfaceMaterial& base, const MaterialPattern& pattern,
+                                      const math::Mat4& domain, math::Vec3 point, float footprint) {
+    if (domain == math::Mat4{1})
+        return sample_material(base, pattern, point, footprint);
+    const math::Mat3 jacobian{domain};
+    const float bound =
+        std::sqrt(glm::dot(jacobian[0], jacobian[0]) + glm::dot(jacobian[1], jacobian[1]) +
+                  glm::dot(jacobian[2], jacobian[2]));
+    auto result = sample_material(base, pattern, math::Vec3{domain * math::Vec4{point, 1}},
+                                  footprint * bound);
+    result.height_gradient = glm::transpose(jacobian) * result.height_gradient;
+    return result;
 }
 } // namespace cubey::procedural

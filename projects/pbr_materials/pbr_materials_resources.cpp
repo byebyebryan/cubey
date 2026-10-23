@@ -23,18 +23,22 @@ cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
         CUBEY_PBR_MATERIALS_SHADER_DIR, {.shadow_extent = kShadowMapSize});
 }
 
-[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_cube_mesh() {
+[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_sphere_mesh() {
     const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> cube =
-        cubey::render::make_uv_sphere_position_color_normal_uv_mesh({.radius = 0.25F, .latitude_segments = 64, .longitude_segments = 128});
+        cubey::render::make_uv_sphere_position_color_normal_uv_mesh(
+            {.radius = 0.25F, .latitude_segments = 64, .longitude_segments = 128});
 
     cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> result;
     result.vertices.reserve(cube.vertices.size());
     result.indices = cube.indices;
     for (const cubey::render::VertexPositionColorNormalUv& vertex : cube.vertices) {
+        const math::Vec3 normal{vertex.normal[0], vertex.normal[1], vertex.normal[2]};
+        auto tangent = glm::cross(math::Vec3{0, 1, 0}, normal);
+        tangent = glm::length(tangent) < 1e-5F ? math::Vec3{1, 0, 0} : glm::normalize(tangent);
         result.vertices.push_back({
             .position = {vertex.position[0], vertex.position[1], vertex.position[2]},
             .normal = {vertex.normal[0], vertex.normal[1], vertex.normal[2]},
-            .tangent = {1.0F, 0.0F, 0.0F, 1.0F},
+            .tangent = {tangent, 1.0F},
             .uv0 = {vertex.uv[0], vertex.uv[1]},
         });
     }
@@ -49,23 +53,29 @@ cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_beveled_block_me
         const int axis = face / 2;
         const float sign = face % 2 ? 1.0F : -1.0F;
         const auto base = static_cast<std::uint16_t>(mesh.vertices.size());
-        for (int y = 0; y <= n; ++y) for (int x = 0; x <= n; ++x) {
-            math::Vec3 q{0};
-            q[axis] = sign * half;
-            q[(axis+1)%3] = half * (2.0F * static_cast<float>(x)/n - 1);
-            q[(axis+2)%3] = half * (2.0F * static_cast<float>(y)/n - 1);
-            const auto core = glm::clamp(q, math::Vec3{-half+radius}, math::Vec3{half-radius});
-            const auto normal = glm::normalize(q-core);
-            const auto p = core + normal * radius;
-            auto tangent = glm::cross(math::Vec3{0,1,0}, normal);
-            tangent = glm::length(tangent)<1e-5F ? math::Vec3{1,0,0} : glm::normalize(tangent);
-            mesh.vertices.push_back({.position=p,.normal=normal,.tangent={tangent,1}});
-        }
-        for (int y = 0; y < n; ++y) for (int x = 0; x < n; ++x) {
-            auto a = static_cast<std::uint16_t>(base+y*(n+1)+x), b=static_cast<std::uint16_t>(a+1),
-                 c=static_cast<std::uint16_t>(a+n+1), d=static_cast<std::uint16_t>(c+1);
-            mesh.indices.insert(mesh.indices.end(),{a,b,c,b,d,c});
-        }
+        for (int y = 0; y <= n; ++y)
+            for (int x = 0; x <= n; ++x) {
+                math::Vec3 q{0};
+                q[axis] = sign * half;
+                q[(axis + 1) % 3] = half * (2.0F * static_cast<float>(x) / n - 1);
+                q[(axis + 2) % 3] = half * (2.0F * static_cast<float>(y) / n - 1);
+                const auto core =
+                    glm::clamp(q, math::Vec3{-half + radius}, math::Vec3{half - radius});
+                const auto normal = glm::normalize(q - core);
+                const auto p = core + normal * radius;
+                auto tangent = glm::cross(math::Vec3{0, 1, 0}, normal);
+                tangent =
+                    glm::length(tangent) < 1e-5F ? math::Vec3{1, 0, 0} : glm::normalize(tangent);
+                mesh.vertices.push_back({.position = p, .normal = normal, .tangent = {tangent, 1}});
+            }
+        for (int y = 0; y < n; ++y)
+            for (int x = 0; x < n; ++x) {
+                auto a = static_cast<std::uint16_t>(base + y * (n + 1) + x),
+                     b = static_cast<std::uint16_t>(a + 1),
+                     c = static_cast<std::uint16_t>(a + n + 1),
+                     d = static_cast<std::uint16_t>(c + 1);
+                mesh.indices.insert(mesh.indices.end(), {a, b, c, b, d, c});
+            }
     }
     return mesh;
 }
@@ -73,8 +83,8 @@ cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_beveled_block_me
 } // namespace
 
 void PbrMaterialsApp::create_global_resources_if_needed(const cubey::vulkan::Device& device,
-                                                         cubey::vulkan::GpuRuntime& gpu,
-                                                         std::uint32_t frame_slot_count) {
+                                                        cubey::vulkan::GpuRuntime& gpu,
+                                                        std::uint32_t frame_slot_count) {
     if (scene_ != nullptr) {
         return;
     }
@@ -95,14 +105,19 @@ void PbrMaterialsApp::create_global_resources_if_needed(const cubey::vulkan::Dev
     }
     forward_pbr_renderer_ =
         &engine_.renderers().create_forward_pbr_renderer_3d(forward_pbr_renderer_3d_config());
-    forward_pbr_renderer().create_global_resources(device, {
-        .environment_textures = config_.environment == "studio" ? render::pbr_environment_texture_bindings(ibl_environment()) : atmosphere_.pbr_environment_bindings(ibl_environment()),
-        .frame_slot_count = frame_slot_count,
-        .atmosphere_background_textures = atmosphere_textures_ ? std::optional{atmosphere_textures_->bindings()} : std::nullopt});
+    forward_pbr_renderer().create_global_resources(
+        device,
+        {.environment_textures = config_.environment == "studio"
+                                     ? render::pbr_environment_texture_bindings(ibl_environment())
+                                     : atmosphere_.pbr_environment_bindings(ibl_environment()),
+         .frame_slot_count = frame_slot_count,
+         .atmosphere_background_textures = atmosphere_textures_
+                                               ? std::optional{atmosphere_textures_->bindings()}
+                                               : std::nullopt});
 }
 
 void PbrMaterialsApp::create_swapchain_resources(const cubey::vulkan::Device& device,
-                                                  VkExtent2D extent, VkFormat color_format) {
+                                                 VkExtent2D extent, VkFormat color_format) {
     create_environment_targets(device, extent, static_cast<std::uint32_t>(materials_.size()));
     forward_pbr_renderer().create_swapchain_resources(
         device, cubey::ForwardPbrRenderer3DTargetResourcesInfo{
@@ -122,7 +137,8 @@ void PbrMaterialsApp::destroy_all_resources() {
     forward_pbr_renderer_ = nullptr;
     atmosphere_.destroy();
     atmosphere_textures_.reset();
-    whole_profiler_.reset(); pass_profiler_.reset();
+    whole_profiler_.reset();
+    pass_profiler_.reset();
     ibl_environment_.reset();
     destroy_scene_if_needed();
     destroy_material_resources();
@@ -131,7 +147,7 @@ void PbrMaterialsApp::destroy_all_resources() {
 }
 
 void PbrMaterialsApp::create_default_textures(const cubey::vulkan::Device& device,
-                                               cubey::vulkan::GpuRuntime& gpu) {
+                                              cubey::vulkan::GpuRuntime& gpu) {
     if (default_textures_.has_value()) {
         return;
     }
@@ -141,28 +157,40 @@ void PbrMaterialsApp::create_default_textures(const cubey::vulkan::Device& devic
 void PbrMaterialsApp::create_materials() {
     const char* names[]{"plain", "limestone", "marble", "clay", "ceramic", "bronze", "glass"};
     for (std::size_t i = 0; i < 7; ++i) {
-        auto r = asset::load_material_recipe(std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / (std::string(names[i]) + ".json"));
+        auto r = asset::load_material_recipe(std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) /
+                                             (std::string(names[i]) + ".json"));
         recipes_.push_back(r);
-        if (config_.material == names[i]) selected_ = static_cast<int>(i);
+        if (config_.material == names[i])
+            selected_ = static_cast<int>(i);
     }
     originals_ = recipes_;
-    if (config_.material != "gallery" && selected_ < 0) throw std::invalid_argument("unknown material");
+    if (config_.material != "gallery" && selected_ < 0)
+        throw std::invalid_argument("unknown material");
     if (!config_.recipe_input.empty()) {
-        if (selected_ < 0) throw std::invalid_argument("recipe input requires a focused --material");
-        recipes_.at(static_cast<std::size_t>(selected_)) = asset::load_material_recipe(config_.recipe_input);
+        if (selected_ < 0)
+            throw std::invalid_argument("recipe input requires a focused --material");
+        recipes_.at(static_cast<std::size_t>(selected_)) =
+            asset::load_material_recipe(config_.recipe_input);
     }
     if (selected_ >= 0) {
         auto& r = recipes_.at(static_cast<std::size_t>(selected_));
-        if (config_.roughness >= 0) r.surface.base_roughness.w = config_.roughness;
-        if (config_.pattern_scale >= 0) r.pattern.settings.z = config_.pattern_scale;
+        if (config_.roughness >= 0)
+            r.surface.base_roughness.w = config_.roughness;
+        if (config_.pattern_scale >= 0)
+            r.pattern.settings.z = config_.pattern_scale;
         asset::validate_material_recipe(r);
-        if (!config_.recipe_output.empty()) asset::save_material_recipe(config_.recipe_output, r);
+        if ((r.optics.settings.y > 0) != (originals_.at(static_cast<std::size_t>(selected_)).optics.settings.y > 0))
+            throw std::invalid_argument("select the matching opaque or glass slot for recipe input");
+        if (!config_.recipe_output.empty())
+            asset::save_material_recipe(config_.recipe_output, r);
     }
     for (std::size_t i = 0; i < recipes_.size(); ++i) {
         const auto definition = material_definition(i);
-        const auto handle = engine_.render_resources().create_material(render::pbr_material_info(definition));
+        const auto handle =
+            engine_.render_resources().create_material(render::pbr_material_info(definition));
         material_handles_.push_back(handle);
-        for (auto& table : materials_) (void)table.emplace(handle, definition, material_sampled_images());
+        for (auto& table : materials_)
+            (void)table.emplace(handle, definition, material_sampled_images());
     }
 }
 
@@ -175,14 +203,15 @@ PbrMaterialsApp::material_sampled_images() const {
 }
 
 void PbrMaterialsApp::create_mesh(cubey::vulkan::GpuRuntime& gpu) {
-    cube_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
-        engine_.render_resources(), meshes_, gpu, "pbr_materials.sphere", make_pbr_cube_mesh());
-    block_mesh_handle_ = render::create_primitive_mesh_resource(
-        engine_.render_resources(), meshes_, gpu, "pbr_materials.beveled-block", make_beveled_block_mesh());
+    sphere_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
+        engine_.render_resources(), meshes_, gpu, "pbr_materials.sphere", make_pbr_sphere_mesh());
+    block_mesh_handle_ = render::create_primitive_mesh_resource(engine_.render_resources(), meshes_,
+                                                                gpu, "pbr_materials.beveled-block",
+                                                                make_beveled_block_mesh());
 }
 
 void PbrMaterialsApp::create_ibl_resources(const cubey::vulkan::Device& device,
-                                            cubey::vulkan::GpuRuntime& gpu) {
+                                           cubey::vulkan::GpuRuntime& gpu) {
     cubey::render::GeneratedPbrEnvironmentConfig ibl_config;
     ibl_config.intensity = config_.pbr.ibl_intensity;
 
@@ -210,7 +239,8 @@ void PbrMaterialsApp::create_ibl_resources(const cubey::vulkan::Device& device,
 
 void PbrMaterialsApp::destroy_material_resources() {
     for (const auto material : material_handles_)
-        if (engine_.render_resources().is_alive(material)) engine_.render_resources().destroy_material(material);
+        if (engine_.render_resources().is_alive(material))
+            engine_.render_resources().destroy_material(material);
     material_handles_.clear();
     materials_.clear();
     recipes_.clear();
@@ -218,7 +248,7 @@ void PbrMaterialsApp::destroy_material_resources() {
 }
 
 void PbrMaterialsApp::destroy_render_handles() {
-    cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, cube_mesh_handle_);
+    cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, sphere_mesh_handle_);
     cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, block_mesh_handle_);
 }
 

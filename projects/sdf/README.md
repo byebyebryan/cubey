@@ -1,5 +1,27 @@
 # SDF
 
+## Material workshop
+
+The explicit workshop mode reuses this renderer and the standalone
+[`assets/materials`](../../assets/materials) catalog. Use sphere or block for
+mesh/SDF comparisons, and `csg` to inspect smooth fusion, a toroidal groove and
+a through-cut. The UI selects recipes/specimens, cut ownership, smooth material
+blending, pattern/bump and component diagnostics, plus save/reload of a shared
+recipe. Existing inline v2 scenes and accepted guardian/robot presets remain valid.
+
+```sh
+build/release/projects/sdf/sdf --workshop csg --material marble --yaw 0 --pitch .15 --distance 1.05
+build/release/projects/sdf/sdf --workshop sphere --material glass --lighting material-atmosphere --sun-elevation 8 --sun-azimuth -155 --clouds --cloud-time 300 --cloud-coverage .28
+```
+
+`--material-recipe` imports a resolved standalone recipe;
+`--export-material-recipe` writes it. Material coordinates map object positions
+through an explicit affine transform and apply its Jacobian to bump gradients;
+identity keeps legacy fingerprints exact. Material-only publication retains the
+existing queue-idle SDF update boundary and does not rebuild distance bricks.
+Glass retains bounded interface tracing and measured in-medium distances.
+
+
 SDF rendering and authored-content experiment derived from projectR. Procedural
 rounded-box edits and named primitive CSG scenes share sparse distance bricks,
 mapless self-shadows and Cubey's atmosphere/HDR presentation. The original

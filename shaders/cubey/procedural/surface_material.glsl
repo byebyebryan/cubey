@@ -128,4 +128,14 @@ vec3 materialShadingNormal(vec3 normal,vec3 gradient) {
     tangent*=min(1.0,.65/max(length(tangent),1e-6));
     return normalize(normal-tangent);
 }
+// Scalar SDF footprints use a conservative Frobenius bound. Mesh derivatives
+// can instead evaluate their exact transformed screen-space footprint.
+MaterialSample surfacePatternDomain(SurfaceMaterial base,MaterialPattern pattern,mat4 domain,vec3 p,float footprint) {
+    if (domain==mat4(1)) return surfacePattern(base,pattern,p,footprint);
+    mat3 j=mat3(domain);
+    float bound=sqrt(dot(j[0],j[0])+dot(j[1],j[1])+dot(j[2],j[2]));
+    MaterialSample result=surfacePattern(base,pattern,(domain*vec4(p,1)).xyz,footprint*bound);
+    result.height_gradient=transpose(j)*result.height_gradient;
+    return result;
+}
 #endif

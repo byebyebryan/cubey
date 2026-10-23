@@ -1,7 +1,7 @@
 #pragma once
 #include "sdf_recipe.h"
-#include <cubey/procedural/surface_material.h>
 #include <array>
+#include <cubey/procedural/surface_material.h>
 #include <optional>
 
 namespace cubey::projects::sdf {
@@ -29,10 +29,10 @@ struct alignas(16) SceneInstruction {
     math::Vec4 settings{}; // scale, blend radius, material index, cut material / blend flag
 };
 static_assert(sizeof(SceneInstruction) == 64);
-using procedural::SurfaceMaterial;
-using procedural::MaterialPattern;
-using procedural::MaterialOptics;
 using procedural::default_optics;
+using procedural::MaterialOptics;
+using procedural::MaterialPattern;
+using procedural::SurfaceMaterial;
 using procedural::validate_material_optics;
 struct AuthoredStep {
     std::vector<std::string> nodes;
@@ -49,6 +49,7 @@ struct AuthoredScene {
     std::vector<SurfaceMaterial> materials;
     std::vector<MaterialPattern> patterns;
     std::vector<MaterialOptics> optics;
+    std::vector<math::Mat4> material_domains; // empty means legacy identity domains
     std::vector<AuthoredStep> history;
     std::size_t leaf_count = 0;
 };

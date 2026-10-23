@@ -101,70 +101,68 @@ MaterialPassInfo pbr_forward_pass_info(const PbrForwardPassConfig& config) {
         .offset = 0,
         .size = sizeof(PbrPushConstants),
     };
-    MaterialPassInfo
-        pass{
-            .label = config.label.empty()
-                         ? (config.blend == MaterialBlendMode::AlphaBlend ? "pbr.forward.alpha"
-                                                                          : "pbr.forward")
-                         : config.label,
-            .kind = MaterialPassKind::ForwardColor,
-            .descriptor_sets =
-                {
-                    MaterialDescriptorSetLayout{
-                        .set = 0,
-                        .bindings =
-                            {
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrSceneBinding::SceneUniforms),
-                                    .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                                    .stage_flags =
-                                        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrSceneBinding::ShadowMap),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding =
-                                        static_cast<std::uint32_t>(PbrSceneBinding::IrradianceCube),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrSceneBinding::PrefilteredCube),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(PbrSceneBinding::BrdfLut),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrSceneBinding::PreviousPrefilteredCube),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
-                                cubey::vulkan::DescriptorSetBindingConfig{
-                                    .binding = static_cast<std::uint32_t>(
-                                        PbrSceneBinding::RefractionRadiance),
-                                    .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                    .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
-                                },
+    MaterialPassInfo pass{
+        .label = config.label.empty()
+                     ? (config.blend == MaterialBlendMode::AlphaBlend ? "pbr.forward.alpha"
+                                                                      : "pbr.forward")
+                     : config.label,
+        .kind = MaterialPassKind::ForwardColor,
+        .descriptor_sets =
+            {
+                MaterialDescriptorSetLayout{
+                    .set = 0,
+                    .bindings =
+                        {
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::SceneUniforms),
+                                .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                .stage_flags =
+                                    VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                             },
-                    },
-                    pbr_material_descriptor_set_layout(),
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(PbrSceneBinding::ShadowMap),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::IrradianceCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::PrefilteredCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(PbrSceneBinding::BrdfLut),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding = static_cast<std::uint32_t>(
+                                    PbrSceneBinding::PreviousPrefilteredCube),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                            cubey::vulkan::DescriptorSetBindingConfig{
+                                .binding =
+                                    static_cast<std::uint32_t>(PbrSceneBinding::RefractionRadiance),
+                                .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                .stage_flags = VK_SHADER_STAGE_FRAGMENT_BIT,
+                            },
+                        },
                 },
-            .push_constants = {push_constants},
-            .cull_mode = config.cull_mode,
-            .depth_test = true,
-            .depth_write = true,
-        };
+                pbr_material_descriptor_set_layout(),
+            },
+        .push_constants = {push_constants},
+        .cull_mode = config.cull_mode,
+        .depth_test = true,
+        .depth_write = true,
+    };
     if (config.blend == MaterialBlendMode::AlphaBlend) {
         pass.depth_write = false;
         pass.blend_enable = true;
@@ -355,6 +353,11 @@ MaterialInfo pbr_material_info(const PbrMaterialDefinition& definition) {
 
 PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialDefinition& definition) {
     const PbrMaterialFactors& factors = definition.factors;
+    if (!std::isfinite(factors.diffuse_roughness) || factors.diffuse_roughness < 0 ||
+        factors.diffuse_roughness > 1)
+        throw std::invalid_argument("PBR diffuse roughness must be finite and in [0,1]");
+    procedural::validate_material_pattern(factors.surface_pattern);
+    procedural::validate_material_domain(factors.material_from_object);
     return {
         .base_color_factor = factors.base_color_factor,
         .emissive_alpha_cutoff =

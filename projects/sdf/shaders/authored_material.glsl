@@ -4,6 +4,10 @@
 #define AUTHORED_MATERIAL_BINDING 4
 #endif
 #include "surface_pattern.glsl"
+#ifndef AUTHORED_DOMAIN_BINDING
+#define AUTHORED_DOMAIN_BINDING 13
+#endif
+layout(std430,set=0,binding=AUTHORED_DOMAIN_BINDING) readonly buffer AuthoredDomains { mat4 materialDomains[]; };
 layout(std430,set=0,binding=AUTHORED_MATERIAL_BINDING) readonly buffer AuthoredMaterials {
     SurfaceMaterial authoredMaterials[];
 };
@@ -23,7 +27,7 @@ MaterialOptics materialOptics(uint i) {
 }
 struct SceneSurface { float distance; SurfaceMaterial material; uint part; vec3 height_gradient; MaterialOptics optics; };
 MaterialSample sampleAuthoredMaterial(uint i,vec3 p,float footprint,bool patterns) {
-    return patterns ? surfacePattern(authoredMaterials[i],authoredPatterns[i],p,footprint) :
+    return patterns ? surfacePatternDomain(authoredMaterials[i],authoredPatterns[i],materialDomains[i],p,footprint) :
         MaterialSample(authoredMaterials[i],vec3(0));
 }
 SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {

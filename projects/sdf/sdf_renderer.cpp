@@ -37,6 +37,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction));
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
     scene_patterns_ = host_buffer(16 * sizeof(MaterialPattern));
+    scene_domains_ = host_buffer(16 * sizeof(math::Mat4));
     const bool study = config.lighting != "atmosphere";
     if (study) {
         const auto start = std::chrono::steady_clock::now();
@@ -59,7 +60,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-        {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
+        {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
     if (study) {
         bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         for (std::uint32_t binding = 8; binding <= 12; ++binding)
@@ -81,6 +83,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                               preview_buffers_[i]->size());
         writes.storage_buffer(descriptors_->set(i), 6, scene_patterns_->handle(),
                               scene_patterns_->size());
+        writes.storage_buffer(descriptors_->set(i), 13, scene_domains_->handle(),
+                              scene_domains_->size());
         if (study_environment_) {
             writes.storage_buffer(descriptors_->set(i), 7, scene_optics_->handle(),
                                   scene_optics_->size());
@@ -164,6 +168,7 @@ void Renderer::destroy() {
     study_environment_.reset();
     scene_materials_.reset();
     scene_patterns_.reset();
+    scene_domains_.reset();
     scene_program_.reset();
     preview_buffers_.clear();
     lighting_.reset();
@@ -189,6 +194,11 @@ void Renderer::update_authored(const AuthoredScene* scene) {
                               scene ? scene->optics.size() * sizeof(MaterialOptics)
                                     : sizeof(MaterialOptics));
     }
+    std::array<math::Mat4, 16> domains;
+    domains.fill(math::Mat4{1});
+    if (scene && !scene->material_domains.empty())
+        std::copy(scene->material_domains.begin(), scene->material_domains.end(), domains.begin());
+    scene_domains_->upload(domains.data(), sizeof(domains));
     const SurfaceMaterial fallback;
     const MaterialPattern plain;
     scene_materials_->upload(scene ? scene->materials.data() : &fallback,
@@ -339,6 +349,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         builder.import_buffer({"sdf.scene", scene_program_->size()}, scene_program_->handle());
     const auto materials = builder.import_buffer({"sdf.materials", scene_materials_->size()},
                                                  scene_materials_->handle());
+    const auto domains =
+        builder.import_buffer({"sdf.domains", scene_domains_->size()}, scene_domains_->handle());
     const auto patterns =
         builder.import_buffer({"sdf.patterns", scene_patterns_->size()}, scene_patterns_->handle());
     const auto previews_buffer =
@@ -351,6 +363,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         .read_storage_buffer(program, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(materials, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(patterns, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        .read_storage_buffer(domains, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(previews_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .write_color(scene)
         .write_depth(depth)

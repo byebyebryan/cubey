@@ -6,6 +6,7 @@
 #define AUTHORED_PATTERN_BINDING 4
 #define SDF_OPTICS
 #define AUTHORED_OPTICS_BINDING 5
+#define AUTHORED_DOMAIN_BINDING 6
 #include "authored.glsl"
 #include "authored_material.glsl"
 #include "optics_math.glsl"

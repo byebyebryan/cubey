@@ -1,7 +1,5 @@
 #include "pbr_materials_app_internal.h"
 
-
-
 #include <cubey/scene/camera_3d.h>
 #include <cubey/scene/light_manager.h>
 #include <cubey/scene/scene_builder.h>
@@ -16,8 +14,7 @@
 namespace cubey::projects::pbr_materials::detail {
 namespace {
 
-const cubey::math::Vec3 kLightDirection =
-    glm::normalize(cubey::math::Vec3{-.35F, .42F, .84F});
+const cubey::math::Vec3 kLightDirection = glm::normalize(cubey::math::Vec3{-.35F, .42F, .84F});
 
 cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 target) {
     const cubey::math::Vec3 forward = glm::normalize(target - eye);
@@ -31,7 +28,7 @@ cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 ta
     };
 }
 
-[[nodiscard]] cubey::math::Vec3 material_cube_translation(std::uint32_t index) {
+[[nodiscard]] cubey::math::Vec3 specimen_translation(std::uint32_t index) {
     const std::uint32_t row = index / kMaterialGridColumns;
     const std::uint32_t column = index % kMaterialGridColumns;
     const float centered_column =
@@ -50,15 +47,15 @@ cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 ta
 void PbrMaterialsApp::create_scene() {
     scene_ = &engine_.create_scene();
     cubey::SceneTransaction setup = scene().begin_transaction();
-    for (std::uint32_t index = 0; index < kMaterialCubeCount; ++index) {
+    for (std::uint32_t index = 0; index < kMaterialSpecimenCount; ++index) {
         const cubey::Entity cube = cubey::scene::create_renderable_entity_3d(
             setup, cubey::scene::RenderableEntity3DConfig{
                        .transform =
                            cubey::Transform3D{
-                               .translation = material_cube_translation(index),
-                               .scale = kMaterialCubeScale,
+                               .translation = specimen_translation(index),
+                               .scale = kMaterialSpecimenScale,
                            },
-                       .mesh = cube_mesh_handle_,
+                       .mesh = sphere_mesh_handle_,
                        .material = material_handles_.at(index),
                        .local_bounds =
                            cubey::Bounds3D{
@@ -68,16 +65,18 @@ void PbrMaterialsApp::create_scene() {
                        .cast_shadows = false,
                        .receive_shadows = false,
                    });
-        cubes_.push_back({
+        specimens_.push_back({
             .entity = cube,
             .material = material_handles_.at(index),
         });
     }
 
     camera_entity_ = cubey::scene::create_camera_entity_3d(
-        setup, cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                   .distance = kCameraDistance,
-               }), cubey::Camera3D({.fovy_radians = glm::radians(45.0F), .near_z = .01F, .far_z = 100}));
+        setup,
+        cubey::orbit_camera_transform(cubey::OrbitCameraState{
+            .distance = kCameraDistance,
+        }),
+        cubey::Camera3D({.fovy_radians = glm::radians(45.0F), .near_z = .01F, .far_z = 100}));
     const cubey::math::Vec3 light_eye = kLightDirection * 9.0F;
     light_camera_entity_ = cubey::scene::create_camera_entity_3d(
         setup, look_at_transform(light_eye, {0.0F, 0.0F, 0.0F}),
@@ -88,9 +87,11 @@ void PbrMaterialsApp::create_scene() {
             .far_z = 32.0F,
         }));
     const auto& sky = atmosphere_.lighting();
-    cubey::Light3D light = config_.environment == "studio"
-        ? cubey::directional_light_3d(kLightDirection, {1.8F,1.6F,1.3F},1)
-        : cubey::directional_light_3d(sky.primary_light_direction, sky.primary_light_color, sky.primary_light_intensity);
+    cubey::Light3D light =
+        config_.environment == "studio"
+            ? cubey::directional_light_3d(kLightDirection, {1.8F, 1.6F, 1.3F}, 1)
+            : cubey::directional_light_3d(sky.primary_light_direction, sky.primary_light_color,
+                                          sky.primary_light_intensity);
     light.casts_shadows = false;
     light_entity_ = cubey::scene::create_directional_light_entity_3d(setup, light);
     setup.commit();
@@ -111,7 +112,7 @@ void PbrMaterialsApp::update_scene_transform(const FrameTiming& timing) {
 
 cubey::scene::FrameRenderPlan3D
 PbrMaterialsApp::current_frame_plan(const cubey::SceneReadView& view,
-                                     VkExtent2D color_extent) const {
+                                    VkExtent2D color_extent) const {
     const cubey::scene::View3D shadow_view{
         .camera_entity = light_camera_entity_,
         .width = kShadowMapSize,
@@ -123,7 +124,9 @@ PbrMaterialsApp::current_frame_plan(const cubey::SceneReadView& view,
         .width = color_extent.width,
         .height = color_extent.height,
         .environment =
-            config_.environment == "studio" ? cubey::scene::Environment3D{.ambient_color={0,0,0}, .ambient_intensity=0} : atmosphere_.scene_environment(),
+            config_.environment == "studio"
+                ? cubey::scene::Environment3D{.ambient_color = {0, 0, 0}, .ambient_intensity = 0}
+                : atmosphere_.scene_environment(),
         .culling_enabled = false,
     };
     cubey::scene::FrameRenderPlan3D frame_plan({
@@ -166,7 +169,7 @@ void PbrMaterialsApp::destroy_scene_if_needed() {
     }
     engine_.destroy_scene(*scene_);
     scene_ = nullptr;
-    cubes_.clear();
+    specimens_.clear();
     camera_entity_ = {};
     light_camera_entity_ = {};
     light_entity_ = {};

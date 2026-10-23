@@ -1,7 +1,7 @@
 #pragma once
-#include <cubey/core/math.h>
 #include <array>
 #include <cstdint>
+#include <cubey/core/math.h>
 
 namespace cubey::procedural {
 struct alignas(16) SurfaceMaterial {
@@ -10,8 +10,8 @@ struct alignas(16) SurfaceMaterial {
 };
 static_assert(sizeof(SurfaceMaterial) == 32);
 struct alignas(16) MaterialPattern {
-    math::Vec4 settings{0, 7, 6,
-                        .5F}; // kind (0 plain, 1 stone, 2 marble, 3 grain), seed, scale, color strength
+    math::Vec4 settings{
+        0, 7, 6, .5F}; // kind (0 plain, 1 stone, 2 marble, 3 grain), seed, scale, color strength
     math::Vec4 secondary{.2F, .18F, .15F, .08F}; // linear RGB, roughness variation
     math::Vec4 veins{1, .3F, .2F, 5};            // direction, frequency
     math::Vec4 detail{.0005F, 160, .10F, 5};     // bump height, grain scale, vein width, warp
@@ -54,6 +54,12 @@ void apply_marble_detail(MaterialPattern& pattern, std::size_t index);
 [[nodiscard]] math::Vec3 material_shading_normal(math::Vec3 geometric_normal,
                                                  math::Vec3 height_gradient);
 void validate_material_pattern(const MaterialPattern& pattern);
+void validate_material_domain(const math::Mat4& material_from_object);
+[[nodiscard]] MaterialSample sample_material_domain(const SurfaceMaterial& base,
+                                                    const MaterialPattern& pattern,
+                                                    const math::Mat4& material_from_object,
+                                                    math::Vec3 object_point,
+                                                    float object_footprint = 0);
 struct OpticalInterface {
     math::Vec3 reflected, transmitted;
     float fresnel;

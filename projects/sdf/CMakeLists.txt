@@ -7,7 +7,7 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp
+    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp
     SHADERS shaders/material_study.frag shaders/sdf.vert shaders/sdf.frag shaders/sdf_authored.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
         ${CUBEY_SDF_CLOUD_SHADERS}
         shaders/authored_filter.comp shaders/authored_bricks.comp
@@ -36,4 +36,13 @@ if (BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/normal_projection_tests.py")
     add_test(NAME sdf_mirror_author_tests
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/mirror_author_tests.py")
+endif()
+
+target_compile_definitions(cubey_project_sdf PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
+
+if(BUILD_TESTING)
+    add_executable(cubey_sdf_workshop_tests sdf_workshop_tests.cpp sdf_workshop.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_recipe.cpp sdf_material.cpp)
+    target_link_libraries(cubey_sdf_workshop_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
+    target_compile_definitions(cubey_sdf_workshop_tests PRIVATE CUBEY_SOURCE_DIR="${PROJECT_SOURCE_DIR}" CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
+    add_test(NAME sdf_workshop_tests COMMAND cubey_sdf_workshop_tests)
 endif()

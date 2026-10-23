@@ -2,13 +2,12 @@
 
 #include "pbr_materials_app.h"
 
-#include <cubey/core/math.h>
 #include <cubey/asset/material_recipe.h>
-#include <cubey/engine/material_recipe.h>
+#include <cubey/core/math.h>
 #include <cubey/engine/atmosphere_environment_runtime.h>
-#include <cubey/vulkan/gpu_timestamps.h>
 #include <cubey/engine/engine.h>
 #include <cubey/engine/forward_pbr_renderer_3d.h>
+#include <cubey/engine/material_recipe.h>
 #include <cubey/host/windowed_app.h>
 #include <cubey/input/orbit_controller.h>
 #include <cubey/render/generated_ibl.h>
@@ -20,6 +19,7 @@
 #include <cubey/scene/entity.h>
 #include <cubey/scene/scene.h>
 #include <cubey/scene/view_3d.h>
+#include <cubey/vulkan/gpu_timestamps.h>
 
 #include <vulkan/vulkan.h>
 
@@ -31,17 +31,17 @@ namespace cubey::projects::pbr_materials::detail {
 
 inline constexpr std::uint32_t kMaterialGridColumns = 7;
 inline constexpr std::uint32_t kMaterialGridRows = 1;
-inline constexpr std::uint32_t kMaterialCubeCount = kMaterialGridColumns * kMaterialGridRows;
-inline constexpr std::uint32_t kCubeTriangleCount = 64 * 128 * 2;
+inline constexpr std::uint32_t kMaterialSpecimenCount = kMaterialGridColumns * kMaterialGridRows;
+inline constexpr std::uint32_t kSphereTriangleCount = 64 * 128 * 2;
 inline constexpr std::uint32_t kShadowMapSize = 2048;
 inline constexpr float kCameraDistance = 3.3F;
 inline constexpr float kMaterialGridSpacingX = 0.62F;
 inline constexpr float kMaterialGridSpacingY = 1.12F;
-inline constexpr cubey::math::Vec3 kMaterialCubeScale{1.0F, 1.0F, 1.0F};
+inline constexpr cubey::math::Vec3 kMaterialSpecimenScale{1.0F, 1.0F, 1.0F};
 inline constexpr cubey::math::Vec4 kNeutralMaterialBaseColor{0.56F, 0.55F, 0.52F, 1.0F};
 inline constexpr float kMinimumRoughness = 0.04F;
 
-struct MaterialCube {
+struct MaterialSpecimen {
     cubey::Entity entity{};
     cubey::render::MaterialHandle material{};
 };
@@ -83,9 +83,11 @@ class PbrMaterialsApp {
     void destroy_scene_if_needed();
 
     int run_headless();
-    void record_frame(const cubey::vulkan::Device&, VkCommandBuffer, cubey::render::ColorTargetView, cubey::render::FrameSlot, bool, cubey::profiling::ProfileRecorder*, std::uint64_t);
-    void record_cube_frame(cubey::host::WindowedAppContext& context,
-                           const cubey::host::WindowedRenderFrame& frame);
+    void record_frame(const cubey::vulkan::Device&, VkCommandBuffer, cubey::render::ColorTargetView,
+                      cubey::render::FrameSlot, bool, cubey::profiling::ProfileRecorder*,
+                      std::uint64_t);
+    void record_workshop_frame(cubey::host::WindowedAppContext& context,
+                               const cubey::host::WindowedRenderFrame& frame);
 
     [[nodiscard]] const cubey::render::GeneratedPbrEnvironment& ibl_environment() const;
     [[nodiscard]] cubey::ForwardPbrRenderer3D& forward_pbr_renderer() const;
@@ -99,7 +101,7 @@ class PbrMaterialsApp {
     cubey::Entity light_entity_{};
     OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
-    cubey::render::MeshHandle cube_mesh_handle_{};
+    cubey::render::MeshHandle sphere_mesh_handle_{};
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     std::vector<cubey::render::PbrMaterialTable> materials_;
@@ -113,6 +115,8 @@ class PbrMaterialsApp {
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;
     render::CloudLayerRuntimeShaderFiles cloud_shaders_{};
+    std::string requested_environment_;
+    void switch_environment(const vulkan::Device&, vulkan::GpuRuntime&, VkExtent2D, VkFormat);
     void create_environment(const vulkan::Device&, vulkan::GpuRuntime&, std::uint32_t);
     void create_environment_targets(const vulkan::Device&, VkExtent2D, std::uint32_t);
     CloudEnvironmentRuntimeFrame cloud_frame(VkExtent2D) const;
@@ -124,7 +128,7 @@ class PbrMaterialsApp {
     void publish_materials(cubey::render::FrameSlot slot);
     cubey::render::PbrMaterialDefinition material_definition(std::size_t index) const;
     std::vector<cubey::render::MaterialHandle> material_handles_;
-    std::vector<MaterialCube> cubes_;
+    std::vector<MaterialSpecimen> specimens_;
     std::optional<cubey::render::PbrDefaultTextureSet> default_textures_;
     std::optional<cubey::render::GeneratedPbrEnvironment> ibl_environment_;
 };

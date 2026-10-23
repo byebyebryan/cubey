@@ -12,6 +12,9 @@ struct SdfConfig {
     double snapshot_time = -1;
     std::filesystem::path recipe_path, export_recipe_path;
     std::filesystem::path authored_path, export_authored_path;
+    std::string workshop, workshop_material = "marble";
+    std::filesystem::path material_recipe_path, export_material_recipe_path;
+    bool workshop_cut_material = false, workshop_blend_materials = true;
     std::string scene = "sticks";
     std::string lighting = "atmosphere";
     std::string cutter_mode = "original";
@@ -123,6 +126,22 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     fast_path.negative_cli_name = "--no-material-fast-path";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
+        .bind(option("workshop", "Material workshop specimen: sphere, block, csg",
+                     config::ValueType::String),
+              c.workshop)
+        .bind(option("material", "Shared workshop material", config::ValueType::String),
+              c.workshop_material)
+        .bind(option("material-recipe", "Standalone recipe override", config::ValueType::Path),
+              c.material_recipe_path)
+        .bind(option("export-material-recipe", "Export resolved workshop material",
+                     config::ValueType::Path),
+              c.export_material_recipe_path)
+        .bind(option("workshop-cut-material", "Use contrasting cut material",
+                     config::ValueType::Bool),
+              c.workshop_cut_material)
+        .bind(option("workshop-blend-materials", "Blend fused surface materials",
+                     config::ValueType::Bool),
+              c.workshop_blend_materials)
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
         .bind(clouds, c.clouds)
@@ -221,6 +240,30 @@ inline SdfConfig parse_sdf_config(int argc, char** argv, config::ParseResult* re
     config::ParseResult local;
     auto& parsed = result ? *result : local;
     auto config = host::parse_configured_app<SdfConfig>(argc, argv, sdf_config_schema, &parsed);
+    if (!config.workshop.empty()) {
+        if (!parsed.path_was_assigned("lighting"))
+            config.lighting = "material-study";
+        if (!parsed.path_was_assigned("exposure"))
+            config.exposure = .6F;
+        if (!parsed.path_was_assigned("distance"))
+            config.distance = 1.05F;
+        if (!parsed.path_was_assigned("yaw"))
+            config.yaw = 0;
+        if (!parsed.path_was_assigned("pitch"))
+            config.pitch = .15F;
+        if (!parsed.path_was_assigned("target-y"))
+            config.target_y = 0;
+        if (!parsed.path_was_assigned("glass-crossings"))
+            config.glass_crossings = 8;
+        if (!parsed.path_was_assigned("sun-elevation"))
+            config.sun_elevation = 8;
+        if (!parsed.path_was_assigned("sun-azimuth"))
+            config.sun_azimuth = -155;
+        if (!parsed.path_was_assigned("cloud-time"))
+            config.cloud_time = 300;
+        if (!parsed.path_was_assigned("cloud-coverage"))
+            config.cloud_coverage = .28F;
+    }
     validate_timeline(config.timeline);
     if (config.common.headless && config.common.capture_mode == CaptureMode::Video &&
         config.timeline.motion != "static" && !parsed.path_was_assigned("frames")) {

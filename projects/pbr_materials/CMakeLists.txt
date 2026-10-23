@@ -8,7 +8,7 @@ cubey_add_app_target(
     OUTPUT_NAME pbr_materials
     SHADER_DEFINE CUBEY_PBR_MATERIALS_SHADER_DIR
     WINDOWED_SMOKE_TEST pbr_materials_reaches_glfw
-    WINDOWED_SMOKE_PATTERN "pbr_materials: .*rendering material instance cubes"
+    WINDOWED_SMOKE_PATTERN "pbr_materials: .*rendering PBR material workshop"
     SOURCES
         main.cpp
         pbr_materials_app.cpp
