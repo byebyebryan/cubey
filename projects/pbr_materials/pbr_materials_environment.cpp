@@ -126,7 +126,7 @@ void PbrMaterialsApp::create_environment_targets(const vulkan::Device& device, V
 void PbrMaterialsApp::switch_environment(const vulkan::Device& device, vulkan::GpuRuntime& gpu,
                                          VkExtent2D extent, VkFormat format) {
     gpu.wait_queue_idle("material workshop lighting switch");
-    engine_.renderers().destroy_all_resources();
+    forward_pbr_renderer().destroy_all_resources();
     atmosphere_.destroy();
     atmosphere_textures_.reset();
     config_.environment = std::move(requested_environment_);

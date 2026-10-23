@@ -72,7 +72,7 @@ void PbrMaterialsApp::refresh_specimens() {
     scene().commit(edits);
 }
 void PbrMaterialsApp::draw_ui() {
-    ImGui::SetNextWindowSize({350, 0}, ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize({420, 640}, ImGuiCond_FirstUseEver);
     if (ImGui::Begin("PBR material workshop")) {
         const char* names[]{"Gallery",        "Neutral gray",  "Limestone",    "Balanced marble",
                             "Dry terracotta", "Ivory ceramic", "Satin bronze", "Tinted glass"};

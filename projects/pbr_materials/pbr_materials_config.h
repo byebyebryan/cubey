@@ -34,8 +34,9 @@ inline cubey::config::OptionSpec pbr_materials_option(std::string path, std::str
                                                       cubey::config::Range range = {}) {
     return {
         .path = std::move(path),
-        .cli_name = std::move(cli_name),
-        .negative_cli_name = {},
+        .cli_name = cli_name,
+        .negative_cli_name =
+            type == cubey::config::ValueType::Bool ? "--no-" + cli_name.substr(2) : "",
         .label = std::move(label),
         .group_path = std::move(group_path),
         .help = std::move(help),

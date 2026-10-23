@@ -124,6 +124,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto fast_path =
         option("material-fast-path", "Uniform material shading shortcut", config::ValueType::Bool);
     fast_path.negative_cli_name = "--no-material-fast-path";
+    auto workshop_blend = option("workshop-blend-materials", "Blend fused surface materials",
+                                 config::ValueType::Bool);
+    workshop_blend.negative_cli_name = "--no-workshop-blend-materials";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
         .bind(option("workshop", "Material workshop specimen: sphere, block, csg",
@@ -139,9 +142,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("workshop-cut-material", "Use contrasting cut material",
                      config::ValueType::Bool),
               c.workshop_cut_material)
-        .bind(option("workshop-blend-materials", "Blend fused surface materials",
-                     config::ValueType::Bool),
-              c.workshop_blend_materials)
+        .bind(workshop_blend, c.workshop_blend_materials)
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
         .bind(clouds, c.clouds)
