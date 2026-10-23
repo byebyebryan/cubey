@@ -404,6 +404,12 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
                 if (!std::isfinite(lane[channel]))
                     throw std::runtime_error("authored GPU evaluation returned a nonfinite value");
         const auto expected = authored_surface(math::Vec3(points[i]), scene, points[i].w);
+        const auto rough_light = glm::normalize(math::Vec3{points[i].x, points[i].y, 1});
+        const auto rough_view = glm::normalize(math::Vec3{-points[i].y, points[i].z, 1});
+        if (std::abs(actual[3].w - rough_diffuse_factor(rough_light.z, rough_view.z,
+                                                        glm::dot(rough_light, rough_view),
+                                                        expected.optics.attenuation.w)) > 2e-5F)
+            throw std::runtime_error("CPU/GPU rough diffuse mismatch");
         max_distance = std::max({max_distance, std::abs(actual[0].x - expected.distance),
                                  std::abs(actual[0].y - expected.distance)});
         for (int channel = 0; channel < 4; ++channel)

@@ -139,7 +139,22 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
     vec3 fv=cubey_pbr_fresnel_schlick(nv,f0);
     float visibility=environmentVisibility(p,geometricNormal,exhausted);
     vec3 indirect=(1-fv)*diffuse*(lighting.surface_options.w>.5 ? vec3(1) : texture(studyDiffuse,n).rgb)*visibility;
+    float diffuseFactor=1;
+    if(optics.attenuation.w>0) {
+        diffuseFactor=roughDiffuseFactor(nl,nv,dot(l,viewDirection),optics.attenuation.w);
+        direct=((1-f)*diffuse*diffuseFactor/3.141592654+f*d*v*compensation)*lighting.direct_color.rgb*nl*shadow;
+        // Existing irradiance cube has no angular rough-diffuse convolution.
+        // Retain a conservative A-only approximation for the environment lobe.
+        indirect*=roughDiffuseFactor(1,1,1,optics.attenuation.w);
+    }
     vec3 reflected=lighting.surface_options.w>.5 ? vec3(1) : textureLod(studySpecular,reflect(-viewDirection,n),roughness*4).rgb;
+    // Opaque component views retain the normal exposure/tone map. They expose
+    // the actual lobes; they do not change the material or the combined path.
+    if(camera.options.x>10.5)
+        return f*d*v*compensation*lighting.direct_color.rgb*nl*shadow+
+            reflected*(f0*dfg.x+dfg.y)*compensation;
+    if(camera.options.x>9.5)
+        return (1-f)*diffuse*diffuseFactor/3.141592654*lighting.direct_color.rgb*nl*shadow+indirect;
     vec3 result=direct+indirect+reflected*(f0*dfg.x+dfg.y)*compensation+sampleValue.material.emission.rgb;
     // Furnace mode is a diagnostic: flag excess energy before HDR output clips it.
     if (lighting.surface_options.w>.5 && any(greaterThan(result,vec3(1.02)))) return vec3(20,0,20);

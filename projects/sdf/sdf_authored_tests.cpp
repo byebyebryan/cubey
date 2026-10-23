@@ -61,9 +61,19 @@ int main() {
             "optics changed geometry or lost appearance identity");
     close(authored_surface({}, metal).optics.settings.x, 1);
     close(parse_authored_scene(serialize_authored_scene(metal)).optics[0].settings.x, 1);
+    auto rough_json = optical_json;
+    rough_json["materials"][0]["optics"] = {{"diffuse_roughness", .6}};
+    const auto rough = parse_authored_scene(rough_json.dump());
+    close(parse_authored_scene(serialize_authored_scene(rough)).optics[0].attenuation.w, .6F);
+    require(authored_geometry_hash(rough) == authored_geometry_hash(ball) &&
+                authored_appearance_hash(rough) != authored_appearance_hash(ball),
+            "rough diffuse edit lost appearance-only identity");
     for (auto bad : {-.1, 1.1}) {
         auto invalid_optics = optical_json;
         invalid_optics["materials"][0]["optics"]["metallic"] = bad;
+        rejected(invalid_optics);
+        invalid_optics = rough_json;
+        invalid_optics["materials"][0]["optics"]["diffuse_roughness"] = bad;
         rejected(invalid_optics);
     }
     auto invalid_optics = optical_json;
@@ -85,6 +95,9 @@ int main() {
             "glass optics did not survive persistence");
     auto bad_glass = glass_json;
     bad_glass["materials"][0]["roughness"] = .2;
+    rejected(bad_glass);
+    bad_glass = glass_json;
+    bad_glass["materials"][0]["optics"]["diffuse_roughness"] = .6;
     rejected(bad_glass);
     bad_glass = glass_json;
     bad_glass["materials"][0]["optics"]["metallic"] = 1;
@@ -114,6 +127,19 @@ int main() {
             "procedural material persistence changed identity");
     require(patterned_reload.patterns[0].offset.w == .08F,
             "marble body variation did not survive save/reload");
+    auto granular_json = patterned_json;
+    granular_json["materials"][0]["procedural"]["type"] = "granular";
+    granular_json["materials"][0]["procedural"]["color_strength"] = 0;
+    const auto granular = parse_authored_scene(granular_json.dump());
+    const auto granular_saved = serialize_authored_scene(granular);
+    const auto granular_reload = parse_authored_scene(granular_saved);
+    require(granular_reload.patterns[0].settings.x == 3 &&
+                nlohmann::json::parse(granular_saved)["materials"][0]["procedural"]["type"] ==
+                    "granular" &&
+                authored_geometry_hash(granular_reload) == authored_geometry_hash(patterned) &&
+                authored_appearance_hash(granular_reload) == authored_appearance_hash(granular) &&
+                authored_appearance_hash(granular) != authored_appearance_hash(patterned),
+            "granular persistence lost pattern identity or changed geometry");
     auto changed_color = patterned;
     changed_color.patterns[0].offset.w = .12F;
     require(authored_geometry_hash(changed_color) == authored_geometry_hash(patterned) &&

@@ -48,14 +48,18 @@ class App {
                 "non-default material optics require material-study lighting");
         if (config_.lighting != "atmosphere" && (config_.ground || config_.occluder))
             throw std::invalid_argument("material study supports environment-only composition");
-        if (config_.debug == 9 && config_.lighting == "atmosphere")
+        if (config_.debug >= 9 && config_.lighting == "atmosphere")
             throw std::invalid_argument(
-                "glass transport diagnostics require material-study lighting");
+                "optical/component diagnostics require material-study lighting");
+        if (config_.debug >= 10 && authored_ &&
+            std::any_of(authored_->optics.begin(), authored_->optics.end(),
+                        [](const auto& o) { return o.settings.y > 0; }))
+            throw std::invalid_argument("component diagnostics require opaque materials");
         if (!authored_ && !config_.export_authored_path.empty())
             throw std::invalid_argument("--export-authored requires --authored-scene");
         if (config_.validate_history && (!authored_ || authored_->history.empty()))
             throw std::invalid_argument("--validate-history requires a saved authored history");
-        if (config_.debug > 9 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+        if (config_.debug > 11 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
             (config_.supersample != 1 && config_.supersample != 2) ||
@@ -464,10 +468,16 @@ class App {
                     seek(static_cast<std::size_t>(step));
             }
             int view = static_cast<int>(config_.debug);
-            const char* views[]{"Shaded",         "Normals",     "Ray distance",
-                                "Traversal work", "Brick cells", "Part identity",
-                                "Base color",     "Roughness",   "Surface normals"};
-            if (ImGui::Combo("View", &view, views, authored_ ? 9 : 5))
+            const char* views[]{"Shaded",          "Normals",        "Ray distance",
+                                "Traversal work",  "Brick cells",    "Part identity",
+                                "Base color",      "Roughness",      "Surface normals",
+                                "Glass transport", "Opaque diffuse", "Opaque reflections"};
+            const bool glass =
+                authored_ && std::any_of(authored_->optics.begin(), authored_->optics.end(),
+                                         [](const auto& o) { return o.settings.y > 0; });
+            const int view_count =
+                config_.lighting != "atmosphere" ? (glass ? 10 : 12) : (authored_ ? 9 : 5);
+            if (ImGui::Combo("View", &view, views, view_count))
                 config_.debug = static_cast<std::uint32_t>(view);
             int shadows = static_cast<int>(config_.shadows);
             const char* shadow_names[]{"Off", "Hard", "Soft (4 samples)"};
@@ -519,7 +529,9 @@ class App {
                         auto& pattern = authored_->patterns[i];
                         if (pattern.settings.x > 0) {
                             ImGui::Text("Procedural: %s",
-                                        pattern.settings.x == 1 ? "Limestone" : "Marble");
+                                        pattern.settings.x == 1
+                                            ? "Limestone"
+                                            : (pattern.settings.x == 2 ? "Marble" : "Granular"));
                             ImGui::Checkbox("Surface pattern", &config_.procedural);
                             ImGui::Checkbox("Bump detail", &config_.bump);
                             materials_changed_ |=

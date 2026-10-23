@@ -5,6 +5,11 @@
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
+float rough_diffuse_factor(float nl, float nv, float lv, float roughness) {
+    const float sigma = roughness * 1.570796327F, s2 = sigma * sigma;
+    const float a = 1 - .5F * s2 / (s2 + .33F), b = .45F * s2 / (s2 + .09F);
+    return a + b * std::max(0.0F, lv - nl * nv) / std::max({nl, nv, .001F});
+}
 OpticalInterface optical_interface(math::Vec3 incident, math::Vec3 outward, bool inside,
                                    float ior) {
     const auto normal = inside ? -outward : outward;
@@ -28,7 +33,8 @@ void validate_material_optics(const MaterialOptics& optics) {
             throw std::invalid_argument("nonfinite material optics");
     if (optics.settings.x < 0 || optics.settings.x > 1 ||
         (optics.settings.y != 0 && optics.settings.y != 1) || optics.settings.z < 1 ||
-        optics.settings.z > 2.5F || optics.settings.w <= 0 || optics.attenuation.w != 0)
+        optics.settings.z > 2.5F || optics.settings.w <= 0 || optics.attenuation.w < 0 ||
+        optics.attenuation.w > 1)
         throw std::invalid_argument("invalid material optics");
     for (int i = 0; i < 3; ++i)
         if (optics.attenuation[i] <= 0 || optics.attenuation[i] > 1)
@@ -244,7 +250,7 @@ math::Vec3 material_shading_normal(math::Vec3 normal, math::Vec3 gradient) {
 }
 
 void validate_material_pattern(const MaterialPattern& p) {
-    range(p.settings.x, 0, 2);
+    range(p.settings.x, 0, 3);
     range(p.settings.y, 0, 65535);
     if (p.settings.x != std::floor(p.settings.x) || p.settings.y != std::floor(p.settings.y))
         throw std::invalid_argument("procedural material kind and seed must be integers");

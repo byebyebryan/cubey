@@ -6,9 +6,9 @@
     {
       "name": "body",
       "base_color": [
-        0.38132601143253014,
-        0.4620769996544071,
-        0.39157247774972326
+        0.184474994500441,
+        0.184474994500441,
+        0.184474994500441
       ],
       "roughness": 0.76,
       "emission": [
@@ -19266,7 +19266,7 @@
     "generator": "cubey-material-study-v1",
     "subject": "guardian",
     "material": "plain",
-    "shared_material_sha256": "d62784abd7ceed942b3e55e2723825211a2d52613dcf9783f37bcbb51fa32fd5"
+    "shared_material_sha256": "4ab6de7a7a05369ebc5e1082c8b65ca0e8d2eb55725db8d284c12dbb25905d0a"
   },
   "history": [
     {

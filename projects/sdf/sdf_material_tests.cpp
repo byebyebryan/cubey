@@ -12,6 +12,28 @@ void require(bool value) {
 }
 } // namespace
 int main() {
+    // Independent Oren-Nayar limits, reciprocity and hemispherical energy.
+    require(rough_diffuse_factor(.3F, .8F, .7F, 0) == 1);
+    for (float rough : {.0F, .6F, 1.0F}) {
+        const float sigma2 = std::pow(rough * 1.570796327F, 2.0F);
+        require(std::abs(rough_diffuse_factor(1, 1, 1, rough) -
+                         (1 - .5F * sigma2 / (sigma2 + .33F))) < 1e-6F);
+        require(rough_diffuse_factor(.3F, .8F, .7F, rough) ==
+                rough_diffuse_factor(.8F, .3F, .7F, rough));
+        for (float nv : {.15F, .5F, 1.0F}) {
+            float energy = 0;
+            for (int i = 0; i < 4096; ++i) {
+                const float u = (static_cast<float>(i) + .5F) / 4096;
+                const float phi = static_cast<float>(i) * 2.39996323F;
+                const float nl = std::sqrt(1 - u);
+                const float lv = std::sqrt(u) * std::cos(phi) * std::sqrt(1 - nv * nv) + nl * nv;
+                const float factor = rough_diffuse_factor(nl, nv, lv, rough);
+                require(std::isfinite(factor) && factor >= 0);
+                energy += factor / 4096;
+            }
+            require(energy <= 1.002F);
+        }
+    }
     // Independent Snell-law, normal-incidence Fresnel and Beer-Lambert checks.
     const auto normal_interface = optical_interface({0, 0, -1}, {0, 0, 1}, false, 1.5F);
     require(!normal_interface.tir && std::abs(normal_interface.fresnel - .04F) < 1e-6F);
@@ -46,7 +68,7 @@ int main() {
     const SurfaceMaterial base;
     MaterialPattern p;
     require(sample_material(base, p, {}).material.base_roughness == base.base_roughness);
-    for (float kind : {1.0F, 2.0F}) {
+    for (float kind : {1.0F, 3.0F, 2.0F}) {
         p.settings.x = kind;
         validate_material_pattern(p);
         for (unsigned i = 0; i < 100; ++i) {

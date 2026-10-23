@@ -57,6 +57,7 @@ def main():
         root=smooth_union('blend',sphere('left',[-.10,0,0],.18,'a'),
                           sphere('right',[.10,0,0],.18,'b'),.08))
     scene['materials'][1]['optics'] = dict(metallic=1)
+    scene['materials'][0]['optics'] = dict(diffuse_roughness=.6)
     run('mixed-ownership',config,fixture=scene)
     scene['root'] = subtract('cut',sphere('base',[0,0,0],.25,'a'),
                             sphere('tool',[.1,.08,.15],.16,'b'),cut_material='b')
@@ -87,10 +88,24 @@ def main():
     original = run('glass-export', cfg, ['--export-authored',str(exported)], validate=False)
     restored = run('glass-reload', dict(cfg, **{'authored-scene':str(exported)}), validate=False)
     assert original.read_bytes()==restored.read_bytes()
+    clay_cfg=read(root/'projects/sdf/presets/material-study/sphere-clay.json')
+    clay_export=out/'clay-export.json'
+    original=run('clay-export',clay_cfg,['--export-authored',str(clay_export)])
+    restored=run('clay-reload',dict(clay_cfg,**{'authored-scene':str(clay_export)}))
+    assert original.read_bytes()==restored.read_bytes()
+    exported_material=read(clay_export)['materials'][0]
+    assert exported_material['procedural']['type']=='granular'
+    assert abs(exported_material['optics']['diffuse_roughness']-.6)<1e-6
+    fixture=read(root/'projects/sdf/scenes/material-study/sphere-clay.json')
+    fixture['materials'][0]['base_color']=[1,1,1]
+    white=run('furnace-rough-diffuse',dict(clay_cfg,lighting='material-furnace',exposure=0,shadows=0),fixture=fixture,validate=False)
+    rgb=subprocess.check_output(['ffmpeg','-v','error','-i',str(white),'-f','rawvideo','-pix_fmt','rgb24','-'])
+    assert not any(r>180 and g<90 and b>180 for r,g,b in zip(rgb[::3],rgb[1::3],rgb[2::3]))
     receipt['passed'] = True
     receipt['checks'] = dict(opaque_shortcut_exact=True,mixed_optics=True,explicit_cut=True,
                              white_furnace_max_energy=1.02,appearance_cache=True,
-                             optical_interface_and_absorption_gpu=True,glass_roundtrip_exact=True)
+                             optical_interface_and_absorption_gpu=True,glass_roundtrip_exact=True,
+                             granular_roundtrip_exact=True,rough_diffuse_gpu=True)
     (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
 
 

@@ -10,9 +10,16 @@ from sdf_author import material, sphere
 def catalog(root):
     def body(suffix):
         return json.loads((root / f'projects/sdf/scenes/sculpture-guardian-{suffix}.json').read_text())['materials'][0]
-    rows = dict(plain=body('mirrored'), limestone=body('limestone'), marble=body('marble'))
-    rows['clay'] = material('body', 'B87453', .90)
-    rows['ceramic'] = material('body', '387D77', .22)
+    rows = dict(plain=material('body', '777777', .76), limestone=body('limestone'), marble=body('marble'))
+    rows['clay'] = material('body', 'B87453', 1.0)
+    rows['clay']['optics'] = dict(diffuse_roughness=.6)
+    # Reuse the established filtered noise/analytic bump sampler. A separate
+    # name makes this surface reusable without calling terracotta limestone.
+    rows['clay']['procedural'] = dict(type='granular', seed=293, scale=32,
+        secondary_color=rows['clay']['base_color'], color_strength=0,
+        roughness_variation=.04, bump_strength=.00035, grain_scale=320,
+        offset=[.13,-.07,.09])
+    rows['ceramic'] = material('body', 'E3D7BE', .34)
     rows['bronze'] = material('body', 'D7A768', .32)
     rows['bronze']['optics'] = dict(metallic=1)
     rows['glass'] = material('body', 'FFFFFF', .05)

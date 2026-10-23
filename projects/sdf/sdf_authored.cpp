@@ -166,11 +166,13 @@ AuthoredScene parse_authored_scene(std::string_view text) {
                                o.value("ior", 1.5F), o.value("attenuation_distance", 1.0F)};
             if (o.contains("attenuation_color"))
                 optics.attenuation = {vector(o.at("attenuation_color")), 0};
+            optics.attenuation.w = o.value("diffuse_roughness", 0.0F);
         }
         validate_material_optics(optics);
         if (optics.settings.y > 0 &&
             (json.at("materials").size() != 1 || optics.settings.x != 0 ||
-             m.base_roughness.w != .05F || math::Vec3{m.base_roughness} != math::Vec3{1} ||
+             m.base_roughness.w != .05F || optics.attenuation.w != 0 ||
+             math::Vec3{m.base_roughness} != math::Vec3{1} ||
              math::Vec3{m.emission} != math::Vec3{0} || item.contains("procedural")))
             throw std::invalid_argument("glass requires one plain neutral material, zero "
                                         "metallic/emission and roughness 0.05");
@@ -179,10 +181,11 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         if (item.contains("procedural")) {
             const auto& p = item.at("procedural");
             const auto type = p.at("type").get<std::string>();
-            if (type != "limestone" && type != "marble")
+            if (type != "limestone" && type != "marble" && type != "granular")
                 throw std::invalid_argument("unknown procedural material type");
-            pattern.settings = {type == "limestone" ? 1.0F : 2.0F, p.value("seed", 7.0F),
-                                p.value("scale", 6.0F), p.value("color_strength", .5F)};
+            pattern.settings = {type == "limestone" ? 1.0F : (type == "marble" ? 2.0F : 3.0F),
+                                p.value("seed", 7.0F), p.value("scale", 6.0F),
+                                p.value("color_strength", .5F)};
             pattern.secondary = {p.contains("secondary_color")
                                      ? vector(p.at("secondary_color"), 0, 1)
                                      : math::Vec3{pattern.secondary},
@@ -487,13 +490,16 @@ std::string serialize_authored_scene(const AuthoredScene& scene) {
                 {"attenuation_distance", optics.settings.w},
                 {"attenuation_color",
                  {optics.attenuation.x, optics.attenuation.y, optics.attenuation.z}}};
+        if (optics.attenuation.w > 0)
+            json["materials"][i]["optics"]["diffuse_roughness"] = optics.attenuation.w;
         const auto& p = scene.patterns.at(i);
         validate_material_pattern(p);
         if (p.settings.x == 0) {
             json["materials"][i].erase("procedural");
         } else {
             json["materials"][i]["procedural"] = {
-                {"type", p.settings.x == 1 ? "limestone" : "marble"},
+                {"type",
+                 p.settings.x == 1 ? "limestone" : (p.settings.x == 2 ? "marble" : "granular")},
                 {"seed", static_cast<unsigned>(p.settings.y)},
                 {"scale", p.settings.z},
                 {"color_strength", p.settings.w},

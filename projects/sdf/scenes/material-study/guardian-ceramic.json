@@ -6,11 +6,11 @@
     {
       "name": "body",
       "base_color": [
-        0.03954623527673284,
-        0.20507873639031693,
-        0.184474994500441
+        0.768151147247507,
+        0.6795424696330938,
+        0.5149176653765214
       ],
-      "roughness": 0.22,
+      "roughness": 0.34,
       "emission": [
         0.0,
         0.0,
@@ -19266,7 +19266,7 @@
     "generator": "cubey-material-study-v1",
     "subject": "guardian",
     "material": "ceramic",
-    "shared_material_sha256": "bacf5c1cfa20dd692facba117827f49034c196798cbad109885dcf4a57d12a4e"
+    "shared_material_sha256": "056547e0ad53ff318ed453f56a6231a8dfb6139e932dfce162778333d6bac49e"
   },
   "history": [
     {

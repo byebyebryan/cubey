@@ -1,5 +1,11 @@
 #ifndef SDF_OPTICS_MATH_GLSL
 #define SDF_OPTICS_MATH_GLSL
+// Oren-Nayar relative to Lambert. Roughness maps linearly to sigma 0..90deg.
+float roughDiffuseFactor(float nl,float nv,float lv,float roughness) {
+    float sigma=roughness*1.570796327,s2=sigma*sigma;
+    float a=1-.5*s2/(s2+.33),b=.45*s2/(s2+.09);
+    return a+b*max(0,lv-nl*nv)/max(max(nl,nv),.001);
+}
 struct OpticalInterface { vec3 reflected; vec3 transmitted; float fresnel; bool tir; };
 OpticalInterface opticalInterface(vec3 incident,vec3 outward,bool inside,float ior) {
     vec3 normal=inside ? -outward : outward;

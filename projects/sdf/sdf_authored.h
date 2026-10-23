@@ -44,7 +44,8 @@ struct alignas(16) MaterialPattern {
 static_assert(sizeof(MaterialPattern) == 80);
 struct alignas(16) MaterialOptics {
     math::Vec4 settings{0, 0, 1.5F, 1}; // metallic, transmission, IOR, attenuation distance
-    math::Vec4 attenuation{1, 1, 1, 0}; // linear RGB transmittance at that distance
+    math::Vec4 attenuation{1, 1, 1,
+                           0}; // RGB transmittance, diffuse roughness (0 Lambert, 1 sigma=90deg)
 };
 static_assert(sizeof(MaterialOptics) == 32);
 [[nodiscard]] bool default_optics(const MaterialOptics& optics);

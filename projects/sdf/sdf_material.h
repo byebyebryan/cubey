@@ -37,4 +37,5 @@ struct OpticalInterface {
 [[nodiscard]] OpticalInterface optical_interface(math::Vec3 incident, math::Vec3 outward,
                                                  bool inside, float ior);
 [[nodiscard]] math::Vec3 optical_absorption(const MaterialOptics& optics, float distance);
+[[nodiscard]] float rough_diffuse_factor(float nl, float nv, float lv, float roughness);
 } // namespace cubey::projects::sdf

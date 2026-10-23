@@ -10,12 +10,34 @@
         0.17464740365558504,
         0.08650046203654976
       ],
-      "roughness": 0.9,
+      "roughness": 1.0,
       "emission": [
         0.0,
         0.0,
         0.0
-      ]
+      ],
+      "optics": {
+        "diffuse_roughness": 0.6
+      },
+      "procedural": {
+        "type": "granular",
+        "seed": 293,
+        "scale": 32,
+        "secondary_color": [
+          0.4793201831008268,
+          0.17464740365558504,
+          0.08650046203654976
+        ],
+        "color_strength": 0,
+        "roughness_variation": 0.04,
+        "bump_strength": 0.00035,
+        "grain_scale": 320,
+        "offset": [
+          0.13,
+          -0.07,
+          0.09
+        ]
+      }
     }
   ],
   "root": {
@@ -40,6 +62,6 @@
     "generator": "cubey-material-study-v1",
     "subject": "sphere",
     "material": "clay",
-    "shared_material_sha256": "1b3180a38ac820d2663a988c2aa32e4cbf7ae6e6613c69172c3eca150dea6085"
+    "shared_material_sha256": "c7d6bbeb78c94ca59b5e13db7e1dc62ae6e3da93750cff789c65d0a76e3bb41f"
   }
 }

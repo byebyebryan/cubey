@@ -108,7 +108,7 @@ void main() {
             uint code=morton(hit.cell)*1664525u+1013904223u;
             radiance=object ? vec3(uvec3(code,code>>8,code>>16)&255u)/255.0 : vec3(0.025);
         }
-        if (camera.options.x>4.5) {
+        if (camera.options.x>4.5 && camera.options.x<8.5) {
 #ifdef SDF_AUTHORED
             if (object && authoredHeader.x>0u) {
                 SceneSurface surface=authoredSurface(p,footprint,lighting.surface_options.x>.5);
@@ -123,7 +123,7 @@ void main() {
 #endif
         }
 #ifdef SDF_MATERIAL_STUDY
-        if(camera.options.x>8.5) {
+        if(camera.options.x>8.5 && camera.options.x<9.5) {
             radiance=vec3(0);
             if(object) {
                 bool glassExhausted=false;
@@ -131,6 +131,10 @@ void main() {
                 if(glassExhausted) { color=vec4(1,0,1,1);return; }
                 radiance=glassDiagnostics;
             }
+        }
+        if(camera.options.x>9.5) {
+            radiance=studyRadiance(p,normal,-direction,footprint,exhausted);
+            if(exhausted) { color=vec4(1,0,1,1);return; }
         }
 #endif
         float viewZ=dot(p-camera.eye.xyz,camera.forward.xyz);
