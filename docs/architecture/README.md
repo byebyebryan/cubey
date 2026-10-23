@@ -14,6 +14,7 @@ than the root design and roadmap.
   commits, and transform manager direction.
 - [Fluid simulation direction](fluid-simulation.md): project direction for
   2D/2.5D/3D fluid work.
+- [Shared material recipes](material-recipes.md): portable material content, filtered surface evaluation, material coordinates and safe live publication.
 - [Procedural generation foundation](procedural-generation.md): shared source
   field, operator, and process-driver direction for procedural assets.
 - [Ocean rendering](ocean-rendering.md):

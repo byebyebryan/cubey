@@ -75,12 +75,14 @@ the architecture and project guides remain current authority.
 - [Terrain Rendering Envelope V1](terrain-rendering-envelope-v1.md): far-backdrop geometry/detail limits.
 - [Terrain Visual Fidelity Strategy](terrain-visual-fidelity-strategy.md): bounded evidence required before reopening the accepted backdrop.
 
+- [SDF material workshop contract](sdf-material-workshop-plan.md): shared recipes and compact CSG inspection on the existing renderer.
+
 ## Exploration candidates
 
 These records retain proposed experiments and their scope. They do not imply
 an implemented project or a new runtime dependency.
 
-- [Material and SDF demo roadmap](material-demo-roadmap.md): proposed mesh PBR
+- [Material and SDF demo roadmap](material-demo-roadmap.md): staged mesh PBR
   material workshop, SDF material workshop and authored-content showcase, with
   shared material recipes/evaluation and separate completion boundaries.
 - [PBR material demo plan](pbr-material-demo-plan.md): proposed seven-material

@@ -411,7 +411,8 @@ class App {
         error_.clear();
     }
     void draw_ui() {
-        ImGui::SetNextWindowSize({340, 0}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(config_.workshop.empty() ? ImVec2{340, 0} : ImVec2{420, 640},
+                                 ImGuiCond_FirstUseEver);
         if (ImGui::Begin("SDF study")) {
             if (!config_.workshop.empty()) {
                 const char* specimens[]{"sphere", "block", "csg"};

@@ -106,6 +106,7 @@ Active projects:
 - [glTF Viewer](../projects/gltf_viewer/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Fractal 2D](../projects/fractal_2d/README.md)
+- [PBR materials](../projects/pbr_materials/README.md): shared mesh material gallery and parameter workshop, with a matched SDF workshop.
 - [SDF](../projects/sdf/README.md): procedural demos, an authored robot and four
   sculpture studies, including the settled guardian, with sparse field
   rendering, plain/procedural stone materials and construction/orbit playback.

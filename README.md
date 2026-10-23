@@ -97,6 +97,7 @@ and keep domain-specific policy local.
 | [Terrain Water](projects/terrain_water/README.md) | Terrain-water integration with live external SynxFlow, recorded fields, and shared terrain/water rendering. |
 | [glTF Viewer](projects/gltf_viewer/README.md) | Staged glTF 2.0 PBR import, animation and deformation, required-use material extensions, procedural or HDR environments, shadows, and optional terrain. |
 | [Fractal 2D](projects/fractal_2d) | Interactive Mandelbrot-style fullscreen shader with windowed navigation and headless output. |
+| [PBR materials](projects/pbr_materials/README.md) | Shared procedural recipes on mesh spheres and beveled blocks, live parameter editing, glass and studio/atmosphere/cloud lighting. |
 | [SDF](projects/sdf/README.md) | Procedural and authored primitive CSG, a settled guardian sculpture, sparse distance bricks, procedural stone materials, atmosphere lighting and mapless self-shadows. |
 
 Terrain and Ocean deliberately represent different scales: far backdrop and
