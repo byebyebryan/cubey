@@ -254,3 +254,14 @@ were warm. That is a startup observation, not an isolated compilation benchmark.
 
 Browser discovery again finds no connected browser, so layout/playback acceptance
 remains separate from native film decoding and source-level interaction checks.
+
+
+The [restored cloud horizon and sampling comparison](http://starship:8787/reports/26ac0eca087abdbecf5e059bf1e790da18f20024d282e7c94a217d6bc2bd639a/index.html)
+publishes the seven-variant still comparison, matched native orbits, diagnostics,
+profiles and receipts. Its 303-file / 51,311,566-byte bundle matches every local
+file over HTTP from Starship. `outputs/sdf/cloud-handoff-delivery.json` records
+served-byte verification. Source-level report checks cover all 24 still-control
+combinations, both film selections, paired playback handlers and asset paths.
+Carbon SSH again timed out at connection establishment, and no connected browser
+was available. No Carbon/browser acceptance is inferred. Commits remain local;
+no push occurred.

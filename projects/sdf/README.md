@@ -644,6 +644,8 @@ The visible cloud composite fades into the sky-only backdrop near the physical
 horizon, while probe radiance and all cloud ray directions remain physical.
 Other shared consumers retain their default composition. The first report's
 local-only cutoff is retained as historical evidence.
+The [cloud follow-up report](http://starship:8787/reports/26ac0eca087abdbecf5e059bf1e790da18f20024d282e7c94a217d6bc2bd639a/index.html)
+contains matched stills/orbits, isolated option comparisons and fresh costs.
 
 `--cloud-distance-mode auto|local`, `--cloud-quality half|full`,
 `--cloud-view-samples 1|2|4` and `--cloud-resolve-mode terrain-post|metadata-bilateral`
