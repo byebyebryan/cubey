@@ -101,8 +101,9 @@ an implemented project or a new runtime dependency.
   limestone and honed-marble audition on the unchanged mirrored guardian,
   with native surface/history qualification and separate pattern/bump costs.
 - [SDF marble mineral plan](sdf-marble-minerals-plan.md): correlate warm vein
-  cores, cream shoulders and pockets through the existing warped structure,
-  with native visual, filtering, compatibility and performance checkpoints.
+  cores, cream shoulders and pockets through the existing warped structure;
+  implemented with native visual, filtering, compatibility and performance
+  checkpoints.
 
 ## Historical research and study records
 

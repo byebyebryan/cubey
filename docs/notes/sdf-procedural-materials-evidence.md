@@ -19,7 +19,9 @@ controls while making the warm/cool patches visible.
 User review then retained cream and rejected the bluish cool-gray end; the
 [original and cream palette](#original-and-cream-palette) replaced that endpoint.
 Further review found the soft placement stain-like; the
-[defined mineral pockets](#defined-mineral-pockets) are the current trial.
+[defined mineral pockets](#defined-mineral-pockets) improved the placement.
+The [coherent mineral color](#coherent-mineral-color) now derives colored
+cores, cream shoulders and pockets directly from the marbling.
 
 ## Result and scope
 
@@ -607,3 +609,103 @@ All 193 served files match the local bytes and hashes, recorded in
 `marble-minerals-served-review.json`. Five documentation/layout checks and all
 18 scoped SDF CLI recipes pass. Changes are committed locally; no push is
 included in this follow-up.
+
+## Coherent mineral color
+
+The user requested a proper plan and implementation goal loop after reviewing
+the relationship between color and marbling. The
+[focused plan](sdf-marble-minerals-plan.md) was committed first in `ae82666e`;
+the implementation and expanded qualification were committed in `c5a199c3`.
+The [coherent-color review](http://starship:8787/reports/0feff6f5a8207ee1f3ed7b6933cbb434b55ff191e8365f248e414699972978ec/)
+compares the previous pockets and current mineral structure at identical
+scene parameters, amounts, cameras and lighting.
+
+### One shared structure
+
+The prior pattern used independent noise islands with a bias toward the vein
+bands and attenuated color at dark cores. The current pattern reuses the
+existing warped main and secondary vein coordinates to place every colored
+core, surrounding cream shoulder and fine wisp. Seeded noise selects warm
+segments and varies their widths; wider shoulders form attached pockets.
+It no longer independently places cream islands between the vein families.
+The full color amount can reach a selected core, retaining the original
+pale/cream multiplier endpoints and amount mapping.
+
+The first native trial established this relationship but had overly smooth
+edges. The selected second trial adds filtered edge variation at 11 times
+pattern scale and slightly stronger warmth along existing secondary veins.
+Native default/stronger shaded and unlit face views, rear views and extracted
+orbit frames were inspected. Color now follows the marbling more clearly,
+while the underlying vein flow remains smooth and contour-like in places.
+This is still a stylized approximation; user artistic acceptance is pending.
+
+The reference interpretation comes from the previously inspected
+[Calacatta Cremo](https://www.antolini.com/en/c6/natural-stone-collection/m1556/calacatta-cremo)
+and [Macchia Vecchia Original](https://www.antolini.com/en/c3/exclusive-collection/m1559/calacatta-macchia-vecchia-original)
+photographs: warm streaks, irregular vein edges and localized wider pockets,
+with pale areas between them. It is not a measured reproduction or a
+geological simulation. Manufacturer photographs are linked, not redistributed.
+
+Analytic noise derivatives account for the varying shoulder width in its
+pixel-footprint ramp. The uncapped width derivative conservatively broadens
+the boundary where width is capped. Unresolved warm main/secondary structure
+fades rather than generating fine alternating colored lines. CPU and GLSL
+use the same calculation. The zero-amount branch retains the accepted neutral
+material exactly. Balanced vein paths, four detail choices, scene parameters,
+the 80-byte pattern record, limestone, roughness, bump, geometric tracing
+normals, geometry and all 65 operations retain their prior values.
+
+### Qualification and presentation
+
+Five focused CPU suites pass. Added spatial checks use an unwarped field:
+warm and gray-only main-vein cores both occur, while sampled regions well
+between the main and secondary bands retain the pale material exactly.
+Existing checks retain bounded, finite, one-sided cream color and unchanged
+roughness/height gradients across intermediate and distant filter footprints.
+
+All 40 native foundation render/validation runs pass. Existing neutral/plain,
+seed, shortcut/full, persistence, material ownership, short cut-history and
+one-build appearance-cache checks remain. Four additional runs exercise every
+named detail preset at the maximum 0.25 color amount and another seed.
+Maximum observed CPU/GPU color error is 0.0000576973, within the unchanged
+0.0002 bound. Geometry/gradient/normal bounds remain 0.00002. Tint-on/off
+roughness and shading-normal PNGs match exactly.
+
+Eighteen current native stills, eight structural probes and all 720 current
+turntable frames pass. Old images and films retain their original receipts.
+All three old/new scene hashes and matching render settings agree; neutral
+images match exactly in every common view, and current clay images are exact
+across amounts. A new unlit face close-up is presented separately because it
+was not captured in the older comparison. Full guardian history and unchanged
+desktop controls were not rerun for this color-only revision.
+
+Fresh RTX 5070 Ti / driver 610.57.04 profiles use 1920×1080, supersample 1,
+hard shadows, 180 submitted frames / 30 warmup and 148 completed GPU samples
+per case. Shading-plus-post medians for variation 0 / 0.08 / 0.16 are
+1.782704 / 1.792496 / 1.794864 ms; p95 values are
+1.829984 / 1.842784 / 1.852224 ms. Cold field builds are
+917.165 / 917.255 / 917.333 ms. No competing owned GPU job ran. These compare
+amounts within the revised build, not old/new shader performance. Field
+construction, readback and encoding are excluded from GPU frame measurements.
+
+The final native binary SHA-256 is
+`ea0046e13e0dd442da986016af39830dcf37aecead16d92e0e73313725e74caa`.
+Foundation, comparison and profile receipts agree on that identity and all
+shader hashes. The qualification ran before the implementation commit, and
+its recorded artifact hashes match the committed implementation and final
+captures. The report includes exact implementation snapshots.
+
+Artifacts under `outputs/sdf/` include `marble-connected-foundation/`,
+`marble-connected-comparison/`, `marble-connected-profile/`,
+`marble-connected-motion-review/`, the two retained native trials and their
+inputs, and the 265-file / 46,027,369-byte `marble-connected-report/`.
+The tracked `projects/sdf/tools/marble_mineral_report.py` packages the prior
+comparison, matching current captures, foundation and profile receipts.
+It checks source hashes, exact neutral images, paired settings and image/video
+integrity before packaging. Static targets, all 30 dynamic old/new image paths
+and JavaScript syntax pass. Browser discovery found no connected browser;
+browser interaction review remains unverified.
+All 265 served files match the local bytes and hashes, recorded in
+`marble-connected-served-review.json`. Five documentation/layout checks and
+all 18 scoped SDF CLI recipes pass. The plan, implementation and presentation
+are committed as local milestones; no push is included.

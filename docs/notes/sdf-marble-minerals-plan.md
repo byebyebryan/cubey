@@ -1,6 +1,10 @@
 # Coherent marble mineral color
 
-Status: planned; implementation goal loop authorized on 2026-10-22.
+Status: implemented and natively qualified on 2026-10-22, following the
+authorized goal loop. Native visual inspection is complete; human artistic
+acceptance remains pending. The
+[material evidence](sdf-procedural-materials-evidence.md) records delivery and
+its limits.
 
 ## Problem and visual target
 

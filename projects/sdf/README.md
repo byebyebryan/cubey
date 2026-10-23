@@ -184,7 +184,14 @@ User review then found the soft placement stain-like. The
 compares the broad tint with smaller, more defined cream pockets that favor
 the warped vein bands. It includes natural-marble references, a same-amount
 0.16 pair, neutral/default/stronger views and native turntables. The current
-0.08 default remains subtle; visual acceptance of the new placement is pending.
+follow-up connects the color directly to the marbling: warm vein cores,
+irregular cream shoulders, attached pockets and colored secondary wisps.
+The [coherent-color plan](../../docs/notes/sdf-marble-minerals-plan.md) defines
+the boundary; the
+[native review](http://starship:8787/reports/0feff6f5a8207ee1f3ed7b6933cbb434b55ff191e8365f248e414699972978ec/)
+pairs both revisions at equal amounts and adds an unlit face close-up.
+Default 0.08 remains restrained. The smooth, stylized vein flow remains;
+human artistic acceptance of the new color placement is pending.
 
 A separately qualified shortcut now skips the CSG material-ownership walk for
 one-material shaded hits. The original three material-audition variants measure
@@ -197,9 +204,10 @@ scopes; those earlier timings keep their original material snapshots. A matched
 1080p pair before the color-visibility correction measured 1.76 ms with tint off
 and 1.78 ms at 0.08; geometry rebuilds remained about 0.92 seconds. That profile
 retains its earlier shader identity; the palette correction has no new profile.
-The later mineral-pocket revision has a fresh matched tint-off/on pair:
-1.754 / 1.769 ms median at 1080p, with about 0.92-second cold field builds.
-This measures both cases within that revised build, rather than old/new shaders.
+The current coherent-color revision has a fresh matched tint-off/on pair:
+1.783 / 1.792 ms median at 1080p, with about 0.92-second cold field builds.
+The stronger 0.16 amount measures 1.795 ms. These measure cases within the
+revised build; previous shader timings retain their earlier receipt scope.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
@@ -446,16 +454,17 @@ material weights. Color, roughness and analytic height gradients use the shared
 seeded value-noise family; fine grain fades with a conservative projected pixel
 footprint, and marble vein ramps broaden/average when unresolved.
 
-For marble, `color_variation` adds smaller, defined cream mineral pockets.
-Seeded noise at 4 times pattern scale, plus finer breakup at 2.43 times that
-frequency, is biased toward the existing warped vein bands. Thresholded edges
-separate the pockets from untouched pale areas; warmth also varies inside each
-pocket. The original pale/cream palette and amount control retain their values,
-with attenuation at dark vein cores. Pixel footprints broaden unresolved edges
-and fade small-scale color towards neutral. This is a stylized procedural
-treatment, not a geological simulation. It affects color only. Its default is
-zero for legacy scene compatibility; the guardian generator explicitly saves
-0.08. Pocket placement follows the existing pattern scale, without adding a
+For marble, `color_variation` colors selected vein cores, irregular cream
+shoulders and existing secondary wisps. The warped vein coordinates place all
+of these features. Seeded noise selects warm segments and varies their width;
+wider shoulders form attached pockets. Noise at 11 times pattern scale adds
+finer edge breakup. Pale intervals and gray-only veins remain, and the former
+color suppression at dark cores is removed. The original pale/cream
+multipliers and amount control retain their values. Analytic gradients broaden
+narrow color boundaries with pixel footprint; unresolved warm structure fades
+towards neutral. This is a stylized procedural treatment, not a geological
+simulation. It affects color only. Its default is zero for legacy scene
+compatibility; the guardian generator explicitly saves 0.08. It introduces no
 separate control, scene field, image map or appearance volume.
 
 In the expanded body material, scroll to **Marble detail** for Original,
