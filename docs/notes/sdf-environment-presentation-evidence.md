@@ -2,7 +2,8 @@
 
 Date: 2026-10-23
 
-Status: implementation in progress. See the
+Status: native implementation and comparison complete; report delivery closeout
+is being recorded below. See the
 [reviewed plan](sdf-environment-presentation-plan.md) for scope and gates.
 Commits remain local; no push is authorized for this loop.
 
@@ -96,3 +97,59 @@ SH diffuse remains a clear-sky approximation, and clouds do not cast sculpture
 shadows. Glass retains environment-only exit/TIR approximations. Full-scene GPU
 timing includes the visible cloud pass and is reported separately from setup,
 field construction, readback and encoding.
+
+
+## Final comparison and cost
+
+The final capture matrix contains 24 subject/material/environment cases,
+48 hero/detail stills, six 240-frame guardian orbits, three empty backgrounds
+and three neutral-sphere calibration images. All use the same accepted scene
+files, camera contracts, exposure +0.6 and eight crossings. The selected budget
+was repeated on the final environment binary: worst cap incidence remains
+0.1409% across 24 guardian angles, with zero traversal/progress errors. Its
+sphere, separated-solid and cavity controls pass native field validation.
+Artifacts: `outputs/sdf/environment-{comparison,final-glass}/`. Final 64-face
+clear-sky bronze/glass controls also pass native field/Vulkan validation in
+`outputs/sdf/environment-final-extent/`; 128 faces remains the presentation choice.
+
+Fresh sequential runs on the RTX 5070 Ti / driver 610.57.04 use 1920x1080,
+1x, hard shadows, 180 frames, 30 warmup and 148 completed GPU samples. New
+routes use one enclosing `sdf.whole_scene` timestamp; fixed reference sums its
+nonoverlapping shading/post passes. Owned capture/UI jobs had finished before
+profiling. Setup, CPU field builds, readback and encoding are excluded.
+
+| Guardian | Fixed median / p95 | Clear sky median / p95 | Clouds median / p95 |
+| --- | --- | --- | --- |
+| Bronze | 1.553 / 1.655 ms | 2.001 / 2.077 ms | 2.386 / 2.458 ms |
+| Glass | 2.702 / 2.875 ms | 2.967 / 3.132 ms | 3.361 / 3.513 ms |
+| Marble | 1.580 / 1.674 ms | 2.012 / 2.090 ms | 2.417 / 2.494 ms |
+| Terracotta | 1.561 / 1.655 ms | 2.012 / 2.095 ms | 2.399 / 2.503 ms |
+
+The largest median across all 24 cases is sphere glass/clouds at 3.602 ms
+(p95 3.738 ms), below the retained 16.7 ms provisional full-scene gate. Warm
+final-launch environment setup spans 14.209–57.015 ms; generated test-IBL setup
+is 249.850–279.751 ms. Sphere/guardian synchronous field builds span
+4.990–921.369 ms. These are distinct CPU wall/setup costs. Early cold cloud
+setup reached 10.86 s, and the first native window run reached 11.61 s; those
+observations are not an isolated compilation benchmark. Interactive probe
+update GPU cost is not independently benchmarked. The steady profiles have
+no sun/weather changes. Full numeric and per-pass evidence is in
+`outputs/sdf/environment-profile/`.
+
+The full native gallery and orbit frame review support the clear-sky presentation
+for user review. Clouds meet the technical/composition/cost gates but retain
+the explicit experimental appearance verdict. The artistic verdict remains the
+user's. No material, geometry or cloud-model refinement is reopened.
+
+The 17 focused core/SDF/policy checks pass after adding the new evidence page
+to the notes index. All 22 selected SDF documentation recipes also pass with
+Vulkan ICDs and displays intentionally unavailable, proving CLI dry-run parsing.
+Browser discovery returns no connected browser; layout/media interaction cannot
+be claimed as browser-qualified. Native films are fully decoded by the capture
+checker. Publication and Carbon reachability are recorded separately below.
+
+
+Report packaging checks cover all 24 environment/material/view control
+combinations, film visibility, diagnostic/table construction, JavaScript
+syntax and relative asset paths. This is source/interaction-logic evidence,
+not a replacement for a connected browser layout or playback review.

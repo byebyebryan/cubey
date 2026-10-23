@@ -2,9 +2,11 @@
 
 Date: 2026-10-23
 
-Status: implementation loop authorized on 2026-10-23. The user accepts the
-latest material contrast pass. The following sections retain the reviewed
-boundary and checkpoints; implementation results will be recorded separately.
+Status: implemented and natively qualified on 2026-10-23. The accepted material
+contrast pass remains unchanged. Clear sky is the recommended presentation;
+clouds retain an experimental appearance verdict. See the
+[implementation evidence](sdf-environment-presentation-evidence.md) for measured
+results. The following sections retain the reviewed boundary and checkpoints.
 
 ## Objective and retained baseline
 
@@ -19,7 +21,7 @@ is in `1812e7c8`. The accepted [material contrast report](http://starship:8787/r
 is the before reference. This pass changes presentation and a bounded glass
 quality option; it does not reopen modeling or material look development.
 
-## What exists and what is missing
+## Pre-implementation state
 
 - `projects/sdf/sdf_renderer.cpp` owns an `AtmosphereEnvironmentRuntime`, but
   currently uses its lighting/frame values without creating its reflection

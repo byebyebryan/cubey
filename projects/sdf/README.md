@@ -546,10 +546,10 @@ adds separate `material-study/` presets for a radius-0.25 sphere and the unchang
 guardian. Both use identical material records: neutral gray, accepted limestone and
 subtle marble, granular terracotta, ivory ceramic, satin bronze and tinted glass.
 The six opaque looks are qualified on both subjects. Homogeneous sphere glass
-is qualified; the guardian glass comparison remains experimental because its
-worst sampled view reaches the four-crossing cap on 1.1068% of visible glass
-pixels, above the declared 1% admission limit. No extra transport passes were
-added to hide that result.
+is qualified; the earlier four-crossing guardian comparison was experimental
+because its worst sampled view reached the cap on 1.1068% of visible glass
+pixels, above the declared 1% admission limit. That historical result remains
+intact. The new eight-crossing qualification is documented below.
 
 The [updated paired material report](http://starship:8787/reports/d7311c3fe7081ab555c02dad8742497d9cc57fb04424c652a350adf95641eb51/index.html)
 includes normal/detail views, native orbits, glass diagnostics and separate
@@ -587,11 +587,13 @@ Opaque blend/cut ownership applies to optics on CPU and GPU.
 Glass requires one plain homogeneous material: white base, zero metallic and
 emission, fixed roughness 0.05 and no procedural/bump pattern. Geometric normals
 control refraction. Measured in-medium distance controls Beer-Lambert tint.
-At most four interfaces are processed, with environment fallback for total
+The compatibility default processes at most four interfaces. `--glass-crossings`
+accepts 4, 8 or 16; new environment presets explicitly select 8. There is environment fallback for total
 internal reflection and crossing-budget limits. This is not recursive optical
 transport, rough glass, caustics or transmission through other opaque objects.
-`--debug 9` shows crossing-cap/TIR flags and coverage. The report and evidence
-separate the qualified sphere from the experimental guardian; a successful
+`--debug 9` shows crossing-cap/TIR flags and coverage. The earlier report and evidence
+separate the qualified sphere from the four-crossing experimental guardian;
+the later eight-crossing pass requalifies the sampled budget. A successful
 render alone does not establish admission.
 
 The old `--clay` option still produces the same gray inspection material at
@@ -607,10 +609,53 @@ rejects these opaque-only modes. Normals/roughness keep their raw debug display.
 The `granular` procedural type reuses the established filtered grain sampler
 without the stone-specific name; clay uses zero procedural color strength.
 
-The next [environment presentation plan](../../docs/notes/sdf-environment-presentation-plan.md)
-proposes a separate atmosphere/cloud material route and a measured 4/8/16
-glass-crossing comparison. Those options are not implemented yet; the current
-material presets still use the fixed generated environment.
+### Shared environment presentation
+
+The implemented [environment presentation plan](../../docs/notes/sdf-environment-presentation-plan.md)
+and [native evidence](../../docs/notes/sdf-environment-presentation-evidence.md)
+add an opt-in `material-atmosphere` route. It consumes shared sun state,
+Lambert-normalized diffuse SH and previous/current prefiltered reflection probes.
+Glass samples the same distant environment. The existing material-study presets
+retain their fixed environment, and the legacy atmosphere route retains its look.
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/environment-study/guardian-bronze-sunset.json
+build/release/projects/sdf/sdf --config projects/sdf/presets/environment-study/guardian-glass-clouds.json
+```
+
+The `environment-study/` presets compare fixed reference, clear low sun and
+experimental frozen broken cumulus on bronze, glass, marble and terracotta.
+All reuse accepted scene/material files and exposure +0.6. The new low-sun
+routes use elevation 8 degrees and azimuth -155 degrees. Clear sky is the main
+presentation; clouds retain visible horizon/sampling artifacts and are an
+integration experiment. No ground plane or terrain is added. Shared distant
+planet radiance contributes the lower reflection hemisphere; the separate
+visible sky uses the shared backdrop horizon policy.
+
+`--environment-extent 64|128` selects reflection face resolution (default 128).
+`--clouds` requires material-atmosphere; `--cloud-coverage` is in [0,1] and
+`--cloud-time` is a nonnegative frozen weather time. The presentation uses
+coverage 0.28 at 300 seconds. `--no-cloud-backdrop` is a compositor diagnostic
+that retains clouded reflections while hiding the visible layer.
+Sky/cloud resources settle before frame zero, then reuse their probes while
+the camera/material changes. Native sun controls update the environment without
+rebuilding distance bricks. The depth-aware HDR cloud composite excludes both
+opaque and glass foreground. Diffuse remains clear-sky SH; there are no cloud
+shadows on the sculpture.
+
+A fixed-environment 24-angle guardian sweep measured worst cap fractions of
+1.2433%, 0.1409% and 0.1258% at 4/8/16 crossings. Eight passes the retained 1%
+gate and was confirmed on the final environment binary. The default remains
+four for old captures/presets. This qualifies the selected budget on sampled
+views; glass still has environment-only exit and TIR approximations, without
+local reflections, caustics or more internal reflection bounces.
+
+Reproduce the bounded evidence with `tools/qualify_environment_study.py`,
+`tools/qualify_glass_budget.py --budgets 8`, and
+`tools/capture_environment_study.py` under this project. Each requires a fresh
+`--output` directory. `tools/profile_guardian.py` accepts repeated `--case NAME
+PRESET` pairs. New-route timings use `sdf.whole_scene` to include sky/cloud/post;
+setup and synchronous field builds remain separate measurements.
 
 ### Authoring history
 

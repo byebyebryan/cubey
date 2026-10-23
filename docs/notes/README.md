@@ -120,6 +120,7 @@ an implemented project or a new runtime dependency.
   sphere-first material foundation and unchanged guardian comparison, with
   dry clay, ceramic, bronze, bounded glass and retained effort/acceptance gates.
 - [SDF environment presentation plan](sdf-environment-presentation-plan.md):
+- [SDF environment presentation evidence](sdf-environment-presentation-evidence.md) — native integration, glass budgets and presentation qualification.
   proposed 4/8/16 glass comparison, opt-in shared atmosphere/cloud reflections,
   and a bounded low-sun presentation on the accepted material set.
 

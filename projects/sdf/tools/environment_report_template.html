@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cubey · SDF environments</title>
+<style>
+:root{color-scheme:dark;--bg:#151817;--panel:#202522;--line:#38443c;--ink:#edf0e8;--muted:#b3bfb4;--accent:#d6b878}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,sans-serif}main{max-width:1240px;margin:auto;padding:44px 24px 90px}a{color:var(--accent)}h1{font-size:clamp(32px,5vw,60px);line-height:1.06;letter-spacing:-.045em;margin:12px 0 20px}h2{font-size:25px;line-height:1.25;margin:0 0 16px}h3{font-size:17px;margin:0 0 10px}p{max-width:84ch;margin:12px 0}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--accent)}.muted,small,figcaption{color:var(--muted)}section{margin-top:40px}.toolbar{display:flex;align-items:end;gap:18px;flex-wrap:wrap;margin:24px 0 14px}.toolbar label{display:grid;gap:6px;font-size:13px;color:var(--muted)}select,button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:10px 13px;cursor:pointer}select:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}figure img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain;background:#1b211f}figcaption{padding:12px 16px;font-size:14px}.notice{background:#342d21;border-left:3px solid var(--accent);padding:13px 17px;margin:16px 0}.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.thumb{padding:0;overflow:hidden;text-align:left;border-radius:9px}.thumb img{width:100%;display:block;aspect-ratio:1;object-fit:cover}.thumb span{display:block;padding:11px}.thumb[aria-pressed=true]{border:2px solid var(--accent)}video{width:100%;max-height:640px;display:block;background:#111;border-radius:8px}.film{max-width:860px}.panel{background:var(--panel);border:1px solid var(--line);padding:22px;border-radius:10px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}.metric strong{display:block;font-size:28px;color:var(--accent);font-variant-numeric:tabular-nums}.metric span{font-size:13px;color:var(--muted)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14px}td,th{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:500}.scroll{overflow:auto}.mask-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.mask-grid img{width:100%;display:block}.mask-grid figure{font-size:13px}details{border:1px solid var(--line);padding:18px;border-radius:8px;margin:16px 0}summary{cursor:pointer;font-weight:600}code{font-size:12px;overflow-wrap:anywhere}.bg-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.bg-row img{width:100%;display:block}.proof{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}.badge{color:var(--accent);font-size:12px}#film-empty{padding:20px;border:1px solid var(--line)}[hidden]{display:none!important}@media(max-width:700px){main{padding:28px 14px 60px}.grid{grid-template-columns:1fr}.thumbs{gap:6px}.thumb span{font-size:12px;padding:8px}.metrics{grid-template-columns:1fr}.mask-grid,.bg-row{grid-template-columns:1fr}.toolbar{align-items:stretch}.toolbar label{flex:1}td,th{padding:8px}}
+</style>
+<main>
+<header>
+<div class="eyebrow">Cubey / rendering experiments / 23 October 2026</div>
+<h1>A sky for the guardian.</h1>
+<p>Warm low sun, shared atmosphere reflections, and one frozen cloud experiment. The same sphere, sculpture and accepted materials make the lighting change visible.</p>
+<p class="muted">Clear sky is the recommended presentation. Clouds remain experimental. This pass changes the environment and glass crossing budget; the material records and sculpted form retain their accepted source bytes.</p>
+<p class="proof"><a href="http://starship:8787/reports/d7311c3fe7081ab555c02dad8742497d9cc57fb04424c652a350adf95641eb51/index.html">Previous seven-material report ↗</a><a href="http://starship:8787/reports/#project=cubey">Cubey reports ↗</a></p>
+</header>
+<div class="toolbar">
+<label>Environment<select id="environment"><option value="reference">Fixed reference</option><option value="sunset" selected>Clear low sun</option><option value="clouds">Frozen clouds · experimental</option></select></label>
+<label>Material<select id="material"><option value="bronze">Satin bronze</option><option value="glass">Tinted glass · 8 crossings</option><option value="marble">Subtle marble</option><option value="clay">Granular terracotta</option></select></label>
+<label>Camera<select id="view"><option value="hero">Hero</option><option value="detail">Detail</option></select></label>
+</div>
+<p id="environment-note" class="muted"></p>
+<p id="cloud-warning" class="notice" hidden>The cloud route is technically coherent, but the bank has a visible horizon cutoff and sampling pattern. Treat this as an integration experiment. Diffuse lighting remains clear-sky SH; clouds do not cast shadows on the sculpture.</p>
+<p id="glass-warning" class="notice" hidden>Eight crossings passes the sampled cap gate. Glass still uses distant-environment exit and total-internal-reflection fallbacks, with no additional internal bounces, caustics or local object reflections.</p>
+<div class="grid">
+<figure><a id="sphere-link"><img id="sphere-image" alt="Native sphere material capture" width="960" height="960"></a><figcaption id="sphere-caption"></figcaption></figure>
+<figure><a id="guardian-link"><img id="guardian-image" alt="Native guardian material capture" width="960" height="960"></a><figcaption id="guardian-caption"></figcaption></figure>
+</div>
+<div class="thumbs" id="environments"></div>
+<p class="muted"><small>Matching guardian cameras above: choose a thumbnail to switch environments. All stills are native 960 × 960 renders at 2× supersampling. All final environments use exposure +0.6 and the same tone map.</small></p>
+<section>
+<h2>In motion</h2>
+<div class="film" id="film-box"><video id="film" controls playsinline preload="none"></video><p class="muted" id="film-caption"></p></div>
+<p id="film-empty" class="muted" hidden>The bounded film set covers bronze and glass. Choose either to view its matched 8-second guardian orbit; marble and terracotta have hero/detail stills.</p>
+<p class="proof" id="source-links"></p>
+</section>
+<section>
+<h2>What changed</h2>
+<div class="grid">
+<div class="panel"><h3>One shared environment</h3><p>Visible sky, sun direction/color, diffuse response, prefiltered reflections and glass lookups come from the shared atmosphere runtime. Previous/current reflection probes blend as complete captures. A settled scene reuses its probes while the camera moves.</p><p class="muted">A distant planet contributes lower-hemisphere reflection radiance; no ground plane or terrain is rendered. The visible backdrop uses the shared presentation horizon policy.</p></div>
+<div class="panel"><h3>Bounded cloud integration</h3><p>Shared broken cumulus supplies the visible layer and reflected/refracted environment. Both use frozen weather at 300 s, coverage 0.28 and the same low sun. Foreground depth excludes the sculpture from background composition, including glass.</p><p class="muted">128-pixel cube faces, five roughness levels, 64-step cloud probes; half-resolution, 64-step visible clouds. No animated weather or new cloud renderer.</p></div>
+</div>
+</section>
+<section>
+<h2>Glass: eight is enough for this study</h2>
+<div class="metrics"><div class="panel metric"><strong>0.141%</strong><span>Worst sampled guardian cap incidence at 8 crossings</span></div><div class="panel metric"><strong>24 angles</strong><span>Final-binary confirmation, zero traversal/progress errors</span></div><div class="panel metric"><strong>4 → 8</strong><span>Old presets retain 4; new presentation presets explicitly select 8</span></div></div>
+<p>The original 4/8/16 comparison uses a fixed environment to isolate transport. Eight reduces worst-view cap incidence below the retained 1% gate with almost no measured shading cost change. Sixteen gives little further benefit here. Total internal reflection still exits through the same approximation.</p>
+<div class="scroll"><table><thead><tr><th>Interfaces</th><th>Worst cap fraction</th><th>Guardian glass median</th><th>Sphere glass median</th></tr></thead><tbody id="glass-table"></tbody></table></div>
+<p class="muted"><small>The cap comparison and timings above are from the glass milestone binary, before atmosphere/cloud integration. The selected 8-crossing sweep was repeated on the final binary with the same 0.1409% result. Sphere hero/detail are identical across the three budgets; separated-solid and cavity fixtures validate. Each GPU timing has 148 samples at 1080p/1×, excluding setup and field construction.</small></p>
+<div class="mask-grid" id="masks"></div>
+<p class="muted"><small>Each budget's own worst sampled mask. Red marks cap fallback, green marks TIR fallback, and blue encodes glass coverage. These fallback classes are separate from traversal errors.</small></p>
+</section>
+<section>
+<h2>Complete scene cost</h2>
+<p id="device" class="muted"></p>
+<div class="scroll"><table><thead><tr><th>Environment</th><th>Material</th><th>Sphere median / p95</th><th>Guardian median / p95</th></tr></thead><tbody id="performance"></tbody></table></div>
+<p class="muted">Fresh sequential 1920 × 1080, 1×, hard-shadow runs; 180 frames, 30 warmup, 148 completed samples. New routes use one outer GPU timestamp around all scene passes, including sky, SDF, cloud view/composition and post. Fixed reference sums its nonoverlapping shading/post passes. No competing owned GPU job ran during measurement.</p>
+<p id="cost-verdict"></p>
+<details><summary>Startup and pass-level evidence</summary><p id="startup"></p><p>The first cold cloud setup observed in this loop took 10.86 s (11.61 s in the first windowed run). Later setups were warm. These observations are not an isolated shader-compilation benchmark. Field builds and generated test-IBL construction remain synchronous and are excluded from steady GPU time.</p><p><a href="profile/manifest.json">All setup/build measurements</a> · <a href="extent-comparison/manifest.json">Final 64-face bronze/glass controls</a> · <a href="review.json">Combined receipt</a>. Interactive sun-update GPU cost is not independently benchmarked. Per-pass CSVs and native logs are included under <code>profile/</code>; avoid adding inner pass times to the enclosing whole-scene timestamp.</p></details>
+</section>
+<section>
+<h2>Backdrop and exposure controls</h2>
+<p class="muted">Empty-state captures isolate the visible environment. The neutral-sphere links use common exposure +0.6. Final sculptural presentations also use +0.6, with no per-material light or exposure adjustments.</p>
+<div class="bg-row" id="backgrounds"></div>
+</section>
+<section>
+<h2>Qualification and limits</h2>
+<div class="grid"><div class="panel"><h3>Native checks passed</h3><ul><li>28 accepted catalog source files retain exact hashes.</li><li>Four legacy atmosphere and six fixed-material compatibility PNGs are exact.</li><li>Bronze and glass foreground composites each compare 99,474 interior channels with maximum error 0.</li><li>Frozen first/final images are byte-identical; static/orbit probes capture once.</li><li>Native resize, orbit, sun and roughness controls pass; sun changes refresh sky/cloud probes with one SDF field build.</li><li>Field/Vulkan validation, invalid-input rejection and config persistence pass.</li></ul></div><div class="panel"><h3>Keep the claims bounded</h3><p>The new clear-sky presentation is ready for visual review. Clouds remain experimental because of visible horizon/sampling artifacts. Glass passes the sampled budget gate while retaining substantial environment/TIR approximations.</p><p class="muted">No terrain, ground receiver, local reflections, cloud shadows, caustics or extra glass bounces. Browser layout/playback and Carbon access could not be qualified without a connected/reachable client. Native captures and report HTTP delivery are separate evidence.</p></div></div>
+<details><summary>Receipts, source and reproducibility</summary><p class="proof"><a href="comparison/manifest.json">Gallery and capture commands</a><a href="foundation/manifest.json">Native foundation checks</a><a href="controls/windowed-interaction.json">Window interactions</a><a href="selected_glass/manifest.json">Final 8-crossing sweep</a><a href="glass/manifest.json">Original 4/8/16 sweep</a><a href="assets.json">Published asset hashes</a></p><p><a href="controls/captures/window-sun-edited.png">Native sun-edit capture</a> · <a href="source/docs/notes/sdf-environment-presentation-plan.md">Reviewed plan</a> · <a href="source/docs/notes/sdf-environment-presentation-evidence.md">Implementation evidence</a></p><p id="identity"></p><p class="muted">Raw captures remain unaltered. Only the selected diagnostic masks are packaged; complete sweep numbers are retained, with other images in the local working evidence. The previous report retains the full seven-material catalog.</p></details>
+</section>
+</main>
+<script>
+const DATA=__DATA__;
+const envs={reference:'Fixed reference',sunset:'Clear low sun',clouds:'Frozen clouds · experimental'};
+const mats={bronze:'Satin bronze',glass:'Tinted glass',marble:'Subtle marble',clay:'Granular terracotta'};
+const byId=id=>document.getElementById(id);
+const imagePath=row=>'comparison/'+row.capture;
+const thumbButtons={};
+for(const [key,label] of Object.entries(envs)){
+ const button=document.createElement('button');button.className='thumb';button.type='button';
+ button.setAttribute('aria-label','Show '+label);const img=document.createElement('img');img.alt='Guardian in '+label;img.loading='lazy';
+ const span=document.createElement('span');span.textContent=label;button.append(img,span);
+ button.addEventListener('click',()=>{byId('environment').value=key;render()});byId('environments').append(button);thumbButtons[key]=button;
+}
+function render(){
+ const env=byId('environment').value,mat=byId('material').value,view=byId('view').value;
+ byId('environment-note').textContent=env==='reference'?'Accepted generated studio environment · fixed key/fill · exposure +0.6 · glass budget 8':'Shared atmosphere · sun elevation 8°, azimuth −155° · exposure +0.6 · glass budget 8'+(env==='clouds'?' · frozen broken cumulus':' · clear sky');
+ byId('cloud-warning').hidden=env!=='clouds';byId('glass-warning').hidden=mat!=='glass';
+ for(const subject of ['sphere','guardian']){
+  const row=DATA.comparison.cases[`${subject}-${mat}-${env}`],src=imagePath(row.views[view]);
+  byId(subject+'-image').src=src;byId(subject+'-image').alt=`${mats[mat]} ${subject}, ${envs[env]}, ${view} view`;
+  byId(subject+'-link').href=src;byId(subject+'-caption').textContent=`${subject==='sphere'?'Sphere':'Guardian'} · ${mats[mat]} · ${view}`;
+ }
+ for(const [key,button] of Object.entries(thumbButtons)){button.setAttribute('aria-pressed',String(key===env));button.querySelector('img').src=imagePath(DATA.comparison.cases[`guardian-${mat}-${key}`].views[view])}
+ const row=DATA.comparison.cases[`guardian-${mat}-${env}`],film=byId('film');film.pause();
+ byId('film-box').hidden=!row.orbit;byId('film-empty').hidden=!!row.orbit;
+ if(row.orbit){const src=imagePath(row.orbit);if(film.getAttribute('src')!==src){film.src=src;film.load()}film.poster=imagePath(row.views.hero);byId('film-caption').textContent=`${mats[mat]} · ${envs[env]} · native 8 s / 240 frames / 1280 × 960 / 2× supersampling`}
+ byId('source-links').replaceChildren();for(const [label,path] of [['Selected preset',row.preset],['Accepted scene',row.scene]]){const link=document.createElement('a');link.href='comparison/'+path;link.textContent=label;byId('source-links').append(link)}
+}
+for(const id of ['environment','material','view'])byId(id).addEventListener('change',render);
+const ms=value=>value.toFixed(3)+' ms';
+for(const cap of [4,8,16]){
+ const row=document.createElement('tr'),budget=DATA.glass.budgets[cap];
+ const guardian=DATA.old_glass_profile.runs[`guardian-${cap}`],sphere=DATA.old_glass_profile.runs[`sphere-${cap}`];
+ for(const value of [cap,(100*budget.worst_cap_fraction).toFixed(4)+'%',ms(guardian.gpu_frame.median_ms),ms(sphere.gpu_frame.median_ms)]){const cell=document.createElement('td');cell.textContent=value;row.append(cell)}byId('glass-table').append(row);
+ const fig=document.createElement('figure'),img=document.createElement('img'),caption=document.createElement('figcaption');img.src=DATA.masks['glass-'+cap];img.alt=cap+' crossing worst-view diagnostic';img.loading='lazy';caption.textContent=cap+' crossings · worst cap '+(100*budget.worst_cap_fraction).toFixed(4)+'%';fig.append(img,caption);byId('masks').append(fig);
+}
+const runs=DATA.profile.runs;let maximum=0;
+for(const [env,label] of Object.entries(envs))for(const [mat,material] of Object.entries(mats)){
+ const a=runs[`sphere-${mat}-${env}`].gpu_frame,b=runs[`guardian-${mat}-${env}`].gpu_frame;maximum=Math.max(maximum,a.median_ms,b.median_ms);
+ const tr=document.createElement('tr');for(const value of [label,material,ms(a.median_ms)+' / '+ms(a.p95_ms),ms(b.median_ms)+' / '+ms(b.p95_ms)]){const td=document.createElement('td');td.textContent=value;tr.append(td)}byId('performance').append(tr);
+}
+byId('device').textContent=DATA.profile.device;
+byId('cost-verdict').textContent=`Largest measured median: ${ms(maximum)}. `+(maximum<=16.7?'All 24 cases meet the provisional 16.7 ms full-scene median target.':'Some cases exceed the provisional 16.7 ms whole-scene target; the cloud option remains experimental without another optimization loop.');
+const setups=Object.values(runs).map(r=>r.environment_setup_ms).filter(v=>v!==undefined),builds=Object.values(runs).map(r=>r.cold_build_ms),ibl=Object.values(runs).map(r=>r.ibl_setup_ms).filter(v=>v!==undefined);
+const range=values=>ms(Math.min(...values))+'–'+ms(Math.max(...values));
+byId('startup').textContent=`These final profile launches measured environment setup ${range(setups)}, generated-IBL setup ${range(ibl)}, and cold SDF field builds ${range(builds)} across sphere/guardian cases. These are CPU wall times for separate setup operations, not steady GPU frame time.`;
+for(const [env,label] of Object.entries(envs)){
+ const row=DATA.comparison.backgrounds[env],fig=document.createElement('figure'),img=document.createElement('img'),caption=document.createElement('figcaption'),link=document.createElement('a');
+ img.src=imagePath(row);img.alt=label+' without sculpture';img.loading='lazy';link.href=imagePath(row.calibration);link.textContent='Neutral sphere calibration';caption.append(label+' · ',link);fig.append(img,caption);byId('backgrounds').append(fig);
+}
+byId('identity').append('Capture source commit: '+DATA.comparison.source_commit+'. Packaged source commit: '+DATA.source_commit+'. ');
+const code=document.createElement('code');code.textContent='Native binary SHA-256: '+DATA.comparison.binary_sha256;byId('identity').append(code);
+render();
+</script>
+</html>
