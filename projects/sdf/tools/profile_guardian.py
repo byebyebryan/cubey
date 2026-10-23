@@ -35,14 +35,18 @@ def main():
         result=subprocess.run(cmd,cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         (out/f'{name}.log').write_text(result.stdout)
         assert result.returncode==0 and 'validation error' not in result.stdout.lower(),result.stdout
-        frames={}
+        frames={};whole_frames={}
         with Path(f'{prefix}.passes.csv').open() as stream:
             for row in csv.DictReader(stream):
                 if row['kind']=='gpu':
                     index=int(row['frame_index']);frames[index]=frames.get(index,0)+float(row['duration_ms'])
+                    if row['label']=='sdf.whole_scene':whole_frames[index]=float(row['duration_ms'])
         match=re.search(r'bricks=(\d+)/(\d+) allocated=(\d+) build_ms=([\d.]+)',result.stdout);assert match
-        receipt['runs'][name]=dict(scene_sha256=sha(scene),command=cmd,gpu_frame=distribution(list(frames.values())),
+        receipt['runs'][name]=dict(scene_sha256=sha(scene),command=cmd,gpu_frame=distribution(list((whole_frames or frames).values())),
             active_bricks=int(match[1]),capacity=int(match[2]),field_bytes=int(match[3]),cold_build_ms=float(match[4]))
+        receipt['runs'][name]['gpu_scope']='whole scene' if whole_frames else 'sum of nonoverlapping shading/post passes'
+        environment_setup=re.search(r'environment ready .* setup_ms=([\d.]+)',result.stdout)
+        if environment_setup:receipt['runs'][name]['environment_setup_ms']=float(environment_setup[1])
         setup=re.search(r'study IBL setup_ms=([\d.]+)',result.stdout)
         if setup:receipt['runs'][name]['ibl_setup_ms']=float(setup[1])
         print(name,json.dumps(receipt['runs'][name]['gpu_frame']),flush=True)

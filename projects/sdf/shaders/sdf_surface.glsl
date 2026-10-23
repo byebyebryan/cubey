@@ -91,6 +91,9 @@ void main() {
     gl_FragDepth=1.0;
     if (hit.status==2) { color=vec4(1,0,1,1); return; }
     bool object=hit.status==1;
+#ifdef SDF_MATERIAL_STUDY
+    if(lighting.transport_options.w>.5 && camera.options.x<.5 && !object && groundT>=1e5) discard;
+#endif
     float t=object ? hit.t : groundT;
     if (t<1e5) {
         vec3 p=camera.eye.xyz+direction*t;

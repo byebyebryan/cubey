@@ -13,6 +13,8 @@ parser.add_argument("--material-y-offset",type=int,default=0,
                     help="Inspected material-row offset for the fixed study-environment label")
 parser.add_argument("--readonly-material",action="store_true",
                     help="Verify the bounded glass material controls remain disabled")
+parser.add_argument("--environment-controls",action="store_true",
+                    help="Change shared sun elevation and verify probe refresh without field rebuild")
 parser.add_argument("--history-controls",action="store_true")
 parser.add_argument("--paired-step",type=int,action="append",default=[],
                     help="Also seek, undo and redo these atomic mirrored operations")
@@ -67,6 +69,11 @@ with log.open("w") as stream:
             if proc.poll() is not None:raise RuntimeError("native app exited before the window appeared")
             time.sleep(.1)
         assert window,"SDF window not found"
+        deadline=time.monotonic()+60
+        while 'windowed_render_ready:' not in log.read_text():
+            if proc.poll() is not None:raise RuntimeError('Native app exited before render readiness')
+            if time.monotonic()>deadline:raise RuntimeError('Native render readiness timed out')
+            time.sleep(.1)
         x.XMoveWindow(d,window,20,20);x.XSetInputFocus(d,window,1,0);x.XSync(d,0);time.sleep(1)
         def capture(name):
             subprocess.run(["ffmpeg","-v","error","-f","x11grab","-video_size",f"900x{args.height}","-i",os.environ["DISPLAY"]+"+20,20","-frames:v","1","-y",str(out/"captures"/name)],check=True)
@@ -162,6 +169,13 @@ with log.open("w") as stream:
             capture("window-playback-paused.png")
             click(160,146);assert wait_step(lambda n:n==0)==0
         else:
+            if args.environment_controls:
+                click(200,407)
+                deadline=time.monotonic()+10
+                while 'sdf: environment refresh' not in log.read_text():
+                    if time.monotonic()>deadline:raise AssertionError('Sun edit did not refresh environment')
+                    time.sleep(.05)
+                time.sleep(.4);capture('window-sun-edited.png')
             click(110,600+args.material_y_offset)
             capture("window-material-open.png")
             if args.material_scroll:
@@ -229,6 +243,12 @@ else:
         receipt['readonly_material']=True
         receipt['actions']=['resize twice','orbit','zoom','pause/reset',
             'attempt disabled glass material edit','unchanged model pixels','Escape']
+    if args.environment_controls:
+        assert 'sdf: environment refresh geometry_rebuilt=0' in text
+        finishes=re.findall(r'environment finish sky_generation=(\d+) cloud_generation=(\d+)',text)
+        assert finishes and int(finishes[-1][0])>1 and int(finishes[-1][1])>1,finishes
+        receipt['environment_controls']=True
+        receipt['actions']+=['change sun elevation','refresh coherent sky/cloud probes without rebuilding field']
     if args.marble_controls:
         choices=re.findall(r'marble detail preset=(\w+)',text)
         assert choices==['Original','Denser','Fine','Balanced'],choices

@@ -20,6 +20,10 @@ struct SdfConfig {
     std::uint32_t supersample = 1;
     std::uint32_t glass_crossings = 4;
     std::uint32_t environment_extent = 128;
+    bool clouds = false;
+    bool cloud_backdrop = true;
+    float cloud_coverage = .45F;
+    double cloud_time = 0;
     float cutter_width = 0.003F;
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
@@ -63,6 +67,13 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
     auto ground = option("ground", "Ground", config::ValueType::Bool);
     ground.negative_cli_name = "--no-ground";
+    auto clouds =
+        option("clouds", "Frozen shared broken-cumulus environment", config::ValueType::Bool);
+    clouds.negative_cli_name = "--no-clouds";
+    auto cloud_backdrop =
+        option("cloud-backdrop", "Visible cloud layer (off: inspect clouded IBL without composite)",
+               config::ValueType::Bool);
+    cloud_backdrop.negative_cli_name = "--no-cloud-backdrop";
     auto validate =
         option("validate-field", "Compare GPU rays with the CPU recipe", config::ValueType::Bool);
     validate.negative_cli_name = "--no-validate-field";
@@ -94,6 +105,12 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
+        .bind(clouds, c.clouds)
+        .bind(cloud_backdrop, c.cloud_backdrop)
+        .bind(option("cloud-coverage", "Frozen cloud coverage", config::ValueType::Float),
+              c.cloud_coverage)
+        .bind(option("cloud-time", "Frozen weather time in seconds", config::ValueType::Float),
+              c.cloud_time)
         .bind(option("environment-extent", "Atmosphere reflection face extent (64 or 128)",
                      config::ValueType::UInt32),
               c.environment_extent)

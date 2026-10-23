@@ -41,6 +41,12 @@ class App {
             validate_authored_motion(*authored_);
         if (config_.lighting != "atmosphere" && !authored_)
             throw std::invalid_argument("material-study lighting requires an authored scene");
+        if (config_.clouds && config_.lighting != "material-atmosphere")
+            throw std::invalid_argument("SDF clouds require material-atmosphere lighting");
+        if (!std::isfinite(config_.cloud_time) || config_.cloud_time < 0 ||
+            !std::isfinite(config_.cloud_coverage) || config_.cloud_coverage < 0 ||
+            config_.cloud_coverage > 1)
+            throw std::invalid_argument("invalid frozen SDF cloud options");
         if (authored_ && config_.lighting == "atmosphere" &&
             std::any_of(authored_->optics.begin(), authored_->optics.end(),
                         [](const auto& o) { return !default_optics(o); }))

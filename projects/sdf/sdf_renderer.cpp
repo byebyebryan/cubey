@@ -148,6 +148,10 @@ void Renderer::update_field(vulkan::Device& device, const Field& field) {
     }
 }
 void Renderer::destroy() {
+    if (material_atmosphere_)
+        std::cout << "sdf: environment finish sky_generation="
+                  << atmosphere_.reflection_probe().snapshot().generation << " cloud_generation="
+                  << (clouds_enabled_ ? atmosphere_.clouds().snapshot().generation : 0) << '\n';
     executor_.clear();
     profiler_.reset();
     whole_profiler_.reset();
@@ -163,9 +167,12 @@ void Renderer::destroy() {
     scene_program_.reset();
     preview_buffers_.clear();
     lighting_.reset();
+    sky_background_.destroy();
     atmosphere_.destroy();
     atmosphere_textures_.reset();
     material_atmosphere_ = false;
+    clouds_enabled_ = false;
+    cloud_sky_generation_ = 0;
     field_ = nullptr;
 }
 void Renderer::update_authored(const AuthoredScene* scene) {
@@ -227,6 +234,21 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                           static_cast<float>(target.extent.height),
                                       0.01F, 100.0F) *
                     glm::lookAt(eye, target_point, math::Vec3{0, 1, 0});
+    if (material_atmosphere_) {
+        const auto forward = glm::normalize(target_point - eye),
+                   right = glm::normalize(glm::cross(forward, math::Vec3{0, 1, 0}));
+        sky_background_.upload(
+            slot,
+            atmosphere_
+                .frame(
+                    {.view_rays = {.right_aspect = {right,
+                                                    static_cast<float>(scene_extent_.width) /
+                                                        static_cast<float>(scene_extent_.height)},
+                                   .up_tan_half_fovy = {glm::cross(right, forward),
+                                                        std::tan(glm::radians(22.5F))},
+                                   .forward = {forward, 0}}})
+                .background);
+    }
     const auto& light = atmosphere_.lighting();
     LightingUniforms uniforms{};
     uniforms.atmosphere = atmosphere_.frame({}).background;
@@ -339,6 +361,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                 {.color = render::color_clear_value(0, 0, 0, 1),
                  .depth = VkClearValue{.depthStencil = {1, 0}}},
                 [&](const vulkan::CommandRecorder& pass) {
+                    if (material_atmosphere_ && config.debug == 0)
+                        render::record_fullscreen_pipeline_draw(
+                            pass, {.pipeline = &sky_background_.pipeline(),
+                                   .descriptor_set = sky_background_.material().set(slot)});
                     pass.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_->pipeline());
                     pass.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_->layout(),
                                              0, descriptors_->set(slot.index));
@@ -354,8 +380,18 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                     }
                 });
         });
+    std::optional<render::CloudLayerRuntimeFrame> cloud_product;
+    auto post_scene = scene;
+    if (clouds_enabled_ && config.cloud_backdrop && config.debug == 0) {
+        auto& clouds = atmosphere_.clouds();
+        const auto frame = cloud_frame(eye, target_point);
+        cloud_product = clouds.declare_surface_product(builder, slot, frame);
+        post_scene = builder.create_texture(
+            render::hdr_scene_color_texture_desc("sdf.clouded", scene_extent_, hdr_format));
+        clouds.declare_surface_composite(builder, post_scene, *cloud_product, slot, scene, depth);
+    }
     builder.add_pass("sdf.post", render::RenderGraphQueueDomain::Graphics)
-        .read_texture(scene)
+        .read_texture(post_scene)
         .write_color(output)
         .execute([&, output](const render::RenderGraphExecutionContext& ctx) {
             post_.record_pass(ctx.recorder(), render::resolved_color_target_view(ctx, output),
@@ -368,7 +404,13 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       .command_buffer_mode = render::RenderGraphCommandBufferMode::AlreadyRecording,
                       .profiler = profiler_ ? &*profiler_ : nullptr},
                      graph, [&](const render::RenderGraphResourceSet& resources) {
-                         post_.update_scene_color_descriptor(device, slot, graph, resources, scene);
+                         post_.update_scene_color_descriptor(device, slot, graph, resources,
+                                                             post_scene);
+                         if (cloud_product)
+                             atmosphere_.clouds().update_surface_descriptors(
+                                 device, slot, graph, resources, *cloud_product, scene, depth);
                      });
+    if (cloud_product)
+        atmosphere_.clouds().complete_surface_frame(slot, *cloud_product);
 }
 } // namespace cubey::projects::sdf

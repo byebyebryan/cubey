@@ -46,9 +46,16 @@ class Renderer {
     void prepare_environment(vulkan::Device& device, VkCommandBuffer command,
                              render::FrameSlot slot, const SdfConfig& config);
     void bind_environment(const vulkan::Device& device, render::FrameSlot slot);
+    void create_clouds(vulkan::Device& device, vulkan::GpuRuntime& gpu, const SdfConfig& config,
+                       std::uint32_t slots);
+    [[nodiscard]] CloudEnvironmentRuntimeFrame cloud_frame(math::Vec3 eye, math::Vec3 target) const;
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;
+    render::AtmosphereBackgroundFrame sky_background_;
     bool material_atmosphere_ = false;
+    bool clouds_enabled_ = false;
+    std::uint64_t cloud_sky_generation_ = 0;
+    render::CloudLayerRuntimeShaderFiles cloud_shaders_;
     std::chrono::steady_clock::time_point environment_clock_{};
     std::optional<render::GeneratedPbrEnvironment> study_environment_;
     std::unique_ptr<vulkan::Buffer> scene_optics_;

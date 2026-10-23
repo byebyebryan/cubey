@@ -1,0 +1,20 @@
+{
+  "authored-scene": "projects/sdf/scenes/material-study/sphere-clay.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "duration": 12,
+  "orbit-turns": 1,
+  "pitch": 0.15,
+  "yaw": 0.4,
+  "distance": 1.05,
+  "target-y": 0,
+  "sun-elevation": 45,
+  "sun-azimuth": 150,
+  "shadows": 1,
+  "ground": false,
+  "ao": false,
+  "exposure": 0.6,
+  "supersample": 2,
+  "lighting": "material-study",
+  "glass-crossings": 8
+}

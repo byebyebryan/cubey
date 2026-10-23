@@ -18,7 +18,7 @@ def diagnostic(image):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--budgets',nargs='+',type=int,choices=[4,8,16],default=[4,8,16])
     a=p.parse_args();root=Path(__file__).resolve().parents[3];out=a.output.resolve();out.mkdir(parents=True,exist_ok=False)
     binary=root/'build/release/projects/sdf/sdf';read=lambda p:json.loads(p.read_text());sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
     receipt=dict(binary_sha256=sha(binary),shader_sha256={p.name:sha(p) for p in sorted((binary.parent/'shaders').glob('*.spv'))},runs={},budgets={})
@@ -30,12 +30,12 @@ def main():
         row=dict(command=cmd,capture=image.name,sha256=sha(image))
         if debug:row.update(diagnostic(image));assert row['errors']==0,row
         receipt['runs'][name]=row;return image,row
-    for budget in [4,8,16]:
+    for budget in sorted(set(a.budgets)):
         for subject in ['sphere','guardian']:
             cfg=read(root/f'projects/sdf/presets/material-study/{subject}-glass.json');cfg['glass-crossings']=budget
             for view,extra in [('hero',[]),('detail',['--distance',.72 if subject=='sphere' else .85,'--target-y',0 if subject=='sphere' else .09])]:
                 image,_=run(f'{subject}-{budget}-{view}',cfg,extra+(['--validate-field'] if view=='hero' else []))
-                if subject=='sphere' and budget>4:assert image.read_bytes()==(out/f'sphere-4-{view}.png').read_bytes()
+                if subject=='sphere' and budget>4 and 4 in a.budgets:assert image.read_bytes()==(out/f'sphere-4-{view}.png').read_bytes()
             if subject=='guardian':
                 for i in range(24):
                     run(f'guardian-{budget}-angle-{i}',cfg,['--yaw',.4+i*6.28318530718/24,'--debug',9],True)
@@ -46,10 +46,11 @@ def main():
         rows=[v for k,v in receipt['runs'].items() if k.startswith(f'guardian-{budget}-angle-')]
         receipt['budgets'][str(budget)]=dict(worst_cap_fraction=max(r['cap_fraction'] for r in rows),errors=sum(r['errors'] for r in rows),views=len(rows))
         (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n');print('budget',budget,receipt['budgets'][str(budget)],flush=True)
-    for i in range(24):
-        assert receipt['runs'][f'guardian-8-angle-{i}']['cap_fraction']<=receipt['runs'][f'guardian-4-angle-{i}']['cap_fraction']
-        assert receipt['runs'][f'guardian-16-angle-{i}']['cap_fraction']<=receipt['runs'][f'guardian-8-angle-{i}']['cap_fraction']
-    receipt['passed']=True;receipt['candidate']=8 if receipt['budgets']['8']['worst_cap_fraction']<=.01 else 16
+    for lo,hi in zip(sorted(set(a.budgets)),sorted(set(a.budgets))[1:]):
+        for i in range(24):
+            assert receipt['runs'][f'guardian-{hi}-angle-{i}']['cap_fraction']<=receipt['runs'][f'guardian-{lo}-angle-{i}']['cap_fraction']
+    receipt['passed']=True
+    receipt['candidate']=next((n for n in sorted(set(a.budgets)) if receipt['budgets'][str(n)]['worst_cap_fraction']<=.01),max(a.budgets))
     (out/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
 
 
