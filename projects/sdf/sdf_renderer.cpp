@@ -231,6 +231,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     uniforms.surface_options = {config.procedural ? 1.0F : 0.0F, config.bump ? 1.0F : 0.0F,
                                 config.material_fast_path ? 1.0F : 0.0F,
                                 config.lighting == "material-furnace" ? 1.0F : 0.0F};
+    uniforms.transport_options = {static_cast<float>(config.glass_crossings), 0, 0, 0};
     if (config.lighting == "material-furnace")
         uniforms.direct_color = math::Vec4{0};
     if (cutter && config.cutter_cue && config.debug == 0) {

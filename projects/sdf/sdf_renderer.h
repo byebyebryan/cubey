@@ -18,9 +18,10 @@ struct LightingUniforms {
     math::Vec4 material;
     math::Vec4 quality; // roughness, softness, AO, ground height
     GpuEdit cutter;
-    math::Vec4 cutter_style;    // opacity, world line width, unused, unused
-    math::Vec4 preview_style;   // opacity, primitive count, unused, unused
-    math::Vec4 surface_options; // procedural, bump, single-material shortcut, unused
+    math::Vec4 cutter_style;      // opacity, world line width, unused, unused
+    math::Vec4 preview_style;     // opacity, primitive count, unused, unused
+    math::Vec4 surface_options;   // procedural, bump, single-material shortcut, unused
+    math::Vec4 transport_options; // glass crossing budget, reserved
 };
 static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
 static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);

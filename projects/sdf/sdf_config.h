@@ -18,6 +18,7 @@ struct SdfConfig {
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
     std::uint32_t supersample = 1;
+    std::uint32_t glass_crossings = 4;
     float cutter_width = 0.003F;
     float sun_elevation = 35, sun_azimuth = -55, exposure = 0, roughness = 0.36F,
           shadow_softness = 0.04F;
@@ -91,6 +92,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .compose(host::common_run_config_schema(c.common))
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
+        .bind(option("glass-crossings", "Glass interfaces including primary hit (4, 8 or 16)",
+                     config::ValueType::UInt32),
+              c.glass_crossings)
         .bind(cutter_mode, c.cutter_mode)
         .bind(motion, c.timeline.motion)
         .bind(option("duration", "Logical clip duration in seconds", config::ValueType::Float),

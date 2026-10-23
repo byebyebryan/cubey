@@ -17,6 +17,7 @@ layout(set=0,binding=2) uniform Lighting {
     vec4 cutter_style;
     vec4 preview_style;
     vec4 surface_options;
+    vec4 transport_options;
 } lighting;
 #ifdef SDF_MATERIAL_STUDY
 layout(set=0,binding=8) uniform samplerCube studyDiffuse;
@@ -84,7 +85,8 @@ vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,
     bool inside=dot(direction,outward)>0;
     glassDiagnostics=vec3(0,0,.25);
     if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(point-camera.eye.xyz));
-    for(int crossing=0;crossing<4;++crossing) {
+    int budget=clamp(int(lighting.transport_options.x+.5),4,16);
+    for(int crossing=0;crossing<16;++crossing) {
         OpticalInterface face=opticalInterface(direction,outward,inside,optics.settings.z);
         if(face.tir) {
             glassDiagnostics.y=1;
@@ -100,7 +102,7 @@ vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,
         if(next.status==0) return result+throughput*skyRadiance(direction);
         vec3 nextPoint=origin+direction*next.t;
         if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(nextPoint-point));
-        if(crossing==3) {
+        if(crossing==budget-1) {
             glassDiagnostics.x=1;
             return result+throughput*skyRadiance(direction);
         }

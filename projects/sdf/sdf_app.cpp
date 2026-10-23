@@ -59,7 +59,9 @@ class App {
             throw std::invalid_argument("--export-authored requires --authored-scene");
         if (config_.validate_history && (!authored_ || authored_->history.empty()))
             throw std::invalid_argument("--validate-history requires a saved authored history");
-        if (config_.debug > 11 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+        if ((config_.glass_crossings != 4 && config_.glass_crossings != 8 &&
+             config_.glass_crossings != 16) ||
+            config_.debug > 11 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
             (config_.supersample != 1 && config_.supersample != 2) ||
@@ -479,6 +481,13 @@ class App {
                 config_.lighting != "atmosphere" ? (glass ? 10 : 12) : (authored_ ? 9 : 5);
             if (ImGui::Combo("View", &view, views, view_count))
                 config_.debug = static_cast<std::uint32_t>(view);
+            if (glass) {
+                int budget =
+                    config_.glass_crossings == 4 ? 0 : (config_.glass_crossings == 8 ? 1 : 2);
+                const char* budgets[]{"4 interfaces", "8 interfaces", "16 interfaces"};
+                if (ImGui::Combo("Glass budget", &budget, budgets, 3))
+                    config_.glass_crossings = 4u << budget;
+            }
             int shadows = static_cast<int>(config_.shadows);
             const char* shadow_names[]{"Off", "Hard", "Soft (4 samples)"};
             if (ImGui::Combo("Shadows", &shadows, shadow_names, 3))
@@ -513,7 +522,7 @@ class App {
                     if (ImGui::TreeNode(authored_->material_names[i].c_str())) {
                         if (authored_->optics[i].settings.y > 0)
                             ImGui::TextUnformatted(
-                                "Bounded glass: environment-only, four crossings");
+                                "Bounded glass: environment-only, selected crossing budget");
                         ImGui::BeginDisabled(authored_->optics[i].settings.y > 0);
                         materials_changed_ |=
                             ImGui::ColorEdit3("Base color", &material.base_roughness.x);
