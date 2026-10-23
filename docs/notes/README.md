@@ -110,6 +110,9 @@ an implemented project or a new runtime dependency.
 - [SDF marble region plan](sdf-marble-regions-plan.md): implemented native
   swatch study for cream regions with their own boundaries and internal
   streaks, partially correlated with veins; settled at subtle strength.
+- [SDF material set and showcase plan](sdf-material-study-plan.md): proposed
+  sphere-first material foundation and unchanged guardian comparison, with
+  dry clay, ceramic, bronze, bounded glass and explicit effort/acceptance gates.
 
 ## Historical research and study records
 
