@@ -31,7 +31,8 @@ PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
         config_.presentation_time > 8)
         throw std::invalid_argument("presentation-time must be -1 or 0..8 seconds");
     presentation_seconds_ = std::max(0.0, config_.presentation_time);
-    presentation_paused_ = config_.presentation_time >= 0;
+    if (config_.presentation_time >= 0)
+        orbit_controller_.toggle_pause();
 }
 
 int PbrMaterialsApp::run() {
@@ -58,7 +59,7 @@ int PbrMaterialsApp::run() {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
         }
         orbit_controller_.update_from_input(input, timing.delta_seconds);
-        if (!config_.presentation.empty() && !presentation_paused_)
+        if (!config_.presentation.empty() && !orbit_controller_.paused())
             presentation_seconds_ = std::min(8.0, presentation_seconds_ + timing.delta_seconds);
         update_scene_transform(timing);
     };

@@ -87,8 +87,16 @@ inline PbrMaterialsConfig parse_pbr_materials_config(int argc, char** argv,
     cubey::config::ParseResult parsed;
     auto c = cubey::host::parse_configured_app<PbrMaterialsConfig>(
         argc, argv, pbr_materials_config_schema, &parsed);
-    if (!c.presentation.empty() && !parsed.path_was_assigned("distance"))
-        c.distance = 2;
+    if (!c.presentation.empty()) {
+        if (!parsed.path_was_assigned("distance"))
+            c.distance = 2;
+        if (!parsed.path_was_assigned("pitch"))
+            c.pitch = -.32F;
+        if (!parsed.path_was_assigned("yaw"))
+            c.yaw = -.12F;
+        if (!parsed.path_was_assigned("environment"))
+            c.environment = "clouds";
+    }
     if (result)
         *result = std::move(parsed);
     return c;

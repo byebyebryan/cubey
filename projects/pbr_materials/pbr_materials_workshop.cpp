@@ -142,17 +142,20 @@ void PbrMaterialsApp::draw_ui() {
     if (ImGui::Begin("PBR material workshop")) {
         if (!config_.presentation.empty()) {
             ImGui::Text("Surface presentation / %s", config_.presentation.c_str());
-            if (ImGui::Button(presentation_paused_ ? "Play presentation" : "Pause presentation"))
-                presentation_paused_ = !presentation_paused_;
+            if (ImGui::Button(orbit_controller_.paused() ? "Play presentation"
+                                                         : "Pause presentation"))
+                orbit_controller_.toggle_pause();
             ImGui::SameLine();
             if (ImGui::Button("Replay presentation")) {
                 presentation_seconds_ = 0;
-                presentation_paused_ = false;
+                orbit_controller_.reset();
+                orbit_controller_.set_pitch(config_.pitch);
             }
             float t = static_cast<float>(presentation_seconds_);
             if (ImGui::SliderFloat("Presentation time", &t, 0, 8, "%.2f s")) {
                 presentation_seconds_ = t;
-                presentation_paused_ = true;
+                if (!orbit_controller_.paused())
+                    orbit_controller_.toggle_pause();
             }
             if (ImGui::Button("Open material workshop")) {
                 leave_presentation();

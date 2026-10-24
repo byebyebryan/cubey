@@ -206,6 +206,12 @@ void PbrMaterialsApp::create_default_textures(const cubey::vulkan::Device& devic
 }
 
 void PbrMaterialsApp::create_materials() {
+    if (!config_.presentation.empty())
+        for (const auto& item : presentation_layout(config_.presentation))
+            if (std::none_of(catalog_.begin(), catalog_.end(),
+                             [&](const auto& e) { return e.id == item.material; }))
+                throw std::invalid_argument("presentation recipe missing from catalog: " +
+                                            std::string(item.material));
     for (std::size_t i = 0; i < catalog_.size(); ++i) {
         recipes_.push_back(catalog_[i].recipe);
         if (config_.material == catalog_[i].id)
