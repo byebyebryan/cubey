@@ -5,8 +5,16 @@
 #include <iostream>
 
 namespace cubey::projects::pbr_materials::detail {
+namespace {
+float specimen_thickness(std::string_view specimen) {
+    // Estimate the front-to-back depth of each specimen. The forward path does
+    // not trace an exit surface; SDF glass measures its actual ray segments.
+    return specimen == "swatch" ? .036F : specimen == "cut-block" ? .32F : .5F;
+}
+} // namespace
 render::PbrMaterialDefinition PbrMaterialsApp::material_definition(std::size_t i) const {
-    auto d = pbr_material_from_recipe(recipes_.at(i), .5F, static_cast<std::uint32_t>(i));
+    auto d = pbr_material_from_recipe(recipes_.at(i), specimen_thickness(config_.specimen),
+                                      static_cast<std::uint32_t>(i));
     d.factors.pattern_enabled = config_.pattern;
     d.factors.bump_enabled = config_.bump;
     return d;
@@ -177,6 +185,7 @@ void PbrMaterialsApp::draw_ui() {
                                                       : 0;
         if (ImGui::Combo("Specimen", &shape, shapes, 4)) {
             config_.specimen = shapes[shape];
+            ++revision_;
             refresh_specimens();
         }
         bool changed = ImGui::Checkbox("Pattern", &config_.pattern);
@@ -267,8 +276,9 @@ void PbrMaterialsApp::draw_ui() {
                 if (r.library.optical_options.x > .5F)
                     changed |= ImGui::SliderFloat("Frost roughness", &r.surface.base_roughness.w,
                                                   .05F, .8F);
-                ImGui::TextWrapped("Forward refraction with a 0.5-unit thickness estimate. SDF "
-                                   "measures its interface segments instead.");
+                ImGui::TextWrapped("Forward refraction with a %.3f-unit thickness estimate. SDF "
+                                   "measures its interface segments instead.",
+                                   specimen_thickness(config_.specimen));
                 changed |= ImGui::SliderFloat("IOR", &r.optics.settings.z, 1, 2.5F);
                 changed |= ImGui::ColorEdit3("Attenuation", &r.optics.attenuation.x);
                 for (int i = 0; i < 3; ++i)

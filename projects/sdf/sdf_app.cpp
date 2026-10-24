@@ -171,7 +171,10 @@ class App {
             }
             if (authored_ && (reload_authored_ || materials_changed_ || workshop_changed_)) {
                 try {
-                    auto next = workshop_changed_  ? make_material_workshop(config_)
+                    auto next = workshop_changed_
+                                    ? make_material_workshop(config_, reload_workshop_material_
+                                                                          ? nullptr
+                                                                          : &*authored_)
                                 : reload_authored_ ? load_authored_scene(config_.authored_path)
                                                    : *authored_;
                     static_cast<void>(authored_appearance_hash(next));
@@ -197,6 +200,7 @@ class App {
                 reload_authored_ = false;
                 materials_changed_ = false;
                 workshop_changed_ = false;
+                reload_workshop_material_ = false;
             }
             if (regenerate_requested_) {
                 regenerate_requested_ = false;
@@ -463,6 +467,7 @@ class App {
                             config_.workshop_material = e.id;
                             config_.material_recipe_path.clear();
                             workshop_changed_ = true;
+                            reload_workshop_material_ = true;
                         }
                     }
                     ImGui::EndCombo();
@@ -480,6 +485,7 @@ class App {
                         config_.material_recipe_path.clear();
                         family_filter_ = "all";
                         workshop_changed_ = true;
+                        reload_workshop_material_ = true;
                         error_.clear();
                     } catch (const std::exception& e) {
                         error_ = e.what();
@@ -492,6 +498,7 @@ class App {
                 if (ImGui::Button("Reset workshop material")) {
                     config_.material_recipe_path.clear();
                     workshop_changed_ = true;
+                    reload_workshop_material_ = true;
                 }
                 ImGui::InputText("Recipe file", workshop_recipe_path_,
                                  sizeof(workshop_recipe_path_));
@@ -508,6 +515,7 @@ class App {
                 if (ImGui::Button("Load shared recipe")) {
                     config_.material_recipe_path = workshop_recipe_path_;
                     workshop_changed_ = true;
+                    reload_workshop_material_ = true;
                 }
                 ImGui::TextWrapped(
                     "Patterns use common material coordinates across fusion and cuts. Glass "
@@ -630,7 +638,7 @@ class App {
             ImGui::SliderFloat("Shadow softness", &config_.shadow_softness, 0, 0.15F);
             ImGui::Separator();
             if (authored_) {
-                if (ImGui::Button("Reload authored scene"))
+                if (!config_.authored_path.empty() && ImGui::Button("Reload authored scene"))
                     reload_authored_ = true;
                 if (!config_.export_authored_path.empty() && ImGui::Button("Export authored scene"))
                     save_authored_scene(config_.export_authored_path, *authored_);
@@ -869,6 +877,7 @@ class App {
     double playback_seconds_ = 0;
     bool regenerate_requested_ = false;
     bool reload_authored_ = false, materials_changed_ = false, workshop_changed_ = false;
+    bool reload_workshop_material_ = false;
     std::vector<asset::MaterialCatalogEntry> catalog_;
     std::string family_filter_ = "all";
     char workshop_recipe_path_[512] = "outputs/sdf-material-recipe.json";

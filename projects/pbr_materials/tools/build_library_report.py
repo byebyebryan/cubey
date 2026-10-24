@@ -11,6 +11,19 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[3]
 
 
+def validate_compatibility(compatibility):
+    expected = {"sphere-clay-reference", "sphere-glass-reference", "guardian-clay-reference",
+                "guardian-glass-reference", "furnace", "furnace-ior", "gltf"}
+    if compatibility.keys() != expected:
+        raise ValueError("compatibility evidence must contain all seven retained controls")
+    for name, result in compatibility.items():
+        if (result.get("returncode") != 0 or result.get("byte_identical") is not True
+                or result.get("validation_errors") is not False
+                or not result.get("sha256")
+                or result.get("sha256") != result.get("baseline_sha256")):
+            raise ValueError(f"compatibility evidence has not passed: {name}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=ROOT / "outputs/material-library/qualification")
@@ -21,8 +34,7 @@ def main():
     manifest = json.loads((source / "manifest.json").read_text())
     timings = json.loads((source / "timings.json").read_text())
     compatibility = json.loads((source / "compatibility.json").read_text())
-    if not all(v["returncode"] == 0 and v["byte_identical"] for v in compatibility.values()):
-        raise ValueError("compatibility evidence has not passed")
+    validate_compatibility(compatibility)
     runs = {k: v for k, v in manifest["runs"].items() if v["artifact"] and not k.startswith("audition-")}
     images = [r for r in runs.values() if r["artifact"].endswith(".png")]
     films = [r for r in runs.values() if r["artifact"].endswith(".mp4")]

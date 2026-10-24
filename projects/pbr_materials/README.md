@@ -23,8 +23,9 @@ and `--orbit-degrees` support repeatable captures. Lighting is `studio` (default
 no atmosphere/cloud allocation), `clear`, or frozen `clouds` using the accepted
 shared low-sun settings. No terrain or ground plane is introduced.
 
-Glass uses the existing forward volume/refraction route and a 0.5-unit specimen
-thickness estimate. The SDF adapter measures in-medium distances instead. V1
+Glass uses the existing forward volume/refraction route with a thickness estimate
+for the selected specimen: 0.5 units for sphere/block, 0.036 for the swatch and
+0.32 for the bored block. The SDF adapter measures in-medium distances instead. V1
 shared glass remains plain neutral, roughness 0.05, with editable IOR and
 attenuation. It does not introduce a new transport solver.
 

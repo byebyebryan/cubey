@@ -34,6 +34,8 @@ if(BUILD_TESTING)
     target_link_libraries(cubey_material_recipe_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     target_compile_definitions(cubey_material_recipe_tests PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")
     add_test(NAME material_recipe_tests COMMAND cubey_material_recipe_tests)
+    add_test(NAME material_library_report_tests
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/library_report_tests.py")
 endif()
 
 if(BUILD_TESTING)

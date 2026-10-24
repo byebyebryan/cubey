@@ -1,6 +1,7 @@
 #include "sdf_workshop.h"
 #include <chrono>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 namespace sdf = cubey::projects::sdf;
 using namespace cubey;
@@ -92,6 +93,21 @@ int main() {
     // The embedded snapshot remains usable after its source file disappears.
     std::filesystem::remove(temporary);
     require(sdf::workshop_material_recipe(c, restored).library == restored.libraries[0]);
+    // Changing the specimen uses the working snapshot even when the source is
+    // gone. Preserve unsaved color, domain and library edits together.
+    restored.materials[0].base_roughness.x = .23F;
+    restored.libraries[0].settings.y = 812;
+    const auto edited_recipe =
+        asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, restored));
+    c.workshop = "cut-block";
+    auto changed_shape = sdf::make_material_workshop(c, &restored);
+    require(sdf::authored_geometry_hash(changed_shape) != sdf::authored_geometry_hash(restored));
+    require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, changed_shape)) ==
+            edited_recipe);
+    c.workshop = "swatch";
+    changed_shape = sdf::make_material_workshop(c, &changed_shape);
+    require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, changed_shape)) ==
+            edited_recipe);
     c.material_recipe_path.clear();
     const auto catalog = asset::load_material_catalog(
         std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
@@ -103,6 +119,34 @@ int main() {
         require(sdf::authored_appearance_hash(saved) == sdf::authored_appearance_hash(scene));
         require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, saved)) ==
                 asset::material_recipe_fingerprint(entry.recipe));
+        auto edited = saved;
+        edited.optics[0].settings.w += .1F;
+        edited.material_domains[0] = domain;
+        const auto fingerprint =
+            asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, edited));
+        c.workshop = "csg";
+        auto csg = sdf::make_material_workshop(c, &edited);
+        require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, csg)) ==
+                fingerprint);
+        if (csg.materials.size() == 3) {
+            csg.materials[1].base_roughness.x = .123F;
+            csg.materials[2].base_roughness.w = .789F;
+            csg.material_domains[2] = domain;
+            if (entry.recipe.version == 2)
+                csg.libraries[1].settings.y = 124;
+            const auto appearance = sdf::authored_appearance_hash(csg);
+            c.workshop_cut_material = !c.workshop_cut_material;
+            c.workshop_blend_materials = !c.workshop_blend_materials;
+            const auto toggled = sdf::make_material_workshop(c, &csg);
+            require(sdf::authored_geometry_hash(toggled) == sdf::authored_geometry_hash(csg));
+            require(sdf::authored_appearance_hash(toggled) != appearance);
+            require(nlohmann::json::parse(sdf::serialize_authored_scene(toggled)).at("materials") ==
+                    nlohmann::json::parse(sdf::serialize_authored_scene(csg)).at("materials"));
+        }
+        // An explicit reset still reloads the catalog recipe.
+        const auto reset = sdf::make_material_workshop(c);
+        require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, reset)) ==
+                asset::material_recipe_fingerprint(entry.recipe));
     }
     c.workshop = "csg";
     c.workshop_material = "rusted-steel";
@@ -112,5 +156,6 @@ int main() {
     require(fresh.optics.settings.x == 1 &&
             fresh.material.base_roughness.w == rust.libraries[0].rust_roughness.x);
     std::cout << "Shared/legacy seven-recipe fingerprints exact; CSG appearance leaves geometry "
-                 "cache identity intact; affine bump derivative verified.\n";
+                 "cache identity intact; affine bump derivative verified; working materials "
+                 "survive specimen and CSG option changes.\n";
 }

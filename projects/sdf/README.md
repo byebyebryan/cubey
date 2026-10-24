@@ -12,6 +12,9 @@ recipe. Existing inline v2 scenes and accepted guardian/robot presets remain val
 The twelve shared looks include wood, rusted steel, kraft cardboard, woven cloth
 and frosted glass. New resolved material data uses authored scene V3; old scenes
 retain their V2 persistence and fingerprints.
+Changing the specimen or CSG options preserves the current body's unsaved
+material edits; CSG option changes also preserve the fused/cut material edits.
+Selecting, resetting or reloading a recipe explicitly replaces those values.
 
 ```sh
 build/release/projects/sdf/sdf --workshop csg --material marble --yaw 0 --pitch .15 --distance 1.05

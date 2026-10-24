@@ -3,20 +3,26 @@
 #include <nlohmann/json.hpp>
 namespace cubey::projects::sdf {
 using J = nlohmann::json;
-AuthoredScene make_material_workshop(const SdfConfig& c) {
+AuthoredScene make_material_workshop(const SdfConfig& c, const AuthoredScene* working) {
     if (c.workshop != "sphere" && c.workshop != "block" && c.workshop != "csg" &&
         c.workshop != "swatch" && c.workshop != "cut-block")
         throw std::invalid_argument("workshop must be sphere, block, csg, swatch or cut-block");
-    const auto catalog = asset::load_material_catalog(
-        std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
-    const auto selected = std::find_if(catalog.begin(), catalog.end(),
-                                       [&](const auto& e) { return e.id == c.workshop_material; });
-    if (selected == catalog.end())
-        throw std::invalid_argument("unknown workshop material");
-    auto recipe = c.material_recipe_path.empty()
-                      ? selected->recipe
-                      : asset::load_material_recipe(c.material_recipe_path);
-    const bool resolved = recipe.version == 2;
+    const auto recipe = [&] {
+        if (working)
+            return workshop_material_recipe(c, *working);
+        if (!c.material_recipe_path.empty())
+            return asset::load_material_recipe(c.material_recipe_path);
+        const auto catalog = asset::load_material_catalog(
+            std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
+        const auto selected = std::find_if(catalog.begin(), catalog.end(), [&](const auto& e) {
+            return e.id == c.workshop_material;
+        });
+        if (selected == catalog.end())
+            throw std::invalid_argument("unknown workshop material");
+        return selected->recipe;
+    }();
+    const auto snapshot = working ? J::parse(serialize_authored_scene(*working)) : J{};
+    const bool resolved = recipe.version == 2 || (working && snapshot.at("version") == 3);
     const auto record = [&](const asset::MaterialRecipe& r, const char* name) -> J {
         const auto json = J::parse(asset::serialize_material_recipe(r));
         if (resolved)
@@ -36,17 +42,34 @@ AuthoredScene make_material_workshop(const SdfConfig& c) {
         auto secondary = recipe;
         secondary.surface.base_roughness = {base * .55F, recipe.surface.base_roughness.w};
         mats.push_back(record(secondary, "fused"));
-        auto cut = asset::load_material_recipe(std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) /
-                                               "ceramic.json");
-        if (recipe.library.settings.x == 2) {
-            cut = asset::MaterialRecipe{};
-            cut.id = "steel-cut";
-            cut.label = "Fresh steel cut";
-            cut.surface.base_roughness = {.42F, .45F, .48F, recipe.library.rust_roughness.x};
-            cut.optics.settings.x = 1;
+        J cut_record;
+        if (working)
+            for (const auto& saved : snapshot.at("materials"))
+                if (saved.at("name") == "cut")
+                    cut_record = saved;
+        if (cut_record.is_null()) {
+            auto cut = asset::load_material_recipe(
+                std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "ceramic.json");
+            if (recipe.library.settings.x == 2) {
+                cut = asset::MaterialRecipe{};
+                cut.id = "steel-cut";
+                cut.label = "Fresh steel cut";
+                cut.surface.base_roughness = {.42F, .45F, .48F, recipe.library.rust_roughness.x};
+                cut.optics.settings.x = 1;
+            }
+            cut_record = record(cut, "cut");
         }
-        mats.push_back(record(cut, "cut"));
+        mats.push_back(std::move(cut_record));
     }
+    // Preserve role edits, including domains and V2 library parameters, rather
+    // than reconstructing them from the on-disk recipe during geometry edits.
+    if (working)
+        for (auto& material : mats)
+            for (const auto& saved : snapshot.at("materials"))
+                if (saved.at("name") == material.at("name")) {
+                    material = saved;
+                    break;
+                }
     const auto sphere = [](const char* name, float x, float radius, const char* material) {
         return J{{"name", name},
                  {"type", "sphere"},
