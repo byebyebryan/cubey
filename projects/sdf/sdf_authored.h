@@ -49,7 +49,8 @@ struct AuthoredScene {
     std::vector<SurfaceMaterial> materials;
     std::vector<MaterialPattern> patterns;
     std::vector<MaterialOptics> optics;
-    std::vector<math::Mat4> material_domains; // empty means legacy identity domains
+    std::vector<math::Mat4> material_domains;          // empty means legacy identity domains
+    std::vector<procedural::SurfaceLibrary> libraries; // empty means neutral V1 response
     std::vector<AuthoredStep> history;
     std::size_t leaf_count = 0;
 };

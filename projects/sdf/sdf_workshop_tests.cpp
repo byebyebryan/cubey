@@ -1,4 +1,5 @@
 #include "sdf_workshop.h"
+#include <chrono>
 #include <iostream>
 #include <stdexcept>
 namespace sdf = cubey::projects::sdf;
@@ -62,6 +63,35 @@ int main() {
         require(std::abs((height(a) - height(b)) / .0002F - sample.height_gradient[axis]) <
                 .00002F);
     }
+    const auto temporary =
+        std::filesystem::temp_directory_path() /
+        ("cubey-v3-workshop-" +
+         std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()) + ".json");
+    asset::MaterialRecipe v2;
+    v2.version = 2;
+    v2.id = "example";
+    v2.label = "Resolved library example";
+    v2.library.settings.x = 1;
+    v2.library.wood.distortion = .73F;
+    v2.material_from_object = domain;
+    asset::save_material_recipe(temporary, v2);
+    c.workshop = "sphere";
+    c.material_recipe_path = temporary;
+    auto resolved = sdf::make_material_workshop(c);
+    require(resolved.libraries.at(0) == v2.library);
+    auto restored = sdf::parse_authored_scene(sdf::serialize_authored_scene(resolved));
+    const auto exported = sdf::workshop_material_recipe(c, restored);
+    require(exported.version == 2 && exported.library == v2.library &&
+            exported.material_from_object == v2.material_from_object);
+    require(sdf::authored_appearance_hash(resolved) == sdf::authored_appearance_hash(restored));
+    restored.libraries[0].wood.distortion += .1F;
+    require(sdf::authored_geometry_hash(resolved) == sdf::authored_geometry_hash(restored));
+    require(sdf::authored_appearance_hash(resolved) != sdf::authored_appearance_hash(restored));
+    restored = sdf::parse_authored_scene(sdf::serialize_authored_scene(restored));
+    require(restored.libraries[0].wood.distortion == v2.library.wood.distortion + .1F);
+    // The embedded snapshot remains usable after its source file disappears.
+    std::filesystem::remove(temporary);
+    require(sdf::workshop_material_recipe(c, restored).library == restored.libraries[0]);
     std::cout << "Shared/legacy seven-recipe fingerprints exact; CSG appearance leaves geometry "
                  "cache identity intact; affine bump derivative verified.\n";
 }

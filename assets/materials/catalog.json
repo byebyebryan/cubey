@@ -1,0 +1,55 @@
+{
+  "format": "cubey.material.catalog",
+  "version": 1,
+  "entries": [
+    {
+      "id": "plain",
+      "label": "Neutral gray",
+      "family": "reference",
+      "description": "Neutral comparison surface",
+      "recipe": "plain.json"
+    },
+    {
+      "id": "limestone",
+      "label": "Limestone",
+      "family": "stone",
+      "description": "Dry stone with filtered granular relief",
+      "recipe": "limestone.json"
+    },
+    {
+      "id": "marble",
+      "label": "Balanced marble",
+      "family": "stone",
+      "description": "Subtle Balanced veins and warm mineral regions",
+      "recipe": "marble.json"
+    },
+    {
+      "id": "clay",
+      "label": "Dry terracotta",
+      "family": "earth",
+      "description": "Dry granular terracotta with rough diffuse response",
+      "recipe": "clay.json"
+    },
+    {
+      "id": "ceramic",
+      "label": "Ivory ceramic",
+      "family": "ceramic",
+      "description": "Smooth ivory glaze",
+      "recipe": "ceramic.json"
+    },
+    {
+      "id": "bronze",
+      "label": "Satin bronze",
+      "family": "metal",
+      "description": "Satin bronze conductor",
+      "recipe": "bronze.json"
+    },
+    {
+      "id": "glass",
+      "label": "Tinted glass",
+      "family": "glass",
+      "description": "Tinted smooth glass with optical absorption",
+      "recipe": "glass.json"
+    }
+  ]
+}

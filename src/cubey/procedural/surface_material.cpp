@@ -64,6 +64,47 @@ void range(float value, float low, float high) {
 }
 } // namespace
 
+bool default_surface_library(const SurfaceLibrary& p) {
+    return p == SurfaceLibrary{};
+}
+void validate_surface_library(const SurfaceLibrary& p) {
+    range(p.settings.x, 0, 4);
+    range(p.settings.y, 0, 65535);
+    if (p.settings.x != std::floor(p.settings.x) || p.settings.y != std::floor(p.settings.y))
+        throw std::invalid_argument("library kind and seed must be integers");
+    range(p.settings.z, .1F, 16);
+    range(p.settings.w, 0, .005F);
+    for (int i = 0; i < 3; ++i) {
+        range(p.secondary[i], 0, 1);
+        range(p.sheen[i], 0, 1);
+    }
+    range(p.sheen.w, .05F, 1);
+    range(p.wood.ring_frequency, 1, 100);
+    range(p.wood.distortion, 0, 2);
+    range(p.wood.grain_frequency, 20, 600);
+    range(p.wood.pore_strength, 0, 1);
+    range(p.rust.coverage, 0, 1);
+    range(p.rust.patch_frequency, 1, 64);
+    range(p.rust.edge_breakup, 0, 1);
+    range(p.rust.pit_strength, 0, 1);
+    range(p.weave.yarn_spacing, .003F, .06F);
+    range(p.weave.yarn_width, .3F, .95F);
+    range(p.weave.irregularity, 0, .5F);
+    range(p.weave.fiber_strength, 0, 1);
+    range(p.paper.fiber_frequency, 40, 1000);
+    range(p.paper.directionality, 0, 1);
+    range(p.paper.fleck_strength, 0, 1);
+    range(p.paper.fiber_strength, 0, 1);
+    range(p.rust_roughness.x, .05F, 1);
+    range(p.rust_roughness.y, .05F, 1);
+    range(p.rust_roughness.z, 0, .25F);
+    range(p.optical_options.x, 0, 1);
+    if ((p.optical_options.x != 0 && p.optical_options.x != 1) || p.secondary.w != 0 ||
+        p.rust_roughness.w != 0 || p.optical_options.y != 0 || p.optical_options.z != 0 ||
+        p.optical_options.w != 0)
+        throw std::invalid_argument("invalid library flag or nonzero reserved parameter");
+}
+
 int marble_detail_index(const MaterialPattern& pattern) {
     if (pattern.settings.x != 2)
         return -1;

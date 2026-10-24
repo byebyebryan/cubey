@@ -5,6 +5,7 @@
 #include <bit>
 #include <cmath>
 #include <cstring>
+#include <cubey/asset/material_recipe.h>
 #include <cubey/core/file_io.h>
 #include <functional>
 #include <iomanip>
@@ -140,7 +141,7 @@ void validate_material(const SurfaceMaterial& m) {
 AuthoredScene parse_authored_scene(std::string_view text) {
     const auto json = Json::parse(text);
     if (json.at("format") != "cubey.sdf.scene" || !json.at("version").is_number_integer() ||
-        json.at("version") != 2 || !json.at("materials").is_array() ||
+        (json.at("version") != 2 && json.at("version") != 3) || !json.at("materials").is_array() ||
         json.at("materials").empty() || json.at("materials").size() > 16)
         throw std::invalid_argument("unsupported authored SDF scene or material count");
     AuthoredScene result;
@@ -153,6 +154,22 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         if (name.empty() ||
             !material_indices.emplace(name, static_cast<unsigned>(result.materials.size())).second)
             throw std::invalid_argument("authored SDF material names must be unique");
+        if (json.at("version") == 3) {
+            if (item.size() != 2 || !item.contains("recipe"))
+                throw std::invalid_argument("V3 material requires only name and resolved recipe");
+            const auto r = asset::parse_material_recipe(item.at("recipe").dump());
+            if (r.optics.settings.y > 0 && json.at("materials").size() != 1)
+                throw std::invalid_argument("SDF glass requires one material");
+            result.materials.push_back(r.surface);
+            result.patterns.push_back(r.pattern);
+            result.optics.push_back(r.optics);
+            result.material_domains.push_back(r.material_from_object);
+            result.libraries.push_back(r.library);
+            result.material_names.push_back(name);
+            continue;
+        }
+        if (item.contains("recipe") || item.contains("library"))
+            throw std::invalid_argument("resolved recipes require authored scene V3");
         SurfaceMaterial m;
         m.base_roughness = {vector(item.at("base_color"), 0, 1),
                             number(item.value("roughness", .5F), .05F, 1)};
@@ -212,6 +229,7 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         procedural::validate_material_domain(domain);
         result.material_domains.push_back(domain);
         result.material_names.push_back(name);
+        result.libraries.emplace_back();
     }
     const auto material_index = [&](const std::string& name) {
         const auto found = material_indices.find(name);
@@ -360,6 +378,8 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
         throw std::invalid_argument("authored material and pattern tables disagree");
     if (!scene.material_domains.empty() && scene.material_domains.size() != scene.materials.size())
         throw std::invalid_argument("authored material domain table disagrees");
+    if (!scene.libraries.empty() && scene.libraries.size() != scene.materials.size())
+        throw std::invalid_argument("authored library surface table disagrees");
     auto hash = authored_geometry_hash(scene);
     for (const auto& node : scene.program) {
         hash_float(hash, node.settings.z);
@@ -403,6 +423,18 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
         hash_float(hash, static_cast<float>(i));
         for (int k = 0; k < 16; ++k)
             hash_float(hash, d[k / 4][k % 4]);
+    }
+    for (std::size_t i = 0; i < scene.libraries.size(); ++i) {
+        const auto& library = scene.libraries[i];
+        procedural::validate_surface_library(library);
+        if (procedural::default_surface_library(library))
+            continue;
+        hash_float(hash, -743.0F);
+        hash_float(hash, static_cast<float>(i));
+        std::array<float, sizeof(library) / sizeof(float)> values;
+        std::memcpy(values.data(), &library, sizeof(library));
+        for (float value : values)
+            hash_float(hash, value);
     }
     return hash;
 }
@@ -499,6 +531,20 @@ std::string serialize_authored_scene(const AuthoredScene& scene) {
     for (std::size_t i = 0; i < scene.materials.size(); ++i) {
         const auto domain =
             scene.material_domains.empty() ? math::Mat4{1} : scene.material_domains.at(i);
+        const auto library =
+            scene.libraries.empty() ? procedural::SurfaceLibrary{} : scene.libraries.at(i);
+        if (json.at("version") == 3) {
+            auto r = asset::parse_material_recipe(json["materials"][i].at("recipe").dump());
+            r.surface = scene.materials.at(i);
+            r.pattern = scene.patterns.at(i);
+            r.optics = scene.optics.at(i);
+            r.material_from_object = domain;
+            r.library = library;
+            json["materials"][i]["recipe"] = Json::parse(asset::serialize_material_recipe(r));
+            continue;
+        }
+        if (!procedural::default_surface_library(library))
+            throw std::invalid_argument("V2 scene cannot discard V3 library material data");
         if (domain == math::Mat4{1})
             json["materials"][i].erase("material_from_object");
         else {

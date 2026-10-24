@@ -53,3 +53,25 @@ forward volume route; SDF measures interface segments with a selected crossing
 budget. The same optical recipe does not imply identical image transport.
 UV image authoring, arbitrary material graphs, nested media and caustics remain
 outside this material-content milestone.
+
+## Library expansion data
+
+The [library expansion](../notes/material-library-expansion-plan.md) adds an
+explicit recipe version 2. Its `library` object has named wood, rust, weave and
+paper parameter groups, seed/scale/relief, secondary color, steel/oxide roughness,
+sheen color/roughness and an opt-in `rough_glass` flag. Version 1 retains its
+serialized values, restrictions and fingerprints. A recipe cannot combine a
+legacy procedural pattern with a new library pattern. New parameters compile
+to a separate checked 144-byte `SurfaceLibrary`, preserving legacy strides.
+
+`assets/materials/catalog.json` is the shared bounded catalog (maximum 32 entries).
+Loading validates all entries, relative filenames and recipe identities before
+returning a candidate snapshot; callers replace their current snapshot only on
+success. Metadata is independent of recipe appearance fingerprints.
+
+SDF authored scene version 3 uses material records containing only `name` and a
+self-contained `recipe`. The version 2 inline path remains unchanged. New
+library values contribute a tagged appearance-hash domain and never alter the
+geometry fingerprint. Export refuses to discard new material data through the
+old inline format. This data checkpoint precedes new evaluator/render adoption;
+new visual behavior requires its own native qualification.

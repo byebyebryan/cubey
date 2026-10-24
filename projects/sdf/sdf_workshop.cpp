@@ -1,33 +1,50 @@
 #include "sdf_workshop.h"
+#include <algorithm>
 #include <nlohmann/json.hpp>
 namespace cubey::projects::sdf {
 using J = nlohmann::json;
 AuthoredScene make_material_workshop(const SdfConfig& c) {
     if (c.workshop != "sphere" && c.workshop != "block" && c.workshop != "csg")
         throw std::invalid_argument("workshop must be sphere, block or csg");
-    auto recipe = asset::load_material_recipe(
-        c.material_recipe_path.empty()
-            ? std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / (c.workshop_material + ".json")
-            : c.material_recipe_path);
-    auto body = J::parse(asset::serialize_material_recipe(recipe)).at("surface");
-    body["name"] = "body";
-    body["material_from_object"] =
-        J::parse(asset::serialize_material_recipe(recipe)).at("material_from_object");
+    const auto catalog = asset::load_material_catalog(
+        std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
+    const auto selected = std::find_if(catalog.begin(), catalog.end(),
+                                       [&](const auto& e) { return e.id == c.workshop_material; });
+    if (selected == catalog.end())
+        throw std::invalid_argument("unknown workshop material");
+    auto recipe = c.material_recipe_path.empty()
+                      ? selected->recipe
+                      : asset::load_material_recipe(c.material_recipe_path);
+    const bool resolved = recipe.version == 2;
+    const auto record = [&](const asset::MaterialRecipe& r, const char* name) -> J {
+        const auto json = J::parse(asset::serialize_material_recipe(r));
+        if (resolved)
+            return {{"name", name}, {"recipe", json}};
+        auto surface = json.at("surface");
+        surface["name"] = name;
+        surface["material_from_object"] = json.at("material_from_object");
+        return surface;
+    };
+    auto body = record(recipe, "body");
     const bool glass = recipe.optics.settings.y > 0;
     J mats = J::array({body});
     if (!glass && c.workshop == "csg") {
-        auto secondary = body;
-        secondary["name"] = "fused";
         // Shared coordinates and pattern persist across fusion; a second base
         // color makes the optional smooth material blend visible.
         const auto base = math::Vec3{recipe.surface.base_roughness};
-        secondary["base_color"] = {base.x * .55F, base.y * .55F, base.z * .55F};
-        mats.push_back(secondary);
-        auto cut = J::parse(asset::serialize_material_recipe(asset::load_material_recipe(
-                                std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "ceramic.json")))
-                       .at("surface");
-        cut["name"] = "cut";
-        mats.push_back(cut);
+        auto secondary = recipe;
+        secondary.surface.base_roughness = {base * .55F, recipe.surface.base_roughness.w};
+        mats.push_back(record(secondary, "fused"));
+        auto cut = asset::load_material_recipe(std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) /
+                                               "ceramic.json");
+        if (recipe.library.settings.x == 2) {
+            cut = asset::MaterialRecipe{};
+            cut.id = "steel-cut";
+            cut.label = "Fresh steel cut";
+            cut.surface.base_roughness = {.42F, .45F, .48F, recipe.library.rust_roughness.x};
+            cut.optics.settings.x = 1;
+        }
+        mats.push_back(record(cut, "cut"));
     }
     const auto sphere = [](const char* name, float x, float radius, const char* material) {
         return J{{"name", name},
@@ -72,7 +89,7 @@ AuthoredScene make_material_workshop(const SdfConfig& c) {
     }
     auto scene = parse_authored_scene(J{
         {"format", "cubey.sdf.scene"},
-        {"version", 2},
+        {"version", resolved ? 3 : 2},
         {"name", "SDF material workshop / " + c.workshop + " / " + recipe.label},
         {"authoring", {{"recipe_id", recipe.id}, {"recipe_label", recipe.label}}},
         {"materials", mats},
@@ -84,6 +101,8 @@ AuthoredScene make_material_workshop(const SdfConfig& c) {
 asset::MaterialRecipe workshop_material_recipe(const SdfConfig& c, const AuthoredScene& scene) {
     asset::MaterialRecipe r;
     const auto document = J::parse(scene.document);
+    if (document.at("version") == 3)
+        r = asset::parse_material_recipe(document.at("materials").at(0).at("recipe").dump());
     r.id = document.at("authoring").at("recipe_id").get<std::string>();
     r.label = document.at("authoring").at("recipe_label").get<std::string>();
     (void)c;
@@ -92,6 +111,8 @@ asset::MaterialRecipe workshop_material_recipe(const SdfConfig& c, const Authore
     r.optics = scene.optics.at(0);
     r.material_from_object =
         scene.material_domains.empty() ? math::Mat4{1} : scene.material_domains.at(0);
+    if (!scene.libraries.empty())
+        r.library = scene.libraries.at(0);
     asset::validate_material_recipe(r);
     return r;
 }

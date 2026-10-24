@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <cubey/core/math.h>
 
@@ -24,6 +25,42 @@ struct alignas(16) MaterialOptics {
                            0}; // RGB transmittance, diffuse roughness (0 Lambert, 1 sigma=90deg)
 };
 static_assert(sizeof(MaterialOptics) == 32);
+// V2 library parameters have their own checked GPU layout. Legacy pattern and
+// optics bytes above retain their original meanings and stride.
+struct alignas(16) WoodParameters {
+    float ring_frequency = 32, distortion = .45F, grain_frequency = 220, pore_strength = .35F;
+    bool operator==(const WoodParameters&) const = default;
+};
+struct alignas(16) RustParameters {
+    float coverage = .6F, patch_frequency = 12, edge_breakup = .35F, pit_strength = .6F;
+    bool operator==(const RustParameters&) const = default;
+};
+struct alignas(16) WeaveParameters {
+    float yarn_spacing = .012F, yarn_width = .72F, irregularity = .15F, fiber_strength = .25F;
+    bool operator==(const WeaveParameters&) const = default;
+};
+struct alignas(16) PaperParameters {
+    float fiber_frequency = 400, directionality = .65F, fleck_strength = .2F, fiber_strength = .5F;
+    bool operator==(const PaperParameters&) const = default;
+};
+struct alignas(16) SurfaceLibrary {
+    math::Vec4 settings{0, 7, 1, .0005F}; // kind: none/wood/rust/weave/paper, seed, scale, relief
+    math::Vec4 secondary{.12F, .045F, .012F, 0}; // secondary linear color, reserved zero
+    WoodParameters wood;
+    RustParameters rust;
+    WeaveParameters weave;
+    PaperParameters paper;
+    math::Vec4 rust_roughness{.24F, .95F, .08F, 0}; // steel, oxide, variation, reserved zero
+    math::Vec4 sheen{0, 0, 0, .5F}; // linear sheen color, perceptual sheen roughness
+    math::Vec4 optical_options{0};  // x: opt-in rough glass; yzw reserved zero
+    bool operator==(const SurfaceLibrary&) const = default;
+};
+static_assert(sizeof(SurfaceLibrary) == 144);
+static_assert(offsetof(SurfaceLibrary, wood) == 32);
+static_assert(offsetof(SurfaceLibrary, rust_roughness) == 96);
+static_assert(offsetof(SurfaceLibrary, optical_options) == 128);
+[[nodiscard]] bool default_surface_library(const SurfaceLibrary& library);
+void validate_surface_library(const SurfaceLibrary& library);
 [[nodiscard]] bool default_optics(const MaterialOptics& optics);
 void validate_material_optics(const MaterialOptics& optics);
 
@@ -34,6 +71,9 @@ struct NoiseGradient {
 struct MaterialSample {
     SurfaceMaterial material;
     math::Vec3 height_gradient{0};
+    float metallic = -1; // negative: inherit constant optics (legacy path)
+    math::Vec4 sheen{0};
+    float rough_glass = 0;
 };
 struct MarbleDetail {
     const char* name;
