@@ -11,7 +11,7 @@ The [reviewed plan](../../docs/notes/pbr-material-demo-plan.md) and
 
 Wood, rusted steel, woven cloth and bronze share one frozen low-sun environment
 while an eased camera arc reveals their different surfaces. Watch the
-[presentation and inspectable SDF cut](http://starship:8787/reports/d0ddec82e8047da315007f815bd30ce9192711b4c420183268faf747b4746d77/)
+[presentation and inspectable SDF cut](http://starship:8787/reports/5ddba21d5b0e6a6e2ff2a88ccb788cce0a4e2c0527ea8c5bc89b4a0c0bf8d71e/)
 or run the preset:
 
 ```sh

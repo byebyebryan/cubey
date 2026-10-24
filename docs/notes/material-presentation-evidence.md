@@ -6,7 +6,7 @@ Status: implemented and technically qualified. The new shot choices await user
 visual review. The accepted material recipes and shader appearances are the
 baseline; this pass adds presentation and capture content.
 
-[Open the two stories and inspect the saved cut states](http://starship:8787/reports/d0ddec82e8047da315007f815bd30ce9192711b4c420183268faf747b4746d77/).
+[Open the two stories and inspect the saved cut states](http://starship:8787/reports/5ddba21d5b0e6a6e2ff2a88ccb788cce0a4e2c0527ea8c5bc89b4a0c0bf8d71e/).
 The [committed media package](../media/material-workshops/README.md) keeps both
 native masters, gallery films, posters, recipes and hashes independently of
 report hosting.
@@ -43,14 +43,18 @@ the final hold. No diagnostic view replaces the ending.
   prior behavior. History seek, material domains and resolved recipes survive
   the new scene's round trips.
 - `37838ac8` unifies playback with the existing orbit pause state and records
-  reproducible captures. All final story images, native films and profiles were
-  captured from this clean source identity, with binary, shader, preset and
-  recipe hashes retained per run.
+  reproducible captures. The selected SDF images, film and profile retain
+  this clean source identity, with binary, shader, preset and recipe hashes
+  recorded per run.
 - `f1deaf3f` makes the native R key restart the PBR presentation and starts
   presentation controls collapsed. Private Xvfb input/resize checks qualify
   this later UI behavior; the headless film paths are unchanged.
 - `b3d7da10` packages the compact presentation and three inspectable SDF states;
   `819290d6` makes video metadata and retained-control checks reproducible.
+- `5abc0a8d` unifies the PBR geometry, atmosphere and cloud camera transforms,
+  correcting an environment-view mismatch found in final review. Selective
+  recapture at clean source `1654e825` replaces the PBR images, film and profile;
+  the SDF capture identities remain intact. Native window checks pass again.
 
 No shared renderer or material shader changes are required. The existing
 five-highlight root-gallery package remains unchanged. Guardian/robot geometry,
@@ -62,8 +66,8 @@ The scoped CTest gate passes eighteen entries, covering core/foundation/layout/
 documentation, material recipes, both workshop configurations and SDF tests.
 New checks cover initialized opening state, monotonic history, preview before
 commit, seek, held camera endpoints, beauty-view endings and V3 recipe/domain
-preservation through the cut. Existing documented workshop CLI commands pass;
-the final documentation gate also checks the new presentation front doors.
+preservation through the cut. All 35 documented workshop/presentation CLI recipes
+pass, including the two new presentation front doors.
 
 Required Vulkan validation passes for seven final stills, two 480-frame native
 films, both profiles and the two retained controls. SDF opening/ending stills
@@ -79,7 +83,7 @@ general editing-performance claim. The environment is generated once and held.
 
 | Held scene | Median GPU ms | P95 ms | Samples |
 | --- | --- | --- | --- |
-| PBR four-specimen group with clouds | 1.344 | 1.358 | 94 |
+| PBR four-specimen group with clouds | 1.347 | 1.363 | 94 |
 | SDF finished wood cut with clouds | 2.134 | 2.179 | 94 |
 
 RTX 5070 Ti, driver 610.57.04, 1920 × 1080, 1×, required validation and sixteen
@@ -108,7 +112,7 @@ library and workshop evidence rather than duplicating their matrices.
 Headless Chrome checks seven interactions, all nine PNG assets, actual playback
 of both films, script errors and a 390-pixel mobile layout. These checks pass
 from both local files and the published HTTP URL. All sixty report files,
-8,709,682 bytes, match source SHA-256 over HTTP from Starship and Carbon.
+9,411,230 bytes, match source SHA-256 over HTTP from Starship and Carbon.
 The publication reuses the shared report server; prior reports remain immutable.
 
 Receipts, raw profiles and logs are retained under

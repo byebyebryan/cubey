@@ -23,11 +23,11 @@
       "returncode": 0,
       "validation_errors": false,
       "identity": {
-        "source_commit": "37838ac801f029c94765ba2aa009e9df1ed4e1c2",
+        "source_commit": "1654e825fc9525ab46a9b64a5b479b70b3b75c69",
         "source_dirty": false,
         "binaries": {
-          "pbr": "f8a1b39b369bda2435fb86a6d1bb81d7cdbd5ff67b731b7723e6e16b11a687df",
-          "sdf": "0aba966564e2b9d47b7a4fda6a9633489afa6e0293ba2881b514d559ea6b601a"
+          "pbr": "b2a71188a068dded805756e67cc99a9b6e7a1986446d920b3bff733403d05239",
+          "sdf": "9813d623528cbea5002c664073ea564463d6471385252b98f5d798b4422854e0"
         },
         "shaders": {
           "pbr": {
@@ -108,7 +108,7 @@
         }
       },
       "artifact": "pbr-master-1080p.mp4",
-      "sha256": "c37278a5686825226692d80e24ba482779bb14f8361e447ef8bcb587fc520618",
+      "sha256": "58244e5cdec8cbe50cca9f91d3497316a0524fb6738de5620d29b731a7f07027",
       "log": "pbr-master-1080p.log"
     },
     "sdf-master-1080p": {
@@ -250,8 +250,8 @@
         "/home/bryan/code/cubey/outputs/material-presentation/qualification/pbr.mp4"
       ],
       "source": "pbr-master-1080p.mp4",
-      "source_sha256": "c37278a5686825226692d80e24ba482779bb14f8361e447ef8bcb587fc520618",
-      "sha256": "8ab495a17cc10c2fbc0bad862c6fa9de6070634c305648da5360cbac85b76be3"
+      "source_sha256": "58244e5cdec8cbe50cca9f91d3497316a0524fb6738de5620d29b731a7f07027",
+      "sha256": "f34c6f188f4ad9fe3da33cd4b26bad0e96e8e0a8bc2947b8a37b48ee5971b512"
     },
     "pbr-poster.png": {
       "command": [
@@ -270,8 +270,8 @@
         "/home/bryan/code/cubey/outputs/material-presentation/qualification/pbr-poster.png"
       ],
       "source": "pbr.mp4",
-      "source_sha256": "8ab495a17cc10c2fbc0bad862c6fa9de6070634c305648da5360cbac85b76be3",
-      "sha256": "f73908242a812babf768d19aa75408027737ad607ffdf6bc9b19497f2529f55c"
+      "source_sha256": "f34c6f188f4ad9fe3da33cd4b26bad0e96e8e0a8bc2947b8a37b48ee5971b512",
+      "sha256": "8229fb43d5fc5c4f263a71829c9b624f04df51bffe8f2da33635be4e8a229afd"
     },
     "sdf.mp4": {
       "command": [

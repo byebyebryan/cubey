@@ -1,7 +1,7 @@
 # Material presentation media
 
 Two independent eight-second stories use the accepted shared material library.
-The [presentation report](http://starship:8787/reports/d0ddec82e8047da315007f815bd30ce9192711b4c420183268faf747b4746d77/)
+The [presentation report](http://starship:8787/reports/5ddba21d5b0e6a6e2ff2a88ccb788cce0a4e2c0527ea8c5bc89b4a0c0bf8d71e/)
 contains playable films and an interactive comparison of saved SDF states.
 The [plan](../../notes/material-presentation-plan.md) and
 [evidence](../../notes/material-presentation-evidence.md) record scope and checks.
@@ -17,9 +17,9 @@ Posters are extracted at 6.5 seconds from the corresponding gallery copy.
 Encoded cadence is separate from live performance.
 
 [manifest.json](manifest.json) owns the committed file hashes and sizes.
-[capture.json](capture.json) retains clean source revision `37838ac8`, exact
-native/derivative commands, binary/shader/input hashes and poster timestamps.
-Later native UI corrections do not change the captured headless scenes.
+[capture.json](capture.json) retains clean source revisions `1654e825` (PBR) and
+`37838ac8` (SDF), exact native/derivative commands, binary/shader/input hashes
+and poster timestamps. Each story keeps its own capture identity.
 The complete raw qualification stays in `outputs/material-presentation/qualification`
 and the immutable report. These are Cubey-generated MIT media.
 
