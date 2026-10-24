@@ -3,7 +3,8 @@
 The component-authored showcase lives here. It presents Cubey as a personal
 graphics/simulation workshop: visual demos first, with concise context and useful
 connections. Detailed technique chapters and development journeys remain later
-editorial work. The current root README gallery is retained until release/cutover.
+editorial work. The public site is hosted at
+[dev.byebyebryan.com/cubey/](https://dev.byebyebryan.com/cubey/).
 
 ## Build and review
 
@@ -72,13 +73,26 @@ python3 site/tools/import-media.py asset-name path/to/native.png \
 Run it from the repository root. Native capture/reproduction is a separate engine
 workflow; follow the referenced guide/recipe and preserve successful outputs.
 
-## Publication boundary
+## GitHub Pages publication
 
-The site is implemented locally and delivered as a review preview before public
-hosting is selected. No public deployment, source push or gallery cutover follows
-from a local build. Before release, confirm the endpoint, the complete Git range
-(including inherited native commits), source links and final media, then publish
-and verify the served revision before compacting the root README.
+[The Pages workflow](../.github/workflows/site.yml) installs locked dependencies,
+runs `npm run verify`, and uploads only `site/dist/`. Selected images and films
+are served alongside the HTML; GitHub attachment uploads are unnecessary.
+The endpoint inherits the account's existing `dev.byebyebryan.com` Pages domain
+and uses the `/cubey/` project path. The workflow reads the origin and base path
+from Pages rather than changing the account domain or adding a separate CNAME.
+
+Pushes to `main` that change the site, content map, glTF extension contract, or
+workflow build and deploy automatically. Pull requests run the same checks and
+build without deploying. `workflow_dispatch` on `main` republishes the current
+source when needed. The workflow uses Node 26.12.1; local builds also support the
+minimum version above.
+
+The public `/metadata/deployment.json` records the source commit and workflow run;
+`/metadata/media.json` records selected media identities. Check these and the
+actual served pages/media after publishing. The host should return `video/mp4`
+for films and support byte-range requests for partial downloads and seeking.
+Native source/capture qualification remains separate from site publication.
 
 The implementation progress/evidence record is
 [here](../docs/notes/cubey-site-implementation-progress.md). The
