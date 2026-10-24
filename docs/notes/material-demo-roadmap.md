@@ -98,6 +98,14 @@ extension as another workshop experiment.
 The detailed [PBR plan](pbr-material-demo-plan.md) specifies the material contract,
 presentation, resource-update gap, checkpoints and proposed acceptance gates.
 
+The next proposed content milestone is a small shared library expansion:
+wood, rusted steel, woven cloth, kraft cardboard and frosted glass. The
+[surface research](material-library-surface-research.md) separates structural
+cues from shading/transport requirements; the
+[expansion plan](material-library-expansion-plan.md) defines catalog growth,
+versioned content, focused specimens and bounded acceptance. It preserves the
+accepted seven looks and current environment integration.
+
 ## B SDF material workshop
 
 Reuse the same recipe files, parameter meanings, seed, material coordinates,
@@ -174,5 +182,7 @@ retained as separate experiments. They are not required by this roadmap.
 - [Guardian closeout](sdf-guardian-closeout.md) and [mirrored-stroke evidence](sdf-mirror-evidence.md).
 - [Reference-first rendering workflow](../architecture/rendering-feature-workflow.md).
 
-The latest retained implementation is `039fdb9f`. This roadmap adds no runtime
-capability or new visual acceptance claim.
+`039fdb9f` was the retained SDF implementation before shared-material promotion.
+The [workshop evidence](material-workshops-evidence.md) now records the promoted
+implementation and its native qualification. Roadmap and follow-up planning
+edits add no runtime capability or new visual acceptance claim.

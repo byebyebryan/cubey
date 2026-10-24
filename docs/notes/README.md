@@ -83,6 +83,12 @@ the architecture and project guides remain current authority.
 These records retain proposed experiments and their scope. They do not imply
 an implemented project or a new runtime dependency.
 
+- [Material library surface research](material-library-surface-research.md):
+  primary references and current capability gaps for wood, rust, woven cloth,
+  kraft cardboard and frosted glass.
+- [Material library expansion plan](material-library-expansion-plan.md): five
+  distinct surface studies, shared catalog/persistence contracts, bounded
+  rendering additions, specimen design and staged native acceptance.
 - [Material and SDF demo roadmap](material-demo-roadmap.md): staged mesh PBR
   material workshop, SDF material workshop and authored-content showcase, with
   shared material recipes/evaluation and separate completion boundaries.

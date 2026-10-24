@@ -62,10 +62,13 @@ The first two stages are implemented and [qualified](notes/material-workshops-ev
 now sit outside SDF. PBR editing uses bounded retired-frame tables; existing
 immutable material consumers and accepted SDF content retain their behavior.
 
-Stage C and further material realism remain deferred. The workshop evidence is
-a bounded native checkpoint, not a repository-wide performance or artistic
-acceptance claim. Reopen shared content/renderer work when a concrete authored
-piece or another consumer needs a missing material or transport capability.
+The next proposed step is a bounded [material library expansion](notes/material-library-expansion-plan.md),
+informed by [surface research](notes/material-library-surface-research.md): wood,
+rusted steel, woven cloth, kraft cardboard and frosted glass, with useful
+specimens and shared catalog/persistence support. This is a plan, not implemented
+content. Stage C and deeper material realism remain deferred. The workshop
+evidence is a bounded native checkpoint, not a repository-wide performance or
+artistic acceptance claim.
 
 ## Public presentation
 
