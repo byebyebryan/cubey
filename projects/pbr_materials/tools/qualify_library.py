@@ -144,11 +144,14 @@ def main():
             result=subprocess.run(command,cwd=ROOT,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
             (output/f"compat-{name}.log").write_text(result.stdout)
             baseline=ROOT/"outputs/material-workshops/final-controls"/f"{name}.png"
+            binary=(ROOT/command[0]).resolve()
             comparison[name]=dict(command=command,returncode=result.returncode,byte_identical=target.exists() and sha(target)==sha(baseline),
+                validation_errors="vulkan validation error" in result.stdout.lower(),binary_sha256=sha(binary),
+                shader_sha256={p.name:sha(p) for p in sorted((binary.parent/"shaders").glob("*.spv"))},
                 baseline_sha256=sha(baseline),sha256=sha(target) if target.exists() else None)
             print("compat",name,comparison[name]["byte_identical"],flush=True)
         (output/"compatibility.json").write_text(json.dumps(comparison,indent=2)+"\n")
-        if not all(v["returncode"]==0 and v["byte_identical"] for v in comparison.values()):
+        if not all(v["returncode"]==0 and v["byte_identical"] and not v["validation_errors"] for v in comparison.values()):
             raise RuntimeError("compatibility comparison failed; inspect component evidence")
 
 

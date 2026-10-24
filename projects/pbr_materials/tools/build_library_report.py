@@ -6,6 +6,7 @@ import html
 import json
 from pathlib import Path
 import shutil
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -27,6 +28,21 @@ def main():
     films = [r for r in runs.values() if r["artifact"].endswith(".mp4")]
     if len(images) > 64 or len(films) > 4 or len(manifest["catalog"]["entries"]) != 12:
         raise ValueError("report exceeds its bounded collection")
+    required={"mesh-gallery", "sdf-rust-csg-cut-0", "sdf-rust-csg-cut-1",
+              "film-sdf-wood", "film-mesh-woven-cloth", "film-sdf-frosted-glass"}
+    for renderer in ("mesh", "sdf"):
+        required.update(f"{renderer}-{e['id']}-studio" for e in manifest["catalog"]["entries"])
+        required.update(f"{renderer}-{name}-fixture" for name in
+                        ("wood","rusted-steel","kraft-cardboard","woven-cloth","frosted-glass"))
+        required.update(f"{renderer}-rust-{name}" for name in ("base-color","roughness","metallic"))
+        required.update(f"{renderer}-{name}-clouds" for name in ("wood","rusted-steel","woven-cloth","frosted-glass"))
+        required.update((f"{renderer}-frost-0.05",f"{renderer}-frost-0.55",f"{renderer}-cloth-far"))
+    if missing:=required-runs.keys():
+        raise ValueError(f"incomplete native report inputs: {sorted(missing)}")
+    for entry in manifest["catalog"]["entries"]:
+        for directory in ("recipes","scenes"):
+            if not (source/directory/f"{entry['id']}.json").is_file():
+                raise ValueError(f"missing resolved {directory} snapshot for {entry['id']}")
     for r in runs.values():
         artifact = source / r["artifact"]
         if hashlib.sha256(artifact.read_bytes()).hexdigest() != r["sha256"]:
@@ -34,11 +50,13 @@ def main():
         shutil.copy2(artifact, target / artifact.name)
     for p in source.glob("*.log"):
         shutil.copy2(p, target / p.name)
+    for pattern in ("profile-*.csv", "profile-*.trace.json"):
+        for p in source.glob(pattern): shutil.copy2(p,target/p.name)
     for name in ("manifest.json", "timings.json", "compatibility.json", "diagnostic.hdr"):
         shutil.copy2(source / name, target / name)
     for name in ("recipes", "scenes"):
         shutil.copytree(source / name, target / name, dirs_exist_ok=True)
-    for name in ("tests-scoped.log", "tests.log"):
+    for name in ("tests-scoped.log", "tests.log", "scoped-recipes.json", "browser-qa.json", "video-qa.json"):
         path = ROOT / "outputs/material-library" / name
         if path.exists(): shutil.copy2(path, target / name)
     table = []
@@ -51,6 +69,12 @@ def main():
     document = template.replace("@@DATA@@", json.dumps(data).replace("</", "<\\/"))
     document = document.replace("@@TIMINGS@@", "\n".join(table)).replace("@@IMAGE_COUNT@@",str(len(images))).replace("@@FILM_COUNT@@",str(len(films)))
     (target / "index.html").write_text(document)
+    generator_files=(Path(__file__).resolve(),Path(__file__).with_name("library_report.html"))
+    (target/"report.json").write_text(json.dumps(dict(
+        generator_commit=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
+        generator_sha256={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in generator_files},
+        capture_commits=sorted({v["identity"]["source_commit"] for v in manifest["runs"].values()}),
+        images=len(images),films=len(films)),indent=2)+"\n")
     inventory = {str(p.relative_to(target)): dict(bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest())
                  for p in sorted(target.rglob("*")) if p.is_file() and p.name != "bundle.json"}
     (target / "bundle.json").write_text(json.dumps(inventory,indent=2)+"\n")
