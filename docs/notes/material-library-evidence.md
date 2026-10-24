@@ -3,8 +3,10 @@
 Date: 2026-10-23
 
 Status: implemented and natively qualified under the
-[library plan](material-library-expansion-plan.md). New appearances remain open
-to human review. The [prior workshop evidence](material-workshops-evidence.md)
+[library plan](material-library-expansion-plan.md). User review accepts the
+twelve-material library for this bounded milestone; the newer
+[presentation shot choices](material-presentation-evidence.md) remain open to
+visual review. The [prior workshop evidence](material-workshops-evidence.md)
 remains the compatibility and performance baseline.
 
 [Open the material-library review report](http://starship:8787/reports/97f536f0e315dd8cb3fa726846f782fbb832ea85ddefa3b7a35b956b33e9d63f/):

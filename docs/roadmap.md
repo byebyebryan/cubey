@@ -79,6 +79,13 @@ review. New materials and the guardian construction-film refresh remain separate
 
 ## Public presentation
 
+The user now wants a full presentation-site migration: move most of the README
+demo gallery, project directory and audience-facing experiment stories onto the
+site, then keep a compact README for repository entry and development. The
+[cubey-site handoff](notes/cubey-site-handoff.md) transfers this next phase; the
+[SDF closeout](notes/sdf-thread-closeout.md) closes the preceding implementation
+thread. Site structure/build/publication and the gallery cutover remain to plan.
+
 Five highlights are now published in the order Ocean, glTF + Terrain, Water 3D,
 Fire 3D and Terrain Water. The [media package](media/showcase/README.md) and
 [manifest](media/showcase/manifest.json) own exact media, recipes, attachments

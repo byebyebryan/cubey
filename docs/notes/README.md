@@ -27,6 +27,12 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
+- [SDF thread closeout](sdf-thread-closeout.md): the complete port/content/material
+  journey, accepted results, retained limits, commit/publication state and deferred
+  experiments.
+- [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
+  migration direction, source/media inventory and next-phase ownership.
+
 - [SDF implementation evidence](sdf-implementation-evidence.md): native field, traversal and batch checkpoints for the boxes-only port.
 - [SDF authored content evidence](sdf-authored-content-evidence.md): the first survey robot, grouped geometry/material contracts and native visual/performance qualification.
 - [SDF authored history evidence](sdf-authored-history-evidence.md): edit-by-edit robot construction, cut previews, step controls and native state/replay qualification.
