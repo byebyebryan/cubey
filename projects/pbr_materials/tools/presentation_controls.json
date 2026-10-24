@@ -1,0 +1,57 @@
+{
+  "mesh-gallery": {
+    "renderer": "pbr",
+    "baseline_source": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+    "sha256": "78e3bf486f02b51c8cda3c140058ae566a21da042dbb8ec7f9d1307e25ec9ca4",
+    "arguments": [
+      "--headless",
+      "--require-validation",
+      "--width",
+      "1920",
+      "--height",
+      "1080",
+      "--material",
+      "gallery",
+      "--yaw",
+      "0",
+      "--pitch",
+      "-0.15",
+      "--distance",
+      "1.05",
+      "--specimen",
+      "sphere",
+      "--lighting",
+      "studio"
+    ]
+  },
+  "sdf-wood-studio": {
+    "renderer": "sdf",
+    "baseline_source": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+    "sha256": "27a15d01ff753ead75ad4429ca05d8bdcc7341d50c1e4be0976e42f4a2a9770d",
+    "arguments": [
+      "--headless",
+      "--require-validation",
+      "--width",
+      "640",
+      "--height",
+      "640",
+      "--material",
+      "wood",
+      "--yaw",
+      "0",
+      "--pitch",
+      "0.15",
+      "--distance",
+      "1.05",
+      "--workshop",
+      "sphere",
+      "--lighting",
+      "material-study",
+      "--supersample",
+      "1",
+      "--glass-crossings",
+      "8",
+      "--validate-field"
+    ]
+  }
+}

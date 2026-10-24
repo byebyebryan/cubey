@@ -21,7 +21,7 @@ def sha(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "outputs/material-presentation/qualification")
-    parser.add_argument("--stage", choices=("captures", "films", "profiles", "all"), default="all")
+    parser.add_argument("--stage", choices=("captures", "films", "profiles", "controls", "metadata", "all"), default="all")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -89,6 +89,38 @@ def main():
                  "--headless-render-only", "--frames", "112", "--profile-warmup-frames", "16",
                  "--profile-output", str(output / f"profile-{renderer}")))
         write_timing_summary(output)
+    if args.stage in ("controls", "all"):
+        controls = json.loads(Path(__file__).with_name("presentation_controls.json").read_text())
+        results = {}
+        for name, control in controls.items():
+            artifact = output / f"compat-{name}.png"
+            command = [str(binaries[control["renderer"]]), *control["arguments"], "--output", str(artifact)]
+            result = subprocess.run(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            (output / f"compat-{name}.log").write_text(result.stdout)
+            record = dict(command=command, returncode=result.returncode,
+                validation_errors="vulkan validation error" in result.stdout.lower(), artifact=artifact.name,
+                sha256=sha(artifact) if artifact.exists() else None, baseline_sha256=control["sha256"], identity=identity)
+            record["byte_identical"] = record["sha256"] == record["baseline_sha256"]
+            results[name] = record
+            (output / "compatibility.json").write_text(json.dumps(results, indent=2) + "\n")
+            if result.returncode or record["validation_errors"] or not record["byte_identical"]:
+                raise RuntimeError(f"retained control differs: {name}; inspect {artifact}")
+    if args.stage in ("films", "metadata", "all"):
+        videos = {}
+        for name in ("pbr.mp4", "sdf.mp4", "pbr-master-1080p.mp4", "sdf-master-1080p.mp4"):
+            command = ["ffprobe", "-v", "error", "-count_frames", "-show_entries",
+                "stream=codec_type,codec_name,profile,width,height,pix_fmt,r_frame_rate,nb_read_frames:format=duration",
+                "-of", "json", str(output / name)]
+            value = json.loads(subprocess.check_output(command, text=True))
+            streams = value["streams"]
+            if (len(streams) != 1 or streams[0]["codec_type"] != "video" or
+                    streams[0]["codec_name"] != "h264" or streams[0]["nb_read_frames"] != "480" or
+                    streams[0]["r_frame_rate"] != "60/1" or float(value["format"]["duration"]) != 8):
+                raise RuntimeError(f"decoded-video contract failed: {name}")
+            videos[name] = value
+        (output / "video-qa.json").write_text(json.dumps(videos, indent=2) + "\n")
+        gpu = subprocess.check_output(["nvidia-smi", "--query-gpu=name,driver_version", "--format=csv,noheader"], text=True).strip()
+        (output / "hardware.json").write_text(json.dumps(dict(gpu=gpu, capture_dimensions=[1920, 1080], supersample=1), indent=2) + "\n")
 
 
 if __name__ == "__main__":
