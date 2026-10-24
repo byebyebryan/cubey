@@ -4,14 +4,21 @@
 
 The explicit workshop mode reuses this renderer and the standalone
 [`assets/materials`](../../assets/materials) catalog. Use sphere or block for
-mesh/SDF comparisons, and `csg` to inspect smooth fusion, a toroidal groove and
+mesh/SDF comparisons, `cut-block` for solid wood grain through a bore, `swatch`
+for oriented cloth/paper surfaces, and `csg` to inspect smooth fusion, a toroidal groove and
 a through-cut. The UI selects recipes/specimens, cut ownership, smooth material
 blending, pattern/bump and component diagnostics, plus save/reload of a shared
 recipe. Existing inline v2 scenes and accepted guardian/robot presets remain valid.
+The twelve shared looks include wood, rusted steel, kraft cardboard, woven cloth
+and frosted glass. New resolved material data uses authored scene V3; old scenes
+retain their V2 persistence and fingerprints.
 
 ```sh
 build/release/projects/sdf/sdf --workshop csg --material marble --yaw 0 --pitch .15 --distance 1.05
 build/release/projects/sdf/sdf --workshop sphere --material glass --lighting material-atmosphere --sun-elevation 8 --sun-azimuth -155 --clouds --cloud-time 300 --cloud-coverage .28
+build/release/projects/sdf/sdf --workshop cut-block --material wood
+build/release/projects/sdf/sdf --workshop swatch --material woven-cloth
+build/release/projects/sdf/sdf --workshop sphere --material frosted-glass
 ```
 
 `--material-recipe` imports a resolved standalone recipe;
@@ -20,6 +27,11 @@ through an explicit affine transform and apply its Jacobian to bump gradients;
 identity keeps legacy fingerprints exact. Material-only publication retains the
 existing queue-idle SDF update boundary and does not rebuild distance bricks.
 Glass retains bounded interface tracing and measured in-medium distances.
+Frosted glass adds a filtered-environment approximation along that path, with
+eight crossings by default in workshop mode. It does not add arbitrary scene
+refraction. `--material-environment` selects a diagnostic HDR in material-study
+lighting. Metalness inspection is `--debug 12`; CSG cut ownership remains explicit.
+See [library qualification](../../docs/notes/material-library-evidence.md).
 
 
 SDF rendering and authored-content experiment derived from projectR. Procedural
@@ -30,12 +42,12 @@ checkpoints; the [source review](../../docs/notes/projectr-architecture-review.m
 and [development history](../../docs/notes/projectr-development-history.md)
 preserve the reference and its experiments.
 
-The proposed [material and SDF demo roadmap](../../docs/notes/material-demo-roadmap.md)
+The [material and SDF demo roadmap](../../docs/notes/material-demo-roadmap.md)
 separates a mesh PBR material workshop, an SDF material workshop and this
 authored-content showcase. The [PBR materials plan](../../docs/notes/pbr-material-demo-plan.md)
-is the first implementation candidate: shared standalone material recipes and
-procedural evaluation, preserving the accepted SDF content. No runtime or
-project-layout split is implemented by those planning records.
+records the implemented shared workshops and their material-content boundary,
+preserving the accepted SDF content. The authored-content presentation remains
+separately scoped.
 
 The guardian sculpture is now settled as an authored SDF rendering/replay demo:
 the organic mirrored sculpt, limestone and subtle Balanced marble are retained.

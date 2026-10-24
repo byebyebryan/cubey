@@ -1,7 +1,8 @@
 # Shared material recipes
 
 A recipe is material content, independent of mesh/SDF geometry, lighting and
-cameras. `assets/materials` holds seven initial accepted looks. The PBR workshop
+cameras. `assets/materials` holds twelve looks: the accepted seven V1 recipes
+and five opt-in V2 surface studies. The PBR workshop
 and explicit SDF workshop mode read these files directly; legacy inline SDF v2
 materials remain supported. Importing a recipe resolves its values rather than
 creating a live link to a mutable global asset.
@@ -29,8 +30,9 @@ Frobenius bound for nonidentity domains. Frequency filtering fades unresolved
 noise and bounds marble coverage. Neither adapter normalizes by model bounds.
 Optical attenuation distance remains independently in geometry units.
 
-The forward PBR material uniform block retains its original prefix and appends
-procedural options, pattern and domain (896 bytes total). Texture bindings and
+The forward PBR material uniform block retains its original prefix, followed by
+procedural options, pattern and domain through byte 896, then the separate
+144-byte library record (1040 bytes total). Texture bindings and
 the default image-based/zero-rough-diffuse behavior remain unchanged. All shader
 consumers must rebuild with the new uniform size. SDF identity domains preserve
 legacy fingerprints; only nonidentity domains add a tagged appearance-hash
@@ -40,7 +42,8 @@ PBR material tables remain immutable by default. The explicit
 `editable_after_retire` option permits updating an existing uniform range and
 CPU definition after **all readers of that table have retired**. The caller must
 own one table per in-flight slot or provide equivalent retirement. The workshop
-uses separate preallocated tables, seven permanent handles and host frame fences.
+uses separate preallocated tables, one permanent handle per validated catalog
+entry and host frame fences.
 Updates cannot change registry routing (alpha, transmission, cull, sort or pass
 mask); selecting glass uses its prepublished handle. No slider allocates a new
 descriptor or uniform buffer. SDF retains its existing queue-idle appearance
@@ -73,5 +76,23 @@ SDF authored scene version 3 uses material records containing only `name` and a
 self-contained `recipe`. The version 2 inline path remains unchanged. New
 library values contribute a tagged appearance-hash domain and never alter the
 geometry fingerprint. Export refuses to discard new material data through the
-old inline format. This data checkpoint precedes new evaluator/render adoption;
-new visual behavior requires its own native qualification.
+old inline format.
+
+The shared library evaluators now supply filtered wood, rust, weave and paper
+surfaces in CPU and GLSL. Resolved samples add spatial metalness (a negative
+sentinel inherits constant optics), sheen, and the explicit rough-glass flag.
+Rust correlates metalness, color, roughness and relief. Sheen uses the existing
+shared Charlie helpers and generated IBL LUT alpha in both consumers. SDF
+material ownership/blending carries those resolved response channels.
+
+Wood/rust use solid coordinates; cloth/paper use explicit material X/Y axes on
+oriented swatches. A general surface atlas or seamless cloth drape is not supplied.
+Relief gradients obey the same affine chain rule as V1. Periodic/fiber detail
+fades under minification while the rough response remains available.
+
+V2 frosted glass is opt-in, with plain white base, zero metal/emission/sheen and
+rough diffuse, plus editable roughness/IOR/absorption. Mesh reuses forward rough
+transmission. SDF estimates angular spread along the bounded central interface
+path and samples filtered environment radiance; it does not add arbitrary scene
+refraction or a full rough BTDF solver. Existing V1 glass follows its sharp path.
+See the [native expansion evidence](../notes/material-library-evidence.md).

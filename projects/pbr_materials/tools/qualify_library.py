@@ -26,6 +26,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "outputs/material-library/qualification")
     parser.add_argument("--stage", choices=("audition", "captures", "profiles", "films", "compatibility", "all"), default="all")
+    parser.add_argument("--only", action="append", default=[], help="Run only these named native cases; repeatable.")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -52,6 +53,8 @@ def main():
 
     def run(name, renderer, material, shape="sphere", lighting="studio", extra=(), yaw=0,
             pitch=.15, distance=1.05, size=(960, 720), suffix="png", bars=False, validate=False):
+        if args.only and name not in args.only:
+            return
         artifact = output / f"{name}.{suffix}"
         command = [str(binaries[renderer]), "--headless", "--require-validation", "--width", str(size[0]),
                    "--height", str(size[1]), "--material", material, "--yaw", str(yaw),
@@ -92,7 +95,9 @@ def main():
                 run(f"{renderer}-{material}-studio",renderer,material,size=(640,640),extra=export,
                     validate=renderer=="sdf" and material in FIXTURES)
             for material, shape in FIXTURES.items():
-                run(f"{renderer}-{material}-fixture",renderer,material,shape,yaw=.5,pitch=.35,bars=material=="frosted-glass")
+                run(f"{renderer}-{material}-fixture",renderer,material,shape,
+                    yaw=0 if material=="frosted-glass" else .5,
+                    pitch=.15 if material=="frosted-glass" else .35,bars=material=="frosted-glass")
             for material in ("wood","rusted-steel","woven-cloth","frosted-glass"):
                 run(f"{renderer}-{material}-clouds",renderer,material,FIXTURES[material],"clouds",yaw=.5,pitch=.35)
             for roughness in (.05,.55):

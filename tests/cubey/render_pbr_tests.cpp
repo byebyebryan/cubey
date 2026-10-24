@@ -646,9 +646,10 @@ void test_pbr_material_uniform_block_layout_is_checked() {
     const cubey::render::PbrMaterialUniformBlockLayout aligned =
         cubey::render::pbr_material_uniform_block_layout(sizeof(cubey::render::PbrMaterialUniforms),
                                                          256U, 64U);
-    require(aligned.uniform_stride == 1024U,
+    static_assert(offsetof(cubey::render::PbrMaterialUniforms, surface_library) == 896U);
+    require(aligned.uniform_stride == 1280U,
             "PBR material uniform stride should satisfy uniform-buffer alignment");
-    require(aligned.uniform_block_byte_size == 65'536U,
+    require(aligned.uniform_block_byte_size == 81'920U,
             "PBR material uniform block should reserve one aligned slot per material");
 
     const cubey::render::PbrMaterialUniformBlockLayout zero_alignment =
