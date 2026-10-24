@@ -42,3 +42,24 @@ The diagnostic generator is
 Mesh accepts that HDR with `--environment`; SDF material-study lighting accepts
 it with `--material-environment`. Both use ordinary existing environment products.
 The accepted clear/cloud atmosphere routes are unchanged.
+
+## First surface auditions
+
+The shared catalog now contains twelve recipes. Initial native auditions cover
+all five new families in both consumers: a bored solid block for wood, oriented
+thin swatches for rust/paper/cloth and a sphere for frosting. Ten fixture
+captures pass required Vulkan validation. SDF also passes the geometry ray oracle
+and CPU/GPU comparisons of color, roughness, relief gradient, metalness, sheen
+and optics for all five fixtures.
+
+The original gradient/normal tolerance remains 2e-5 for legacy materials. Fine
+V2 periodic relief uses a separate 1e-4 bound for ordinary CPU/GPU trigonometric
+rounding; geometry and optical-interface bounds are unchanged. Independent
+finite differences verify the scalar relief gradient and nonuniform affine
+chain rule for each new opaque family. Minified samples lose resolved bump
+while retaining stable mean color/coverage and their rough response.
+
+Initial visual review finds the wood/cut relationship legible and the rust's
+metal/oxide response distinct. Cloth relief and paper flecks need a restrained
+correction before final presentation. The local audition files are retained;
+these images precede final preset selection and performance qualification.

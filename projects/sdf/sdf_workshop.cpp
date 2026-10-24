@@ -4,8 +4,9 @@
 namespace cubey::projects::sdf {
 using J = nlohmann::json;
 AuthoredScene make_material_workshop(const SdfConfig& c) {
-    if (c.workshop != "sphere" && c.workshop != "block" && c.workshop != "csg")
-        throw std::invalid_argument("workshop must be sphere, block or csg");
+    if (c.workshop != "sphere" && c.workshop != "block" && c.workshop != "csg" &&
+        c.workshop != "swatch" && c.workshop != "cut-block")
+        throw std::invalid_argument("workshop must be sphere, block, csg, swatch or cut-block");
     const auto catalog = asset::load_material_catalog(
         std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
     const auto selected = std::find_if(catalog.begin(), catalog.end(),
@@ -60,6 +61,25 @@ AuthoredScene make_material_workshop(const SdfConfig& c) {
                 {"half_extent", {.205F, .205F, .205F}},
                 {"rounding", .045F},
                 {"material", "body"}};
+    if (c.workshop == "swatch")
+        root = {{"name", "oriented-swatch"},
+                {"type", "box"},
+                {"half_extent", {.238F, .188F, .006F}},
+                {"rounding", .012F},
+                {"material", "body"}};
+    if (c.workshop == "cut-block") {
+        J block = {{"name", "solid-block"},
+                   {"type", "box"},
+                   {"half_extent", {.235F, .20F, .16F}},
+                   {"material", "body"}};
+        J bore = {{"name", "bore"},
+                  {"type", "cylinder"},
+                  {"radius", .065F},
+                  {"half_length", .4F},
+                  {"rotation_xyzw", {.70710678, 0, 0, .70710678}}};
+        root = {
+            {"name", "bored-block"}, {"type", "subtract"}, {"children", J::array({block, bore})}};
+    }
     if (c.workshop == "csg") {
         J fuse = {{"name", "fusion"},
                   {"type", "smooth-union"},

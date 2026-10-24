@@ -347,6 +347,11 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
         domain_values.resize(scene.materials.size(), math::Mat4{1});
     auto domains = gpu.upload_device_buffer<math::Mat4>(
         domain_values, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf material domains");
+    auto library_values = scene.libraries;
+    if (library_values.empty())
+        library_values.resize(scene.materials.size());
+    auto libraries = gpu.upload_device_buffer<procedural::SurfaceLibrary>(
+        library_values, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf library surfaces");
     auto optics = gpu.upload_device_buffer<MaterialOptics>(
         scene.optics, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored optics");
     for (std::size_t i = 0; i < points.size(); ++i)
@@ -354,17 +359,18 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
     auto point_buffer = gpu.upload_device_buffer<math::Vec4>(
         points, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "sdf authored points");
     vulkan::Buffer results(
-        device, vulkan::device_local_buffer_config(points.size() * 10 * sizeof(math::Vec4),
+        device, vulkan::device_local_buffer_config(points.size() * 12 * sizeof(math::Vec4),
                                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
-    const std::array<vulkan::DescriptorSetBindingConfig, 7> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 8> bindings{
         {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
          {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
-         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
+         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
+         {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}}};
     vulkan::DescriptorSetBundle descriptors(device, vulkan::DescriptorSetInfo(bindings));
     vulkan::DescriptorWriteBatch writes;
     writes.storage_buffer(descriptors.set(), 0, program_buffer.handle(), program_buffer.size());
@@ -374,6 +380,7 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
     writes.storage_buffer(descriptors.set(), 4, patterns.handle(), patterns.size());
     writes.storage_buffer(descriptors.set(), 5, optics.handle(), optics.size());
     writes.storage_buffer(descriptors.set(), 6, domains.handle(), domains.size());
+    writes.storage_buffer(descriptors.set(), 7, libraries.handle(), libraries.size());
     writes.update(device);
     const std::array layouts{descriptors.layout()};
     const std::array<VkPushConstantRange, 1> push{{{VK_SHADER_STAGE_COMPUTE_BIT, 0, 4}}};
@@ -402,15 +409,24 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
                                                  [](const auto& p) { return p.settings.x != 0; })
                                          ? 2e-4F
                                          : 2e-5F;
+    // High-frequency V2 yarn relief amplifies ordinary CPU/GPU trig rounding.
+    // Retain the original bounds for legacy patterns and all geometry, and use
+    // a 1e-4 gradient/normal bound only for active library surface evaluators.
+    const bool library_surface = std::any_of(scene.libraries.begin(), scene.libraries.end(),
+                                             [](const auto& p) { return p.settings.x > 0; });
+    const float relief_tolerance = library_surface ? 1e-4F : 2e-5F;
     float max_distance = 0, max_material = 0, max_gradient = 0, max_normal = 0, max_fast = 0;
     for (std::size_t i = 0; i < points.size(); ++i) {
-        std::array<math::Vec4, 10> actual;
+        std::array<math::Vec4, 12> actual;
         std::memcpy(actual.data(), bytes.data() + i * sizeof(actual), sizeof(actual));
         for (const auto& lane : actual)
             for (int channel = 0; channel < 4; ++channel)
                 if (!std::isfinite(lane[channel]))
                     throw std::runtime_error("authored GPU evaluation returned a nonfinite value");
         const auto expected = authored_surface(math::Vec3(points[i]), scene, points[i].w);
+        if (glm::length(actual[10] - expected.sheen) > 2e-5F ||
+            std::abs(actual[11].x - expected.rough_glass) > 2e-5F)
+            throw std::runtime_error("CPU/GPU library response mismatch");
         const auto rough_light = glm::normalize(math::Vec3{points[i].x, points[i].y, 1});
         const auto rough_view = glm::normalize(math::Vec3{-points[i].y, points[i].z, 1});
         if (std::abs(actual[3].w - rough_diffuse_factor(rough_light.z, rough_view.z,
@@ -449,14 +465,15 @@ void validate_authored(vulkan::Device& device, ProjectGpuServices& gpu,
         max_fast = std::max(max_fast, actual[0].w);
         if (!std::isfinite(actual[0].x) || !std::isfinite(actual[0].y) ||
             static_cast<unsigned>(actual[0].z) != expected.part || max_distance > 2e-5F ||
-            max_material > material_tolerance || max_gradient > 2e-5F || max_normal > 2e-5F ||
-            max_fast > 2e-5F)
+            max_material > material_tolerance || max_gradient > relief_tolerance ||
+            max_normal > relief_tolerance || max_fast > 2e-5F)
             throw std::runtime_error(
                 "authored CPU/GPU distance/material mismatch at point " + std::to_string(i) +
                 " CPU part=" + std::to_string(expected.part) +
                 " GPU part=" + std::to_string(static_cast<unsigned>(actual[0].z)) +
                 " distance_error=" + std::to_string(max_distance) + " material_error=" +
-                std::to_string(max_material) + " gradient_error=" + std::to_string(max_gradient));
+                std::to_string(max_material) + " gradient_error=" + std::to_string(max_gradient) +
+                " normal_error=" + std::to_string(max_normal));
     }
     std::cout << "sdf: authored CPU/GPU points=" << points.size()
               << " max_distance_error=" << max_distance << " max_material_error=" << max_material

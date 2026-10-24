@@ -34,6 +34,7 @@ add_library(cubey_core STATIC
     procedural/sample_domain.cpp
     procedural/seed.cpp
     procedural/surface_material.cpp
+    procedural/surface_library.cpp
     procedural/source_fields.cpp
 )
 add_library(cubey::core ALIAS cubey_core)

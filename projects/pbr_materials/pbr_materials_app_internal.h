@@ -29,14 +29,12 @@
 
 namespace cubey::projects::pbr_materials::detail {
 
-inline constexpr std::uint32_t kMaterialGridColumns = 7;
-inline constexpr std::uint32_t kMaterialGridRows = 1;
-inline constexpr std::uint32_t kMaterialSpecimenCount = kMaterialGridColumns * kMaterialGridRows;
+inline constexpr std::uint32_t kMaterialGridColumns = 4;
 inline constexpr std::uint32_t kSphereTriangleCount = 64 * 128 * 2;
 inline constexpr std::uint32_t kShadowMapSize = 2048;
 inline constexpr float kCameraDistance = 3.3F;
 inline constexpr float kMaterialGridSpacingX = 0.62F;
-inline constexpr float kMaterialGridSpacingY = 1.12F;
+inline constexpr float kMaterialGridSpacingY = .68F;
 inline constexpr cubey::math::Vec3 kMaterialSpecimenScale{1.0F, 1.0F, 1.0F};
 inline constexpr cubey::math::Vec4 kNeutralMaterialBaseColor{0.56F, 0.55F, 0.52F, 1.0F};
 inline constexpr float kMinimumRoughness = 0.04F;
@@ -106,11 +104,14 @@ class PbrMaterialsApp {
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     std::vector<cubey::render::PbrMaterialTable> materials_;
     std::vector<cubey::asset::MaterialRecipe> recipes_, originals_;
+    std::vector<cubey::asset::MaterialCatalogEntry> catalog_;
+    std::string family_filter_ = "all";
     std::vector<std::uint64_t> published_revision_;
     std::vector<bool> stress_done_;
     std::uint64_t revision_ = 1;
     int selected_ = -1;
     cubey::render::MeshHandle block_mesh_handle_{};
+    cubey::render::MeshHandle swatch_mesh_handle_{}, cut_block_mesh_handle_{};
     std::optional<vulkan::GpuTimestampProfiler> whole_profiler_, pass_profiler_;
     AtmosphereEnvironmentRuntime atmosphere_;
     std::optional<render::AtmosphereBackgroundPlaceholderTextures> atmosphere_textures_;

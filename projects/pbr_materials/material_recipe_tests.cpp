@@ -96,6 +96,47 @@ int main() {
     const auto directory = std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR);
     const auto catalog = asset::load_material_catalog(directory / "catalog.json");
     require(catalog.size() >= 7);
+    for (const auto& entry : catalog) {
+        const auto& r = entry.recipe;
+        if (r.library.settings.x == 0)
+            continue;
+        const auto domain = math::rotation_z(.37F) * math::scale({1.3F, .8F, 1.1F});
+        const math::Vec3 point{.137F, -.081F, .213F};
+        const auto value =
+            procedural::sample_surface_domain(r.surface, r.pattern, r.library, domain, point);
+        // Independent finite differences of the scalar relief check the chain
+        // rule, including nonuniform material domains, for every new family.
+        for (int axis = 0; axis < 3; ++axis) {
+            auto a = point, b = point;
+            a[axis] += .000002F;
+            b[axis] -= .000002F;
+            const float derivative =
+                (procedural::sample_surface_domain(r.surface, r.pattern, r.library, domain, a)
+                     .height -
+                 procedural::sample_surface_domain(r.surface, r.pattern, r.library, domain, b)
+                     .height) /
+                .000004F;
+            if (std::abs(derivative - value.height_gradient[axis]) > .001F)
+                throw std::runtime_error("library relief derivative mismatch: " + entry.id);
+        }
+        const auto far =
+            procedural::sample_surface_domain(r.surface, r.pattern, r.library, domain, point, 1);
+        const auto far2 = procedural::sample_surface_domain(r.surface, r.pattern, r.library, domain,
+                                                            point + math::Vec3{.27F}, 1);
+        require(glm::length(far.height_gradient) < 1e-8F &&
+                glm::length(far2.height_gradient) < 1e-8F);
+        require(glm::length(far.material.base_roughness - far2.material.base_roughness) < 1e-6F);
+        if (r.library.settings.x == 2) {
+            auto library = r.library;
+            library.rust.coverage = 0;
+            const auto steel = procedural::sample_library_surface(r.surface, library, point);
+            library.rust.coverage = 1;
+            const auto oxide = procedural::sample_library_surface(r.surface, library, point);
+            require(steel.metallic == 1 && oxide.metallic == 0 &&
+                    steel.material.base_roughness.w < oxide.material.base_roughness.w);
+            require(std::abs(far.metallic - (1 - r.library.rust.coverage)) < 1e-6F);
+        }
+    }
     const auto fixture =
         std::filesystem::temp_directory_path() /
         ("cubey-material-catalog-" +

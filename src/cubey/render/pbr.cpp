@@ -357,6 +357,7 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialDefinition& definitio
         factors.diffuse_roughness > 1)
         throw std::invalid_argument("PBR diffuse roughness must be finite and in [0,1]");
     procedural::validate_material_pattern(factors.surface_pattern);
+    procedural::validate_surface_library(factors.surface_library);
     procedural::validate_material_domain(factors.material_from_object);
     return {
         .base_color_factor = factors.base_color_factor,
@@ -434,6 +435,7 @@ PbrMaterialUniforms pbr_material_uniforms(const PbrMaterialDefinition& definitio
                             factors.bump_enabled ? 1.0F : 0.0F, 0},
         .surface_pattern = factors.surface_pattern,
         .material_from_object = factors.material_from_object,
+        .surface_library = factors.surface_library,
     };
 }
 

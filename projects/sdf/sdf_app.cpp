@@ -40,6 +40,9 @@ class App {
               : config_.authored_path.empty()
                   ? std::nullopt
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
+        if (!config_.workshop.empty())
+            catalog_ = asset::load_material_catalog(
+                std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
         if (authored_)
             validate_authored_motion(*authored_);
         if (config_.lighting != "atmosphere" && !authored_)
@@ -415,23 +418,37 @@ class App {
                                  ImGuiCond_FirstUseEver);
         if (ImGui::Begin("SDF study")) {
             if (!config_.workshop.empty()) {
-                const char* specimens[]{"sphere", "block", "csg"};
-                int shape =
-                    config_.workshop == "sphere" ? 0 : (config_.workshop == "block" ? 1 : 2);
-                if (ImGui::Combo("Workshop specimen", &shape, specimens, 3)) {
+                const char* specimens[]{"sphere", "block", "csg", "swatch", "cut-block"};
+                int shape = config_.workshop == "sphere"      ? 0
+                            : config_.workshop == "block"     ? 1
+                            : config_.workshop == "swatch"    ? 3
+                            : config_.workshop == "cut-block" ? 4
+                                                              : 2;
+                if (ImGui::Combo("Workshop specimen", &shape, specimens, 5)) {
                     config_.workshop = specimens[shape];
                     workshop_changed_ = true;
                 }
-                const char* ids[]{"plain",   "limestone", "marble", "clay",
-                                  "ceramic", "bronze",    "glass"};
-                int material = 0;
-                for (int i = 0; i < 7; ++i)
-                    if (config_.workshop_material == ids[i])
-                        material = i;
-                if (ImGui::Combo("Shared recipe", &material, ids, 7)) {
-                    config_.workshop_material = ids[material];
-                    config_.material_recipe_path.clear();
-                    workshop_changed_ = true;
+                if (ImGui::BeginCombo("Family", family_filter_.c_str())) {
+                    std::vector<std::string> families{"all"};
+                    for (const auto& e : catalog_)
+                        if (std::find(families.begin(), families.end(), e.family) == families.end())
+                            families.push_back(e.family);
+                    for (const auto& family : families)
+                        if (ImGui::Selectable(family.c_str(), family_filter_ == family))
+                            family_filter_ = family;
+                    ImGui::EndCombo();
+                }
+                if (ImGui::BeginCombo("Shared recipe", config_.workshop_material.c_str())) {
+                    for (const auto& e : catalog_) {
+                        if (family_filter_ != "all" && e.family != family_filter_)
+                            continue;
+                        if (ImGui::Selectable(e.label.c_str(), config_.workshop_material == e.id)) {
+                            config_.workshop_material = e.id;
+                            config_.material_recipe_path.clear();
+                            workshop_changed_ = true;
+                        }
+                    }
+                    ImGui::EndCombo();
                 }
                 workshop_changed_ |=
                     ImGui::Checkbox("Contrasting cut material", &config_.workshop_cut_material);
@@ -615,6 +632,76 @@ class App {
                             materials_changed_ |= ImGui::SliderFloat("Attenuation distance",
                                                                      &optics.settings.w, .01F, 4);
                         }
+                        if (!authored_->libraries.empty()) {
+                            auto& library = authored_->libraries[i];
+                            if (library.optical_options.x > .5F)
+                                materials_changed_ |= ImGui::SliderFloat(
+                                    "Frost roughness", &material.base_roughness.w, .05F, .8F);
+
+                            if (library.settings.x > 0) {
+                                int seed = static_cast<int>(library.settings.y);
+                                if (ImGui::SliderInt("Library seed", &seed, 0, 65535)) {
+                                    library.settings.y = static_cast<float>(seed);
+                                    materials_changed_ = true;
+                                }
+                                materials_changed_ |= ImGui::SliderFloat(
+                                    "Library scale", &library.settings.z, .1F, 16);
+                                materials_changed_ |= ImGui::SliderFloat(
+                                    "Relief height", &library.settings.w, 0, .005F, "%.5f");
+                                materials_changed_ |= ImGui::ColorEdit3("Library secondary color",
+                                                                        &library.secondary.x);
+                                if (library.settings.x == 1) {
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Ring frequency", &library.wood.ring_frequency, 1, 100);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Growth distortion", &library.wood.distortion, 0, 2);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Fiber frequency", &library.wood.grain_frequency, 20, 600);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Pore strength", &library.wood.pore_strength, 0, 1);
+                                } else if (library.settings.x == 2) {
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Rust coverage", &library.rust.coverage, 0, 1);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Patch frequency", &library.rust.patch_frequency, 1, 64);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Edge breakup", &library.rust.edge_breakup, 0, 1);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Pitting", &library.rust.pit_strength, 0, 1);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Steel roughness", &library.rust_roughness.x, .05F, 1);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Oxide roughness", &library.rust_roughness.y, .05F, 1);
+                                } else if (library.settings.x == 3) {
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Yarn spacing", &library.weave.yarn_spacing, .003F, .06F,
+                                        "%.4f");
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Yarn width", &library.weave.yarn_width, .3F, .95F);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Yarn irregularity", &library.weave.irregularity, 0, .5F);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Fine fibers", &library.weave.fiber_strength, 0, 1);
+                                    materials_changed_ |=
+                                        ImGui::ColorEdit3("Sheen color", &library.sheen.x);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Sheen roughness", &library.sheen.w, .05F, 1);
+                                    ImGui::TextWrapped("Weave follows the material X/Y axes. Use "
+                                                       "the swatch to inspect its structure.");
+                                } else {
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Fiber frequency", &library.paper.fiber_frequency, 40,
+                                        1000);
+                                    materials_changed_ |=
+                                        ImGui::SliderFloat("Fiber directionality",
+                                                           &library.paper.directionality, 0, 1);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Pulp flecks", &library.paper.fleck_strength, 0, 1);
+                                    materials_changed_ |= ImGui::SliderFloat(
+                                        "Fiber relief", &library.paper.fiber_strength, 0, 1);
+                                }
+                            }
+                        }
                         auto& pattern = authored_->patterns[i];
                         if (pattern.settings.x > 0) {
                             ImGui::Text("Procedural: %s",
@@ -741,6 +828,8 @@ class App {
     double playback_seconds_ = 0;
     bool regenerate_requested_ = false;
     bool reload_authored_ = false, materials_changed_ = false, workshop_changed_ = false;
+    std::vector<asset::MaterialCatalogEntry> catalog_;
+    std::string family_filter_ = "all";
     char workshop_recipe_path_[512] = "outputs/sdf-material-recipe.json";
     std::string error_;
 };

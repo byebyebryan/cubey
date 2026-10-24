@@ -2,7 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "cubey/pbr.glsl"
-#include "cubey/procedural/surface_material.glsl"
+#include "cubey/procedural/surface_library.glsl"
 
 layout(set = 0, binding = 0) uniform PbrSceneUniforms {
     mat4 view_projection;
@@ -82,6 +82,7 @@ layout(set = 1, binding = 7) uniform PbrMaterialUniforms {
     vec4 surface_options;
     MaterialPattern surface_pattern;
     mat4 material_from_object;
+    SurfaceLibrary surface_library;
 } material;
 
 const uint CUBEY_PBR_TEXTURE_SPECULAR = 1u;
@@ -521,13 +522,16 @@ void main() {
         1.0;
     sampled_normal.xy *= normal_scale;
     vec3 normal = normalize(tbn * sampled_normal);
-    if (material.surface_options.y > 0.5 && material.surface_pattern.settings.x > 0.0) {
+    if (material.surface_options.y > 0.5 && (material.surface_pattern.settings.x > 0.0 || material.surface_library.settings.x > 0.0)) {
         vec3 p = (material.material_from_object * vec4(frag_object_position, 1)).xyz;
         float footprint = max(length(dFdx(p)), length(dFdy(p)));
-        MaterialSample surface_sample = surfacePattern(
+        MaterialSample surface_sample = material.surface_library.settings.x > 0.0 ? librarySurface(
+            SurfaceMaterial(vec4(base_color.rgb, perceptual_roughness), material.emissive_alpha_cutoff),
+            material.surface_library, p, footprint) : surfacePattern(
             SurfaceMaterial(vec4(base_color.rgb, perceptual_roughness), material.emissive_alpha_cutoff),
             material.surface_pattern, p, footprint);
         base_color.rgb = surface_sample.material.base_roughness.rgb;
+        if(surface_sample.metallic>=0.0) metallic=surface_sample.metallic;
         perceptual_roughness = surface_sample.material.base_roughness.w;
         roughness = max(perceptual_roughness, 0.04);
         if (material.surface_options.z > 0.5) {

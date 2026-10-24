@@ -74,6 +74,7 @@ struct MaterialSample {
     float metallic = -1; // negative: inherit constant optics (legacy path)
     math::Vec4 sheen{0};
     float rough_glass = 0;
+    float height = 0; // library relief in material units, for derivative inspection
 };
 struct MarbleDetail {
     const char* name;
@@ -100,6 +101,12 @@ void validate_material_domain(const math::Mat4& material_from_object);
                                                     const math::Mat4& material_from_object,
                                                     math::Vec3 object_point,
                                                     float object_footprint = 0);
+[[nodiscard]] MaterialSample sample_library_surface(const SurfaceMaterial&, const SurfaceLibrary&,
+                                                    math::Vec3 point, float footprint = 0);
+[[nodiscard]] MaterialSample sample_surface_domain(const SurfaceMaterial&, const MaterialPattern&,
+                                                   const SurfaceLibrary&, const math::Mat4&,
+                                                   math::Vec3 point, float footprint = 0,
+                                                   bool patterns = true);
 struct OpticalInterface {
     math::Vec3 reflected, transmitted;
     float fresnel;

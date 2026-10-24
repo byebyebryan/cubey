@@ -28,6 +28,9 @@ pbr_material_from_recipe(const asset::MaterialRecipe& r, float thickness,
     f.volume_attenuation_color = math::Vec3{r.optics.attenuation};
     f.diffuse_roughness = r.optics.attenuation.w;
     f.surface_pattern = r.pattern;
+    f.surface_library = r.library;
+    f.sheen_color_factor = math::Vec3{r.library.sheen};
+    f.sheen_roughness_factor = r.library.sheen.w;
     f.material_from_object = r.material_from_object;
     return d;
 }

@@ -28,31 +28,17 @@ cubey::Transform3D look_at_transform(cubey::math::Vec3 eye, cubey::math::Vec3 ta
     };
 }
 
-[[nodiscard]] cubey::math::Vec3 specimen_translation(std::uint32_t index) {
-    const std::uint32_t row = index / kMaterialGridColumns;
-    const std::uint32_t column = index % kMaterialGridColumns;
-    const float centered_column =
-        static_cast<float>(column) - (static_cast<float>(kMaterialGridColumns - 1U) * 0.5F);
-    const float centered_row =
-        (static_cast<float>(kMaterialGridRows - 1U) * 0.5F) - static_cast<float>(row);
-    return {
-        centered_column * kMaterialGridSpacingX,
-        centered_row * kMaterialGridSpacingY,
-        0.0F,
-    };
-}
-
 } // namespace
 
 void PbrMaterialsApp::create_scene() {
     scene_ = &engine_.create_scene();
     cubey::SceneTransaction setup = scene().begin_transaction();
-    for (std::uint32_t index = 0; index < kMaterialSpecimenCount; ++index) {
+    for (std::uint32_t index = 0; index < material_handles_.size(); ++index) {
         const cubey::Entity cube = cubey::scene::create_renderable_entity_3d(
             setup, cubey::scene::RenderableEntity3DConfig{
                        .transform =
                            cubey::Transform3D{
-                               .translation = specimen_translation(index),
+                               .translation = math::Vec3{0},
                                .scale = kMaterialSpecimenScale,
                            },
                        .mesh = sphere_mesh_handle_,

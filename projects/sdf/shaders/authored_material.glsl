@@ -30,13 +30,14 @@ MaterialOptics materialOptics(uint i) {
     return MaterialOptics(vec4(0,0,1.5,1),vec4(1,1,1,0));
 #endif
 }
-struct SceneSurface { float distance; SurfaceMaterial material; uint part; vec3 height_gradient; MaterialOptics optics; };
+struct SceneSurface { float distance; SurfaceMaterial material; uint part; vec3 height_gradient; MaterialOptics optics; vec4 sheen; float rough_glass; };
 MaterialSample sampleAuthoredMaterial(uint i,vec3 p,float footprint,bool patterns) {
-    return patterns ? surfacePatternDomain(authoredMaterials[i],authoredPatterns[i],materialDomains[i],p,footprint) :
-        MaterialSample(authoredMaterials[i],vec3(0));
+    MaterialSample m=librarySurfaceDomain(authoredMaterials[i],authoredPatterns[i],libraryTable[i],materialDomains[i],p,footprint,patterns);
+    if(m.metallic<0.0) m.metallic=materialOptics(i).settings.x;
+    return m;
 }
 SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
-    if (authoredHeader.x==0u) return SceneSurface(1000.0,SurfaceMaterial(vec4(0.5),vec4(0)),0u,vec3(0),MaterialOptics(vec4(0,0,1.5,1),vec4(1,1,1,0)));
+    if (authoredHeader.x==0u) return SceneSurface(1000.0,SurfaceMaterial(vec4(0.5),vec4(0)),0u,vec3(0),MaterialOptics(vec4(0,0,1.5,1),vec4(1,1,1,0)),vec4(0),0.0);
     MaterialSample materials[16];
     for (uint i=0u;i<authoredHeader.y;++i) materials[i]=sampleAuthoredMaterial(i,p,footprint,patterns);
     SceneSurface stack[32];
@@ -46,7 +47,8 @@ SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
         uint code=uint(node.center_code.w);
         if (code<10u) {
             MaterialSample m=materials[uint(node.settings.z)];
-            stack[size++]=SceneSurface(authoredPrimitive(p,node),m.material,i,m.height_gradient,materialOptics(uint(node.settings.z)));
+            stack[size++]=SceneSurface(authoredPrimitive(p,node),m.material,i,m.height_gradient,materialOptics(uint(node.settings.z)),m.sheen,m.rough_glass);
+            stack[size-1].optics.settings.x=m.metallic;
         } else {
             SceneSurface b=stack[--size],a=stack[size-1];
             if (code==10u) {
@@ -59,7 +61,7 @@ SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
                 if (-b.distance>a.distance+1e-6) {
                     if (node.settings.w>=0.0) {
                         MaterialSample m=materials[uint(node.settings.w)];
-                        a.material=m.material;a.height_gradient=m.height_gradient;a.part=i;a.optics=materialOptics(uint(node.settings.w));
+                        a.material=m.material;a.height_gradient=m.height_gradient;a.part=i;a.optics=materialOptics(uint(node.settings.w));a.optics.settings.x=m.metallic;a.sheen=m.sheen;a.rough_glass=m.rough_glass;
                     }
                 }
                 a.distance=d;
@@ -68,7 +70,7 @@ SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
                 float d=mix(-b.distance,a.distance,h)+node.settings.y*h*(1.0-h);
                 if (-b.distance>a.distance+1e-6 && node.settings.w>=0.0) {
                     MaterialSample m=materials[uint(node.settings.w)];
-                    a.material=m.material;a.height_gradient=m.height_gradient;a.part=i;a.optics=materialOptics(uint(node.settings.w));
+                    a.material=m.material;a.height_gradient=m.height_gradient;a.part=i;a.optics=materialOptics(uint(node.settings.w));a.optics.settings.x=m.metallic;a.sheen=m.sheen;a.rough_glass=m.rough_glass;
                 }
                 a.distance=d;
             } else {
@@ -79,9 +81,10 @@ SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
                     a.material.emission=mix(b.material.emission,a.material.emission,h);
                     a.optics.settings=mix(b.optics.settings,a.optics.settings,h);
                     a.optics.attenuation=mix(b.optics.attenuation,a.optics.attenuation,h);
+                    a.sheen=mix(b.sheen,a.sheen,h);a.rough_glass=mix(b.rough_glass,a.rough_glass,h);
                     a.height_gradient=mix(b.height_gradient,a.height_gradient,h);
                 } else if (b.distance<a.distance-1e-6) {
-                    a.material=b.material;a.height_gradient=b.height_gradient;a.optics=b.optics;
+                    a.material=b.material;a.height_gradient=b.height_gradient;a.optics=b.optics;a.sheen=b.sheen;a.rough_glass=b.rough_glass;
                 }
                 if (b.distance<a.distance-1e-6) a.part=b.part;
                 a.distance=d;
@@ -97,6 +100,6 @@ SceneSurface authoredSurface(vec3 p) { return authoredSurface(p,0.0,true); }
 MaterialSample authoredShadingMaterial(vec3 p,float footprint,bool patterns,bool fastPath) {
     if (authoredHeader.y==1u && fastPath) return sampleAuthoredMaterial(0u,p,footprint,patterns);
     SceneSurface surface=authoredSurface(p,footprint,patterns);
-    return MaterialSample(surface.material,surface.height_gradient);
+    return MaterialSample(surface.material,surface.height_gradient,surface.optics.settings.x,surface.sheen,surface.rough_glass,0.0);
 }
 #endif

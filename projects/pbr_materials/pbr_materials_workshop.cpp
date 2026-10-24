@@ -52,20 +52,35 @@ void PbrMaterialsApp::publish_materials(render::FrameSlot slot) {
 }
 void PbrMaterialsApp::refresh_specimens() {
     auto edits = scene().create_edit_queue();
+    const bool gallery = selected_ < 0;
+    const auto matches = [&](std::size_t i) {
+        return family_filter_ == "all" || catalog_[i].family == family_filter_;
+    };
+    std::size_t visible = 0;
+    for (std::size_t i = 0; i < catalog_.size(); ++i)
+        if (matches(i))
+            ++visible;
+    const std::size_t rows = (visible + kMaterialGridColumns - 1) / kMaterialGridColumns;
+    std::size_t cell = 0;
     for (std::size_t i = 0; i < specimens_.size(); ++i) {
-        const bool gallery = selected_ < 0;
+        const auto column = cell % kMaterialGridColumns, row = cell / kMaterialGridColumns;
+        const math::Vec3 position{(static_cast<float>(column) - 1.5F) * kMaterialGridSpacingX,
+                                  (static_cast<float>(rows - 1) * .5F - static_cast<float>(row)) *
+                                      kMaterialGridSpacingY,
+                                  0};
+        if (matches(i))
+            ++cell;
         edits.transforms3d().set_local_transform(
-            specimens_[i].entity,
-            {.translation =
-                 gallery ? math::Vec3{(static_cast<float>(i) - 3) * kMaterialGridSpacingX, 0, 0}
-                         : math::Vec3{0}});
+            specimens_[i].entity, {.translation = gallery ? position : math::Vec3{0}});
         edits.renderables3d().set_renderable(
             specimens_[i].entity,
-            {.primitives = {{.mesh = config_.specimen == "block" ? block_mesh_handle_
-                                                                 : sphere_mesh_handle_,
+            {.primitives = {{.mesh = config_.specimen == "swatch"      ? swatch_mesh_handle_
+                                     : config_.specimen == "cut-block" ? cut_block_mesh_handle_
+                                     : config_.specimen == "block"     ? block_mesh_handle_
+                                                                       : sphere_mesh_handle_,
                              .material = material_handles_[i]}},
              .local_bounds = {.half_extent = {.25F, .25F, .25F}},
-             .visible = gallery || static_cast<int>(i) == selected_,
+             .visible = gallery ? matches(i) : static_cast<int>(i) == selected_,
              .cast_shadows = false,
              .receive_shadows = false});
     }
@@ -74,25 +89,58 @@ void PbrMaterialsApp::refresh_specimens() {
 void PbrMaterialsApp::draw_ui() {
     ImGui::SetNextWindowSize({420, 640}, ImGuiCond_FirstUseEver);
     if (ImGui::Begin("PBR material workshop")) {
-        const char* names[]{"Gallery",        "Neutral gray",  "Limestone",    "Balanced marble",
-                            "Dry terracotta", "Ivory ceramic", "Satin bronze", "Tinted glass"};
-        int selected = selected_ + 1;
-        if (ImGui::Combo("Material", &selected, names, 8)) {
-            selected_ = selected - 1;
-            orbit_controller_.set_home_distance(selected_ < 0 ? kCameraDistance : config_.distance);
-            orbit_controller_.reset();
-            orbit_controller_.set_pitch(config_.pitch);
-            refresh_specimens();
+        if (ImGui::BeginCombo("Family", family_filter_.c_str())) {
+            std::vector<std::string> families{"all"};
+            for (const auto& e : catalog_)
+                if (std::find(families.begin(), families.end(), e.family) == families.end())
+                    families.push_back(e.family);
+            for (const auto& family : families)
+                if (ImGui::Selectable(family.c_str(), family_filter_ == family)) {
+                    family_filter_ = family;
+                    selected_ = -1;
+                    refresh_specimens();
+                    orbit_controller_.set_home_distance(kCameraDistance);
+                    orbit_controller_.reset();
+                    orbit_controller_.set_pitch(config_.pitch);
+                }
+            ImGui::EndCombo();
+        }
+        const char* selected_label =
+            selected_ < 0 ? "Gallery" : recipes_[static_cast<std::size_t>(selected_)].label.c_str();
+        if (ImGui::BeginCombo("Material", selected_label)) {
+            if (ImGui::Selectable("Gallery", selected_ < 0)) {
+                selected_ = -1;
+                orbit_controller_.set_home_distance(kCameraDistance);
+                orbit_controller_.reset();
+                orbit_controller_.set_pitch(config_.pitch);
+                refresh_specimens();
+            }
+            for (std::size_t i = 0; i < catalog_.size(); ++i) {
+                if (family_filter_ != "all" && catalog_[i].family != family_filter_)
+                    continue;
+                if (ImGui::Selectable(catalog_[i].label.c_str(),
+                                      selected_ == static_cast<int>(i))) {
+                    selected_ = static_cast<int>(i);
+                    orbit_controller_.set_home_distance(config_.distance);
+                    orbit_controller_.reset();
+                    orbit_controller_.set_pitch(config_.pitch);
+                    refresh_specimens();
+                }
+            }
+            ImGui::EndCombo();
         }
         const char* environments[]{"studio", "clear", "clouds"};
         int environment =
             config_.environment == "studio" ? 0 : (config_.environment == "clear" ? 1 : 2);
         if (ImGui::Combo("Lighting", &environment, environments, 3))
             requested_environment_ = environments[environment];
-        const char* shapes[]{"Sphere", "Beveled block"};
-        int shape = config_.specimen == "block" ? 1 : 0;
-        if (ImGui::Combo("Specimen", &shape, shapes, 2)) {
-            config_.specimen = shape ? "block" : "sphere";
+        const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
+        int shape = config_.specimen == "block"       ? 1
+                    : config_.specimen == "swatch"    ? 2
+                    : config_.specimen == "cut-block" ? 3
+                                                      : 0;
+        if (ImGui::Combo("Specimen", &shape, shapes, 4)) {
+            config_.specimen = shapes[shape];
             refresh_specimens();
         }
         bool changed = ImGui::Checkbox("Pattern", &config_.pattern);
@@ -107,6 +155,61 @@ void PbrMaterialsApp::draw_ui() {
             changed |= ImGui::SliderFloat("Metallic", &r.optics.settings.x, 0, 1);
             changed |= ImGui::SliderFloat("Diffuse roughness", &r.optics.attenuation.w, 0, 1);
             ImGui::EndDisabled();
+            auto& library = r.library;
+
+            if (library.settings.x > 0) {
+                int seed = static_cast<int>(library.settings.y);
+                if (ImGui::SliderInt("Library seed", &seed, 0, 65535)) {
+                    library.settings.y = static_cast<float>(seed);
+                    changed = true;
+                }
+                changed |= ImGui::SliderFloat("Library scale", &library.settings.z, .1F, 16);
+                changed |=
+                    ImGui::SliderFloat("Relief height", &library.settings.w, 0, .005F, "%.5f");
+                changed |= ImGui::ColorEdit3("Library secondary color", &library.secondary.x);
+                if (library.settings.x == 1) {
+                    changed |=
+                        ImGui::SliderFloat("Ring frequency", &library.wood.ring_frequency, 1, 100);
+                    changed |=
+                        ImGui::SliderFloat("Growth distortion", &library.wood.distortion, 0, 2);
+                    changed |= ImGui::SliderFloat("Fiber frequency", &library.wood.grain_frequency,
+                                                  20, 600);
+                    changed |=
+                        ImGui::SliderFloat("Pore strength", &library.wood.pore_strength, 0, 1);
+                } else if (library.settings.x == 2) {
+                    changed |= ImGui::SliderFloat("Rust coverage", &library.rust.coverage, 0, 1);
+                    changed |=
+                        ImGui::SliderFloat("Patch frequency", &library.rust.patch_frequency, 1, 64);
+                    changed |= ImGui::SliderFloat("Edge breakup", &library.rust.edge_breakup, 0, 1);
+                    changed |= ImGui::SliderFloat("Pitting", &library.rust.pit_strength, 0, 1);
+                    changed |=
+                        ImGui::SliderFloat("Steel roughness", &library.rust_roughness.x, .05F, 1);
+                    changed |=
+                        ImGui::SliderFloat("Oxide roughness", &library.rust_roughness.y, .05F, 1);
+                } else if (library.settings.x == 3) {
+                    changed |= ImGui::SliderFloat("Yarn spacing", &library.weave.yarn_spacing,
+                                                  .003F, .06F, "%.4f");
+                    changed |=
+                        ImGui::SliderFloat("Yarn width", &library.weave.yarn_width, .3F, .95F);
+                    changed |= ImGui::SliderFloat("Yarn irregularity", &library.weave.irregularity,
+                                                  0, .5F);
+                    changed |=
+                        ImGui::SliderFloat("Fine fibers", &library.weave.fiber_strength, 0, 1);
+                    changed |= ImGui::ColorEdit3("Sheen color", &library.sheen.x);
+                    changed |= ImGui::SliderFloat("Sheen roughness", &library.sheen.w, .05F, 1);
+                    ImGui::TextWrapped("Weave follows the material X/Y axes. Use the swatch to "
+                                       "inspect its structure.");
+                } else {
+                    changed |= ImGui::SliderFloat("Fiber frequency", &library.paper.fiber_frequency,
+                                                  40, 1000);
+                    changed |= ImGui::SliderFloat("Fiber directionality",
+                                                  &library.paper.directionality, 0, 1);
+                    changed |=
+                        ImGui::SliderFloat("Pulp flecks", &library.paper.fleck_strength, 0, 1);
+                    changed |=
+                        ImGui::SliderFloat("Fiber relief", &library.paper.fiber_strength, 0, 1);
+                }
+            }
             if (r.pattern.settings.x > 0) {
                 int seed = static_cast<int>(r.pattern.settings.y);
                 if (ImGui::SliderInt("Seed", &seed, 0, 65535)) {
@@ -123,6 +226,9 @@ void PbrMaterialsApp::draw_ui() {
                 }
             }
             if (glass) {
+                if (r.library.optical_options.x > .5F)
+                    changed |= ImGui::SliderFloat("Frost roughness", &r.surface.base_roughness.w,
+                                                  .05F, .8F);
                 ImGui::TextWrapped("Forward refraction with a 0.5-unit thickness estimate. SDF "
                                    "measures its interface segments instead.");
                 changed |= ImGui::SliderFloat("IOR", &r.optics.settings.z, 1, 2.5F);

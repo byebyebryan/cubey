@@ -444,22 +444,29 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
         return {};
     std::array<SurfaceSample, 32> stack{};
     std::array<MaterialSample, 16> materials;
-    for (std::size_t i = 0; i < scene.materials.size(); ++i)
-        materials[i] = patterns ? procedural::sample_material_domain(
-                                      scene.materials[i], scene.patterns[i],
-                                      scene.material_domains.empty() ? math::Mat4{1}
-                                                                     : scene.material_domains.at(i),
-                                      point, footprint)
-                                : MaterialSample{scene.materials[i], {0, 0, 0}};
+    for (std::size_t i = 0; i < scene.materials.size(); ++i) {
+        materials[i] = procedural::sample_surface_domain(
+            scene.materials[i], scene.patterns[i],
+            scene.libraries.empty() ? procedural::SurfaceLibrary{} : scene.libraries.at(i),
+            scene.material_domains.empty() ? math::Mat4{1} : scene.material_domains.at(i), point,
+            footprint, patterns);
+        if (materials[i].metallic < 0)
+            materials[i].metallic = scene.optics.at(i).settings.x;
+    }
     std::size_t size = 0;
     for (std::size_t i = 0; i < scene.program.size(); ++i) {
         const auto& instruction = scene.program[i];
         const auto code = static_cast<ShapeCode>(static_cast<unsigned>(instruction.center_code.w));
         if (instruction.center_code.w < 10) {
             const auto& m = materials.at(static_cast<unsigned>(instruction.settings.z));
-            stack[size++] = {primitive_distance(point, instruction), m.material,
-                             static_cast<unsigned>(i), m.height_gradient,
-                             scene.optics.at(static_cast<unsigned>(instruction.settings.z))};
+            stack[size++] = {primitive_distance(point, instruction),
+                             m.material,
+                             static_cast<unsigned>(i),
+                             m.height_gradient,
+                             scene.optics.at(static_cast<unsigned>(instruction.settings.z)),
+                             m.sheen,
+                             m.rough_glass};
+            stack[size - 1].optics.settings.x = m.metallic;
         } else {
             const auto b = stack[--size];
             auto& a = stack[size - 1];
@@ -475,6 +482,9 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
                         const auto& m = materials.at(static_cast<unsigned>(instruction.settings.w));
                         a.material = m.material;
                         a.optics = scene.optics.at(static_cast<unsigned>(instruction.settings.w));
+                        a.optics.settings.x = m.metallic;
+                        a.sheen = m.sheen;
+                        a.rough_glass = m.rough_glass;
                         a.height_gradient = m.height_gradient;
                         a.part = static_cast<unsigned>(i);
                     }
@@ -489,6 +499,9 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
                     const auto& m = materials.at(static_cast<unsigned>(instruction.settings.w));
                     a.material = m.material;
                     a.optics = scene.optics.at(static_cast<unsigned>(instruction.settings.w));
+                    a.optics.settings.x = m.metallic;
+                    a.sheen = m.sheen;
+                    a.rough_glass = m.rough_glass;
                     a.height_gradient = m.height_gradient;
                     a.part = static_cast<unsigned>(i);
                 }
@@ -504,10 +517,14 @@ static SurfaceSample evaluate_surface(math::Vec3 point, const AuthoredScene& sce
                     a.material.emission = glm::mix(b.material.emission, a.material.emission, h);
                     a.optics.settings = glm::mix(b.optics.settings, a.optics.settings, h);
                     a.optics.attenuation = glm::mix(b.optics.attenuation, a.optics.attenuation, h);
+                    a.sheen = glm::mix(b.sheen, a.sheen, h);
+                    a.rough_glass = glm::mix(b.rough_glass, a.rough_glass, h);
                     a.height_gradient = glm::mix(b.height_gradient, a.height_gradient, h);
                 } else if (b.distance < a.distance - 1e-6F) {
                     a.material = b.material;
                     a.optics = b.optics;
+                    a.sheen = b.sheen;
+                    a.rough_glass = b.rough_glass;
                     a.height_gradient = b.height_gradient;
                 }
                 if (b.distance < a.distance - 1e-6F)

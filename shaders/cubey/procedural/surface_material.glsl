@@ -3,7 +3,13 @@
 #include "cubey/procedural/noise.glsl"
 struct SurfaceMaterial { vec4 base_roughness; vec4 emission; };
 struct MaterialPattern { vec4 settings,secondary,veins,detail,offset; };
-struct MaterialSample { SurfaceMaterial material; vec3 height_gradient; };
+struct MaterialSample {
+    SurfaceMaterial material; vec3 height_gradient; float metallic;
+    vec4 sheen; float rough_glass; float height;
+};
+MaterialSample materialSample(SurfaceMaterial base,vec3 gradient) {
+    return MaterialSample(base,gradient,-1.0,vec4(0),0.0,0.0);
+}
 // xyz is the analytic derivative of quintic value noise, w is its value.
 vec4 surfaceNoise(vec3 p,uint seed) {
     ivec3 c=ivec3(floor(p));vec3 t=p-vec3(c);
@@ -35,7 +41,7 @@ vec4 surfaceFractal(vec3 p,uint seed,float footprint) {
     return result;
 }
 MaterialSample surfacePattern(SurfaceMaterial base,MaterialPattern pattern,vec3 point,float footprint) {
-    MaterialSample result=MaterialSample(base,vec3(0));
+    MaterialSample result=materialSample(base,vec3(0));
     if (pattern.settings.x==0.0) return result;
     uint seed=uint(pattern.settings.y);vec3 p=point+pattern.offset.xyz;
     float scale=pattern.settings.z;

@@ -148,6 +148,7 @@ function(cubey_forward_pbr_shader_depends out_var)
         ${forward_pbr_shared_shader_depends}
         ${forward_pbr_atmosphere_shader_depends}
         "${PROJECT_SOURCE_DIR}/shaders/cubey/procedural/surface_material.glsl"
+        "${PROJECT_SOURCE_DIR}/shaders/cubey/procedural/surface_library.glsl"
         "${PROJECT_SOURCE_DIR}/shaders/cubey/procedural/noise.glsl"
     )
     list(REMOVE_DUPLICATES forward_pbr_shader_depends)

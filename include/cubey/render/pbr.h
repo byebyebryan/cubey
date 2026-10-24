@@ -168,6 +168,7 @@ struct PbrMaterialFactors {
     float diffuse_roughness = 0;
     bool pattern_enabled = true;
     bool bump_enabled = true;
+    procedural::SurfaceLibrary surface_library{};
 };
 
 // Immutable PBR material input. Keep raster routing inputs alongside the
@@ -198,6 +199,7 @@ struct PbrMaterialUniforms {
     math::Vec4 surface_options{0, 1, 1, 0};
     procedural::MaterialPattern surface_pattern{};
     math::Mat4 material_from_object{1};
+    procedural::SurfaceLibrary surface_library{};
 };
 
 struct PbrPushConstants {
@@ -208,7 +210,7 @@ static_assert(sizeof(PbrTextureTransform) == sizeof(math::Vec4) * 2U);
 static_assert(sizeof(PbrMaterialTextureTransforms) == sizeof(math::Vec4) * 34U);
 static_assert(sizeof(PbrVertex) == sizeof(float) * 18U);
 static_assert(sizeof(PbrSceneUniforms) == (sizeof(math::Mat4) * 2U) + (sizeof(math::Vec4) * 19U));
-static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 56U);
+static_assert(sizeof(PbrMaterialUniforms) == sizeof(math::Vec4) * 65U);
 static_assert(sizeof(PbrSkyboxUniforms) == sizeof(math::Mat4) + (sizeof(math::Vec4) * 3U));
 static_assert(sizeof(PbrPostUniforms) == sizeof(math::Vec4));
 static_assert(sizeof(PbrPushConstants) == sizeof(math::Mat4));

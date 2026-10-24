@@ -145,12 +145,12 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
     MaterialOptics optics=authoredHeader.y==1u ? materialOptics(0u) : authoredSurface(p,footprint,lighting.surface_options.x>.5).optics;
     if(optics.settings.y>.5 && lighting.material.w<.5)
         return glassRadiance(p,geometricNormal,-viewDirection,optics,
-            libraryTable[0].optical_options.x>.5 ? sampleValue.material.base_roughness.w : 0.0,exhausted);
+            sampleValue.rough_glass>.5 ? sampleValue.material.base_roughness.w : 0.0,exhausted);
     vec3 base=sampleValue.material.base_roughness.rgb;
     float roughness=sampleValue.material.base_roughness.a;
     vec3 n=lighting.surface_options.y>.5 ? materialShadingNormal(geometricNormal,sampleValue.height_gradient) : geometricNormal;
     if(lighting.material.w>.5) { base=lighting.material.rgb;roughness=lighting.quality.x;n=geometricNormal;optics=MaterialOptics(vec4(0,0,1.5,1),vec4(1,1,1,0)); }
-    float metallic=optics.settings.x,ior=optics.settings.z;
+    float metallic=lighting.material.w>.5 ? optics.settings.x : sampleValue.metallic,ior=optics.settings.z;
     float dielectric=pow((ior-1)/(ior+1),2);
     vec3 f0=mix(vec3(dielectric),base,metallic);
     vec3 l=camera.sunlight.xyz,halfVector=l+viewDirection;
@@ -177,14 +177,31 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
         indirect*=roughDiffuseFactor(1,1,1,optics.attenuation.w);
     }
     vec3 reflected=lighting.surface_options.w>.5 ? vec3(1) : reflectedEnvironment(reflect(-viewDirection,n),roughness*lighting.transport_options.z);
-    // Opaque component views retain the normal exposure/tone map. They expose
-    // the actual lobes; they do not change the material or the combined path.
+    vec3 specularEnvironment=reflected*(f0*dfg.x+dfg.y)*compensation;
+    vec3 sheenDirect=vec3(0),sheenEnvironment=vec3(0);
+    vec3 sheen=lighting.material.w>.5 ? vec3(0) : sampleValue.sheen.rgb;
+    float sheenMaximum=max(max(sheen.r,sheen.g),sheen.b);
+    float directScale=1.0,viewScale=1.0;
+    if(sheenMaximum>0.0) {
+        float sr=sampleValue.sheen.w;
+        float ev=texture(studyDfg,vec2(nv,sr)).a;
+        float el=texture(studyDfg,vec2(nl,sr)).a;
+        viewScale=clamp(1.0-sheenMaximum*ev,0.0,1.0);
+        directScale=min(viewScale,clamp(1.0-sheenMaximum*el,0.0,1.0));
+        sheenDirect=cubey_pbr_sheen_direct(sheen,sr,nv,nl,max(dot(n,h),0.0))*lighting.direct_color.rgb*nl*shadow;
+        sheenEnvironment=(lighting.surface_options.w>.5 ? vec3(1) : reflectedEnvironment(reflect(-viewDirection,n),sr*lighting.transport_options.z))*sheen*ev*visibility;
+    }
+    if(sheenMaximum>0.0) {
+        direct*=directScale;indirect*=viewScale;specularEnvironment*=viewScale;
+    }
+    // Component views expose the lobes after sheen energy attenuation.
     if(camera.options.x>10.5)
-        return f*d*v*compensation*lighting.direct_color.rgb*nl*shadow+
-            reflected*(f0*dfg.x+dfg.y)*compensation;
+        return directScale*f*d*v*compensation*lighting.direct_color.rgb*nl*shadow+
+            specularEnvironment+sheenDirect+sheenEnvironment;
     if(camera.options.x>9.5)
-        return (1-f)*diffuse*diffuseFactor/3.141592654*lighting.direct_color.rgb*nl*shadow+indirect;
-    vec3 result=direct+indirect+reflected*(f0*dfg.x+dfg.y)*compensation+sampleValue.material.emission.rgb;
+        return directScale*(1-f)*diffuse*diffuseFactor/3.141592654*lighting.direct_color.rgb*nl*shadow+indirect;
+    vec3 result=direct+indirect+specularEnvironment+sampleValue.material.emission.rgb;
+    if(sheenMaximum>0.0) result+=sheenDirect+sheenEnvironment;
     // Furnace mode is a diagnostic: flag excess energy before HDR output clips it.
     if (lighting.surface_options.w>.5 && any(greaterThan(result,vec3(1.02)))) return vec3(20,0,20);
     return result;

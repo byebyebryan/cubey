@@ -60,6 +60,8 @@ struct SurfaceSample {
     std::uint32_t part = 0;
     math::Vec3 height_gradient{0};
     MaterialOptics optics;
+    math::Vec4 sheen{0};
+    float rough_glass = 0;
 };
 [[nodiscard]] AuthoredScene parse_authored_scene(std::string_view text);
 [[nodiscard]] AuthoredScene load_authored_scene(const std::filesystem::path& path);

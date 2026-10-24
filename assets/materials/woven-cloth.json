@@ -1,0 +1,39 @@
+{
+  "format": "cubey.material.recipe",
+  "version": 2,
+  "id": "woven-cloth",
+  "label": "Plain-weave cloth",
+  "surface": {
+    "base_color": [
+      0.11,
+      0.22,
+      0.18
+    ],
+    "roughness": 0.92,
+    "optics": {
+      "diffuse_roughness": 0.4
+    }
+  },
+  "library": {
+    "type": "weave",
+    "seed": 17,
+    "relief": 0.0018,
+    "secondary_color": [
+      0.16,
+      0.28,
+      0.22
+    ],
+    "weave": {
+      "yarn_spacing": 0.012,
+      "yarn_width": 0.72,
+      "irregularity": 0.15,
+      "fiber_strength": 0.2
+    },
+    "sheen_color": [
+      0.07,
+      0.09,
+      0.075
+    ],
+    "sheen_roughness": 0.8
+  }
+}

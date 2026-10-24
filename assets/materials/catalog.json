@@ -50,6 +50,41 @@
       "family": "glass",
       "description": "Tinted smooth glass with optical absorption",
       "recipe": "glass.json"
+    },
+    {
+      "id": "wood",
+      "label": "Unvarnished hardwood",
+      "family": "wood",
+      "description": "Solid growth rings, long grain and end grain across cuts",
+      "recipe": "wood.json"
+    },
+    {
+      "id": "rusted-steel",
+      "label": "Rusted steel",
+      "family": "metal",
+      "description": "Dry dielectric oxide patches interrupt reflective steel",
+      "recipe": "rusted-steel.json"
+    },
+    {
+      "id": "kraft-cardboard",
+      "label": "Kraft cardboard",
+      "family": "fiber",
+      "description": "Matte uncoated kraft fibers and pulp flecks",
+      "recipe": "kraft-cardboard.json"
+    },
+    {
+      "id": "woven-cloth",
+      "label": "Plain-weave cloth",
+      "family": "fiber",
+      "description": "Oriented plain weave with restrained grazing sheen",
+      "recipe": "woven-cloth.json"
+    },
+    {
+      "id": "frosted-glass",
+      "label": "Frosted glass",
+      "family": "glass",
+      "description": "Etched surface with softened reflection and transmission",
+      "recipe": "frosted-glass.json"
     }
   ]
 }

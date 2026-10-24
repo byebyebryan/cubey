@@ -17,8 +17,9 @@ PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
     orbit_controller_.set_home_distance(config_.material == "gallery" ? kCameraDistance
                                                                       : config_.distance);
     orbit_controller_.set_pitch(config_.pitch);
-    if (config_.specimen != "sphere" && config_.specimen != "block")
-        throw std::invalid_argument("specimen must be sphere or block");
+    if (config_.specimen != "sphere" && config_.specimen != "block" &&
+        config_.specimen != "swatch" && config_.specimen != "cut-block")
+        throw std::invalid_argument("specimen must be sphere, block, swatch or cut-block");
 }
 
 int PbrMaterialsApp::run() {
@@ -52,14 +53,15 @@ int PbrMaterialsApp::run() {
         record_workshop_frame(context, frame);
     };
     callbacks.frame_stats_sample =
-        [](cubey::host::WindowedAppContext& context,
-           const FrameTiming& timing) -> std::optional<FrameStatsSample> {
+        [this](cubey::host::WindowedAppContext& context,
+               const FrameTiming& timing) -> std::optional<FrameStatsSample> {
         const VkExtent2D extent = context.swapchain().extent();
         return FrameStatsSample{
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = kSphereTriangleCount * kMaterialSpecimenCount,
+            .triangles =
+                kSphereTriangleCount * static_cast<std::uint32_t>(material_handles_.size()),
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
