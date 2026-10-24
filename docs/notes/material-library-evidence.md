@@ -156,3 +156,42 @@ Further realism, arbitrary cloth charts, corrugated/fuzzy geometry and a full
 rough-refraction solver remain deferred. The guardian/robot modeling and their
 accepted presets are preserved; the separate authored-content showcase is not
 reopened by this milestone.
+
+## Review and refinement
+
+The review fix is `67b00dc0`. The accepted material presets remain the visual
+boundary for this milestone. The review found and corrected two workshop issues:
+
+- SDF specimen and CSG-option changes previously reloaded the source recipe,
+  discarding unsaved edits. Geometry changes now retain the working body
+  material, and CSG option changes also retain the fused/cut materials. Explicit
+  recipe selection, reload and reset still replace them. There is no hidden
+  material history for roles absent from the selected specimen.
+- The mesh workshop previously supplied a 0.5-unit volume thickness for every
+  specimen. It now supplies 0.036 for the thin swatch and 0.32 for the bored block,
+  retaining 0.5 for sphere/block. Switching specimens republishes the material
+  data at the existing retired-slot boundary. The glass caption reports the
+  current estimate. This remains approximate forward transport.
+
+The report exporter now requires all seven retained compatibility controls,
+successful exits, explicit clean validation receipts and matching baseline
+hashes. Empty or partial evidence, validation errors and inconsistent hashes
+are covered by regression checks.
+
+Review evidence is retained in `outputs/material-library/review`:
+
+- All eighteen scoped CTest entries and all 33 documented workshop CLI recipes
+  pass. The SDF regression covers all twelve recipes, individual CSG role edits,
+  explicit reset and specimen changes after the source recipe is deleted.
+- Four native controls are byte-identical to the published library captures:
+  mesh gallery, mesh frosted sphere, SDF wood sphere and SDF rust CSG with cut
+  ownership. Their shader bytes also match. Both SDF controls pass the field,
+  CPU/GPU material and appearance-cache checks with required validation.
+- Clear and frosted thin swatches were captured before/after the thickness fix
+  with required validation. A 32-frame frosted-swatch stress run updates each
+  used frame slot 1,000 times, retaining twelve descriptors and 13,056 uniform
+  bytes per slot with zero growth.
+- Re-exporting the existing 57-image/three-film bundle passes the stricter
+  evidence gate and produces identical gallery HTML. Its published URL remains
+  the collection reference; no replacement artistic acceptance or new performance
+  measurements are claimed for this review.
