@@ -59,6 +59,10 @@ int PbrMaterialsApp::run() {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
         }
         orbit_controller_.update_from_input(input, timing.delta_seconds);
+        if (!config_.presentation.empty() && input.key_pressed(cubey::input::Key::R)) {
+            presentation_seconds_ = 0;
+            orbit_controller_.set_pitch(config_.pitch);
+        }
         if (!config_.presentation.empty() && !orbit_controller_.paused())
             presentation_seconds_ = std::min(8.0, presentation_seconds_ + timing.delta_seconds);
         update_scene_transform(timing);

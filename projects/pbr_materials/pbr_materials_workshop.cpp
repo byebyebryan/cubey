@@ -139,6 +139,8 @@ void PbrMaterialsApp::leave_presentation() {
 }
 void PbrMaterialsApp::draw_ui() {
     ImGui::SetNextWindowSize({420, 640}, ImGuiCond_FirstUseEver);
+    if (!config_.presentation.empty())
+        ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
     if (ImGui::Begin("PBR material workshop")) {
         if (!config_.presentation.empty()) {
             ImGui::Text("Surface presentation / %s", config_.presentation.c_str());
