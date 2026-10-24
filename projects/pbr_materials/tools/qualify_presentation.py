@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "outputs/material-presentation/qualification")
     parser.add_argument("--stage", choices=("captures", "films", "profiles", "controls", "metadata", "all"), default="all")
+    parser.add_argument("--renderer", choices=("pbr", "sdf"), help="Refresh just the affected renderer")
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -68,6 +69,8 @@ def main():
 
     if args.stage in ("captures", "all"):
         for renderer, samples in (("pbr", (0, 4, 8)), ("sdf", (0, 2.1, 3, 8))):
+            if args.renderer and renderer != args.renderer:
+                continue
             for t in samples:
                 extra = ["--presentation-time" if renderer == "pbr" else "--time", str(t)]
                 if renderer == "sdf" and t in (0, 8):
@@ -75,6 +78,8 @@ def main():
                 run(f"{renderer}-{t}", renderer, extra)
     if args.stage in ("films", "all"):
         for renderer in ("pbr", "sdf"):
+            if args.renderer and renderer != args.renderer:
+                continue
             master = run(f"{renderer}-master-1080p", renderer,
                          ("--capture", "video", "--frames", "480", "--fps", "60"), "mp4")
             gallery = derive(f"{renderer}.mp4", master, ["-an", "-vf", "scale=1280:720:flags=lanczos",
@@ -84,6 +89,8 @@ def main():
                    ["-ss", "6.5", "-frames:v", "1", "-vf", "format=rgb24"])
     if args.stage in ("profiles", "all"):
         for renderer in ("pbr", "sdf"):
+            if args.renderer and renderer != args.renderer:
+                continue
             run(f"profile-{renderer}", renderer,
                 ("--presentation-time" if renderer == "pbr" else "--time", "8",
                  "--headless-render-only", "--frames", "112", "--profile-warmup-frames", "16",
@@ -93,6 +100,8 @@ def main():
         controls = json.loads(Path(__file__).with_name("presentation_controls.json").read_text())
         results = {}
         for name, control in controls.items():
+            if args.renderer and control["renderer"] != args.renderer:
+                continue
             artifact = output / f"compat-{name}.png"
             command = [str(binaries[control["renderer"]]), *control["arguments"], "--output", str(artifact)]
             result = subprocess.run(command, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)

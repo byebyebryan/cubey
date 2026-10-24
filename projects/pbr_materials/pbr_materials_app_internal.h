@@ -19,6 +19,7 @@
 #include <cubey/render/resource_table.h>
 #include <cubey/scene/entity.h>
 #include <cubey/scene/scene.h>
+#include <cubey/scene/transform_3d.h>
 #include <cubey/scene/view_3d.h>
 #include <cubey/vulkan/gpu_timestamps.h>
 
@@ -75,6 +76,7 @@ class PbrMaterialsApp {
 
     void create_scene();
     void update_scene_transform(const FrameTiming& timing);
+    [[nodiscard]] cubey::Transform3D camera_transform() const;
     [[nodiscard]] cubey::scene::FrameRenderPlan3D
     current_frame_plan(const cubey::SceneReadView& view, VkExtent2D color_extent) const;
     [[nodiscard]] cubey::LightPacket3D fallback_light_packet() const;

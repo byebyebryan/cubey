@@ -4,18 +4,14 @@
 
 namespace cubey::projects::pbr_materials::detail {
 render::ViewRayBasis3D PbrMaterialsApp::view_rays(VkExtent2D extent) const {
-    const auto transform = orbit_camera_transform({.distance = orbit_controller_.distance(),
-                                                   .yaw = config_.yaw + orbit_controller_.yaw(),
-                                                   .pitch = orbit_controller_.pitch()});
+    const auto transform = camera_transform();
     return render::view_ray_basis_3d(
         transform.rotation, static_cast<float>(extent.width) / static_cast<float>(extent.height),
         glm::radians(45.0F));
 }
 CloudEnvironmentRuntimeFrame PbrMaterialsApp::cloud_frame(VkExtent2D extent) const {
     const auto rays = view_rays(extent);
-    const auto camera = orbit_camera_transform({.distance = orbit_controller_.distance(),
-                                                .yaw = config_.yaw + orbit_controller_.yaw(),
-                                                .pitch = orbit_controller_.pitch()});
+    const auto camera = camera_transform();
     return atmosphere_.clouds().frame(
         {.camera_position = camera.translation + math::Vec3{0, 2, 0},
          .camera_right = math::Vec3{rays.right_aspect},
