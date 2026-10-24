@@ -1,0 +1,8 @@
+---
+import {asset} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props { id: string; path: string; alt: string; eager?: boolean; class?: string }
+const {id,path,alt,eager=false,class:className}=Astro.props;
+const a=asset(id);
+---
+<img class={className} src={url(a.file,path)} srcset={a.thumbnail ? `${url(a.thumbnail,path)} 640w, ${url(a.file,path)} ${a.width}w` : undefined} sizes="(max-width:720px) calc(100vw - 36px), (max-width:1100px) 60vw, 800px" width={a.width} height={a.height} alt={alt} loading={eager?'eager':'lazy'} fetchpriority={eager?'high':undefined} decoding="async" />

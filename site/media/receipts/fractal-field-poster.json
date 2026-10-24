@@ -1,0 +1,25 @@
+{
+  "name": "fractal-field-poster",
+  "command": [
+    "build/release/projects/fractal_2d/fractal_2d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--frames",
+    "1",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/fractal-field-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "2a174a9fdfc4a7a248cd7570b6f769c08e9c649cff7ab3a797cd9467c505a7ca",
+  "started": "2026-10-24T20:19:02.061106+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 0.195,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/fractal-field-poster/capture.png",
+  "bytes": 153339,
+  "sha256": "06bd098fe77bcf68ca97f1cdfc65e36308330a1efca215f8d5e9a13efd75f708"
+}

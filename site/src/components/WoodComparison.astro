@@ -1,0 +1,10 @@
+---
+import ViewButtons from './ViewButtons.astro';
+import {asset} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props {path:string}
+const {path}=Astro.props;
+const views=[{id:'solid',label:'Solid',asset:'wood-solid',caption:'Native wood specimen: the solid.'},{id:'cut-preview',label:'Cut preview',asset:'wood-preview',caption:'Native wood specimen: the subtractor preview.'},{id:'through-cut',label:'Through-cut',asset:'wood-cut',caption:'Native wood specimen: the committed cut exposes the grain.'}];
+const image=asset(views[0].asset);
+---
+<div class="comparison-view" id="wood-cut-states" data-comparison><div class="comparison-description"><h3>A cut through the grain.</h3><p>The same camera reveals the solid, the subtractor preview and the committed cut.</p><ViewButtons views={views} path={path} label="Wood cut states"/><p class="comparison-caption" aria-live="polite" data-comparison-caption>{views[0].caption}</p><noscript><p><a href={url(asset('wood-preview').file,path)}>Open cut preview</a> · <a href={url(asset('wood-cut').file,path)}>Open through-cut view</a></p></noscript></div><div class="comparison-media"><img data-comparison-image src={url(image.file,path)} width={image.width} height={image.height} alt={views[0].caption} loading="lazy"/></div></div>

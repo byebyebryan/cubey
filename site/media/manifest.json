@@ -1,0 +1,1165 @@
+{
+  "schema": "cubey.site.selected-media",
+  "version": 1,
+  "assets": [
+    {
+      "id": "clouds",
+      "file": "/media/clouds.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "fa9ce95c05646bbefc0524bf1ccee94c4393510f4c06105ea3dc00f537b603bc",
+      "bytes": 18458,
+      "caption": "Surface-view broken cumulus under daylight.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/clouds-daylight-poster/capture.png",
+        "sourceSha256": "77ba3a36a47ba78c3388cd66e59588aca5e393298ad6e798e8ce2aee65a7e886",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/clouds-daylight-poster.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/clouds-640.webp",
+      "thumbnailSha256": "ac3a3e9366733f45c8b1747fde408fda59655eaf34f78b1f40233fc050d78aef",
+      "thumbnailBytes": 6120
+    },
+    {
+      "id": "day-night",
+      "file": "/media/day-night.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "1993eaa702971fee5e1edc2557d3105eec54134956ceaf37fca9aa40d29e9b46",
+      "bytes": 7846,
+      "caption": "A standalone sky, from daylight into evening.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/day-night-poster/capture.png",
+        "sourceSha256": "44dabb99aebdbb4d95f8c82bd3fa1ea39d78b1bda9bca0a84bb13f5a0f94cfa8",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/day-night-poster.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/day-night-640.webp",
+      "thumbnailSha256": "0e3390ab08c564f6d327bf2f7f3234bdb39594730a6cda04fb5314d18abd226d",
+      "thumbnailBytes": 2302
+    },
+    {
+      "id": "day-night-film",
+      "file": "/media/day-night-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "341caca93857d1e171ec66a34b84b2dd1f3ee5a8a3945ecdf868944ec6e3e33e",
+      "bytes": 803865,
+      "caption": "A standalone sky, from daylight into evening.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/day-night-film/capture.mp4",
+        "sourceSha256": "341caca93857d1e171ec66a34b84b2dd1f3ee5a8a3945ecdf868944ec6e3e33e",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/day-night-film.json",
+        "note": ""
+      }
+    },
+    {
+      "id": "explosion-3d",
+      "file": "/media/explosion-3d.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "a0358751980383c71bb8e16691b423a9dcf3f42b70ca33f51339ff5c1a23f048",
+      "bytes": 11500,
+      "caption": "A repeated fireball impulse, shown during its early flash.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/poster-selection/explosion-early.png",
+        "sourceSha256": "c29cb511179748377a13573d0fadafc55a11526e7ba02e04ed7b719d996bfb1c",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/explosion-film.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/explosion-3d-640.webp",
+      "thumbnailSha256": "983b5050ac69e41900350d7bd2b18f45c246271e69103b97f712a4c95eaa44fc",
+      "thumbnailBytes": 3278
+    },
+    {
+      "id": "explosion-3d-film",
+      "file": "/media/explosion-3d-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "e4d7a369e830a6b63a51d8506d23d889f0523be97582cfabe7f5d83fd3e3b38a",
+      "bytes": 1038498,
+      "caption": "A repeated fireball impulse, shown during its early flash.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/explosion-film/capture.mp4",
+        "sourceSha256": "e4d7a369e830a6b63a51d8506d23d889f0523be97582cfabe7f5d83fd3e3b38a",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/explosion-film.json",
+        "note": ""
+      }
+    },
+    {
+      "id": "fire-3d",
+      "file": "/media/fire-3d.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "8c227ccb5eb07a4c9c00045dfaaf32a95f3f388e1e3c70b329a3799d2685f49e",
+      "bytes": 10518,
+      "caption": "Flame and smoke evolve as daylight falls away.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/fire-3d.png",
+        "sourceSha256": "fbd8b576ade4de1efcb09cf221a4c64a3432b2ba242d94e3752fa193eed34e04",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/fire-3d.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/fire-3d-640.webp",
+      "thumbnailSha256": "b828f333534ff938e5a29919a2e2ebe890223e583a0a52bad3e6128ddb3c98ff",
+      "thumbnailBytes": 3200
+    },
+    {
+      "id": "fire-3d-film",
+      "file": "/media/fire-3d-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
+      "bytes": 877564,
+      "caption": "Flame and smoke evolve as daylight falls away.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/fire-3d.mp4",
+        "sourceSha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/fire-3d.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "fractal-field",
+      "file": "/media/fractal-field.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "abde0673ddb57428c8c362bea564fa4586c0e7f86b36689ccd3993f70089436f",
+      "bytes": 20974,
+      "caption": "The native fullscreen Mandelbrot field.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/fractal-field-poster/capture.png",
+        "sourceSha256": "06bd098fe77bcf68ca97f1cdfc65e36308330a1efca215f8d5e9a13efd75f708",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/fractal-field-poster.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/fractal-field-640.webp",
+      "thumbnailSha256": "5c55564c63a033ef6d788da3085c94bd526bf1eff28a4c9fdff563c7c2a89032",
+      "thumbnailBytes": 4828
+    },
+    {
+      "id": "gltf-layers",
+      "file": "/media/gltf-layers.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "43f49a6653abd9ecd930f32b15a9b3f2422c3f59bf1e9f1b538681738c1d3825",
+      "bytes": 33100,
+      "caption": "Anisotropy and clearcoat on the imported Barn Lamp.",
+      "credit": {
+        "label": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "\u00a9 2023 Wayfair, LLC; Eric Chadwick",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnisotropyBarnLamp/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-lamp-framed-safe/capture.png",
+        "sourceSha256": "4fb76cd00c9f9565ddee12bb4ae38f162b7ea1d99ac30e765f65117124b65e31",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-lamp-framed-safe.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      },
+      "thumbnail": "/media/gltf-layers-640.webp",
+      "thumbnailSha256": "34bfb8ea004b8b3d290be031cb18fc0137fee05289e086787a8ca6ef3b0ee585",
+      "thumbnailBytes": 7864
+    },
+    {
+      "id": "gltf-morph",
+      "file": "/media/gltf-morph.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "2ca92f63cedc05ed8ea4a2fe0c991a072d6ec50354d6ba12b43a63ef9b7852cc",
+      "bytes": 7438,
+      "caption": "Animated Morph Cube: target deformation.",
+      "credit": {
+        "label": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "author": "Microsoft; public CC0 asset, 2017",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-morph-poster/capture.png",
+        "sourceSha256": "1125baa65a217ed19295790741f228d4b94ef931e6ba1831259adfd83fc584d0",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-morph-poster.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      },
+      "thumbnail": "/media/gltf-morph-640.webp",
+      "thumbnailSha256": "1fcde469f5ad57e10198bdfaf1b342801c8956bff2cf82c364e3b274d232b64a",
+      "thumbnailBytes": 2074
+    },
+    {
+      "id": "gltf-morph-film",
+      "file": "/media/gltf-morph-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "d72e4efedb1e365a26c62fbedd0e529bc46e5819d8cc27a9a65a51420301f259",
+      "bytes": 119282,
+      "caption": "Animated Morph Cube: target deformation.",
+      "credit": {
+        "label": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "author": "Microsoft; public CC0 asset, 2017",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-morph-film/capture.mp4",
+        "sourceSha256": "d72e4efedb1e365a26c62fbedd0e529bc46e5819d8cc27a9a65a51420301f259",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-morph-film.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      }
+    },
+    {
+      "id": "gltf-motion",
+      "file": "/media/gltf-motion.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "613936814e560a2f4c3ad936c5f1b45c5ddbf0afae303f3afb94eb90e2a78945",
+      "bytes": 15432,
+      "caption": "Fox: the Walk animation and a skinned mesh.",
+      "credit": {
+        "label": "CC0 model \u00b7 CC BY 4.0 animation/conversion",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "PixelMannen (model, CC0); \u00a9 2014 tomkranis (rig/animation); \u00a9 2017 AsoboStudio and scurest (glTF conversion)",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-fox-framed-poster/capture.png",
+        "sourceSha256": "5d61c7f0deb5ae5f4a3bff2a06768b81c4791a7428e8d8f6bedc3d680a97fcb0",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-fox-framed-poster.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      },
+      "thumbnail": "/media/gltf-motion-640.webp",
+      "thumbnailSha256": "0123227fa8bf0a42dda1ffd13f9add9d14d35d09623eb955554c26961f07a6c4",
+      "thumbnailBytes": 4564
+    },
+    {
+      "id": "gltf-motion-film",
+      "file": "/media/gltf-motion-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "c5993e7b5b09f99aff340ec03d80cc44c161b000c015032c439d4f2e72b056cf",
+      "bytes": 1041748,
+      "caption": "Fox: the Walk animation and a skinned mesh.",
+      "credit": {
+        "label": "CC0 model \u00b7 CC BY 4.0 animation/conversion",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "PixelMannen (model, CC0); \u00a9 2014 tomkranis (rig/animation); \u00a9 2017 AsoboStudio and scurest (glTF conversion)",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-fox-framed-film/capture.mp4",
+        "sourceSha256": "c5993e7b5b09f99aff340ec03d80cc44c161b000c015032c439d4f2e72b056cf",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-fox-framed-film.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      }
+    },
+    {
+      "id": "gltf-optics",
+      "file": "/media/gltf-optics.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "519de06287b976224a3ab3c0c80ffec953ff666d0b60f03a9668b90305c18e5a",
+      "bytes": 36636,
+      "caption": "Dispersion Test: authored IOR and dispersion across a prism grid.",
+      "credit": {
+        "label": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "\u00a9 2023 AGI; Ed Mackey",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/DispersionTest/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-optics-poster/capture.png",
+        "sourceSha256": "3394b3fc95b9212295cadf53ca2ad9671e08b612a3a642a238e6dbc1ddff88f9",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-optics-poster.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      },
+      "thumbnail": "/media/gltf-optics-640.webp",
+      "thumbnailSha256": "0848177219806217dd04f1ddbd502c1c6fdf82c290e0b10fbd27ec5ec7dcb1df",
+      "thumbnailBytes": 12644
+    },
+    {
+      "id": "gltf-textures",
+      "file": "/media/gltf-textures.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "4fe83a4842317d97211eb24d0cf0d283e00dd5dbaa930853280b64973ad17ee5",
+      "bytes": 22754,
+      "caption": "Texture Transform Multi Test: UV transforms across material channels.",
+      "credit": {
+        "label": "CC BY 4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "\u00a9 2020 Analytical Graphics, Inc.; Ed Mackey",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/TextureTransformMultiTest/README.md"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/gltf-texture-framed/capture.png",
+        "sourceSha256": "cdb7cffaa7be668680490b014fa4ae55ab0c697244a1b50228d1ca33c2b9622a",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/gltf-texture-framed.json",
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+      },
+      "thumbnail": "/media/gltf-textures-640.webp",
+      "thumbnailSha256": "aaa13e498ef74660c76ce94f99017a94522c52faa63fc77ead66677c1eac276a",
+      "thumbnailBytes": 9222
+    },
+    {
+      "id": "guardian",
+      "file": "/media/guardian.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 960,
+      "sha256": "8a15b9ec269cba155ae76747658ccf9c0a30332683a2d33d598cdc1a2d9badfe",
+      "bytes": 22252,
+      "caption": "An authored horned sculpture rendered in limestone and restrained marble.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/guardian.png",
+        "sourceSha256": "583fe82358eede806550c77d1492f15cc55e40744129ade7478650aea59fa456",
+        "sourceRevision": null,
+        "recipe": "outputs/sdf/marble-regions-comparison/subtle/captures/hero.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/guardian-640.webp",
+      "thumbnailSha256": "0db2c3c81145dcbee09391ce06dcc09de2670fa88d986002c79b45c1a0c1441f",
+      "thumbnailBytes": 10760
+    },
+    {
+      "id": "guardian-limestone",
+      "file": "/media/guardian-limestone.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 960,
+      "sha256": "b46163d4260b9006a9157a2f09b510206de7daae7269cb5f20eb181cb3db45c0",
+      "bytes": 24864,
+      "caption": "Guardian limestone",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/guardian-limestone.png",
+        "sourceSha256": "62bae3072621b326b8b266cb41b99d5125082914c2d619c51ebb883e8b78901d",
+        "sourceRevision": null,
+        "recipe": "outputs/sdf/material-contrast-regression/limestone.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/guardian-limestone-640.webp",
+      "thumbnailSha256": "34b76df04e912b86d7f960096d1f5c8dc5bcfc4be7ce44fd2c794c6bdde05ffd",
+      "thumbnailBytes": 11740
+    },
+    {
+      "id": "mesh-bronze",
+      "file": "/media/mesh-bronze.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "3d20794e46ab07f0444b0340dbb55b0a6f35fbced834bad04ab9bcdca05515ff",
+      "bytes": 6024,
+      "caption": "Mesh bronze",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-bronze.png",
+        "sourceSha256": "740ad84bb5fd6027654979670eef1ccaad83e373d78b7952b4c46b962592404b",
+        "sourceRevision": null,
+        "recipe": "outputs/material-library/report/mesh-bronze-studio.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "mesh-cloth",
+      "file": "/media/mesh-cloth.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "d02ee3cc1f953b88a58a3d638fb9bb0507c282d8ff6169e78f3d7f48e295247b",
+      "bytes": 14904,
+      "caption": "Mesh cloth",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-woven-cloth.png",
+        "sourceSha256": "c1b004a8a7ec4566423f49acadad71b953fb77292c2f2e158de533a156dd886c",
+        "sourceRevision": null,
+        "recipe": "outputs/material-library/report/mesh-woven-cloth-studio.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "mesh-materials",
+      "file": "/media/mesh-materials.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "1d13ab89ef2d8acbedaf41ceff66af167c4c6a07a0d72402d584e26c486cb9d0",
+      "bytes": 29308,
+      "caption": "Wood, rusted steel, woven cloth and bronze share one lighting environment.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-materials.png",
+        "sourceSha256": "8229fb43d5fc5c4f263a71829c9b624f04df51bffe8f2da33635be4e8a229afd",
+        "sourceRevision": null,
+        "recipe": "docs/media/material-workshops/pbr-poster.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/mesh-materials-640.webp",
+      "thumbnailSha256": "429ed00c5cced573369be7751389270f4717431a3d76e81bd78473bc4c708ed5",
+      "thumbnailBytes": 9474
+    },
+    {
+      "id": "mesh-materials-film",
+      "file": "/media/mesh-materials-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "f34c6f188f4ad9fe3da33cd4b26bad0e96e8e0a8bc2947b8a37b48ee5971b512",
+      "bytes": 399327,
+      "caption": "Wood, rusted steel, woven cloth and bronze share one lighting environment.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-materials.mp4",
+        "sourceSha256": "f34c6f188f4ad9fe3da33cd4b26bad0e96e8e0a8bc2947b8a37b48ee5971b512",
+        "sourceRevision": null,
+        "recipe": "docs/media/material-workshops/pbr.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "mesh-rust",
+      "file": "/media/mesh-rust.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "53084acac115039b4bf87e879bf1bd32b70713e8e1a2d9d527c97cc9d07661a7",
+      "bytes": 13320,
+      "caption": "Mesh rust",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-rusted-steel.png",
+        "sourceSha256": "b41bcd21ab0ca47f165251e192f23a0353d6072406140b896b23e873031689e6",
+        "sourceRevision": null,
+        "recipe": "outputs/material-library/report/mesh-rusted-steel-studio.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "mesh-wood",
+      "file": "/media/mesh-wood.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "0ca329397614b2e31a20beb78c0c66bd38f597c0e999cdfb6bb215b3a9dbcd43",
+      "bytes": 10594,
+      "caption": "Mesh wood",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-wood.png",
+        "sourceSha256": "3076d8bff54090002da790b0379b210df4dd77925fdb2e0eb94ca19b34f2300c",
+        "sourceRevision": null,
+        "recipe": "outputs/material-library/report/mesh-wood-studio.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "night-sky",
+      "file": "/media/night-sky.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "c2ba7480cad5c058885c9c8c491170e3e496993f97267be8b626f39a9455f5cb",
+      "bytes": 8188,
+      "caption": "Native procedural stars and Milky Way at night.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/night-sky-poster/capture.png",
+        "sourceSha256": "0f64c65ba4e555b796f726f6fc75a7f780e5202b568094a4f885bae84a2b3be5",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/night-sky-poster.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/night-sky-640.webp",
+      "thumbnailSha256": "a4bee850891b867195c81a3dbc5ef0e530000b62df708d7a148a93b71595d823",
+      "thumbnailBytes": 3166
+    },
+    {
+      "id": "ocean-surface",
+      "file": "/media/ocean-surface.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "f6dd406ffa733cc3f1bebc5645d014d45f411212bdf9862fa01299635f42958e",
+      "bytes": 97502,
+      "caption": "Spectral waves carry changing light across an open-water surface.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/ocean-surface.png",
+        "sourceSha256": "184e261b7514818cfbe6e7ec096b55ea27873fdf8315e55d56d2fb0502f0085d",
+        "sourceRevision": null,
+        "recipe": "outputs/cubey-site/design-review-2026-10-24/frames/ocean-0.5.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/ocean-surface-640.webp",
+      "thumbnailSha256": "5d7d4eb20f88656f34bb2dfedd95370c059d204a059482366d5b270e7477ade6",
+      "thumbnailBytes": 28844
+    },
+    {
+      "id": "ocean-surface-film",
+      "file": "/media/ocean-surface-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
+      "bytes": 6718736,
+      "caption": "Spectral waves carry changing light across an open-water surface.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/ocean-surface.mp4",
+        "sourceSha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/ocean.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "robot",
+      "file": "/media/robot.webp",
+      "kind": "image",
+      "width": 960,
+      "height": 960,
+      "sha256": "8a734370e738ea401a6137af0a0aa01f46c11cf6931c95ba6888c59ca2b48416",
+      "bytes": 29948,
+      "caption": "Mechanical assemblies appear through saved additive and subtractive operations.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/robot.png",
+        "sourceSha256": "4a8646d34b687e3b17d981dba72a006a0394afb9bb40f3049030b58883eeab93",
+        "sourceRevision": null,
+        "recipe": "outputs/sdf/robot-joints-qualified/captures/detail-hero.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/robot-640.webp",
+      "thumbnailSha256": "fd4befa521f65a9ada26d4761ad94bd90e2718482fb60c410c7759baa128ed56",
+      "thumbnailBytes": 15520
+    },
+    {
+      "id": "robot-film",
+      "file": "/media/robot-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 960,
+      "sha256": "c0c48f32bc3da6929cbf73028e4f057f6cddc802b7cd56257dbf92b93c891a4e",
+      "bytes": 4046149,
+      "caption": "Mechanical assemblies appear through saved additive and subtractive operations.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/robot.mp4",
+        "sourceSha256": "c0c48f32bc3da6929cbf73028e4f057f6cddc802b7cd56257dbf92b93c891a4e",
+        "sourceRevision": null,
+        "recipe": "outputs/sdf/robot-joints-qualified/history/presentation.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "sdf-materials",
+      "file": "/media/sdf-materials.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "56817b00994a38697388bedb4fea392358e19116f50f7a380305c319a9f5f457",
+      "bytes": 20442,
+      "caption": "A subtraction exposes grain through the inside of a wood field.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/sdf-materials.png",
+        "sourceSha256": "ab9915d1301fc6c0321f92d26e7a8ce1321ec65e67c0b4fa1aaf4f52924e4f80",
+        "sourceRevision": null,
+        "recipe": "docs/media/material-workshops/sdf-poster.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/sdf-materials-640.webp",
+      "thumbnailSha256": "e72f3b72ffd13a17164fe691f71778d8217ff25849e6f6389e54cbf0648f56fd",
+      "thumbnailBytes": 6928
+    },
+    {
+      "id": "sdf-materials-film",
+      "file": "/media/sdf-materials-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "9db1447e92503cd065c8b14840ccd01cf6d9baaa4c689467565c22d86fbe9a9e",
+      "bytes": 242050,
+      "caption": "A subtraction exposes grain through the inside of a wood field.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/sdf-materials.mp4",
+        "sourceSha256": "9db1447e92503cd065c8b14840ccd01cf6d9baaa4c689467565c22d86fbe9a9e",
+        "sourceRevision": null,
+        "recipe": "docs/media/material-workshops/sdf.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "shallow-water",
+      "file": "/media/shallow-water.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "56eef73523907ca6d6111db507181772f877dfb281252666fc1835fd97a295a1",
+      "bytes": 13252,
+      "caption": "Builtin finite-volume flow through the authored source/outlet valley.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/poster-selection/builtin-valley.png",
+        "sourceSha256": "b4b40dd3f41307397e9fd656eb0e6250c72468bbb9100bc937a02856f9e6ba02",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/builtin-valley-film.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/shallow-water-640.webp",
+      "thumbnailSha256": "3eda6f33ce2abc2c291ffa425164a1ab83e018489ab2aedeced4913949f8d0aa",
+      "thumbnailBytes": 3936
+    },
+    {
+      "id": "shallow-water-film",
+      "file": "/media/shallow-water-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "e11ac55d561a128abaa04b075a06726480a222fede97002a6a251bc46dc9f1c0",
+      "bytes": 119159,
+      "caption": "Builtin finite-volume flow through the authored source/outlet valley.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/builtin-valley-film/capture.mp4",
+        "sourceSha256": "e11ac55d561a128abaa04b075a06726480a222fede97002a6a251bc46dc9f1c0",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/builtin-valley-film.json",
+        "note": ""
+      }
+    },
+    {
+      "id": "smoke-2d",
+      "file": "/media/smoke-2d.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "ee6736ed65af34c8c3054169d782a7273bdda56e47e2051f7b345a380f8a57ea",
+      "bytes": 25686,
+      "caption": "Five moving injectors stir coloured dye through a velocity field.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-poster/capture.png",
+        "sourceSha256": "e2efdd678ed6b13f765ce7d177a780be9d0336808e862ae13aa9e74d5e684d83",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/smoke-2d-poster.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/smoke-2d-640.webp",
+      "thumbnailSha256": "b21ec75c117e242c898b2d432ea1ed03870bbc32a5023cf13d029525a1d3bb74",
+      "thumbnailBytes": 7852
+    },
+    {
+      "id": "smoke-2d-film",
+      "file": "/media/smoke-2d-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "8012760546b0373108ab151b118c49f97255eb8abde8d50e1e04146fbf04f0fb",
+      "bytes": 1703949,
+      "caption": "Five moving injectors stir coloured dye through a velocity field.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-film/capture.mp4",
+        "sourceSha256": "8012760546b0373108ab151b118c49f97255eb8abde8d50e1e04146fbf04f0fb",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/smoke-2d-film.json",
+        "note": ""
+      }
+    },
+    {
+      "id": "terrain-rendering",
+      "file": "/media/terrain-rendering.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "bb66431866e0a921014492bd18727e7835e86012055a5a7fcc5f06520161ace6",
+      "bytes": 82028,
+      "caption": "Dry mountain terrain, with generated elevation, material detail and shadows.",
+      "credit": {
+        "label": "Cubey render \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan; elevation generated with Terrain Diffusion by Xander Gos",
+        "source": "https://huggingface.co/xandergos/terrain-diffusion-30m"
+      },
+      "provenance": {
+        "source": "/home/bryan/.local/share/codex-plus/reports/public/ebb9d3fb17214c5a8d6e4a25e44f9fcc0b722c3e9fbf631ef067f1e5d8388df2/dry.png",
+        "sourceSha256": "fae0a06d70dba97b310e05f8b0dda3455889500dfff56bf6c7584eb957eb49bc",
+        "sourceRevision": null,
+        "recipe": "http://starship:8787/reports/ebb9d3fb17214c5a8d6e4a25e44f9fcc0b722c3e9fbf631ef067f1e5d8388df2/protocol.json",
+        "note": "Historical native capture; exact captured Git HEAD is unrecorded. Binary SHA256 6a00a2b79bdc92e66d55d3780f132034dc13776dc097a7291a601befcaa23b69. Terrain Diffusion producer 82a0431281f21a6ec3d691a12ee61525de5b0790, model revision 9ef8030cb805b433b98ec25c5dddefbac07a9e26. Generated elevation at 30m native spacing; not surveyed terrain."
+      },
+      "thumbnail": "/media/terrain-rendering-640.webp",
+      "thumbnailSha256": "db6c6badd126b6e0e7a7f806259c4e91c043bfb32bac90cffa49c837a948e257",
+      "thumbnailBytes": 27376
+    },
+    {
+      "id": "terrain-water",
+      "file": "/media/terrain-water.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "013ac29a7ff17685551bc7e9c2a783bc32718e511db4ec830fb5d486baaeddcd",
+      "bytes": 67422,
+      "caption": "Rain-fed streams join and collect in a mountain lake.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/terrain-water.png",
+        "sourceSha256": "d7dd733c50f3eda0289915415071cbbb1e0588b1fa7d1eb312901701558b4953",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/fluid-25d.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/terrain-water-640.webp",
+      "thumbnailSha256": "129aace92b80808468b69110e42b1eedbd1b545758a68292d9df65fcc2ebf687",
+      "thumbnailBytes": 22360
+    },
+    {
+      "id": "terrain-water-film",
+      "file": "/media/terrain-water-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+      "bytes": 1429568,
+      "caption": "Rain-fed streams join and collect in a mountain lake.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/terrain-water.mp4",
+        "sourceSha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/fluid-25d.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "water-2d",
+      "file": "/media/water-2d.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "855b27031c699c0aaf3832081066506db039884dc8d12e6075f945a73e0c517b",
+      "bytes": 33526,
+      "caption": "A two-dimensional dam break and reconstructed liquid surface.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/water-2d-poster/capture.png",
+        "sourceSha256": "8750d34c08122456e9cfbabfa8d1deedb3625d45b487eaf442911ae56e991a2c",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/water-2d-poster.json",
+        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+      },
+      "thumbnail": "/media/water-2d-640.webp",
+      "thumbnailSha256": "d84cbd11e90e40999997e6e8bfe68bbc02df9d791e0893c87d3a87451368e630",
+      "thumbnailBytes": 11580
+    },
+    {
+      "id": "water-2d-film",
+      "file": "/media/water-2d-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "1eca13b867e1d64473c14f78edd35a9d6001ea51f928728feeebf79cd31a7f84",
+      "bytes": 2265016,
+      "caption": "A two-dimensional dam break and reconstructed liquid surface.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/implementation-2026-10-24/captures/water-2d-film/capture.mp4",
+        "sourceSha256": "1eca13b867e1d64473c14f78edd35a9d6001ea51f928728feeebf79cd31a7f84",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/water-2d-film.json",
+        "note": ""
+      }
+    },
+    {
+      "id": "water-3d",
+      "file": "/media/water-3d.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "88e3f06f8526b040ac14ca392d703c74d5bfa09775da5078d80ddb39e6cfb080",
+      "bytes": 23874,
+      "caption": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/water-3d.png",
+        "sourceSha256": "22688a05fcefec6abdee2706ac9f465a3cdef5fedfd904f56cfeaded86fc5376",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/water-3d.png",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/water-3d-640.webp",
+      "thumbnailSha256": "2e49093f17c6bcaf942a6e6ffef0fc4b2763d2b7394ce2cc634839c4f6d4f5b1",
+      "thumbnailBytes": 7216
+    },
+    {
+      "id": "water-3d-film",
+      "file": "/media/water-3d-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
+      "bytes": 1308520,
+      "caption": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/water-3d.mp4",
+        "sourceSha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
+        "sourceRevision": null,
+        "recipe": "docs/media/showcase/water-3d.mp4",
+        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      }
+    },
+    {
+      "id": "wood-cut",
+      "file": "/media/wood-cut.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "5cbd460243cd94c4aa511114ce8e5ad59d0a9ff5fc018513fa2fb6eaccd90744",
+      "bytes": 25388,
+      "caption": "Wood cut",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/wood-sdf-3.png",
+        "sourceSha256": "83028f6783c3654da1d9fac179348e9b557e38d17dadc450af91925aaf664267",
+        "sourceRevision": null,
+        "recipe": "outputs/material-presentation/report-final/sdf-3.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/wood-cut-640.webp",
+      "thumbnailSha256": "549d18c9e9a344dc80c1b48d28a23b5439087e80cf9560b62f820f22c1370bf7",
+      "thumbnailBytes": 6272
+    },
+    {
+      "id": "wood-preview",
+      "file": "/media/wood-preview.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "1ff481ae3a1a79e01417a298bcb4d5f2d3b0b9429fec659ee9194b5ed33ef18d",
+      "bytes": 23612,
+      "caption": "Wood preview",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/wood-sdf-2.1.png",
+        "sourceSha256": "ada34fe9e87149ed581d2964150d8e3379d238fc95e12eb95cb122f444db7fb8",
+        "sourceRevision": null,
+        "recipe": "outputs/material-presentation/report-final/sdf-2.1.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/wood-preview-640.webp",
+      "thumbnailSha256": "29db217508e7e4d14283d8a87af8674a905adf93453dc8c8af4f967a5c934044",
+      "thumbnailBytes": 5886
+    },
+    {
+      "id": "wood-solid",
+      "file": "/media/wood-solid.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "e8b3463e97e2b00d7eeb8de5478503d3c4ad4a6462945b0c549f9c48d0b907fc",
+      "bytes": 23292,
+      "caption": "Wood solid",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/wood-sdf-0.png",
+        "sourceSha256": "5da5b5d646affc5d0dd4f8befcc0065ecfa46df0255424ba3f9afca64e736ea4",
+        "sourceRevision": null,
+        "recipe": "outputs/material-presentation/report-final/sdf-0.png",
+        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
+        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+      },
+      "thumbnail": "/media/wood-solid-640.webp",
+      "thumbnailSha256": "b4dd3e0197a98868a5bdacbb396e95facaf926b1d6b2011fe3ac8d50f2b6b193",
+      "thumbnailBytes": 5796
+    }
+  ],
+  "selections": {
+    "water-3d": {
+      "poster": "water-3d",
+      "film": "water-3d-film"
+    },
+    "fire-3d": {
+      "poster": "fire-3d",
+      "film": "fire-3d-film"
+    },
+    "terrain-water": {
+      "poster": "terrain-water",
+      "film": "terrain-water-film"
+    },
+    "ocean-surface": {
+      "poster": "ocean-surface",
+      "film": "ocean-surface-film"
+    },
+    "mesh-materials": {
+      "poster": "mesh-materials",
+      "film": "mesh-materials-film"
+    },
+    "sdf-materials": {
+      "poster": "sdf-materials",
+      "film": "sdf-materials-film"
+    },
+    "guardian": {
+      "poster": "guardian"
+    },
+    "robot": {
+      "poster": "robot",
+      "film": "robot-film"
+    },
+    "explosion-3d": {
+      "poster": "explosion-3d",
+      "film": "explosion-3d-film"
+    },
+    "water-2d": {
+      "poster": "water-2d",
+      "film": "water-2d-film"
+    },
+    "smoke-2d": {
+      "poster": "smoke-2d",
+      "film": "smoke-2d-film"
+    },
+    "shallow-water": {
+      "poster": "shallow-water",
+      "film": "shallow-water-film"
+    },
+    "day-night": {
+      "poster": "day-night",
+      "film": "day-night-film"
+    },
+    "clouds": {
+      "poster": "clouds"
+    },
+    "night-sky": {
+      "poster": "night-sky"
+    },
+    "fractal-field": {
+      "poster": "fractal-field"
+    },
+    "terrain-rendering": {
+      "poster": "terrain-rendering"
+    },
+    "gltf-layers": {
+      "poster": "gltf-layers"
+    },
+    "gltf-optics": {
+      "poster": "gltf-optics"
+    },
+    "gltf-motion": {
+      "poster": "gltf-motion",
+      "film": "gltf-motion-film"
+    },
+    "gltf-textures": {
+      "poster": "gltf-textures"
+    },
+    "gltf-morph": {
+      "poster": "gltf-morph",
+      "film": "gltf-morph-film"
+    }
+  }
+}

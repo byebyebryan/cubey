@@ -1,0 +1,31 @@
+{
+  "name": "day-night-poster",
+  "command": [
+    "build/release/projects/atmosphere/atmosphere",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--frames",
+    "2",
+    "--atmosphere-preset",
+    "sunset",
+    "--no-clouds",
+    "--no-reference-geometry",
+    "--atmosphere-ground-mode",
+    "sky-only-no-ground-occlusion",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/day-night-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "3d4d6f91368c814c4ce2057352c653a18075cd9e1a7886c4801bb0bb8c79cf55",
+  "started": "2026-10-24T20:18:56.786611+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 1.584,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/day-night-poster/capture.png",
+  "bytes": 159272,
+  "sha256": "44dabb99aebdbb4d95f8c82bd3fa1ea39d78b1bda9bca0a84bb13f5a0f94cfa8"
+}

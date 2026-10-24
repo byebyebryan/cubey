@@ -1,0 +1,8 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageTitle from '../../../components/PageTitle.astro';
+import Card from '../../../components/Card.astro';
+import {familyEntries} from '../../../data/catalog';
+const path='/demos/simulation/';
+---
+<Layout title="Simulation" path={path}><PageTitle subject="Simulation" title="Water. Smoke. Fire." intro="Fields and particles in motion, from a flat dye canvas to a three-dimensional plume." path={path}/><section class="section"><div class="grid cards">{familyEntries('simulation').map(e=><Card entry={e} path={path}/>)}</div></section></Layout>

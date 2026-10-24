@@ -1,0 +1,29 @@
+{
+  "name": "smoke-2d-film",
+  "command": [
+    "build/release/projects/fluid/smoke_2d/smoke_2d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--capture",
+    "video",
+    "--frames",
+    "240",
+    "--fps",
+    "30",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-film/capture.mp4"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "6a6411babb9eafb64274535e40d5e08d194692a57f521170d6e3c06314461adf",
+  "started": "2026-10-24T20:18:50.391100+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 3.428,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-film/capture.mp4",
+  "bytes": 1703949,
+  "sha256": "8012760546b0373108ab151b118c49f97255eb8abde8d50e1e04146fbf04f0fb"
+}

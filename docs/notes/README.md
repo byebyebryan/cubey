@@ -92,6 +92,26 @@ the architecture and project guides remain current authority.
 These records retain research, implementation plans and deferred experiments.
 Each record's status and evidence link identifies what is implemented.
 
+- [Cubey presentation-site implementation brief](cubey-site-plan.md): subject-led
+  showcase, component/page contracts, media work and later execution/release
+  boundaries; the authored implementation is under `site/`.
+- [Cubey site structure specification](cubey-site-structure.md): eight subjects,
+  demo/variant models, feature-led glTF, representative mockups and visitor paths.
+- [Cubey structure/design refinement](cubey-site-refinement.md): follow-on review,
+  visual directory, visible chapters, fewer repeated pages and purposeful native
+  comparisons before implementation.
+- [Cubey site implementation progress](cubey-site-implementation-progress.md):
+  authored Astro site, selected native media, checks and review-preview delivery.
+- [Cubey workshop-alignment review](cubey-site-workshop-alignment.md): personal
+  workshop identity, coding-agent collaboration, experiment/foundation feedback,
+  connected demo mockups and completed design-only review.
+- [Cubey site content map](cubey-site-content-map.json): source-guided presentation
+  inventory across fourteen native projects, with proposed scenes and media gaps.
+- [Cubey showcase design review](cubey-site-design-review.md): historical dark/
+  light studies; A selected, with the earlier six-demo roster now superseded.
+- [Cubey site design-loop progress](cubey-site-design-progress.md): completed
+  design-only structure, refinement and workshop-alignment goals, with milestones
+  and evidence; production implementation remains out of scope.
 - [Material library surface research](material-library-surface-research.md):
   primary references and current capability gaps for wood, rust, woven cloth,
   kraft cardboard and frosted glass.

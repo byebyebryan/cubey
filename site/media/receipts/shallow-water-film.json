@@ -1,0 +1,31 @@
+{
+  "name": "shallow-water-film",
+  "command": [
+    "build/release/projects/fluid/fluid_25d/fluid_25d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--fluid25d-backend",
+    "builtin",
+    "--capture",
+    "video",
+    "--frames",
+    "240",
+    "--fps",
+    "30",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/shallow-water-film/capture.mp4"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "799407bc7fe05e25196d5eecf7019488c70632d3b215c98ef77ff5b397a943a8",
+  "started": "2026-10-24T20:18:54.154922+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 2.593,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/shallow-water-film/capture.mp4",
+  "bytes": 144011,
+  "sha256": "1a814595916ecb239d6737504728b93a08bf843bde9ae9f3f317afac51045ec9"
+}

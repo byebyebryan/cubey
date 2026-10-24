@@ -1,0 +1,33 @@
+{
+  "name": "explosion-film",
+  "command": [
+    "build/release/projects/fluid/explosion_3d/explosion_3d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--capture",
+    "video",
+    "--frames",
+    "240",
+    "--fps",
+    "30",
+    "--capture-video-orbit-degrees",
+    "0",
+    "--capture-camera-distance",
+    "2.1",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/explosion-film/capture.mp4"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "1af8bfb354365f1c7baadb029d1eb5b1e290b53af8e92660bee0d11c0e6ece5d",
+  "started": "2026-10-24T20:18:42.431091+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 3.45,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/explosion-film/capture.mp4",
+  "bytes": 1038498,
+  "sha256": "e4d7a369e830a6b63a51d8506d23d889f0523be97582cfabe7f5d83fd3e3b38a"
+}

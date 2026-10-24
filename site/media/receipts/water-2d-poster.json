@@ -1,0 +1,25 @@
+{
+  "name": "water-2d-poster",
+  "command": [
+    "build/release/projects/fluid/water_2d/water_2d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--frames",
+    "120",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/water-2d-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "92a6e803577a101dafa2cb6ee1af51f6397b2546b1a9ba562c48efdcf1479624",
+  "started": "2026-10-24T20:18:45.917501+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 0.461,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/water-2d-poster/capture.png",
+  "bytes": 497462,
+  "sha256": "8750d34c08122456e9cfbabfa8d1deedb3625d45b487eaf442911ae56e991a2c"
+}

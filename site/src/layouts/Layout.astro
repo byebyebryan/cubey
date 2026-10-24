@@ -1,0 +1,40 @@
+---
+import { url } from '../lib/urls';
+interface Props { title: string; description?: string; path: string }
+const {title,description='A personal graphics and simulation workshop. Explore native rendering, fluids, landscapes, sky, materials and authored forms.',path}=Astro.props;
+const canonical=Astro.site ? new URL((import.meta.env.BASE_URL+path.replace(/^\//,'')).replace(/\/+/g,'/'),Astro.site) : undefined;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#111715" />
+    <title>{title} — Cubey</title>
+    {canonical && <link rel="canonical" href={canonical} />}
+    <meta property="og:title" content={`${title} — Cubey`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <link rel="icon" type="image/svg+xml" href={url('/favicon.svg',path)} />
+    <link rel="stylesheet" href={url('/styles/site.css',path)} />
+    <script is:inline defer src={url('/scripts/media.js',path)}></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="wrap">
+      <header class="site-header">
+        <a class="brand" href={url('/',path)} aria-label="Cubey home">Cubey</a>
+        <nav aria-label="Main">
+          <a href={url('/demos/',path)} aria-current={path==='/demos/'?'page':path.startsWith('/demos/')?'location':undefined}>Demos</a>
+          <a href={url('/about/',path)} aria-current={path==='/about/'?'page':undefined}>About</a>
+          <a href="https://github.com/byebyebryan/cubey">Source ↗</a>
+        </nav>
+      </header>
+      <main id="main-content" tabindex="-1"><slot /></main>
+      <footer><span>Cubey · a personal graphics &amp; simulation workshop</span><nav aria-label="Footer"><a href={url('/demos/',path)}>Demos</a><a href={url('/credits/',path)}>Media &amp; credits</a><a href="https://github.com/byebyebryan/cubey/blob/main/docs/getting-started.md">Build and run ↗</a></nav></footer>
+    </div>
+  </body>
+</html>

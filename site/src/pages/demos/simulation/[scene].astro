@@ -1,0 +1,7 @@
+---
+import ScenePage from '../../../components/ScenePage.astro';
+import {familyEntries} from '../../../data/catalog';
+export function getStaticPaths(){return familyEntries('simulation').map(entry=>({params:{scene:entry.id},props:{entry}}));}
+const {entry}=Astro.props;
+---
+<ScenePage entry={entry} path={`/demos/simulation/${entry.id}/`}/>

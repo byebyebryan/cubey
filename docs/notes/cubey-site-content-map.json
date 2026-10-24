@@ -1,0 +1,1024 @@
+{
+  "schema": "cubey.site.design-content-map",
+  "version": 4,
+  "status": "Implementation content model; all entries have selected native web media",
+  "direction": "A / dark gallery (user selected)",
+  "user_scope": "Showcase first with personal workshop context and concrete demo connections. Techniques and journeys remain later layers. Native media required for implementation.",
+  "families": [
+    {
+      "id": "simulation",
+      "title": "Simulation",
+      "subtitle": "Water, smoke, fire and explosions.",
+      "question": "What does motion look like when fields and particles interact?",
+      "order": 1,
+      "page_model": "Collection of six visible scene links with dimension badges; no filter required for six demos",
+      "display_title": "Water. Smoke. Fire.",
+      "prominence": "primary"
+    },
+    {
+      "id": "terrain",
+      "title": "Terrain",
+      "subtitle": "Land first. Then water finds its way.",
+      "question": "How do shape, surface, light and flow build a landscape?",
+      "order": 2,
+      "page_model": "One ordered visual experience: dry rendering, then water; named chapter links avoid duplicate child pages",
+      "display_title": "Land, then flow.",
+      "prominence": "primary"
+    },
+    {
+      "id": "ocean",
+      "title": "Ocean",
+      "subtitle": "Waves, whitecaps and a changing horizon.",
+      "question": "How does an open-water surface respond to wind and light?",
+      "order": 3,
+      "page_model": "Single cinematic subject page; optional selected supporting views, no generated preset panel",
+      "display_title": "An open horizon.",
+      "prominence": "primary"
+    },
+    {
+      "id": "atmosphere",
+      "title": "Atmosphere & light",
+      "subtitle": "Daylight, twilight, clouds and the night sky.",
+      "question": "How does the sky change the scene?",
+      "order": 4,
+      "page_model": "Three visible sky chapters, with ordinary section links",
+      "display_title": "A changing sky.",
+      "prominence": "primary"
+    },
+    {
+      "id": "materials",
+      "title": "Materials",
+      "subtitle": "Procedural surfaces on meshes and solids.",
+      "question": "What makes wood, metal, cloth and glass read differently?",
+      "order": 5,
+      "page_model": "Visible mesh and SDF chapters; a focused native cut comparison",
+      "display_title": "Surfaces with character.",
+      "prominence": "primary"
+    },
+    {
+      "id": "sdf",
+      "title": "SDF forms",
+      "subtitle": "Authored shapes, sculpture and construction.",
+      "question": "What can be built from continuous solids and cuts?",
+      "order": 6,
+      "page_model": "Authored-form collection with sculpture and construction scene pages",
+      "display_title": "Forms from fields.",
+      "prominence": "primary"
+    },
+    {
+      "id": "gltf",
+      "title": "glTF rendering",
+      "subtitle": "Imported materials, optics, textures and motion.",
+      "question": "How do authored assets keep their appearance and movement?",
+      "order": 7,
+      "page_model": "Four visible feature chapters; secondary supported-contract detail",
+      "secondary_features": [
+        "Metadata bounds/loading cage",
+        "Staged single-asset loading",
+        "Atomic scene activation"
+      ],
+      "display_title": "Assets, as authored.",
+      "prominence": "primary"
+    },
+    {
+      "id": "fractals",
+      "title": "Fractals",
+      "subtitle": "A small window into a procedural field.",
+      "question": "What appears as a mathematical image is explored?",
+      "order": 8,
+      "page_model": "A focused scene in Further explorations; no empty zoom/preset controls",
+      "display_title": "Look closer.",
+      "prominence": "secondary"
+    }
+  ],
+  "entries": [
+    {
+      "id": "water-3d",
+      "family": "simulation",
+      "title": "Water 3D",
+      "owner": "projects/fluid/water_3d",
+      "dimension": "3D",
+      "summary": "A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "cues": [
+        "Particle-grid liquid",
+        "Screen-space surface",
+        "Whitewater"
+      ],
+      "variants": [
+        "Dam break",
+        "Hose and drain",
+        "Rain"
+      ],
+      "source": "projects/fluid/water_3d/README.md",
+      "media": "docs/media/showcase/water-3d.mp4",
+      "poster": "docs/media/showcase/water-3d.png",
+      "related": [
+        "water-2d",
+        "shallow-water",
+        "terrain-water"
+      ],
+      "kind": "demo",
+      "boundary": "Tank-scale liquid; extra variants need their own selected captures. The long tank is a render-domain scale.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/simulation/water-3d/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "water-3d",
+        "film": "water-3d-film"
+      }
+    },
+    {
+      "id": "fire-3d",
+      "family": "simulation",
+      "title": "Fire 3D",
+      "owner": "projects/fluid/fire_3d",
+      "dimension": "3D",
+      "summary": "Flame and smoke evolve as daylight falls away.",
+      "cues": [
+        "Dense-grid combustion",
+        "Volumetric rendering",
+        "Shared sky light"
+      ],
+      "variants": [
+        "Plume",
+        "Obstacle",
+        "Day to night"
+      ],
+      "source": "projects/fluid/fire_3d/README.md",
+      "media": "docs/media/showcase/fire-3d.mp4",
+      "poster": "docs/media/showcase/fire-3d.png",
+      "related": [
+        "explosion-3d",
+        "smoke-2d"
+      ],
+      "kind": "demo",
+      "boundary": "Dense-grid pyro presentation; no general combustion-accuracy claim.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/simulation/fire-3d/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "fire-3d",
+        "film": "fire-3d-film"
+      }
+    },
+    {
+      "id": "explosion-3d",
+      "family": "simulation",
+      "title": "Explosion 3D",
+      "owner": "projects/fluid/explosion_3d",
+      "dimension": "3D",
+      "summary": "A hot flash expands into a smoky shell and a rising plume.",
+      "cues": [
+        "Impulse source",
+        "Expanding smoke",
+        "Volumetric lighting"
+      ],
+      "variants": [
+        "Single impulse",
+        "Repeated impulses",
+        "Obstacle"
+      ],
+      "source": "projects/fluid/explosion_3d/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "fire-3d",
+        "smoke-2d"
+      ],
+      "kind": "demo",
+      "boundary": "Shares the native pyro solver with Fire 3D, with distinct impulse timing and source policy.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/simulation/explosion-3d/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "explosion-3d",
+        "film": "explosion-3d-film"
+      }
+    },
+    {
+      "id": "water-2d",
+      "family": "simulation",
+      "title": "Water 2D",
+      "owner": "projects/fluid/water_2d",
+      "dimension": "2D",
+      "summary": "A cross-section liquid sandbox with splashes, waves, hose and drain flow.",
+      "cues": [
+        "APIC transfer",
+        "Free surface",
+        "Particle reconstruction"
+      ],
+      "variants": [
+        "Dam break",
+        "Obstacle splash",
+        "Wave slab",
+        "Hose fill"
+      ],
+      "source": "projects/fluid/water_2d/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "water-3d",
+        "smoke-2d"
+      ],
+      "kind": "demo",
+      "boundary": "Current foundation sandbox; viscosity, surface tension and adaptive storage remain deferred.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/simulation/water-2d/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "water-2d",
+        "film": "water-2d-film"
+      }
+    },
+    {
+      "id": "smoke-2d",
+      "family": "simulation",
+      "title": "Smoke & dye 2D",
+      "owner": "projects/fluid/smoke_2d",
+      "dimension": "2D",
+      "summary": "Moving injectors draw and stir coloured dye through a velocity field.",
+      "cues": [
+        "Advection",
+        "Vorticity",
+        "Pressure projection"
+      ],
+      "variants": [
+        "Dye",
+        "Velocity",
+        "Vorticity"
+      ],
+      "source": "projects/fluid/smoke_2d/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "water-2d",
+        "fire-3d"
+      ],
+      "kind": "demo",
+      "boundary": "A 2D incompressible dye/velocity demonstration, distinct from free-surface liquid.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/simulation/smoke-2d/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "smoke-2d",
+        "film": "smoke-2d-film"
+      }
+    },
+    {
+      "id": "shallow-water",
+      "family": "simulation",
+      "title": "Shallow water",
+      "owner": "projects/fluid/fluid_25d",
+      "dimension": "2.5D",
+      "summary": "Surface flow through an authored catchment, with depth and direction views.",
+      "cues": [
+        "Builtin Vulkan solvers",
+        "Virtual pipes",
+        "Finite volume"
+      ],
+      "variants": [
+        "River V0",
+        "Lake at rest",
+        "Depth and flow"
+      ],
+      "source": "projects/fluid/fluid_25d/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "terrain-water",
+        "water-2d"
+      ],
+      "kind": "demo",
+      "boundary": "Retained builtin experiments; distinct from the SynxFlow terrain-water showcase.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/simulation/shallow-water/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "water-to-terrain"
+      ],
+      "related_reasons": {
+        "terrain-water": "The fluid exploration led into this separate terrain-water experience.",
+        "water-2d": "A different fluid experiment on a flat field."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "shallow-water",
+        "film": "shallow-water-film"
+      }
+    },
+    {
+      "id": "terrain-rendering",
+      "family": "terrain",
+      "title": "Terrain rendering",
+      "owner": "projects/terrain",
+      "dimension": "3D",
+      "summary": "Landform, surface detail and self-shadowing across a source-bound backdrop.",
+      "cues": [
+        "Heightfield backdrop",
+        "Surface detail",
+        "Fixed-focus LOD"
+      ],
+      "variants": [
+        "Dry landscape",
+        "Material detail",
+        "Light and shadow"
+      ],
+      "source": "projects/terrain/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "terrain-water",
+        "day-night"
+      ],
+      "kind": "demo",
+      "boundary": "External raster sources and prepared landscapes; not a general traversable terrain engine or a live terrain generator.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/terrain/#terrain-rendering",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "water-to-terrain"
+      ],
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "terrain-rendering"
+      }
+    },
+    {
+      "id": "terrain-water",
+      "family": "terrain",
+      "title": "Terrain Water",
+      "owner": "projects/terrain_water",
+      "dimension": "2.5D",
+      "summary": "Rain-fed streams join and collect in a mountain lake.",
+      "cues": [
+        "External SynxFlow",
+        "Recorded water fields",
+        "Shared terrain renderer"
+      ],
+      "variants": [
+        "Rainfall",
+        "Streams and basins",
+        "Recorded storm"
+      ],
+      "source": "projects/terrain_water/README.md",
+      "media": "docs/media/showcase/fluid-25d.mp4",
+      "poster": "docs/media/showcase/fluid-25d.png",
+      "related": [
+        "terrain-rendering",
+        "shallow-water"
+      ],
+      "kind": "demo",
+      "boundary": "Existing film shows recorded physical states with an independent artistic solar clock. Live external-worker mode is a separate native route.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/terrain/#terrain-water",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "water-to-terrain"
+      ],
+      "related_reasons": {
+        "shallow-water": "The retained builtin surface-flow study; a separate solver and scene.",
+        "terrain-rendering": "Terrain rendering has its own landform and backdrop experience."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "terrain-water",
+        "film": "terrain-water-film"
+      }
+    },
+    {
+      "id": "ocean-surface",
+      "family": "ocean",
+      "title": "Open water",
+      "owner": "projects/ocean",
+      "dimension": "3D",
+      "summary": "Spectral waves carry changing light across an open-water surface.",
+      "cues": [
+        "FFT waves",
+        "Persistent whitecaps",
+        "Atmosphere reflections"
+      ],
+      "variants": [
+        "Calm",
+        "Windy",
+        "Stormy"
+      ],
+      "source": "projects/ocean/README.md",
+      "media": "docs/media/showcase/ocean.mp4",
+      "poster": "outputs/cubey-site/design-review-2026-10-24/frames/ocean-0.5.png",
+      "related": [
+        "day-night",
+        "clouds"
+      ],
+      "kind": "demo",
+      "boundary": "Surface and curved-local scope. The existing film shows Windy; Calm/Stormy need selected native captures. No shorelines, wakes or underwater route promised.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/ocean/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "ocean-surface",
+        "film": "ocean-surface-film"
+      }
+    },
+    {
+      "id": "day-night",
+      "family": "atmosphere",
+      "title": "Day to night",
+      "owner": "projects/atmosphere",
+      "dimension": "3D",
+      "summary": "Follow the sun through daylight, twilight and the changing night sky.",
+      "cues": [
+        "Solar time",
+        "Atmospheric scattering",
+        "Exposure"
+      ],
+      "variants": [
+        "Noon",
+        "Twilight",
+        "Night"
+      ],
+      "source": "projects/atmosphere/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "clouds",
+        "night-sky",
+        "ocean-surface",
+        "mesh-materials"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Standalone atmosphere presentation; native sky captures must be selected before public implementation. No GI or LUT-based multiple-scattering claim.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/atmosphere/#day-night",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "sky-to-materials"
+      ],
+      "related_reasons": {
+        "mesh-materials": "Shared sky and light also support the material workshops."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "day-night",
+        "film": "day-night-film"
+      }
+    },
+    {
+      "id": "clouds",
+      "family": "atmosphere",
+      "title": "Clouds & light",
+      "owner": "projects/atmosphere",
+      "dimension": "3D",
+      "summary": "Weather, shape and low sun change a surface-view cloud layer.",
+      "cues": [
+        "Surface clouds",
+        "Weather presets",
+        "Cloud lighting"
+      ],
+      "variants": [
+        "Noon",
+        "Low sun",
+        "Afterglow"
+      ],
+      "source": "projects/atmosphere/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "day-night",
+        "ocean-surface",
+        "mesh-materials"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Current surface-only cloud product. Aerial and orbital cloud experiments are deferred.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/atmosphere/#clouds",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "sky-to-materials"
+      ],
+      "related_reasons": {
+        "mesh-materials": "The workshops reuse shared cloud/environment services."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "clouds"
+      }
+    },
+    {
+      "id": "night-sky",
+      "family": "atmosphere",
+      "title": "The night sky",
+      "owner": "projects/atmosphere",
+      "dimension": "3D",
+      "summary": "Stars, a generated lunar surface and a procedural Milky Way share the sky.",
+      "cues": [
+        "Procedural stars",
+        "Moon geometry",
+        "Milky Way layers"
+      ],
+      "variants": [
+        "Stars",
+        "Moon",
+        "Milky Way"
+      ],
+      "source": "projects/atmosphere/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "day-night",
+        "clouds"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Show selected current native celestial captures; generated caches are native implementation inputs, not browser work.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/atmosphere/#night-sky",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "night-sky"
+      }
+    },
+    {
+      "id": "mesh-materials",
+      "family": "materials",
+      "title": "Materials on meshes",
+      "owner": "projects/pbr_materials",
+      "dimension": "3D",
+      "summary": "Wood, rusted steel, woven cloth and bronze share one lighting environment.",
+      "cues": [
+        "Twelve recipes",
+        "Mesh specimens",
+        "Studio and sky"
+      ],
+      "variants": [
+        "Wood",
+        "Rust",
+        "Cloth",
+        "Bronze"
+      ],
+      "source": "projects/pbr_materials/README.md",
+      "media": "docs/media/material-workshops/pbr.mp4",
+      "poster": "docs/media/material-workshops/pbr-poster.png",
+      "related": [
+        "sdf-materials",
+        "gltf-layers",
+        "day-night"
+      ],
+      "kind": "demo",
+      "boundary": "Native procedural material workshop. Shared recipes do not imply identical optical transport between renderers.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/materials/#mesh-materials",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "sky-to-materials"
+      ],
+      "related_reasons": {
+        "day-night": "Explore the sky and light shared with this workshop.",
+        "sdf-materials": "Shared material recipes applied through a distinct SDF renderer."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "mesh-materials",
+        "film": "mesh-materials-film"
+      }
+    },
+    {
+      "id": "sdf-materials",
+      "family": "materials",
+      "title": "Materials through a solid",
+      "owner": "projects/sdf",
+      "dimension": "3D",
+      "summary": "A subtraction exposes grain through the inside of a wood field.",
+      "cues": [
+        "Continuous material field",
+        "SDF cuts",
+        "Shared recipes"
+      ],
+      "variants": [
+        "Solid",
+        "Cut preview",
+        "Through-cut"
+      ],
+      "source": "projects/sdf/README.md",
+      "media": "docs/media/material-workshops/sdf.mp4",
+      "poster": "docs/media/material-workshops/sdf-poster.png",
+      "related": [
+        "mesh-materials",
+        "guardian",
+        "day-night"
+      ],
+      "kind": "demo",
+      "boundary": "A distinct SDF material route, not a mesh rendering mode or general rough-refraction solver.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/materials/#sdf-materials",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "sky-to-materials"
+      ],
+      "related_reasons": {
+        "day-night": "The atmosphere services also support this workshop.",
+        "mesh-materials": "The same recipe library on ordinary mesh specimens."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "sdf-materials",
+        "film": "sdf-materials-film"
+      }
+    },
+    {
+      "id": "guardian",
+      "family": "sdf",
+      "title": "Guardian",
+      "owner": "projects/sdf",
+      "dimension": "3D",
+      "summary": "An authored horned sculpture rendered in limestone and restrained marble.",
+      "cues": [
+        "Authored CSG",
+        "Mirrored strokes",
+        "Stone surfaces"
+      ],
+      "variants": [
+        "Marble",
+        "Limestone",
+        "Detail"
+      ],
+      "source": "projects/sdf/README.md",
+      "media": null,
+      "poster": "outputs/sdf/marble-regions-comparison/subtle/captures/hero.png",
+      "related": [
+        "robot",
+        "sdf-materials"
+      ],
+      "kind": "demo",
+      "boundary": "Accepted sculpture and subtle marble. Current stills suffice; old complete construction film has an earlier marble appearance.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/sdf/guardian/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "guardian"
+      }
+    },
+    {
+      "id": "robot",
+      "family": "sdf",
+      "title": "Build a robot",
+      "owner": "projects/sdf",
+      "dimension": "3D",
+      "summary": "Mechanical assemblies appear through saved additive and subtractive operations.",
+      "cues": [
+        "Authored primitives",
+        "CSG history",
+        "Construction playback"
+      ],
+      "variants": [
+        "Finished form",
+        "Construction",
+        "Cut previews"
+      ],
+      "source": "projects/sdf/README.md",
+      "media": "outputs/sdf/robot-joints-qualified/history/presentation.mp4",
+      "poster": "outputs/sdf/robot-joints-qualified/captures/detail-hero.png",
+      "related": [
+        "guardian",
+        "sdf-materials"
+      ],
+      "kind": "demo",
+      "boundary": "Corrected field-kit pose and saved authored history. Construction playback is a result demo, separate from the later development journey.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/sdf/robot/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "robot",
+        "film": "robot-film"
+      }
+    },
+    {
+      "id": "gltf-layers",
+      "family": "gltf",
+      "title": "Materials & light",
+      "owner": "projects/gltf_viewer",
+      "dimension": "3D",
+      "summary": "Authored surface response ranges from directional highlights and soft fibres to thin-film colour and glow.",
+      "cues": [
+        "Coats and highlights",
+        "Sheen and iridescence",
+        "Emissive and unlit"
+      ],
+      "variants": [
+        "Clearcoat",
+        "Anisotropy",
+        "Iridescence",
+        "Sheen"
+      ],
+      "source": "docs/architecture/gltf-assets.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "gltf-optics",
+        "mesh-materials"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Current supported-use extension semantics, not a claim of complete glTF compatibility or certification.",
+      "extensions": [
+        "KHR_materials_unlit",
+        "KHR_materials_emissive_strength",
+        "KHR_materials_specular",
+        "KHR_materials_clearcoat",
+        "KHR_materials_anisotropy",
+        "KHR_materials_iridescence",
+        "KHR_materials_sheen"
+      ],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/gltf/#gltf-layers",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "gltf-layers"
+      }
+    },
+    {
+      "id": "gltf-optics",
+      "family": "gltf",
+      "title": "Transmission & volume",
+      "owner": "projects/gltf_viewer",
+      "dimension": "3D",
+      "summary": "Thickness, absorption and dispersion shape light through imported transparent objects.",
+      "cues": [
+        "Transmission",
+        "Volume attenuation",
+        "Dispersion"
+      ],
+      "variants": [
+        "Transmission",
+        "Attenuation",
+        "Dispersion"
+      ],
+      "source": "docs/architecture/gltf-assets.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "gltf-layers",
+        "gltf-textures"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Bounded same-frame screen-space/environment transport. No exact back-face refraction, multiple internal bounces, transparent shadows or order-independent transparency.",
+      "extensions": [
+        "KHR_materials_ior",
+        "KHR_materials_transmission",
+        "KHR_materials_volume",
+        "KHR_materials_dispersion"
+      ],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/gltf/#gltf-optics",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "gltf-optics"
+      }
+    },
+    {
+      "id": "gltf-motion",
+      "family": "gltf",
+      "title": "Animation & deformation",
+      "owner": "projects/gltf_viewer",
+      "dimension": "3D",
+      "summary": "Authored animation, skinning and morph targets bring imported shapes into motion.",
+      "cues": [
+        "Core animation",
+        "Skinning",
+        "Morph targets"
+      ],
+      "variants": [
+        "Node animation",
+        "Skinning",
+        "Morph targets"
+      ],
+      "source": "docs/architecture/gltf-assets.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "gltf-layers",
+        "gltf-textures"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Core single-asset animation/deformation; not a general animation editor or advanced animation-extension runtime.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/gltf/#gltf-motion",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "gltf-motion",
+        "film": "gltf-motion-film"
+      }
+    },
+    {
+      "id": "gltf-textures",
+      "family": "gltf",
+      "title": "Texture & detail",
+      "owner": "projects/gltf_viewer",
+      "dimension": "3D",
+      "summary": "Texture transforms, UV selection and compressed textures retain authored surface detail.",
+      "cues": [
+        "UV0 and UV1",
+        "Texture transforms",
+        "BasisU"
+      ],
+      "variants": [
+        "Texture transform",
+        "UV selection",
+        "BasisU"
+      ],
+      "source": "docs/architecture/gltf-assets.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "gltf-layers",
+        "gltf-optics"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Current PNG/JPEG and BasisU KTX2 route; no Draco/meshopt, arbitrary UV sets or material-variant promise.",
+      "extensions": [
+        "KHR_texture_transform",
+        "KHR_texture_basisu"
+      ],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/gltf/#gltf-textures",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "gltf-textures"
+      }
+    },
+    {
+      "id": "fractal-field",
+      "family": "fractals",
+      "title": "Fractal field",
+      "owner": "projects/fractal_2d",
+      "dimension": "2D",
+      "summary": "Explore a procedural fullscreen field by moving and zooming the view.",
+      "cues": [
+        "Fullscreen shader",
+        "Navigation",
+        "Deterministic capture"
+      ],
+      "variants": [
+        "Overview",
+        "Zoom"
+      ],
+      "source": "projects/fractal_2d/README.md",
+      "media": null,
+      "poster": null,
+      "related": [],
+      "kind": "demo",
+      "boundary": "Independent rendering experiment, distinct from fluid and terrain products.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/fractals/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "fractal-field"
+      }
+    }
+  ],
+  "media_rules": {
+    "native-review-input": "A selected local input exists; verify provenance, license and artistic choice before public use.",
+    "placeholder-capture-needed": "No showcase image has been selected in this design pass. Placeholder is allowed only in mockups; find existing evidence or capture using an existing native route before release."
+  },
+  "architecture_notes": [
+    "Home is an editorial selection, not the limit of the collection.",
+    "Explore is a complete subject-aware index; subject collections add context and variants.",
+    "A native executable may own several feature showcases; a gallery film is one media item, not a page taxonomy.",
+    "glTF is an importer/renderer feature showcase; the helmet/terrain film is a reference asset, not its identity.",
+    "Materials and SDF forms share native services but retain distinct visitor purposes.",
+    "The authored static implementation lives under site/. Public hosting, source push and README migration remain separately scoped."
+  ],
+  "browse_bands": [
+    {
+      "id": "simulation",
+      "title": "Simulation",
+      "subjects": [
+        "simulation"
+      ]
+    },
+    {
+      "id": "environments",
+      "title": "Land, sea and sky",
+      "subjects": [
+        "terrain",
+        "ocean",
+        "atmosphere"
+      ]
+    },
+    {
+      "id": "objects",
+      "title": "Objects and surfaces",
+      "subjects": [
+        "materials",
+        "sdf",
+        "gltf"
+      ]
+    },
+    {
+      "id": "further",
+      "title": "Further explorations",
+      "subjects": [
+        "fractals"
+      ]
+    }
+  ],
+  "interaction_policy": "Start with visible media and ordinary links. Proposed variants are a capture/editorial backlog, not automatic public controls. Keep only useful, media-backed comparisons.",
+  "editorial_identity": {
+    "kind": "Personal graphics and simulation workshop",
+    "origin": "Reviving an old engine and graphics experiments after earlier C++/OpenGL learning",
+    "direction": "Curiosity-led subject selection; careful implementation and review",
+    "collaboration": "The author chooses interests and direction and reviews results; coding agents are development collaborators",
+    "foundation": "Experiments draw on and contribute back to a growing shared foundation",
+    "method": "Understand and apply established techniques, check assumptions and results, refine, restart or cut approaches as needed",
+    "presentation_order": [
+      "Show current visual work",
+      "Explain selected concrete connections and brief technique cues",
+      "Add deeper techniques and development journeys later"
+    ],
+    "voice": "Personal, curious and technically precise",
+    "browse_model": "Subject categories organise the current collection, not an invented roadmap or curriculum",
+    "homepage_headline_proposal": "A graphics workshop."
+  },
+  "connections": [
+    {
+      "id": "water-to-terrain",
+      "title": "Water experiments meet terrain.",
+      "from_entries": [
+        "shallow-water"
+      ],
+      "to_entries": [
+        "terrain-rendering",
+        "terrain-water"
+      ],
+      "relationship": "Exploration led into another subject; shared terrain rendering carries improvements between projects",
+      "summary": "The 2.5D fluid experiments led into terrain-water work, with shared terrain rendering carrying useful changes between the projects.",
+      "public_boundary": "The featured Terrain Water film replays recorded SynxFlow fields. The builtin shallow-water study remains a separate demo with its own solver.",
+      "evidence": [
+        "projects/terrain_water/current_reference.md",
+        "projects/terrain/README.md",
+        "studies/fluid_25d/notes/development_map.md"
+      ],
+      "display_on": [
+        "home",
+        "about",
+        "terrain",
+        "shallow-water"
+      ]
+    },
+    {
+      "id": "sky-to-materials",
+      "title": "A sky becomes a light source.",
+      "from_entries": [
+        "day-night",
+        "clouds"
+      ],
+      "to_entries": [
+        "mesh-materials",
+        "sdf-materials"
+      ],
+      "relationship": "Shared sky/cloud environment services support material workshop lighting and backdrop",
+      "summary": "Atmosphere and clouds became shared lighting and backdrop for the material workshops.",
+      "public_boundary": "The workshops reuse shared environment services within each renderer's existing transport limits; this does not imply GI or identical mesh/SDF optics.",
+      "evidence": [
+        "docs/notes/material-workshops-evidence.md",
+        "docs/notes/sdf-environment-presentation-evidence.md",
+        "docs/architecture/cloud-rendering.md"
+      ],
+      "display_on": [
+        "home",
+        "about",
+        "atmosphere",
+        "materials"
+      ]
+    }
+  ]
+}

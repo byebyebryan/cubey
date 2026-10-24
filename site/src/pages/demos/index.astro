@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Picture from '../../components/Picture.astro';
+import {subjects,bands,familyEntries,selected,entryPath} from '../../data/catalog';
+import {url} from '../../lib/urls';
+const path='/demos/';
+const covers:Record<string,string>={simulation:'water-3d',terrain:'terrain-rendering',ocean:'ocean-surface',atmosphere:'day-night',materials:'mesh-materials',sdf:'guardian',gltf:'gltf-layers',fractals:'fractal-field'};
+---
+<Layout title="Demos" path={path}><section class="page-title"><span class="eyebrow">Explore the workshop</span><h1>Follow an interest.</h1><p class="intro">Different interests, shared pieces. Choose a subject, or go straight to a scene.</p></section>
+  {bands.map(band=><section class="section"><div class="section-head"><h2>{band.title}</h2></div><div class:list={['grid',band.subjects.length===3?'cards':'two',band.id==='simulation'?'single-subject':'']}>{band.subjects.map(id=>{const subject=subjects.find(s=>s.id===id)!;const items=familyEntries(id);return <article class:list={['area-card',band.id==='simulation'?'directory-feature':'']}><a class="area-cover" href={url(`/demos/${id}/`,path)}><div class:list={{square:id==='sdf'}}><Picture id={selected(covers[id]).poster} path={path} alt={subject.title}/></div></a><div><a class="area-cover" href={url(`/demos/${id}/`,path)}><h3>{subject.title} ↗</h3></a><p>{subject.subtitle}</p><div class="scene-links">{items.map(e=><a href={url(entryPath(e),path)}>{e.title}</a>)}</div></div></article>;})}</div></section>)}
+</Layout>

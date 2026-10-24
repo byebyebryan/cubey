@@ -1,0 +1,27 @@
+{
+  "name": "shallow-water-poster",
+  "command": [
+    "build/release/projects/fluid/fluid_25d/fluid_25d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--fluid25d-backend",
+    "builtin",
+    "--frames",
+    "120",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/shallow-water-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "799407bc7fe05e25196d5eecf7019488c70632d3b215c98ef77ff5b397a943a8",
+  "started": "2026-10-24T20:18:53.858176+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 0.259,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/shallow-water-poster/capture.png",
+  "bytes": 153034,
+  "sha256": "0e564fe1c45d3dac8c9c8abff913cdb6baae0ba5c1f28f6d0ba856868235f520"
+}

@@ -1,0 +1,6 @@
+---
+import {url} from '../lib/urls';
+interface Props { subject: string; title: string; intro: string; path: string }
+const {subject,title,intro,path}=Astro.props;
+---
+<section class="page-title"><div class="crumbs"><a href={url('/demos/',path)}>Demos</a><span>/</span><span>{subject}</span></div><span class="eyebrow">{subject}</span><h1>{title}</h1><p class="intro">{intro}</p></section>

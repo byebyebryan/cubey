@@ -1,0 +1,8 @@
+---
+import Picture from './Picture.astro';
+import {byId,entryPath,selected,connections} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props {id:string; from:string; to:string; path:string}
+const {id,from,to,path}=Astro.props; const c=connections.find(c=>c.id===id)!;
+---
+<article class="connection-card" data-connection={id}><div class="connection-images">{[from,to].map(id=><a href={url(entryPath(byId[id]),path)}><Picture id={selected(id).poster} path={path} alt={byId[id].title}/><span>{byId[id].title} ↗</span></a>)}</div><h3>{c.title}</h3><p>{c.summary}</p><a class="text-link" href={url(entryPath(byId[to]),path)}>Explore {byId[to].title} ↗</a></article>

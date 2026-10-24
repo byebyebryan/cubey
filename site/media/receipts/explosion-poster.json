@@ -1,0 +1,27 @@
+{
+  "name": "explosion-poster",
+  "command": [
+    "build/release/projects/fluid/explosion_3d/explosion_3d",
+    "--headless",
+    "--frames",
+    "120",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--capture-camera-distance",
+    "2.1",
+    "--require-validation",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/explosion-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "1af8bfb354365f1c7baadb029d1eb5b1e290b53af8e92660bee0d11c0e6ece5d",
+  "started": "2026-10-24T20:17:25.572826+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 1.471,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/explosion-poster/capture.png",
+  "bytes": 276797,
+  "sha256": "81abebf590ceed0eaa5cc3ecc1fb8c91010a7b037e46a14e528106122a0343cc"
+}

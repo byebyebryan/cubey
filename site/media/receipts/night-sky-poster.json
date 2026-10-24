@@ -1,0 +1,32 @@
+{
+  "name": "night-sky-poster",
+  "command": [
+    "build/release/projects/atmosphere/atmosphere",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--frames",
+    "2",
+    "--atmosphere-preset",
+    "night",
+    "--pause-time",
+    "--no-clouds",
+    "--no-reference-geometry",
+    "--camera-pitch-offset-deg",
+    "65",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/night-sky-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "3d4d6f91368c814c4ce2057352c653a18075cd9e1a7886c4801bb0bb8c79cf55",
+  "started": "2026-10-24T20:19:01.780796+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 0.243,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/night-sky-poster/capture.png",
+  "bytes": 175146,
+  "sha256": "0f64c65ba4e555b796f726f6fc75a7f780e5202b568094a4f885bae84a2b3be5"
+}

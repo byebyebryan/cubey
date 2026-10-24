@@ -1,0 +1,47 @@
+[
+  {
+    "model": "AnisotropyBarnLamp",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnisotropyBarnLamp/glTF-Binary/AnisotropyBarnLamp.glb",
+    "bytes": 7833440,
+    "sha256": "0e728826c30bd6f3a18a0911db9f5f9ddc2dafa8e20bf9c3312c9625d1e32a24",
+    "notice": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnisotropyBarnLamp/README.md",
+    "upstreamNoticeSha256": "bc9be70760d510ee42bfc7d25a298922b05b0ef5d9083f89b4b5086792734225",
+    "retainedNoticeSha256": "2ec47d35c2c4b5c68b2fc9f4bf62a7f9226a8c89a51b2e4bc478e1da7bf9313a"
+  },
+  {
+    "model": "DispersionTest",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/DispersionTest/glTF-Binary/DispersionTest.glb",
+    "bytes": 2310944,
+    "sha256": "bbac38386632b5a7a27289737963314c2f92095074dfdf0e8c0c1c25270b3e37",
+    "notice": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/DispersionTest/README.md",
+    "upstreamNoticeSha256": "d99714c8b95c23be499b257277227e6b71fab3eac0f9349eba3cbb19e3a03ad1",
+    "retainedNoticeSha256": "f4b9c144cbd4e2e763de604d00ac8954805628d994bd3178128d51935555d538"
+  },
+  {
+    "model": "Fox",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/glTF-Binary/Fox.glb",
+    "bytes": 162852,
+    "sha256": "d97044e701822bac5a62696459b27d7b375aada5de8574ed4362edbba94771f7",
+    "notice": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md",
+    "upstreamNoticeSha256": "5e1504ed6f726c432774e37a0a295f2a4d7e096b50bdc60e4ea8d51e8d16fef3",
+    "retainedNoticeSha256": "5a7403b2aa8835b2a7913ae34dd9d117993b405979561a301874af5703d47150"
+  },
+  {
+    "model": "TextureTransformMultiTest",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/TextureTransformMultiTest/glTF-Binary/TextureTransformMultiTest.glb",
+    "bytes": 388264,
+    "sha256": "569aedb53822d5721e7e06af5983348683d4b2ffb1d469338ad4f02bf6a74911",
+    "notice": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/TextureTransformMultiTest/README.md",
+    "upstreamNoticeSha256": "1954507737c3982d95b0bcbe9c598c637b80da0710e7271c373fbebdacbb1879",
+    "retainedNoticeSha256": "5d31141443946bac1ded5d76f35d8d764d653b79bd82e6fb7386f94b1b31c038"
+  },
+  {
+    "model": "AnimatedMorphCube",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/glTF-Binary/AnimatedMorphCube.glb",
+    "bytes": 6752,
+    "sha256": "214ee56160a50dbf22543a1d66dbf860986e87f0efac3d89feac1359d0e6aeab",
+    "notice": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md",
+    "upstreamNoticeSha256": "7f209568f93f1fad9168046b0e10e02c271a5dbe6eb0392e7c1bec98e24a9f50",
+    "retainedNoticeSha256": "bce978952e27a18bde39699969ffd346e57df484c15e18f9bf1385ebba051c56"
+  }
+]

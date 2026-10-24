@@ -1,0 +1,27 @@
+{
+  "name": "smoke-2d-poster",
+  "command": [
+    "build/release/projects/fluid/smoke_2d/smoke_2d",
+    "--headless",
+    "--width",
+    "1280",
+    "--height",
+    "720",
+    "--require-validation",
+    "--frames",
+    "120",
+    "--debug-view",
+    "dye",
+    "--output",
+    "/home/bryan/code/cubey/outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-poster/capture.png"
+  ],
+  "sourceHead": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+  "binarySha256": "6a6411babb9eafb64274535e40d5e08d194692a57f521170d6e3c06314461adf",
+  "started": "2026-10-24T20:18:49.946878+00:00",
+  "scope": "Existing native feature capture for site presentation; not renderer-wide/native desktop qualification",
+  "exitCode": 0,
+  "wallSeconds": 0.409,
+  "output": "outputs/cubey-site/implementation-2026-10-24/captures/smoke-2d-poster/capture.png",
+  "bytes": 473699,
+  "sha256": "e2efdd678ed6b13f765ce7d177a780be9d0336808e862ae13aa9e74d5e684d83"
+}

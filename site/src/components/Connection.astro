@@ -1,0 +1,9 @@
+---
+import Picture from './Picture.astro';
+import {byId,entryPath,selected,connections} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props { id: string; target: string; path: string; text?: string; boundary?: boolean }
+const {id,target,path,text,boundary=false}=Astro.props;
+const c=connections.find(c=>c.id===id)!; const e=byId[target];
+---
+<aside class="section connection-context" data-connection={id} aria-labelledby={`${id}-heading`}><div><span class="eyebrow">Elsewhere in the workshop</span><h2 id={`${id}-heading`}>{c.title}</h2><p>{text||c.summary}</p>{boundary && <p class="note">{c.public_boundary}</p>}</div><a class="connection-link" href={url(entryPath(e),path)}><Picture id={selected(e.id).poster} path={path} alt={e.title}/><span>{e.title} ↗</span></a></aside>
