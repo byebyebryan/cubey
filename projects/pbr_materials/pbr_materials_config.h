@@ -23,6 +23,8 @@ struct PbrMaterialsConfig {
     std::filesystem::path recipe_input, recipe_output;
     float yaw = 0, pitch = .15F, distance = 1.05F, roughness = -1, pattern_scale = -1;
     float orbit_degrees = 0;
+    std::string presentation;
+    double presentation_time = -1;
     bool pattern = true, bump = true;
     std::uint32_t stress_edits = 0;
 };
@@ -70,6 +72,9 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
     bind(config.roughness, "roughness", "--roughness", cubey::config::ValueType::Float);
     bind(config.pattern_scale, "pattern_scale", "--pattern-scale", cubey::config::ValueType::Float);
     bind(config.orbit_degrees, "orbit_degrees", "--orbit-degrees", cubey::config::ValueType::Float);
+    bind(config.presentation, "presentation", "--presentation", cubey::config::ValueType::String);
+    bind(config.presentation_time, "presentation_time", "--presentation-time",
+         cubey::config::ValueType::Float);
     bind(config.pattern, "pattern", "--pattern", cubey::config::ValueType::Bool);
     bind(config.bump, "bump", "--bump", cubey::config::ValueType::Bool);
     bind(config.stress_edits, "stress_edits", "--stress-edits", cubey::config::ValueType::UInt32);
@@ -79,8 +84,14 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
 
 inline PbrMaterialsConfig parse_pbr_materials_config(int argc, char** argv,
                                                      cubey::config::ParseResult* result = nullptr) {
-    return cubey::host::parse_configured_app<PbrMaterialsConfig>(
-        argc, argv, pbr_materials_config_schema, result);
+    cubey::config::ParseResult parsed;
+    auto c = cubey::host::parse_configured_app<PbrMaterialsConfig>(
+        argc, argv, pbr_materials_config_schema, &parsed);
+    if (!c.presentation.empty() && !parsed.path_was_assigned("distance"))
+        c.distance = 2;
+    if (result)
+        *result = std::move(parsed);
+    return c;
 }
 
 } // namespace cubey::projects::pbr_materials

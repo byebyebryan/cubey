@@ -15,12 +15,23 @@ using cubey::host::FrameStatsSample;
 PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
     : config_(std::move(config)),
       debug_view_(render::pbr_debug_view_from_name(config_.debug_view)) {
-    orbit_controller_.set_home_distance(config_.material == "gallery" ? kCameraDistance
+    orbit_controller_.set_home_distance(
+        config_.material == "gallery" && config_.presentation.empty() ? kCameraDistance
                                                                       : config_.distance);
     orbit_controller_.set_pitch(config_.pitch);
     if (config_.specimen != "sphere" && config_.specimen != "block" &&
         config_.specimen != "swatch" && config_.specimen != "cut-block")
         throw std::invalid_argument("specimen must be sphere, block, swatch or cut-block");
+    if (!config_.presentation.empty()) {
+        (void)presentation_layout(config_.presentation);
+        if (config_.material != "gallery")
+            throw std::invalid_argument("presentation requires gallery material selection");
+    }
+    if (!std::isfinite(config_.presentation_time) || config_.presentation_time < -1 ||
+        config_.presentation_time > 8)
+        throw std::invalid_argument("presentation-time must be -1 or 0..8 seconds");
+    presentation_seconds_ = std::max(0.0, config_.presentation_time);
+    presentation_paused_ = config_.presentation_time >= 0;
 }
 
 int PbrMaterialsApp::run() {
@@ -47,6 +58,8 @@ int PbrMaterialsApp::run() {
             debug_view_ = render::next_pbr_debug_view(debug_view_);
         }
         orbit_controller_.update_from_input(input, timing.delta_seconds);
+        if (!config_.presentation.empty() && !presentation_paused_)
+            presentation_seconds_ = std::min(8.0, presentation_seconds_ + timing.delta_seconds);
         update_scene_transform(timing);
     };
     callbacks.record_frame = [this](cubey::host::WindowedAppContext& context,
@@ -67,11 +80,22 @@ int PbrMaterialsApp::run() {
                                  catalog_.begin(), catalog_.end(), [&](const auto& e) {
                                      return family_filter_ == "all" || family_filter_ == e.family;
                                  }));
+        std::uint32_t triangles =
+            meshes_.at(mesh).index_count() / 3 * static_cast<std::uint32_t>(count);
+        if (!config_.presentation.empty()) {
+            triangles = 0;
+            for (const auto& item : presentation_layout(config_.presentation)) {
+                const auto handle = item.shape == "sphere"   ? sphere_mesh_handle_
+                                    : item.shape == "swatch" ? swatch_mesh_handle_
+                                                             : cut_block_mesh_handle_;
+                triangles += meshes_.at(handle).index_count() / 3;
+            }
+        }
         return FrameStatsSample{
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles = meshes_.at(mesh).index_count() / 3 * static_cast<std::uint32_t>(count),
+            .triangles = triangles,
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {
@@ -107,6 +131,10 @@ int PbrMaterialsApp::run_headless() {
                                     const cubey::host::HeadlessRenderTarget& target) {
         // Capture motion derives from frame progress, never wall time.
         const auto saved_yaw = config_.yaw;
+        if (!config_.presentation.empty())
+            presentation_seconds_ = config_.presentation_time >= 0
+                                        ? config_.presentation_time
+                                        : 8.0 * cubey::host::headless_capture_progress(f);
         config_.yaw +=
             glm::radians(config_.orbit_degrees) * cubey::host::headless_capture_progress(f);
         update_scene_transform(f.timing);

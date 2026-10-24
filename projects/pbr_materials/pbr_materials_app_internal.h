@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pbr_materials_app.h"
+#include "pbr_materials_presentation.h"
 
 #include <cubey/asset/material_recipe.h>
 #include <cubey/core/math.h>
@@ -126,6 +127,9 @@ class PbrMaterialsApp {
     char recipe_path_[512] = "outputs/material-recipe.json";
     void draw_ui();
     void refresh_specimens();
+    void leave_presentation();
+    double presentation_seconds_ = 0;
+    bool presentation_paused_ = false;
     void publish_materials(cubey::render::FrameSlot slot);
     cubey::render::PbrMaterialDefinition material_definition(std::size_t index) const;
     std::vector<cubey::render::MaterialHandle> material_handles_;

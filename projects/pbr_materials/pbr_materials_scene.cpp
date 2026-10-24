@@ -87,12 +87,14 @@ void PbrMaterialsApp::create_scene() {
 void PbrMaterialsApp::update_scene_transform(const FrameTiming& timing) {
     (void)timing;
     cubey::SceneEditQueue edits = scene().create_edit_queue();
-    edits.transforms3d().set_local_transform(camera_entity_,
-                                             cubey::orbit_camera_transform(cubey::OrbitCameraState{
-                                                 .distance = orbit_controller_.distance(),
-                                                 .yaw = config_.yaw + orbit_controller_.yaw(),
-                                                 .pitch = orbit_controller_.pitch(),
-                                             }));
+    edits.transforms3d().set_local_transform(
+        camera_entity_,
+        cubey::orbit_camera_transform(cubey::OrbitCameraState{
+            .distance = orbit_controller_.distance(),
+            .yaw = config_.yaw + orbit_controller_.yaw() +
+                   (config_.presentation.empty() ? 0 : presentation_yaw(presentation_seconds_)),
+            .pitch = orbit_controller_.pitch(),
+        }));
     scene().commit(edits);
 }
 

@@ -1,19 +1,18 @@
 #include "pbr_materials_app_internal.h"
 #include <algorithm>
 #include <cubey/scene/transform_3d.h>
+#include <glm/gtc/quaternion.hpp>
 #include <imgui.h>
 #include <iostream>
 
 namespace cubey::projects::pbr_materials::detail {
-namespace {
-float specimen_thickness(std::string_view specimen) {
-    // Estimate the front-to-back depth of each specimen. The forward path does
-    // not trace an exit surface; SDF glass measures its actual ray segments.
-    return specimen == "swatch" ? .036F : specimen == "cut-block" ? .32F : .5F;
-}
-} // namespace
 render::PbrMaterialDefinition PbrMaterialsApp::material_definition(std::size_t i) const {
-    auto d = pbr_material_from_recipe(recipes_.at(i), specimen_thickness(config_.specimen),
+    std::string_view shape = config_.specimen;
+    if (!config_.presentation.empty())
+        for (const auto& item : presentation_layout(config_.presentation))
+            if (item.material == catalog_.at(i).id)
+                shape = item.shape;
+    auto d = pbr_material_from_recipe(recipes_.at(i), specimen_thickness(shape),
                                       static_cast<std::uint32_t>(i));
     d.factors.pattern_enabled = config_.pattern;
     d.factors.bump_enabled = config_.bump;
@@ -67,6 +66,31 @@ void PbrMaterialsApp::publish_materials(render::FrameSlot slot) {
 }
 void PbrMaterialsApp::refresh_specimens() {
     auto edits = scene().create_edit_queue();
+    if (!config_.presentation.empty()) {
+        const auto layout = presentation_layout(config_.presentation);
+        for (std::size_t i = 0; i < specimens_.size(); ++i) {
+            const auto found = std::find_if(layout.begin(), layout.end(), [&](const auto& item) {
+                return item.material == catalog_[i].id;
+            });
+            const bool visible = found != layout.end();
+            if (visible)
+                edits.transforms3d().set_local_transform(
+                    specimens_[i].entity,
+                    {.translation = found->position, .rotation = glm::quat(found->rotation)});
+            edits.renderables3d().set_renderable(
+                specimens_[i].entity,
+                {.primitives = {{.mesh = !visible || found->shape == "sphere" ? sphere_mesh_handle_
+                                         : found->shape == "swatch" ? swatch_mesh_handle_
+                                                                    : cut_block_mesh_handle_,
+                                 .material = material_handles_[i]}},
+                 .local_bounds = {.half_extent = {.25F, .25F, .25F}},
+                 .visible = visible,
+                 .cast_shadows = false,
+                 .receive_shadows = false});
+        }
+        scene().commit(edits);
+        return;
+    }
     const bool gallery = selected_ < 0;
     const auto matches = [&](std::size_t i) {
         return family_filter_ == "all" || catalog_[i].family == family_filter_;
@@ -104,9 +128,38 @@ void PbrMaterialsApp::refresh_specimens() {
     }
     scene().commit(edits);
 }
+void PbrMaterialsApp::leave_presentation() {
+    if (config_.presentation.empty())
+        return;
+    config_.presentation.clear();
+    ++revision_;
+    orbit_controller_.set_home_distance(selected_ < 0 ? kCameraDistance : config_.distance);
+    orbit_controller_.reset();
+    orbit_controller_.set_pitch(config_.pitch);
+}
 void PbrMaterialsApp::draw_ui() {
     ImGui::SetNextWindowSize({420, 640}, ImGuiCond_FirstUseEver);
     if (ImGui::Begin("PBR material workshop")) {
+        if (!config_.presentation.empty()) {
+            ImGui::Text("Surface presentation / %s", config_.presentation.c_str());
+            if (ImGui::Button(presentation_paused_ ? "Play presentation" : "Pause presentation"))
+                presentation_paused_ = !presentation_paused_;
+            ImGui::SameLine();
+            if (ImGui::Button("Replay presentation")) {
+                presentation_seconds_ = 0;
+                presentation_paused_ = false;
+            }
+            float t = static_cast<float>(presentation_seconds_);
+            if (ImGui::SliderFloat("Presentation time", &t, 0, 8, "%.2f s")) {
+                presentation_seconds_ = t;
+                presentation_paused_ = true;
+            }
+            if (ImGui::Button("Open material workshop")) {
+                leave_presentation();
+                refresh_specimens();
+            }
+            ImGui::Separator();
+        }
         if (ImGui::BeginCombo("Family", family_filter_.c_str())) {
             std::vector<std::string> families{"all"};
             for (const auto& e : catalog_)
@@ -116,6 +169,7 @@ void PbrMaterialsApp::draw_ui() {
                 if (ImGui::Selectable(family.c_str(), family_filter_ == family)) {
                     family_filter_ = family;
                     selected_ = -1;
+                    leave_presentation();
                     refresh_specimens();
                     orbit_controller_.set_home_distance(kCameraDistance);
                     orbit_controller_.reset();
@@ -128,6 +182,7 @@ void PbrMaterialsApp::draw_ui() {
         if (ImGui::BeginCombo("Material", selected_label)) {
             if (ImGui::Selectable("Gallery", selected_ < 0)) {
                 selected_ = -1;
+                leave_presentation();
                 orbit_controller_.set_home_distance(kCameraDistance);
                 orbit_controller_.reset();
                 orbit_controller_.set_pitch(config_.pitch);
@@ -139,6 +194,7 @@ void PbrMaterialsApp::draw_ui() {
                 if (ImGui::Selectable(catalog_[i].label.c_str(),
                                       selected_ == static_cast<int>(i))) {
                     selected_ = static_cast<int>(i);
+                    leave_presentation();
                     orbit_controller_.set_home_distance(config_.distance);
                     orbit_controller_.reset();
                     orbit_controller_.set_pitch(config_.pitch);
@@ -184,6 +240,7 @@ void PbrMaterialsApp::draw_ui() {
                     : config_.specimen == "cut-block" ? 3
                                                       : 0;
         if (ImGui::Combo("Specimen", &shape, shapes, 4)) {
+            leave_presentation();
             config_.specimen = shapes[shape];
             ++revision_;
             refresh_specimens();
