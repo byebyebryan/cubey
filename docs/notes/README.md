@@ -77,13 +77,14 @@ the architecture and project guides remain current authority.
 
 - [Material workshops evidence](material-workshops-evidence.md): implemented mesh/SDF front doors, shared content, native qualification, measured costs and review report.
 - [Material library expansion evidence](material-library-evidence.md): versioned
-  content checkpoint and native rough-glass feasibility; implementation is ongoing.
+  twelve-material library, native mesh/SDF comparisons, bounded edit/resource
+  checks, retained control images and the published review report.
 - [SDF material workshop contract](sdf-material-workshop-plan.md): shared recipes and compact CSG inspection on the existing renderer.
 
 ## Exploration candidates
 
-These records retain proposed experiments and their scope. They do not imply
-an implemented project or a new runtime dependency.
+These records retain research, implementation plans and deferred experiments.
+Each record's status and evidence link identifies what is implemented.
 
 - [Material library surface research](material-library-surface-research.md):
   primary references and current capability gaps for wood, rust, woven cloth,

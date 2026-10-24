@@ -2,10 +2,17 @@
 
 Date: 2026-10-23
 
-Status: implementation in progress under the
-[library plan](material-library-expansion-plan.md). New appearances are pending
-human review. The [prior workshop evidence](material-workshops-evidence.md)
+Status: implemented and natively qualified under the
+[library plan](material-library-expansion-plan.md). New appearances remain open
+to human review. The [prior workshop evidence](material-workshops-evidence.md)
 remains the compatibility and performance baseline.
+
+[Open the material-library review report](http://starship:8787/reports/97f536f0e315dd8cb3fa726846f782fbb832ea85ddefa3b7a35b956b33e9d63f/):
+57 native stills, three eight-second films, matched mesh/SDF specimens, optical
+roughness strips, material components, editable-recipe snapshots and measured
+costs. Publication contains 221 files / 20,231,386 bytes. Every file's HTTP bytes
+match the prepared bundle from both Starship and Carbon. The shared report
+server is reused; no source push or public-showcase deployment is included.
 
 ## Content checkpoint
 
@@ -21,8 +28,8 @@ Eight native 640 by 640 captures compare roughness 0.05, 0.25, 0.45 and 0.65 in
 mesh and SDF spheres against the same generated sharp-bar HDR environment.
 Required Vulkan validation passes on the RTX 5070 Ti, driver 610.57.04.
 Local captures, native logs and hashed source/binary/input receipt live under
-`outputs/material-library/feasibility`; the final report will select a small
-comparison from this set.
+`outputs/material-library/feasibility`. The final report uses newly captured,
+matched views at roughness 0.05, 0.32 (default) and 0.55.
 
 Inspection shows progressively softened reflection and transmitted bars with
 fixed geometry, neutral attenuation and fixed IOR. At the higher settings SDF
@@ -80,5 +87,72 @@ the selected new family is covered by the bounded-resource stress path.
 Final qualification is driven by
 [`qualify_library.py`](../../projects/pbr_materials/tools/qualify_library.py),
 which discovers the catalog, records per-run identities and uses adapter-specific
-pitch signs to compare the same view. Current implementation work is still
-awaiting its final compatibility, timing and published presentation receipts.
+pitch signs to compare the same view.
+
+## Final qualification
+
+The rendered implementation is `cc4a248d`. Two optical default views were
+recaptured using the matched-camera tooling at `3622d91e`, with unchanged
+binary/shader identities. `bfc19fc0` completes report checks and provenance;
+subsequent wrap-up documentation adds no renderer change. Per-run commands,
+binary/shader/recipe hashes, resolved recipes/scenes and raw profile CSV/trace
+files are retained in `outputs/material-library/qualification` and the report.
+Its generator identity is recorded separately in `report.json`.
+
+- All 57 final images and three films pass required Vulkan validation. The five
+  new sphere cases and the rust CSG ownership cases also pass the SDF field and
+  CPU/GPU material oracles. New family/roughness edits hit the geometry cache
+  without rebuilding bricks; the existing approximately 871 MiB field allocation
+  is unchanged.
+- The selected rust, cloth and frosted-glass stress cases each update both used
+  frame slots 1,000 times. Each slot retains twelve descriptors and 13,056 uniform
+  bytes with zero growth. Routing-changing edits remain rejected.
+- All twelve resolved recipes survive SDF scene serialization and export with
+  matching content fingerprints. An embedded V3 snapshot also remains usable
+  after its original recipe file is removed.
+- Seven retained PNG controls remain byte-identical: clay/glass spheres,
+  clay/glass guardians, furnace, IOR furnace and glTF. The original seven recipe
+  values, v2 scene hashes and geometry/history contracts remain unchanged.
+- The scoped core/header/foundation/layout/documentation/SDF gate passes 17
+  CTest entries; both workshops pass all 33 documented CLI recipes. The initial
+  broad CLI recipe gate encounters unrelated unbuilt executables in this release
+  tree, so no repository-wide CLI pass is claimed. A stale unit-test expectation
+  for the enlarged uniform packet was corrected to its new aligned size; the
+  legacy prefix ends at byte 896 and the full packet is 1040 bytes.
+- Headless Chrome 156 checks eight report interactions on desktop and mobile,
+  decodes all 57 images, loads all three eight-second H.264 films and reports no
+  script errors or horizontal mobile overflow. The same checks pass over the
+  published HTTP URL. This is browser QA, not human artistic acceptance.
+
+## Steady GPU costs
+
+RTX 5070 Ti, driver 610.57.04, 1920 by 1080, 1x, required validation, sixteen
+warmup frames and 94 recorded samples per case. Costs exclude field construction,
+IBL generation and encoding. Scene complexity differs, so these are budget
+checks rather than a direct renderer speed comparison.
+
+| Consumer / specimen | Environment | Median ms | P95 ms |
+| --- | --- | --- | --- |
+| Mesh twelve-material gallery | Studio | 0.452 | 0.455 |
+| Mesh twelve-material gallery | Clouds | 2.089 | 2.100 |
+| Mesh cloth swatch | Studio | 0.160 | 0.162 |
+| Mesh frosted sphere | Studio | 0.216 | 0.218 |
+| Mesh frosted sphere | Clouds | 1.849 | 1.869 |
+| SDF wood cut block | Studio | 1.591 | 1.643 |
+| SDF rust CSG | Studio | 2.795 | 2.901 |
+| SDF cloth swatch | Studio | 0.804 | 0.821 |
+| SDF cloth swatch | Clouds | 2.404 | 2.436 |
+| SDF frosted sphere | Studio | 2.707 | 2.836 |
+| SDF frosted sphere | Clouds | 4.204 | 4.333 |
+
+## Settled boundary
+
+The twelve-entry shared library, its two workshops, bounded controls and
+persistence are implemented. Wood's solid structure and rust's changing response
+are the clearest new technical demonstrations. Cloth is a coarse weave with
+restrained sheen; kraft is deliberately a stylized fiber surface. Frosting is
+usefully visible in both consumers, with the stated SDF transport approximation.
+Further realism, arbitrary cloth charts, corrugated/fuzzy geometry and a full
+rough-refraction solver remain deferred. The guardian/robot modeling and their
+accepted presets are preserved; the separate authored-content showcase is not
+reopened by this milestone.

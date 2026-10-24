@@ -98,11 +98,12 @@ extension as another workshop experiment.
 The detailed [PBR plan](pbr-material-demo-plan.md) specifies the material contract,
 presentation, resource-update gap, checkpoints and proposed acceptance gates.
 
-The next proposed content milestone is a small shared library expansion:
+The next content milestone is now implemented and
+[qualified](material-library-evidence.md): a small shared library expansion with
 wood, rusted steel, woven cloth, kraft cardboard and frosted glass. The
 [surface research](material-library-surface-research.md) separates structural
 cues from shading/transport requirements; the
-[expansion plan](material-library-expansion-plan.md) defines catalog growth,
+[expansion plan](material-library-expansion-plan.md) records catalog growth,
 versioned content, focused specimens and bounded acceptance. It preserves the
 accepted seven looks and current environment integration.
 

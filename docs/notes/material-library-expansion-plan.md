@@ -2,8 +2,8 @@
 
 Date: 2026-10-23
 
-Status: implementation started; [checkpoint evidence](material-library-evidence.md)
-records completed work and open qualification. The plan follows the
+Status: implemented and natively qualified; [checkpoint evidence](material-library-evidence.md)
+records the finished scope, measured costs and review report. The plan follows the
 [surface research](material-library-surface-research.md). New appearances remain
 pending human review.
 Baseline: `7b7bfd07`, the [qualified mesh/SDF workshops](material-workshops-evidence.md).
