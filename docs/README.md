@@ -17,10 +17,12 @@ there when implementation boundaries matter.
 
 ## Current Design
 
-- [Material and SDF demo roadmap](notes/material-demo-roadmap.md): proposed
-  separate mesh PBR materials, SDF materials and authored-content demos;
+- [Material and SDF demo roadmap](notes/material-demo-roadmap.md): separates
+  the implemented mesh/SDF material workshops from the authored-content showcase;
   [PBR material demo plan](notes/pbr-material-demo-plan.md) develops the first
-  workshop and the shared parameterized material-content gap.
+  workshop and the shared parameterized material-content gap. The proposed
+  [material presentation pass](notes/material-presentation-plan.md) gives the
+  qualified workshops separate short stories and native presentation presets.
 - [Showcase storyboard and capture plan](showcase.md): public demo scope,
   cinematic shot cards, media provenance, and gated capture work.
 - [Showcase media package](media/showcase/README.md): native-player mapping,

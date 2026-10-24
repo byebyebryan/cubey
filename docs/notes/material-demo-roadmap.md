@@ -5,7 +5,9 @@ Date: 2026-10-23
 Status: Stages A and B implemented and qualified on 2026-10-23. The
 [workshop evidence](material-workshops-evidence.md) records current front doors,
 compatibility, measured costs and the native review report. Stage C remains
-deferred. Milestone commits are local; no push is included in this loop.
+deferred. The material milestones and review fixes are pushed through `b72c7c5c`.
+The [presentation pass](material-presentation-plan.md) is proposed for review;
+it starts with two material stories before a separate authored-content film.
 
 ## Purpose
 

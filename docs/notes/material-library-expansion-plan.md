@@ -4,8 +4,9 @@ Date: 2026-10-23
 
 Status: implemented and natively qualified; [checkpoint evidence](material-library-evidence.md)
 records the finished scope, measured costs and review report. The plan follows the
-[surface research](material-library-surface-research.md). New appearances remain
-pending human review.
+[surface research](material-library-surface-research.md). The bounded appearances
+are accepted by user review; a [presentation pass](material-presentation-plan.md)
+is proposed separately.
 Baseline: `7b7bfd07`, the [qualified mesh/SDF workshops](material-workshops-evidence.md).
 
 ## Outcome and scope
