@@ -95,9 +95,9 @@ MaterialSample sample_library_surface(const SurfaceMaterial& base, const Surface
                             0, 0};
         const math::Vec3 gb{
             0, -power * std::pow(y, power - 1) * pi * frequency * std::sin(2 * pi * v), 0};
-        const float over = .5F + .5F * std::sin(pi * u) * std::sin(pi * v);
-        const math::Vec3 go{.5F * pi * frequency * std::cos(pi * u) * std::sin(pi * v),
-                            .5F * pi * frequency * std::sin(pi * u) * std::cos(pi * v), 0};
+        const float over = .5F + .5F * std::cos(pi * u) * std::cos(pi * v);
+        const math::Vec3 go{-.5F * pi * frequency * std::sin(pi * u) * std::cos(pi * v),
+                            -.5F * pi * frequency * std::cos(pi * u) * std::sin(pi * v), 0};
         const float filter = fade(footprint, frequency);
         const float yarn = glm::mix(.4F, glm::mix(a, b, over), filter);
         const auto yarn_gradient = (glm::mix(ga, gb, over) + (b - a) * go) * filter;

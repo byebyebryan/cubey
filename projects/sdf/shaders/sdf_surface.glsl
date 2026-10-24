@@ -135,9 +135,12 @@ void main() {
                 radiance=glassDiagnostics;
             }
         }
-        if(camera.options.x>9.5) {
+        if(camera.options.x>9.5 && camera.options.x<11.5) {
             radiance=studyRadiance(p,normal,-direction,footprint,exhausted);
             if(exhausted) { color=vec4(1,0,1,1);return; }
+        }
+        if(camera.options.x>11.5) {
+            radiance=vec3(authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,true).metallic);
         }
 #endif
         float viewZ=dot(p-camera.eye.xyz,camera.forward.xyz);

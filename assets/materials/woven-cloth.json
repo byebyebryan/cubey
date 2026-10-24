@@ -17,7 +17,7 @@
   "library": {
     "type": "weave",
     "seed": 17,
-    "relief": 0.0018,
+    "relief": 0.0007,
     "secondary_color": [
       0.16,
       0.28,
@@ -25,7 +25,7 @@
     ],
     "weave": {
       "yarn_spacing": 0.012,
-      "yarn_width": 0.72,
+      "yarn_width": 0.83,
       "irregularity": 0.15,
       "fiber_strength": 0.2
     },

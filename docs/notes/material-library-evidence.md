@@ -63,3 +63,22 @@ Initial visual review finds the wood/cut relationship legible and the rust's
 metal/oxide response distinct. Cloth relief and paper flecks need a restrained
 correction before final presentation. The local audition files are retained;
 these images precede final preset selection and performance qualification.
+
+The bounded correction reduces wood/rust relief, quiets paper flecks while
+bringing fibers into the visible frequency range, and softens cloth relief.
+Cloth over/under selection is centered on alternating yarn crossings. The
+corrected ten-fixture audition passes native validation and SDF CPU/GPU checks;
+paper remains a stylized directional-fiber study rather than a complete board
+construction or a fuzzy paper simulation.
+
+Both consumers now expose the shared catalog and family selection. Mesh uses a
+four-column gallery with bounded table capacity. Reloading recipes validates a
+complete candidate before publication; a mesh roster/order/optical-route change
+requires restart so existing permanent handles retain their contract. Editing
+the selected new family is covered by the bounded-resource stress path.
+
+Final qualification is driven by
+[`qualify_library.py`](../../projects/pbr_materials/tools/qualify_library.py),
+which discovers the catalog, records per-run identities and uses adapter-specific
+pitch signs to compare the same view. Current implementation work is still
+awaiting its final compatibility, timing and published presentation receipts.

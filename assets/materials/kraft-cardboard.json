@@ -5,29 +5,29 @@
   "label": "Kraft cardboard",
   "surface": {
     "base_color": [
-      0.48,
-      0.3,
-      0.145
+      0.42,
+      0.28,
+      0.15
     ],
     "roughness": 1,
     "optics": {
-      "diffuse_roughness": 0.75
+      "diffuse_roughness": 0.9
     }
   },
   "library": {
     "type": "paper",
     "seed": 43,
-    "relief": 0.0008,
+    "relief": 0.00065,
     "secondary_color": [
       0.18,
       0.085,
       0.025
     ],
     "paper": {
-      "fiber_frequency": 500,
-      "directionality": 0.55,
-      "fleck_strength": 0.18,
-      "fiber_strength": 0.65
+      "fiber_frequency": 220,
+      "directionality": 0.9,
+      "fleck_strength": 0.08,
+      "fiber_strength": 0.75
     }
   }
 }

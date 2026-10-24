@@ -1,4 +1,5 @@
 #include "pbr_materials_app_internal.h"
+#include <algorithm>
 
 #include <cubey/host/frame_stats.h>
 #include <cubey/host/headless_png_host.h>
@@ -56,12 +57,21 @@ int PbrMaterialsApp::run() {
         [this](cubey::host::WindowedAppContext& context,
                const FrameTiming& timing) -> std::optional<FrameStatsSample> {
         const VkExtent2D extent = context.swapchain().extent();
+        const auto mesh = config_.specimen == "block"       ? block_mesh_handle_
+                          : config_.specimen == "swatch"    ? swatch_mesh_handle_
+                          : config_.specimen == "cut-block" ? cut_block_mesh_handle_
+                                                            : sphere_mesh_handle_;
+        const auto count =
+            selected_ >= 0 ? std::size_t{1}
+                           : static_cast<std::size_t>(std::count_if(
+                                 catalog_.begin(), catalog_.end(), [&](const auto& e) {
+                                     return family_filter_ == "all" || family_filter_ == e.family;
+                                 }));
         return FrameStatsSample{
             .delta_seconds = timing.delta_seconds,
             .width = extent.width,
             .height = extent.height,
-            .triangles =
-                kSphereTriangleCount * static_cast<std::uint32_t>(material_handles_.size()),
+            .triangles = meshes_.at(mesh).index_count() / 3 * static_cast<std::uint32_t>(count),
         };
     };
     callbacks.shutdown = [this](cubey::host::WindowedAppContext& context) {

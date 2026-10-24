@@ -17,20 +17,27 @@ void PbrMaterialsApp::publish_materials(render::FrameSlot slot) {
     // table is used only by its corresponding slot, including CPU routing.
     if (config_.stress_edits && !stress_done_.at(slot.index)) {
         const auto before = table.metrics();
-        auto wrong_route = material_definition(0);
-        wrong_route.factors.transmission_factor = 1;
+        const std::size_t index = selected_ < 0 ? 0 : static_cast<std::size_t>(selected_);
+        const auto route = material_definition(index).factors.transmission_factor;
+        auto wrong_route = material_definition(index);
+        wrong_route.factors.transmission_factor = route > 0 ? 0.0F : 1.0F;
         bool rejected = false;
         try {
-            table.update_after_retire(material_handles_[0], wrong_route);
+            table.update_after_retire(material_handles_[index], wrong_route);
         } catch (const std::runtime_error&) {
             rejected = true;
         }
-        if (!rejected || table.definition(material_handles_[0]).factors.transmission_factor != 0)
+        if (!rejected ||
+            table.definition(material_handles_[index]).factors.transmission_factor != route)
             throw std::runtime_error("routing-changing edit was published");
         for (std::uint32_t i = 0; i < config_.stress_edits; ++i) {
-            auto d = material_definition(0);
+            auto d = material_definition(index);
             d.factors.roughness_factor = .05F + .95F * static_cast<float>(i % 97) / 96;
-            table.update_after_retire(material_handles_[0], std::move(d));
+            if (d.factors.surface_library.settings.x > 0)
+                d.factors.surface_library.settings.y = static_cast<float>(i % 65536);
+            if (d.factors.surface_library.settings.x == 2)
+                d.factors.surface_library.rust.coverage = static_cast<float>(i % 101) / 100;
+            table.update_after_retire(material_handles_[index], std::move(d));
         }
         const auto after = table.metrics();
         if (after.allocated_uniform_byte_size != before.allocated_uniform_byte_size ||
@@ -60,14 +67,17 @@ void PbrMaterialsApp::refresh_specimens() {
     for (std::size_t i = 0; i < catalog_.size(); ++i)
         if (matches(i))
             ++visible;
-    const std::size_t rows = (visible + kMaterialGridColumns - 1) / kMaterialGridColumns;
+    const std::size_t columns =
+        std::max<std::size_t>(1, std::min<std::size_t>(kMaterialGridColumns, visible));
+    const std::size_t rows = (visible + columns - 1) / columns;
     std::size_t cell = 0;
     for (std::size_t i = 0; i < specimens_.size(); ++i) {
-        const auto column = cell % kMaterialGridColumns, row = cell / kMaterialGridColumns;
-        const math::Vec3 position{(static_cast<float>(column) - 1.5F) * kMaterialGridSpacingX,
-                                  (static_cast<float>(rows - 1) * .5F - static_cast<float>(row)) *
-                                      kMaterialGridSpacingY,
-                                  0};
+        const auto column = cell % columns, row = cell / columns;
+        const math::Vec3 position{
+            (static_cast<float>(column) - static_cast<float>(columns - 1) * .5F) *
+                kMaterialGridSpacingX,
+            (static_cast<float>(rows - 1) * .5F - static_cast<float>(row)) * kMaterialGridSpacingY,
+            0};
         if (matches(i))
             ++cell;
         edits.transforms3d().set_local_transform(
@@ -129,6 +139,32 @@ void PbrMaterialsApp::draw_ui() {
             }
             ImGui::EndCombo();
         }
+        if (ImGui::Button("Reload library recipes")) {
+            try {
+                auto candidate = asset::load_material_catalog(
+                    std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
+                if (candidate.size() != catalog_.size())
+                    throw std::runtime_error("Restart the workshop to change the catalog roster.");
+                std::vector<asset::MaterialRecipe> next;
+                for (std::size_t i = 0; i < candidate.size(); ++i) {
+                    if (candidate[i].id != catalog_[i].id ||
+                        (candidate[i].recipe.optics.settings.y > 0) !=
+                            (originals_[i].optics.settings.y > 0))
+                        throw std::runtime_error(
+                            "Restart the workshop to change catalog IDs or optical routing.");
+                    next.push_back(candidate[i].recipe);
+                }
+                catalog_ = std::move(candidate);
+                recipes_ = std::move(next);
+                originals_ = recipes_;
+                family_filter_ = "all";
+                ++revision_;
+                refresh_specimens();
+                ui_error_.clear();
+            } catch (const std::exception& e) {
+                ui_error_ = e.what();
+            }
+        }
         const char* environments[]{"studio", "clear", "clouds"};
         int environment =
             config_.environment == "studio" ? 0 : (config_.environment == "clear" ? 1 : 2);
@@ -151,8 +187,10 @@ void PbrMaterialsApp::draw_ui() {
             ImGui::TextUnformatted(r.label.c_str());
             ImGui::BeginDisabled(glass);
             changed |= ImGui::ColorEdit3("Linear base color", &r.surface.base_roughness.x);
+            ImGui::BeginDisabled(r.library.settings.x == 2);
             changed |= ImGui::SliderFloat("Roughness", &r.surface.base_roughness.w, .05F, 1);
             changed |= ImGui::SliderFloat("Metallic", &r.optics.settings.x, 0, 1);
+            ImGui::EndDisabled();
             changed |= ImGui::SliderFloat("Diffuse roughness", &r.optics.attenuation.w, 0, 1);
             ImGui::EndDisabled();
             auto& library = r.library;

@@ -74,7 +74,10 @@ Size resident mesh tables from the validated catalog snapshot, with a proposed
 32-entry cap and twelve entries in this milestone. Keep material handles stable
 within that snapshot. Reject duplicate IDs, ID/path mismatches, missing recipes
 and unsupported requirements with a useful error; retain the last good snapshot
-on reload failure. A catalog is content metadata, not a new engine asset database.
+on reload failure. The bounded implementation permits live recipe/metadata
+reload with an unchanged mesh roster and optical routes; changing IDs, order,
+entry count or routing requires restart to preserve permanent handles. A catalog
+is content metadata, not a new engine asset database.
 
 ### Versioned recipes and resolved samples
 

@@ -85,9 +85,9 @@ MaterialSample librarySurface(SurfaceMaterial base, SurfaceLibrary s,
         float a = pow(x, power), b = pow(y, power);
         vec3 ga=vec3(-power * pow(x, power - 1) * LIBRARY_PI * frequency * sin(2 * LIBRARY_PI * u), 0, 0);
         vec3 gb=vec3(0, -power * pow(y, power - 1) * LIBRARY_PI * frequency * sin(2 * LIBRARY_PI * v), 0);
-        float over = .5 + .5 * sin(LIBRARY_PI * u) * sin(LIBRARY_PI * v);
-        vec3 go=vec3(.5 * LIBRARY_PI * frequency * cos(LIBRARY_PI * u) * sin(LIBRARY_PI * v),
-                           .5 * LIBRARY_PI * frequency * sin(LIBRARY_PI * u) * cos(LIBRARY_PI * v), 0);
+        float over=.5+.5*cos(LIBRARY_PI*u)*cos(LIBRARY_PI*v);
+        vec3 go=vec3(-.5*LIBRARY_PI*frequency*sin(LIBRARY_PI*u)*cos(LIBRARY_PI*v),
+                    -.5*LIBRARY_PI*frequency*cos(LIBRARY_PI*u)*sin(LIBRARY_PI*v),0);
         float filterWeight = surfaceFade(footprint, frequency);
         float yarn = mix(.4, mix(a, b, over), filterWeight);
         vec3 yarn_gradient = (mix(ga, gb, over) + (b - a) * go) * filterWeight;

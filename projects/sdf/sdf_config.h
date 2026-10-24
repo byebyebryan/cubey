@@ -201,7 +201,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("debug",
                      "Debug (0 shaded, 1 normals, 2 distance, 3 steps, 4 bricks, 5 parts, 6 base "
                      "color, 7 roughness, 8 surface normals, 9 glass transport diagnostics, "
-                     "10 opaque diffuse, 11 opaque reflections)",
+                     "10 opaque diffuse, 11 opaque reflections, 12 metalness)",
                      config::ValueType::UInt32),
               c.debug)
         .bind(option("shadows", "Shadows (0 off, 1 hard, 2 soft)", config::ValueType::UInt32),

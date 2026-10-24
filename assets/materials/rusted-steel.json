@@ -18,7 +18,7 @@
   "library": {
     "type": "rust",
     "seed": 31,
-    "relief": 0.0016,
+    "relief": 0.0008,
     "secondary_color": [
       0.29,
       0.063,

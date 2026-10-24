@@ -92,6 +92,25 @@ int main() {
     // The embedded snapshot remains usable after its source file disappears.
     std::filesystem::remove(temporary);
     require(sdf::workshop_material_recipe(c, restored).library == restored.libraries[0]);
+    c.material_recipe_path.clear();
+    const auto catalog = asset::load_material_catalog(
+        std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
+    for (const auto& entry : catalog) {
+        c.workshop_material = entry.id;
+        c.workshop = "sphere";
+        const auto scene = sdf::make_material_workshop(c);
+        const auto saved = sdf::parse_authored_scene(sdf::serialize_authored_scene(scene));
+        require(sdf::authored_appearance_hash(saved) == sdf::authored_appearance_hash(scene));
+        require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, saved)) ==
+                asset::material_recipe_fingerprint(entry.recipe));
+    }
+    c.workshop = "csg";
+    c.workshop_material = "rusted-steel";
+    c.workshop_cut_material = true;
+    const auto rust = sdf::make_material_workshop(c);
+    const auto fresh = sdf::authored_surface({.075F, -.025F, .15F}, rust);
+    require(fresh.optics.settings.x == 1 &&
+            fresh.material.base_roughness.w == rust.libraries[0].rust_roughness.x);
     std::cout << "Shared/legacy seven-recipe fingerprints exact; CSG appearance leaves geometry "
                  "cache identity intact; affine bump derivative verified.\n";
 }

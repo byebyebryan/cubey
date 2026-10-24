@@ -76,7 +76,7 @@ class App {
         if ((config_.environment_extent != 64 && config_.environment_extent != 128) ||
             (config_.glass_crossings != 4 && config_.glass_crossings != 8 &&
              config_.glass_crossings != 16) ||
-            config_.debug > 11 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
+            config_.debug > 12 || config_.shadows > 2 || !std::isfinite(config_.yaw) ||
             !std::isfinite(config_.pitch) || !std::isfinite(config_.distance) ||
             !std::isfinite(config_.target_y) || config_.distance < 0.6F ||
             (config_.supersample != 1 && config_.supersample != 2) ||
@@ -336,6 +336,23 @@ class App {
                     if (field_->stats().build_count != before)
                         throw std::runtime_error("optics-only edit rebuilt distance bricks");
                     std::cout << "sdf: optics-only cache check passed builds=" << before << '\n';
+                    if (std::any_of(authored_->libraries.begin(), authored_->libraries.end(),
+                                    [](const auto& p) {
+                                        return !procedural::default_surface_library(p);
+                                    })) {
+                        auto changed = *displayed_authored_;
+                        auto& library = changed.libraries[0];
+                        if (library.settings.x > 0)
+                            library.settings.y = std::fmod(library.settings.y + 1, 65536.0F);
+                        if (library.optical_options.x > .5F)
+                            changed.materials[0].base_roughness.w =
+                                std::min(1.0F, changed.materials[0].base_roughness.w + .05F);
+                        field_->build(changed);
+                        if (field_->stats().build_count != before)
+                            throw std::runtime_error("library-only edit rebuilt distance bricks");
+                        std::cout << "sdf: library-only cache check passed builds=" << before
+                                  << '\n';
+                    }
                     if (std::any_of(authored_->patterns.begin(), authored_->patterns.end(),
                                     [](const auto& p) { return p.settings.x != 0; })) {
                         auto changed = *displayed_authored_;
@@ -450,6 +467,24 @@ class App {
                     }
                     ImGui::EndCombo();
                 }
+                if (ImGui::Button("Reload library recipes")) {
+                    try {
+                        auto candidate = asset::load_material_catalog(
+                            std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
+                        if (std::none_of(candidate.begin(), candidate.end(), [&](const auto& e) {
+                                return e.id == config_.workshop_material;
+                            }))
+                            throw std::runtime_error(
+                                "Active material is missing from the candidate library.");
+                        catalog_ = std::move(candidate);
+                        config_.material_recipe_path.clear();
+                        family_filter_ = "all";
+                        workshop_changed_ = true;
+                        error_.clear();
+                    } catch (const std::exception& e) {
+                        error_ = e.what();
+                    }
+                }
                 workshop_changed_ |=
                     ImGui::Checkbox("Contrasting cut material", &config_.workshop_cut_material);
                 workshop_changed_ |=
@@ -552,12 +587,13 @@ class App {
             const char* views[]{"Shaded",          "Normals",        "Ray distance",
                                 "Traversal work",  "Brick cells",    "Part identity",
                                 "Base color",      "Roughness",      "Surface normals",
-                                "Glass transport", "Opaque diffuse", "Opaque reflections"};
+                                "Glass transport", "Opaque diffuse", "Opaque reflections",
+                                "Metalness"};
             const bool glass =
                 authored_ && std::any_of(authored_->optics.begin(), authored_->optics.end(),
                                          [](const auto& o) { return o.settings.y > 0; });
             const int view_count =
-                config_.lighting != "atmosphere" ? (glass ? 10 : 12) : (authored_ ? 9 : 5);
+                config_.lighting != "atmosphere" ? (glass ? 10 : 13) : (authored_ ? 9 : 5);
             if (ImGui::Combo("View", &view, views, view_count))
                 config_.debug = static_cast<std::uint32_t>(view);
             if (glass) {
@@ -608,8 +644,11 @@ class App {
                         ImGui::BeginDisabled(authored_->optics[i].settings.y > 0);
                         materials_changed_ |=
                             ImGui::ColorEdit3("Base color", &material.base_roughness.x);
+                        ImGui::BeginDisabled(!authored_->libraries.empty() &&
+                                             authored_->libraries[i].settings.x == 2);
                         materials_changed_ |=
                             ImGui::SliderFloat("Roughness", &material.base_roughness.w, .05F, 1);
+                        ImGui::EndDisabled();
                         materials_changed_ |=
                             ImGui::ColorEdit3("Emission", &material.emission.x,
                                               ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float);
@@ -639,6 +678,8 @@ class App {
                                     "Frost roughness", &material.base_roughness.w, .05F, .8F);
 
                             if (library.settings.x > 0) {
+                                ImGui::Checkbox("Surface pattern", &config_.procedural);
+                                ImGui::Checkbox("Bump detail", &config_.bump);
                                 int seed = static_cast<int>(library.settings.y);
                                 if (ImGui::SliderInt("Library seed", &seed, 0, 65535)) {
                                     library.settings.y = static_cast<float>(seed);

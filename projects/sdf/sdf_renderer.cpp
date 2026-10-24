@@ -327,7 +327,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
          config.ground ? 1.0F : 0.0F, 0},
         {glm::normalize(target_point - eye),
          2.0F * std::tan(glm::radians(22.5F)) / static_cast<float>(scene_extent_.height)}};
-    const bool raw_diagnostic = config.debug > 0 && config.debug < 10;
+    const bool raw_diagnostic = (config.debug > 0 && config.debug < 10) || config.debug == 12;
     post_.upload(slot, render::hdr_post_uniforms(
                            target.format, raw_diagnostic ? 0.0F : config.exposure,
                            raw_diagnostic ? render::PbrTonemap::Linear : render::PbrTonemap::Aces));
