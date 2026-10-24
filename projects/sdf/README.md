@@ -1,5 +1,25 @@
 # SDF
 
+## Material presentation
+
+[![A through-cut reveals solid wood grain](../../docs/media/material-workshops/sdf-poster.png)](../../docs/media/material-workshops/sdf.mp4)
+
+A saved body/cut history exposes the wood field on a new interior, followed by
+a small camera reveal of the bore and end grain. The
+[presentation report](http://starship:8787/reports/d0ddec82e8047da315007f815bd30ce9192711b4c420183268faf747b4746d77/)
+also compares the solid, subtractor preview and committed cut at the same camera.
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/presentation/wood-cut.json
+```
+
+Controls start collapsed. Expand the title bar to pause, restart, seek or inspect
+the saved history. Space pauses and R restarts; `--time 3` selects the committed
+cut before the camera moves. This is saved construction playback; continuous
+brush sculpting is a separate experiment. See the
+[media package](../../docs/media/material-workshops/README.md) and
+[qualification](../../docs/notes/material-presentation-evidence.md).
+
 ## Material workshop
 
 The explicit workshop mode reuses this renderer and the standalone

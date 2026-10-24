@@ -6,8 +6,9 @@ Status: Stages A and B implemented and qualified on 2026-10-23. The
 [workshop evidence](material-workshops-evidence.md) records current front doors,
 compatibility, measured costs and the native review report. Stage C remains
 deferred. The material milestones and review fixes are pushed through `b72c7c5c`.
-The [presentation pass](material-presentation-plan.md) is proposed for review;
-it starts with two material stories before a separate authored-content film.
+The [presentation pass](material-presentation-evidence.md) now delivers two
+native material stories and a compact report, with new shot choices awaiting
+user review. A refreshed authored-content film remains separate.
 
 ## Purpose
 

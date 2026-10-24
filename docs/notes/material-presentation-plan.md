@@ -2,7 +2,10 @@
 
 Date: 2026-10-23
 
-Status: proposed for review; no presentation implementation is included.
+Status: implemented and technically qualified; the new shot choices await user
+visual review. The [presentation evidence](material-presentation-evidence.md)
+records the selected stories, source identities, committed media and delivery.
+The original proposal below retains the intended scope and completion boundary.
 The current twelve-material appearance is accepted for the bounded library
 milestone. Its [review fixes and qualification](material-library-evidence.md#review-and-refinement)
 are committed and pushed through `b72c7c5c`. This plan develops the presentation

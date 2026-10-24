@@ -1,0 +1,62 @@
+{
+  "schema": "cubey.material-presentation.media",
+  "version": 1,
+  "entries": [
+    {
+      "id": "pbr",
+      "title": "PBR materials / contrasting surfaces",
+      "capture_source": "37838ac801f029c94765ba2aa009e9df1ed4e1c2",
+      "files": {
+        "pbr.mp4": {
+          "bytes": 286580,
+          "sha256": "8ab495a17cc10c2fbc0bad862c6fa9de6070634c305648da5360cbac85b76be3"
+        },
+        "pbr-master-1080p.mp4": {
+          "bytes": 1276890,
+          "sha256": "c37278a5686825226692d80e24ba482779bb14f8361e447ef8bcb587fc520618"
+        },
+        "pbr-poster.png": {
+          "bytes": 279661,
+          "sha256": "f73908242a812babf768d19aa75408027737ad607ffdf6bc9b19497f2529f55c"
+        }
+      }
+    },
+    {
+      "id": "sdf",
+      "title": "SDF materials / reveal the inside",
+      "capture_source": "37838ac801f029c94765ba2aa009e9df1ed4e1c2",
+      "files": {
+        "sdf.mp4": {
+          "bytes": 242050,
+          "sha256": "9db1447e92503cd065c8b14840ccd01cf6d9baaa4c689467565c22d86fbe9a9e"
+        },
+        "sdf-master-1080p.mp4": {
+          "bytes": 986122,
+          "sha256": "713a3d9dcbb45f2bd9205b2886327adfa82038edff6abc220d870625cf1ac800"
+        },
+        "sdf-poster.png": {
+          "bytes": 208224,
+          "sha256": "ab9915d1301fc6c0321f92d26e7a8ce1321ec65e67c0b4fa1aaf4f52924e4f80"
+        }
+      }
+    }
+  ],
+  "video_contract": {
+    "frames": 480,
+    "fps": 60,
+    "duration_seconds": 8,
+    "gallery_size": [
+      1280,
+      720
+    ],
+    "master_size": [
+      1920,
+      1080
+    ],
+    "codec": "H.264",
+    "audio": "none",
+    "poster_seconds": 6.5
+  },
+  "license": "MIT / Cubey-generated media",
+  "capture_recipe": "capture.json"
+}

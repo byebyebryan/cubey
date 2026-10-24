@@ -5,6 +5,28 @@ twelve standalone recipes in [`assets/materials`](../../assets/materials).
 The [reviewed plan](../../docs/notes/pbr-material-demo-plan.md) and
 [SDF workshop contract](../../docs/notes/sdf-material-workshop-plan.md) define scope.
 
+## Presentation
+
+[![Four contrasting material specimens](../../docs/media/material-workshops/pbr-poster.png)](../../docs/media/material-workshops/pbr.mp4)
+
+Wood, rusted steel, woven cloth and bronze share one frozen low-sun environment
+while an eased camera arc reveals their different surfaces. Watch the
+[presentation and inspectable SDF cut](http://starship:8787/reports/d0ddec82e8047da315007f815bd30ce9192711b4c420183268faf747b4746d77/)
+or run the preset:
+
+```sh
+build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/presentation/contrast.json
+```
+
+Controls start collapsed; expand the title bar for pause/replay and the full
+material workshop. Space pauses, R restarts, and drag/scroll still orbit/zoom.
+`--presentation-time 4` selects a reproducible snapshot. The alternative
+`surfaces.json` preset retains the frosted-glass group audition. The
+[media package](../../docs/media/material-workshops/README.md) retains both
+1080p masters and 720p clips with capture provenance.
+
+## Workshop
+
 ```sh
 cmake --build build/release --target cubey_project_pbr_materials
 build/release/projects/pbr_materials/pbr_materials

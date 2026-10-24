@@ -72,10 +72,10 @@ bounded optical comparisons. Stage C and deeper material realism remain deferred
 evidence is a bounded native checkpoint, not a repository-wide performance or
 artistic acceptance claim.
 
-The proposed [material presentation pass](notes/material-presentation-plan.md)
-curates the accepted library into separate PBR and SDF short stories, native
-presentation presets and a compact viewer-facing report. It leaves new material
-development and the guardian construction-film refresh to separate goals.
+The [material presentation pass](notes/material-presentation-evidence.md)
+delivers separate PBR and SDF short stories, native presets, committed media and
+a compact report. Technical/delivery checks pass; new shot choices await user
+review. New materials and the guardian construction-film refresh remain separate.
 
 ## Public presentation
 
