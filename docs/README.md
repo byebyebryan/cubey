@@ -13,9 +13,10 @@ there when implementation boundaries matter.
   repository structure.
 - [Roadmap](roadmap.md): current readiness, completed foundations, and likely
   next work.
-- [Showcase](../README.md#showcase): the five showcased project highlights.
+- [Public showcase](https://dev.byebyebryan.com/cubey/): the current visual
+  collection, organized by subject and demo.
 - [Presentation site](../site/README.md): authored static showcase, web-media
-  attribution, build/review workflow and the separate public-release boundary.
+  attribution, build/review workflow and GitHub Pages publishing.
 
 ## Current Design
 
@@ -25,10 +26,10 @@ there when implementation boundaries matter.
   workshop and the shared parameterized material-content gap. The
   [material presentation evidence](notes/material-presentation-evidence.md)
   records native presets, two short stories and a compact published report.
-- [Showcase storyboard and capture plan](showcase.md): public demo scope,
-  cinematic shot cards, media provenance, and gated capture work.
-- [Showcase media package](media/showcase/README.md): native-player mapping,
-  committed MP4/poster fallbacks, hashes, recipes, and licensing.
+- [Original README showcase storyboard](showcase.md): retained shot cards,
+  capture contracts, and provenance for the earlier five-film gallery.
+- [Original README media package](media/showcase/README.md): retained player
+  mappings, committed MP4/poster fallbacks, hashes, recipes, and licensing.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
 
@@ -91,8 +92,9 @@ Detailed current foundation notes live under
 
 Project-specific design stays beside the project:
 
-The root [README](../README.md) maps the active project families. This section
-indexes projects and studies that currently have a local README.
+This section indexes active projects and retained studies with a local README.
+The [public showcase](https://dev.byebyebryan.com/cubey/demos/) presents visual
+subjects; these guides retain source ownership and technical instructions.
 
 Active projects:
 

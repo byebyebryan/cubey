@@ -325,7 +325,7 @@ Borrow the contract clarity and terminology; keep Cubey's implementation small.
 
 Cubey is a small C++ monorepo. Its explicit `cubey::*` CMake libraries and
 public include boundaries define ownership; a directory tree is not a second
-source registry. The [root project map](../README.md#project-map) owns the
+source registry. The [project guides](README.md#project-docs) index the
 application inventory, and [project layout](architecture/project-layout.md)
 distinguishes supported front doors, tools, tests and retained studies.
 

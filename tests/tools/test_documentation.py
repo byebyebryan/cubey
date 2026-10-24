@@ -100,7 +100,7 @@ class DocumentationRules(unittest.TestCase):
             extended = struct.pack(">I4sQ", 1, b"moov", 16) + mdat
             self.assertEqual(docs.media_errors(root, self.asset(root, "clip.mp4", extended)), [])
 
-    def test_manifest_checks_current_assets_and_native_player_order(self):
+    def test_retained_gallery_checks_assets_and_package_player_order(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             folder = root / "docs/media/showcase"
@@ -115,11 +115,14 @@ class DocumentationRules(unittest.TestCase):
                                 "poster": self.asset(root, f"{name}.png", png, width=2, height=3)})
             (folder / "manifest.json").write_text(json.dumps({"entries": entries}))
             urls = [entry["publication"]["github_attachment_url"] for entry in entries]
-            (root / "README.md").write_text("\n".join(urls))
+            (root / "README.md").write_text("# Cubey\n[Showcase](https://example.org/site/)")
             (folder / "README.md").write_text("\n".join(urls))
             self.assertEqual(check.check_media(root)["errors"], [])
-            (root / "README.md").write_text("\n".join(reversed(urls)))
-            self.assertIn("root native-player order differs from the manifest", check.check_media(root)["errors"])
+            (folder / "README.md").write_text("\n".join(reversed(urls)))
+            self.assertIn("media package native-player order differs from the manifest", check.check_media(root)["errors"])
+            (folder / "README.md").write_text(urls[1])
+            self.assertIn("missing native player in media README: first", check.check_media(root)["errors"])
+            (folder / "README.md").write_text("\n".join(urls))
             (root / "first.mp4").write_bytes(b"corrupt")
             self.assertTrue(any("hash mismatch" in error for error in check.check_media(root)["errors"]))
             entries[0]["publication"]["github_attachment_url"] = ""

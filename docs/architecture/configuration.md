@@ -51,7 +51,7 @@ That list is migration history, not the current project roster. `cloud_ref` now
 lives in the opt-in [TerrainEngine cloud study](../../studies/cloud/terrainengine/README.md)
 and retains its typed facade only for reference comparisons. It is absent from
 normal project builds. Current applications are listed in the
-[portfolio](../../README.md#project-map).
+[project guides](../README.md#project-docs).
 Planet likewise lives in an [opt-in paused study](../../studies/planet/README.md);
 its facade is retained for explicit study runs.
 

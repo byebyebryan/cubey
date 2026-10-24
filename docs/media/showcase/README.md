@@ -1,12 +1,13 @@
 # Cubey showcase media
 
-This directory keeps five selected highlights
-reproducible and independent of GitHub's presentation layer. The
-root highlights use five published native video players with poster fallbacks;
-these committed MP4s, generated posters, and the manifest are the durable,
-hashable source of truth.
+This directory retains the original five-film README gallery, independently of
+GitHub's presentation layer. The current visual collection lives on the
+[presentation site](https://dev.byebyebryan.com/cubey/); its
+[media ledger](../../../site/media/README.md) records the selected web assets.
+These committed MP4s, generated posters, attachment mappings, and the manifest
+remain the durable source for the earlier gallery and its capture recipes.
 
-The published gallery order is Ocean, glTF + Terrain, Water 3D, Fire 3D, and
+The retained gallery order is Ocean, glTF + Terrain, Water 3D, Fire 3D, and
 Terrain Water. Joining valleys sunset is the owner-selected Terrain Water cut. Each poster
 is extracted from its corresponding committed MP4; click one to open the clip:
 

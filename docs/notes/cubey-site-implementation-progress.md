@@ -169,3 +169,38 @@ deployment or production-performance claim.
 - No required implementation work remains in this goal. The next release step
   needs the chosen public endpoint and explicit source/publication scope; the
   static build, selected media, attribution and review result are concrete.
+
+## Public release and README cutover — 2026-10-24
+
+- The user authorized push/publication after reviewing media coverage and serving.
+  The existing account Pages domain supplies
+  [the public endpoint](https://dev.byebyebryan.com/cubey/). Cubey uses workflow
+  publication and enforced HTTPS; the account domain, DNS and root-site source
+  remain unchanged. The repository homepage now points to the public site.
+- Source release `a1755d99bf83f04273b17f692de74bb21d625d85` fast-forwarded
+  `main`, including the twelve previously local native/material commits and
+  the site implementation. The
+  [Pages run](https://github.com/byebyebryan/cubey/actions/runs/40135806809)
+  passed both build and deployment. Its public
+  [deployment identity](https://dev.byebyebryan.com/cubey/metadata/deployment.json)
+  records that source revision and workflow.
+- Every public build file matches the served bytes: 95 files, 23,305,150 bytes,
+  including all 70 media files and fourteen MP4s. The `.nojekyll` control marker
+  is not a public resource. Canonical URLs match the HTTPS `/cubey/` endpoint;
+  the nested custom 404 returns the correct page and HTTP status. First and last
+  1 KB video ranges return matching `206` responses with `video/mp4`.
+- The live home page and Ocean page were inspected in the browser. Ocean's
+  native 1280×720 film played through eight seconds with ready state 4 and no
+  media error. Detailed HTTP receipts remain under
+  `outputs/cubey-site/publication-2026-10-24/` as local execution evidence.
+- After live verification, the root README became a compact build/navigation
+  guide with a prominent site link. Source project guides remain in the docs
+  index. The earlier five-film package, hashes, recipes, attachments and media
+  license exception remain intact; retained gallery checks now read its package
+  index rather than requiring root-README embeds. This follow-up changes
+  repository documentation/checks and does not change deployed website bytes.
+- Site type/content/media/build checks pass, as do all eight documentation/layout/
+  media lanes checked separately from native CLI recipe execution. The
+  latter cannot pass against this checkout's incomplete/stale `build/dev`
+  executables; this publication does not rebuild or requalify native rendering.
+  Existing native source/capture qualification remains recorded in its own notes.

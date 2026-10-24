@@ -17,7 +17,6 @@ def check_media(root):
     manifest = json.loads((root / "docs/media/showcase/manifest.json").read_text())
     entries = manifest["entries"]
     errors, paths, ids = [], set(), set()
-    root_readme = (root / "README.md").read_text()
     package = (root / "docs/media/showcase/README.md").read_text()
     positions = []
     if not entries:
@@ -40,12 +39,11 @@ def check_media(root):
         if not isinstance(url, str) or not url.startswith("https://"):
             errors.append(f"invalid native-player URL: {entry['id']}")
             continue
-        for name, text in (("README.md", root_readme), ("media README", package)):
-            if url not in text:
-                errors.append(f"missing native player in {name}: {entry['id']}")
-        positions.append(root_readme.find(url))
+        if url not in package:
+            errors.append(f"missing native player in media README: {entry['id']}")
+        positions.append(package.find(url))
     if positions != sorted(positions):
-        errors.append("root native-player order differs from the manifest")
+        errors.append("media package native-player order differs from the manifest")
     return {"entries_checked": len(entries), "media_checked": len(paths), "errors": errors}
 
 

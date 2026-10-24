@@ -118,14 +118,14 @@ class Documentation(unittest.TestCase):
         self.assertIn('Fluid 2.5D builtin shallow water',docs)
 
     def test_selected_cut_is_published_without_promoting_interactive_defaults(self):
-        for path in (ROOT/'README.md',TERRAIN_WATER/'README.md',ROOT/'docs/showcase.md'):
+        for path in (ROOT/'docs/media/showcase/README.md',TERRAIN_WATER/'README.md',ROOT/'docs/showcase.md'):
             source=path.read_text()
             self.assertIn('Joining valleys',source)
             self.assertNotIn('Owner creative review and GitHub attachment publication',source)
-        root=(ROOT/'README.md').read_text()
-        self.assertIn('fluid-25d-master-1080p.mp4',root)
-        self.assertNotIn('36-second project film',root)
-        self.assertNotIn('publication remains pending',root)
+        gallery=(ROOT/'docs/media/showcase/README.md').read_text()
+        self.assertIn('fluid-25d-master-1080p.mp4',gallery)
+        self.assertNotIn('36-second project film',gallery)
+        self.assertNotIn('publication remains pending',gallery)
         self.assertIn('Default prepared site: Mountain',(TERRAIN_WATER/'README.md').read_text())
 
     def test_project_split_preserves_identity_and_backup_boundaries(self):
@@ -140,7 +140,7 @@ class Documentation(unittest.TestCase):
         self.assertEqual((entry['project'],entry['title']),('terrain_water','Terrain Water'))
         # Capture identity is historical and must not be rewritten by a project move.
         self.assertIn('/projects/fluid/fluid_25d/fluid_25d',entry['recipe']['capture_command'][2])
-        self.assertIn('projects/terrain_water/README.md',(ROOT/'README.md').read_text())
+        self.assertIn('projects/terrain_water/README.md',(ROOT/'docs/README.md').read_text())
 
 
 if __name__=='__main__':

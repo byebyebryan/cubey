@@ -9,8 +9,10 @@ Run these stdlib Python 3.11+ tools from the repository root:
   follow their README; vendored docs and ignored private builds are excluded.
 - `python3 -B tools/check_documentation.py --check media` verifies current gallery
   files, sizes, SHA-256, PNG dimensions, MP4 fast-start layout and player order.
-  Historical recipes retain their original hashes; this check reads the current
-  manifest rather than treating superseded file paths as current assets.
+  Player mappings/order live in the retained gallery package README; the root
+  README points to the public presentation site. Historical recipes retain their
+  original hashes; this check reads the current manifest rather than treating
+  superseded file paths as current assets.
 - `python3 -B tools/report_server.py` serves local reports under `outputs/`.
   See the [report browser guide](../docs/getting-started.md#browse-local-result-reports)
   for configuration and operation.

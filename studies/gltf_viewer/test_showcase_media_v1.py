@@ -66,12 +66,12 @@ class ShowcaseMedia(unittest.TestCase):
                          "936661a15f5b49b915d5a09be8a0ae061e4a14b6a8a0b254f28268c285bb7bc2")
         self.assertEqual(legacy["entry"]["publication"]["github_attachment_url"],
                          self.entry["legacy"]["github_attachment_url"])
-        root = (ROOT / "README.md").read_text()
-        self.assertIn("](docs/media/showcase/gltf-terrain.mp4)", root)
-        self.assertIn("\n" + self.entry["publication"]["github_attachment_url"] + "\n", root)
+        gallery = (MEDIA / "README.md").read_text()
+        self.assertIn("](gltf-terrain.mp4)", gallery)
+        self.assertIn(self.entry["publication"]["github_attachment_url"], gallery)
         self.assertNotEqual(self.entry["publication"]["github_attachment_url"],
                             self.entry["legacy"]["github_attachment_url"])
-        self.assertNotIn("\n" + self.entry["legacy"]["github_attachment_url"] + "\n", root)
+        self.assertNotIn(self.entry["legacy"]["github_attachment_url"], gallery)
         self.assertEqual(self.entry["license"], legacy["entry"]["license"])
         self.assertEqual(self.recipe["license"], self.entry["license"])
         self.assertEqual(self.entry["license"]["media"], "CC-BY-NC-4.0")
@@ -102,8 +102,7 @@ class ShowcaseMedia(unittest.TestCase):
         for key in ("issue_remains_closed", "original_four_attachment_mappings_unchanged",
                     "fluid_publication_comment_retained", "morning_publication_comment_retained"):
             self.assertTrue(verification[key])
-        for path in (ROOT / "README.md", ROOT / "projects/gltf_viewer/README.md",
-                     MEDIA / "README.md"):
+        for path in (ROOT / "projects/gltf_viewer/README.md", MEDIA / "README.md"):
             self.assertIn(publication["github_attachment_url"], path.read_text())
 
     def test_morning_recipe_and_receipt_are_retained_as_exact_history(self):
@@ -120,8 +119,8 @@ class ShowcaseMedia(unittest.TestCase):
         self.assertEqual(receipt["sha256"],
                          "8734ec1b86a2390947ad960e0481015aa24f0b218a7f6f4f8f95bcd416fe8233")
         self.assertEqual(previous["github_attachment_url"], receipt["github_attachment_url"])
-        self.assertNotIn("\n" + previous["github_attachment_url"] + "\n",
-                         (ROOT / "README.md").read_text())
+        self.assertNotIn(previous["github_attachment_url"],
+                         (MEDIA / "README.md").read_text())
         self.assertEqual(old["license"], self.recipe["license"])
 
 
