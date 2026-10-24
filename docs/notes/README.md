@@ -76,6 +76,8 @@ the architecture and project guides remain current authority.
 - [Terrain Visual Fidelity Strategy](terrain-visual-fidelity-strategy.md): bounded evidence required before reopening the accepted backdrop.
 
 - [Material workshops evidence](material-workshops-evidence.md): implemented mesh/SDF front doors, shared content, native qualification, measured costs and review report.
+- [Material library expansion evidence](material-library-evidence.md): versioned
+  content checkpoint and native rough-glass feasibility; implementation is ongoing.
 - [SDF material workshop contract](sdf-material-workshop-plan.md): shared recipes and compact CSG inspection on the existing renderer.
 
 ## Exploration candidates

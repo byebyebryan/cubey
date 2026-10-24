@@ -63,7 +63,7 @@ class Renderer {
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
     std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_, scene_patterns_,
-        scene_domains_;
+        scene_domains_, scene_libraries_;
     std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
     render::HdrPostFrame post_;

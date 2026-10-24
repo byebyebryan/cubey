@@ -93,8 +93,18 @@ float environmentVisibility(vec3 p,vec3 n,inout bool exhausted) {
 #ifdef SDF_MATERIAL_STUDY
 #include "optics_math.glsl"
 vec3 glassDiagnostics=vec3(0);
-vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,inout bool exhausted) {
+vec3 glassEnvironment(vec3 direction,float variance) {
+    if(variance==0.0) return skyRadiance(direction); // exact legacy path
+    float roughness=pow(clamp(variance,0.0,1.0),.25);
+    return lighting.surface_options.w>.5 ? vec3(1) :
+        reflectedEnvironment(direction,roughness*lighting.transport_options.z);
+}
+vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,float roughness,inout bool exhausted) {
     vec3 result=vec3(0),throughput=vec3(1);
+    // Bounded environment-only roughness approximation. Variance accumulates
+    // angular spread at each refracting interface; the measured central path
+    // still determines absorption. This is not a multiple-ray rough BTDF.
+    float variance=0.0,slopeVariance=roughness*roughness*roughness*roughness;
     bool inside=dot(direction,outward)>0;
     glassDiagnostics=vec3(0,0,.25);
     if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(point-camera.eye.xyz));
@@ -103,21 +113,23 @@ vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,
         OpticalInterface face=opticalInterface(direction,outward,inside,optics.settings.z);
         if(face.tir) {
             glassDiagnostics.y=1;
-            return result+throughput*skyRadiance(face.reflected);
+            return result+throughput*glassEnvironment(face.reflected,variance+slopeVariance);
         }
-        result+=throughput*face.fresnel*skyRadiance(face.reflected);
+        result+=throughput*face.fresnel*glassEnvironment(face.reflected,variance+slopeVariance);
         throughput*=1-face.fresnel;
+        float eta=inside ? optics.settings.z : 1.0/optics.settings.z;
+        variance+=slopeVariance*(1.0-eta)*(1.0-eta);
         direction=normalize(face.transmitted);
         inside=!inside;
         vec3 origin=point+outward*(inside ? -VOXEL : VOXEL);
         Hit next=trace(origin,direction,5);
         if(next.status==2) { exhausted=true;return vec3(0); }
-        if(next.status==0) return result+throughput*skyRadiance(direction);
+        if(next.status==0) return result+throughput*glassEnvironment(direction,variance);
         vec3 nextPoint=origin+direction*next.t;
         if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(nextPoint-point));
         if(crossing==budget-1) {
             glassDiagnostics.x=1;
-            return result+throughput*skyRadiance(direction);
+            return result+throughput*glassEnvironment(direction,variance);
         }
         // The next trace starts at an offset origin. A small local t can be
         // a valid adjacent interface; test world-space progress instead.
@@ -132,7 +144,8 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
     MaterialSample sampleValue=authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,lighting.surface_options.z>.5);
     MaterialOptics optics=authoredHeader.y==1u ? materialOptics(0u) : authoredSurface(p,footprint,lighting.surface_options.x>.5).optics;
     if(optics.settings.y>.5 && lighting.material.w<.5)
-        return glassRadiance(p,geometricNormal,-viewDirection,optics,exhausted);
+        return glassRadiance(p,geometricNormal,-viewDirection,optics,
+            libraryTable[0].optical_options.x>.5 ? sampleValue.material.base_roughness.w : 0.0,exhausted);
     vec3 base=sampleValue.material.base_roughness.rgb;
     float roughness=sampleValue.material.base_roughness.a;
     vec3 n=lighting.surface_options.y>.5 ? materialShadingNormal(geometricNormal,sampleValue.height_gradient) : geometricNormal;

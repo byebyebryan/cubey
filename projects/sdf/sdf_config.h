@@ -14,6 +14,7 @@ struct SdfConfig {
     std::filesystem::path authored_path, export_authored_path;
     std::string workshop, workshop_material = "marble";
     std::filesystem::path material_recipe_path, export_material_recipe_path;
+    std::filesystem::path material_environment_path;
     bool workshop_cut_material = false, workshop_blend_materials = true;
     std::string scene = "sticks";
     std::string lighting = "atmosphere";
@@ -145,6 +146,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(workshop_blend, c.workshop_blend_materials)
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
+        .bind(option("material-environment", "Diagnostic HDR environment for material-study",
+                     config::ValueType::Path),
+              c.material_environment_path)
         .bind(clouds, c.clouds)
         .bind(cloud_backdrop, c.cloud_backdrop)
         .bind(cloud_sky_only, c.cloud_sky_only)

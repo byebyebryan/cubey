@@ -1,0 +1,44 @@
+# Material library expansion evidence
+
+Date: 2026-10-23
+
+Status: implementation in progress under the
+[library plan](material-library-expansion-plan.md). New appearances are pending
+human review. The [prior workshop evidence](material-workshops-evidence.md)
+remains the compatibility and performance baseline.
+
+## Content checkpoint
+
+`b3e9a371` adds recipe V2, the bounded shared catalog and resolved authored SDF
+scene V3 materials. Recipe and workshop tests pass, including strict fields,
+catalog identity/path failures, all named parameter groups, domain persistence,
+standalone snapshot survival and exact legacy seven-material SDF fingerprints.
+No new appearance was claimed by that data checkpoint.
+
+## Rough-glass feasibility
+
+Eight native 640 by 640 captures compare roughness 0.05, 0.25, 0.45 and 0.65 in
+mesh and SDF spheres against the same generated sharp-bar HDR environment.
+Required Vulkan validation passes on the RTX 5070 Ti, driver 610.57.04.
+Local captures, native logs and hashed source/binary/input receipt live under
+`outputs/material-library/feasibility`; the final report will select a small
+comparison from this set.
+
+Inspection shows progressively softened reflection and transmitted bars with
+fixed geometry, neutral attenuation and fixed IOR. At the higher settings SDF
+approaches a smooth bright average of this environment. This establishes that
+the bounded filtering route is viable; it is not an acceptance claim for the
+final preset or a comparison to measured glass.
+
+Mesh reuses forward rough-transmission filtering. SDF accumulates an angular
+spread estimate at interfaces and samples existing environment mip levels;
+its central path and measured in-medium absorption distance remain intact.
+Zero spread takes the legacy sharp environment path. SDF does not transmit
+arbitrary opaque scene geometry or integrate a full multiple-ray rough BTDF.
+The two renderers are intentionally not required to produce identical images.
+
+The diagnostic generator is
+[`library_environment.py`](../../projects/pbr_materials/tools/library_environment.py).
+Mesh accepts that HDR with `--environment`; SDF material-study lighting accepts
+it with `--material-environment`. Both use ordinary existing environment products.
+The accepted clear/cloud atmosphere routes are unchanged.

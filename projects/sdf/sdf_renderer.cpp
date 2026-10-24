@@ -1,5 +1,6 @@
 #include "sdf_renderer.h"
 
+#include <cubey/asset/hdr_image.h>
 #include <cubey/render/pass.h>
 #include <cubey/render/render_graph_builder.h>
 #include <cubey/render/render_graph_resolve.h>
@@ -38,10 +39,19 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
     scene_patterns_ = host_buffer(16 * sizeof(MaterialPattern));
     scene_domains_ = host_buffer(16 * sizeof(math::Mat4));
+    scene_libraries_ = host_buffer(16 * sizeof(procedural::SurfaceLibrary));
     const bool study = config.lighting != "atmosphere";
     if (study) {
         const auto start = std::chrono::steady_clock::now();
-        study_environment_.emplace(render::create_generated_pbr_environment(device, gpu));
+        if (!config.material_environment_path.empty()) {
+            if (config.lighting != "material-study")
+                throw std::invalid_argument("diagnostic HDR requires material-study lighting");
+            const auto image = asset::load_hdr_image(config.material_environment_path);
+            study_environment_.emplace(render::create_pbr_environment_from_equirectangular(
+                device, gpu,
+                {.width = image.width, .height = image.height, .rgba32f = image.rgba32f}));
+        } else
+            study_environment_.emplace(render::create_generated_pbr_environment(device, gpu));
         std::cout << "sdf: study IBL setup_ms="
                   << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() -
                                                                start)
@@ -61,7 +71,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-        {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
+        {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
+        {14, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
     if (study) {
         bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         for (std::uint32_t binding = 8; binding <= 12; ++binding)
@@ -85,6 +96,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                               scene_patterns_->size());
         writes.storage_buffer(descriptors_->set(i), 13, scene_domains_->handle(),
                               scene_domains_->size());
+        writes.storage_buffer(descriptors_->set(i), 14, scene_libraries_->handle(),
+                              scene_libraries_->size());
         if (study_environment_) {
             writes.storage_buffer(descriptors_->set(i), 7, scene_optics_->handle(),
                                   scene_optics_->size());
@@ -169,6 +182,7 @@ void Renderer::destroy() {
     scene_materials_.reset();
     scene_patterns_.reset();
     scene_domains_.reset();
+    scene_libraries_.reset();
     scene_program_.reset();
     preview_buffers_.clear();
     lighting_.reset();
@@ -199,6 +213,10 @@ void Renderer::update_authored(const AuthoredScene* scene) {
     if (scene && !scene->material_domains.empty())
         std::copy(scene->material_domains.begin(), scene->material_domains.end(), domains.begin());
     scene_domains_->upload(domains.data(), sizeof(domains));
+    std::array<procedural::SurfaceLibrary, 16> libraries;
+    if (scene && !scene->libraries.empty())
+        std::copy(scene->libraries.begin(), scene->libraries.end(), libraries.begin());
+    scene_libraries_->upload(libraries.data(), sizeof(libraries));
     const SurfaceMaterial fallback;
     const MaterialPattern plain;
     scene_materials_->upload(scene ? scene->materials.data() : &fallback,
@@ -351,6 +369,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                                  scene_materials_->handle());
     const auto domains =
         builder.import_buffer({"sdf.domains", scene_domains_->size()}, scene_domains_->handle());
+    const auto libraries = builder.import_buffer({"sdf.libraries", scene_libraries_->size()},
+                                                 scene_libraries_->handle());
     const auto patterns =
         builder.import_buffer({"sdf.patterns", scene_patterns_->size()}, scene_patterns_->handle());
     const auto previews_buffer =
@@ -364,6 +384,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         .read_storage_buffer(materials, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(patterns, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(domains, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+        .read_storage_buffer(libraries, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(previews_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .write_color(scene)
         .write_depth(depth)

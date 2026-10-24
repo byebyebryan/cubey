@@ -4,6 +4,11 @@
 #define AUTHORED_MATERIAL_BINDING 4
 #endif
 #include "surface_pattern.glsl"
+#include "cubey/procedural/surface_library.glsl"
+#ifndef AUTHORED_LIBRARY_BINDING
+#define AUTHORED_LIBRARY_BINDING 14
+#endif
+layout(std430,set=0,binding=AUTHORED_LIBRARY_BINDING) readonly buffer AuthoredLibrary { SurfaceLibrary libraryTable[]; };
 #ifndef AUTHORED_DOMAIN_BINDING
 #define AUTHORED_DOMAIN_BINDING 13
 #endif
