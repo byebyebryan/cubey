@@ -159,6 +159,10 @@ deployment or production-performance claim.
   checks pass. The third-party notice files retain the exact legal sections,
   pinned upstream URLs and upstream/retained hashes without copying unrelated
   illustrated README prose.
+- Once the new Markdown became tracked, the repository's navigation gate exposed
+  missing front-door links. The main docs index now links the site guide, which
+  links the media/attribution index and all five retained model notices. This
+  indexing repair changes no built website bytes.
 - The owned preview server is stopped. Temporary clean-build dependency folders
   were removed after success; source/build/receipt snapshots and all completed
   native captures remain. The shared Starship report server is left running.

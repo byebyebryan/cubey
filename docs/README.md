@@ -14,6 +14,8 @@ there when implementation boundaries matter.
 - [Roadmap](roadmap.md): current readiness, completed foundations, and likely
   next work.
 - [Showcase](../README.md#showcase): the five showcased project highlights.
+- [Presentation site](../site/README.md): authored static showcase, web-media
+  attribution, build/review workflow and the separate public-release boundary.
 
 ## Current Design
 

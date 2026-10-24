@@ -50,6 +50,8 @@ image selection and lazy loading reduce the actual image load. Films use
   attribution and capture references. All twenty-one entries need native posters.
 - `media/receipts/`, `media/sources/`, `media/licenses/`: pinned current/historical
   capture inputs, model downloads and exact imported-asset notices.
+- [Selected media and attribution](media/README.md): ledger semantics and the
+  imported model notice index.
 - `public/media/`: tracked WebP derivatives and silent native MP4 films.
 - `public/scripts/media.js`: ordinary players and two purposeful comparisons.
 
