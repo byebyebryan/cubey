@@ -98,7 +98,8 @@ def main():
         write_timing_summary(output)
     if args.stage in ("controls", "all"):
         controls = json.loads(Path(__file__).with_name("presentation_controls.json").read_text())
-        results = {}
+        control_receipt = output / "compatibility.json"
+        results = json.loads(control_receipt.read_text()) if args.renderer and control_receipt.exists() else {}
         for name, control in controls.items():
             if args.renderer and control["renderer"] != args.renderer:
                 continue
@@ -117,6 +118,8 @@ def main():
     if args.stage in ("films", "metadata", "all"):
         videos = {}
         for name in ("pbr.mp4", "sdf.mp4", "pbr-master-1080p.mp4", "sdf-master-1080p.mp4"):
+            if args.renderer and not (output / name).exists():
+                continue
             command = ["ffprobe", "-v", "error", "-count_frames", "-show_entries",
                 "stream=codec_type,codec_name,profile,width,height,pix_fmt,r_frame_rate,nb_read_frames:format=duration",
                 "-of", "json", str(output / name)]
