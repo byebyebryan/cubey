@@ -3,29 +3,77 @@
   "version": 1,
   "assets": [
     {
-      "id": "clouds",
-      "file": "/media/clouds.webp",
+      "id": "atmosphere-light",
+      "file": "/media/atmosphere-light.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "fa9ce95c05646bbefc0524bf1ccee94c4393510f4c06105ea3dc00f537b603bc",
-      "bytes": 18458,
-      "caption": "Surface-view broken cumulus under daylight.",
+      "sha256": "e911b4f9dcc168f677ce775ec31e1690477cc8f2c2a1fb3ca67d8a5df1adf593",
+      "bytes": 8564,
+      "caption": "Low sun and direct atmospheric scattering.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/clouds-daylight-poster/capture.png",
-        "sourceSha256": "77ba3a36a47ba78c3388cd66e59588aca5e393298ad6e798e8ce2aee65a7e886",
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/scattering-clear-sun/capture.png",
+        "sourceSha256": "33f9f6a81ffe30bc5ce3e37227a90f3ac3be36d7c32eab5fbe8835460b570b3e",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/clouds-daylight-poster.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "recipe": "site/media/receipts/scattering-clear-sun.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
+      },
+      "thumbnail": "/media/atmosphere-light-640.webp",
+      "thumbnailSha256": "20f7a77c4dfe649b94a7d553478b275fd8bbbfb50293fdab11a28f1d5f1d8f05",
+      "thumbnailBytes": 2574
+    },
+    {
+      "id": "clouds",
+      "file": "/media/clouds.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "fede3d2ed0cf2023a7b78f5593bb599842e7a02fb2095f7447dcba4a5b55786f",
+      "bytes": 21056,
+      "caption": "Broken cumulus under afternoon light.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/clouds-drift-film/poster.png",
+        "sourceSha256": "625031f15d45ec71b1a7daf109358d9021e2797f2d5ecf29bd1d9ae551c60a00",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/clouds-drift-film.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Poster extracted at one second from the identified native film. Wind parameter 800 m/s is an artistic acceleration for readable drift, not a physical weather-speed claim."
       },
       "thumbnail": "/media/clouds-640.webp",
-      "thumbnailSha256": "ac3a3e9366733f45c8b1747fde408fda59655eaf34f78b1f40233fc050d78aef",
-      "thumbnailBytes": 6120
+      "thumbnailSha256": "22496e9dbeeb3cf02f079b37442f2cabd9deae400d6682755ecd097bc8fd7ddc",
+      "thumbnailBytes": 6584
+    },
+    {
+      "id": "clouds-film",
+      "file": "/media/clouds-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "be88fafa0ecb9c085911d5858db5b994940c597969f4fb32430fa2a9229a746d",
+      "bytes": 1502651,
+      "caption": "Broken cumulus with accelerated cloud drift.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/clouds-drift-film/capture.mp4",
+        "sourceSha256": "6e7e2a2251608f4f27024a4babfe367cf9ebd16e1a1ba91d817d7f9fadf3eb46",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/clouds-drift-film.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Wind parameter 800 m/s is an artistic acceleration for readable drift, not a physical weather-speed claim. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
+      }
     },
     {
       "id": "day-night",
@@ -33,24 +81,24 @@
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "1993eaa702971fee5e1edc2557d3105eec54134956ceaf37fca9aa40d29e9b46",
-      "bytes": 7846,
-      "caption": "A standalone sky, from daylight into evening.",
+      "sha256": "50e4be601f63472b6a5899a86c062d0f3480951574c7403651ec0ca33beb6e23",
+      "bytes": 9508,
+      "caption": "Sunset begins a complete solar cycle.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/day-night-poster/capture.png",
-        "sourceSha256": "44dabb99aebdbb4d95f8c82bd3fa1ea39d78b1bda9bca0a84bb13f5a0f94cfa8",
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/solar-cycle-film/poster.png",
+        "sourceSha256": "d13ed905dbd95a9cdf8596cb78be4491f0aa0b23cd55c9c4a9b171dba268c44d",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/day-night-poster.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "recipe": "site/media/receipts/solar-cycle-film.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Poster extracted at one second from the identified native film."
       },
       "thumbnail": "/media/day-night-640.webp",
-      "thumbnailSha256": "0e3390ab08c564f6d327bf2f7f3234bdb39594730a6cda04fb5314d18abd226d",
-      "thumbnailBytes": 2302
+      "thumbnailSha256": "9276acaa8772431ce2f9052c92f018222d16ecb7ddab5ae404fe56ba387fecde",
+      "thumbnailBytes": 2836
     },
     {
       "id": "day-night-film",
@@ -58,20 +106,21 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "341caca93857d1e171ec66a34b84b2dd1f3ee5a8a3945ecdf868944ec6e3e33e",
-      "bytes": 803865,
-      "caption": "A standalone sky, from daylight into evening.",
+      "sha256": "5521d2f32df1dc04bb46af4f14ea2d0d728caa1b4cfcfe1f134e0f849145e7c5",
+      "bytes": 1663828,
+      "caption": "A complete accelerated solar day: afternoon, night and daylight again.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/day-night-film/capture.mp4",
-        "sourceSha256": "341caca93857d1e171ec66a34b84b2dd1f3ee5a8a3945ecdf868944ec6e3e33e",
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/solar-cycle-film/capture.mp4",
+        "sourceSha256": "fe0969199869c2cca54d76ebd71c43156be3e6f6d6486e9dfb6c1fcf79d5ac7e",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/day-night-film.json",
-        "note": ""
+        "recipe": "site/media/receipts/solar-cycle-film.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -105,7 +154,7 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "e4d7a369e830a6b63a51d8506d23d889f0523be97582cfabe7f5d83fd3e3b38a",
+      "sha256": "659dc609f50e371573473cd0b136cda44579dec3bae376ec3cadcbc2ffe970be",
       "bytes": 1038498,
       "caption": "A repeated fireball impulse, shown during its early flash.",
       "credit": {
@@ -118,7 +167,8 @@
         "sourceSha256": "e4d7a369e830a6b63a51d8506d23d889f0523be97582cfabe7f5d83fd3e3b38a",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "recipe": "site/media/receipts/explosion-film.json",
-        "note": ""
+        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -169,31 +219,6 @@
         "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
         "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
       }
-    },
-    {
-      "id": "fractal-field",
-      "file": "/media/fractal-field.webp",
-      "kind": "image",
-      "width": 1280,
-      "height": 720,
-      "sha256": "abde0673ddb57428c8c362bea564fa4586c0e7f86b36689ccd3993f70089436f",
-      "bytes": 20974,
-      "caption": "The native fullscreen Mandelbrot field.",
-      "credit": {
-        "label": "Cubey original media \u00b7 MIT",
-        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
-        "author": "Bryan"
-      },
-      "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/fractal-field-poster/capture.png",
-        "sourceSha256": "06bd098fe77bcf68ca97f1cdfc65e36308330a1efca215f8d5e9a13efd75f708",
-        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/fractal-field-poster.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
-      },
-      "thumbnail": "/media/fractal-field-640.webp",
-      "thumbnailSha256": "5c55564c63a033ef6d788da3085c94bd526bf1eff28a4c9fdff563c7c2a89032",
-      "thumbnailBytes": 4828
     },
     {
       "id": "gltf-layers",
@@ -253,7 +278,7 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "d72e4efedb1e365a26c62fbedd0e529bc46e5819d8cc27a9a65a51420301f259",
+      "sha256": "17e35ffe42a034e49f19ccdbec7c8a96299619dbfa646f0f1d2d057ab422fe1d",
       "bytes": 119282,
       "caption": "Animated Morph Cube: target deformation.",
       "credit": {
@@ -267,7 +292,8 @@
         "sourceSha256": "d72e4efedb1e365a26c62fbedd0e529bc46e5819d8cc27a9a65a51420301f259",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "recipe": "site/media/receipts/gltf-morph-film.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -302,7 +328,7 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "c5993e7b5b09f99aff340ec03d80cc44c161b000c015032c439d4f2e72b056cf",
+      "sha256": "52d8e33b284556c0e79aae41ec705fc7e248647058cf40535f6d42cc17ece224",
       "bytes": 1041748,
       "caption": "Fox: the Walk animation and a skinned mesh.",
       "credit": {
@@ -316,7 +342,8 @@
         "sourceSha256": "c5993e7b5b09f99aff340ec03d80cc44c161b000c015032c439d4f2e72b056cf",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "recipe": "site/media/receipts/gltf-fox-framed-film.json",
-        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence."
+        "note": "Model bytes and pinned notices are recorded in site/media/sources/gltf-sample-assets.json and site/media/licenses. Native capture; representative feature example, not full glTF conformance evidence. Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -424,49 +451,531 @@
       "thumbnailBytes": 11740
     },
     {
-      "id": "mesh-bronze",
-      "file": "/media/mesh-bronze.webp",
+      "id": "library-mesh-bronze",
+      "file": "/media/library-mesh-bronze.webp",
       "kind": "image",
       "width": 640,
       "height": 640,
       "sha256": "3d20794e46ab07f0444b0340dbb55b0a6f35fbced834bad04ab9bcdca05515ff",
       "bytes": 6024,
-      "caption": "Mesh bronze",
+      "caption": "Satin bronze \u00b7 Forward PBR mesh",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-bronze.png",
+        "source": "outputs/material-library/report/mesh-bronze-studio.png",
         "sourceSha256": "740ad84bb5fd6027654979670eef1ccaad83e373d78b7952b4c46b962592404b",
-        "sourceRevision": null,
-        "recipe": "outputs/material-library/report/mesh-bronze-studio.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
       }
     },
     {
-      "id": "mesh-cloth",
-      "file": "/media/mesh-cloth.webp",
+      "id": "library-mesh-ceramic",
+      "file": "/media/library-mesh-ceramic.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "9e55a93d8acc1f794f6e6784771b826eb1a82e16eac1c946e42b9703d869ea81",
+      "bytes": 5208,
+      "caption": "Ivory ceramic \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-ceramic-studio.png",
+        "sourceSha256": "dc9ff7ecbabc573619d9d90729c7472ce997e8d51eb9a39a8c15ec53db66df9d",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-clay",
+      "file": "/media/library-mesh-clay.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "0341e24747f702d74360a7fa0b052d9dc709e230c7f13cb4779dfad27d2baf13",
+      "bytes": 9146,
+      "caption": "Dry terracotta \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-clay-studio.png",
+        "sourceSha256": "90cfcb7c2902d9cb6af88a87dc204b0a42801a4a6192930811510e0914260586",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-frosted-glass",
+      "file": "/media/library-mesh-frosted-glass.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "43e56c7d5c01733893cb9ac05fe34c92752f89c86ed2591b1970a9bad0d3342f",
+      "bytes": 4552,
+      "caption": "Frosted glass \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-frosted-glass-studio.png",
+        "sourceSha256": "a03816a2d7019dd8b44ebc80565a46d3b8a9f7cca6cd5e15f81262d2f86c83e8",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-glass",
+      "file": "/media/library-mesh-glass.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "9d1b37f55cb0444d0ad3b1e1c6cc7aa079f23ca0614cee755a1e49752c0b0a43",
+      "bytes": 3368,
+      "caption": "Tinted glass \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-glass-studio.png",
+        "sourceSha256": "2a853227f6ad95aff4d8a7baaa4534b9e59a459457e437d3de5ebd792742196e",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-kraft-cardboard",
+      "file": "/media/library-mesh-kraft-cardboard.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "bcce2cbffe7765940596111aa9dc1304e7483b216e6fafb689ab420b259bc0e9",
+      "bytes": 8248,
+      "caption": "Kraft cardboard \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-kraft-cardboard-studio.png",
+        "sourceSha256": "301f40857f42b09a5db100af6e5999f8f1f8684ffee7db5d73e98dbfe0103659",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-limestone",
+      "file": "/media/library-mesh-limestone.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "590bca02137a7c8eeb2d364b8dd81674d48e90444e36120387195f9c84569de1",
+      "bytes": 9962,
+      "caption": "Limestone \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-limestone-studio.png",
+        "sourceSha256": "27774ada07ddbfd0032b9b109014cedd5cd52b37f2ed2d5a157d40aeed0ddfa2",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-marble",
+      "file": "/media/library-mesh-marble.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "56f185ac9ae7b4bab686a79a2282e31faa0888859ca49090f2d853e17950b3fd",
+      "bytes": 9208,
+      "caption": "Balanced marble \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-marble-studio.png",
+        "sourceSha256": "ef6f3c54839fafdd51286b493a798ccdd629cb072fa2bc706b255dcc49805fbb",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-plain",
+      "file": "/media/library-mesh-plain.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "d19e9c6fa036630db888884fd5efbdb8955fdd2d3208127ed18c3c74a2453d1e",
+      "bytes": 5746,
+      "caption": "Neutral gray \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-plain-studio.png",
+        "sourceSha256": "4c0ebbc424b31e614f14cef1bc17fe4f7e3624736622e0fc2d5d00e4a09b962f",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-rusted-steel",
+      "file": "/media/library-mesh-rusted-steel.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "53084acac115039b4bf87e879bf1bd32b70713e8e1a2d9d527c97cc9d07661a7",
+      "bytes": 13320,
+      "caption": "Rusted steel \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-rusted-steel-studio.png",
+        "sourceSha256": "b41bcd21ab0ca47f165251e192f23a0353d6072406140b896b23e873031689e6",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-wood",
+      "file": "/media/library-mesh-wood.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "0ca329397614b2e31a20beb78c0c66bd38f597c0e999cdfb6bb215b3a9dbcd43",
+      "bytes": 10594,
+      "caption": "Unvarnished hardwood \u00b7 Forward PBR mesh",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/mesh-wood-studio.png",
+        "sourceSha256": "3076d8bff54090002da790b0379b210df4dd77925fdb2e0eb94ca19b34f2300c",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-woven-cloth",
+      "file": "/media/library-mesh-woven-cloth.webp",
       "kind": "image",
       "width": 640,
       "height": 640,
       "sha256": "d02ee3cc1f953b88a58a3d638fb9bb0507c282d8ff6169e78f3d7f48e295247b",
       "bytes": 14904,
-      "caption": "Mesh cloth",
+      "caption": "Plain-weave cloth \u00b7 Forward PBR mesh",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-woven-cloth.png",
+        "source": "outputs/material-library/report/mesh-woven-cloth-studio.png",
         "sourceSha256": "c1b004a8a7ec4566423f49acadad71b953fb77292c2f2e158de533a156dd886c",
-        "sourceRevision": null,
-        "recipe": "outputs/material-library/report/mesh-woven-cloth-studio.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-bronze",
+      "file": "/media/library-sdf-bronze.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "c6bbcd71c8c89fad7315fa4efffb16fc91809467e4d3db87faeb3414adce24bc",
+      "bytes": 6134,
+      "caption": "Satin bronze \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-bronze-studio.png",
+        "sourceSha256": "b4a16567c73563134b78662d164ea7c25deeb4e8e55903b342454cd101cf9b8a",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-ceramic",
+      "file": "/media/library-sdf-ceramic.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "04277538f26cee1143c1071e7f8b06a3e89701e7fb2118f4dcdadf3377315a02",
+      "bytes": 5276,
+      "caption": "Ivory ceramic \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-ceramic-studio.png",
+        "sourceSha256": "f9b1a37712256cb8d560a2f2432d2c304d222193971c79a31277f9cf06a93c30",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-clay",
+      "file": "/media/library-sdf-clay.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "c5500d1abb460d4fa441adbf2e3126b30167ab2cc7fbba6b51df8adb2d3a9002",
+      "bytes": 8824,
+      "caption": "Dry terracotta \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-clay-studio.png",
+        "sourceSha256": "28a011f73af65b354a6d9d82dcc7fdeee217e8911fbd2d75127acf64778f3f1b",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-frosted-glass",
+      "file": "/media/library-sdf-frosted-glass.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "b91cdd2bbfcde65492c06e6e16212bb9b010871cb62f2061e168f13ae5d51bd7",
+      "bytes": 3668,
+      "caption": "Frosted glass \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-frosted-glass-studio.png",
+        "sourceSha256": "00b7c5d4d47a4d1bddcd01b2a69f3a581063ecfeec59665fe60f44710883cfd8",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-glass",
+      "file": "/media/library-sdf-glass.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "ca283c4efd68fb3d37240936df8a216eac45a63308caeeb082070edf9a5da8c3",
+      "bytes": 4136,
+      "caption": "Tinted glass \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-glass-studio.png",
+        "sourceSha256": "a12595358e5652ee706a18af36e88a0daa86a1310b7593d553d108b942e7ae5a",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-kraft-cardboard",
+      "file": "/media/library-sdf-kraft-cardboard.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "6e5ecb75e38dc306565c05ec3201da9d0cf54b137bfdb6f6f93b6c57d5366b86",
+      "bytes": 8038,
+      "caption": "Kraft cardboard \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-kraft-cardboard-studio.png",
+        "sourceSha256": "b465ddd1c5b409c34e6630891376c52a8f00b9b8b1d9d9c53586e9e84a8a8343",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-limestone",
+      "file": "/media/library-sdf-limestone.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "3b55a317ab625aef8c6e82eca7b404d6d3a459f2c382ecd743c473be3ff8a099",
+      "bytes": 9494,
+      "caption": "Limestone \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-limestone-studio.png",
+        "sourceSha256": "0c57c56c61c9614645bf99d0f140d12d0519ce8e16a6cf3042ce82999543c6ab",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-marble",
+      "file": "/media/library-sdf-marble.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "15eba9a7282c684a9d54937a98d16f5b903b1c51d227e973843e0778daac59df",
+      "bytes": 8814,
+      "caption": "Balanced marble \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-marble-studio.png",
+        "sourceSha256": "db86804284302b284ac100f3dca2aab86c9f6bab39b11fc1142712b705b74790",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-plain",
+      "file": "/media/library-sdf-plain.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "f3bb61a8afdd2eca934dde05f208b753dd6840da6e573ca4925a3170a3df85da",
+      "bytes": 5770,
+      "caption": "Neutral gray \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-plain-studio.png",
+        "sourceSha256": "1720986ce3f07019c74883a5db110bc468694faa70a1bd66532eb8ab845056fa",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-rusted-steel",
+      "file": "/media/library-sdf-rusted-steel.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "5cd5218262eb52ad3558af321711fd6aa569d7fcb8573c0b39f7364c3fbcb622",
+      "bytes": 13048,
+      "caption": "Rusted steel \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-rusted-steel-studio.png",
+        "sourceSha256": "4c36ac19292f436a45b7fd66b78082212f8721c59496037f78d31ee2c7bfda9f",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-wood",
+      "file": "/media/library-sdf-wood.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "34fc8988266815c94a5171595963e4afdba4b987fc18b1f0930efeda49a52caf",
+      "bytes": 10330,
+      "caption": "Unvarnished hardwood \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-wood-studio.png",
+        "sourceSha256": "27a15d01ff753ead75ad4429ca05d8bdcc7341d50c1e4be0976e42f4a2a9770d",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-sdf-woven-cloth",
+      "file": "/media/library-sdf-woven-cloth.webp",
+      "kind": "image",
+      "width": 640,
+      "height": 640,
+      "sha256": "be3c73087eb221b5f8be56bb8b138543392467b474f5df81397d9568b772fdc1",
+      "bytes": 14702,
+      "caption": "Plain-weave cloth \u00b7 SDF ray marching",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/material-library/report/sdf-woven-cloth-studio.png",
+        "sourceSha256": "61fbd72b086ca4328a337e26ef755163c531c0181b112635b26f8a936e103787",
+        "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
+        "recipe": "site/media/receipts/full-material-library.json",
+        "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
       }
     },
     {
@@ -519,75 +1028,29 @@
       }
     },
     {
-      "id": "mesh-rust",
-      "file": "/media/mesh-rust.webp",
-      "kind": "image",
-      "width": 640,
-      "height": 640,
-      "sha256": "53084acac115039b4bf87e879bf1bd32b70713e8e1a2d9d527c97cc9d07661a7",
-      "bytes": 13320,
-      "caption": "Mesh rust",
-      "credit": {
-        "label": "Cubey original media \u00b7 MIT",
-        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
-        "author": "Bryan"
-      },
-      "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-rusted-steel.png",
-        "sourceSha256": "b41bcd21ab0ca47f165251e192f23a0353d6072406140b896b23e873031689e6",
-        "sourceRevision": null,
-        "recipe": "outputs/material-library/report/mesh-rusted-steel-studio.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
-      }
-    },
-    {
-      "id": "mesh-wood",
-      "file": "/media/mesh-wood.webp",
-      "kind": "image",
-      "width": 640,
-      "height": 640,
-      "sha256": "0ca329397614b2e31a20beb78c0c66bd38f597c0e999cdfb6bb215b3a9dbcd43",
-      "bytes": 10594,
-      "caption": "Mesh wood",
-      "credit": {
-        "label": "Cubey original media \u00b7 MIT",
-        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
-        "author": "Bryan"
-      },
-      "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-wood.png",
-        "sourceSha256": "3076d8bff54090002da790b0379b210df4dd77925fdb2e0eb94ca19b34f2300c",
-        "sourceRevision": null,
-        "recipe": "outputs/material-library/report/mesh-wood-studio.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
-      }
-    },
-    {
       "id": "night-sky",
       "file": "/media/night-sky.webp",
       "kind": "image",
       "width": 1280,
       "height": 720,
-      "sha256": "c2ba7480cad5c058885c9c8c491170e3e496993f97267be8b626f39a9455f5cb",
-      "bytes": 8188,
-      "caption": "Native procedural stars and Milky Way at night.",
+      "sha256": "065449f139ed04c372d4f0a784e41c6bd8adecb447ba4a02d05cca21770eff16",
+      "bytes": 11816,
+      "caption": "Procedural stars and the Milky Way in the native night sky.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/implementation-2026-10-24/captures/night-sky-poster/capture.png",
-        "sourceSha256": "0f64c65ba4e555b796f726f6fc75a7f780e5202b568094a4f885bae84a2b3be5",
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/night-milky-way/capture.png",
+        "sourceSha256": "edf7eaf370b80f209051b5ea8b6bfe84b8fa8b91530a7c8f349d6c614d68d562",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
-        "recipe": "site/media/receipts/night-sky-poster.json",
-        "note": "Current-source existing native route; stills selected directly or extracted from the identified native film, without scene edits."
+        "recipe": "site/media/receipts/night-milky-way.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
       },
       "thumbnail": "/media/night-sky-640.webp",
-      "thumbnailSha256": "a4bee850891b867195c81a3dbc5ef0e530000b62df708d7a148a93b71595d823",
-      "thumbnailBytes": 3166
+      "thumbnailSha256": "0c7855e833d4d0f7bbbc4f9bdaaf3ef2c4a520c3f3f7a21d51ef400c8e129e2a",
+      "thumbnailBytes": 4284
     },
     {
       "id": "ocean-surface",
@@ -688,6 +1151,56 @@
       }
     },
     {
+      "id": "scattering-daylight",
+      "file": "/media/scattering-daylight.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "ac1bb4252d49a893ce0beda72bdcb1b6240eaa4c914dbdd8af2c30df87e840d4",
+      "bytes": 8090,
+      "caption": "Higher sun: blue daylight and the sun disk.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/scattering-daylight/capture.png",
+        "sourceSha256": "613946adedb2ac25137c9190a19779bc0c0b955827d8e20f3d35ec360099cfd6",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/scattering-daylight.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
+      },
+      "thumbnail": "/media/scattering-daylight-640.webp",
+      "thumbnailSha256": "0b1db8093286b7f07bc93cc02e8ad5c26947c4306b5db520c5ea4f6c8571c4c8",
+      "thumbnailBytes": 2360
+    },
+    {
+      "id": "scattering-haze",
+      "file": "/media/scattering-haze.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "bdf59226785fcf8b9de01eb30b861da05fa5f65652fc0496e03d30714e1258f7",
+      "bytes": 9114,
+      "caption": "More aerosols broaden the low-sun glow.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/refinement-2026-10-24/captures/scattering-haze/capture.png",
+        "sourceSha256": "2ac9c4224e4c8c846edc9397c6bd2ed1a28bc83eaf282e9a1657c50af1c0aad4",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "recipe": "site/media/receipts/scattering-haze.json",
+        "note": "Selected native capture from the pinned existing renderer binary; no native source changes."
+      },
+      "thumbnail": "/media/scattering-haze-640.webp",
+      "thumbnailSha256": "3b8441a557ecb5cfaadb67be0ac10674c99930534f78477d0890409b582d70a4",
+      "thumbnailBytes": 2620
+    },
+    {
       "id": "sdf-materials",
       "file": "/media/sdf-materials.webp",
       "kind": "image",
@@ -767,7 +1280,7 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "e11ac55d561a128abaa04b075a06726480a222fede97002a6a251bc46dc9f1c0",
+      "sha256": "52bac5219a08a4b2446f2910ac612085a6afcfe83bd2f60b63363bd134c7ca25",
       "bytes": 119159,
       "caption": "Builtin finite-volume flow through the authored source/outlet valley.",
       "credit": {
@@ -780,7 +1293,8 @@
         "sourceSha256": "e11ac55d561a128abaa04b075a06726480a222fede97002a6a251bc46dc9f1c0",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "recipe": "site/media/receipts/builtin-valley-film.json",
-        "note": ""
+        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -814,7 +1328,7 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "8012760546b0373108ab151b118c49f97255eb8abde8d50e1e04146fbf04f0fb",
+      "sha256": "6a029ee1eb36a10138e051e1c77dad7117f50fe04c4b51b8302bc2c59ef93ea4",
       "bytes": 1703949,
       "caption": "Five moving injectors stir coloured dye through a velocity field.",
       "credit": {
@@ -827,7 +1341,8 @@
         "sourceSha256": "8012760546b0373108ab151b118c49f97255eb8abde8d50e1e04146fbf04f0fb",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "recipe": "site/media/receipts/smoke-2d-film.json",
-        "note": ""
+        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -936,7 +1451,7 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "1eca13b867e1d64473c14f78edd35a9d6001ea51f928728feeebf79cd31a7f84",
+      "sha256": "0b2ee049f46a360094765946db7279cc9bbc623f433f0686cf5f92770ba6950a",
       "bytes": 2265016,
       "caption": "A two-dimensional dam break and reconstructed liquid surface.",
       "credit": {
@@ -949,7 +1464,8 @@
         "sourceSha256": "1eca13b867e1d64473c14f78edd35a9d6001ea51f928728feeebf79cd31a7f84",
         "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
         "recipe": "site/media/receipts/water-2d-film.json",
-        "note": ""
+        "note": "Lossless fast-start MP4 remux; encoded video packets are unchanged.",
+        "webDeliveryReceipt": "site/media/receipts/web-video-faststart.json"
       }
     },
     {
@@ -1133,13 +1649,11 @@
       "film": "day-night-film"
     },
     "clouds": {
-      "poster": "clouds"
+      "poster": "clouds",
+      "film": "clouds-film"
     },
     "night-sky": {
       "poster": "night-sky"
-    },
-    "fractal-field": {
-      "poster": "fractal-field"
     },
     "terrain-rendering": {
       "poster": "terrain-rendering"
@@ -1160,6 +1674,13 @@
     "gltf-morph": {
       "poster": "gltf-morph",
       "film": "gltf-morph-film"
+    },
+    "atmosphere-light": {
+      "poster": "atmosphere-light",
+      "gallery": [
+        "scattering-daylight",
+        "scattering-haze"
+      ]
     }
   }
 }

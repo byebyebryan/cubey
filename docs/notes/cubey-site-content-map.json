@@ -38,20 +38,20 @@
     {
       "id": "atmosphere",
       "title": "Atmosphere & light",
-      "subtitle": "Daylight, twilight, clouds and the night sky.",
+      "subtitle": "Scattering and lighting, clouds, then night sky and the solar cycle.",
       "question": "How does the sky change the scene?",
       "order": 4,
-      "page_model": "Three visible sky chapters, with ordinary section links",
+      "page_model": "Three visible chapters: scattering/light, clouds, and night sky with a nested complete solar cycle",
       "display_title": "A changing sky.",
       "prominence": "primary"
     },
     {
       "id": "materials",
       "title": "Materials",
-      "subtitle": "Procedural surfaces on meshes and solids.",
+      "subtitle": "Twelve shared recipes, in forward PBR and SDF ray marching.",
       "question": "What makes wood, metal, cloth and glass read differently?",
       "order": 5,
-      "page_model": "Visible mesh and SDF chapters; a focused native cut comparison",
+      "page_model": "Full twelve-material library with an explicit renderer choice, then two native lighting/cut stories",
       "display_title": "Surfaces with character.",
       "prominence": "primary"
     },
@@ -79,16 +79,6 @@
       ],
       "display_title": "Assets, as authored.",
       "prominence": "primary"
-    },
-    {
-      "id": "fractals",
-      "title": "Fractals",
-      "subtitle": "A small window into a procedural field.",
-      "question": "What appears as a mathematical image is explored?",
-      "order": 8,
-      "page_model": "A focused scene in Further explorations; no empty zoom/preset controls",
-      "display_title": "Look closer.",
-      "prominence": "secondary"
     }
   ],
   "entries": [
@@ -435,21 +425,21 @@
       }
     },
     {
-      "id": "day-night",
+      "id": "atmosphere-light",
       "family": "atmosphere",
-      "title": "Day to night",
+      "title": "Scattering & lighting",
       "owner": "projects/atmosphere",
       "dimension": "3D",
-      "summary": "Follow the sun through daylight, twilight and the changing night sky.",
+      "summary": "Air, aerosols and the sun shape a blue sky, a warm horizon and the light used by other scenes.",
       "cues": [
-        "Solar time",
-        "Atmospheric scattering",
-        "Exposure"
+        "Rayleigh scattering",
+        "Mie scattering",
+        "Shared environment light"
       ],
       "variants": [
-        "Noon",
-        "Twilight",
-        "Night"
+        "Low sun",
+        "Daylight",
+        "Haze"
       ],
       "source": "projects/atmosphere/README.md",
       "media": null,
@@ -457,25 +447,25 @@
       "related": [
         "clouds",
         "night-sky",
-        "ocean-surface",
-        "mesh-materials"
+        "mesh-materials",
+        "ocean-surface"
       ],
       "kind": "feature-showcase",
-      "boundary": "Standalone atmosphere presentation; native sky captures must be selected before public implementation. No GI or LUT-based multiple-scattering claim.",
+      "boundary": "Direct single scattering, ozone absorption and a sun disk. No GI or multiple-scattering claim.",
       "extensions": [],
       "asset_status": "selected-native-web-media",
-      "planned_route": "/demos/atmosphere/#day-night",
+      "planned_route": "/demos/atmosphere/#atmosphere-light",
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "connection_ids": [
         "sky-to-materials"
       ],
-      "related_reasons": {
-        "mesh-materials": "Shared sky and light also support the material workshops."
-      },
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "day-night",
-        "film": "day-night-film"
+        "poster": "atmosphere-light",
+        "gallery": [
+          "scattering-daylight",
+          "scattering-haze"
+        ]
       }
     },
     {
@@ -517,20 +507,21 @@
       },
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "clouds"
+        "poster": "clouds",
+        "film": "clouds-film"
       }
     },
     {
       "id": "night-sky",
       "family": "atmosphere",
-      "title": "The night sky",
+      "title": "Night sky & solar cycle",
       "owner": "projects/atmosphere",
       "dimension": "3D",
-      "summary": "Stars, a generated lunar surface and a procedural Milky Way share the sky.",
+      "summary": "Procedural stars and the Milky Way emerge as daylight fades; the shared solar clock carries the sky back into day.",
       "cues": [
         "Procedural stars",
-        "Moon geometry",
-        "Milky Way layers"
+        "Milky Way",
+        "Solar cycle"
       ],
       "variants": [
         "Stars",
@@ -556,22 +547,65 @@
       }
     },
     {
-      "id": "mesh-materials",
-      "family": "materials",
-      "title": "Materials on meshes",
-      "owner": "projects/pbr_materials",
+      "id": "day-night",
+      "family": "atmosphere",
+      "title": "The solar cycle",
+      "owner": "projects/atmosphere",
       "dimension": "3D",
-      "summary": "Wood, rusted steel, woven cloth and bronze share one lighting environment.",
+      "summary": "An accelerated day turns through afternoon, sunset, stars and returning daylight.",
       "cues": [
-        "Twelve recipes",
-        "Mesh specimens",
-        "Studio and sky"
+        "Full solar day",
+        "Twilight and stars",
+        "Changing exposure"
       ],
       "variants": [
-        "Wood",
-        "Rust",
-        "Cloth",
-        "Bronze"
+        "Afternoon",
+        "Sunset",
+        "Night",
+        "Daylight"
+      ],
+      "source": "projects/atmosphere/README.md",
+      "media": null,
+      "poster": null,
+      "related": [
+        "clouds",
+        "night-sky",
+        "ocean-surface",
+        "mesh-materials"
+      ],
+      "kind": "feature-showcase",
+      "boundary": "Twenty-four solar hours in twelve seconds of native recorded playback.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/atmosphere/#day-night",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "connection_ids": [
+        "sky-to-materials"
+      ],
+      "related_reasons": {
+        "mesh-materials": "Shared sky and light also support the material workshops."
+      },
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "day-night",
+        "film": "day-night-film"
+      }
+    },
+    {
+      "id": "mesh-materials",
+      "family": "materials",
+      "title": "Forward PBR materials",
+      "owner": "projects/pbr_materials",
+      "dimension": "3D",
+      "summary": "Twelve procedural recipes on mesh specimens, from smooth and frosted glass to wood, metal, cloth and stone.",
+      "cues": [
+        "Forward PBR",
+        "Mesh specimens",
+        "Shared recipes"
+      ],
+      "variants": [
+        "Full twelve-material library",
+        "Lighting study"
       ],
       "source": "projects/pbr_materials/README.md",
       "media": "docs/media/material-workshops/pbr.mp4",
@@ -579,7 +613,7 @@
       "related": [
         "sdf-materials",
         "gltf-layers",
-        "day-night"
+        "atmosphere-light"
       ],
       "kind": "demo",
       "boundary": "Native procedural material workshop. Shared recipes do not imply identical optical transport between renderers.",
@@ -591,8 +625,8 @@
         "sky-to-materials"
       ],
       "related_reasons": {
-        "day-night": "Explore the sky and light shared with this workshop.",
-        "sdf-materials": "Shared material recipes applied through a distinct SDF renderer."
+        "sdf-materials": "Shared material recipes applied through a distinct SDF renderer.",
+        "atmosphere-light": "Explore the sky and light shared with this workshop."
       },
       "selected_media": {
         "manifest": "site/media/manifest.json",
@@ -623,7 +657,7 @@
       "related": [
         "mesh-materials",
         "guardian",
-        "day-night"
+        "atmosphere-light"
       ],
       "kind": "demo",
       "boundary": "A distinct SDF material route, not a mesh rendering mode or general rough-refraction solver.",
@@ -635,8 +669,8 @@
         "sky-to-materials"
       ],
       "related_reasons": {
-        "day-night": "The atmosphere services also support this workshop.",
-        "mesh-materials": "The same recipe library on ordinary mesh specimens."
+        "mesh-materials": "The same recipe library on ordinary mesh specimens.",
+        "atmosphere-light": "The atmosphere services also support this workshop."
       },
       "selected_media": {
         "manifest": "site/media/manifest.json",
@@ -872,37 +906,6 @@
         "manifest": "site/media/manifest.json",
         "poster": "gltf-textures"
       }
-    },
-    {
-      "id": "fractal-field",
-      "family": "fractals",
-      "title": "Fractal field",
-      "owner": "projects/fractal_2d",
-      "dimension": "2D",
-      "summary": "Explore a procedural fullscreen field by moving and zooming the view.",
-      "cues": [
-        "Fullscreen shader",
-        "Navigation",
-        "Deterministic capture"
-      ],
-      "variants": [
-        "Overview",
-        "Zoom"
-      ],
-      "source": "projects/fractal_2d/README.md",
-      "media": null,
-      "poster": null,
-      "related": [],
-      "kind": "demo",
-      "boundary": "Independent rendering experiment, distinct from fluid and terrain products.",
-      "extensions": [],
-      "asset_status": "selected-native-web-media",
-      "planned_route": "/demos/fractals/",
-      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
-      "selected_media": {
-        "manifest": "site/media/manifest.json",
-        "poster": "fractal-field"
-      }
     }
   ],
   "media_rules": {
@@ -941,13 +944,6 @@
         "materials",
         "sdf",
         "gltf"
-      ]
-    },
-    {
-      "id": "further",
-      "title": "Further explorations",
-      "subjects": [
-        "fractals"
       ]
     }
   ],
@@ -998,7 +994,7 @@
       "id": "sky-to-materials",
       "title": "A sky becomes a light source.",
       "from_entries": [
-        "day-night",
+        "atmosphere-light",
         "clouds"
       ],
       "to_entries": [

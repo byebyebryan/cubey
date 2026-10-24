@@ -28,6 +28,17 @@ Astro 7's preview can run in the background. Stop the owned preview with
 with `npm run preview -- --allowed-hosts your-hostname`.
 
 The implementation uses authored Astro components and plain CSS/JavaScript.
+Films play directly in home, subject-directory, simulation and SDF overview
+cards as well as scene pages. Navigation links stay outside native player
+controls; starting a film pauses the others. Guardian and Robot use matching
+4:3 presentation frames, with complete native video frames retained in playback.
+
+The materials page shows all twelve shared recipes, with a Forward PBR / SDF
+renderer switch and glass presented first. The existing four-specimen lighting
+film remains a selected study. Atmosphere is grouped into scattering/light,
+clouds, then night sky with a complete accelerated solar cycle. Fractals is
+deferred from the public site; its native project remains documented.
+
 Internal and asset URLs are relative, so the same `dist/` works beneath a hosting
 prefix. `SITE_ORIGIN` and `SITE_BASE` may be supplied to emit canonical metadata
 for a chosen public endpoint; leave the origin unset for an unannounced preview.
@@ -82,8 +93,8 @@ The endpoint inherits the account's existing `dev.byebyebryan.com` Pages domain
 and uses the `/cubey/` project path. The workflow reads the origin and base path
 from Pages rather than changing the account domain or adding a separate CNAME.
 
-Pushes to `main` that change the site, content map, glTF extension contract, or
-workflow build and deploy automatically. Pull requests run the same checks and
+Pushes to `main` that change the site, content map, material catalog, glTF extension
+contract, or workflow build and deploy automatically. Pull requests run the same checks and
 build without deploying. `workflow_dispatch` on `main` republishes the current
 source when needed. The workflow uses Node 26.12.1; local builds also support the
 minimum version above.

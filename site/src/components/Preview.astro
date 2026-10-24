@@ -1,0 +1,14 @@
+---
+import Media from './Media.astro';
+import Picture from './Picture.astro';
+import {asset, byId, entryPath, selected} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props { entry: string; path: string; title?: string; eager?: boolean }
+const {entry,path,title=byId[entry]?.title||entry,eager=false}=Astro.props;
+const selection=selected(entry);
+const poster=asset(selection.poster);
+---
+<div class:list={['preview-media',{'object-preview':byId[entry]?.family==='sdf'}]}>
+  {selection.film ? <Media entry={entry} path={path} title={title} eager={eager} compact/> : <a class="preview-link" href={url(entryPath(byId[entry]),path)} aria-label={`Explore ${title}`}><Picture id={selection.poster} path={path} alt={title} eager={eager}/></a>}
+</div>
+{!poster.credit.label.startsWith('Cubey original')&&<p class="credit-caption"><a href={url(`/credits/#${poster.id}`,path)}>{poster.credit.label} ↗</a></p>}

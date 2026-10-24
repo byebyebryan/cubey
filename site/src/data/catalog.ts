@@ -24,8 +24,9 @@ const publicScope: Record<string,string> = {
   'water-3d': 'A tank-scale liquid experiment with a reconstructed surface and whitewater. The long tank is the rendering domain.',
   'water-2d': 'A two-dimensional liquid sandbox. Viscosity, surface tension and adaptive storage are outside this version.',
   'ocean-surface': 'This capture uses the Windy sea state. The renderer focuses on an open-water surface; shorelines, wakes and underwater rendering are outside this demo.',
-  'day-night': 'A direct-scattering sky with a shared solar clock. This view does not demonstrate global illumination or multiple-scattering transport.',
-  'night-sky': 'Stars, a generated lunar surface and a procedural Milky Way are composed in the native sky renderer.',
+  'atmosphere-light': 'Direct single scattering from air and aerosols, with ozone absorption and a sun disk. These views do not demonstrate global illumination or multiple-scattering transport.',
+  'day-night': 'A complete accelerated solar day, from afternoon through sunset, night and daylight again. This is native recorded playback of the shared solar clock.',
+  'night-sky': 'Procedural stars and a generated Milky Way are composed in the native sky renderer; the solar cycle controls their transition into daylight.',
   'guardian': 'The settled sculpture, shown in restrained marble and limestone. These views use the same authored form.',
   'robot': 'Playback of a saved authored construction, including additive and subtractive operations. This is a recorded native result.',
   'gltf-motion': 'The Fox example shows core animation and skinning. A separate morph-target example is identified where shown. This is a single-asset renderer, with no animation editor.',
@@ -48,6 +49,10 @@ export type Entry = typeof entries[number];
 export const byId = Object.fromEntries(entries.map(e => [e.id,e]));
 export const familyEntries = (id: string) => entries.filter(e => e.family === id);
 export const sourceURL = (e: Entry) => `https://github.com/byebyebryan/cubey/blob/main/${e.source}`;
+export function rendererLabel(e: Entry): string | undefined {
+  if(e.family==='sdf'||e.id==='sdf-materials')return 'SDF ray marching';
+  if(e.family==='gltf'||e.id==='mesh-materials')return 'Forward PBR';
+}
 export function entryPath(e: Entry): string {
   if (e.family === 'simulation' || e.family === 'sdf') return `/demos/${e.family}/${e.id}/`;
   return `/demos/${e.family}/${['terrain','atmosphere','materials','gltf'].includes(e.family) ? '#'+e.id : ''}`;

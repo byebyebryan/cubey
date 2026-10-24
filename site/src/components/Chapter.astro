@@ -1,12 +1,12 @@
 ---
 import Media from './Media.astro';
-import {sourceURL,type Entry} from '../data/catalog';
+import {sourceURL,rendererLabel,type Entry} from '../data/catalog';
 interface Props { entry: Entry; path: string; number?: number; caption?: string }
 const {entry:e,path,number,caption}=Astro.props;
 ---
 <section class="section feature-chapter" id={e.id}>
-  {number && <div class="number">{String(number).padStart(2,'0')}</div>}
-  <div class="chapter-grid"><div class="chapter-media"><Media entry={e.id} path={path} title={e.title} caption={caption}/></div><div class="chapter-copy"><h2>{e.title}</h2><p>{e.summary}</p><div class="cues">{e.cues.map(c=><span class="cue">{c}</span>)}</div><a class="source-link" href={sourceURL(e)}>{e.family==='gltf'?'Renderer contract':'Run locally / source'} ↗</a></div></div>
+  {(number||rendererLabel(e)) && <div class="number">{number&&String(number).padStart(2,'0')}{number&&rendererLabel(e)&&' · '}{rendererLabel(e)}</div>}
+  <div class="chapter-grid"><div class="chapter-media"><Media entry={e.id} path={path} title={e.title} caption={caption} eager={number===1}/></div><div class="chapter-copy"><h2>{e.title}</h2><p>{e.summary}</p><div class="cues">{e.cues.map(c=><span class="cue">{c}</span>)}</div><a class="source-link" href={sourceURL(e)}>{e.family==='gltf'?'Renderer contract':'Run locally / source'} ↗</a></div></div>
   <slot />
   <details class="scope-note"><summary>About this scene</summary><p class="note">{e.scope}</p><a class="source-link" href={sourceURL(e)}>Source and details ↗</a></details>
 </section>

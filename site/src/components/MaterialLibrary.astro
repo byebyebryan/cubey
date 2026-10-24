@@ -1,0 +1,24 @@
+---
+import catalog from '../../../assets/materials/catalog.json';
+import {asset} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props {path:string}
+const {path}=Astro.props;
+const order=['glass','frosted-glass','wood','rusted-steel','marble','limestone','clay','ceramic','bronze','kraft-cardboard','woven-cloth','plain'];
+const materials=order.map(id=>catalog.entries.find(e=>e.id===id)!);
+---
+<section class="section material-library" id="material-library" data-material-library>
+  <div class="section-head"><div><span class="eyebrow">The complete library</span><h2>Twelve materials. Two renderers.</h2></div><p>The same recipes, from smooth glass to rough stone.</p></div>
+  <p class="body-copy">Forward PBR renders mesh specimens. SDF ray marching renders implicit solids. Choose a renderer to see all twelve materials through that path.</p>
+  <div class="renderer-controls" role="group" aria-label="Material renderer" data-renderer-controls hidden>
+    <button class="filter" data-renderer="mesh" aria-pressed="true">Forward PBR</button>
+    <button class="filter" data-renderer="sdf" aria-pressed="false">SDF ray marching</button>
+  </div>
+  <p class="renderer-caption" aria-live="polite" data-renderer-caption>Forward PBR · native mesh specimens</p>
+  <div class="material-grid">{materials.map(m=>{const mesh=asset(`library-mesh-${m.id}`);const sdf=asset(`library-sdf-${m.id}`);return <figure class="material-tile" data-material={m.id}>
+    <a data-material-link href={url(mesh.file,path)} data-mesh={url(mesh.file,path)} data-sdf={url(sdf.file,path)} aria-label={`Open ${m.label} · Forward PBR`}><img data-material-image src={url(mesh.file,path)} data-mesh={url(mesh.file,path)} data-sdf={url(sdf.file,path)} data-label={m.label} width={mesh.width} height={mesh.height} alt={`${m.label} · Forward PBR mesh specimen`} loading="lazy" decoding="async"/></a>
+    <figcaption><h3>{m.label}</h3><p>{m.description}</p></figcaption>
+  </figure>;})}</div>
+  <noscript><p class="note">SDF captures: {materials.map(m=><a href={url(asset(`library-sdf-${m.id}`).file,path)}>{m.label} · </a>)}</p></noscript>
+  <details><summary>How the renderers share materials</summary><p class="note">Both use the same recipe library. Mesh and SDF have different light-transport paths, so glass will look different between them. The SDF frosted-glass route uses filtered environment light along a bounded interface path.</p><a class="source-link" href="https://github.com/byebyebryan/cubey/blob/main/docs/architecture/material-recipes.md">Shared recipes and renderer details ↗</a></details>
+</section>

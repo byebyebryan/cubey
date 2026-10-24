@@ -1,8 +1,8 @@
 ---
-import Picture from './Picture.astro';
-import {selected,entryPath,type Entry} from '../data/catalog';
+import Preview from './Preview.astro';
+import {entryPath,rendererLabel,type Entry} from '../data/catalog';
 import {url} from '../lib/urls';
 interface Props { entry: Entry; path: string; reason?: string; compact?: boolean }
 const {entry:e,path,reason,compact=false}=Astro.props;
 ---
-<article class="card"><a class="card-link" href={url(entryPath(e),path)}><Picture id={selected(e.id).poster} path={path} alt={e.title} /><div class="meta">{e.dimension==='2.5D'?'Surface flow':e.dimension}</div><h3>{e.title} ↗</h3>{!compact && <p>{reason||e.summary}</p>}</a></article>
+<article class="card" data-entry={e.id}><Preview entry={e.id} path={path}/><a class="card-link" href={url(entryPath(e),path)}><div class="meta">{rendererLabel(e)||(e.dimension==='2.5D'?'Surface flow':e.dimension)}</div><h3>{e.title} ↗</h3>{!compact && <p>{reason||e.summary}</p>}</a></article>

@@ -37,6 +37,17 @@ native source. Films are silent H.264/yuv420p. Parent and derivative hashes rema
 distinct. The website exposes a static, path-free media identity download; full
 capture paths and reproduction references belong to this source ledger.
 
+The complete twelve-recipe mesh/SDF specimen set retains its original accepted
+qualification identities in `receipts/full-material-library.json`. These are
+historical native captures, not renders from the site's Git revision. New sky
+stills, accelerated cloud drift and a complete solar-cycle film retain commands,
+binary hashes and frame-parent identities in their individual receipts. The
+cloud film uses an explicitly accelerated wind parameter for visible motion.
+`receipts/web-video-faststart.json` records lossless delivery remuxes. Their
+encoded video-packet hashes match the native inputs; only MP4 container layout
+changes to put the playback index first. The content gate enforces fast-start
+layout for every film.
+
 The [site guide](../README.md) owns authoring/build instructions; the
 [implementation record](../../docs/notes/cubey-site-implementation-progress.md)
 owns point-in-time checks and preview delivery.

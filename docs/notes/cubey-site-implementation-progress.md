@@ -204,3 +204,42 @@ deployment or production-performance claim.
   latter cannot pass against this checkout's incomplete/stale `build/dev`
   executables; this publication does not rebuild or requalify native rendering.
   Existing native source/capture qualification remains recorded in its own notes.
+
+## Showcase refinement after public review — 2026-10-24
+
+- Home, the demos index, simulation collections, SDF collections and related
+  cards now play their films in place. Player controls and scene links are
+  separate. The demos index includes all six simulation players; starting
+  another film pauses the first, without leaving the overview.
+- Guardian and Robot share 4:3 overview and scene frames. The native square
+  posters retain the complete subjects within their presentation crop; Robot's
+  4:3 recorded frames stay complete during playback and fullscreen uses contain.
+- The materials page now leads with all twelve recipes and a Forward PBR / SDF
+  ray-marching switch. Both glass materials are prominent. All twenty-four
+  specimen images match the accepted historical library manifest, retaining
+  capture source `cc4a248d` separately from selection. The four-specimen
+  forward-PBR film remains a labeled lighting study; the cut-through wood film
+  is SDF. Shared recipes do not imply the same optical transport.
+- Atmosphere has three visible chapters: scattering/light, clouds, then night
+  sky with its nested solar cycle. New native views show the sun, daylight and
+  haze; clouds drift under a fixed sun; the solar film spans a full accelerated
+  day and a better framed Milky Way view replaces the earlier still. The cloud
+  wind parameter is deliberately accelerated and labeled accordingly. Capture
+  receipts pin the existing binary/source baseline `492fac84`; native source
+  and capture inputs remain unchanged from that baseline.
+- Fractals is deferred from the public catalog, routes, credits and selected web
+  assets. Its native source and project guide remain. The public catalog now
+  has seven subjects, twenty-one entries and thirteen native project owners.
+- Fifteen films pass H.264/yuv420p, silent and fast-start audits. Eight native
+  inputs initially had their MP4 index at the end; a lossless remux moves it
+  first. Encoded video-packet hashes are identical before/after, with native
+  input and web-output identities retained in `web-video-faststart.json`.
+  The content gate now rejects non-fast-start films.
+- Astro checks pass with zero errors/warnings/hints; all sixty page/width cases
+  (twenty pages at 320, 390 and 768 pixels) fit without overflow, including
+  matching sculpture preview dimensions and twelve visible library tiles.
+  The SDF renderer query restores all twelve SDF images; overview playback and
+  single-active-film behavior pass in the browser. All eight documentation/
+  layout/media lanes pass separately from the native CLI recipe lane, whose
+  previously recorded incomplete-build limitation remains. Local receipts are
+  under `outputs/cubey-site/refinement-2026-10-24/`.
