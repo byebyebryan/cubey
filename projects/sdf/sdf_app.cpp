@@ -45,6 +45,8 @@ class App {
                 std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
         if (authored_)
             validate_authored_motion(*authored_);
+        if (!authored_ && config_.timeline.motion == "material-story")
+            throw std::invalid_argument("material-story requires an authored body/cut history");
         if (config_.lighting != "atmosphere" && !authored_)
             throw std::invalid_argument("material-study lighting requires an authored scene");
         if (config_.clouds && config_.lighting != "material-atmosphere")
@@ -133,6 +135,7 @@ class App {
                 if (config_.validate && frame.index + 1 == frame.count &&
                     (config_.timeline.motion == "construction" ||
                      config_.timeline.motion == "presentation" ||
+                     config_.timeline.motion == "material-story" ||
                      config_.timeline.motion == "carve")) {
                     if (authored_) {
                         validate_field(ctx.device(), runtime_.gpu(), *field_, Recipe{},
@@ -269,14 +272,19 @@ class App {
   private:
     bool authored_build() const {
         return authored_ && (config_.timeline.motion == "construction" ||
-                             config_.timeline.motion == "presentation");
+                             config_.timeline.motion == "presentation" ||
+                             config_.timeline.motion == "material-story");
     }
     void validate_authored_motion(const AuthoredScene& scene) const {
+        if (config_.timeline.motion == "material-story")
+            (void)sample_authored_history(config_.timeline, scene, 0, config_.debug);
+        const bool saved_motion =
+            !scene.history.empty() && (config_.timeline.motion == "construction" ||
+                                       config_.timeline.motion == "presentation" ||
+                                       config_.timeline.motion == "material-story");
         if (!config_.recipe_path.empty() || !config_.export_recipe_path.empty() ||
             (config_.timeline.motion != "static" && config_.timeline.motion != "orbit" &&
-             !((config_.timeline.motion == "construction" ||
-                config_.timeline.motion == "presentation") &&
-               !scene.history.empty())))
+             !saved_motion))
             throw std::invalid_argument(
                 "Authored scenes support static/orbit, or "
                 "construction/presentation with a saved history, and their own export format");
@@ -540,15 +548,25 @@ class App {
             ImGui::SameLine();
             if (ImGui::Button("Restart"))
                 playback_seconds_ = 0;
-            const char* motions[]{"Static", "Orbit", "Construction", "Presentation", "Carve"};
-            const std::string motion_names[]{"static", "orbit", "construction", "presentation",
-                                             "carve"};
+            std::vector<const char*> motions{"Static", "Orbit"};
+            std::vector<std::string> motion_names{"static", "orbit"};
+            if (!authored_ || !authored_->history.empty()) {
+                motions.insert(motions.end(), {"Construction", "Presentation"});
+                motion_names.insert(motion_names.end(), {"construction", "presentation"});
+            }
+            if (!authored_) {
+                motions.push_back("Carve");
+                motion_names.push_back("carve");
+            } else if (authored_->history.size() == 2 && authored_->history[0].cutters.empty() &&
+                       !authored_->history[1].cutters.empty()) {
+                motions.push_back("Material story");
+                motion_names.push_back("material-story");
+            }
             int motion = 0;
-            for (int i = 0; i < 5; ++i)
+            for (int i = 0; i < static_cast<int>(motion_names.size()); ++i)
                 if (config_.timeline.motion == motion_names[i])
                     motion = i;
-            if (ImGui::Combo("Motion", &motion, motions,
-                             authored_ ? (authored_->history.empty() ? 2 : 4) : 5)) {
+            if (ImGui::Combo("Motion", &motion, motions.data(), static_cast<int>(motions.size()))) {
                 auto next = config_.timeline;
                 next.motion = motion_names[motion];
                 try {
@@ -578,7 +596,8 @@ class App {
                     if (!orbit_.paused())
                         orbit_.toggle_pause();
                 };
-                ImGui::BeginDisabled(shown == 0);
+                const int minimum_step = config_.timeline.motion == "material-story" ? 1 : 0;
+                ImGui::BeginDisabled(shown <= static_cast<std::size_t>(minimum_step));
                 if (ImGui::Button("Previous edit"))
                     seek(shown - 1);
                 ImGui::EndDisabled();
@@ -588,7 +607,7 @@ class App {
                     seek(shown + 1);
                 ImGui::EndDisabled();
                 int step = static_cast<int>(shown);
-                if (ImGui::SliderInt("Edit", &step, 0, static_cast<int>(total)))
+                if (ImGui::SliderInt("Edit", &step, minimum_step, static_cast<int>(total)))
                     seek(static_cast<std::size_t>(step));
             }
             int view = static_cast<int>(config_.debug);

@@ -1,0 +1,17 @@
+{
+  "authored-scene": "projects/sdf/scenes/material-presentation/wood-cut.json",
+  "motion": "material-story",
+  "duration": 8,
+  "orbit-turns": 0.0555555556,
+  "lighting": "material-atmosphere",
+  "sun-elevation": 8,
+  "sun-azimuth": -155,
+  "exposure": 0.6,
+  "clouds": true,
+  "cloud-time": 300,
+  "cloud-coverage": 0.28,
+  "yaw": 0.2,
+  "pitch": 0.42,
+  "distance": 1.12,
+  "shadows": 1
+}

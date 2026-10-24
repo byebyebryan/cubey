@@ -1,3 +1,4 @@
+#include "sdf_history.h"
 #include "sdf_workshop.h"
 #include <chrono>
 #include <iostream>
@@ -155,6 +156,40 @@ int main() {
     const auto fresh = sdf::authored_surface({.075F, -.025F, .15F}, rust);
     require(fresh.optics.settings.x == 1 &&
             fresh.material.base_roughness.w == rust.libraries[0].rust_roughness.x);
+    const auto story =
+        sdf::load_authored_scene(std::filesystem::path(CUBEY_SOURCE_DIR) /
+                                 "projects/sdf/scenes/material-presentation/wood-cut.json");
+    const auto story_round = sdf::parse_authored_scene(sdf::serialize_authored_scene(story));
+    require(story_round.history.size() == 2 && story_round.history[1].cutters.size() == 1);
+    const auto body_only = sdf::authored_history_scene(story_round, 1);
+    require(body_only.material_domains == story_round.material_domains &&
+            body_only.libraries == story_round.libraries);
+    require(asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, body_only)) ==
+            asset::material_recipe_fingerprint(sdf::workshop_material_recipe(c, story_round)));
+    require(sdf::authored_distance({0, 0, 0}, body_only) < 0 &&
+            sdf::authored_distance({0, 0, 0}, story_round) > 0);
+    sdf::TimelineConfig story_time{
+        .motion = "material-story", .duration = 8, .orbit_turns = 1.0F / 18};
+    std::size_t last_prefix = 1;
+    float last_yaw = 0;
+    for (int frame = 0; frame <= 480; ++frame) {
+        const auto sample = sdf::sample_authored_history(story_time, story_round, frame / 60.0);
+        require(sample.timeline.prefix >= last_prefix && sample.timeline.prefix >= 1 &&
+                sample.timeline.prefix <= 2 && sample.timeline.yaw >= last_yaw &&
+                sample.timeline.debug == 0);
+        if (!sample.cutters.empty())
+            require(sample.timeline.prefix == 1);
+        last_prefix = sample.timeline.prefix;
+        last_yaw = sample.timeline.yaw;
+    }
+    require(sdf::sample_authored_history(story_time, story_round, 0).timeline.yaw == 0);
+    require(sdf::sample_authored_history(story_time, story_round, 8).timeline.yaw ==
+            sdf::sample_authored_history(story_time, story_round, 6.5).timeline.yaw);
+    for (std::size_t step = 1; step <= 2; ++step)
+        require(
+            sdf::sample_authored_history(story_time, story_round,
+                                         sdf::authored_history_seek(story_time, story_round, step))
+                .timeline.prefix == step);
     std::cout << "Shared/legacy seven-recipe fingerprints exact; CSG appearance leaves geometry "
                  "cache identity intact; affine bump derivative verified; working materials "
                  "survive specimen and CSG option changes.\n";

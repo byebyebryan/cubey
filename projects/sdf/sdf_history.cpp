@@ -151,6 +151,26 @@ AuthoredHistorySample sample_authored_history(const TimelineConfig& config,
     if (scene.history.empty() || !std::isfinite(seconds))
         throw std::invalid_argument("authored construction needs a saved history and finite time");
     const double t = std::clamp(seconds, 0.0, config.duration);
+    if (config.motion == "material-story") {
+        if (scene.history.size() != 2 || !scene.history[0].cutters.empty() ||
+            scene.history[1].cutters.empty())
+            throw std::invalid_argument("material-story requires body then cut history");
+        // A saved, discrete subtraction: initialized opening, tool preview,
+        // committed cut, eased reveal and a final beauty hold.
+        const double s = 8 * t / config.duration;
+        AuthoredHistorySample result;
+        result.timeline.prefix = s < 2.65 ? 1 : 2;
+        result.timeline.debug = debug;
+        if (s >= 1.5 && s < 2.65) {
+            result.cutters = scene.history[1].cutters;
+            result.timeline.cutter_opacity =
+                .45F * static_cast<float>(std::sin(std::numbers::pi_v<double> * (s - 1.5) / 1.15));
+        }
+        const auto phase = static_cast<float>(std::clamp((s - 3.5) / 3, 0.0, 1.0));
+        result.timeline.yaw =
+            2 * std::numbers::pi_v<float> * config.orbit_turns * phase * phase * (3 - 2 * phase);
+        return result;
+    }
     const double history_time = t / config.construction_seconds * history_duration(scene);
     AuthoredHistorySample result;
     result.timeline.debug = debug;
@@ -184,6 +204,8 @@ double authored_history_seek(const TimelineConfig& config, const AuthoredScene& 
     validate_timeline(config);
     if (scene.history.empty() || count > scene.history.size())
         throw std::invalid_argument("authored history seek outside the saved sequence");
+    if (config.motion == "material-story")
+        return count < 2 ? 0 : config.duration * 3.5 / 8;
     if (count == 0)
         return 0;
     double t = opening_hold;

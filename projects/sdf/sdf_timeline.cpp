@@ -14,7 +14,7 @@ void validate_timeline(const TimelineConfig& c) {
         (c.motion == "carve" && c.construction_seconds >= c.duration) ||
         (c.motion == "presentation" && c.construction_seconds >= c.duration * 5.0 / 6.0) ||
         (c.motion != "static" && c.motion != "orbit" && c.motion != "construction" &&
-         c.motion != "presentation" && c.motion != "carve"))
+         c.motion != "presentation" && c.motion != "carve" && c.motion != "material-story"))
         throw std::invalid_argument("invalid SDF motion/duration/construction timeline");
 }
 TimelineSample sample_timeline(const TimelineConfig& c, std::size_t count, double seconds,

@@ -1,0 +1,84 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "Solid wood / a through-cut",
+  "materials": [
+    {
+      "name": "body",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "wood",
+        "label": "Unvarnished hardwood",
+        "surface": {
+          "base_color": [
+            0.46,
+            0.25,
+            0.105
+          ],
+          "roughness": 0.64
+        },
+        "library": {
+          "type": "wood",
+          "seed": 19,
+          "relief": 0.00045,
+          "secondary_color": [
+            0.12,
+            0.04,
+            0.01
+          ],
+          "wood": {
+            "ring_frequency": 26,
+            "distortion": 0.6,
+            "grain_frequency": 220,
+            "pore_strength": 0.3
+          }
+        }
+      }
+    }
+  ],
+  "root": {
+    "name": "bored-block",
+    "type": "subtract",
+    "children": [
+      {
+        "name": "solid-block",
+        "type": "box",
+        "half_extent": [
+          0.235,
+          0.2,
+          0.16
+        ],
+        "material": "body"
+      },
+      {
+        "name": "bore",
+        "type": "cylinder",
+        "radius": 0.065,
+        "half_length": 0.4,
+        "rotation_xyzw": [
+          0.70710678,
+          0,
+          0,
+          0.70710678
+        ]
+      }
+    ]
+  },
+  "history": [
+    {
+      "node": "solid-block",
+      "label": "Solid wood block",
+      "seconds": 1.5
+    },
+    {
+      "node": "bore",
+      "label": "Through-cut / same material field",
+      "seconds": 2
+    }
+  ],
+  "authoring": {
+    "recipe_id": "wood",
+    "recipe_label": "Wood"
+  }
+}

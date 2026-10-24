@@ -72,7 +72,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
                             "material-atmosphere"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
-    motion.enum_values = {"static", "orbit", "construction", "presentation", "carve"};
+    motion.enum_values = {"static",       "orbit", "construction",
+                          "presentation", "carve", "material-story"};
     auto ground = option("ground", "Ground", config::ValueType::Bool);
     ground.negative_cli_name = "--no-ground";
     auto clouds =
