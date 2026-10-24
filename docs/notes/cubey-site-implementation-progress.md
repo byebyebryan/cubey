@@ -243,3 +243,22 @@ deployment or production-performance claim.
   layout/media lanes pass separately from the native CLI recipe lane, whose
   previously recorded incomplete-build limitation remains. Local receipts are
   under `outputs/cubey-site/refinement-2026-10-24/`.
+
+### Published refinement verification
+
+- Source `915b4a14c17896a2d694de0a9eb9d9f5b50a6cee` is published through
+  [successful Pages run 40142078153](https://github.com/byebyebryan/cubey/actions/runs/40142078153).
+  The public deployment identity names that exact commit. All 120 public files
+  (25,886,755 bytes, including deployment metadata) match the verified build or
+  deployment identity; 95 media files include all fifteen films.
+- Thirty first/last 1 KB requests across every film return matching `206`
+  responses. Both a nested missing route and the deferred fractals route return
+  the matching custom 404. HTTPS canonical URLs match the public mount.
+- The live materials page restores twelve SDF specimens from its saved query
+  and switches all twelve back to Forward PBR. The live demos overview exposes
+  twelve player controls, including every simulation example and the new cloud
+  film. The native cloud film plays from that overview without navigation.
+- The maximum checked page image/style/script bound is 414,598 bytes, under
+  the retained 600 KB policy. No required implementation changes remain.
+  The following documentation-only closeout leaves deployed site inputs equal
+  to the published commit. Native source and qualification scope are unchanged.
