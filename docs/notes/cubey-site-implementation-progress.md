@@ -2,7 +2,7 @@
 
 Date: 2026-10-24
 
-Status: active implementation goal, explicitly launched by the user after the
+Status: implementation goal complete, explicitly launched by the user after the
 completed workshop-alignment design. Work is on the local
 `codex/cubey-site-implementation` branch, based on `492fac84`. The twelve inherited
 commits beyond local origin/main remain unpublished. Prior planning edits belong
@@ -144,3 +144,24 @@ deployment or production-performance claim.
 - Source push, public-domain deployment and README cutover remain unperformed.
   The inherited twelve native commits remain part of any later source-publication
   review. Hosting and final artistic acceptance are distinct from these checks.
+
+## Closeout
+
+- Local implementation checkpoint: `54c8bf6` (`feat(site): implement the Cubey
+  graphics workshop showcase`), including the preserved planning/design package.
+  Changes are confined to `site/` and this thread's notes/index; native source
+  and the current root README gallery are unchanged.
+- [Implementation review, screenshots and verification receipts](http://starship:8787/reports/e0f32d64443f123e11ef735720de134953595f004f2dddbe81a3ed79158c24a2/).
+  Its thirteen served files (546,240 bytes) match the review export. The main
+  implementation preview remains the browser deliverable and is independent
+  of the temporary port4321 server.
+- Documentation navigation/layout/media, note links/whitespace and scoped source
+  checks pass. The third-party notice files retain the exact legal sections,
+  pinned upstream URLs and upstream/retained hashes without copying unrelated
+  illustrated README prose.
+- The owned preview server is stopped. Temporary clean-build dependency folders
+  were removed after success; source/build/receipt snapshots and all completed
+  native captures remain. The shared Starship report server is left running.
+- No required implementation work remains in this goal. The next release step
+  needs the chosen public endpoint and explicit source/publication scope; the
+  static build, selected media, attribution and review result are concrete.

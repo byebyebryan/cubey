@@ -22,6 +22,10 @@ tracked source and selected web media. No native executable, GPU, Vulkan/CUDA,
 private report host or capture output is needed. `npm run build` builds the static
 site alone; `npm run preview` serves its output for review.
 
+Astro 7's preview can run in the background. Stop the owned preview with
+`npm exec astro preview stop`. For a custom LAN hostname, pass the specific name
+with `npm run preview -- --allowed-hosts your-hostname`.
+
 The implementation uses authored Astro components and plain CSS/JavaScript.
 Internal and asset URLs are relative, so the same `dist/` works beneath a hosting
 prefix. `SITE_ORIGIN` and `SITE_BASE` may be supplied to emit canonical metadata
