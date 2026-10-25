@@ -29,6 +29,8 @@ void PbrMaterialsApp::record_frame(const cubey::vulkan::Device& device, VkComman
     }
     if (present)
         vulkan::CommandRecorder(command).begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    if (config_.lighting_cycle != "frozen")
+        prepare_environment(device, command, slot, target.extent);
     if (whole_profiler_) {
         whole_profiler_->begin_frame(command, slot.index);
         pass_profiler_->begin_frame(command, slot.index);

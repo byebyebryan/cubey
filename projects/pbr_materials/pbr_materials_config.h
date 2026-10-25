@@ -24,6 +24,7 @@ struct PbrMaterialsConfig {
     float yaw = 0, pitch = .15F, distance = 1.05F, roughness = -1, pattern_scale = -1;
     float orbit_degrees = 0;
     std::string presentation;
+    std::string lighting_cycle = "frozen";
     double presentation_time = -1;
     bool pattern = true, bump = true;
     std::uint32_t stress_edits = 0;
@@ -75,6 +76,11 @@ inline cubey::config::Schema pbr_materials_config_schema(PbrMaterialsConfig& con
     bind(config.presentation, "presentation", "--presentation", cubey::config::ValueType::String);
     bind(config.presentation_time, "presentation_time", "--presentation-time",
          cubey::config::ValueType::Float);
+    auto cycle =
+        pbr_materials_option("lighting_cycle", "--lighting-cycle", "Lighting cycle", "Presentation",
+                             "Frozen, dusk or dawn lighting.", cubey::config::ValueType::Enum);
+    cycle.enum_values = {"frozen", "dusk", "dawn"};
+    builder.bind(cycle, config.lighting_cycle);
     bind(config.pattern, "pattern", "--pattern", cubey::config::ValueType::Bool);
     bind(config.bump, "bump", "--bump", cubey::config::ValueType::Bool);
     bind(config.stress_edits, "stress_edits", "--stress-edits", cubey::config::ValueType::UInt32);
@@ -96,6 +102,16 @@ inline PbrMaterialsConfig parse_pbr_materials_config(int argc, char** argv,
             c.yaw = -.12F;
         if (!parsed.path_was_assigned("environment"))
             c.environment = "clouds";
+        if (c.presentation == "library") {
+            if (!parsed.path_was_assigned("distance"))
+                c.distance = .855F;
+            if (!parsed.path_was_assigned("pitch"))
+                c.pitch = 0;
+            if (!parsed.path_was_assigned("yaw"))
+                c.yaw = 0;
+            if (!parsed.path_was_assigned("lighting_cycle"))
+                c.lighting_cycle = "dusk";
+        }
     }
     if (result)
         *result = std::move(parsed);

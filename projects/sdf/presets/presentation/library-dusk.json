@@ -1,0 +1,17 @@
+{
+  "authored-scene": "projects/sdf/scenes/material-presentation/library-spheres.json",
+  "motion": "static",
+  "duration": 8,
+  "lighting": "material-atmosphere",
+  "lighting-cycle": "dusk",
+  "clouds": true,
+  "cloud-time": 300,
+  "cloud-coverage": 0.28,
+  "distance": 0.855,
+  "yaw": 0,
+  "pitch": 0,
+  "target-y": 0,
+  "shadows": 0,
+  "glass-crossings": 16,
+  "environment-extent": 128
+}

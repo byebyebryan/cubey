@@ -23,10 +23,11 @@ cubey::ForwardPbrRenderer3DConfig forward_pbr_renderer_3d_config() {
         CUBEY_PBR_MATERIALS_SHADER_DIR, {.shadow_extent = kShadowMapSize});
 }
 
-[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> make_pbr_sphere_mesh() {
+[[nodiscard]] cubey::render::PrimitiveMeshData<cubey::render::PbrVertex>
+make_pbr_sphere_mesh(float radius) {
     const cubey::render::PrimitiveMeshData<cubey::render::VertexPositionColorNormalUv> cube =
         cubey::render::make_uv_sphere_position_color_normal_uv_mesh(
-            {.radius = 0.25F, .latitude_segments = 64, .longitude_segments = 128});
+            {.radius = radius, .latitude_segments = 64, .longitude_segments = 128});
 
     cubey::render::PrimitiveMeshData<cubey::render::PbrVertex> result;
     result.vertices.reserve(cube.vertices.size());
@@ -264,7 +265,8 @@ PbrMaterialsApp::material_sampled_images() const {
 
 void PbrMaterialsApp::create_mesh(cubey::vulkan::GpuRuntime& gpu) {
     sphere_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
-        engine_.render_resources(), meshes_, gpu, "pbr_materials.sphere", make_pbr_sphere_mesh());
+        engine_.render_resources(), meshes_, gpu, "pbr_materials.sphere",
+        make_pbr_sphere_mesh(config_.presentation == "library" ? .075F : .25F));
     block_mesh_handle_ = render::create_primitive_mesh_resource(engine_.render_resources(), meshes_,
                                                                 gpu, "pbr_materials.beveled-block",
                                                                 make_beveled_block_mesh());

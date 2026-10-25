@@ -26,6 +26,7 @@ void Renderer::create_environment(vulkan::Device& device, vulkan::GpuRuntime& gp
     atmosphere_.create_resources(
         device, {.reflection_extent = config.environment_extent,
                  .reflection_mip_levels = 5,
+                 .reflection_update_hz = config.lighting_cycle == "frozen" ? 4.0F : 30.0F,
                  .frame_slot_count = slots,
                  .atmosphere_textures = atmosphere_textures_->bindings(),
                  .reflection_ground_mode = render::AtmosphereEnvironmentGroundMode::Ground});
@@ -85,7 +86,8 @@ void Renderer::bind_environment(const vulkan::Device& device, render::FrameSlot 
     writes.update(device);
 }
 void Renderer::prepare_environment(vulkan::Device& device, VkCommandBuffer command,
-                                   render::FrameSlot slot, const SdfConfig& config) {
+                                   render::FrameSlot slot, const SdfConfig& config, math::Vec3 eye,
+                                   math::Vec3 target) {
     auto environment = atmosphere_.environment();
     environment.sun_elevation_degrees = config.sun_elevation;
     environment.sun_azimuth_degrees = config.sun_azimuth;
@@ -93,16 +95,33 @@ void Renderer::prepare_environment(vulkan::Device& device, VkCommandBuffer comma
     if (!material_atmosphere_)
         return;
     const auto now = std::chrono::steady_clock::now();
-    atmosphere_.advance(std::chrono::duration<double>(now - environment_clock_).count());
+    const bool cycling = config.lighting_cycle != "frozen";
+    const double seconds = environment_seconds_.value_or(0);
+    const double delta = cycling ? (previous_environment_seconds_
+                                        ? std::max(0.0, seconds - *previous_environment_seconds_)
+                                        : 0)
+                                 : std::chrono::duration<double>(now - environment_clock_).count();
+    if (cycling &&
+        (!previous_environment_seconds_ ||
+         static_cast<int>(seconds / 2) != static_cast<int>(*previous_environment_seconds_ / 2)))
+        std::cout << "material-cycle time=" << seconds << " sun=" << config.sun_elevation
+                  << " azimuth=" << config.sun_azimuth << " cloud=" << config.cloud_time
+                  << " exposure=" << config.exposure << '\n';
+    atmosphere_.advance(delta);
+    if (cycling)
+        previous_environment_seconds_ = seconds;
     environment_clock_ = now;
+    if (cycling && changed)
+        atmosphere_.force_reflection_refresh();
     atmosphere_.record_pending_update(vulkan::CommandRecorder(command), slot);
     if (clouds_enabled_) {
         auto& clouds = atmosphere_.clouds();
         clouds.set_elapsed_seconds(config.cloud_time);
         const auto sky_generation = atmosphere_.reflection_probe().snapshot().generation;
-        if (sky_generation != cloud_sky_generation_ &&
+        if ((cycling || sky_generation != cloud_sky_generation_) &&
             clouds.record_pending_update(vulkan::CommandRecorder(command), slot,
-                                         cloud_frame({0, 0, 0}, {0, 0, -1}))) {
+                                         cycling ? cloud_frame(eye, target)
+                                                 : cloud_frame({0, 0, 0}, {0, 0, -1}))) {
             cloud_sky_generation_ = sky_generation;
             std::cout << "sdf: cloud probe capture generation=" << clouds.snapshot().generation
                       << '\n';
@@ -171,12 +190,18 @@ void Renderer::create_clouds(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                  .prefilter_fragment =
                      render::fragment_shader_file(path / "cloud_environment_prefilter.frag.spv")});
     clouds.set_elapsed_seconds(config.cloud_time);
+    const math::Vec3 target{0, config.target_y, 0};
+    const auto eye =
+        target + math::Vec3{std::cos(config.pitch) * std::sin(config.yaw), std::sin(config.pitch),
+                            std::cos(config.pitch) * std::cos(config.yaw)} *
+                     config.distance;
     static_cast<void>(gpu.submit_and_wait(
         {.label = "sdf settle frozen cloud probe", .work = [&](vulkan::GpuOwnerContext& owner) {
              vulkan::ImmediateCommands commands(owner);
-             static_cast<void>(
-                 clouds.record_pending_update(vulkan::CommandRecorder(commands.command_buffer()),
-                                              {0, slots}, cloud_frame({0, 0, 0}, {0, 0, -1})));
+             static_cast<void>(clouds.record_pending_update(
+                 vulkan::CommandRecorder(commands.command_buffer()), {0, slots},
+                 config.lighting_cycle == "frozen" ? cloud_frame({0, 0, 0}, {0, 0, -1})
+                                                   : cloud_frame(eye, target)));
              commands.submit_and_wait();
          }}));
     clouds.advance(.25);

@@ -12,8 +12,9 @@ render::PbrMaterialDefinition PbrMaterialsApp::material_definition(std::size_t i
         for (const auto& item : presentation_layout(config_.presentation))
             if (item.material == catalog_.at(i).id)
                 shape = item.shape;
-    auto d = pbr_material_from_recipe(recipes_.at(i), specimen_thickness(shape),
-                                      static_cast<std::uint32_t>(i));
+    auto d = pbr_material_from_recipe(
+        recipes_.at(i), config_.presentation == "library" ? .15F : specimen_thickness(shape),
+        static_cast<std::uint32_t>(i));
     d.factors.pattern_enabled = config_.pattern;
     d.factors.bump_enabled = config_.bump;
     return d;

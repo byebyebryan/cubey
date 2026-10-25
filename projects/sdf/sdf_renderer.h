@@ -34,6 +34,9 @@ class Renderer {
     void destroy();
     void update_field(vulkan::Device& device, const Field& field);
     void update_authored(const AuthoredScene* scene);
+    void set_environment_elapsed_seconds(double seconds) {
+        environment_seconds_ = seconds;
+    }
     void record(vulkan::Device& device, VkCommandBuffer command, render::ColorTargetView target,
                 render::FrameSlot slot, bool present, const SdfConfig& config, float yaw,
                 float pitch, float distance, profiling::ProfileRecorder* profile,
@@ -44,7 +47,8 @@ class Renderer {
     void create_environment(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                             const SdfConfig& config, std::uint32_t slots);
     void prepare_environment(vulkan::Device& device, VkCommandBuffer command,
-                             render::FrameSlot slot, const SdfConfig& config);
+                             render::FrameSlot slot, const SdfConfig& config, math::Vec3 eye,
+                             math::Vec3 target);
     void bind_environment(const vulkan::Device& device, render::FrameSlot slot);
     void create_clouds(vulkan::Device& device, vulkan::GpuRuntime& gpu, const SdfConfig& config,
                        std::uint32_t slots);
@@ -58,6 +62,7 @@ class Renderer {
     std::uint64_t cloud_sky_generation_ = 0;
     render::CloudLayerRuntimeShaderFiles cloud_shaders_;
     std::chrono::steady_clock::time_point environment_clock_{};
+    std::optional<double> environment_seconds_, previous_environment_seconds_;
     std::optional<render::GeneratedPbrEnvironment> study_environment_;
     std::unique_ptr<vulkan::Buffer> scene_optics_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;

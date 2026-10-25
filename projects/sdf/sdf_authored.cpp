@@ -136,6 +136,67 @@ void validate_material(const SurfaceMaterial& m) {
     }
     number(m.base_roughness.w, .05F, 1);
 }
+// Gallery glass keeps the existing environment-only transport contract. Each
+// body must be homogeneous, bounded and separate from every other body. The
+// conservative bounds deliberately reject touching, nested or blended media.
+void validate_environment_gallery(const AuthoredScene& scene) {
+    struct Body {
+        math::Vec3 low, high;
+        unsigned material;
+    };
+    std::vector<std::vector<Body>> stack;
+    for (const auto& n : scene.program) {
+        const auto code = static_cast<ShapeCode>(static_cast<unsigned>(n.center_code.w));
+        if (n.center_code.w < 10) {
+            math::Vec3 half;
+            if (code == ShapeCode::Sphere)
+                half = math::Vec3{n.parameters.x};
+            else if (code == ShapeCode::Box)
+                half = math::Vec3{n.parameters} + n.parameters.w;
+            else if (code == ShapeCode::Cylinder)
+                half = {n.parameters.x, n.parameters.y, n.parameters.x};
+            else
+                throw std::invalid_argument(
+                    "environment gallery supports sphere, box and cylinder bodies");
+            if (code != ShapeCode::Sphere) {
+                const math::Quat q{n.inverse_rotation.w, n.inverse_rotation.x, n.inverse_rotation.y,
+                                   n.inverse_rotation.z};
+                const auto rotation = glm::mat3_cast(glm::conjugate(q));
+                half = glm::abs(rotation[0]) * half.x + glm::abs(rotation[1]) * half.y +
+                       glm::abs(rotation[2]) * half.z;
+            }
+            half *= n.settings.x;
+            const math::Vec3 center{n.center_code};
+            stack.push_back({{center - half, center + half, static_cast<unsigned>(n.settings.z)}});
+            continue;
+        }
+        auto b = std::move(stack.back());
+        stack.pop_back();
+        auto& a = stack.back();
+        if (code == ShapeCode::Subtract) {
+            if (a.size() != 1 || n.settings.w >= 0)
+                throw std::invalid_argument("gallery cuts require one body and inherited material");
+            continue;
+        }
+        if (code != ShapeCode::Union)
+            throw std::invalid_argument(
+                "environment gallery does not support smooth material blends");
+        for (const auto& left : a)
+            for (const auto& right : b) {
+                const auto gap = glm::max(left.low - right.high, right.low - left.high);
+                if (std::max({gap.x, gap.y, gap.z}) <= .002F)
+                    throw std::invalid_argument(
+                        "environment gallery bodies must have separated bounds");
+            }
+        a.insert(a.end(), b.begin(), b.end());
+    }
+    if (stack.empty())
+        return; // The empty construction-history prefix is valid.
+    for (const auto& body : stack.front())
+        if (std::min({body.low.x, body.low.y, body.low.z}) < -.499F ||
+            std::max({body.high.x, body.high.y, body.high.z}) > .499F)
+            throw std::invalid_argument("environment gallery body exceeds the SDF field");
+}
 } // namespace
 
 AuthoredScene parse_authored_scene(std::string_view text) {
@@ -145,6 +206,9 @@ AuthoredScene parse_authored_scene(std::string_view text) {
         json.at("materials").empty() || json.at("materials").size() > 16)
         throw std::invalid_argument("unsupported authored SDF scene or material count");
     AuthoredScene result;
+    result.environment_only_gallery = json.value("environment_only_gallery", false);
+    if (result.environment_only_gallery && json.at("version") != 3)
+        throw std::invalid_argument("environment-only gallery requires resolved V3 recipes");
     result.name = json.at("name").get<std::string>();
     if (result.name.empty())
         throw std::invalid_argument("authored SDF scene needs a name");
@@ -158,7 +222,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
             if (item.size() != 2 || !item.contains("recipe"))
                 throw std::invalid_argument("V3 material requires only name and resolved recipe");
             const auto r = asset::parse_material_recipe(item.at("recipe").dump());
-            if (r.optics.settings.y > 0 && json.at("materials").size() != 1)
+            if (r.optics.settings.y > 0 && json.at("materials").size() != 1 &&
+                !result.environment_only_gallery)
                 throw std::invalid_argument("SDF glass requires one material");
             result.materials.push_back(r.surface);
             result.patterns.push_back(r.pattern);
@@ -350,6 +415,8 @@ AuthoredScene parse_authored_scene(std::string_view text) {
     }
     if (stack != (json.at("root").is_null() ? 0U : 1U))
         throw std::invalid_argument("authored SDF program has no single root");
+    if (result.environment_only_gallery)
+        validate_environment_gallery(result);
     result.document = json.dump();
     if (json.contains("geometry_hash") &&
         json.at("geometry_hash") != hex(authored_geometry_hash(result)))
@@ -381,6 +448,8 @@ std::uint64_t authored_appearance_hash(const AuthoredScene& scene) {
     if (!scene.libraries.empty() && scene.libraries.size() != scene.materials.size())
         throw std::invalid_argument("authored library surface table disagrees");
     auto hash = authored_geometry_hash(scene);
+    if (scene.environment_only_gallery)
+        hash_float(hash, 19471.0F); // Preserve every unselected legacy fingerprint.
     for (const auto& node : scene.program) {
         hash_float(hash, node.settings.z);
         hash_float(hash, node.settings.w);
@@ -631,8 +700,8 @@ std::vector<std::uint8_t> authored_program_bytes(const AuthoredScene* scene) {
         16 + (scene ? scene->program.size() : 1) * sizeof(SceneInstruction), 0);
     if (scene) {
         const std::array<std::uint32_t, 4> header{static_cast<unsigned>(scene->program.size()),
-                                                  static_cast<unsigned>(scene->materials.size()), 0,
-                                                  0};
+                                                  static_cast<unsigned>(scene->materials.size()),
+                                                  scene->environment_only_gallery ? 1U : 0U, 0};
         std::memcpy(bytes.data(), header.data(), 16);
         std::memcpy(bytes.data() + 16, scene->program.data(),
                     scene->program.size() * sizeof(SceneInstruction));

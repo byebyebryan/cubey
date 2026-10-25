@@ -123,6 +123,8 @@ class PbrMaterialsApp {
     void switch_environment(const vulkan::Device&, vulkan::GpuRuntime&, VkExtent2D, VkFormat);
     void create_environment(const vulkan::Device&, vulkan::GpuRuntime&, std::uint32_t);
     void create_environment_targets(const vulkan::Device&, VkExtent2D, std::uint32_t);
+    void prepare_environment(const vulkan::Device&, VkCommandBuffer, render::FrameSlot, VkExtent2D);
+    std::optional<double> previous_environment_seconds_;
     CloudEnvironmentRuntimeFrame cloud_frame(VkExtent2D) const;
     render::ViewRayBasis3D view_rays(VkExtent2D) const;
     std::string ui_error_;

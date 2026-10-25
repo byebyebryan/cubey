@@ -252,12 +252,12 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         recorded_frames_[slot.index] = frame_index;
     const vulkan::GpuTimestampScope whole(whole_profiler_ ? &*whole_profiler_ : nullptr, command,
                                           slot.index, "sdf.whole_scene");
-    prepare_environment(device, command, slot, config);
     const math::Vec3 target_point{0, config.target_y, 0};
     const math::Vec3 eye =
         target_point + math::Vec3{std::cos(pitch) * std::sin(yaw), std::sin(pitch),
                                   std::cos(pitch) * std::cos(yaw)} *
                            distance;
+    prepare_environment(device, command, slot, config, eye, target_point);
     const auto vp = math::perspective(glm::radians(45.0F),
                                       static_cast<float>(target.extent.width) /
                                           static_cast<float>(target.extent.height),

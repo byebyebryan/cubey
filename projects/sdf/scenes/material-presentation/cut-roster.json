@@ -1,0 +1,417 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "Four material fields, one cut sequence",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "wood",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "wood",
+        "label": "Unvarnished hardwood",
+        "surface": {
+          "base_color": [
+            0.46,
+            0.25,
+            0.105
+          ],
+          "roughness": 0.64
+        },
+        "library": {
+          "type": "wood",
+          "seed": 19,
+          "relief": 0.00045,
+          "secondary_color": [
+            0.12,
+            0.04,
+            0.01
+          ],
+          "wood": {
+            "ring_frequency": 26,
+            "distortion": 0.6,
+            "grain_frequency": 220,
+            "pore_strength": 0.3
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.273,
+          -0.1885,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "marble",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "marble",
+        "label": "Balanced marble",
+        "surface": {
+          "base_color": [
+            0.6866853124353135,
+            0.6795424696330938,
+            0.6172065624196511
+          ],
+          "roughness": 0.42,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "procedural": {
+            "type": "marble",
+            "seed": 47,
+            "secondary_color": [
+              0.1301364766903643,
+              0.14126329114027164,
+              0.11443537382697373
+            ],
+            "color_strength": 0.88,
+            "roughness_variation": 0.055,
+            "bump_strength": 8e-05,
+            "vein_direction": [
+              0.67,
+              0.63,
+              0.19
+            ],
+            "offset": [
+              0.17,
+              -0.08,
+              0.13
+            ],
+            "color_variation": 0.08,
+            "scale": 6,
+            "vein_frequency": 7.25,
+            "vein_width": 0.07,
+            "warp_strength": 5.5,
+            "grain_scale": 280
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.273,
+          -0.1885,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "rusted-steel",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "rusted-steel",
+        "label": "Rusted steel",
+        "surface": {
+          "base_color": [
+            0.45,
+            0.48,
+            0.5
+          ],
+          "roughness": 0.24,
+          "optics": {
+            "metallic": 1,
+            "diffuse_roughness": 0.4
+          }
+        },
+        "library": {
+          "type": "rust",
+          "seed": 31,
+          "relief": 0.0008,
+          "secondary_color": [
+            0.29,
+            0.063,
+            0.016
+          ],
+          "rust": {
+            "coverage": 0.54,
+            "patch_frequency": 14,
+            "edge_breakup": 0.6,
+            "pit_strength": 0.8
+          },
+          "rust_roughness": [
+            0.22,
+            0.95,
+            0.09
+          ]
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.273,
+          0.1885,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "glass",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "glass",
+        "label": "Tinted glass",
+        "surface": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "roughness": 0.05,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "optics": {
+            "transmission": 1,
+            "ior": 1.5,
+            "attenuation_color": [
+              0.65,
+              0.9,
+              0.76
+            ],
+            "attenuation_distance": 0.5
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.273,
+          0.1885,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "root": {
+    "name": "cut-roster",
+    "type": "union",
+    "children": [
+      {
+        "name": "wood-cut",
+        "type": "subtract",
+        "children": [
+          {
+            "name": "wood-block",
+            "type": "box",
+            "half_extent": [
+              0.15275,
+              0.13,
+              0.104
+            ],
+            "position": [
+              -0.273,
+              0.1885,
+              0
+            ],
+            "material": "wood"
+          },
+          {
+            "name": "wood-bore",
+            "type": "cylinder",
+            "radius": 0.05525,
+            "half_length": 0.26,
+            "position": [
+              -0.273,
+              0.1885,
+              0
+            ],
+            "rotation_xyzw": [
+              0.70710678,
+              0,
+              0,
+              0.70710678
+            ]
+          }
+        ]
+      },
+      {
+        "name": "marble-cut",
+        "type": "subtract",
+        "children": [
+          {
+            "name": "marble-block",
+            "type": "box",
+            "half_extent": [
+              0.15275,
+              0.13,
+              0.104
+            ],
+            "position": [
+              0.273,
+              0.1885,
+              0
+            ],
+            "material": "marble"
+          },
+          {
+            "name": "marble-bore",
+            "type": "cylinder",
+            "radius": 0.05525,
+            "half_length": 0.26,
+            "position": [
+              0.273,
+              0.1885,
+              0
+            ],
+            "rotation_xyzw": [
+              0.70710678,
+              0,
+              0,
+              0.70710678
+            ]
+          }
+        ]
+      },
+      {
+        "name": "rusted-steel-cut",
+        "type": "subtract",
+        "children": [
+          {
+            "name": "rusted-steel-block",
+            "type": "box",
+            "half_extent": [
+              0.15275,
+              0.13,
+              0.104
+            ],
+            "position": [
+              -0.273,
+              -0.1885,
+              0
+            ],
+            "material": "rusted-steel"
+          },
+          {
+            "name": "rusted-steel-bore",
+            "type": "cylinder",
+            "radius": 0.05525,
+            "half_length": 0.26,
+            "position": [
+              -0.273,
+              -0.1885,
+              0
+            ],
+            "rotation_xyzw": [
+              0.70710678,
+              0,
+              0,
+              0.70710678
+            ]
+          }
+        ]
+      },
+      {
+        "name": "glass-cut",
+        "type": "subtract",
+        "children": [
+          {
+            "name": "glass-block",
+            "type": "box",
+            "half_extent": [
+              0.15275,
+              0.13,
+              0.104
+            ],
+            "position": [
+              0.273,
+              -0.1885,
+              0
+            ],
+            "material": "glass"
+          },
+          {
+            "name": "glass-bore",
+            "type": "cylinder",
+            "radius": 0.05525,
+            "half_length": 0.26,
+            "position": [
+              0.273,
+              -0.1885,
+              0
+            ],
+            "rotation_xyzw": [
+              0.70710678,
+              0,
+              0,
+              0.70710678
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "history": [
+    {
+      "nodes": [
+        "wood-block",
+        "marble-block",
+        "rusted-steel-block",
+        "glass-block"
+      ],
+      "label": "Wood, marble, steel and glass",
+      "seconds": 1.5
+    },
+    {
+      "nodes": [
+        "wood-bore",
+        "marble-bore",
+        "rusted-steel-bore",
+        "glass-bore"
+      ],
+      "label": "Cuts retain each body material",
+      "seconds": 2
+    }
+  ]
+}

@@ -51,6 +51,8 @@ class App {
             throw std::invalid_argument("material-study lighting requires an authored scene");
         if (config_.clouds && config_.lighting != "material-atmosphere")
             throw std::invalid_argument("SDF clouds require material-atmosphere lighting");
+        if (config_.lighting_cycle != "frozen" && config_.lighting != "material-atmosphere")
+            throw std::invalid_argument("lighting cycle requires material-atmosphere lighting");
         if (!std::isfinite(config_.cloud_time) || config_.cloud_time < 0 ||
             (config_.cloud_view_samples != 1 && config_.cloud_view_samples != 2 &&
              config_.cloud_view_samples != 4) ||
@@ -224,7 +226,8 @@ class App {
                         orbit_.toggle_pause();
                 }
             }
-            if (config_.timeline.motion != "static" && !orbit_.paused())
+            if ((config_.timeline.motion != "static" || config_.lighting_cycle != "frozen") &&
+                !orbit_.paused())
                 playback_seconds_ =
                     std::min(playback_seconds_ + timing.delta_seconds, config_.timeline.duration);
             try {
@@ -290,6 +293,15 @@ class App {
                 "construction/presentation with a saved history, and their own export format");
     }
     void sample_time(double time) {
+        if (config_.lighting_cycle != "frozen") {
+            const auto sample =
+                material_lighting_cycle(config_.lighting_cycle, time, config_.timeline.duration);
+            config_.sun_elevation = sample.sun_elevation;
+            config_.sun_azimuth = sample.sun_azimuth;
+            config_.exposure = sample.exposure;
+            config_.cloud_time = sample.cloud_seconds;
+            renderer_.set_environment_elapsed_seconds(sample.elapsed_seconds);
+        }
         history_cutters_ = {};
         if (authored_build()) {
             auto sample =
@@ -443,7 +455,7 @@ class App {
         error_.clear();
     }
     void draw_ui() {
-        if (config_.timeline.motion == "material-story")
+        if (config_.timeline.motion == "material-story" || config_.lighting_cycle != "frozen")
             ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
         ImGui::SetNextWindowSize(config_.workshop.empty() ? ImVec2{340, 0} : ImVec2{420, 640},
                                  ImGuiCond_FirstUseEver);

@@ -31,6 +31,10 @@ PbrMaterialsApp::PbrMaterialsApp(PbrMaterialsConfig config)
         config_.presentation_time > 8)
         throw std::invalid_argument("presentation-time must be -1 or 0..8 seconds");
     presentation_seconds_ = std::max(0.0, config_.presentation_time);
+    if (config_.lighting_cycle != "frozen" &&
+        (config_.presentation.empty() || config_.environment == "studio"))
+        throw std::invalid_argument(
+            "lighting cycle requires a presentation with clear/clouds lighting");
     if (config_.presentation_time >= 0)
         orbit_controller_.toggle_pause();
 }

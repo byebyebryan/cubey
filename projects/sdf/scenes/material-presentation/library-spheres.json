@@ -1,0 +1,781 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 3,
+  "name": "Twelve material spheres",
+  "environment_only_gallery": true,
+  "materials": [
+    {
+      "name": "plain",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "plain",
+        "label": "Neutral gray",
+        "surface": {
+          "base_color": [
+            0.184474994500441,
+            0.184474994500441,
+            0.184474994500441
+          ],
+          "roughness": 0.76,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.378,
+          -0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "limestone",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "limestone",
+        "label": "Limestone",
+        "surface": {
+          "base_color": [
+            0.47353149614800955,
+            0.4178850708481375,
+            0.35153259950043936
+          ],
+          "roughness": 0.82,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "procedural": {
+            "type": "limestone",
+            "seed": 173,
+            "scale": 9,
+            "secondary_color": [
+              0.2232279573168085,
+              0.17788841598362912,
+              0.12213877222960187
+            ],
+            "color_strength": 0.65,
+            "roughness_variation": 0.12,
+            "bump_strength": 0.00035,
+            "grain_scale": 240,
+            "offset": [
+              0.13,
+              -0.07,
+              0.09
+            ]
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.126,
+          -0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "marble",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "marble",
+        "label": "Balanced marble",
+        "surface": {
+          "base_color": [
+            0.6866853124353135,
+            0.6795424696330938,
+            0.6172065624196511
+          ],
+          "roughness": 0.42,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "procedural": {
+            "type": "marble",
+            "seed": 47,
+            "secondary_color": [
+              0.1301364766903643,
+              0.14126329114027164,
+              0.11443537382697373
+            ],
+            "color_strength": 0.88,
+            "roughness_variation": 0.055,
+            "bump_strength": 8e-05,
+            "vein_direction": [
+              0.67,
+              0.63,
+              0.19
+            ],
+            "offset": [
+              0.17,
+              -0.08,
+              0.13
+            ],
+            "color_variation": 0.08,
+            "scale": 6,
+            "vein_frequency": 7.25,
+            "vein_width": 0.07,
+            "warp_strength": 5.5,
+            "grain_scale": 280
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.126,
+          -0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "clay",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "clay",
+        "label": "Dry terracotta",
+        "surface": {
+          "base_color": [
+            0.4793201831008268,
+            0.17464740365558504,
+            0.08650046203654976
+          ],
+          "roughness": 1.0,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "optics": {
+            "diffuse_roughness": 0.6
+          },
+          "procedural": {
+            "type": "granular",
+            "seed": 293,
+            "scale": 32,
+            "secondary_color": [
+              0.4793201831008268,
+              0.17464740365558504,
+              0.08650046203654976
+            ],
+            "color_strength": 0,
+            "roughness_variation": 0.04,
+            "bump_strength": 0.00035,
+            "grain_scale": 320,
+            "offset": [
+              0.13,
+              -0.07,
+              0.09
+            ]
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.378,
+          -0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "ceramic",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "ceramic",
+        "label": "Ivory ceramic",
+        "surface": {
+          "base_color": [
+            0.768151147247507,
+            0.6795424696330938,
+            0.5149176653765214
+          ],
+          "roughness": 0.34,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.378,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "bronze",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "bronze",
+        "label": "Satin bronze",
+        "surface": {
+          "base_color": [
+            0.6795424696330938,
+            0.386429433787049,
+            0.13843161503245183
+          ],
+          "roughness": 0.32,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "optics": {
+            "metallic": 1
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.126,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "glass",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 1,
+        "id": "glass",
+        "label": "Tinted glass",
+        "surface": {
+          "base_color": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "roughness": 0.05,
+          "emission": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "optics": {
+            "transmission": 1,
+            "ior": 1.5,
+            "attenuation_color": [
+              0.65,
+              0.9,
+              0.76
+            ],
+            "attenuation_distance": 0.5
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.126,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "wood",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "wood",
+        "label": "Unvarnished hardwood",
+        "surface": {
+          "base_color": [
+            0.46,
+            0.25,
+            0.105
+          ],
+          "roughness": 0.64
+        },
+        "library": {
+          "type": "wood",
+          "seed": 19,
+          "relief": 0.00045,
+          "secondary_color": [
+            0.12,
+            0.04,
+            0.01
+          ],
+          "wood": {
+            "ring_frequency": 26,
+            "distortion": 0.6,
+            "grain_frequency": 220,
+            "pore_strength": 0.3
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.378,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "rusted-steel",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "rusted-steel",
+        "label": "Rusted steel",
+        "surface": {
+          "base_color": [
+            0.45,
+            0.48,
+            0.5
+          ],
+          "roughness": 0.24,
+          "optics": {
+            "metallic": 1,
+            "diffuse_roughness": 0.4
+          }
+        },
+        "library": {
+          "type": "rust",
+          "seed": 31,
+          "relief": 0.0008,
+          "secondary_color": [
+            0.29,
+            0.063,
+            0.016
+          ],
+          "rust": {
+            "coverage": 0.54,
+            "patch_frequency": 14,
+            "edge_breakup": 0.6,
+            "pit_strength": 0.8
+          },
+          "rust_roughness": [
+            0.22,
+            0.95,
+            0.09
+          ]
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.378,
+          0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "kraft-cardboard",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "kraft-cardboard",
+        "label": "Kraft cardboard",
+        "surface": {
+          "base_color": [
+            0.42,
+            0.28,
+            0.15
+          ],
+          "roughness": 1,
+          "optics": {
+            "diffuse_roughness": 0.9
+          }
+        },
+        "library": {
+          "type": "paper",
+          "seed": 43,
+          "relief": 0.00065,
+          "secondary_color": [
+            0.18,
+            0.085,
+            0.025
+          ],
+          "paper": {
+            "fiber_frequency": 220,
+            "directionality": 0.9,
+            "fleck_strength": 0.08,
+            "fiber_strength": 0.75
+          }
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0.126,
+          0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "woven-cloth",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "woven-cloth",
+        "label": "Plain-weave cloth",
+        "surface": {
+          "base_color": [
+            0.11,
+            0.22,
+            0.18
+          ],
+          "roughness": 0.92,
+          "optics": {
+            "diffuse_roughness": 0.4
+          }
+        },
+        "library": {
+          "type": "weave",
+          "seed": 17,
+          "relief": 0.0007,
+          "secondary_color": [
+            0.16,
+            0.28,
+            0.22
+          ],
+          "weave": {
+            "yarn_spacing": 0.012,
+            "yarn_width": 0.83,
+            "irregularity": 0.15,
+            "fiber_strength": 0.2
+          },
+          "sheen_color": [
+            0.07,
+            0.09,
+            0.075
+          ],
+          "sheen_roughness": 0.8
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.126,
+          0.195,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "frosted-glass",
+      "recipe": {
+        "format": "cubey.material.recipe",
+        "version": 2,
+        "id": "frosted-glass",
+        "label": "Frosted glass",
+        "surface": {
+          "base_color": [
+            1,
+            1,
+            1
+          ],
+          "roughness": 0.32,
+          "optics": {
+            "transmission": 1,
+            "ior": 1.5,
+            "attenuation_color": [
+              0.95,
+              0.98,
+              0.96
+            ],
+            "attenuation_distance": 0.7
+          }
+        },
+        "library": {
+          "rough_glass": true
+        },
+        "material_from_object": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          -0.378,
+          0.195,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "root": {
+    "name": "material-library",
+    "type": "union",
+    "children": [
+      {
+        "name": "plain-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          -0.378,
+          0.195,
+          0
+        ],
+        "material": "plain"
+      },
+      {
+        "name": "limestone-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          -0.126,
+          0.195,
+          0
+        ],
+        "material": "limestone"
+      },
+      {
+        "name": "marble-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          0.126,
+          0.195,
+          0
+        ],
+        "material": "marble"
+      },
+      {
+        "name": "clay-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          0.378,
+          0.195,
+          0
+        ],
+        "material": "clay"
+      },
+      {
+        "name": "ceramic-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          -0.378,
+          0.0,
+          0
+        ],
+        "material": "ceramic"
+      },
+      {
+        "name": "bronze-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          -0.126,
+          0.0,
+          0
+        ],
+        "material": "bronze"
+      },
+      {
+        "name": "glass-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          0.126,
+          0.0,
+          0
+        ],
+        "material": "glass"
+      },
+      {
+        "name": "wood-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          0.378,
+          0.0,
+          0
+        ],
+        "material": "wood"
+      },
+      {
+        "name": "rusted-steel-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          -0.378,
+          -0.195,
+          0
+        ],
+        "material": "rusted-steel"
+      },
+      {
+        "name": "kraft-cardboard-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          -0.126,
+          -0.195,
+          0
+        ],
+        "material": "kraft-cardboard"
+      },
+      {
+        "name": "woven-cloth-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          0.126,
+          -0.195,
+          0
+        ],
+        "material": "woven-cloth"
+      },
+      {
+        "name": "frosted-glass-sphere",
+        "type": "sphere",
+        "radius": 0.075,
+        "position": [
+          0.378,
+          -0.195,
+          0
+        ],
+        "material": "frosted-glass"
+      }
+    ]
+  }
+}

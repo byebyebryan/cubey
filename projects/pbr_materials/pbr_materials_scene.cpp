@@ -88,7 +88,9 @@ cubey::Transform3D PbrMaterialsApp::camera_transform() const {
     return cubey::orbit_camera_transform(cubey::OrbitCameraState{
         .distance = orbit_controller_.distance(),
         .yaw = config_.yaw + orbit_controller_.yaw() +
-               (config_.presentation.empty() ? 0 : presentation_yaw(presentation_seconds_)),
+               (config_.presentation.empty() || config_.presentation == "library"
+                    ? 0
+                    : presentation_yaw(presentation_seconds_)),
         .pitch = orbit_controller_.pitch(),
     });
 }

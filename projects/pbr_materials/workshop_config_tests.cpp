@@ -56,4 +56,32 @@ int main() {
             layout[3].material == "bronze");
     require(pbr_materials::specimen_thickness(layout[0].shape) == .32F &&
             pbr_materials::specimen_thickness(layout[2].shape) == .036F);
+    const auto library = parse(pbr_materials::parse_pbr_materials_config,
+                               {"--presentation", "library", "--lighting-cycle", "dawn"});
+    require(library.distance == .855F && library.pitch == 0 && library.yaw == 0 &&
+            library.lighting_cycle == "dawn");
+    const auto all = pbr_materials::presentation_layout("library");
+    require(all.size() == 12);
+    for (const auto& item : all)
+        require(item.shape == "sphere");
+    for (const auto* phase : {"dusk", "dawn"})
+        for (int frame = 0; frame <= 240; ++frame) {
+            const auto mesh_light = pbr_materials::presentation_lighting(phase, frame / 30.0);
+            const auto sdf_light = sdf::material_lighting_cycle(phase, frame / 30.0, 8);
+            require(mesh_light.sun_elevation == sdf_light.sun_elevation &&
+                    mesh_light.sun_azimuth == sdf_light.sun_azimuth &&
+                    mesh_light.cloud_seconds == sdf_light.cloud_seconds &&
+                    mesh_light.exposure == sdf_light.exposure);
+        }
+    require(pbr_materials::presentation_lighting("dusk", -1).sun_elevation == 14 &&
+            pbr_materials::presentation_lighting("dusk", 9).sun_elevation == -4);
+    require(pbr_materials::presentation_lighting("dawn", 0).sun_elevation == -4 &&
+            pbr_materials::presentation_lighting("dawn", 8).sun_elevation == 14);
+    bool invalid = false;
+    try {
+        (void)cubey::sample_environment_transition({.duration_seconds = 0}, 1);
+    } catch (const std::invalid_argument&) {
+        invalid = true;
+    }
+    require(invalid);
 }

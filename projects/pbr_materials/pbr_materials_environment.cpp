@@ -43,12 +43,19 @@ void PbrMaterialsApp::create_environment(const vulkan::Device& device, vulkan::G
     e.ground_mode = render::AtmosphereEnvironmentGroundMode::SkyOnlyNoGroundOcclusion;
     e.render_night_sky = false;
     e.render_moon_disk = false;
+    if (config_.lighting_cycle != "frozen") {
+        const auto sample = presentation_lighting(config_.lighting_cycle, presentation_seconds_);
+        e.sun_elevation_degrees = sample.sun_elevation;
+        e.sun_azimuth_degrees = sample.sun_azimuth;
+        config_.pbr.exposure = sample.exposure;
+    }
     atmosphere_.set_environment(e);
     atmosphere_textures_.emplace(
         render::create_atmosphere_background_placeholder_textures(device, gpu));
     atmosphere_.create_resources(
         device, {.reflection_extent = 128,
                  .reflection_mip_levels = 5,
+                 .reflection_update_hz = config_.lighting_cycle == "frozen" ? 4.0F : 30.0F,
                  .frame_slot_count = slots,
                  .atmosphere_textures = atmosphere_textures_->bindings(),
                  .reflection_ground_mode = render::AtmosphereEnvironmentGroundMode::Ground});
@@ -93,7 +100,12 @@ void PbrMaterialsApp::create_environment(const vulkan::Device& device, vulkan::G
                      .prefilter_vertex = render::vertex_shader_file(path / "atmosphere.vert.spv"),
                      .prefilter_fragment = render::fragment_shader_file(
                          path / "cloud_environment_prefilter.frag.spv")});
-        clouds.set_elapsed_seconds(300);
+        const double cloud_time =
+            config_.lighting_cycle == "frozen"
+                ? 300
+                : presentation_lighting(config_.lighting_cycle, presentation_seconds_)
+                      .cloud_seconds;
+        clouds.set_elapsed_seconds(cloud_time);
         (void)gpu.submit_and_wait({.label = "material workshop settle frozen clouds",
                                    .work = [&](vulkan::GpuOwnerContext& owner) {
                                        vulkan::ImmediateCommands commands(owner);
@@ -103,7 +115,7 @@ void PbrMaterialsApp::create_environment(const vulkan::Device& device, vulkan::G
                                        commands.submit_and_wait();
                                    }});
         clouds.advance(.25);
-        clouds.set_elapsed_seconds(300);
+        clouds.set_elapsed_seconds(cloud_time);
         if (!clouds.snapshot().valid)
             throw std::runtime_error("cloud probe not ready after completion");
     }
@@ -111,6 +123,43 @@ void PbrMaterialsApp::create_environment(const vulkan::Device& device, vulkan::G
               << std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
                      .count()
               << "\n";
+}
+void PbrMaterialsApp::prepare_environment(const vulkan::Device& device, VkCommandBuffer command,
+                                          render::FrameSlot slot, VkExtent2D extent) {
+    const auto sample = presentation_lighting(config_.lighting_cycle, presentation_seconds_);
+    auto environment = atmosphere_.environment();
+    environment.sun_elevation_degrees = sample.sun_elevation;
+    environment.sun_azimuth_degrees = sample.sun_azimuth;
+    const bool changed = atmosphere_.set_environment(environment);
+    if (!previous_environment_seconds_ || static_cast<int>(sample.elapsed_seconds / 2) !=
+                                              static_cast<int>(*previous_environment_seconds_ / 2))
+        std::cout << "material-cycle time=" << sample.elapsed_seconds
+                  << " sun=" << sample.sun_elevation << " azimuth=" << sample.sun_azimuth
+                  << " cloud=" << sample.cloud_seconds << " exposure=" << sample.exposure << '\n';
+    const double delta =
+        previous_environment_seconds_
+            ? std::max(0.0, sample.elapsed_seconds - *previous_environment_seconds_)
+            : 0;
+    atmosphere_.advance(delta);
+    previous_environment_seconds_ = sample.elapsed_seconds;
+    if (changed)
+        atmosphere_.force_reflection_refresh();
+    atmosphere_.record_pending_update(vulkan::CommandRecorder(command), slot);
+    if (config_.environment == "clouds") {
+        auto& clouds = atmosphere_.clouds();
+        clouds.set_elapsed_seconds(sample.cloud_seconds);
+        (void)clouds.record_pending_update(vulkan::CommandRecorder(command), slot,
+                                           cloud_frame(extent));
+    }
+    config_.pbr.exposure = sample.exposure;
+    const auto& sky = atmosphere_.lighting();
+    auto light = directional_light_3d(sky.primary_light_direction, sky.primary_light_color,
+                                      sky.primary_light_intensity);
+    light.casts_shadows = false;
+    auto edits = scene().create_edit_queue();
+    edits.lights3d().set_light(light_entity_, light);
+    scene().commit(edits);
+    (void)device;
 }
 void PbrMaterialsApp::create_environment_targets(const vulkan::Device& device, VkExtent2D extent,
                                                  std::uint32_t slots) {

@@ -106,6 +106,9 @@ vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,
     // still determines absorption. This is not a multiple-ray rough BTDF.
     float variance=0.0,slopeVariance=roughness*roughness*roughness*roughness;
     bool inside=dot(direction,outward)>0;
+    uint galleryMaterial=0u;
+    if(authoredHeader.z==1u)
+        galleryMaterial=uint(authoredNodes[authoredSurface(point,0.0,false).part].settings.z);
     glassDiagnostics=vec3(0,0,.25);
     if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(point-camera.eye.xyz));
     int budget=clamp(int(lighting.transport_options.x+.5),4,16);
@@ -126,6 +129,13 @@ vec3 glassRadiance(vec3 point,vec3 outward,vec3 direction,MaterialOptics optics,
         if(next.status==2) { exhausted=true;return vec3(0); }
         if(next.status==0) return result+throughput*glassEnvironment(direction,variance);
         vec3 nextPoint=origin+direction*next.t;
+        if(authoredHeader.z==1u &&
+            uint(authoredNodes[authoredSurface(nextPoint,0.0,false).part].settings.z)!=galleryMaterial) {
+            // Separate gallery bodies are not additional optical media. Once
+            // this body's path exits, use the existing environment-only exit.
+            if(inside) { exhausted=true;return vec3(0); }
+            return result+throughput*glassEnvironment(direction,variance);
+        }
         if(inside) throughput*=opticalAbsorption(optics.attenuation.rgb,optics.settings.w,length(nextPoint-point));
         if(crossing==budget-1) {
             glassDiagnostics.x=1;

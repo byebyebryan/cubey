@@ -2,8 +2,10 @@
 #include "sdf_timeline.h"
 #include <algorithm>
 #include <cmath>
+#include <cubey/engine/environment_transition.h>
 #include <cubey/host/configured_app.h>
 #include <limits>
+#include <string_view>
 
 namespace cubey::projects::sdf {
 struct SdfConfig {
@@ -18,6 +20,7 @@ struct SdfConfig {
     bool workshop_cut_material = false, workshop_blend_materials = true;
     std::string scene = "sticks";
     std::string lighting = "atmosphere";
+    std::string lighting_cycle = "frozen";
     std::string cutter_mode = "original";
     std::uint32_t seed = 42, count = 512, debug = 0, shadows = 1;
     std::uint32_t atlas_axis = 64;
@@ -70,6 +73,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto lighting = option("lighting", "Lighting route", config::ValueType::Enum);
     lighting.enum_values = {"atmosphere", "material-study", "material-furnace",
                             "material-atmosphere"};
+    auto cycle = option("lighting-cycle", "Frozen, dusk or dawn lighting", config::ValueType::Enum);
+    cycle.enum_values = {"frozen", "dusk", "dawn"};
     auto motion =
         option("motion", "Deterministic capture/presentation motion", config::ValueType::Enum);
     motion.enum_values = {"static",       "orbit", "construction",
@@ -147,6 +152,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(workshop_blend, c.workshop_blend_materials)
         .bind(scene, c.scene)
         .bind(lighting, c.lighting)
+        .bind(cycle, c.lighting_cycle)
         .bind(option("material-environment", "Diagnostic HDR environment for material-study",
                      config::ValueType::Path),
               c.material_environment_path)
@@ -242,6 +248,18 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(option("target-y", "Orbit target height", config::ValueType::Float), c.target_y)
         .build();
 }
+inline EnvironmentTransitionSample material_lighting_cycle(std::string_view cycle, double seconds,
+                                                           double duration) {
+    if (cycle != "dusk" && cycle != "dawn")
+        throw std::invalid_argument("lighting cycle must be dusk or dawn");
+    return sample_environment_transition({.duration_seconds = duration,
+                                          .sun_elevation_begin = cycle == "dawn" ? -4.0F : 14.0F,
+                                          .sun_elevation_end = cycle == "dawn" ? 14.0F : -4.0F,
+                                          .sun_azimuth = -155,
+                                          .cloud_seconds_begin = 300,
+                                          .cloud_time_scale = 30},
+                                         seconds);
+}
 inline SdfConfig parse_sdf_config(int argc, char** argv, config::ParseResult* result = nullptr) {
     config::ParseResult local;
     auto& parsed = result ? *result : local;
@@ -272,7 +290,8 @@ inline SdfConfig parse_sdf_config(int argc, char** argv, config::ParseResult* re
     }
     validate_timeline(config.timeline);
     if (config.common.headless && config.common.capture_mode == CaptureMode::Video &&
-        config.timeline.motion != "static" && !parsed.path_was_assigned("frames")) {
+        (config.timeline.motion != "static" || config.lighting_cycle != "frozen") &&
+        !parsed.path_was_assigned("frames")) {
         const double count = std::round(config.timeline.duration * config.common.fps);
         if (count > std::numeric_limits<std::uint32_t>::max())
             throw std::invalid_argument("SDF capture duration/fps exceeds the frame limit");

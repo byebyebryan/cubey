@@ -53,6 +53,7 @@ struct AuthoredScene {
     std::vector<procedural::SurfaceLibrary> libraries; // empty means neutral V1 response
     std::vector<AuthoredStep> history;
     std::size_t leaf_count = 0;
+    bool environment_only_gallery = false;
 };
 struct SurfaceSample {
     float distance = 1000;

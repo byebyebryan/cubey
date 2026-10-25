@@ -1,0 +1,9 @@
+{
+  "presentation": "library",
+  "material": "gallery",
+  "environment": "clouds",
+  "lighting_cycle": "dusk",
+  "distance": 0.855,
+  "yaw": 0,
+  "pitch": 0
+}

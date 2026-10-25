@@ -12,6 +12,11 @@ creating a live link to a mutable global asset.
 contains base color, perceptual roughness, emission, optical values and optional
 limestone/marble/granular parameters. Unknown fields, nonfinite values, invalid
 ranges, singular/projective domains and unsupported mixed glass are rejected.
+An explicit SDF `environment_only_gallery` scene permits conservatively
+separated homogeneous bodies for presentation. Its glass exits remain
+environment-only: neighboring bodies are not additional optical media. See
+[the native presentation presets](../../projects/pbr_materials/presets/presentation/README.md)
+for the geometry restrictions and matched dusk/dawn capture recipe.
 Serialization is deterministic; the resolved serialized value supplies a stable
 64-bit content fingerprint. No camera, mesh, CSG tree, weather or exposure belongs
 in a recipe. See [marble](../../assets/materials/marble.json) for a complete example.

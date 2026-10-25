@@ -3,12 +3,14 @@
 #include <chrono>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <source_location>
 #include <stdexcept>
 namespace sdf = cubey::projects::sdf;
 using namespace cubey;
-void require(bool v) {
+void require(bool v, std::source_location at = std::source_location::current()) {
     if (!v)
-        throw std::runtime_error("SDF workshop contract failed");
+        throw std::runtime_error("SDF workshop contract failed at line " +
+                                 std::to_string(at.line()));
 }
 int main() {
     sdf::SdfConfig c;
@@ -190,6 +192,79 @@ int main() {
             sdf::sample_authored_history(story_time, story_round,
                                          sdf::authored_history_seek(story_time, story_round, step))
                 .timeline.prefix == step);
+    const auto library =
+        sdf::load_authored_scene(std::filesystem::path(CUBEY_SOURCE_DIR) /
+                                 "projects/sdf/scenes/material-presentation/library-spheres.json");
+    require(library.leaf_count == 12 && library.materials.size() == catalog.size());
+    for (std::size_t i = 0; i < catalog.size(); ++i) {
+        const auto& recipe = catalog[i].recipe;
+        auto embedded = recipe;
+        embedded.surface = library.materials[i];
+        embedded.pattern = library.patterns[i];
+        embedded.optics = library.optics[i];
+        embedded.library = library.libraries[i];
+        const math::Vec3 center{(static_cast<float>(i % 4) - 1.5F) * .252F,
+                                (1 - static_cast<float>(i / 4)) * .195F, 0};
+        const auto local_domain = library.material_domains[i] * math::translation(center);
+        for (int col = 0; col < 4; ++col)
+            for (int row = 0; row < 4; ++row)
+                require(std::abs(local_domain[col][row] - recipe.material_from_object[col][row]) <
+                        .000001F);
+        require(library.material_names[i] == catalog[i].id &&
+                asset::material_recipe_fingerprint(embedded) ==
+                    asset::material_recipe_fingerprint(recipe));
+        require(std::abs(sdf::authored_distance(center, library) + .075F) < .00001F);
+    }
+    const auto roster =
+        sdf::load_authored_scene(std::filesystem::path(CUBEY_SOURCE_DIR) /
+                                 "projects/sdf/scenes/material-presentation/cut-roster.json");
+    const auto roster_round = sdf::parse_authored_scene(sdf::serialize_authored_scene(roster));
+    require(sdf::authored_geometry_hash(roster) == sdf::authored_geometry_hash(roster_round) &&
+            sdf::authored_appearance_hash(roster) == sdf::authored_appearance_hash(roster_round));
+    require(roster.history.size() == 2 && roster.history[1].cutters.size() == 4);
+    const auto rejects_gallery = [](nlohmann::json input) {
+        bool rejected = false;
+        try {
+            (void)sdf::parse_authored_scene(input.dump());
+        } catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        require(rejected);
+    };
+    auto invalid_gallery = nlohmann::json::parse(library.document);
+    invalid_gallery.erase("environment_only_gallery");
+    rejects_gallery(invalid_gallery);
+    invalid_gallery = nlohmann::json::parse(library.document);
+    invalid_gallery["root"]["children"][1]["position"] =
+        invalid_gallery["root"]["children"][0]["position"];
+    rejects_gallery(invalid_gallery);
+    invalid_gallery = nlohmann::json::parse(library.document);
+    invalid_gallery["root"]["children"][0]["position"] = {1, 0, 0};
+    rejects_gallery(invalid_gallery);
+    invalid_gallery = nlohmann::json::parse(library.document);
+    invalid_gallery["root"]["type"] = "smooth-union";
+    invalid_gallery["root"]["radius"] = .01;
+    rejects_gallery(invalid_gallery);
+    const auto solid_roster = sdf::authored_history_scene(roster, 1);
+    constexpr std::array roster_ids{"wood", "marble", "rusted-steel", "glass"};
+    for (std::size_t i = 0; i < roster_ids.size(); ++i) {
+        const math::Vec3 center{(static_cast<float>(i % 2) - .5F) * .546F,
+                                (.5F - static_cast<float>(i / 2)) * .377F, 0};
+        require(sdf::authored_distance(center, solid_roster) < 0 &&
+                sdf::authored_distance(center, roster) > 0);
+        const auto material =
+            std::find(roster.material_names.begin(), roster.material_names.end(), roster_ids[i]);
+        require(material != roster.material_names.end());
+        // A point on the bore wall still samples the body's material recipe.
+        const auto wall = sdf::authored_surface(center + math::Vec3{.05525F, 0, 0}, roster);
+        const auto body_sample =
+            sdf::authored_surface(center + math::Vec3{.05525F, 0, 0}, solid_roster);
+        require(wall.optics.settings == body_sample.optics.settings &&
+                wall.optics.attenuation == body_sample.optics.attenuation &&
+                wall.material.base_roughness == body_sample.material.base_roughness);
+        const auto preview = sdf::sample_authored_history(story_time, roster, 2);
+        require(preview.timeline.prefix == 1 && preview.cutters.size() == 4);
+    }
     std::cout << "Shared/legacy seven-recipe fingerprints exact; CSG appearance leaves geometry "
                  "cache identity intact; affine bump derivative verified; working materials "
                  "survive specimen and CSG option changes.\n";
