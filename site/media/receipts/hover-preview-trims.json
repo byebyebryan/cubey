@@ -1,0 +1,12 @@
+{
+  "scope": "Optional trim/quality settings for selected films. Unlisted selections use the shared preparation defaults.",
+  "entries": {
+    "water-3d": { "startSeconds": 0.8, "crf": 26 },
+    "fire-3d": { "startSeconds": 2, "crf": 26 },
+    "clouds": { "startSeconds": 1, "crf": 26 },
+    "mesh-materials": { "startSeconds": 1.5, "crf": 26 },
+    "ocean-surface": { "startSeconds": 0.5, "crf": 28 },
+    "sdf-materials": { "startSeconds": 1.5 },
+    "robot": { "startSeconds": 9 }
+  }
+}

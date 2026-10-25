@@ -2,10 +2,12 @@ import {readFileSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {resolve,dirname} from 'node:path';
+import {hoverPreviewErrors} from './hover-preview-contract.mjs';
 const site=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const root=resolve(site,'..');
 const content=JSON.parse(readFileSync(resolve(root,'docs/notes/cubey-site-content-map.json'),'utf8'));
 const media=JSON.parse(readFileSync(resolve(site,'media/manifest.json'),'utf8'));
+const previewReceipt=JSON.parse(readFileSync(resolve(site,'media/receipts/hover-previews.json'),'utf8'));
 const library=JSON.parse(readFileSync(resolve(root,'assets/materials/catalog.json'),'utf8'));
 const errors=[];
 const assets=new Map(media.assets.map(a=>[a.id,a]));
@@ -49,12 +51,8 @@ for(const e of content.entries){
 }
 for(const [name,selection] of Object.entries(media.selections)){
   for(const id of [selection.poster,selection.film,selection.preview,...(selection.gallery||[])].filter(Boolean))if(!assets.has(id))errors.push(`Missing selected asset ${name}/${id}`);
-  if(selection.preview){
-    const preview=assets.get(selection.preview),parent=assets.get(selection.film);
-    if(preview?.kind!=='video'||preview.width!==640||preview.height!==360||preview.bytes>400_000)errors.push(`Invalid hover preview delivery: ${name}`);
-    if(!parent||preview?.provenance.parentAsset!==parent.id||preview?.provenance.sourceSha256!==parent.sha256)errors.push(`Hover preview parent changed: ${name}`);
-  }
 }
+errors.push(...hoverPreviewErrors(media,assets,previewReceipt));
 const supported=new Set([...readFileSync(resolve(root,'docs/architecture/gltf-assets.md'),'utf8').matchAll(/^\| `(KHR_[^`]+)` \| supported/gm)].map(m=>m[1]));
 const mapped=new Set(content.entries.flatMap(e=>e.extensions));
 if(supported.size!==mapped.size||[...supported].some(id=>!mapped.has(id)))errors.push('Supported glTF extension map changed');

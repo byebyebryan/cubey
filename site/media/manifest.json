@@ -1350,6 +1350,52 @@
       }
     },
     {
+      "id": "preview-day-night",
+      "file": "/media/preview-day-night.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "e5ea81be43ea01e29244c36642ff4108aac44c993c29d9a78fb97a82ba297732",
+      "bytes": 64174,
+      "caption": "Short silent preview. A complete accelerated solar day: afternoon, night and daylight again.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/day-night-film.mp4",
+        "sourceSha256": "5521d2f32df1dc04bb46af4f14ea2d0d728caa1b4cfcfe1f134e0f849145e7c5",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "day-night-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-explosion-3d",
+      "file": "/media/preview-explosion-3d.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "bb6c72fc44a191359abc28faca095e2d33f1e69595658d00a3cac5bb2044ca7b",
+      "bytes": 51160,
+      "caption": "Short silent preview. A repeated fireball impulse, shown during its early flash.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/explosion-3d-film.mp4",
+        "sourceSha256": "659dc609f50e371573473cd0b136cda44579dec3bae376ec3cadcbc2ffe970be",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "explosion-3d-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-fire-3d",
       "file": "/media/preview-fire-3d.mp4",
       "kind": "video",
@@ -1370,6 +1416,54 @@
         "parentAsset": "fire-3d-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "preview-gltf-morph",
+      "file": "/media/preview-gltf-morph.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "cb02c3bb76ba26659b53c630b7f1834ea8d17ce9cf4633228914e4049a517444",
+      "bytes": 16643,
+      "caption": "Short silent preview. Animated Morph Cube: target deformation.",
+      "credit": {
+        "label": "CC0 1.0",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "author": "Microsoft; public CC0 asset, 2017",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/AnimatedMorphCube/README.md"
+      },
+      "provenance": {
+        "source": "site/public/media/gltf-morph-film.mp4",
+        "sourceSha256": "17e35ffe42a034e49f19ccdbec7c8a96299619dbfa646f0f1d2d057ab422fe1d",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "gltf-morph-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-gltf-motion",
+      "file": "/media/preview-gltf-motion.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "9eaea81de07f70a4019481549370cf5f2556c2a6254520be0ae60b1353e9ec77",
+      "bytes": 44858,
+      "caption": "Short silent preview. Fox: the Walk animation and a skinned mesh.",
+      "credit": {
+        "label": "CC0 model \u00b7 CC BY 4.0 animation/conversion",
+        "url": "https://creativecommons.org/licenses/by/4.0/",
+        "author": "PixelMannen (model, CC0); \u00a9 2014 tomkranis (rig/animation); \u00a9 2017 AsoboStudio and scurest (glTF conversion)",
+        "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/blob/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/Fox/README.md"
+      },
+      "provenance": {
+        "source": "site/public/media/gltf-motion-film.mp4",
+        "sourceSha256": "52d8e33b284556c0e79aae41ec705fc7e248647058cf40535f6d42cc17ece224",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "gltf-motion-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
     },
     {
@@ -1416,6 +1510,144 @@
         "parentAsset": "ocean-surface-film",
         "recipe": "site/media/receipts/hover-previews.json",
         "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "preview-robot",
+      "file": "/media/preview-robot.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "747ee92bf3d3c244bae1e308ac6b6c76db723a15db54029c4b2b9d502d0fafd1",
+      "bytes": 22438,
+      "caption": "Short silent preview. The fieldkit robot assembles through its saved native construction history.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/robot-film.mp4",
+        "sourceSha256": "bee42e4fe480e8ad980037690c0f3dc2f0ffb6dee67bfb19a6827126fda0b9d5",
+        "sourceRevision": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+        "parentAsset": "robot-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-sdf-materials",
+      "file": "/media/preview-sdf-materials.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "c4ac88c50c9260323db002493ec1a51b9b88bff5312910b49b17e38619761707",
+      "bytes": 47399,
+      "caption": "Short silent preview. Four materials share a saved two-step cut sequence and a final camera arc.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/sdf-materials-film.mp4",
+        "sourceSha256": "8f4e960524e2db9c274928834df389f9ba7285e16313f2e08db0479ec83323e8",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "parentAsset": "sdf-materials-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-shallow-water",
+      "file": "/media/preview-shallow-water.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "6f3111da4666b9f899fb63365d6eb96841fc1cb5e543402896dc68cedf18e8cd",
+      "bytes": 10866,
+      "caption": "Short silent preview. Builtin finite-volume flow through the authored source/outlet valley.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/shallow-water-film.mp4",
+        "sourceSha256": "52bac5219a08a4b2446f2910ac612085a6afcfe83bd2f60b63363bd134c7ca25",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "shallow-water-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-smoke-2d",
+      "file": "/media/preview-smoke-2d.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "b2706157ea29cf8e4c62466bdb6b8e2bd2fd70f463d3704aecbb63b7a7356a5b",
+      "bytes": 25173,
+      "caption": "Short silent preview. Five moving injectors stir coloured dye through a velocity field.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/smoke-2d-film.mp4",
+        "sourceSha256": "6a029ee1eb36a10138e051e1c77dad7117f50fe04c4b51b8302bc2c59ef93ea4",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "smoke-2d-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-terrain-water",
+      "file": "/media/preview-terrain-water.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "458a0389b05c559d393e5b1e48dd9c09f0d8b37a6b30a232324bf48f3aaedbd9",
+      "bytes": 101768,
+      "caption": "Short silent preview. Rain-fed streams join and collect in a mountain lake.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/terrain-water-film.mp4",
+        "sourceSha256": "fb52735a59373c42f83db4ac70b7d66042240a8370de1e8c04803688cf23b352",
+        "sourceRevision": null,
+        "parentAsset": "terrain-water-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-water-2d",
+      "file": "/media/preview-water-2d.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "be8795edfb401b50b70ddefc90bc39c249aa1b29397ddd0be64b86a833aaad5d",
+      "bytes": 76975,
+      "caption": "Short silent preview. A two-dimensional dam break and reconstructed liquid surface.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/water-2d-film.mp4",
+        "sourceSha256": "0b2ee049f46a360094765946db7279cc9bbc623f433f0686cf5f92770ba6950a",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "water-2d-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
       }
     },
     {
@@ -1871,7 +2103,8 @@
     },
     "terrain-water": {
       "poster": "terrain-water",
-      "film": "terrain-water-film"
+      "film": "terrain-water-film",
+      "preview": "preview-terrain-water"
     },
     "ocean-surface": {
       "poster": "ocean-surface",
@@ -1885,34 +2118,41 @@
     },
     "sdf-materials": {
       "poster": "sdf-materials",
-      "film": "sdf-materials-film"
+      "film": "sdf-materials-film",
+      "preview": "preview-sdf-materials"
     },
     "guardian": {
       "poster": "guardian"
     },
     "robot": {
       "poster": "robot",
-      "film": "robot-film"
+      "film": "robot-film",
+      "preview": "preview-robot"
     },
     "explosion-3d": {
       "poster": "explosion-3d",
-      "film": "explosion-3d-film"
+      "film": "explosion-3d-film",
+      "preview": "preview-explosion-3d"
     },
     "water-2d": {
       "poster": "water-2d",
-      "film": "water-2d-film"
+      "film": "water-2d-film",
+      "preview": "preview-water-2d"
     },
     "smoke-2d": {
       "poster": "smoke-2d",
-      "film": "smoke-2d-film"
+      "film": "smoke-2d-film",
+      "preview": "preview-smoke-2d"
     },
     "shallow-water": {
       "poster": "shallow-water",
-      "film": "shallow-water-film"
+      "film": "shallow-water-film",
+      "preview": "preview-shallow-water"
     },
     "day-night": {
       "poster": "day-night",
-      "film": "day-night-film"
+      "film": "day-night-film",
+      "preview": "preview-day-night"
     },
     "clouds": {
       "poster": "clouds",
@@ -1933,14 +2173,16 @@
     },
     "gltf-motion": {
       "poster": "gltf-motion",
-      "film": "gltf-motion-film"
+      "film": "gltf-motion-film",
+      "preview": "preview-gltf-motion"
     },
     "gltf-textures": {
       "poster": "gltf-textures"
     },
     "gltf-morph": {
       "poster": "gltf-morph",
-      "film": "gltf-morph-film"
+      "film": "gltf-morph-film",
+      "preview": "preview-gltf-morph"
     },
     "atmosphere-light": {
       "poster": "atmosphere-light",

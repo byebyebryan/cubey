@@ -3,11 +3,11 @@ import Media from './Media.astro';
 import Picture from './Picture.astro';
 import {asset, byId, entryPath, selected} from '../data/catalog';
 import {url} from '../lib/urls';
-interface Props { entry: string; path: string; title?: string; eager?: boolean }
-const {entry,path,title=byId[entry]?.title||entry,eager=false}=Astro.props;
+interface Props { entry: string; path: string; title?: string; eager?: boolean; hover?: boolean }
+const {entry,path,title=byId[entry]?.title||entry,eager=false,hover=true}=Astro.props;
 const selection=selected(entry);
 const poster=asset(selection.poster);
-const preview=selection.preview&&!eager?asset(selection.preview):undefined;
+const preview=selection.preview&&hover?asset(selection.preview):undefined;
 ---
 <div class="preview-media" data-hover-preview={preview?true:undefined}>
   {preview&&<div class="hover-preview-shell" data-preview-shell hidden><button class="hover-preview-trigger" type="button" data-preview-trigger aria-label={`Play ${title}`}>

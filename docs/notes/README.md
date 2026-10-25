@@ -36,6 +36,8 @@ the architecture and project guides remain current authority.
   recaptures, matched twelve-material films, cut examples and publication evidence.
 - [Cubey hover-preview trial](cubey-site-hover-preview-trial.md): bounded preview
   assets, native-player handoff, loading policies and GitHub Pages media limits.
+- [Cubey default hover previews](cubey-site-default-hover-previews.md): all
+  film-backed selections, importer preparation, parent attribution and build checks.
 
 - [SDF implementation evidence](sdf-implementation-evidence.md): native field, traversal and batch checkpoints for the boxes-only port.
 - [SDF authored content evidence](sdf-authored-content-evidence.md): the first survey robot, grouped geometry/material contracts and native visual/performance qualification.

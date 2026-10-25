@@ -34,31 +34,41 @@ controls; starting a film pauses the others. Guardian and Robot use the common
 16:9 native landscape recaptures. Native images and videos fit without cropping the
 subjects or changing their proportions.
 
-A small hover-preview pilot covers water, fire, ocean, clouds and materials in
-browsing cards. On a fine hover pointer, a 350 ms dwell requests a separate,
-silent 640x360 / 18 fps / 3.5-second excerpt. The five files total 620,898 bytes;
-none is over the 400 KB preview budget. Clicking replaces the tile with the full
-native player inline. Scene players and the home hero use native controls from
-the start, without a separate play overlay. Touch, reduced-motion and supported
-data-saving preferences retain native players. With JavaScript disabled, the
-same native players remain available.
+Every selected film has a small hover preview in browsing cards; still-only
+selections remain still. The current 15 film-backed selections each have a
+validated preview. A 350 ms dwell on a fine hover pointer requests a separate,
+silent 640x360 / 18 fps excerpt of up to 3.5 seconds. Each clip is H.264/yuv420p,
+fast-start and at most 400 KB. The encoder raises CRF through 36 when needed and
+fails if a clip still exceeds the budget. Clicking replaces the tile with the
+full native player inline. Scene players and the home hero use native controls
+from the start, without a separate play overlay. Touch, reduced-motion and
+supported data-saving preferences retain native players. With JavaScript
+disabled, the same native players remain available.
 
 Preview URLs are assigned only after hover intent. Leaving the card, scrolling
 it away, hiding the tab, Escape/Tab, or starting full playback stops previews.
 An explicitly playing film blocks hover playback. The encoded preview remains
-cached for reuse. `node --test tools/hover-preview.test.mjs` checks these policies
-with a controlled clock/media harness; browser review checks real playback.
+cached for reuse. `npm run check` verifies that every film-backed selection has
+a valid, current preview and receipt; missing or stale parent identities fail
+the check. The Node-only site build does not need FFmpeg. The hover policy tests
+run with the check command, and browser review checks real playback.
 
-Regenerate/import the pilot from existing selected films using a fresh staging
-directory, preserving earlier outputs:
+Prepare all selected films automatically using a fresh staging directory. The
+script discovers film-backed selections from the manifest, reuses current
+previews without reencoding, and keeps successful staging files if a later
+encode fails:
 
 ```sh
-python3 site/tools/prepare-hover-previews.py --output outputs/hover-preview-review --import-media
+python3 site/tools/prepare-hover-previews.py \
+  --output outputs/cubey-site/default-previews-2026-10-25 --import-media
 ```
 
-`preview` selections in the media ledger carry their parent film identity. An
-updated parent requires regenerated previews. Exact trims, encodes and hashes
-are recorded in [the preview receipt](media/receipts/hover-previews.json).
+Use repeatable `--entry demo-id` options for a subset; unrelated receipt entries
+and selections remain intact. A second pass on the same inputs leaves the media
+ledger and receipt unchanged. Optional start/duration/CRF overrides live in
+[the trim settings](media/receipts/hover-preview-trims.json); unlisted entries
+use the shared defaults. Exact trims, encodes, parent identities and hashes are
+recorded in [the preview receipt](media/receipts/hover-previews.json).
 
 The materials page shows all twelve spheres together, with Forward PBR / SDF
 and dusk / dawn controls. Renderer changes preserve the lighting phase and
@@ -106,13 +116,22 @@ and authors, surfaced at `/credits/` and beside imported examples. The old Damag
 Helmet composite is not used in this site. Historical media is not relabelled as
 a current-head renderer result: selection and capture identities remain separate.
 
-The one-time editorial importer requires Python 3, installed site dependencies
-(Sharp), and FFmpeg/ffprobe for film inspection. It is not part of the build:
+The one-time editorial importer requires Python 3; poster imports also use the
+installed site image dependency (Sharp), while film imports use FFmpeg/ffprobe
+for inspection and preview encoding. Importing a film with `--entry` and
+`--role film` stages the full film and its preview first,
+then publishes the selected media and ledgers together. A preview failure leaves
+the previous selected film/preview ledger in place. This importer is not part of
+the build:
 
 ```sh
 python3 site/tools/import-media.py asset-name path/to/native.png \
   --entry demo-id --role poster --caption 'What this capture shows.' \
   --recipe site/media/receipts/capture-name.json
+
+python3 site/tools/import-media.py demo-film path/to/native-film.mp4 \
+  --entry demo-id --role film --caption 'What this film shows.' \
+  --revision 0123456789abcdef
 ```
 
 Run it from the repository root. Native capture/reproduction is a separate engine
