@@ -46,3 +46,5 @@ video:fullscreen{object-fit:contain!important;max-height:none}
 .supporting-motion>.note{margin-bottom:22px}
 .gallery{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
 @media(max-width:720px){.surface-grid{grid-template-columns:1fr}.material-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:25px 15px}.material-tile h3{font-size:17px}.material-tile figcaption p{font-size:12px}.preview-media .play-native{bottom:10px;left:10px;padding:9px 12px}}
+
+.library-controls{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 30px}.library-controls .renderer-controls{margin:24px 0 20px}.library-stage .movie video{max-height:none;aspect-ratio:16/9}.material-inspection .material-grid{margin-top:24px;grid-template-columns:repeat(4,minmax(0,1fr))}.anchor-target{display:block;scroll-margin-top:20px}@media(max-width:720px){.material-inspection .material-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.library-controls{gap:0 16px}.library-controls .renderer-controls{margin:18px 0 10px}}

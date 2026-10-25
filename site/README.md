@@ -31,12 +31,18 @@ The implementation uses authored Astro components and plain CSS/JavaScript.
 Films play directly in home, subject-directory, simulation and SDF overview
 cards as well as scene pages. Navigation links stay outside native player
 controls; starting a film pauses the others. Guardian and Robot use the common
-16:9 presentation frames. Native images and videos fit without cropping the
+16:9 native landscape recaptures. Native images and videos fit without cropping the
 subjects or changing their proportions.
 
-The materials page shows all twelve shared recipes, with a Forward PBR / SDF
-renderer switch and glass presented first. The existing four-specimen lighting
-film remains a selected study. Atmosphere is grouped into scattering/light,
+The materials page shows all twelve spheres together, with Forward PBR / SDF
+and dusk / dawn controls. Renderer changes preserve the lighting phase and
+playhead; changing phase starts its film from the beginning. Individual frozen
+stills remain available in a disclosure. A second native film shows matching
+cuts through wood, marble, rusted steel and clear glass. The native presets and
+qualification boundaries are documented
+[here](../projects/pbr_materials/presets/presentation/README.md); capture identities
+and web encoding commands are in [the receipt](media/receipts/native-showcases.json).
+Atmosphere is grouped into scattering/light,
 clouds, then night sky with a complete accelerated solar cycle. Fractals is
 deferred from the public site; its native project remains documented.
 
@@ -66,7 +72,8 @@ image selection and lazy loading reduce the actual image load. Films use
 - [Selected media and attribution](media/README.md): ledger semantics and the
   imported model notice index.
 - `public/media/`: tracked WebP derivatives and silent native MP4 films.
-- `public/scripts/media.js`: ordinary players and two purposeful comparisons.
+- `public/scripts/media.js`: ordinary players, scene comparisons and the matched
+  material-film viewer.
 
 Original media retains Cubey's MIT policy. Imported assets keep their own licenses
 and authors, surfaced at `/credits/` and beside imported examples. The old Damaged

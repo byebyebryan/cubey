@@ -55,6 +55,20 @@ if(content.families.length!==7||content.entries.length!==21||new Set(content.ent
 if(content.families.some(f=>f.id==='fractals')||content.entries.some(e=>e.family==='fractals'))errors.push('Deferred fractals returned to the public catalog');
 if(library.entries.length!==12)errors.push('Shared twelve-material catalog changed');
 for(const material of library.entries)for(const renderer of ['mesh','sdf'])if(assets.get(`library-${renderer}-${material.id}`)?.kind!=='image')errors.push(`Missing ${renderer} library specimen: ${material.id}`);
+for(const id of ['mesh-materials','library-mesh-dawn','library-sdf-dusk','library-sdf-dawn']){
+  for(const [suffix,kind] of [['','image'],['-film','video']]){
+    const a=assets.get(id+suffix);
+    if(a?.kind!==kind||a.width*9!==a.height*16)errors.push(`Missing landscape material study: ${id+suffix}`);
+  }
+}
+const nativeReceipt=JSON.parse(readFileSync(resolve(site,'media/receipts/native-showcases.json'),'utf8'));
+for(const [id,capture] of Object.entries(nativeReceipt.assets)){
+  const a=assets.get(id);
+  if(!a||a.width*9!==a.height*16)errors.push(`Recapture lost its native landscape frame: ${id}`);
+  if(a?.provenance.sourceRevision!==capture.sourceHead||capture.exitCode!==0)errors.push(`Native capture identity mismatch: ${id}`);
+  if(a?.kind==='video'&&a.sha256!==capture.webEncode?.sha256)errors.push(`Film differs from its delivery receipt: ${id}`);
+  if(a?.kind==='image'&&a.provenance.sourceSha256!==capture.sha256)errors.push(`Poster differs from its native master: ${id}`);
+}
 if(content.entries.filter(e=>e.family==='simulation').length!==6)errors.push('Simulation collection is incomplete');
 for(const c of content.connections)for(const id of [...c.from_entries,...c.to_entries])if(!ids.has(id))errors.push(`Unknown connection ${c.id}/${id}`);
 const result={passed:errors.length===0,errors,subjects:content.families.length,entries:content.entries.length,nativeOwners:new Set(content.entries.map(e=>e.owner)).size,gltfExtensions:mapped.size,assets:assets.size,bytes:media.assets.reduce((n,a)=>n+a.bytes+(a.thumbnailBytes||0),0)};

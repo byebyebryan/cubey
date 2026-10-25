@@ -76,6 +76,84 @@
       }
     },
     {
+      "id": "cut-roster-cut",
+      "file": "/media/cut-roster-cut.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "d4f651e658ac02aa57aecd5761a418b6d749d9a4588610fb3527d0174bef43b5",
+      "bytes": 43016,
+      "caption": "The committed cuts retain each body material, with the camera held still.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-cut/capture.png",
+        "sourceSha256": "451de6f1f4d509f9a5ace4a07ad381f45dc851e055cc46e24647f51e80448875",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      },
+      "thumbnail": "/media/cut-roster-cut-640.webp",
+      "thumbnailSha256": "ee3a6a31439b3ab2ee61986e2939950b43fcb5d4e0e2c3efd38dc46f89570a74",
+      "thumbnailBytes": 11458
+    },
+    {
+      "id": "cut-roster-preview",
+      "file": "/media/cut-roster-preview.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "4a07c544cba7d4a9fc89fae40a1b9243c19aa9131cd8ea36f9444829ff2bfdd9",
+      "bytes": 39200,
+      "caption": "Four subtractors preview the same bore through each material.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-preview/capture.png",
+        "sourceSha256": "890e8e3b533bbb7f90e2ad973d1a5adf6bf08bcfa57325527cfc0732830126e2",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      },
+      "thumbnail": "/media/cut-roster-preview-640.webp",
+      "thumbnailSha256": "9e7a899fa1f293ff44a12515816460ad0daa47129c414719f1bbd8137e5057a4",
+      "thumbnailBytes": 10436
+    },
+    {
+      "id": "cut-roster-solid",
+      "file": "/media/cut-roster-solid.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "d6bce731e5e7d922422b04b45579a59ed5d1f3f297d8a87b33a86f1804255cda",
+      "bytes": 35508,
+      "caption": "Wood and marble above; rusted steel and clear glass below.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-solid/capture.png",
+        "sourceSha256": "c7795017244abef7d2c93358c72becef6772aa114a0db0aa6c9423976cc06d89",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      },
+      "thumbnail": "/media/cut-roster-solid-640.webp",
+      "thumbnailSha256": "09806c6892194d00cbfa51669a60267278c4291a4de3832d97269c041eabe216",
+      "thumbnailBytes": 9778
+    },
+    {
       "id": "day-night",
       "file": "/media/day-night.webp",
       "kind": "image",
@@ -402,53 +480,53 @@
       "id": "guardian",
       "file": "/media/guardian.webp",
       "kind": "image",
-      "width": 960,
-      "height": 960,
-      "sha256": "8a15b9ec269cba155ae76747658ccf9c0a30332683a2d33d598cdc1a2d9badfe",
-      "bytes": 22252,
-      "caption": "An authored horned sculpture rendered in limestone and restrained marble.",
+      "width": 1600,
+      "height": 900,
+      "sha256": "2ca372ead1c36ebb03f21b8a88acd3b6004fa31461bf34a141de44bbfaa8abba",
+      "bytes": 24474,
+      "caption": "An authored Guardian in restrained marble, recaptured in native landscape.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/guardian.png",
-        "sourceSha256": "583fe82358eede806550c77d1492f15cc55e40744129ade7478650aea59fa456",
-        "sourceRevision": null,
-        "recipe": "outputs/sdf/marble-regions-comparison/subtle/captures/hero.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-marble-landscape/capture.png",
+        "sourceSha256": "185bcf7b6d5013dd504d24c8b7d98b71d79729586a9de2122ae436dcf7bd5683",
+        "sourceRevision": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       },
       "thumbnail": "/media/guardian-640.webp",
-      "thumbnailSha256": "0db2c3c81145dcbee09391ce06dcc09de2670fa88d986002c79b45c1a0c1441f",
-      "thumbnailBytes": 10760
+      "thumbnailSha256": "331f2fcd50e7e889d5fb661f5f0a4444105fdf7a6ccd1ab91ad248e0a696bd84",
+      "thumbnailBytes": 5910
     },
     {
       "id": "guardian-limestone",
       "file": "/media/guardian-limestone.webp",
       "kind": "image",
-      "width": 960,
-      "height": 960,
-      "sha256": "b46163d4260b9006a9157a2f09b510206de7daae7269cb5f20eb181cb3db45c0",
-      "bytes": 24864,
-      "caption": "Guardian limestone",
+      "width": 1600,
+      "height": 900,
+      "sha256": "ff68709f30e6bb38016f26b72560c94ea2b9ec3a2890e7d5b930be8cb42352b0",
+      "bytes": 26792,
+      "caption": "The same Guardian form in limestone, recaptured in native landscape.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/guardian-limestone.png",
-        "sourceSha256": "62bae3072621b326b8b266cb41b99d5125082914c2d619c51ebb883e8b78901d",
-        "sourceRevision": null,
-        "recipe": "outputs/sdf/material-contrast-regression/limestone.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-limestone-landscape/capture.png",
+        "sourceSha256": "4abe05a06c1774ca2c0cf53a8e8b2a0c5259f05b84e2c0c52b02d3337cb27281",
+        "sourceRevision": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       },
       "thumbnail": "/media/guardian-limestone-640.webp",
-      "thumbnailSha256": "34b76df04e912b86d7f960096d1f5c8dc5bcfc4be7ce44fd2c794c6bdde05ffd",
-      "thumbnailBytes": 11740
+      "thumbnailSha256": "76ac8cc2d424cf21671dcf9127737bf3b5cc4feaa15d52ed6f10eae558146676",
+      "thumbnailBytes": 5942
     },
     {
       "id": "library-mesh-bronze",
@@ -514,6 +592,55 @@
         "sourceRevision": "cc4a248d106756020e667ae595dc0df0383dbc7d",
         "recipe": "site/media/receipts/full-material-library.json",
         "note": "Retained accepted native library specimen; mesh and SDF share recipes while using distinct optical transport."
+      }
+    },
+    {
+      "id": "library-mesh-dawn",
+      "file": "/media/library-mesh-dawn.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "b53794d38e8bd28d71bce130b286eab42fad5b5ef51d4736d71fabc300b4ff0b",
+      "bytes": 48582,
+      "caption": "The twelve-sphere forward PBR lineup at dawn.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-poster/capture.png",
+        "sourceSha256": "95904b67a94c157ad68005fb14135c94f07d10dfbebba41dd08c13e38c7edfa3",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      },
+      "thumbnail": "/media/library-mesh-dawn-640.webp",
+      "thumbnailSha256": "bd7447905dcd6f7166033f2b6fba5ed7b86ad0d688601ab574588a38a9b08c22",
+      "thumbnailBytes": 12342
+    },
+    {
+      "id": "library-mesh-dawn-film",
+      "file": "/media/library-mesh-dawn-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "90cac0bde63134b158b41b69e1d067930edd950d80de2b10883315131d0d4545",
+      "bytes": 1314289,
+      "caption": "Forward PBR: twelve spheres through dawn, with accelerated cloud drift.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/web/library-mesh-dawn-film.mp4",
+        "sourceSha256": "90cac0bde63134b158b41b69e1d067930edd950d80de2b10883315131d0d4545",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       }
     },
     {
@@ -781,6 +908,104 @@
       }
     },
     {
+      "id": "library-sdf-dawn",
+      "file": "/media/library-sdf-dawn.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "1ce3de73504fc446d5869681d881bbe95682dd40973e21fe7b9ab3d2f1ce5452",
+      "bytes": 52682,
+      "caption": "The same twelve-sphere SDF lineup at dawn.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-poster/capture.png",
+        "sourceSha256": "01d819ab983c75ae92a7a5519605f8ac16dba1b0115313c902520531adc8b00e",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      },
+      "thumbnail": "/media/library-sdf-dawn-640.webp",
+      "thumbnailSha256": "c5b99144881c7efcea4fdfd95f5db783e2a08c29f23a381bad2de9652709a3b0",
+      "thumbnailBytes": 13652
+    },
+    {
+      "id": "library-sdf-dawn-film",
+      "file": "/media/library-sdf-dawn-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "bde6965605a26c80b6a003eb598766cf4d648eb79b6f47c884997c1f483d4be6",
+      "bytes": 1383681,
+      "caption": "SDF ray marching: twelve spheres through dawn, with accelerated cloud drift.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/web/library-sdf-dawn-film.mp4",
+        "sourceSha256": "bde6965605a26c80b6a003eb598766cf4d648eb79b6f47c884997c1f483d4be6",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      }
+    },
+    {
+      "id": "library-sdf-dusk",
+      "file": "/media/library-sdf-dusk.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "2f39d45bba6b476a630175b79b1a55959a9d6b06de6d384a344c96cdd42ce75c",
+      "bytes": 53518,
+      "caption": "The same twelve-sphere lineup rendered as SDF solids at dusk.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-poster/capture.png",
+        "sourceSha256": "d853cdf42d94f5f50619c4f192340c74d0d16404e0d21823a3f49b4bc7060ff0",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      },
+      "thumbnail": "/media/library-sdf-dusk-640.webp",
+      "thumbnailSha256": "4b8539ff9a4ed91ea2ce40651e58417088acfaf381a58a0a9ed4cd1c85da4212",
+      "thumbnailBytes": 13798
+    },
+    {
+      "id": "library-sdf-dusk-film",
+      "file": "/media/library-sdf-dusk-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "64effbb72abedc4bc0b5b91e4a8a4d3fb7e5cbea024c25a210a9d4b2e11f913c",
+      "bytes": 1393048,
+      "caption": "SDF ray marching: twelve spheres through dusk, with accelerated cloud drift.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/web/library-sdf-dusk-film.mp4",
+        "sourceSha256": "64effbb72abedc4bc0b5b91e4a8a4d3fb7e5cbea024c25a210a9d4b2e11f913c",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
+      }
+    },
+    {
       "id": "library-sdf-frosted-glass",
       "file": "/media/library-sdf-frosted-glass.webp",
       "kind": "image",
@@ -982,27 +1207,27 @@
       "id": "mesh-materials",
       "file": "/media/mesh-materials.webp",
       "kind": "image",
-      "width": 1280,
-      "height": 720,
-      "sha256": "1d13ab89ef2d8acbedaf41ceff66af167c4c6a07a0d72402d584e26c486cb9d0",
-      "bytes": 29308,
-      "caption": "Wood, rusted steel, woven cloth and bronze share one lighting environment.",
+      "width": 1600,
+      "height": 900,
+      "sha256": "5771805009334ac782347a736b7edf88f091eb6f135b765bb3eb0b7de59756ac",
+      "bytes": 48484,
+      "caption": "All twelve shared materials on mesh spheres, under moving clouds and low sunlight.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-materials.png",
-        "sourceSha256": "8229fb43d5fc5c4f263a71829c9b624f04df51bffe8f2da33635be4e8a229afd",
-        "sourceRevision": null,
-        "recipe": "docs/media/material-workshops/pbr-poster.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-poster/capture.png",
+        "sourceSha256": "25c8940a02e93cbd7de843c6873a0283c8d49b69dd116647f72ddb246e7d774b",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       },
       "thumbnail": "/media/mesh-materials-640.webp",
-      "thumbnailSha256": "429ed00c5cced573369be7751389270f4717431a3d76e81bd78473bc4c708ed5",
-      "thumbnailBytes": 9474
+      "thumbnailSha256": "acc7e2f6a08a0650c81b4cab9b9a43f61ffb95fa6d822c13c3767ea6d4d23056",
+      "thumbnailBytes": 12476
     },
     {
       "id": "mesh-materials-film",
@@ -1010,21 +1235,21 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "f34c6f188f4ad9fe3da33cd4b26bad0e96e8e0a8bc2947b8a37b48ee5971b512",
-      "bytes": 399327,
-      "caption": "Wood, rusted steel, woven cloth and bronze share one lighting environment.",
+      "sha256": "0660d07b25613c817310636f1113c51516baa3b4aef82c0b0a340d5c1e1e7f18",
+      "bytes": 1329209,
+      "caption": "Forward PBR: twelve spheres through dusk, with accelerated cloud drift.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/mesh-materials.mp4",
-        "sourceSha256": "f34c6f188f4ad9fe3da33cd4b26bad0e96e8e0a8bc2947b8a37b48ee5971b512",
-        "sourceRevision": null,
-        "recipe": "docs/media/material-workshops/pbr.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/web/mesh-materials-film.mp4",
+        "sourceSha256": "0660d07b25613c817310636f1113c51516baa3b4aef82c0b0a340d5c1e1e7f18",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       }
     },
     {
@@ -1105,49 +1330,49 @@
       "id": "robot",
       "file": "/media/robot.webp",
       "kind": "image",
-      "width": 960,
-      "height": 960,
-      "sha256": "8a734370e738ea401a6137af0a0aa01f46c11cf6931c95ba6888c59ca2b48416",
-      "bytes": 29948,
-      "caption": "Mechanical assemblies appear through saved additive and subtractive operations.",
+      "width": 1600,
+      "height": 900,
+      "sha256": "b0c42369627605a0ca1e18ff7389a9af02fd67c59cc4ee965071c106d571c07c",
+      "bytes": 30886,
+      "caption": "The complete fieldkit robot, recaptured in native landscape.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/robot.png",
-        "sourceSha256": "4a8646d34b687e3b17d981dba72a006a0394afb9bb40f3049030b58883eeab93",
-        "sourceRevision": null,
-        "recipe": "outputs/sdf/robot-joints-qualified/captures/detail-hero.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/robot-landscape/capture.png",
+        "sourceSha256": "7460773cb0fc48dd81e48b6c53da5d8170f7ec6cab5edff5974f719db4db13b6",
+        "sourceRevision": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       },
       "thumbnail": "/media/robot-640.webp",
-      "thumbnailSha256": "fd4befa521f65a9ada26d4761ad94bd90e2718482fb60c410c7759baa128ed56",
-      "thumbnailBytes": 15520
+      "thumbnailSha256": "d262fd0434b3845a9bca3c90520d0ed641419e6a2d27993e402b76a87af1ca3c",
+      "thumbnailBytes": 8320
     },
     {
       "id": "robot-film",
       "file": "/media/robot-film.mp4",
       "kind": "video",
       "width": 1280,
-      "height": 960,
-      "sha256": "c0c48f32bc3da6929cbf73028e4f057f6cddc802b7cd56257dbf92b93c891a4e",
-      "bytes": 4046149,
-      "caption": "Mechanical assemblies appear through saved additive and subtractive operations.",
+      "height": 720,
+      "sha256": "bee42e4fe480e8ad980037690c0f3dc2f0ffb6dee67bfb19a6827126fda0b9d5",
+      "bytes": 393542,
+      "caption": "The fieldkit robot assembles through its saved native construction history.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/robot.mp4",
-        "sourceSha256": "c0c48f32bc3da6929cbf73028e4f057f6cddc802b7cd56257dbf92b93c891a4e",
-        "sourceRevision": null,
-        "recipe": "outputs/sdf/robot-joints-qualified/history/presentation.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/web/robot-film.mp4",
+        "sourceSha256": "bee42e4fe480e8ad980037690c0f3dc2f0ffb6dee67bfb19a6827126fda0b9d5",
+        "sourceRevision": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       }
     },
     {
@@ -1204,27 +1429,27 @@
       "id": "sdf-materials",
       "file": "/media/sdf-materials.webp",
       "kind": "image",
-      "width": 1280,
-      "height": 720,
-      "sha256": "56817b00994a38697388bedb4fea392358e19116f50f7a380305c319a9f5f457",
-      "bytes": 20442,
-      "caption": "A subtraction exposes grain through the inside of a wood field.",
+      "width": 1600,
+      "height": 900,
+      "sha256": "1442a69d36d32d32e8112b77ff9ecf327ac1ffcbd43eb0b88749a257ea573b07",
+      "bytes": 47684,
+      "caption": "Saved cuts through wood, marble, rusted steel and clear glass.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/sdf-materials.png",
-        "sourceSha256": "ab9915d1301fc6c0321f92d26e7a8ce1321ec65e67c0b4fa1aaf4f52924e4f80",
-        "sourceRevision": null,
-        "recipe": "docs/media/material-workshops/sdf-poster.png",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-poster/capture.png",
+        "sourceSha256": "4d6aff474cbb351e4fcae8b36f3afff0dd54ddcab7e704774f7d81a227c0d92c",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       },
       "thumbnail": "/media/sdf-materials-640.webp",
-      "thumbnailSha256": "e72f3b72ffd13a17164fe691f71778d8217ff25849e6f6389e54cbf0648f56fd",
-      "thumbnailBytes": 6928
+      "thumbnailSha256": "4052d68298ef3cfcdd76bb716c7cb72d59abaee697822d5a91fd6e1eddba46e5",
+      "thumbnailBytes": 12908
     },
     {
       "id": "sdf-materials-film",
@@ -1232,21 +1457,21 @@
       "kind": "video",
       "width": 1280,
       "height": 720,
-      "sha256": "9db1447e92503cd065c8b14840ccd01cf6d9baaa4c689467565c22d86fbe9a9e",
-      "bytes": 242050,
-      "caption": "A subtraction exposes grain through the inside of a wood field.",
+      "sha256": "8f4e960524e2db9c274928834df389f9ba7285e16313f2e08db0479ec83323e8",
+      "bytes": 520898,
+      "caption": "Four materials share a saved two-step cut sequence and a final camera arc.",
       "credit": {
         "label": "Cubey original media \u00b7 MIT",
         "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
         "author": "Bryan"
       },
       "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/sdf-materials.mp4",
-        "sourceSha256": "9db1447e92503cd065c8b14840ccd01cf6d9baaa4c689467565c22d86fbe9a9e",
-        "sourceRevision": null,
-        "recipe": "docs/media/material-workshops/sdf.mp4",
-        "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
+        "source": "outputs/cubey-site/native-showcases-2026-10-24/web/sdf-materials-film.mp4",
+        "sourceSha256": "8f4e960524e2db9c274928834df389f9ba7285e16313f2e08db0479ec83323e8",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "recipe": "site/media/receipts/native-showcases.json",
+        "note": "Native landscape recapture. Master identity, exact command and web derivative are recorded in the capture receipt.",
+        "webDeliveryReceipt": "site/media/receipts/native-showcases.json"
       }
     },
     {
@@ -1516,84 +1741,6 @@
         "note": "Reused native media selected during workshop-alignment review. Historical native capture; the selection revision is not its render revision.",
         "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
       }
-    },
-    {
-      "id": "wood-cut",
-      "file": "/media/wood-cut.webp",
-      "kind": "image",
-      "width": 1600,
-      "height": 900,
-      "sha256": "5cbd460243cd94c4aa511114ce8e5ad59d0a9ff5fc018513fa2fb6eaccd90744",
-      "bytes": 25388,
-      "caption": "Wood cut",
-      "credit": {
-        "label": "Cubey original media \u00b7 MIT",
-        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
-        "author": "Bryan"
-      },
-      "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/wood-sdf-3.png",
-        "sourceSha256": "83028f6783c3654da1d9fac179348e9b557e38d17dadc450af91925aaf664267",
-        "sourceRevision": null,
-        "recipe": "outputs/material-presentation/report-final/sdf-3.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
-      },
-      "thumbnail": "/media/wood-cut-640.webp",
-      "thumbnailSha256": "549d18c9e9a344dc80c1b48d28a23b5439087e80cf9560b62f820f22c1370bf7",
-      "thumbnailBytes": 6272
-    },
-    {
-      "id": "wood-preview",
-      "file": "/media/wood-preview.webp",
-      "kind": "image",
-      "width": 1600,
-      "height": 900,
-      "sha256": "1ff481ae3a1a79e01417a298bcb4d5f2d3b0b9429fec659ee9194b5ed33ef18d",
-      "bytes": 23612,
-      "caption": "Wood preview",
-      "credit": {
-        "label": "Cubey original media \u00b7 MIT",
-        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
-        "author": "Bryan"
-      },
-      "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/wood-sdf-2.1.png",
-        "sourceSha256": "ada34fe9e87149ed581d2964150d8e3379d238fc95e12eb95cb122f444db7fb8",
-        "sourceRevision": null,
-        "recipe": "outputs/material-presentation/report-final/sdf-2.1.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
-      },
-      "thumbnail": "/media/wood-preview-640.webp",
-      "thumbnailSha256": "29db217508e7e4d14283d8a87af8674a905adf93453dc8c8af4f967a5c934044",
-      "thumbnailBytes": 5886
-    },
-    {
-      "id": "wood-solid",
-      "file": "/media/wood-solid.webp",
-      "kind": "image",
-      "width": 1600,
-      "height": 900,
-      "sha256": "e8b3463e97e2b00d7eeb8de5478503d3c4ad4a6462945b0c549f9c48d0b907fc",
-      "bytes": 23292,
-      "caption": "Wood solid",
-      "credit": {
-        "label": "Cubey original media \u00b7 MIT",
-        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
-        "author": "Bryan"
-      },
-      "provenance": {
-        "source": "outputs/cubey-site/workshop-alignment-2026-10-24/export/assets/wood-sdf-0.png",
-        "sourceSha256": "5da5b5d646affc5d0dd4f8befcc0065ecfa46df0255424ba3f9afca64e736ea4",
-        "sourceRevision": null,
-        "recipe": "outputs/material-presentation/report-final/sdf-0.png",
-        "note": "Selected native specimen/comparison view. Historical native capture; the selection revision is not its render revision.",
-        "selectedAtRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee"
-      },
-      "thumbnail": "/media/wood-solid-640.webp",
-      "thumbnailSha256": "b4dd3e0197a98868a5bdacbb396e95facaf926b1d6b2011fe3ac8d50f2b6b193",
-      "thumbnailBytes": 5796
     }
   ],
   "selections": {

@@ -1,0 +1,10 @@
+---
+import ViewButtons from './ViewButtons.astro';
+import {asset} from '../data/catalog';
+import {url} from '../lib/urls';
+interface Props {path:string}
+const {path}=Astro.props;
+const views=[{id:'solid',label:'Solid',asset:'cut-roster-solid',caption:'Wood and marble above; rusted steel and glass below.'},{id:'cut-preview',label:'Cut preview',asset:'cut-roster-preview',caption:'Four subtractors preview the same bore through each material.'},{id:'through-cut',label:'Through-cut',asset:'cut-roster-cut',caption:'The committed cuts retain each body’s continuous material field.'}];
+const image=asset(views[0].asset);
+---
+<div class="comparison-view" id="wood-cut-states" data-comparison><div class="comparison-description"><h3>Four fields, the same cut.</h3><p>Grain, veins, oxide and transparent interfaces continue through the solid. Compare the saved operation with the camera held still.</p><ViewButtons views={views} path={path} label="Material cut states"/><p class="comparison-caption" aria-live="polite" data-comparison-caption>{views[0].caption}</p><noscript><p><a href={url(asset('cut-roster-preview').file,path)}>Open cut preview</a> · <a href={url(asset('cut-roster-cut').file,path)}>Open through-cut view</a></p></noscript></div><div class="comparison-media"><img data-comparison-image src={url(image.file,path)} width={image.width} height={image.height} alt={views[0].caption} loading="lazy"/></div></div>

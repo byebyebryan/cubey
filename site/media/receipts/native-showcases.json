@@ -1,0 +1,1274 @@
+{
+  "scope": "Native 1920x1080 captures and web delivery. Recorded playback, not browser rendering or a native frame-rate claim.",
+  "assets": {
+    "guardian": {
+      "name": "guardian-marble-landscape",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-marble.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-marble-landscape/capture.png"
+      ],
+      "sourceHead": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+      "binarySha256": "9813d623528cbea5002c664073ea564463d6471385252b98f5d798b4422854e0",
+      "started": "2026-10-25T03:11:34.476020+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/sculpture-guardian-marble.json": "a14573288c26a0531dc34423abf1efc6dab10bea929286a45f57e33e25c8c428"
+      },
+      "exitCode": 0,
+      "wallSeconds": 2.455,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-marble-landscape/capture.png",
+      "bytes": 498236,
+      "sha256": "185bcf7b6d5013dd504d24c8b7d98b71d79729586a9de2122ae436dcf7bd5683",
+      "logSha256": "fa99d8fe1a4105d81cc0ccf5adeef0c4b91127e74404f29bf21bd7db4ead6180",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-marble-landscape/capture.png at 1920x1080"
+      ]
+    },
+    "guardian-limestone": {
+      "name": "guardian-limestone-landscape",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-limestone-landscape/capture.png"
+      ],
+      "sourceHead": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+      "binarySha256": "9813d623528cbea5002c664073ea564463d6471385252b98f5d798b4422854e0",
+      "started": "2026-10-25T03:11:36.967442+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/sculpture-guardian-limestone.json": "55e07578aaa17fda60c48dde20572d17e6cd16fd5bfc0abe5b81159208d80990"
+      },
+      "exitCode": 0,
+      "wallSeconds": 1.209,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-limestone-landscape/capture.png",
+      "bytes": 530187,
+      "sha256": "4abe05a06c1774ca2c0cf53a8e8b2a0c5259f05b84e2c0c52b02d3337cb27281",
+      "logSha256": "34e9fc8da47d504ffc5ef5db8dcf2bdd065948f65ca611a5a8a37fd82c0f977d",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/guardian-limestone-landscape/capture.png at 1920x1080"
+      ]
+    },
+    "robot": {
+      "name": "robot-landscape",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/robot-landscape/capture.png"
+      ],
+      "sourceHead": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+      "binarySha256": "9813d623528cbea5002c664073ea564463d6471385252b98f5d798b4422854e0",
+      "started": "2026-10-25T03:11:38.215406+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/survey-robot-fieldkit.json": "e612351b793ac1eec50d6e8a6efa3b0a78a5a6af5708fad80d16856c9f0a7cb7"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.382,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/robot-landscape/capture.png",
+      "bytes": 326479,
+      "sha256": "7460773cb0fc48dd81e48b6c53da5d8170f7ec6cab5edff5974f719db4db13b6",
+      "logSha256": "b1ce67573076ea99e44ca9f3cc23d5ee42e2a7295c9e58983e2c3fa8e53a5444",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/robot-landscape/capture.png at 1920x1080"
+      ]
+    },
+    "robot-film": {
+      "name": "robot-construction-landscape",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--motion",
+        "presentation",
+        "--duration",
+        "16",
+        "--construction-seconds",
+        "11",
+        "--orbit-turns",
+        "0.05555556",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--capture",
+        "video",
+        "--frames",
+        "480",
+        "--fps",
+        "30",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/robot-construction-landscape/capture.mp4"
+      ],
+      "sourceHead": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+      "binarySha256": "9813d623528cbea5002c664073ea564463d6471385252b98f5d798b4422854e0",
+      "started": "2026-10-25T03:11:38.633270+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/survey-robot-fieldkit.json": "e612351b793ac1eec50d6e8a6efa3b0a78a5a6af5708fad80d16856c9f0a7cb7"
+      },
+      "exitCode": 0,
+      "wallSeconds": 16.184,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/robot-construction-landscape/capture.mp4",
+      "bytes": 1666818,
+      "sha256": "20d300e2fcefbaee14414e57b531841a4cffc4612f119d6f47526c0b7ca756f0",
+      "logSha256": "d06db945dbc613a3404773d1009b0580898ed80d5798ff464b7ad38b9a43040d",
+      "logEvidence": [
+        "headless_video: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/robot-construction-landscape/capture.mp4 at 1920x1080, 480 frames @ 30 fps via libav h264"
+      ],
+      "webEncode": {
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-n",
+          "-i",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/robot-construction-landscape/capture.mp4",
+          "-an",
+          "-vf",
+          "scale=1280:720:flags=lanczos",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          "outputs/cubey-site/native-showcases-2026-10-24/web/robot-film.mp4"
+        ],
+        "sha256": "bee42e4fe480e8ad980037690c0f3dc2f0ffb6dee67bfb19a6827126fda0b9d5",
+        "bytes": 393542
+      }
+    },
+    "mesh-materials": {
+      "name": "accepted-library-pbr_materials-dusk-poster",
+      "command": [
+        "build/release/projects/pbr_materials/pbr_materials",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/pbr_materials/presets/presentation/library-dusk.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--presentation-time",
+        "3",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-poster/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "936a85156abab1665b947d953466c95d70e9995efc6ec40e58e8c3514be1c697",
+      "started": "2026-10-25T03:35:29.672116+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/pbr_materials/presets/presentation/library-dusk.json": "2ed3a8001a4955cb61b49f6366e6d28e7387a0bcf4ca6cf73935ce77dd7fb04a"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.63,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-poster/capture.png",
+      "bytes": 1194663,
+      "sha256": "25c8940a02e93cbd7de843c6873a0283c8d49b69dd116647f72ddb246e7d774b",
+      "logSha256": "c166c3810fbddccf027f3482840a986830d77f4fe690e5787b420c3fbb7b716c",
+      "logEvidence": [
+        "material-cycle time=3 sun=9.19063 azimuth=-155 cloud=390 exposure=0.824591",
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-poster/capture.png at 1920x1080",
+        "pbr_materials: environment finish sky_generation=1 cloud_generation=2"
+      ]
+    },
+    "mesh-materials-film": {
+      "name": "accepted-library-pbr_materials-dusk-film",
+      "command": [
+        "build/release/projects/pbr_materials/pbr_materials",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/pbr_materials/presets/presentation/library-dusk.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--capture",
+        "video",
+        "--frames",
+        "240",
+        "--fps",
+        "30",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-film/capture.mp4"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "936a85156abab1665b947d953466c95d70e9995efc6ec40e58e8c3514be1c697",
+      "started": "2026-10-25T03:35:22.317881+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/pbr_materials/presets/presentation/library-dusk.json": "2ed3a8001a4955cb61b49f6366e6d28e7387a0bcf4ca6cf73935ce77dd7fb04a"
+      },
+      "exitCode": 0,
+      "wallSeconds": 7.316,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-film/capture.mp4",
+      "bytes": 4988474,
+      "sha256": "759c8a62349fd48ad9a30783ed7c87d38850ead88e8326ae1e3eb55eaccf0eb9",
+      "logSha256": "81945ccadadc9957ef0c62bc3346a628d89308f6f28dfddcd7c4cc43b06c4a74",
+      "logEvidence": [
+        "material-cycle time=0 sun=14 azimuth=-155 cloud=300 exposure=0.297406",
+        "material-cycle time=2.00837 sun=11.6071 azimuth=-155 cloud=360.251 exposure=0.539734",
+        "material-cycle time=4.01674 sun=6.3523 azimuth=-155 cloud=420.502 exposure=1.18214",
+        "material-cycle time=6.0251 sun=1.12156 azimuth=-155 cloud=480.753 exposure=1.79526",
+        "material-cycle time=8 sun=-1.2 azimuth=-155 cloud=540 exposure=2.00274",
+        "headless_video: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-film/capture.mp4 at 1920x1080, 240 frames @ 30 fps via libav h264",
+        "pbr_materials: environment finish sky_generation=240 cloud_generation=31"
+      ],
+      "webEncode": {
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-n",
+          "-i",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dusk-film/capture.mp4",
+          "-an",
+          "-vf",
+          "scale=1280:720:flags=lanczos",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          "outputs/cubey-site/native-showcases-2026-10-24/web/mesh-materials-film.mp4"
+        ],
+        "sha256": "0660d07b25613c817310636f1113c51516baa3b4aef82c0b0a340d5c1e1e7f18",
+        "bytes": 1329209
+      }
+    },
+    "library-mesh-dawn": {
+      "name": "accepted-library-pbr_materials-dawn-poster",
+      "command": [
+        "build/release/projects/pbr_materials/pbr_materials",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/pbr_materials/presets/presentation/library-dawn.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--presentation-time",
+        "5",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-poster/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "936a85156abab1665b947d953466c95d70e9995efc6ec40e58e8c3514be1c697",
+      "started": "2026-10-25T03:35:37.578064+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/pbr_materials/presets/presentation/library-dawn.json": "1344ac5d4a115ad99a583445417fb474bb4af29bbda96a8c07b73bc658f15401"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.656,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-poster/capture.png",
+      "bytes": 1179197,
+      "sha256": "95904b67a94c157ad68005fb14135c94f07d10dfbebba41dd08c13e38c7edfa3",
+      "logSha256": "c993799f90299fda0b4a5dc9b8adc9731914332b582b060e4fd758b5310dd120",
+      "logEvidence": [
+        "material-cycle time=5 sun=9.19063 azimuth=-155 cloud=450 exposure=0.824591",
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-poster/capture.png at 1920x1080",
+        "pbr_materials: environment finish sky_generation=1 cloud_generation=2"
+      ]
+    },
+    "library-mesh-dawn-film": {
+      "name": "accepted-library-pbr_materials-dawn-film",
+      "command": [
+        "build/release/projects/pbr_materials/pbr_materials",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/pbr_materials/presets/presentation/library-dawn.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--capture",
+        "video",
+        "--frames",
+        "240",
+        "--fps",
+        "30",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-film/capture.mp4"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "936a85156abab1665b947d953466c95d70e9995efc6ec40e58e8c3514be1c697",
+      "started": "2026-10-25T03:35:30.337110+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/pbr_materials/presets/presentation/library-dawn.json": "1344ac5d4a115ad99a583445417fb474bb4af29bbda96a8c07b73bc658f15401"
+      },
+      "exitCode": 0,
+      "wallSeconds": 7.203,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-film/capture.mp4",
+      "bytes": 4833058,
+      "sha256": "57ccaedc3031cf92d5d23ef697f77d04029df0692be7c36732c3644aaf4331e9",
+      "logSha256": "0afadc106969d1e4919a31a1074f101710df4fcb343912a13895404c38188db7",
+      "logEvidence": [
+        "material-cycle time=0 sun=-1.2 azimuth=-155 cloud=300 exposure=2.00274",
+        "material-cycle time=2.00837 sun=1.19291 azimuth=-155 cloud=360.251 exposure=1.78803",
+        "material-cycle time=4.01674 sun=6.4477 azimuth=-155 cloud=420.502 exposure=1.17006",
+        "material-cycle time=6.0251 sun=11.6784 azimuth=-155 cloud=480.753 exposure=0.531834",
+        "material-cycle time=8 sun=14 azimuth=-155 cloud=540 exposure=0.297406",
+        "headless_video: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-film/capture.mp4 at 1920x1080, 240 frames @ 30 fps via libav h264",
+        "pbr_materials: environment finish sky_generation=240 cloud_generation=31"
+      ],
+      "webEncode": {
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-n",
+          "-i",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-pbr_materials-dawn-film/capture.mp4",
+          "-an",
+          "-vf",
+          "scale=1280:720:flags=lanczos",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          "outputs/cubey-site/native-showcases-2026-10-24/web/library-mesh-dawn-film.mp4"
+        ],
+        "sha256": "90cac0bde63134b158b41b69e1d067930edd950d80de2b10883315131d0d4545",
+        "bytes": 1314289
+      }
+    },
+    "library-sdf-dusk": {
+      "name": "accepted-library-sdf-dusk-poster",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/library-dusk.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--time",
+        "3",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-poster/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:35:45.446598+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/library-dusk.json": "8dda7f88252b46ca2a652339cd6a6734dbf1df73fd15441f05cb22f106adf0b2"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.632,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-poster/capture.png",
+      "bytes": 1252601,
+      "sha256": "d853cdf42d94f5f50619c4f192340c74d0d16404e0d21823a3f49b4bc7060ff0",
+      "logSha256": "b64bea0531d45c8593d4dc01465bf95987c5b50efe8d575bb86f7907a66a95d8",
+      "logEvidence": [
+        "material-cycle time=3 sun=9.19063 azimuth=-155 cloud=390 exposure=0.824591",
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-poster/capture.png at 1920x1080",
+        "sdf: environment finish sky_generation=1 cloud_generation=2"
+      ]
+    },
+    "library-sdf-dusk-film": {
+      "name": "accepted-library-sdf-dusk-film",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/library-dusk.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--capture",
+        "video",
+        "--frames",
+        "240",
+        "--fps",
+        "30",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-film/capture.mp4"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:35:38.278976+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/library-dusk.json": "8dda7f88252b46ca2a652339cd6a6734dbf1df73fd15441f05cb22f106adf0b2"
+      },
+      "exitCode": 0,
+      "wallSeconds": 7.128,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-film/capture.mp4",
+      "bytes": 5327836,
+      "sha256": "6c0700b205d35bbc9bbbbec33b584cd2b049947d831b0061977210916cb4b7ac",
+      "logSha256": "bdd2bb0df6d6e1d6a38aae45a7e04eaa8b872123356976ae0f27523b9a470b81",
+      "logEvidence": [
+        "material-cycle time=0 sun=14 azimuth=-155 cloud=300 exposure=0.297406",
+        "material-cycle time=2.00837 sun=11.6071 azimuth=-155 cloud=360.251 exposure=0.539734",
+        "material-cycle time=4.01674 sun=6.3523 azimuth=-155 cloud=420.502 exposure=1.18214",
+        "material-cycle time=6.0251 sun=1.12156 azimuth=-155 cloud=480.753 exposure=1.79526",
+        "material-cycle time=8 sun=-1.2 azimuth=-155 cloud=540 exposure=2.00274",
+        "headless_video: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-film/capture.mp4 at 1920x1080, 240 frames @ 30 fps via libav h264",
+        "sdf: environment finish sky_generation=240 cloud_generation=31"
+      ],
+      "webEncode": {
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-n",
+          "-i",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dusk-film/capture.mp4",
+          "-an",
+          "-vf",
+          "scale=1280:720:flags=lanczos",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          "outputs/cubey-site/native-showcases-2026-10-24/web/library-sdf-dusk-film.mp4"
+        ],
+        "sha256": "64effbb72abedc4bc0b5b91e4a8a4d3fb7e5cbea024c25a210a9d4b2e11f913c",
+        "bytes": 1393048
+      }
+    },
+    "library-sdf-dawn": {
+      "name": "accepted-library-sdf-dawn-poster",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/library-dawn.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--time",
+        "5",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-poster/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:35:53.364963+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/library-dawn.json": "3abfc10484362a236225a83a3a1b8c27ca7e827dd3b879f954f4dfe9a923d6ec"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.646,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-poster/capture.png",
+      "bytes": 1225908,
+      "sha256": "01d819ab983c75ae92a7a5519605f8ac16dba1b0115313c902520531adc8b00e",
+      "logSha256": "87a2ece2f6db71e6d39507fb98217cbb5877b11b2534cb3fc165e38a13eece2d",
+      "logEvidence": [
+        "material-cycle time=5 sun=9.19063 azimuth=-155 cloud=450 exposure=0.824591",
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-poster/capture.png at 1920x1080",
+        "sdf: environment finish sky_generation=1 cloud_generation=2"
+      ]
+    },
+    "library-sdf-dawn-film": {
+      "name": "accepted-library-sdf-dawn-film",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/library-dawn.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--capture",
+        "video",
+        "--frames",
+        "240",
+        "--fps",
+        "30",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-film/capture.mp4"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:35:46.115426+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/library-dawn.json": "3abfc10484362a236225a83a3a1b8c27ca7e827dd3b879f954f4dfe9a923d6ec"
+      },
+      "exitCode": 0,
+      "wallSeconds": 7.211,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-film/capture.mp4",
+      "bytes": 5207365,
+      "sha256": "ac12531809d28dce5507b46412b8839186473af27ebe550b4035744bdb2c3800",
+      "logSha256": "b7fe06bac8b23ffc4f38b4eaaf034a97f9c66ea784f7ed633361e09e6422e197",
+      "logEvidence": [
+        "material-cycle time=0 sun=-1.2 azimuth=-155 cloud=300 exposure=2.00274",
+        "material-cycle time=2.00837 sun=1.19291 azimuth=-155 cloud=360.251 exposure=1.78803",
+        "material-cycle time=4.01674 sun=6.4477 azimuth=-155 cloud=420.502 exposure=1.17006",
+        "material-cycle time=6.0251 sun=11.6784 azimuth=-155 cloud=480.753 exposure=0.531834",
+        "material-cycle time=8 sun=14 azimuth=-155 cloud=540 exposure=0.297406",
+        "headless_video: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-film/capture.mp4 at 1920x1080, 240 frames @ 30 fps via libav h264",
+        "sdf: environment finish sky_generation=240 cloud_generation=31"
+      ],
+      "webEncode": {
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-n",
+          "-i",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-library-sdf-dawn-film/capture.mp4",
+          "-an",
+          "-vf",
+          "scale=1280:720:flags=lanczos",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          "outputs/cubey-site/native-showcases-2026-10-24/web/library-sdf-dawn-film.mp4"
+        ],
+        "sha256": "bde6965605a26c80b6a003eb598766cf4d648eb79b6f47c884997c1f483d4be6",
+        "bytes": 1383681
+      }
+    },
+    "sdf-materials": {
+      "name": "accepted-cut-roster-poster",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/cut-roster.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--time",
+        "6.5",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-poster/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:36:03.368744+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/cut-roster.json": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.611,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-poster/capture.png",
+      "bytes": 992612,
+      "sha256": "4d6aff474cbb351e4fcae8b36f3afff0dd54ddcab7e704774f7d81a227c0d92c",
+      "logSha256": "61ed7083482a66edf4697b1758cdb3ba7d738ddee8acbad7c5b986b8f46a26a6",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-poster/capture.png at 1920x1080",
+        "sdf: environment finish sky_generation=1 cloud_generation=1"
+      ]
+    },
+    "sdf-materials-film": {
+      "name": "accepted-cut-roster-film",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/cut-roster.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--capture",
+        "video",
+        "--frames",
+        "240",
+        "--fps",
+        "30",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-film/capture.mp4"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:35:54.046806+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/cut-roster.json": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf"
+      },
+      "exitCode": 0,
+      "wallSeconds": 7.038,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-film/capture.mp4",
+      "bytes": 1852572,
+      "sha256": "0fba68d320432292559fb90f38f3f625d26ac8972e98247b67f14652aaf5d78e",
+      "logSha256": "ae23fe510fa81816f4c54bb13600a29c1993220c20cc9105056d42a5c984520a",
+      "logEvidence": [
+        "headless_video: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-film/capture.mp4 at 1920x1080, 240 frames @ 30 fps via libav h264",
+        "sdf: environment finish sky_generation=1 cloud_generation=1"
+      ],
+      "webEncode": {
+        "command": [
+          "ffmpeg",
+          "-v",
+          "error",
+          "-n",
+          "-i",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-film/capture.mp4",
+          "-an",
+          "-vf",
+          "scale=1280:720:flags=lanczos",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "medium",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          "outputs/cubey-site/native-showcases-2026-10-24/web/sdf-materials-film.mp4"
+        ],
+        "sha256": "8f4e960524e2db9c274928834df389f9ba7285e16313f2e08db0479ec83323e8",
+        "bytes": 520898
+      }
+    },
+    "cut-roster-solid": {
+      "name": "accepted-cut-roster-solid",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/cut-roster.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--time",
+        "0",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-solid/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:36:01.122783+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/cut-roster.json": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.613,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-solid/capture.png",
+      "bytes": 830719,
+      "sha256": "c7795017244abef7d2c93358c72becef6772aa114a0db0aa6c9423976cc06d89",
+      "logSha256": "b486937d4f91c27acd021bb6eef6a2b5673ad28f58420c01d6bacf95c261c8c4",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-solid/capture.png at 1920x1080",
+        "sdf: environment finish sky_generation=1 cloud_generation=1"
+      ]
+    },
+    "cut-roster-preview": {
+      "name": "accepted-cut-roster-preview",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/cut-roster.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--time",
+        "2",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-preview/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:36:01.773629+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/cut-roster.json": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.913,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-preview/capture.png",
+      "bytes": 805116,
+      "sha256": "890e8e3b533bbb7f90e2ad973d1a5adf6bf08bcfa57325527cfc0732830126e2",
+      "logSha256": "16e7aa8f4d3f1a315ee17a40d993397895963dc08df66050c7de327bc9eccfd3",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-preview/capture.png at 1920x1080",
+        "sdf: environment finish sky_generation=1 cloud_generation=1"
+      ]
+    },
+    "cut-roster-cut": {
+      "name": "accepted-cut-roster-cut",
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--config",
+        "projects/sdf/presets/presentation/cut-roster.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--frames",
+        "2",
+        "--time",
+        "3",
+        "--output",
+        "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-cut/capture.png"
+      ],
+      "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+      "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+      "started": "2026-10-25T03:36:02.724095+00:00",
+      "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+      "inputs": {
+        "projects/sdf/presets/presentation/cut-roster.json": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf"
+      },
+      "exitCode": 0,
+      "wallSeconds": 0.609,
+      "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-cut/capture.png",
+      "bytes": 892406,
+      "sha256": "451de6f1f4d509f9a5ace4a07ad381f45dc851e055cc46e24647f51e80448875",
+      "logSha256": "81bb35265cf2c96f8c92ad8cdd644504e334d2fedb0fbe5ce0f0819505bae5ec",
+      "logEvidence": [
+        "headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/cubey-site/native-showcases-2026-10-24/captures/accepted-cut-roster-cut/capture.png at 1920x1080",
+        "sdf: environment finish sky_generation=1 cloud_generation=1"
+      ]
+    }
+  },
+  "qualification": {
+    "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+    "diagnostics": {
+      "accepted-diagnostic-cut-0": {
+        "pixels": 181116,
+        "cap": 0,
+        "tir": 86675,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-cut-2": {
+        "pixels": 181116,
+        "cap": 0,
+        "tir": 86675,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-cut-3": {
+        "pixels": 180216,
+        "cap": 0,
+        "tir": 103395,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-cut-4": {
+        "pixels": 182983,
+        "cap": 0,
+        "tir": 105138,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-cut-5": {
+        "pixels": 197040,
+        "cap": 0,
+        "tir": 113474,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-cut-6.5": {
+        "pixels": 213054,
+        "cap": 0,
+        "tir": 131310,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-cut-8": {
+        "pixels": 213054,
+        "cap": 0,
+        "tir": 131310,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-dawn-0": {
+        "pixels": 88410,
+        "cap": 0,
+        "tir": 0,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-dawn-4": {
+        "pixels": 88410,
+        "cap": 0,
+        "tir": 0,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-dawn-8": {
+        "pixels": 88410,
+        "cap": 0,
+        "tir": 0,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-dusk-0": {
+        "pixels": 88410,
+        "cap": 0,
+        "tir": 0,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-dusk-4": {
+        "pixels": 88410,
+        "cap": 0,
+        "tir": 0,
+        "cap_fraction": 0.0,
+        "errors": 0
+      },
+      "accepted-diagnostic-dusk-8": {
+        "pixels": 88410,
+        "cap": 0,
+        "tir": 0,
+        "cap_fraction": 0.0,
+        "errors": 0
+      }
+    },
+    "clocks": {
+      "dusk": {
+        "pbr_materials": [
+          "material-cycle time=0 sun=14 azimuth=-155 cloud=300 exposure=0.297406",
+          "material-cycle time=2.00837 sun=11.6071 azimuth=-155 cloud=360.251 exposure=0.539734",
+          "material-cycle time=4.01674 sun=6.3523 azimuth=-155 cloud=420.502 exposure=1.18214",
+          "material-cycle time=6.0251 sun=1.12156 azimuth=-155 cloud=480.753 exposure=1.79526",
+          "material-cycle time=8 sun=-1.2 azimuth=-155 cloud=540 exposure=2.00274"
+        ],
+        "sdf": [
+          "material-cycle time=0 sun=14 azimuth=-155 cloud=300 exposure=0.297406",
+          "material-cycle time=2.00837 sun=11.6071 azimuth=-155 cloud=360.251 exposure=0.539734",
+          "material-cycle time=4.01674 sun=6.3523 azimuth=-155 cloud=420.502 exposure=1.18214",
+          "material-cycle time=6.0251 sun=1.12156 azimuth=-155 cloud=480.753 exposure=1.79526",
+          "material-cycle time=8 sun=-1.2 azimuth=-155 cloud=540 exposure=2.00274"
+        ]
+      },
+      "dawn": {
+        "pbr_materials": [
+          "material-cycle time=0 sun=-1.2 azimuth=-155 cloud=300 exposure=2.00274",
+          "material-cycle time=2.00837 sun=1.19291 azimuth=-155 cloud=360.251 exposure=1.78803",
+          "material-cycle time=4.01674 sun=6.4477 azimuth=-155 cloud=420.502 exposure=1.17006",
+          "material-cycle time=6.0251 sun=11.6784 azimuth=-155 cloud=480.753 exposure=0.531834",
+          "material-cycle time=8 sun=14 azimuth=-155 cloud=540 exposure=0.297406"
+        ],
+        "sdf": [
+          "material-cycle time=0 sun=-1.2 azimuth=-155 cloud=300 exposure=2.00274",
+          "material-cycle time=2.00837 sun=1.19291 azimuth=-155 cloud=360.251 exposure=1.78803",
+          "material-cycle time=4.01674 sun=6.4477 azimuth=-155 cloud=420.502 exposure=1.17006",
+          "material-cycle time=6.0251 sun=11.6784 azimuth=-155 cloud=480.753 exposure=0.531834",
+          "material-cycle time=8 sun=14 azimuth=-155 cloud=540 exposure=0.297406"
+        ]
+      }
+    },
+    "clocksMatch": {
+      "dusk": true,
+      "dawn": true
+    },
+    "probeGenerations": {
+      "dusk": {
+        "pbr_materials": [
+          "240",
+          "31"
+        ],
+        "sdf": [
+          "240",
+          "31"
+        ]
+      },
+      "dawn": {
+        "pbr_materials": [
+          "240",
+          "31"
+        ],
+        "sdf": [
+          "240",
+          "31"
+        ]
+      }
+    },
+    "frozenControlsMatch": {
+      "control-forward-contrast": true,
+      "control-sdf-wood": true
+    },
+    "frozenControlReceipts": {
+      "control-forward-contrast": {
+        "before": {
+          "name": "control-forward-contrast",
+          "command": [
+            "build/release/projects/pbr_materials/pbr_materials",
+            "--headless",
+            "--require-validation",
+            "--config",
+            "projects/pbr_materials/presets/presentation/contrast.json",
+            "--presentation-time",
+            "6.5",
+            "--width",
+            "640",
+            "--height",
+            "360",
+            "--output",
+            "outputs/cubey-site/native-showcases-2026-10-24/captures/control-forward-contrast/capture.png"
+          ],
+          "sourceHead": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+          "binarySha256": "b2a71188a068dded805756e67cc99a9b6e7a1986446d920b3bff733403d05239",
+          "started": "2026-10-25T03:11:33.312418+00:00",
+          "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+          "inputs": {
+            "projects/pbr_materials/presets/presentation/contrast.json": "4b9335d3f04fb91ecba2ebec2f718a8287a02e7737c332a1e6cf824a18c920e4"
+          },
+          "exitCode": 0,
+          "wallSeconds": 0.58,
+          "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/control-forward-contrast/capture.png",
+          "bytes": 163003,
+          "sha256": "4bd4abb0445e8e0744428cf5a0f35f42347df6b866e96044f4e81677c3e312a7"
+        },
+        "after": {
+          "name": "control-forward-contrast-accepted",
+          "command": [
+            "build/release/projects/pbr_materials/pbr_materials",
+            "--headless",
+            "--require-validation",
+            "--config",
+            "projects/pbr_materials/presets/presentation/contrast.json",
+            "--presentation-time",
+            "6.5",
+            "--width",
+            "640",
+            "--height",
+            "360",
+            "--output",
+            "outputs/cubey-site/native-showcases-2026-10-24/captures/control-forward-contrast-accepted/capture.png"
+          ],
+          "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+          "binarySha256": "936a85156abab1665b947d953466c95d70e9995efc6ec40e58e8c3514be1c697",
+          "started": "2026-10-25T03:38:27.858141+00:00",
+          "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+          "inputs": {
+            "projects/pbr_materials/presets/presentation/contrast.json": "4b9335d3f04fb91ecba2ebec2f718a8287a02e7737c332a1e6cf824a18c920e4"
+          },
+          "exitCode": 0,
+          "wallSeconds": 0.574,
+          "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/control-forward-contrast-accepted/capture.png",
+          "bytes": 163003,
+          "sha256": "4bd4abb0445e8e0744428cf5a0f35f42347df6b866e96044f4e81677c3e312a7"
+        }
+      },
+      "control-sdf-wood": {
+        "before": {
+          "name": "control-sdf-wood",
+          "command": [
+            "build/release/projects/sdf/sdf",
+            "--headless",
+            "--require-validation",
+            "--config",
+            "projects/sdf/presets/presentation/wood-cut.json",
+            "--time",
+            "6.5",
+            "--width",
+            "640",
+            "--height",
+            "360",
+            "--output",
+            "outputs/cubey-site/native-showcases-2026-10-24/captures/control-sdf-wood/capture.png"
+          ],
+          "sourceHead": "ec17b49fff3459cf9aff32f0680cd9c8b3b7c43b",
+          "binarySha256": "9813d623528cbea5002c664073ea564463d6471385252b98f5d798b4422854e0",
+          "started": "2026-10-25T03:11:33.928728+00:00",
+          "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+          "inputs": {
+            "projects/sdf/presets/presentation/wood-cut.json": "d3c64e99c21f3e32406445a93f6c8c7608853b62d0ff05faa55325acbaedbea3"
+          },
+          "exitCode": 0,
+          "wallSeconds": 0.512,
+          "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/control-sdf-wood/capture.png",
+          "bytes": 122232,
+          "sha256": "99e77bf6b98a4a19df27aac9f16beed8bcf46776437dd614900b95dfd230af43"
+        },
+        "after": {
+          "name": "control-sdf-wood-accepted",
+          "command": [
+            "build/release/projects/sdf/sdf",
+            "--headless",
+            "--require-validation",
+            "--config",
+            "projects/sdf/presets/presentation/wood-cut.json",
+            "--time",
+            "6.5",
+            "--width",
+            "640",
+            "--height",
+            "360",
+            "--output",
+            "outputs/cubey-site/native-showcases-2026-10-24/captures/control-sdf-wood-accepted/capture.png"
+          ],
+          "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+          "binarySha256": "2528fd40a43c8ef6d6f9e2abbf1147e5c215340256fe65c95b105c31b783dfcb",
+          "started": "2026-10-25T03:38:28.469966+00:00",
+          "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+          "inputs": {
+            "projects/sdf/presets/presentation/wood-cut.json": "d3c64e99c21f3e32406445a93f6c8c7608853b62d0ff05faa55325acbaedbea3"
+          },
+          "exitCode": 0,
+          "wallSeconds": 0.501,
+          "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/control-sdf-wood-accepted/capture.png",
+          "bytes": 122232,
+          "sha256": "99e77bf6b98a4a19df27aac9f16beed8bcf46776437dd614900b95dfd230af43"
+        }
+      }
+    },
+    "fieldValidation": {
+      "accepted-diagnostic-dusk-0": {
+        "logSha256": "6fef9b4d9b8b379125c546b6680cdb993eda6cafff2d20608e0bc6c18c31c548",
+        "evidence": [
+          "sdf: oracle rays=301 hits=110 mismatches=0 exhausted=0 max_hit_error=5.43594e-05 max_surface_error=0.000110649 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=813 max_distance_error=5.96046e-08 max_material_error=4.23193e-06 max_gradient_error=6.55651e-07 max_normal_error=5.66244e-07 max_shortcut_error=0 part_mismatches=0",
+          "sdf: material-only cache check passed builds=1",
+          "sdf: optics-only cache check passed builds=1",
+          "sdf: library-only cache check passed builds=1",
+          "sdf: procedural-only cache check passed builds=1",
+          "sdf: marble color cache check passed builds=1"
+        ]
+      },
+      "accepted-diagnostic-cut-3": {
+        "logSha256": "3f55b9617ae508a0bea6138943735c2b8590774f635e1c4b5a1410364b36bfe8",
+        "evidence": [
+          "sdf: oracle rays=253 hits=0 mismatches=0 exhausted=0 max_hit_error=0 max_surface_error=0 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=729 max_distance_error=0 max_material_error=0 max_gradient_error=0 max_normal_error=2.98023e-08 max_shortcut_error=0 part_mismatches=0",
+          "sdf: oracle rays=269 hits=147 mismatches=0 exhausted=0 max_hit_error=5.45979e-05 max_surface_error=0.00011155 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=757 max_distance_error=2.98023e-08 max_material_error=7.09295e-06 max_gradient_error=5.86384e-07 max_normal_error=5.06639e-07 max_shortcut_error=0 part_mismatches=0",
+          "sdf: oracle rays=285 hits=145 mismatches=0 exhausted=0 max_hit_error=5.45979e-05 max_surface_error=0.00011155 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=785 max_distance_error=2.98023e-08 max_material_error=7.09295e-06 max_gradient_error=5.86384e-07 max_normal_error=5.06639e-07 max_shortcut_error=0 part_mismatches=0",
+          "sdf: oracle rays=269 hits=147 mismatches=0 exhausted=0 max_hit_error=5.45979e-05 max_surface_error=0.00011155 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=757 max_distance_error=2.98023e-08 max_material_error=7.09295e-06 max_gradient_error=5.86384e-07 max_normal_error=5.06639e-07 max_shortcut_error=0 part_mismatches=0",
+          "sdf: oracle rays=253 hits=0 mismatches=0 exhausted=0 max_hit_error=0 max_surface_error=0 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=729 max_distance_error=0 max_material_error=0 max_gradient_error=0 max_normal_error=2.98023e-08 max_shortcut_error=0 part_mismatches=0",
+          "sdf: oracle rays=285 hits=145 mismatches=0 exhausted=0 max_hit_error=5.45979e-05 max_surface_error=0.00011155 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=785 max_distance_error=2.98023e-08 max_material_error=7.09295e-06 max_gradient_error=5.86384e-07 max_normal_error=5.06639e-07 max_shortcut_error=0 part_mismatches=0",
+          "sdf: authored history passed (all states, backward/reset, cache reuse)",
+          "sdf: oracle rays=285 hits=145 mismatches=0 exhausted=0 max_hit_error=5.45979e-05 max_surface_error=0.00011155 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=785 max_distance_error=2.98023e-08 max_material_error=7.09295e-06 max_gradient_error=5.86384e-07 max_normal_error=5.06639e-07 max_shortcut_error=0 part_mismatches=0",
+          "sdf: material-only cache check passed builds=6",
+          "sdf: optics-only cache check passed builds=6",
+          "sdf: library-only cache check passed builds=6",
+          "sdf: procedural-only cache check passed builds=6",
+          "sdf: marble color cache check passed builds=6",
+          "sdf: oracle rays=285 hits=145 mismatches=0 exhausted=0 max_hit_error=5.45979e-05 max_surface_error=0.00011155 sampling_ambiguous=0",
+          "sdf: authored CPU/GPU points=785 max_distance_error=2.98023e-08 max_material_error=7.09295e-06 max_gradient_error=5.86384e-07 max_normal_error=5.06639e-07 max_shortcut_error=0 part_mismatches=0"
+        ]
+      }
+    },
+    "nativeWorkshopExitFix": {
+      "snapshotMatchesCaptureSource": true,
+      "receipt": {
+        "name": "workshop-exit-parity",
+        "command": [
+          "build/release/projects/pbr_materials/pbr_materials",
+          "--headless",
+          "--require-validation",
+          "--config",
+          "projects/pbr_materials/presets/presentation/library-dusk.json",
+          "--presentation-time",
+          "3",
+          "--width",
+          "1920",
+          "--height",
+          "1080",
+          "--frames",
+          "2",
+          "--output",
+          "outputs/cubey-site/native-showcases-2026-10-24/captures/workshop-exit-parity/capture.png"
+        ],
+        "sourceHead": "31ac67c2c17d30538a8df839852813d7a07f31f3",
+        "binarySha256": "7e256aa5c3f89627db24909f4825fde5ed5b43a7e957155213287cd554812509",
+        "started": "2026-10-25T03:41:55.756375+00:00",
+        "scope": "Native presentation capture; recorded media, not a browser renderer or native frame-rate claim",
+        "inputs": {
+          "projects/pbr_materials/presets/presentation/library-dusk.json": "2ed3a8001a4955cb61b49f6366e6d28e7387a0bcf4ca6cf73935ce77dd7fb04a"
+        },
+        "exitCode": 0,
+        "wallSeconds": 0.686,
+        "output": "outputs/cubey-site/native-showcases-2026-10-24/captures/workshop-exit-parity/capture.png",
+        "bytes": 1194663,
+        "sha256": "25c8940a02e93cbd7de843c6873a0283c8d49b69dd116647f72ddb246e7d774b"
+      }
+    }
+  },
+  "inputHashes": {
+    "assets/materials/plain.json": "401cfb72ff2e41fb3bcd8a07c0a0f751abda1002959a74920aba769934438ea7",
+    "assets/materials/limestone.json": "cccc023571523d052823b6e27658ca88b461c3b6b2a90763919687943db372e3",
+    "assets/materials/marble.json": "dce3505445117ba30ee642eed6b8263a67a585eed81764aea47bd9fc4083eda5",
+    "assets/materials/clay.json": "a84d85caabc22353a9ec601bc7fb56a0e1941a780f4ed4ff65058e960472dfc8",
+    "assets/materials/ceramic.json": "b0697acafe549744f5f8a259e3d35cca4e20efd0f47691bbbed8264f015f9304",
+    "assets/materials/bronze.json": "fe9474f73eda0389f43596ada8857527802e1911867bc5002f6f932f5c9012ae",
+    "assets/materials/glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+    "assets/materials/catalog.json": "f4701d806b2e517e5cfe705777de54454f43e6bf13a5d161035432271656ea6d",
+    "assets/materials/wood.json": "2aa55215acdae9b64fa0518f511445a9e50f9592e09f21069bb7db279807cfde",
+    "assets/materials/rusted-steel.json": "78643660334fcdf353e34bd7a70615f33c034cc537329d4fe58ded6c21f15a07",
+    "assets/materials/woven-cloth.json": "9e376270d7a174ea67709eb82a148237c749c480b621e3f50f3ed69c72ab2f80",
+    "assets/materials/kraft-cardboard.json": "499f05ba5309bc5c81024103f78babff6d63a001831ef7309e7f993f60e94e94",
+    "assets/materials/frosted-glass.json": "18dbb3c951418635ada6944ef44284ff2fdf5305ab27d1b5620295a6266957cb",
+    "projects/sdf/scenes/material-presentation/wood-cut.json": "7746b6a4b861798bc1890d8c3d5746bcb80cc46ea339b26cf5031d38d977c0a8",
+    "projects/sdf/scenes/material-presentation/library-spheres.json": "3aa7c85924a4ccb93a3f5afb8d3112160b0d1a739e5ce4298cdb84c43b44cadf",
+    "projects/sdf/scenes/material-presentation/cut-roster.json": "4d68871ec70ee003a4eccf1fbfb3a3b3ba783a831c72151c1c77d44900b6c4f1",
+    "projects/sdf/presets/presentation/wood-cut.json": "d3c64e99c21f3e32406445a93f6c8c7608853b62d0ff05faa55325acbaedbea3",
+    "projects/sdf/presets/presentation/library-dusk.json": "8dda7f88252b46ca2a652339cd6a6734dbf1df73fd15441f05cb22f106adf0b2",
+    "projects/sdf/presets/presentation/library-dawn.json": "3abfc10484362a236225a83a3a1b8c27ca7e827dd3b879f954f4dfe9a923d6ec",
+    "projects/sdf/presets/presentation/cut-roster.json": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf",
+    "projects/pbr_materials/presets/presentation/surfaces.json": "6ddc2a3a2619c853b2b64042a3edd654062ca2a30bba01f123042e87c6ba3b51",
+    "projects/pbr_materials/presets/presentation/contrast.json": "4b9335d3f04fb91ecba2ebec2f718a8287a02e7737c332a1e6cf824a18c920e4",
+    "projects/pbr_materials/presets/presentation/library-dusk.json": "2ed3a8001a4955cb61b49f6366e6d28e7387a0bcf4ca6cf73935ce77dd7fb04a",
+    "projects/pbr_materials/presets/presentation/library-dawn.json": "1344ac5d4a115ad99a583445417fb474bb4af29bbda96a8c07b73bc658f15401"
+  },
+  "materialCaptureShaderHashes": {
+    "sourceHead": "42b7538af18df9dcac4f017970f95565bc185523",
+    "apps": {
+      "sdf": {
+        "authored_bricks.comp.spv": "6792b381fdac5bfb8ce3e9207bb8e5581e73cf1e662bbeb73f471aa58d726880",
+        "authored_filter.comp.spv": "def16143f1e0d4d008a6b58cec85d21053361fb14775040beb40a63ca1feb806",
+        "authored_validate.comp.spv": "28c8411c0781b07578de27bbc543bd0017895bc41ecf2c53f9545e63c462e921",
+        "bricks.comp.spv": "90a2ec847d648475fc93e400231c80c48ed444eb3274f687b88bb71ba8f2bb26",
+        "filter.comp.spv": "f3589f2ef32c4d06a9b30ec8b00e7ac2c5456cf359d026f8f4e0638b9ed19c6c",
+        "forward_pbr_post.frag.spv": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526",
+        "forward_pbr_post.vert.spv": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c",
+        "occluder.vert.spv": "d20392e4249444cf65afbdad2cd01de9c703256d0c4fe912d6b2a309a92bfe3a",
+        "occluder.frag.spv": "e592d45c44f430da47367715bd58068a78d914861e13e5d2df5bf0df55a5775e",
+        "sdf.frag.spv": "44dd5df203134bbbf1757309328400c68db96348a80f86ab48a40cb31cf3b3b6",
+        "sdf.vert.spv": "ae9983b94db66576a2d02fb1e286ac642aca8252887cf39d4d9b82af48f1ebd0",
+        "sdf_authored.frag.spv": "fc623a7a0b9e99aad040c47d34c0ddbd8b6a09a97dbc9d6663780f48626a9942",
+        "validate.comp.spv": "46f0591dac8a4cd15c8a7d8e398226b833ee9b2b3153de65f202842239eb7f26",
+        "material_study.frag.spv": "64dfd0bd1930162b843458332845c471a104b68098d098c174ba007249bea56c",
+        "atmosphere_reflection_prefilter.frag.spv": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d",
+        "atmosphere.vert.spv": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87",
+        "atmosphere.frag.spv": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b",
+        "cloud.vert.spv": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570",
+        "cloud_blue_noise.comp.spv": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb",
+        "cloud_perlin_worley.comp.spv": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572",
+        "cloud_composite_background_depth.frag.spv": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3",
+        "cloud_environment_prefilter.frag.spv": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc",
+        "cloud_march.comp.spv": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1",
+        "cloud_planar_filter.frag.spv": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778",
+        "cloud_weather.comp.spv": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0",
+        "cloud_shadow.comp.spv": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1",
+        "cloud_worley.comp.spv": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0",
+        "cloud_temporal.comp.spv": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759",
+        "surface_cloud_march.comp.spv": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3"
+      },
+      "pbr_materials": {
+        "forward_pbr_post.frag.spv": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526",
+        "forward_pbr.vert.spv": "f67cb5ccbc74393dbb4514f75ab1a7e3623799702aeb323ac86fce7413b33ab6",
+        "atmosphere.vert.spv": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87",
+        "forward_pbr.frag.spv": "62e80fa4b9327d21a6b9b482d1d835e41a6c88e35e5cbc300457cf2dfe1bd6ef",
+        "atmosphere_reflection_prefilter.frag.spv": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d",
+        "atmosphere.frag.spv": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b",
+        "forward_pbr_post.vert.spv": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c",
+        "forward_pbr_shadow_depth.frag.spv": "3cc261f5e66eb04e9c5950c862252e4547755b3ff8b77407a0386dcf83573b47",
+        "forward_pbr_shadow_depth.vert.spv": "dc2654c9ad4dd87d1cfc4d9529f4d3faf71b0915878af207e51d2f80c9d4bfbe",
+        "hdr_color_pyramid.frag.spv": "009d0e7e29cec32f9ca68217653a672d1450c99a7d783eba479095acc9281d90",
+        "forward_pbr_skybox.frag.spv": "fbfb5a5d54683314ff93827b9ac174456ed504df849bab7aad97b148ccc197de",
+        "forward_pbr_skybox.vert.spv": "21d1aa6e81e63bf885e48899a8853eb793bbcce08211bed986ea5c9c58e9d83e",
+        "cloud.vert.spv": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570",
+        "cloud_blue_noise.comp.spv": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb",
+        "cloud_environment_prefilter.frag.spv": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc",
+        "cloud_perlin_worley.comp.spv": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572",
+        "cloud_composite_background_depth.frag.spv": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3",
+        "cloud_march.comp.spv": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1",
+        "cloud_planar_filter.frag.spv": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778",
+        "cloud_shadow.comp.spv": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1",
+        "cloud_weather.comp.spv": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0",
+        "cloud_temporal.comp.spv": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759",
+        "cloud_worley.comp.spv": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0",
+        "surface_cloud_march.comp.spv": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3"
+      }
+    }
+  }
+}

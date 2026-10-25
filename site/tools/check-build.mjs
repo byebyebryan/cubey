@@ -13,7 +13,7 @@ for(const [name,html] of pages){
   if(/LAYOUT PLACEHOLDER|DESIGN MOCKUP|Choose a scene|localhost:|starship:|outputs\/cubey-site/i.test(html))errors.push(`${name}: development content leaked`);
   const ids=[...html.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);
   if(new Set(ids).size!==ids.length)errors.push(`${name}: duplicate anchor IDs`);
-  for(const match of html.matchAll(/\s(href|src|poster|data-image|data-mesh|data-sdf)="([^"]+)"/g)){
+  for(const match of html.matchAll(/\s(href|src|poster|data-image|data-mesh|data-sdf|data-poster)="([^"]+)"/g)){
     const value=match[2].replaceAll('&amp;','&');
     if(/^(?:https?:|mailto:|data:)/.test(value))continue;
     refs++;

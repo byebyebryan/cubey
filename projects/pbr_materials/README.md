@@ -7,6 +7,20 @@ The [reviewed plan](../../docs/notes/pbr-material-demo-plan.md) and
 
 ## Presentation
 
+The [public material showcase](https://dev.byebyebryan.com/cubey/demos/materials/)
+puts all twelve spheres in one view, with moving clouds and matching forward
+PBR / SDF dusk and dawn films. Run either forward preset:
+
+```sh
+build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/presentation/library-dusk.json
+build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/presentation/library-dawn.json
+```
+
+See the [matched native presentation guide](presets/presentation/README.md) for
+camera, lighting, recipe coordinates and optical limits.
+
+### Frozen four-specimen study
+
 [![Four contrasting material specimens](../../docs/media/material-workshops/pbr-poster.png)](../../docs/media/material-workshops/pbr.mp4)
 
 Wood, rusted steel, woven cloth and bronze share one frozen low-sun environment

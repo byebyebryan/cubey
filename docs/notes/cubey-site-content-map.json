@@ -597,19 +597,20 @@
       "title": "Forward PBR materials",
       "owner": "projects/pbr_materials",
       "dimension": "3D",
-      "summary": "Twelve procedural recipes on mesh specimens, from smooth and frosted glass to wood, metal, cloth and stone.",
+      "summary": "All twelve shared materials in one sphere lineup, under moving clouds and dusk or dawn light.",
       "cues": [
         "Forward PBR",
         "Mesh specimens",
         "Shared recipes"
       ],
       "variants": [
-        "Full twelve-material library",
-        "Lighting study"
+        "Twelve-sphere lineup",
+        "Forward PBR / SDF comparison",
+        "Dusk / dawn"
       ],
-      "source": "projects/pbr_materials/README.md",
-      "media": "docs/media/material-workshops/pbr.mp4",
-      "poster": "docs/media/material-workshops/pbr-poster.png",
+      "source": "projects/pbr_materials/presets/presentation/README.md",
+      "media": "site/public/media/mesh-materials-film.mp4",
+      "poster": "site/public/media/mesh-materials.webp",
       "related": [
         "sdf-materials",
         "gltf-layers",
@@ -637,30 +638,31 @@
     {
       "id": "sdf-materials",
       "family": "materials",
-      "title": "Materials through a solid",
+      "title": "Four materials, one cut",
       "owner": "projects/sdf",
       "dimension": "3D",
-      "summary": "A subtraction exposes grain through the inside of a wood field.",
+      "summary": "Wood, marble, rusted steel and clear glass reveal their interiors through the same saved subtraction.",
       "cues": [
         "Continuous material field",
         "SDF cuts",
         "Shared recipes"
       ],
       "variants": [
+        "Four-material cut board",
         "Solid",
         "Cut preview",
         "Through-cut"
       ],
       "source": "projects/sdf/README.md",
-      "media": "docs/media/material-workshops/sdf.mp4",
-      "poster": "docs/media/material-workshops/sdf-poster.png",
+      "media": "site/public/media/sdf-materials-film.mp4",
+      "poster": "site/public/media/sdf-materials.webp",
       "related": [
         "mesh-materials",
         "guardian",
         "atmosphere-light"
       ],
       "kind": "demo",
-      "boundary": "A distinct SDF material route, not a mesh rendering mode or general rough-refraction solver.",
+      "boundary": "Separate material bodies share a cut sequence. Glass uses bounded environment-only transport; neighboring bodies are not refracted.",
       "extensions": [],
       "asset_status": "selected-native-web-media",
       "planned_route": "/demos/materials/#sdf-materials",

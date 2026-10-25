@@ -2,6 +2,25 @@
 
 ## Material presentation
 
+The [public material showcase](https://dev.byebyebryan.com/cubey/demos/materials/)
+includes twelve spheres under moving clouds and dusk/dawn light, matched to
+the forward PBR lineup. A separate cut board shows wood, marble, rusted steel
+and clear glass together:
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/presentation/library-dusk.json
+build/release/projects/sdf/sdf --config projects/sdf/presets/presentation/library-dawn.json
+build/release/projects/sdf/sdf --config projects/sdf/presets/presentation/cut-roster.json
+```
+
+These V3 scenes explicitly select the bounded `environment_only_gallery` path.
+Bodies have separate conservative bounds; glass resolves to the environment
+after its own interfaces rather than refracting other materials. See the
+[matched presentation guide](../pbr_materials/presets/presentation/README.md)
+for restrictions, capture settings and the authoring generator.
+
+### Frozen wood study
+
 [![A through-cut reveals solid wood grain](../../docs/media/material-workshops/sdf-poster.png)](../../docs/media/material-workshops/sdf.mp4)
 
 A saved body/cut history exposes the wood field on a new interior, followed by

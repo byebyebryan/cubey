@@ -41,13 +41,39 @@ window.addEventListener('pagehide',()=>pauseFilms());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseFilms();});
 
 for (const library of document.querySelectorAll('[data-material-library]')) {
-  const controls=library.querySelector('[data-renderer-controls]');
+  const controls=library.querySelector('[data-library-controls]');
   const buttons=[...library.querySelectorAll('[data-renderer]')];
+  const phaseButtons=[...library.querySelectorAll('[data-phase]')];
   const caption=library.querySelector('[data-renderer-caption]');
-  const choose=(renderer,save=true)=>{
-    pauseFilms();
+  const video=library.querySelector('[data-library-film]');
+  const source=video.querySelector('source');
+  const play=video.parentElement.querySelector('[data-play]');
+  const variants=[...library.querySelectorAll('[data-material-variant]')];
+  let renderer='mesh',phase='dusk',resume;
+  const choose=(nextRenderer,nextPhase,save=true)=>{
+    const variant=variants.find(v=>v.dataset.rendererKey===nextRenderer&&v.dataset.phaseKey===nextPhase);
+    if(!variant)return;
+    const time=nextPhase===phase&&!video.ended?video.currentTime:0;
+    const playing=!video.paused&&!video.ended;
+    renderer=nextRenderer;phase=nextPhase;
     const label=renderer==='sdf'?'SDF ray marching':'Forward PBR';
     for(const button of buttons)button.setAttribute('aria-pressed',String(button.dataset.renderer===renderer));
+    for(const button of phaseButtons)button.setAttribute('aria-pressed',String(button.dataset.phase===phase));
+    if(source.getAttribute('src')!==variant.getAttribute('href')){
+      pauseFilms();
+      if(resume)video.removeEventListener('loadedmetadata',resume);
+      source.src=variant.getAttribute('href');
+      video.poster=variant.dataset.poster;
+      video.setAttribute('aria-label',`Twelve material spheres · ${label} · ${phase}`);
+      library.querySelector('[data-library-download]').href=variant.href;
+      play.hidden=false;play.textContent='Watch film';
+      resume=async()=>{
+        video.currentTime=Math.min(time,Math.max(0,video.duration-.04));
+        if(playing){try{await video.play();}catch{play.hidden=false;}}
+      };
+      video.addEventListener('loadedmetadata',resume,{once:true});
+      video.load();
+    }
     for(const image of library.querySelectorAll('[data-material-image]')){
       image.src=image.dataset[renderer];
       image.alt=`${image.dataset.label} · ${label} specimen`;
@@ -55,10 +81,12 @@ for (const library of document.querySelectorAll('[data-material-library]')) {
       link.href=link.dataset[renderer];
       link.setAttribute('aria-label',`Open ${image.dataset.label} · ${label}`);
     }
-    caption.textContent=`${label} · native ${renderer==='sdf'?'implicit-solid':'mesh'} specimens`;
-    if(save){const url=new URL(location.href);url.searchParams.set('renderer',renderer);url.hash=library.id;history.replaceState(null,'',url);}
+    caption.textContent=`${label} · ${phase} · native recorded playback`;
+    if(save){const url=new URL(location.href);url.searchParams.set('renderer',renderer);url.searchParams.set('light',phase);url.hash=library.id;history.replaceState(null,'',url);}
   };
   controls.hidden=false;
-  for(const button of buttons)button.addEventListener('click',()=>choose(button.dataset.renderer));
-  if(new URLSearchParams(location.search).get('renderer')==='sdf')choose('sdf',false);
+  for(const button of buttons)button.addEventListener('click',()=>choose(button.dataset.renderer,phase));
+  for(const button of phaseButtons)button.addEventListener('click',()=>choose(renderer,button.dataset.phase));
+  const saved=new URLSearchParams(location.search);
+  choose(saved.get('renderer')==='sdf'?'sdf':'mesh',saved.get('light')==='dawn'?'dawn':'dusk',false);
 }

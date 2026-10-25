@@ -5,17 +5,17 @@ import Chapter from '../../components/Chapter.astro';
 import Media from '../../components/Media.astro';
 import Picture from '../../components/Picture.astro';
 import Connection from '../../components/Connection.astro';
-import WoodComparison from '../../components/WoodComparison.astro';
+import MaterialCutComparison from '../../components/MaterialCutComparison.astro';
 import MaterialLibrary from '../../components/MaterialLibrary.astro';
 import {subjects,familyEntries,asset,selected,sourceURL,media} from '../../data/catalog';
 import {url} from '../../lib/urls';
 export function getStaticPaths(){return subjects.filter(f=>!['simulation','sdf'].includes(f.id)).map(subject=>({params:{subject:subject.id},props:{subject}}));}
 const {subject}=Astro.props;const path=`/demos/${subject.id}/`;const items=familyEntries(subject.id);
-const chapterItems=items.filter(e=>e.id!=='day-night');
+const chapterItems=items.filter(e=>e.id!=='day-night'&&e.id!=='mesh-materials');
 const titles:Record<string,string>={terrain:'Land, then flow.',ocean:'Open water.',atmosphere:'Light. Clouds. A turning sky.',materials:'Surfaces with character.',gltf:'Imported scenes, in detail.'};
 const intros:Record<string,string>={terrain:'Land first. Then water finds its way.',ocean:'Spectral waves, persistent whitecaps and an open horizon.',atmosphere:'Scattering and light, cloud fields in motion, then the night sky and a complete solar cycle.',materials:'Twelve procedural materials, shared between forward PBR and SDF ray marching.',gltf:'A native glTF importer and renderer, explored through specific visual features.'};
 const chapterPage=['terrain','atmosphere','materials','gltf'].includes(subject.id);
-const filmCaptions:Record<string,string>={'terrain-water':'Recorded SynxFlow water fields, with an independent artistic lighting clock.','mesh-materials':'Forward PBR · a lighting study with wood, rust, cloth and bronze.','sdf-materials':'SDF ray marching · a cut through a continuous wood field.','atmosphere-light':'Low sun · direct scattering through the clear atmosphere.','clouds':'Broken cumulus · accelerated cloud drift under a fixed afternoon sun.','night-sky':'Procedural stars and Milky Way · native sky rendering.','gltf-layers':'Barn Lamp · authored anisotropy and clearcoat on an imported material.','gltf-optics':'Dispersion Test · transmission, volume thickness, IOR and dispersion.','gltf-motion':'Fox · the Walk clip demonstrates core animation and skinning.','gltf-textures':'Texture Transform Multi Test · authored UV transforms across different surfaces.'};
+const filmCaptions:Record<string,string>={'terrain-water':'Recorded SynxFlow water fields, with an independent artistic lighting clock.','sdf-materials':'Wood, marble, rusted steel and clear glass · one saved cut sequence.','atmosphere-light':'Low sun · direct scattering through the clear atmosphere.','clouds':'Broken cumulus · accelerated cloud drift under a fixed afternoon sun.','night-sky':'Procedural stars and Milky Way · native sky rendering.','gltf-layers':'Barn Lamp · authored anisotropy and clearcoat on an imported material.','gltf-optics':'Dispersion Test · transmission, volume thickness, IOR and dispersion.','gltf-motion':'Fox · the Walk clip demonstrates core animation and skinning.','gltf-textures':'Texture Transform Multi Test · authored UV transforms across different surfaces.'};
 ---
 <Layout title={subject.title} path={path} description={intros[subject.id]}>
   <PageTitle subject={subject.title} title={titles[subject.id]} intro={intros[subject.id]} path={path}/>
@@ -23,7 +23,7 @@ const filmCaptions:Record<string,string>={'terrain-water':'Recorded SynxFlow wat
     <nav class="chapter-nav" aria-label="On this page">{subject.id==='materials'&&<a href="#material-library">All twelve materials</a>}{chapterItems.map(e=><a href={`#${e.id}`}>{e.title}</a>)}</nav>
     {subject.id==='materials'&&<MaterialLibrary path={path}/>}
     {chapterItems.map((entry,i)=><Chapter entry={entry} path={path} number={i+1} caption={filmCaptions[entry.id]}>
-      {entry.id==='sdf-materials' && <WoodComparison path={path}/>}
+      {entry.id==='sdf-materials' && <MaterialCutComparison path={path}/>}
       {entry.id==='night-sky'&&<div class="supporting-motion" id="day-night"><h3>Day, night, and daylight again.</h3><p class="note">An accelerated full solar day: afternoon, sunset, stars and returning daylight.</p><Media entry="day-night" path={path} title="The solar cycle" caption="Twenty-four solar hours in twelve seconds · native recorded playback."/></div>}
       {entry.id==='gltf-motion' && media.selections['gltf-morph'] && <div class="supporting-motion"><h3>A separate morph-target example.</h3><Media entry="gltf-morph" path={path} title="Animated morph cube" caption="Animated Morph Cube · a separate target-deformation example."/></div>}
       {selected(entry.id).gallery && <div class="gallery">{selected(entry.id).gallery!.map(id=><figure><Picture id={id} path={path} alt={asset(id).caption}/><figcaption>{asset(id).caption}</figcaption></figure>)}</div>}
