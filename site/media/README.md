@@ -27,6 +27,14 @@ The old Damaged Helmet composite is not included in the selected website media.
 
 ## Capture identities
 
+About also embeds two author-selected recordings of the original OpenGL Cubey
+from YouTube. [Their source records](sources/legacy-youtube.json) retain the video
+IDs, original titles, author and verified upload dates. The 2018 upload dates do
+not establish capture dates or code revisions. These externally hosted players
+use YouTube's privacy-enhanced embed domain, load lazily without autoplay, and
+retain direct watch links. They are separate from the current native captures
+and their MP4/hover-preview ledger; no video was downloaded or reencoded.
+
 Current captures have command/binary/source receipts under `receipts/`, referenced
 per asset by the ledger. A source revision is populated only when the capture's
 evidence records it. Historical media with an unknown capture revision keeps
