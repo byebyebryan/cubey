@@ -1,5 +1,6 @@
 ---
 import Picture from './Picture.astro';
+import PlayButton from './PlayButton.astro';
 import {asset, selected} from '../data/catalog';
 import {url} from '../lib/urls';
 interface Props { entry: string; path: string; title: string; eager?: boolean; caption?: string; compact?: boolean }
@@ -7,6 +8,6 @@ const {entry,path,title,eager=false,caption,compact=false}=Astro.props;
 const s=selected(entry); const poster=asset(s.poster); const film=s.film?asset(s.film):undefined;
 ---
 <figure class="scene-media">
-  {film ? <div class="movie"><video controls playsinline preload="none" poster={url(poster.file,path)} width={film.width} height={film.height} aria-label={`${title} — native recorded film`}><source src={url(film.file,path)} type="video/mp4" /><p>Your browser cannot play this film. <a href={url(film.file,path)}>Download the MP4</a>.</p></video><button class="play-native" data-play hidden aria-label={`Play ${title}`}>Watch film</button></div> : <Picture id={s.poster} path={path} alt={title} eager={eager} />}
+  {film ? <div class="movie"><video controls playsinline preload="none" poster={url(poster.file,path)} width={film.width} height={film.height} aria-label={`${title} — native recorded film`}><source src={url(film.file,path)} type="video/mp4" /><p>Your browser cannot play this film. <a href={url(film.file,path)}>Download the MP4</a>.</p></video><PlayButton label={`Play ${title}`}/></div> : <Picture id={s.poster} path={path} alt={title} eager={eager} />}
   {!compact && (caption || !poster.credit.label.startsWith('Cubey original')) && <figcaption class="media-foot">{caption && <span>{caption} </span>}{!poster.credit.label.startsWith('Cubey original') && <a href={url(`/credits/#${poster.id}`,path)}>{poster.credit.label} ↗</a>}</figcaption>}
 </figure>

@@ -1,5 +1,6 @@
 ---
 import catalog from '../../../assets/materials/catalog.json';
+import PlayButton from './PlayButton.astro';
 import {asset} from '../data/catalog';
 import {url} from '../lib/urls';
 interface Props {path:string}
@@ -24,7 +25,7 @@ const poster=asset('mesh-materials');const film=asset('mesh-materials-film');
     <button class="filter" data-phase="dusk" aria-pressed="true">Dusk</button>
     <button class="filter" data-phase="dawn" aria-pressed="false">Dawn</button>
   </div></div>
-  <figure class="scene-media library-stage"><div class="movie"><video data-library-film controls playsinline preload="none" poster={url(poster.file,path)} width={film.width} height={film.height} aria-label="Twelve material spheres · Forward PBR · dusk"><source src={url(film.file,path)} type="video/mp4"/><p><a data-library-download href={url(film.file,path)}>Download the film</a>.</p></video><button class="play-native" data-play hidden aria-label="Play the material lighting study">Watch film</button></div><figcaption class="media-foot" data-renderer-caption aria-live="polite">Forward PBR · dusk · native recorded playback</figcaption></figure>
+  <figure class="scene-media library-stage"><div class="movie"><video data-library-film controls playsinline preload="none" poster={url(poster.file,path)} width={film.width} height={film.height} aria-label="Twelve material spheres · Forward PBR · dusk"><source src={url(film.file,path)} type="video/mp4"/><p><a data-library-download href={url(film.file,path)}>Download the film</a>.</p></video><PlayButton label="Play the material lighting study"/></div><figcaption class="media-foot" data-renderer-caption aria-live="polite">Forward PBR · dusk · native recorded playback</figcaption></figure>
   {variants.map(v=><a hidden data-material-variant data-renderer-key={v.renderer} data-phase-key={v.phase} href={url(asset(`${v.id}-film`).file,path)} data-poster={url(asset(v.id).file,path)}>{v.renderer} · {v.phase}</a>)}
   <p class="note">Same sphere layout, camera, light and cloud timing. Glass reveals the different transport paths. Cloud drift is accelerated.</p>
   <a class="source-link" href="https://github.com/byebyebryan/cubey/blob/main/projects/pbr_materials/presets/presentation/README.md">Run the matched scenes ↗</a>

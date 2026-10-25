@@ -8,10 +8,10 @@ for (const video of document.querySelectorAll('video')) {
     button.addEventListener('click', async () => {
       pauseFilms(video);
       try { await video.play(); button.hidden=true; }
-      catch { button.textContent='Play film'; }
+      catch { button.hidden=false; }
     });
     video.addEventListener('play',()=>{pauseFilms(video);button.hidden=true;});
-    video.addEventListener('ended',()=>{button.hidden=false;button.textContent='Watch again';});
+    video.addEventListener('ended',()=>{button.hidden=false;});
   } else video.addEventListener('play',()=>pauseFilms(video));
 }
 for (const group of document.querySelectorAll('[data-comparison]')) {
@@ -66,7 +66,7 @@ for (const library of document.querySelectorAll('[data-material-library]')) {
       video.poster=variant.dataset.poster;
       video.setAttribute('aria-label',`Twelve material spheres · ${label} · ${phase}`);
       library.querySelector('[data-library-download]').href=variant.href;
-      play.hidden=false;play.textContent='Watch film';
+      play.hidden=false;
       resume=async()=>{
         video.currentTime=Math.min(time,Math.max(0,video.duration-.04));
         if(playing){try{await video.play();}catch{play.hidden=false;}}
