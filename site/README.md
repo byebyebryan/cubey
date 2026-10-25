@@ -30,8 +30,9 @@ with `npm run preview -- --allowed-hosts your-hostname`.
 The implementation uses authored Astro components and plain CSS/JavaScript.
 Films play directly in home, subject-directory, simulation and SDF overview
 cards as well as scene pages. Navigation links stay outside native player
-controls; starting a film pauses the others. Guardian and Robot use matching
-4:3 presentation frames, with complete native video frames retained in playback.
+controls; starting a film pauses the others. Guardian and Robot use the common
+16:9 presentation frames. Native images and videos fit without cropping the
+subjects or changing their proportions.
 
 The materials page shows all twelve shared recipes, with a Forward PBR / SDF
 renderer switch and glass presented first. The existing four-specimen lighting

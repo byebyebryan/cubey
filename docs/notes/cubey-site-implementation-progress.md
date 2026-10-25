@@ -262,3 +262,13 @@ deployment or production-performance claim.
   the retained 600 KB policy. No required implementation changes remain.
   The following documentation-only closeout leaves deployed site inputs equal
   to the published commit. Native source and qualification scope are unchanged.
+
+### Common demo frames — 2026-10-24
+
+User review supersedes the earlier SDF-only 4:3 framing: Guardian and Robot now
+use the common 16:9 containers on Home, About, collections and detail pages.
+Native captures fit with `contain`, keeping complete subjects and their original
+proportions. The material swatches retain their separate square-grid format.
+Astro/content/build checks pass; fifteen browser cases across 320, 390 and 1280
+pixels confirm 16:9 media frames without overflow. No native source or media
+bytes change.
