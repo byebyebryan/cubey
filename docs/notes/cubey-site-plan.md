@@ -46,13 +46,19 @@ API/contracts, qualification and raw history in their repository authorities.
 
 ## Project identity and editorial tone
 
-The author's framing is a personal graphics/simulation playground and workshop.
-Cubey began by reviving an old engine and graphics experiments, following earlier
-learning in C++/OpenGL, simulation and rendering on a small foundation. Working
-with coding agents has expanded both the scope and the development process:
-build a broader foundation, explore a subject, then expand or refine that
-foundation in response. Projects such as Atmosphere also contribute reusable
-capabilities back to the foundation.
+The author's framing is a personal graphics/simulation playground and workshop,
+and the engine that supports it. Today's Cubey is a new project in the spirit of
+the original, rather than a restoration of its code. The original C++/OpenGL
+learning project already followed the same feedback loop: build an engine to
+try an idea, learn from the experiment, then improve the engine.
+
+The reboot brings a decade of software engineering experience, including more
+than five years in graphics, a Vulkan renderer and collaboration with Codex.
+Familiar subjects such as fluid simulation and SDF still invite exploration.
+Codex makes it practical to follow more of those interests in depth and refine
+the supporting foundation. Projects such as Atmosphere also contribute reusable
+capabilities back to the engine. Keep the continuity of purpose distinct from
+code continuity; do not suggest that careful engineering began only with agents.
 
 Topic selection remains curiosity-led. Familiar subjects such as glTF and fluid
 simulation sit alongside whatever caught the author's interest: ocean, clouds,

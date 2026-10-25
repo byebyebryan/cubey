@@ -951,11 +951,12 @@
   ],
   "interaction_policy": "Start with visible media and ordinary links. Proposed variants are a capture/editorial backlog, not automatic public controls. Keep only useful, media-backed comparisons.",
   "editorial_identity": {
-    "kind": "Personal graphics and simulation workshop",
-    "origin": "Reviving an old engine and graphics experiments after earlier C++/OpenGL learning",
+    "kind": "Personal graphics and simulation workshop and its supporting engine",
+    "origin": "A new project in the spirit of the original Cubey, where C++/OpenGL learning followed an engine-and-experiment feedback loop",
+    "reboot": "Return with a decade of software engineering, more than five years in graphics, Vulkan and Codex; familiar subjects such as fluid simulation and SDF remain worth exploring",
     "direction": "Curiosity-led subject selection; careful implementation and review",
-    "collaboration": "The author chooses interests and direction and reviews results; coding agents are development collaborators",
-    "foundation": "Experiments draw on and contribute back to a growing shared foundation",
+    "collaboration": "The author chooses interests and direction and reviews results; Codex makes broader and deeper exploration practical as a coding collaborator",
+    "foundation": "Building the engine enables experiments; experiments expose what to improve in the engine. This relationship was present in the original Cubey too",
     "method": "Understand and apply established techniques, check assumptions and results, refine, restart or cut approaches as needed",
     "presentation_order": [
       "Show current visual work",

@@ -1,7 +1,7 @@
 ---
 import { url } from '../lib/urls';
 interface Props { title: string; description?: string; path: string }
-const {title,description='A personal graphics and simulation workshop. Explore native rendering, fluids, landscapes, sky, materials and authored forms.',path}=Astro.props;
+const {title,description='A personal graphics and simulation workshop, and the engine behind it. Explore rendering, fluids, landscapes, sky, materials and authored forms.',path}=Astro.props;
 const canonical=Astro.site ? new URL((import.meta.env.BASE_URL+path.replace(/^\//,'')).replace(/\/+/g,'/'),Astro.site) : undefined;
 ---
 <!doctype html>

@@ -40,11 +40,13 @@ duplicate Terrain child pages and hidden feature-tour modes.
 
 ## Editorial framing
 
-Cubey is the author's personal graphics/simulation workshop: an old-engine
-revival and learning project whose scope and working process grew with coding
-agents. Interests drive the experiments; experiments and the shared foundation
-improve one another. The subject structure organises today's collection, not a
-predetermined roadmap or curriculum.
+Cubey is the author's personal graphics/simulation workshop and its supporting
+engine. The current project is a spiritual successor to the earlier C++/OpenGL
+learning project. Both follow the same engine/experiment feedback loop. The
+reboot brings more professional experience, Vulkan and Codex, making broader
+and deeper exploration practical. Interests drive the experiments; experiments
+and the shared engine improve one another. The subject structure organises
+today's collection, not a predetermined roadmap or curriculum.
 
 Keep demos as the main way in. Home adds a brief personal introduction; About
 explains the origin, coding-agent collaboration and the care taken with
