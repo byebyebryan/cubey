@@ -1,19 +1,78 @@
+const previewControllers=[];
+const films=()=>[...document.querySelectorAll('video:not([data-hover-clip])')];
+const stopPreviews=()=>{for(const controller of previewControllers)controller.stop();};
 const pauseFilms = (except) => {
-  for (const video of document.querySelectorAll('video')) if (video !== except) video.pause();
+  stopPreviews();
+  for (const video of films()) if (video !== except) video.pause();
 };
-for (const video of document.querySelectorAll('video')) {
-  const button=video.parentElement.querySelector('[data-play]');
-  if (button) {
-    button.hidden=false;
-    button.addEventListener('click', async () => {
-      pauseFilms(video);
-      try { await video.play(); button.hidden=true; }
-      catch { button.hidden=false; }
-    });
-    video.addEventListener('play',()=>{pauseFilms(video);button.hidden=true;});
-    video.addEventListener('ended',()=>{button.hidden=false;});
-  } else video.addEventListener('play',()=>pauseFilms(video));
+for (const video of films())video.addEventListener('play',()=>pauseFilms(video));
+
+const hoverCapability=matchMedia('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+const canPreview=()=>hoverCapability.matches&&!navigator.connection?.saveData;
+const manualPlayback=()=>films().some(v=>!v.paused&&!v.ended);
+const previewVisibility=new IntersectionObserver(entries=>{
+  for(const entry of entries)
+    previewControllers.find(c=>c.element===entry.target)?.setVisible(entry.isIntersecting);
+});
+for(const element of document.querySelectorAll('[data-hover-preview]')){
+  const shell=element.querySelector('[data-preview-shell]');
+  const trigger=element.querySelector('[data-preview-trigger]');
+  const clip=element.querySelector('[data-hover-clip]');
+  const source=clip.querySelector('source');
+  const figure=element.querySelector(':scope > .scene-media');
+  const film=figure.querySelector('video');
+  const hoverTarget=element.closest('article')||element;
+  let timer,hovered=false,visible=false,activated=false,generation=0;
+  const stop=()=>{
+    clearTimeout(timer);
+    generation++;
+    clip.pause();
+    clip.hidden=true;
+    element.classList.remove('is-previewing');
+  };
+  const refresh=()=>{
+    stop();
+    const previewMode=canPreview()&&!activated;
+    shell.hidden=!previewMode;
+    figure.hidden=previewMode;
+  };
+  const leave=()=>{hovered=false;stop();};
+  const start=async()=>{
+    if(!hovered||!visible||activated||!canPreview()||manualPlayback()||document.hidden)return;
+    stopPreviews();
+    const ticket=++generation;
+    if(!source.hasAttribute('src')){
+      source.src=source.dataset.src;
+      clip.load();
+    }
+    if(clip.readyState>0)clip.currentTime=0;
+    clip.muted=true;
+    clip.hidden=false;
+    try{
+      await clip.play();
+      if(ticket===generation)element.classList.add('is-previewing');
+    }catch{if(ticket===generation)stop();}
+  };
+  hoverTarget.addEventListener('pointerenter',event=>{
+    if(event.pointerType==='touch'||activated||!canPreview())return;
+    hovered=true;
+    clearTimeout(timer);
+    timer=setTimeout(start,350);
+  });
+  hoverTarget.addEventListener('pointerleave',leave);
+  trigger.addEventListener('click',()=>{
+    activated=true;
+    refresh();
+    film.focus({preventScroll:true});
+    film.play().catch(()=>{}); // Native controls remain available if play is declined.
+  });
+  film.addEventListener('play',()=>{activated=true;refresh();});
+  previewControllers.push({element,stop,refresh,setVisible:value=>{visible=value;if(!visible)leave();}});
+  previewVisibility.observe(element);
+  refresh();
 }
+hoverCapability.addEventListener('change',()=>{for(const c of previewControllers)c.refresh();});
+navigator.connection?.addEventListener?.('change',()=>{for(const c of previewControllers)c.refresh();});
 for (const group of document.querySelectorAll('[data-comparison]')) {
   const image=group.querySelector('[data-comparison-image]');
   const caption=group.querySelector('[data-comparison-caption]');
@@ -39,6 +98,7 @@ for (const group of document.querySelectorAll('[data-comparison]')) {
 }
 window.addEventListener('pagehide',()=>pauseFilms());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseFilms();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'||event.key==='Tab')stopPreviews();});
 
 for (const library of document.querySelectorAll('[data-material-library]')) {
   const controls=library.querySelector('[data-library-controls]');
@@ -47,7 +107,6 @@ for (const library of document.querySelectorAll('[data-material-library]')) {
   const caption=library.querySelector('[data-renderer-caption]');
   const video=library.querySelector('[data-library-film]');
   const source=video.querySelector('source');
-  const play=video.parentElement.querySelector('[data-play]');
   const variants=[...library.querySelectorAll('[data-material-variant]')];
   let renderer='mesh',phase='dusk',resume;
   const choose=(nextRenderer,nextPhase,save=true)=>{
@@ -66,10 +125,9 @@ for (const library of document.querySelectorAll('[data-material-library]')) {
       video.poster=variant.dataset.poster;
       video.setAttribute('aria-label',`Twelve material spheres · ${label} · ${phase}`);
       library.querySelector('[data-library-download]').href=variant.href;
-      play.hidden=false;
       resume=async()=>{
         video.currentTime=Math.min(time,Math.max(0,video.duration-.04));
-        if(playing){try{await video.play();}catch{play.hidden=false;}}
+        if(playing){try{await video.play();}catch{}}
       };
       video.addEventListener('loadedmetadata',resume,{once:true});
       video.load();

@@ -10,7 +10,7 @@
     "dev": "astro dev --host 0.0.0.0",
     "build": "astro build",
     "preview": "astro preview --host 0.0.0.0",
-    "check": "astro check && node tools/check-content.mjs",
+    "check": "astro check && node --test tools/hover-preview.test.mjs && node tools/check-content.mjs",
     "verify": "npm run check && npm run build && node tools/check-build.mjs"
   },
   "dependencies": {

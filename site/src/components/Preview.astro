@@ -7,8 +7,14 @@ interface Props { entry: string; path: string; title?: string; eager?: boolean }
 const {entry,path,title=byId[entry]?.title||entry,eager=false}=Astro.props;
 const selection=selected(entry);
 const poster=asset(selection.poster);
+const preview=selection.preview&&!eager?asset(selection.preview):undefined;
 ---
-<div class="preview-media">
+<div class="preview-media" data-hover-preview={preview?true:undefined}>
+  {preview&&<div class="hover-preview-shell" data-preview-shell hidden><button class="hover-preview-trigger" type="button" data-preview-trigger aria-label={`Play ${title}`}>
+    <Picture id={selection.poster} path={path} alt=""/>
+    <video class="hover-preview-clip" data-hover-clip muted playsinline loop preload="none" width={preview.width} height={preview.height} aria-hidden="true" tabindex="-1" hidden><source data-src={url(preview.file,path)} type="video/mp4"/></video>
+    <span class="hover-preview-cue" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+  </button></div>}
   {selection.film ? <Media entry={entry} path={path} title={title} eager={eager} compact/> : <a class="preview-link" href={url(entryPath(byId[entry]),path)} aria-label={`Explore ${title}`}><Picture id={selection.poster} path={path} alt={title} eager={eager}/></a>}
 </div>
 {!poster.credit.label.startsWith('Cubey original')&&<p class="credit-caption"><a href={url(`/credits/#${poster.id}`,path)}>{poster.credit.label} ↗</a></p>}

@@ -34,6 +34,32 @@ controls; starting a film pauses the others. Guardian and Robot use the common
 16:9 native landscape recaptures. Native images and videos fit without cropping the
 subjects or changing their proportions.
 
+A small hover-preview pilot covers water, fire, ocean, clouds and materials in
+browsing cards. On a fine hover pointer, a 350 ms dwell requests a separate,
+silent 640x360 / 18 fps / 3.5-second excerpt. The five files total 620,898 bytes;
+none is over the 400 KB preview budget. Clicking replaces the tile with the full
+native player inline. Scene players and the home hero use native controls from
+the start, without a separate play overlay. Touch, reduced-motion and supported
+data-saving preferences retain native players. With JavaScript disabled, the
+same native players remain available.
+
+Preview URLs are assigned only after hover intent. Leaving the card, scrolling
+it away, hiding the tab, Escape/Tab, or starting full playback stops previews.
+An explicitly playing film blocks hover playback. The encoded preview remains
+cached for reuse. `node --test tools/hover-preview.test.mjs` checks these policies
+with a controlled clock/media harness; browser review checks real playback.
+
+Regenerate/import the pilot from existing selected films using a fresh staging
+directory, preserving earlier outputs:
+
+```sh
+python3 site/tools/prepare-hover-previews.py --output outputs/hover-preview-review --import-media
+```
+
+`preview` selections in the media ledger carry their parent film identity. An
+updated parent requires regenerated previews. Exact trims, encodes and hashes
+are recorded in [the preview receipt](media/receipts/hover-previews.json).
+
 The materials page shows all twelve spheres together, with Forward PBR / SDF
 and dusk / dawn controls. Renderer changes preserve the lighting phase and
 playhead; changing phase starts its film from the beginning. Individual frozen

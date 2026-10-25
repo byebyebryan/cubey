@@ -14,7 +14,7 @@ export interface Asset {
   credit: { label: string; url: string; author?: string; source?: string };
   provenance: Record<string, unknown>;
 }
-export interface Selection { poster: string; film?: string; gallery?: string[] }
+export interface Selection { poster: string; film?: string; preview?: string; gallery?: string[] }
 export const media = ledger as unknown as { assets: Asset[]; selections: Record<string, Selection> };
 export const assets = Object.fromEntries(media.assets.map(a => [a.id, a]));
 export const subjects = design.families;

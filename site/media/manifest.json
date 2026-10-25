@@ -1327,6 +1327,121 @@
       }
     },
     {
+      "id": "preview-clouds",
+      "file": "/media/preview-clouds.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "987d4fd3294195d201756917181e98aea1ce24772028518c589526d243d4f142",
+      "bytes": 67096,
+      "caption": "Short silent preview. Broken cumulus with accelerated cloud drift.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/clouds-film.mp4",
+        "sourceSha256": "be88fafa0ecb9c085911d5858db5b994940c597969f4fb32430fa2a9229a746d",
+        "sourceRevision": "492fac845b80cf3be0b3ca6df24894ebb66afbee",
+        "parentAsset": "clouds-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "preview-fire-3d",
+      "file": "/media/preview-fire-3d.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "759c24b8b6f2586b4c5b751b9801d619e7c6092783ee5c6af66c1d0cef416d3a",
+      "bytes": 56999,
+      "caption": "Short silent preview. Flame and smoke evolve as daylight falls away.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/fire-3d-film.mp4",
+        "sourceSha256": "3fc22accb5084a27acd7435d0ffbabbd597229cc3dcb555e83f831b1fa215348",
+        "sourceRevision": null,
+        "parentAsset": "fire-3d-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "preview-mesh-materials",
+      "file": "/media/preview-mesh-materials.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "0b0124dbea4adb384072fa26d161d0f7f12a607983cfa21fbac1ec51c0079356",
+      "bytes": 77091,
+      "caption": "Short silent preview. Forward PBR: twelve spheres through dusk, with accelerated cloud drift.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/mesh-materials-film.mp4",
+        "sourceSha256": "0660d07b25613c817310636f1113c51516baa3b4aef82c0b0a340d5c1e1e7f18",
+        "sourceRevision": "42b7538af18df9dcac4f017970f95565bc185523",
+        "parentAsset": "mesh-materials-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "preview-ocean-surface",
+      "file": "/media/preview-ocean-surface.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "712704a9487ac3df30b97af1accd88ccf2017ed91a0818b0862f0dc3b0d032cf",
+      "bytes": 325148,
+      "caption": "Short silent preview. Spectral waves carry changing light across an open-water surface.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/ocean-surface-film.mp4",
+        "sourceSha256": "dd0c33c65ba355c75da484875822fef2abf7dd2a61fc611b3b21671302216d6b",
+        "sourceRevision": null,
+        "parentAsset": "ocean-surface-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
+      "id": "preview-water-3d",
+      "file": "/media/preview-water-3d.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "a9e6a396956a01a7a6d3d530e6483240a5ba0520fb8b116b0d890a0fcf41ee2d",
+      "bytes": 94564,
+      "caption": "Short silent preview. A dam break spreads through a long tank, rebounds and throws off whitewater.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/water-3d-film.mp4",
+        "sourceSha256": "90d242578225647d82ae8041e32b63f66f9ac4797622d0413360c62d7f438ece",
+        "sourceRevision": null,
+        "parentAsset": "water-3d-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "640x360, 18 fps, 3.5-second excerpt of the selected web film. Full playback retains the original file."
+      }
+    },
+    {
       "id": "robot",
       "file": "/media/robot.webp",
       "kind": "image",
@@ -1746,11 +1861,13 @@
   "selections": {
     "water-3d": {
       "poster": "water-3d",
-      "film": "water-3d-film"
+      "film": "water-3d-film",
+      "preview": "preview-water-3d"
     },
     "fire-3d": {
       "poster": "fire-3d",
-      "film": "fire-3d-film"
+      "film": "fire-3d-film",
+      "preview": "preview-fire-3d"
     },
     "terrain-water": {
       "poster": "terrain-water",
@@ -1758,11 +1875,13 @@
     },
     "ocean-surface": {
       "poster": "ocean-surface",
-      "film": "ocean-surface-film"
+      "film": "ocean-surface-film",
+      "preview": "preview-ocean-surface"
     },
     "mesh-materials": {
       "poster": "mesh-materials",
-      "film": "mesh-materials-film"
+      "film": "mesh-materials-film",
+      "preview": "preview-mesh-materials"
     },
     "sdf-materials": {
       "poster": "sdf-materials",
@@ -1797,7 +1916,8 @@
     },
     "clouds": {
       "poster": "clouds",
-      "film": "clouds-film"
+      "film": "clouds-film",
+      "preview": "preview-clouds"
     },
     "night-sky": {
       "poster": "night-sky"

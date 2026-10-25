@@ -47,7 +47,14 @@ for(const e of content.entries){
   if(!existsSync(resolve(root,e.source)))errors.push(`Missing project/source guide: ${e.id}`);
   for(const related of e.related)if(!ids.has(related))errors.push(`Unknown related demo: ${e.id}/${related}`);
 }
-for(const [name,selection] of Object.entries(media.selections))for(const id of [selection.poster,selection.film,...(selection.gallery||[])].filter(Boolean))if(!assets.has(id))errors.push(`Missing selected asset ${name}/${id}`);
+for(const [name,selection] of Object.entries(media.selections)){
+  for(const id of [selection.poster,selection.film,selection.preview,...(selection.gallery||[])].filter(Boolean))if(!assets.has(id))errors.push(`Missing selected asset ${name}/${id}`);
+  if(selection.preview){
+    const preview=assets.get(selection.preview),parent=assets.get(selection.film);
+    if(preview?.kind!=='video'||preview.width!==640||preview.height!==360||preview.bytes>400_000)errors.push(`Invalid hover preview delivery: ${name}`);
+    if(!parent||preview?.provenance.parentAsset!==parent.id||preview?.provenance.sourceSha256!==parent.sha256)errors.push(`Hover preview parent changed: ${name}`);
+  }
+}
 const supported=new Set([...readFileSync(resolve(root,'docs/architecture/gltf-assets.md'),'utf8').matchAll(/^\| `(KHR_[^`]+)` \| supported/gm)].map(m=>m[1]));
 const mapped=new Set(content.entries.flatMap(e=>e.extensions));
 if(supported.size!==mapped.size||[...supported].some(id=>!mapped.has(id)))errors.push('Supported glTF extension map changed');

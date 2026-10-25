@@ -13,7 +13,7 @@ for(const [name,html] of pages){
   if(/LAYOUT PLACEHOLDER|DESIGN MOCKUP|Choose a scene|localhost:|starship:|outputs\/cubey-site/i.test(html))errors.push(`${name}: development content leaked`);
   const ids=[...html.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);
   if(new Set(ids).size!==ids.length)errors.push(`${name}: duplicate anchor IDs`);
-  for(const match of html.matchAll(/\s(href|src|poster|data-image|data-mesh|data-sdf|data-poster)="([^"]+)"/g)){
+  for(const match of html.matchAll(/\s(href|src|poster|data-image|data-mesh|data-sdf|data-poster|data-src)="([^"]+)"/g)){
     const value=match[2].replaceAll('&amp;','&');
     if(/^(?:https?:|mailto:|data:)/.test(value))continue;
     refs++;
@@ -33,10 +33,14 @@ for(const [name,html] of pages){
       if(!targetHTML.includes(`id="${decodeURIComponent(url.hash.slice(1))}"`))errors.push(`${name}: missing anchor ${value}`);
     }
   }
-  for(const video of html.matchAll(/<video\b[^>]*>/g))if(!video[0].includes('preload="none"')||/\bautoplay\b|\bloop\b/.test(video[0]))errors.push(`${name}: unexpected eager/autoplay/looping film`);
+  for(const video of html.matchAll(/<video\b[^>]*>/g)){
+    const tag=video[0],preview=/\bdata-hover-clip\b/.test(tag);
+    if(!tag.includes('preload="none"')||/\bautoplay\b/.test(tag)||(!preview&&/\bloop\b/.test(tag)))errors.push(`${name}: unexpected eager/autoplay/looping film`);
+    if(preview&&(!/\bmuted\b/.test(tag)||!/\bplaysinline\b/.test(tag)||/\bcontrols\b/.test(tag)))errors.push(`${name}: hover preview must be silent and separate from native controls`);
+  }
   if(/<a\b[^>]*>(?:(?!<\/a>)[\s\S])*?<video\b/.test(html))errors.push(`${name}: native player nested in a navigation link`);
   if(/demos\/fractals|Fractal field/.test(html))errors.push(`${name}: deferred fractals leaked into the public showcase`);
-  for(const image of html.matchAll(/<img\b[^>]*>/g))if(!/\balt=/.test(image[0])||!/\bwidth=/.test(image[0])||!/\bheight=/.test(image[0]))errors.push(`${name}: image lacks accessible text/dimensions`);
+  for(const image of html.matchAll(/<img\b[^>]*>/g))if(!/\balt(?:\s|=|>)/.test(image[0])||!/\bwidth=/.test(image[0])||!/\bheight=/.test(image[0]))errors.push(`${name}: image lacks accessible text/dimensions`);
   const bound=Buffer.byteLength(html)+[...initialAssets].reduce((sum,p)=>sum+readFileSync(resolve(dist,p)).length,0);
   loadingBounds.push({page:name,bytes:bound});
   if(bound>600_000)errors.push(`${name}: HTML/styles/scripts/all maximum-size poster images exceed 600 KB budget`);
