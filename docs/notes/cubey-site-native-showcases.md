@@ -92,3 +92,12 @@ Historical sealed media under `docs/media/` remains available independently.
 The publication target remains [the public Cubey site](https://dev.byebyebryan.com/cubey/).
 Deployment identity is independently visible at
 [`metadata/deployment.json`](https://dev.byebyebryan.com/cubey/metadata/deployment.json).
+
+Published source `867aa935` passed
+[Pages build and deployment](https://github.com/byebyebryan/cubey/actions/runs/40159760961).
+The public audit at 2026-10-25 03:53 UTC matched all 129 served files to the local
+build: 27,839,843 bytes including deployment identity, with 104 media files and
+18 videos. All 36 first/end video-range requests returned matching bytes with
+HTTP 206; canonical URLs and the nested/deferred-route 404 responses also passed.
+Live browser playback and renderer/lighting controls passed after publication.
+The subsequent evidence-only documentation commit does not change site bytes.
