@@ -2,7 +2,7 @@
 import {asset} from '../data/catalog';
 import {url} from '../lib/urls';
 export interface View {id:string; label:string; asset:string; caption:string}
-interface Props {views:View[]; path:string; label:string}
-const {views,path,label}=Astro.props;
+interface Props {views:View[]; path:string; label:string; initial?:string}
+const {views,path,label,initial=views[0].id}=Astro.props;
 ---
-<div class="comparison-controls" role="group" aria-label={label}>{views.map((v,i)=><button class="filter" data-view={v.id} data-image={url(asset(v.asset).file,path)} data-caption={v.caption} aria-pressed={i===0?'true':'false'}>{v.label}</button>)}</div>
+<div class="comparison-controls" role="group" aria-label={label}>{views.map(v=><button class="filter" data-view={v.id} data-image={url(asset(v.asset).file,path)} data-caption={v.caption} aria-pressed={v.id===initial?'true':'false'}>{v.label}</button>)}</div>

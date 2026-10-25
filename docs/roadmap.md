@@ -79,23 +79,24 @@ review. New materials and the guardian construction-film refresh remain separate
 
 ## Public presentation
 
-The user now wants a full presentation-site migration: move most of the README
-demo gallery, project directory and audience-facing experiment stories onto the
-site, then keep a compact README for repository entry and development. The
-[cubey-site handoff](notes/cubey-site-handoff.md) transfers this next phase; the
-[SDF closeout](notes/sdf-thread-closeout.md) closes the preceding implementation
-thread. Site structure/build/publication and the gallery cutover remain to plan.
+The [public presentation site](https://dev.byebyebryan.com/cubey/) now owns the
+visual demo collection, audience-facing introductions and project navigation.
+The compact root README owns repository entry and development links. The
+[site guide](../site/README.md) describes the authored Astro build and Pages
+publication; [the polish record](notes/cubey-site-polish.md) records the reviewed
+seven-subject overview and its media/interaction boundaries.
 
-Five highlights are now published in the order Ocean, glTF + Terrain, Water 3D,
-Fire 3D and Terrain Water. The [media package](media/showcase/README.md) and
-[manifest](media/showcase/manifest.json) own exact media, recipes, attachments
-and license boundaries. The glTF scene holds one saved water state; Terrain
+The first detailed chapter, [Building and cutting a solid](notes/cubey-site-sdf-story.md),
+connects native SDF construction and material cuts with small interactive 2D
+illustrations and a short development history. Further detailed stories remain
+editorial choices. The chapter does not reopen native brush, incremental-field,
+GI or material-realism experiments.
+
+The earlier five-film [media package](media/showcase/README.md),
+[manifest](media/showcase/manifest.json) and [showcase plan](showcase.md) retain
+their exact media, recipes, attachments and license boundaries as historical
+publication evidence. The glTF composite holds one saved water state; Terrain
 Water shows a recorded timelapse. Neither is a live solver-performance claim.
-
-The [showcase plan](showcase.md) retains twelve project cards. Its remaining
-seven cards are optional future editorial work, selected only through their
-own creative review. The original four-highlight history does not change
-today's five-highlight package or select a suite hero.
 
 ## Next work and deferred boundaries
 

@@ -529,6 +529,31 @@
       "thumbnailBytes": 5942
     },
     {
+      "id": "history-sdf-carved-sphere",
+      "file": "/media/history-sdf-carved-sphere.webp",
+      "kind": "image",
+      "width": 1280,
+      "height": 720,
+      "sha256": "b1005f87cd18582a5d1ce79cafafa87cd5bef1226cf4e37d32489e2b0975e260",
+      "bytes": 68300,
+      "caption": "Carved sphere \u00b7 historical native procedural prototype, 4,096 cuts.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/oblique-closeout/captures/final-4096.png",
+        "sourceSha256": "93f6e024020da9a3267f528d4d272a2c72863f27859fd4a38bffded8a31260b3",
+        "sourceRevision": "10573c7af7bf40461bd05652b6cdf94fd8cd53c0",
+        "recipe": "site/media/receipts/sdf-prototype-history.json",
+        "note": "Historical native capture from the clean procedural closeout, captured 2026-10-22. Final 4,096-cut state, seed 42; retained as a technique prototype, not a new render or authored sculpture."
+      },
+      "thumbnail": "/media/history-sdf-carved-sphere-640.webp",
+      "thumbnailSha256": "e93a24a8b8d8670f8741cb9d4366ed9312a45110bef031c8eff14903137ac05e",
+      "thumbnailBytes": 18940
+    },
+    {
       "id": "library-mesh-bronze",
       "file": "/media/library-mesh-bronze.webp",
       "kind": "image",
@@ -2190,6 +2215,9 @@
         "scattering-daylight",
         "scattering-haze"
       ]
+    },
+    "sdf-prototype-history": {
+      "poster": "history-sdf-carved-sphere"
     }
   }
 }

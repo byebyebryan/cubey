@@ -2,9 +2,10 @@
 import ViewButtons from './ViewButtons.astro';
 import {asset} from '../data/catalog';
 import {url} from '../lib/urls';
-interface Props {path:string}
-const {path}=Astro.props;
+interface Props {path:string; initial?:string}
+const {path,initial='solid'}=Astro.props;
 const views=[{id:'solid',label:'Solid',asset:'cut-roster-solid',caption:'Wood and marble above; rusted steel and glass below.'},{id:'cut-preview',label:'Cut preview',asset:'cut-roster-preview',caption:'Four subtractors preview the same bore through each material.'},{id:'through-cut',label:'Through-cut',asset:'cut-roster-cut',caption:'The committed cuts retain each body’s continuous material field.'}];
-const image=asset(views[0].asset);
+const active=views.find(v=>v.id===initial)||views[0];
+const image=asset(active.asset);
 ---
-<div class="comparison-view" id="wood-cut-states" data-comparison><div class="comparison-description"><h3>Four fields, the same cut.</h3><p>Grain, veins, oxide and transparent interfaces continue through the solid. Compare the saved operation with the camera held still.</p><ViewButtons views={views} path={path} label="Material cut states"/><p class="comparison-caption" aria-live="polite" data-comparison-caption>{views[0].caption}</p><noscript><p><a href={url(asset('cut-roster-preview').file,path)}>Open cut preview</a> · <a href={url(asset('cut-roster-cut').file,path)}>Open through-cut view</a></p></noscript></div><div class="comparison-media"><img data-comparison-image src={url(image.file,path)} width={image.width} height={image.height} alt={views[0].caption} loading="lazy"/></div></div>
+<div class="comparison-view" id="wood-cut-states" data-comparison><div class="comparison-description"><h3>Four fields, the same cut.</h3><p>Grain, veins, oxide and transparent interfaces continue through the solid. Compare the saved operation with the camera held still.</p><ViewButtons views={views} path={path} label="Material cut states" initial={active.id}/><p class="comparison-caption" aria-live="polite" data-comparison-caption>{active.caption}</p><noscript><p>{views.filter(v=>v.id!==active.id).map((v,i)=><>{i>0&&' · '}<a href={url(asset(v.asset).file,path)}>Open {v.label.toLowerCase()}</a></>)}</p></noscript></div><div class="comparison-media"><img data-comparison-image src={url(image.file,path)} width={image.width} height={image.height} alt={active.caption} loading="lazy"/></div></div>

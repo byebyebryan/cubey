@@ -40,6 +40,12 @@ per asset by the ledger. A source revision is populated only when the capture's
 evidence records it. Historical media with an unknown capture revision keeps
 that value empty; its later selection revision is a separate identity.
 
+The SDF story reuses a historical 4,096-cut sphere still from the procedural
+closeout at clean source `10573c7af7bf40461bd05652b6cdf94fd8cd53c0`. Its ledger
+entry retains the original PNG digest and [pinned capture receipt](receipts/sdf-prototype-history.json). It is
+labelled historical, not a new render. The chapter's interactive SVG figures
+are authored analytic 2D illustrations, outside the native-capture ledger.
+
 WebP images preserve the scene and aspect ratio while resizing/encoding the
 native source. Films are silent H.264/yuv420p. Parent and derivative hashes remain
 distinct. The website exposes a static, path-free media identity download; full

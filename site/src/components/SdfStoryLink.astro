@@ -1,0 +1,10 @@
+---
+import Picture from './Picture.astro';
+import {url} from '../lib/urls';
+interface Props {path:string}
+const {path}=Astro.props;
+---
+<section class="section connection-context">
+  <div><p class="eyebrow">A closer look · SDF</p><h2>Building and cutting a solid.</h2><p>Watch a robot take shape, look inside four materials, and try the ideas behind the surface.</p><a class="text-link" href={url('/demos/sdf/inside-a-solid/',path)}>Explore the SDF story ↗</a></div>
+  <a class="connection-link" href={url('/demos/sdf/inside-a-solid/',path)} aria-label="Building and cutting a solid: explore the SDF story"><Picture id="cut-roster-cut" path={path} alt="Through-cuts in wood, marble, rusted steel and clear glass."/></a>
+</section>

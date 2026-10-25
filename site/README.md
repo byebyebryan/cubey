@@ -2,8 +2,9 @@
 
 The component-authored showcase lives here. It presents Cubey as a personal
 graphics/simulation workshop and its supporting engine: visual demos first,
-with concise context and useful connections. Detailed technique chapters and development journeys remain later
-editorial work. The public site is hosted at
+with concise context and useful connections. The first detailed visual chapter,
+“Building and cutting a solid,” connects SDF construction, materials and a short
+development history. Further chapters remain editorial choices. The public site is hosted at
 [dev.byebyebryan.com/cubey/](https://dev.byebyebryan.com/cubey/).
 
 ## Build and review
@@ -63,6 +64,14 @@ table in a native disclosure. Existing capture fragments remain usable. The
 [polish review](../docs/notes/cubey-site-polish.md) records the latest copy,
 navigation and responsive-layout acceptance scope.
 
+The [SDF story record](../docs/notes/cubey-site-sdf-story.md) owns the first
+detailed chapter's evidence and acceptance limits. Its two 2D SVG illustrations
+are built into the static HTML, then enhanced with manual, keyboard-accessible
+controls. The shared analytic model in `public/scripts/sdf-story.js` is used by
+the build, browser and model tests. It is an explanatory illustration, not a
+WebGL/native renderer or a live brush editor. The chapter reuses the native
+robot film and cut comparison, plus a labelled historical procedural still.
+
 Prepare all selected films automatically using a fresh staging directory. The
 script discovers film-backed selections from the manifest, reuses current
 previews without reencoding, and keeps successful staging files if a later
@@ -121,6 +130,8 @@ Third-party YouTube player resources are also outside this local-file bound.
 - `public/media/`: tracked WebP derivatives and silent native MP4 films.
 - `public/scripts/media.js`: ordinary players, scene comparisons and the matched
   material-film viewer.
+- `src/pages/demos/sdf/inside-a-solid.astro`, `public/styles/sdf-story.css` and
+  `public/scripts/sdf-story.js`: the first detailed SDF chapter and its figures.
 
 Original media retains Cubey's MIT policy. Imported assets keep their own licenses
 and authors, surfaced at `/credits/` and beside imported examples. The old Damaged

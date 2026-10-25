@@ -1,0 +1,75 @@
+{
+  "purpose": "Historical native procedural still selected for the SDF presentation story; no new native run.",
+  "originalManifest": "outputs/sdf/oblique-closeout/manifest.json",
+  "captured_utc": "2026-10-22T04:37:21.315526+00:00",
+  "source_commit": "10573c7af7bf40461bd05652b6cdf94fd8cd53c0",
+  "source_dirty": false,
+  "binary_sha256": "0c4a8acd14ff15a9d1987c6cd1f4a71c54d3ba4d5e3f74d44f23eea484c28e77",
+  "shader_sha256": {
+    "bricks.comp.spv": "90a2ec847d648475fc93e400231c80c48ed444eb3274f687b88bb71ba8f2bb26",
+    "filter.comp.spv": "f3589f2ef32c4d06a9b30ec8b00e7ac2c5456cf359d026f8f4e0638b9ed19c6c",
+    "forward_pbr_post.frag.spv": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526",
+    "forward_pbr_post.vert.spv": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c",
+    "occluder.frag.spv": "e592d45c44f430da47367715bd58068a78d914861e13e5d2df5bf0df55a5775e",
+    "occluder.vert.spv": "d20392e4249444cf65afbdad2cd01de9c703256d0c4fe912d6b2a309a92bfe3a",
+    "sdf.frag.spv": "858a9f6e8a3c7199ce5f7128c4645514c25902aab18c6170efbc7da51f91a82c",
+    "sdf.vert.spv": "ae9983b94db66576a2d02fb1e286ac642aca8252887cf39d4d9b82af48f1ebd0",
+    "validate.comp.spv": "ec55fac06827d97880c100e41db12a3d5bca0407a92338869887217203499e60"
+  },
+  "config": {
+    "scene": "negative-stick-ball",
+    "seed": 42,
+    "count": 4096,
+    "atlas-axis": 92,
+    "motion": "carve",
+    "duration": 24,
+    "construction-seconds": 16,
+    "orbit-turns": 0.5,
+    "cutter-cue": true,
+    "pitch": 0.5494743563202503,
+    "yaw": 0.6062341301943412,
+    "distance": 1.1014335345597208,
+    "target-y": 0,
+    "sun-elevation": 35,
+    "sun-azimuth": 160,
+    "shadows": 1,
+    "ground": false,
+    "ao": false,
+    "roughness": 0.36,
+    "exposure": 0.7,
+    "supersample": 2,
+    "cutter-width": 0.024,
+    "cutter-mode": "intro-bores"
+  },
+  "selectedRun": {
+    "final-4096": {
+      "command": [
+        "/home/bryan/code/cubey/build/dev/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/negative-stick-ball-dense.json",
+        "--headless",
+        "--require-validation",
+        "--width",
+        "1280",
+        "--height",
+        "720",
+        "--count",
+        "4096",
+        "--motion",
+        "static",
+        "--export-recipe",
+        "/home/bryan/code/cubey/outputs/sdf/oblique-closeout/recipes/final-4096.json",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/oblique-closeout/captures/final-4096.png"
+      ],
+      "exit_code": 0,
+      "capture_sha256": "93f6e024020da9a3267f528d4d272a2c72863f27859fd4a38bffded8a31260b3",
+      "recipe_sha256": "8a87b651376fe3381530c690a4b52961e4a799683bc3184c84ed18dfd06aafef",
+      "recipe_matches_prior": true,
+      "field_stats": [
+        "sdf: edits=4097 batches=33 bricks=436391/778688 references=329099 allocated=1974880928 build_ms=377.357 filter_gpu_ms=178.541 brick_gpu_ms=160.234 other_wall_ms=38.5813 copied=14000126 updated=2419579",
+        "sdf: recipe hash=db4eede129e38d27"
+      ]
+    }
+  }
+}
