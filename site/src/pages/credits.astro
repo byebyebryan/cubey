@@ -1,11 +1,31 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import {media} from '../data/catalog';
+import {media,asset} from '../data/catalog';
 import {url} from '../lib/urls';
 const path='/credits/';
+const sources=[
+  {id:'gltf-layers',title:'Anisotropy Barn Lamp'},
+  {id:'gltf-optics',title:'Dispersion Test'},
+  {id:'gltf-motion',title:'Fox'},
+  {id:'gltf-textures',title:'Texture Transform Multi Test'},
+  {id:'gltf-morph',title:'Animated Morph Cube'},
+  {id:'terrain-rendering',title:'Terrain elevation'},
+];
+const sourceIds=new Set(sources.map(s=>s.id));
 ---
-<Layout title="Media and credits" path={path}>
-  <section class="page-title"><span class="eyebrow">Media and credits</span><h1>Made here.<br/> With credit.</h1><p class="intro">Native Cubey captures, imported example assets and their authors.</p></section>
-  <section class="section about"><h2>The visual work.</h2><div class="body-copy"><p>The images and films on this site are captured from the native Cubey applications. The original code and original Cubey media use the MIT license. Imported models retain their own notices, listed with the relevant captures below.</p><p>Images are resized and encoded for the site without changing the scene. Recorded playback remains distinct from an interactive browser renderer.</p><div class="source-strip"><a href="https://github.com/byebyebryan/cubey/blob/main/LICENSE">Cubey license ↗</a><a href={url('/metadata/media.json',path)}>Selected media identities ↗</a></div></div></section>
-  <section class="section"><div class="section-head"><h2>Selected assets.</h2></div><div class="table-scroll"><table class="credits-table"><thead><tr><th>Capture</th><th>Author / source</th><th>License</th></tr></thead><tbody>{media.assets.map(a=><tr id={a.id}><td><a href={url(a.file,path)}>{a.caption}</a></td><td>{a.credit.author||'Bryan'}{a.credit.source&&<><br/><a href={a.credit.source}>Asset source / notice ↗</a></>}</td><td><a href={a.credit.url}>{a.credit.label} ↗</a></td></tr>)}</tbody></table></div></section>
+<Layout title="Media and credits" description="The original Cubey captures, imported models, terrain source and authors behind the showcase." path={path}>
+  <section class="page-title"><span class="eyebrow">Media and credits</span><h1>Made here.<br/> With credit.</h1><p class="intro">The captures, models and people behind the scenes.</p></section>
+  <section class="section about"><h2>The original work.</h2><div class="body-copy"><p>The current demo images and films are recorded from native Cubey applications. The repository code and original self-hosted Cubey captures use the MIT license. Imported models retain their own authors and notices.</p><p>The images are resized and the films encoded for the site. What you watch here is a recording; the source includes the native scenes and instructions to run them.</p><p>The original OpenGL recordings on <a href={url('/about/#original-cubey',path)}>About Cubey</a> are hosted on my YouTube channel, with their upload dates labelled separately.</p><div class="source-strip"><a href="https://github.com/byebyebryan/cubey/blob/main/LICENSE">Cubey license ↗</a><a href={url('/metadata/media.json',path)}>Media records (JSON) ↗</a></div></div></section>
+  <section class="section">
+    <div class="section-head"><h2>Models and sources.</h2><p>Authors and source notices for the imported examples and terrain elevation.</p></div>
+    <div class="grid two credits-grid">{sources.map(source=>{const capture=asset(source.id);return <article class="source-credit" id={source.id}>
+      <h3>{source.title}</h3>
+      <p>{capture.credit.author}</p>
+      <div class="scene-links"><a href={capture.credit.source}>Source and attribution ↗</a><a href={capture.credit.url}>{capture.credit.label} ↗</a></div>
+    </article>;})}</div>
+  </section>
+  <section class="section">
+    <div class="section-head"><h2>Capture records.</h2><p>The complete file-by-file credits, including films and their short previews.</p></div>
+    <details class="asset-records"><summary>All capture credits</summary><div class="table-scroll"><table class="credits-table"><caption class="sr-only">Credits and licenses for every selected self-hosted media file.</caption><thead><tr><th scope="col">Capture</th><th scope="col">Author / source</th><th scope="col">License</th></tr></thead><tbody>{media.assets.map(a=><tr id={sourceIds.has(a.id)?undefined:a.id}><td><a href={url(a.file,path)}>{a.caption}</a></td><td>{a.credit.author||'Bryan'}{a.credit.source&&<><br/><a href={a.credit.source}>Asset source / notice ↗</a></>}</td><td><a href={a.credit.url}>{a.credit.label} ↗</a></td></tr>)}</tbody></table></div></details>
+  </section>
 </Layout>

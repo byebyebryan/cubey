@@ -38,6 +38,8 @@ the architecture and project guides remain current authority.
   assets, native-player handoff, loading policies and GitHub Pages media limits.
 - [Cubey default hover previews](cubey-site-default-hover-previews.md): all
   film-backed selections, importer preparation, parent attribution and build checks.
+- [Cubey showcase polish](cubey-site-polish.md): full-site copy and layout review,
+  clearer source credits, narrow-screen refinements and browser acceptance scope.
 
 - [SDF implementation evidence](sdf-implementation-evidence.md): native field, traversal and batch checkpoints for the boxes-only port.
 - [SDF authored content evidence](sdf-authored-content-evidence.md): the first survey robot, grouped geometry/material contracts and native visual/performance qualification.

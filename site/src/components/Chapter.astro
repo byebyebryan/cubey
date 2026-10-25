@@ -6,7 +6,7 @@ const {entry:e,path,number,caption}=Astro.props;
 ---
 <section class="section feature-chapter" id={e.id}>
   {(number||rendererLabel(e)) && <div class="number">{number&&String(number).padStart(2,'0')}{number&&rendererLabel(e)&&' · '}{rendererLabel(e)}</div>}
-  <div class="chapter-grid"><div class="chapter-media"><Media entry={e.id} path={path} title={e.title} caption={caption} eager={number===1}/></div><div class="chapter-copy"><h2>{e.title}</h2><p>{e.summary}</p><div class="cues">{e.cues.map(c=><span class="cue">{c}</span>)}</div><a class="source-link" href={sourceURL(e)}>{e.family==='gltf'?'Renderer contract':'Run locally / source'} ↗</a></div></div>
+  <div class="chapter-grid"><div class="chapter-media"><Media entry={e.id} path={path} title={e.title} caption={caption} eager={number===1}/></div><div class="chapter-copy"><h2>{e.title}</h2><p>{e.summary}</p><div class="cues">{e.cues.map(c=><span class="cue">{c}</span>)}</div><a class="source-link" href={sourceURL(e)}>{e.family==='gltf'?'glTF renderer notes':'Scene guide & source'} ↗</a></div></div>
   <slot />
-  <details class="scope-note"><summary>About this scene</summary><p class="note">{e.scope}</p><a class="source-link" href={sourceURL(e)}>Source and details ↗</a></details>
+  <details class="scope-note"><summary>About this scene</summary><p class="note">{e.scope}</p></details>
 </section>

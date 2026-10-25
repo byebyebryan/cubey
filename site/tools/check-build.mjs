@@ -46,7 +46,7 @@ for(const [name,html] of pages){
   if(bound>600_000)errors.push(`${name}: HTML/styles/scripts/all maximum-size poster images exceed 600 KB budget`);
 }
 for(const name of ['index.html','demos/index.html','demos/simulation/index.html','demos/sdf/index.html'])if(!pages.get(name)?.includes('<video '))errors.push(`${name}: overview has no playable film`);
-const result={passed:errors.length===0,errors,pages:pages.size,internalReferences:refs,checkedMount:prefix,maximumPageImageResourceBound:Math.max(...loadingBounds.map(p=>p.bytes)),loadingBounds,scope:'Built HTML/asset/anchor and media policy audit; image resource bounds include full-size posters before responsive/lazy savings, exclude user-requested films; browser and public deployment checks remain separate'};
+const result={passed:errors.length===0,errors,pages:pages.size,internalReferences:refs,checkedMount:prefix,maximumPageImageResourceBound:Math.max(...loadingBounds.map(p=>p.bytes)),loadingBounds,scope:'Built HTML/asset/anchor and media policy audit; local resource bounds include full-size posters before responsive/lazy savings, exclude user-requested films and external YouTube player resources; browser and public deployment checks remain separate'};
 console.log(JSON.stringify(result,null,2));
 if(process.env.SITE_CHECK_RECEIPT)writeFileSync(process.env.SITE_CHECK_RECEIPT,JSON.stringify(result,null,2)+'\n');
 if(errors.length)process.exit(1);

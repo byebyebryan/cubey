@@ -15,8 +15,7 @@ const poster=asset('mesh-materials');const film=asset('mesh-materials-film');
 ---
 <section class="section material-library" id="material-library" data-material-library>
   <span id="mesh-materials" class="anchor-target"></span>
-  <div class="section-head"><div><span class="eyebrow">The complete library</span><h2>Twelve spheres. Changing light.</h2></div><p>One view, from clear glass to rough stone.</p></div>
-  <p class="body-copy">Moving clouds and a low sun change the character of every surface. Switch between forward PBR and SDF, or watch the light return at dawn.</p>
+  <div class="section-head"><div><span class="eyebrow">The complete library</span><h2>Twelve spheres. Changing light.</h2></div></div>
   <div class="library-controls" data-library-controls hidden><div class="renderer-controls" role="group" aria-label="Material renderer">
     <button class="filter" data-renderer="mesh" aria-pressed="true">Forward PBR</button>
     <button class="filter" data-renderer="sdf" aria-pressed="false">SDF ray marching</button>
@@ -26,7 +25,7 @@ const poster=asset('mesh-materials');const film=asset('mesh-materials-film');
   </div></div>
   <figure class="scene-media library-stage"><div class="movie"><video data-library-film controls playsinline preload="none" poster={url(poster.file,path)} width={film.width} height={film.height} aria-label="Twelve material spheres · Forward PBR · dusk"><source src={url(film.file,path)} type="video/mp4"/><p><a data-library-download href={url(film.file,path)}>Download the film</a>.</p></video></div><figcaption class="media-foot" data-renderer-caption aria-live="polite">Forward PBR · dusk · native recorded playback</figcaption></figure>
   {variants.map(v=><a hidden data-material-variant data-renderer-key={v.renderer} data-phase-key={v.phase} href={url(asset(`${v.id}-film`).file,path)} data-poster={url(asset(v.id).file,path)}>{v.renderer} · {v.phase}</a>)}
-  <p class="note">Same sphere layout, camera, light and cloud timing. Glass reveals the different transport paths. Cloud drift is accelerated.</p>
+  <p class="note">Both renderers use the same sphere layout, camera and lighting timeline. Glass shows how their light paths differ. Cloud drift is accelerated.</p>
   <a class="source-link" href="https://github.com/byebyebryan/cubey/blob/main/projects/pbr_materials/presets/presentation/README.md">Run the matched scenes ↗</a>
   <noscript><p class="note">Other films: {variants.slice(1).map(v=><a href={url(asset(`${v.id}-film`).file,path)}>{v.renderer==='sdf'?'SDF':'Forward PBR'} · {v.phase} · </a>)}</p></noscript>
   <details class="material-inspection"><summary>Inspect individual materials</summary><p class="note">Separate stills under frozen lighting. The order below matches the rows in the film.</p>

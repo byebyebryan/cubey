@@ -1,8 +1,8 @@
 # Cubey presentation site
 
 The component-authored showcase lives here. It presents Cubey as a personal
-graphics/simulation workshop: visual demos first, with concise context and useful
-connections. Detailed technique chapters and development journeys remain later
+graphics/simulation workshop and its supporting engine: visual demos first,
+with concise context and useful connections. Detailed technique chapters and development journeys remain later
 editorial work. The public site is hosted at
 [dev.byebyebryan.com/cubey/](https://dev.byebyebryan.com/cubey/).
 
@@ -30,7 +30,7 @@ with `npm run preview -- --allowed-hosts your-hostname`.
 The implementation uses authored Astro components and plain CSS/JavaScript.
 Films play directly in home, subject-directory, simulation and SDF overview
 cards as well as scene pages. Navigation links stay outside native player
-controls; starting a film pauses the others. Guardian and Robot use the common
+controls; starting a native film pauses the others. Guardian and Robot use the common
 16:9 native landscape recaptures. Native images and videos fit without cropping the
 subjects or changing their proportions.
 
@@ -52,6 +52,16 @@ cached for reuse. `npm run check` verifies that every film-backed selection has
 a valid, current preview and receipt; missing or stale parent identities fail
 the check. The Node-only site build does not need FFmpeg. The hover policy tests
 run with the check command, and browser review checks real playback.
+
+About embeds two original OpenGL recordings in standard YouTube players, with
+lazy loading, no autoplay and direct watch links. The 2018 labels are upload
+dates. Their source records live in `media/sources/legacy-youtube.json`; these
+externally hosted players are separate from the native playback/preview policy.
+
+Credits groups the model and terrain sources first, with the complete capture
+table in a native disclosure. Existing capture fragments remain usable. The
+[polish review](../docs/notes/cubey-site-polish.md) records the latest copy,
+navigation and responsive-layout acceptance scope.
 
 Prepare all selected films automatically using a fresh staging directory. The
 script discovers film-backed selections from the manifest, reuses current
@@ -93,6 +103,7 @@ The checked budgets are 250 KB per image, 8 MB per film and a conservative 600 K
 per-page bound for HTML, CSS, JavaScript and all full-size poster images. Responsive
 image selection and lazy loading reduce the actual image load. Films use
 `preload="none"` and begin on request; they are excluded from that image-page bound.
+Third-party YouTube player resources are also outside this local-file bound.
 
 ## Content and assets
 
