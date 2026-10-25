@@ -253,8 +253,8 @@ inline EnvironmentTransitionSample material_lighting_cycle(std::string_view cycl
     if (cycle != "dusk" && cycle != "dawn")
         throw std::invalid_argument("lighting cycle must be dusk or dawn");
     return sample_environment_transition({.duration_seconds = duration,
-                                          .sun_elevation_begin = cycle == "dawn" ? -4.0F : 14.0F,
-                                          .sun_elevation_end = cycle == "dawn" ? 14.0F : -4.0F,
+                                          .sun_elevation_begin = cycle == "dawn" ? -1.2F : 14.0F,
+                                          .sun_elevation_end = cycle == "dawn" ? 14.0F : -1.2F,
                                           .sun_azimuth = -155,
                                           .cloud_seconds_begin = 300,
                                           .cloud_time_scale = 30},

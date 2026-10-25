@@ -74,8 +74,8 @@ int main() {
                     mesh_light.exposure == sdf_light.exposure);
         }
     require(pbr_materials::presentation_lighting("dusk", -1).sun_elevation == 14 &&
-            pbr_materials::presentation_lighting("dusk", 9).sun_elevation == -4);
-    require(pbr_materials::presentation_lighting("dawn", 0).sun_elevation == -4 &&
+            pbr_materials::presentation_lighting("dusk", 9).sun_elevation == -1.2F);
+    require(pbr_materials::presentation_lighting("dawn", 0).sun_elevation == -1.2F &&
             pbr_materials::presentation_lighting("dawn", 8).sun_elevation == 14);
     bool invalid = false;
     try {

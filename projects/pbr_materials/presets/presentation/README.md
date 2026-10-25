@@ -7,7 +7,7 @@ radius 0.075, distance 0.855, sun azimuth -155 degrees, cloud coverage 0.28, and
 128-pixel reflection probes. Mesh specimens use local recipe coordinates; the
 SDF snapshots translate each recipe domain into that specimen's local space.
 
-The eight-second lighting studies sweep sun elevation from 14 to -4 degrees
+The eight-second lighting studies sweep sun elevation from 14 to -1.2 degrees
 (dusk) or the reverse (dawn), with smoothstep timing and the shared atmosphere
 exposure function. Clouds advance from 300 to 540 simulation seconds: an
 accelerated artistic clock, not a geographic solar-day simulation. Specimen
