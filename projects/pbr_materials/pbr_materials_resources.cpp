@@ -271,7 +271,11 @@ PbrMaterialsApp::material_sampled_images() const {
 void PbrMaterialsApp::create_mesh(cubey::vulkan::GpuRuntime& gpu) {
     sphere_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
         engine_.render_resources(), meshes_, gpu, "pbr_materials.sphere",
-        make_pbr_sphere_mesh(config_.presentation == "library" ? .075F : .25F));
+        make_pbr_sphere_mesh(.25F));
+    if (config_.presentation == "library")
+        library_sphere_mesh_handle_ = cubey::render::create_primitive_mesh_resource(
+            engine_.render_resources(), meshes_, gpu, "pbr_materials.library-sphere",
+            make_pbr_sphere_mesh(.075F));
     block_mesh_handle_ = render::create_primitive_mesh_resource(engine_.render_resources(), meshes_,
                                                                 gpu, "pbr_materials.beveled-block",
                                                                 make_beveled_block_mesh());
@@ -324,6 +328,11 @@ void PbrMaterialsApp::destroy_render_handles() {
     cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_,
                                          cut_block_mesh_handle_);
     cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, sphere_mesh_handle_);
+    if (library_sphere_mesh_handle_) {
+        cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_,
+                                             *library_sphere_mesh_handle_);
+        library_sphere_mesh_handle_.reset();
+    }
     cubey::render::destroy_mesh_resource(engine_.render_resources(), meshes_, block_mesh_handle_);
 }
 

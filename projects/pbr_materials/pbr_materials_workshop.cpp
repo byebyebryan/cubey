@@ -80,7 +80,10 @@ void PbrMaterialsApp::refresh_specimens() {
                     {.translation = found->position, .rotation = glm::quat(found->rotation)});
             edits.renderables3d().set_renderable(
                 specimens_[i].entity,
-                {.primitives = {{.mesh = !visible || found->shape == "sphere" ? sphere_mesh_handle_
+                {.primitives = {{.mesh = config_.presentation == "library"
+                                             ? *library_sphere_mesh_handle_
+                                         : !visible || found->shape == "sphere"
+                                             ? sphere_mesh_handle_
                                          : found->shape == "swatch" ? swatch_mesh_handle_
                                                                     : cut_block_mesh_handle_,
                                  .material = material_handles_[i]}},
@@ -133,6 +136,7 @@ void PbrMaterialsApp::leave_presentation() {
     if (config_.presentation.empty())
         return;
     config_.presentation.clear();
+    config_.lighting_cycle = "frozen";
     ++revision_;
     orbit_controller_.set_home_distance(selected_ < 0 ? kCameraDistance : config_.distance);
     orbit_controller_.reset();
@@ -238,8 +242,11 @@ void PbrMaterialsApp::draw_ui() {
         const char* environments[]{"studio", "clear", "clouds"};
         int environment =
             config_.environment == "studio" ? 0 : (config_.environment == "clear" ? 1 : 2);
-        if (ImGui::Combo("Lighting", &environment, environments, 3))
+        if (ImGui::Combo("Lighting", &environment, environments, 3)) {
             requested_environment_ = environments[environment];
+            if (environment == 0)
+                config_.lighting_cycle = "frozen";
+        }
         const char* shapes[]{"sphere", "block", "swatch", "cut-block"};
         int shape = config_.specimen == "block"       ? 1
                     : config_.specimen == "swatch"    ? 2

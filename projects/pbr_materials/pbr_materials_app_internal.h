@@ -103,6 +103,7 @@ class PbrMaterialsApp {
     OrbitController orbit_controller_;
     cubey::render::PbrDebugView debug_view_ = cubey::render::PbrDebugView::Final;
     cubey::render::MeshHandle sphere_mesh_handle_{};
+    std::optional<cubey::render::MeshHandle> library_sphere_mesh_handle_;
 
     cubey::render::MeshResourceTable<cubey::render::Mesh> meshes_;
     std::vector<cubey::render::PbrMaterialTable> materials_;
