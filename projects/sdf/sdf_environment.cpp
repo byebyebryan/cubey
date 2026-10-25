@@ -111,8 +111,6 @@ void Renderer::prepare_environment(vulkan::Device& device, VkCommandBuffer comma
     if (cycling)
         previous_environment_seconds_ = seconds;
     environment_clock_ = now;
-    if (cycling && changed)
-        atmosphere_.force_reflection_refresh();
     atmosphere_.record_pending_update(vulkan::CommandRecorder(command), slot);
     if (clouds_enabled_) {
         auto& clouds = atmosphere_.clouds();

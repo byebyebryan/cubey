@@ -130,7 +130,7 @@ void PbrMaterialsApp::prepare_environment(const vulkan::Device& device, VkComman
     auto environment = atmosphere_.environment();
     environment.sun_elevation_degrees = sample.sun_elevation;
     environment.sun_azimuth_degrees = sample.sun_azimuth;
-    const bool changed = atmosphere_.set_environment(environment);
+    atmosphere_.set_environment(environment);
     if (!previous_environment_seconds_ || static_cast<int>(sample.elapsed_seconds / 2) !=
                                               static_cast<int>(*previous_environment_seconds_ / 2))
         std::cout << "material-cycle time=" << sample.elapsed_seconds
@@ -142,8 +142,6 @@ void PbrMaterialsApp::prepare_environment(const vulkan::Device& device, VkComman
             : 0;
     atmosphere_.advance(delta);
     previous_environment_seconds_ = sample.elapsed_seconds;
-    if (changed)
-        atmosphere_.force_reflection_refresh();
     atmosphere_.record_pending_update(vulkan::CommandRecorder(command), slot);
     if (config_.environment == "clouds") {
         auto& clouds = atmosphere_.clouds();

@@ -1,4 +1,5 @@
 #include "pbr_materials_app_internal.h"
+#include <iostream>
 
 #include <cubey/asset/hdr_image.h>
 #include <cubey/render/generated_ibl.h>
@@ -187,6 +188,10 @@ void PbrMaterialsApp::destroy_swapchain_resources() {
 void PbrMaterialsApp::destroy_all_resources() {
     engine_.renderers().destroy_all_resources();
     forward_pbr_renderer_ = nullptr;
+    if (config_.lighting_cycle != "frozen")
+        std::cout << "pbr_materials: environment finish sky_generation="
+                  << atmosphere_.reflection_probe().snapshot().generation
+                  << " cloud_generation=" << atmosphere_.clouds().snapshot().generation << '\n';
     atmosphere_.destroy();
     atmosphere_textures_.reset();
     whole_profiler_.reset();
