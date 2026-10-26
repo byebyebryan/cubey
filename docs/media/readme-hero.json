@@ -1,0 +1,48 @@
+{
+  "description": "Approved README collage of five separate native Cubey captures.",
+  "license": "MIT; original Cubey captures. Individual capture provenance remains in site/media/manifest.json.",
+  "canvas": {
+    "width": 1600,
+    "height": 360,
+    "cutOffset": 64,
+    "dividerWidth": 5,
+    "dividerColor": "#ffffff"
+  },
+  "output": {
+    "file": "docs/media/readme-hero.png",
+    "width": 1200,
+    "height": 270,
+    "sha256": "6ecd71da5d390a673643fbec987ad337f48e8570d745988595fe3e8653c5a40a"
+  },
+  "panels": [
+    {
+      "asset": "ocean-surface",
+      "sha256": "f6dd406ffa733cc3f1bebc5645d014d45f411212bdf9862fa01299635f42958e",
+      "positionX": 0.5
+    },
+    {
+      "asset": "terrain-water",
+      "sha256": "013ac29a7ff17685551bc7e9c2a783bc32718e511db4ec830fb5d486baaeddcd",
+      "positionX": 0.67
+    },
+    {
+      "asset": "water-3d",
+      "sha256": "88e3f06f8526b040ac14ca392d703c74d5bfa09775da5078d80ddb39e6cfb080",
+      "fitVolume": {
+        "bounds": {"left": 240, "top": 294, "right": 824, "bottom": 716},
+        "scale": 0.44,
+        "background": "Extend the empty lower background scanline; preserve the complete water volume."
+      }
+    },
+    {
+      "asset": "fire-3d",
+      "sha256": "8c227ccb5eb07a4c9c00045dfaaf32a95f3f388e1e3c70b329a3799d2685f49e",
+      "positionX": 0.5
+    },
+    {
+      "asset": "robot",
+      "sha256": "b0c42369627605a0ca1e18ff7389a9af02fd67c59cc4ee965071c106d571c07c",
+      "positionX": 0.52
+    }
+  ]
+}

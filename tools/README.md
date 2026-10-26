@@ -48,6 +48,19 @@ To run both checks directly after configuration:
 `python3 -B tools/check_foundation_layers.py --target-graph build/dev/foundation-targets.json`.
 Keep the adjacent generated `.json.links/` directory with that manifest.
 
+## README hero
+
+The root README links to a five-capture banner. Its
+[composition recipe](../docs/media/readme-hero.json) pins the source images,
+panel crops and approved PNG identity. The water panel fits the full volume
+inside its slice and extends only the empty lower background scanline.
+
+After installing the site's locked dependencies with `npm ci` in `site/`,
+regenerate it from the repository root with `node tools/prepare_readme_hero.mjs`.
+The tool requires Node and the site's Sharp dependency; it needs no native
+renderer, GPU or private preview files. Changed source images or output fail
+the identity check so a future visual revision gets an explicit review.
+
 ## Documentation gate
 
 After configuring and building the normal dev tree, run `ctest --preset dev-docs`.
