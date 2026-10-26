@@ -26,10 +26,6 @@ there when implementation boundaries matter.
   workshop and the shared parameterized material-content gap. The
   [material presentation evidence](notes/material-presentation-evidence.md)
   records native presets, two short stories and a compact published report.
-- [Original README showcase storyboard](showcase.md): retained shot cards,
-  capture contracts, and provenance for the earlier five-film gallery.
-- [Original README media package](media/showcase/README.md): retained player
-  mappings, committed MP4/poster fallbacks, hashes, recipes, and licensing.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
 
@@ -161,6 +157,10 @@ Legacy material:
 
 - [Archive index](archive/README.md): completed foundation phases, retired
   applications and retained rejection records.
+- [Original README showcase storyboard](showcase.md): historical shot cards
+  and capture contracts, superseded by the presentation site for public structure.
+- [Original README media package](media/showcase/README.md): retained player
+  mappings, committed MP4/poster fallbacks, hashes, recipes, and licensing.
 - [Archived terrain reboot direction](architecture/terrain-reboot.md): earlier
   product strategy retained at its original URL; current behavior is in Terrain V1.
 

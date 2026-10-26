@@ -1,14 +1,20 @@
 # Showcase Storyboard and Capture Plan
 
-Status: design authority. This document defines what the public visual
-showcase should communicate and the capture work that follows. Five root
-highlights are creatively locked and packaged as committed media. The
-remaining seven storyboard cards are future editorial work; GitHub attachment
-publication for the current five is complete and recorded in the [showcase
-manifest](media/showcase/manifest.json) and [media package README](media/showcase/README.md).
-Terrain Water (formerly the featured Fluid 2.5D terrain demo) is the fifth published highlight. Its Joining valleys sunset
-cut is owner-selected through headless cinematic auditions, with a byte-verified
-GitHub native-player attachment. It does not alter the original four clips or select a suite hero.
+Status: historical README-gallery storyboard and capture record. The
+[presentation site](https://dev.byebyebryan.com/cubey/) now owns the public
+collection and its subject structure; the [site guide](../site/README.md)
+describes authoring, selected media and publication. The roster, candidate
+shots and unfinished gates below retain their original scope. They are not
+the current site design or an active capture backlog.
+
+The earlier gallery published five highlights, with exact media and GitHub
+attachment identities in the [showcase manifest](media/showcase/manifest.json)
+and [retained media package](media/showcase/README.md). Terrain Water (formerly
+the featured Fluid 2.5D terrain demo) was the fifth highlight. Its Joining
+valleys sunset cut was owner-selected through headless cinematic auditions,
+with a byte-verified GitHub native-player attachment. The other seven shot
+cards remain historical proposals; the presentation site made its own later
+selection and framing decisions.
 
 The showcase is a set of small project stories whose render inputs and capture
 recipes can be reproduced. It is not a single merged reel and it is not a
@@ -18,7 +24,7 @@ clip at README size.
 
 ## Scope
 
-The public-facing storyboard set contains these twelve active projects:
+The original public-facing storyboard set contained these twelve projects:
 
 | Project | Public role | Story family |
 | --- | --- | --- |
@@ -59,8 +65,8 @@ The following remain outside this showcase set:
   `studies/terrain/shadertoy`;
 - archived or retired applications and studies.
 
-The active/reference inventory remains documented in the [root
-README](../README.md). Technical validation documentation may continue to
+The current active/reference inventory is in the [project documentation
+index](README.md#project-docs). Technical validation documentation may continue to
 mention `pbr_furnace`.
 
 ## Suite visual language
@@ -640,8 +646,9 @@ recipe.
 
 Each original committed gallery MP4 was uploaded through GitHub Markdown in the
 locked editorial order and anchored by [issue #1](https://github.com/byebyebryan/cubey/issues/1),
-which is closed with reason `completed`. The native-player URLs are recorded in
-the root and package READMEs and in the [manifest](media/showcase/manifest.json)
+which is closed with reason `completed`. The native-player URLs were originally
+embedded in the root README and remain in the [retained package
+README](media/showcase/README.md) and [manifest](media/showcase/manifest.json)
 alongside each committed relative reference. Fluid 2.5D was subsequently added
 in a separate [provenance comment](https://github.com/byebyebryan/cubey/issues/1#issuecomment-6201178145),
 without changing that closed issue's original body or attachment mappings.
@@ -659,7 +666,7 @@ publication changes.
 
 ## Design boundary
 
-This document records the approved camera and 60 FPS capture/publication
-standard for the five published root-gallery highlights. It does not authorize
+This document records the original approved camera and 60 FPS capture/publication
+standard for the five README-gallery highlights. It does not authorize
 future uploads, commits, pushes, timeline APIs, or unrelated capture work;
 future actions remain explicitly authorized.
