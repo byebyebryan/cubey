@@ -4,6 +4,8 @@ Cubey is a personal graphics and simulation workshop built with C++20 and Vulkan
 Focused projects explore rendering, fluids, procedural environments, materials,
 and authored forms, with a shared foundation that grows from their needs.
 
+[![Ocean waves, reflections and clouds rendered in Cubey](site/public/media/ocean-surface.webp)](https://dev.byebyebryan.com/cubey/)
+
 **[Explore the demos → dev.byebyebryan.com/cubey](https://dev.byebyebryan.com/cubey/)**
 
 [Build and run](docs/getting-started.md) · [Project guides](docs/README.md#project-docs) · [Architecture](docs/architecture/README.md) · [Roadmap](docs/roadmap.md)
