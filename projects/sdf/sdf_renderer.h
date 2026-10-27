@@ -1,6 +1,7 @@
 #pragma once
 #include "sdf_config.h"
 #include "sdf_field.h"
+#include "sdf_regions.h"
 
 #include <chrono>
 #include <cubey/core/profiling.h>
@@ -29,11 +30,12 @@ static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUnifo
 class Renderer {
   public:
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent, VkFormat format,
-                std::uint32_t slots, const Field& field, const SdfConfig& config,
-                const AuthoredScene* scene = nullptr);
+                std::uint32_t slots, const Field* field, const SdfConfig& config,
+                const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr);
     void destroy();
     void update_field(vulkan::Device& device, const Field& field);
-    void update_authored(const AuthoredScene* scene);
+    void update_authored(vulkan::Device& device, const AuthoredScene* scene,
+                         const GpuRegionPrograms* regions = nullptr);
     void set_environment_elapsed_seconds(double seconds) {
         environment_seconds_ = seconds;
     }
@@ -77,6 +79,9 @@ class Renderer {
     std::optional<vulkan::GpuTimestampProfiler> whole_profiler_;
     std::vector<std::optional<std::uint64_t>> recorded_frames_;
     const Field* field_ = nullptr;
+    const GpuRegionPrograms* regions_ = nullptr;
+    profiling::ProfileRecorder* profile_ = nullptr;
+    bool source_tracing_ = false;
     VkExtent2D scene_extent_{};
 };
 } // namespace cubey::projects::sdf

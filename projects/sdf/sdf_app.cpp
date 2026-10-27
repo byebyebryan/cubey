@@ -1,3 +1,4 @@
+#include "sdf_comparison.h"
 #include "sdf_config.h"
 #include "sdf_field.h"
 #include "sdf_history.h"
@@ -19,9 +20,11 @@
 #include <array>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <imgui.h>
 #include <iostream>
 #include <limits>
+#include <nlohmann/json.hpp>
 
 namespace cubey::projects::sdf {
 namespace {
@@ -40,11 +43,39 @@ class App {
               : config_.authored_path.empty()
                   ? std::nullopt
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
+        if (!config_.comparison_actions.empty()) {
+            std::ifstream input(config_.comparison_actions);
+            study_actions_ = nlohmann::json::parse(input);
+            if (!config_.common.headless || !authored_ || config_.timeline.motion != "static" ||
+                config_.comparison_output.empty() ||
+                study_actions_.at("format") != "cubey.sdf.action-study" ||
+                study_actions_.at("version") != 1 ||
+                study_actions_.at("actions").size() != config_.common.frames ||
+                config_.common.frames > 128)
+                throw std::invalid_argument("action study requires authored static headless frames "
+                                            "matching its bounded manifest and a receipt path");
+            study_receipt_ = nlohmann::json::array();
+        }
         if (!config_.workshop.empty())
             catalog_ = asset::load_material_catalog(
                 std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
         if (authored_)
             validate_authored_motion(*authored_);
+        if (config_.csg_evaluation == "pruned" &&
+            (!authored_ || config_.surface_trace == "sampled" ||
+             (config_.region_axis != 4 && config_.region_axis != 16 && config_.region_axis != 64)))
+            throw std::invalid_argument(
+                "pruned evaluation requires authored source tracing and region axis 4, 16 or 64");
+        if (config_.surface_trace != "sampled") {
+            if (!authored_)
+                throw std::invalid_argument("source tracing requires an authored scene");
+            if (config_.debug == 4)
+                throw std::invalid_argument("brick debug is unavailable for source tracing");
+            if (config_.validate || config_.validate_batches || config_.validate_subtractions ||
+                config_.validate_history)
+                throw std::invalid_argument("source tracing uses --comparison-input; legacy field "
+                                            "oracles require sampled tracing");
+        }
         if (!authored_ && config_.timeline.motion == "material-story")
             throw std::invalid_argument("material-story requires an authored body/cut history");
         if (config_.lighting != "atmosphere" && !authored_)
@@ -124,6 +155,10 @@ class App {
                 };
             callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
                                          const host::HeadlessCaptureFrame& frame) {
+                if (!study_actions_.is_null()) {
+                    finish_study_action();
+                    apply_study_action(ctx.device(), frame.index);
+                }
                 const double time =
                     config_.snapshot_time >= 0
                         ? config_.snapshot_time
@@ -184,7 +219,7 @@ class App {
                                                    : *authored_;
                     static_cast<void>(authored_appearance_hash(next));
                     validate_authored_motion(next);
-                    const auto before = field_->stats().build_count;
+                    const auto before = field_ ? field_->stats().build_count : 0;
                     auto previous = *authored_;
                     authored_ = std::move(next);
                     try {
@@ -197,8 +232,8 @@ class App {
                     std::cout << "sdf: authored update geometry=" << std::hex
                               << authored_geometry_hash(*authored_)
                               << " appearance=" << authored_appearance_hash(*authored_) << std::dec
-                              << " field_rebuilt=" << (field_->stats().build_count != before)
-                              << '\n';
+                              << " field_rebuilt="
+                              << (field_ && field_->stats().build_count != before) << '\n';
                 } catch (const std::exception& error) {
                     error_ = error.what();
                 }
@@ -243,7 +278,8 @@ class App {
                 } else {
                     active_prefix_ = timeline_.prefix;
                 }
-                renderer_.update_field(ctx.device(), *field_);
+                if (field_)
+                    renderer_.update_field(ctx.device(), *field_);
             }
         };
         callbacks.draw_ui = [&](host::WindowedAppContext&) { draw_ui(); };
@@ -327,8 +363,9 @@ class App {
     void initialize(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                     const render::ColorTargetView& target, std::uint32_t slots) {
         runtime_.attach_gpu_if_needed(gpu);
-        if (!field_) {
-            field_ = std::make_unique<Field>(device, runtime_.gpu(), config_.atlas_axis);
+        if (!geometry_initialized_) {
+            if (config_.surface_trace != "analytic")
+                field_ = std::make_unique<Field>(device, runtime_.gpu(), config_.atlas_axis);
             if (config_.validate_batches)
                 validate_batches(device, runtime_.gpu(), *field_);
             if (config_.validate_batches && authored_)
@@ -342,7 +379,13 @@ class App {
                 displayed_authored_ = authored_build()
                                           ? authored_history_scene(*authored_, timeline_.prefix)
                                           : *authored_;
-                field_->build(*displayed_authored_);
+                if (config_.csg_evaluation == "pruned") {
+                    regions_ = std::make_unique<GpuRegionPrograms>(device, *displayed_authored_,
+                                                                   config_.region_axis);
+                    ++region_builds_;
+                }
+                if (field_)
+                    field_->build(*displayed_authored_);
                 if (config_.validate) {
                     validate_field(device, runtime_.gpu(), *field_, Recipe{},
                                    &*displayed_authored_);
@@ -420,9 +463,12 @@ class App {
             if (!authored_)
                 std::cout << "sdf: recipe hash=" << std::hex << recipe_hash(recipe_) << std::dec
                           << '\n';
+            geometry_initialized_ = true;
+            std::cout << "sdf: trace=" << config_.surface_trace
+                      << " field_bytes=" << (field_ ? field_->stats().allocation_bytes : 0) << '\n';
         }
-        renderer_.create(device, gpu, target.extent, target.format, slots, *field_, config_,
-                         displayed_authored_ ? &*displayed_authored_ : nullptr);
+        renderer_.create(device, gpu, target.extent, target.format, slots, field_.get(), config_,
+                         displayed_authored_ ? &*displayed_authored_ : nullptr, regions_.get());
     }
     void prepare_time(vulkan::Device& device, double time, bool force = false) {
         sample_time(time);
@@ -431,11 +477,27 @@ class App {
                 return;
             auto next = authored_build() ? authored_history_scene(*authored_, timeline_.prefix)
                                          : *authored_;
+            // Build all fallible candidate resources before publishing either the
+            // field or the program. Queue-idle retires the preceding snapshot.
+            std::unique_ptr<GpuRegionPrograms> next_regions;
+            if (config_.csg_evaluation == "pruned" &&
+                (!regions_ || regions_->geometry_hash != authored_geometry_hash(next)))
+                next_regions =
+                    std::make_unique<GpuRegionPrograms>(device, next, config_.region_axis);
+            if (study_fault_ == "region" || study_fault_ == "field")
+                throw CapacityExceeded("injected study failure before " + study_fault_ +
+                                       " publication");
             runtime_.gpu().wait_queue_idle("sdf authored publication");
-            field_->build(next);
+            if (field_)
+                field_->build(next);
             displayed_authored_ = std::move(next);
-            renderer_.update_field(device, *field_);
-            renderer_.update_authored(&*displayed_authored_);
+            if (next_regions) {
+                regions_ = std::move(next_regions);
+                ++region_builds_;
+            }
+            if (field_)
+                renderer_.update_field(device, *field_);
+            renderer_.update_authored(device, &*displayed_authored_, regions_.get());
             active_prefix_ = timeline_.prefix;
             error_.clear();
             if (authored_build())
@@ -453,6 +515,81 @@ class App {
         renderer_.update_field(device, *field_);
         active_prefix_ = timeline_.prefix;
         error_.clear();
+    }
+    void finish_study_action() {
+        if (!pending_study_action_)
+            return;
+        runtime_.gpu().wait_queue_idle("study first completed GPU frame");
+        auto& row = study_receipt_.back();
+        row["request_to_waited_gpu_completion_ms"] =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() -
+                                                      *pending_study_action_)
+                .count();
+        pending_study_action_.reset();
+    }
+    void apply_study_action(vulkan::Device& device, std::uint64_t frame) {
+        const auto& action = study_actions_.at("actions").at(frame);
+        const auto oracle_start = std::chrono::steady_clock::now();
+        auto expected = parse_authored_scene(action.at("visible_scene").dump());
+        if (action.contains("visible_history_prefix"))
+            expected = authored_history_scene(
+                expected, action.at("visible_history_prefix").get<std::size_t>());
+        const auto expected_geometry = authored_geometry_hash(expected),
+                   expected_appearance = authored_appearance_hash(expected);
+        const auto oracle_ms = std::chrono::duration<double, std::milli>(
+                                   std::chrono::steady_clock::now() - oracle_start)
+                                   .count();
+        const auto start = std::chrono::steady_clock::now();
+        const auto field_before = field_ ? field_->stats().build_count : 0;
+        const auto region_before = region_builds_;
+        auto previous = *authored_;
+        bool failed = false;
+        try {
+            auto next = parse_authored_scene(action.at("scene").dump());
+            if (action.contains("history_prefix"))
+                next = authored_history_scene(next, action.at("history_prefix").get<std::size_t>());
+            validate_authored_motion(next);
+            authored_ = std::move(next);
+            study_fault_ = action.value("fault", std::string{});
+            prepare_time(device, 0, true);
+        } catch (const CapacityExceeded&) {
+            authored_ = std::move(previous);
+            failed = true;
+        } catch (...) {
+            authored_ = std::move(previous);
+            study_fault_.clear();
+            throw;
+        }
+        study_fault_.clear();
+        if (failed != action.value("expect_failure", false))
+            throw std::runtime_error("unexpected study publication result");
+        if (authored_geometry_hash(*displayed_authored_) != expected_geometry ||
+            authored_appearance_hash(*displayed_authored_) != expected_appearance)
+            throw std::runtime_error("study published mixed geometry/appearance revision");
+        const auto field_delta = (field_ ? field_->stats().build_count : 0) - field_before;
+        const auto region_delta = region_builds_ - region_before;
+        if (action.value("geometry_unchanged", false) && (field_delta || region_delta))
+            throw std::runtime_error(
+                "appearance or failed action rebuilt a published geometry cache");
+        study_receipt_.push_back(
+            {{"label", action.at("label")},
+             {"frame", frame},
+             {"failed", failed},
+             {"expected_oracle_before_request_ms", oracle_ms},
+             {"geometry_hash", authored_geometry_hash(*displayed_authored_)},
+             {"appearance_hash", authored_appearance_hash(*displayed_authored_)},
+             {"field_builds", field_delta},
+             {"region_builds", region_delta},
+             {"field_build_ms", field_ && field_delta ? field_->stats().build_ms : 0},
+             {"region_build_upload_ms", regions_ && region_delta ? regions_->build_upload_ms : 0},
+             {"field_bytes", field_ ? field_->stats().allocation_bytes : 0},
+             {"region_bytes", regions_ ? regions_->allocation_bytes : 0},
+             {"region_scratch_peak_bytes", regions_ ? regions_->scratch_peak_bytes : 0},
+             {"region_references", regions_ ? regions_->reference_count : 0},
+             {"compile_cache_publish_ms",
+              std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
+                  .count()}});
+        pending_study_action_ = start;
     }
     void draw_ui() {
         if (config_.timeline.motion == "material-story" || config_.lighting_cycle != "frozen")
@@ -880,8 +1017,8 @@ class App {
             if (!error_.empty())
                 ImGui::TextWrapped("%s", error_.c_str());
             if (ImGui::CollapsingHeader("Field and tracing")) {
-                const auto& stats = field_->stats();
-                ImGui::Text("Bricks: %u / %u", stats.brick_count, field_->capacity);
+                const auto stats = field_ ? field_->stats() : FieldStats{};
+                ImGui::Text("Bricks: %u / %u", stats.brick_count, field_ ? field_->capacity : 0);
                 ImGui::Text("Field: %.1f MiB",
                             static_cast<double>(stats.allocation_bytes) / (1024 * 1024));
                 ImGui::Text("Last build: %.2f ms", stats.build_ms);
@@ -892,8 +1029,27 @@ class App {
         ImGui::End();
     }
     void shutdown() {
+        if (!study_actions_.is_null()) {
+            finish_study_action();
+            std::ofstream output(config_.comparison_output);
+            if (!output)
+                throw std::runtime_error("cannot write action study receipt");
+            output
+                << nlohmann::json{{"format", "cubey.sdf.action-results"},
+                                  {"version", 1},
+                                  {"trace", config_.surface_trace},
+                                  {"csg", config_.csg_evaluation},
+                                  {"region_axis", config_.region_axis},
+                                  {"completion_scope",
+                                   "request to queue-idle observation after first rendered GPU "
+                                   "frame; serialized upper bound, not physical display latency"},
+                                  {"actions", study_receipt_}}
+                       .dump(2)
+                << '\n';
+        }
         renderer_.destroy();
         field_.reset();
+        regions_.reset();
         runtime_.detach_gpu_if_attached();
     }
     SdfConfig config_;
@@ -904,6 +1060,12 @@ class App {
     ProjectRuntimeAdapter runtime_{1};
     OrbitController orbit_{{.distance = 1.35F, .min_distance = 0.6F, .max_distance = 5.0F}};
     std::unique_ptr<Field> field_;
+    std::unique_ptr<GpuRegionPrograms> regions_;
+    std::uint64_t region_builds_ = 0;
+    nlohmann::json study_actions_, study_receipt_;
+    std::string study_fault_;
+    std::optional<std::chrono::steady_clock::time_point> pending_study_action_;
+    bool geometry_initialized_ = false;
     Renderer renderer_;
     TimelineSample timeline_;
     std::size_t active_prefix_ = std::numeric_limits<std::size_t>::max();
@@ -918,6 +1080,14 @@ class App {
 };
 } // namespace
 int run_sdf(const SdfConfig& config) {
+    if ((!config.comparison_input.empty() && !config.comparison_actions.empty()) ||
+        (config.comparison_donor && config.comparison_input.empty()) ||
+        (!config.comparison_output.empty() && config.comparison_input.empty() &&
+         config.comparison_actions.empty()))
+        throw std::invalid_argument(
+            "select exactly one tracing query or action study for its receipt");
+    if (!config.comparison_input.empty())
+        return run_tracing_comparison(config);
     if (!config.workshop.empty() && (!config.authored_path.empty() || !config.recipe_path.empty()))
         throw std::invalid_argument("workshop selects its own specimen");
     return App(config).run();

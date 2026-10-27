@@ -71,6 +71,8 @@ void save_authored_scene(const std::filesystem::path& path, const AuthoredScene&
 [[nodiscard]] std::uint64_t authored_geometry_hash(const AuthoredScene& scene);
 [[nodiscard]] std::uint64_t authored_appearance_hash(const AuthoredScene& scene);
 [[nodiscard]] float authored_distance(math::Vec3 point, const AuthoredScene& scene);
+// Unclipped leaf value for project-local derived acceleration structures.
+[[nodiscard]] float authored_primitive_distance(math::Vec3 point, const SceneInstruction& node);
 [[nodiscard]] SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene,
                                              float footprint = 0);
 // Header followed by explicit vec4 instructions; suitable for a storage buffer.

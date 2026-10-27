@@ -14,6 +14,12 @@ struct SdfConfig {
     double snapshot_time = -1;
     std::filesystem::path recipe_path, export_recipe_path;
     std::filesystem::path authored_path, export_authored_path;
+    std::filesystem::path comparison_input, comparison_output;
+    std::filesystem::path comparison_actions;
+    std::string surface_trace = "sampled";
+    std::string csg_evaluation = "full";
+    std::uint32_t region_axis = 16;
+    bool comparison_donor = false;
     std::string workshop, workshop_material = "marble";
     std::filesystem::path material_recipe_path, export_material_recipe_path;
     std::filesystem::path material_environment_path;
@@ -60,6 +66,12 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         return spec;
     };
     auto scene = option("scene", "Deterministic box recipe", config::ValueType::Enum);
+    auto surface_trace =
+        option("surface-trace", "Authored surface tracer (study)", config::ValueType::Enum);
+    surface_trace.enum_values = {"sampled", "hybrid", "analytic"};
+    auto csg =
+        option("csg-evaluation", "Authored geometry evaluation (study)", config::ValueType::Enum);
+    csg.enum_values = {"full", "pruned"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -136,6 +148,20 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     workshop_blend.negative_cli_name = "--no-workshop-blend-materials";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
+        .bind(surface_trace, c.surface_trace)
+        .bind(csg, c.csg_evaluation)
+        .bind(option("region-axis", "Exact region grid (4, 16 or 64)", config::ValueType::UInt32),
+              c.region_axis)
+        .bind(option("comparison-donor", "Qualify pinned donor compute core",
+                     config::ValueType::Bool),
+              c.comparison_donor)
+        .bind(option("comparison-input", "Private tracing study input", config::ValueType::Path),
+              c.comparison_input)
+        .bind(option("comparison-actions", "Private scripted publication study",
+                     config::ValueType::Path),
+              c.comparison_actions)
+        .bind(option("comparison-output", "Private tracing study receipt", config::ValueType::Path),
+              c.comparison_output)
         .bind(option("workshop", "Material workshop specimen: sphere, block, csg",
                      config::ValueType::String),
               c.workshop)

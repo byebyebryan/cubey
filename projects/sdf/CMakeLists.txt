@@ -7,11 +7,18 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp
+    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp
     SHADERS shaders/material_study.frag shaders/sdf.vert shaders/sdf.frag shaders/sdf_authored.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
         ${CUBEY_SDF_CLOUD_SHADERS}
         shaders/authored_filter.comp shaders/authored_bricks.comp
         shaders/authored_validate.comp
+        shaders/comparison_full.comp shaders/comparison_hybrid.comp shaders/comparison_sampled.comp
+        shaders/comparison_donor.comp
+        shaders/comparison_analytic_pruned.comp shaders/comparison_hybrid_pruned.comp
+        shaders/sdf_analytic.frag shaders/sdf_hybrid.frag
+        shaders/material_analytic.frag shaders/material_hybrid.frag
+        shaders/sdf_analytic_pruned.frag shaders/sdf_hybrid_pruned.frag
+        shaders/material_analytic_pruned.frag shaders/material_hybrid_pruned.frag
         shaders/occluder.vert shaders/occluder.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -23,6 +30,9 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_region_tests sdf_regions.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_region_tests.cpp)
+    target_link_libraries(cubey_project_sdf_region_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
+    add_test(NAME sdf_region_tests COMMAND cubey_project_sdf_region_tests "${CMAKE_CURRENT_SOURCE_DIR}/comparison/fixtures.json")
     add_executable(cubey_project_sdf_recipe_tests sdf_recipe.cpp sdf_recipe_tests.cpp sdf_timeline.cpp)
     target_link_libraries(cubey_project_sdf_recipe_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_recipe_tests COMMAND cubey_project_sdf_recipe_tests)

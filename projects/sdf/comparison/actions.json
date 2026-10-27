@@ -1,0 +1,3314 @@
+{
+  "format": "cubey.sdf.action-study",
+  "version": 1,
+  "actions": [
+    {
+      "label": "initial source",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "original-group",
+          "type": "group",
+          "children": [
+            {
+              "name": "hidden-A",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "original-group",
+          "type": "group",
+          "children": [
+            {
+              "name": "hidden-A",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": true
+    },
+    {
+      "label": "cover A with B",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cover",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "B",
+              "type": "sphere",
+              "radius": 0.3,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cover",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "B",
+              "type": "sphere",
+              "radius": 0.3,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "undo cover restores A",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "original-group",
+          "type": "group",
+          "children": [
+            {
+              "name": "hidden-A",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "original-group",
+          "type": "group",
+          "children": [
+            {
+              "name": "hidden-A",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "redo cover",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cover",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "B",
+              "type": "sphere",
+              "radius": 0.3,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cover",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "B",
+              "type": "sphere",
+              "radius": 0.3,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "undo before branch",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "original-group",
+          "type": "group",
+          "children": [
+            {
+              "name": "hidden-A",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "original-group",
+          "type": "group",
+          "children": [
+            {
+              "name": "hidden-A",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "new action abandons redo branch",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "redo unavailable",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": true
+    },
+    {
+      "label": "atomic mirrored stroke",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "mirrored-action",
+          "type": "union",
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "left",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                -0.2,
+                0.2,
+                0
+              ]
+            },
+            {
+              "name": "right",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0.2,
+                0.2,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "mirrored-action",
+          "type": "union",
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "left",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                -0.2,
+                0.2,
+                0
+              ]
+            },
+            {
+              "name": "right",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0.2,
+                0.2,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "undo both mirrored sides",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "transform earlier named group",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "position": [
+                0,
+                0.1,
+                0
+              ],
+              "scale": 1.2,
+              "rotation_xyzw": [
+                0,
+                0.2,
+                0,
+                0.9797958971132712
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "branch",
+          "type": "union",
+          "children": [
+            {
+              "name": "original-group",
+              "type": "group",
+              "children": [
+                {
+                  "name": "hidden-A",
+                  "type": "sphere",
+                  "radius": 0.1,
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ]
+                }
+              ],
+              "position": [
+                0,
+                0.1,
+                0
+              ],
+              "scale": 1.2,
+              "rotation_xyzw": [
+                0,
+                0.2,
+                0,
+                0.9797958971132712
+              ]
+            },
+            {
+              "name": "C",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "smooth fusion",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "change smooth radius",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.07,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.07,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "undo smooth radius",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "appearance color",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": true
+    },
+    {
+      "label": "appearance domain",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "fused",
+          "type": "smooth-union",
+          "radius": 0.03,
+          "children": [
+            {
+              "name": "branch",
+              "type": "union",
+              "children": [
+                {
+                  "name": "original-group",
+                  "type": "group",
+                  "children": [
+                    {
+                      "name": "hidden-A",
+                      "type": "sphere",
+                      "radius": 0.1,
+                      "position": [
+                        0,
+                        0,
+                        0
+                      ]
+                    }
+                  ],
+                  "position": [
+                    0,
+                    0.1,
+                    0
+                  ],
+                  "scale": 1.2,
+                  "rotation_xyzw": [
+                    0,
+                    0.2,
+                    0,
+                    0.9797958971132712
+                  ]
+                },
+                {
+                  "name": "C",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0.25,
+                    0,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "smooth-ball",
+              "type": "sphere",
+              "radius": 0.12,
+              "position": [
+                0,
+                -0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": true
+    },
+    {
+      "label": "add inherited-material cut",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0,
+                0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0,
+                0.1,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "geometry_unchanged": false
+    },
+    {
+      "label": "change cut owner",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "geometry_unchanged": true
+    },
+    {
+      "label": "region boundary failure retains completed snapshot",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0.03,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "geometry_unchanged": true,
+      "fault": "region",
+      "expect_failure": true
+    },
+    {
+      "label": "field boundary failure retains completed snapshot",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0.03,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "geometry_unchanged": true,
+      "fault": "field",
+      "expect_failure": true
+    },
+    {
+      "label": "explicit deterministic retry",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0.03,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "visible_scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              0.2,
+              0.8,
+              0.3
+            ],
+            "roughness": 0.5,
+            "material_from_object": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0.1,
+              0,
+              0,
+              1
+            ]
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "cut",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "fused",
+              "type": "smooth-union",
+              "radius": 0.03,
+              "children": [
+                {
+                  "name": "branch",
+                  "type": "union",
+                  "children": [
+                    {
+                      "name": "original-group",
+                      "type": "group",
+                      "children": [
+                        {
+                          "name": "hidden-A",
+                          "type": "sphere",
+                          "radius": 0.1,
+                          "position": [
+                            0,
+                            0,
+                            0
+                          ]
+                        }
+                      ],
+                      "position": [
+                        0,
+                        0.1,
+                        0
+                      ],
+                      "scale": 1.2,
+                      "rotation_xyzw": [
+                        0,
+                        0.2,
+                        0,
+                        0.9797958971132712
+                      ]
+                    },
+                    {
+                      "name": "C",
+                      "type": "sphere",
+                      "radius": 0.12,
+                      "position": [
+                        0.25,
+                        0,
+                        0
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "smooth-ball",
+                  "type": "sphere",
+                  "radius": 0.12,
+                  "position": [
+                    0,
+                    -0.1,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "bore",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                0.03,
+                0.1,
+                0
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "geometry_unchanged": false
+    }
+  ]
+}

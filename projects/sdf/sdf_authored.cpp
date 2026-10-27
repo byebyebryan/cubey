@@ -708,4 +708,7 @@ std::vector<std::uint8_t> authored_program_bytes(const AuthoredScene* scene) {
     }
     return bytes;
 }
+float authored_primitive_distance(math::Vec3 point, const SceneInstruction& node) {
+    return primitive_distance(point, node);
+}
 } // namespace cubey::projects::sdf

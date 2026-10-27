@@ -1,0 +1,41 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "tracing comparison",
+  "materials": [
+    {
+      "name": "red",
+      "base_color": [
+        1,
+        0,
+        0
+      ],
+      "roughness": 0.5
+    },
+    {
+      "name": "blue",
+      "base_color": [
+        0,
+        0,
+        1
+      ],
+      "roughness": 0.7
+    }
+  ],
+  "root": {
+    "name": "original-group",
+    "type": "group",
+    "children": [
+      {
+        "name": "hidden-A",
+        "type": "sphere",
+        "radius": 0.1,
+        "position": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#include "authored.glsl"
+layout(local_size_x=4,local_size_y=4,local_size_z=4) in;
+// Scheduling adapter: one 64-lane workgroup replaces subgroup allocation and
+// broadcast. This isolated first-level run has uniform program sizes per group.
+shared int broadcast_value;
+bool donorElect() {return gl_LocalInvocationIndex==0u;}
+int donorBroadcast(int v) {if(donorElect()) broadcast_value=v;barrier();return broadcast_value;}
+#define subgroupElect donorElect
+#define subgroupBroadcastFirst donorBroadcast
+#define gl_SubgroupSize 64u
+#define gl_SubgroupInvocationID gl_LocalInvocationIndex
+// Isolated, 32-bit descriptor adapter for the pinned donor compute core.
+#define uint16_t uint
+#define NODETYPE_BINARY 0
+#define NODETYPE_PRIMITIVE 1
+struct Node {int type;int idx_in_type;};
+struct BinaryOp {float k;float s;};
+struct ActiveNode {uint idx_and_sign;};
+struct Tmp {uint x;};
+struct Primitive {int id;};
+layout(std430,set=0,binding=0) readonly buffer N {Node tab[];} nodes;
+layout(std430,set=0,binding=1) readonly buffer B {BinaryOp tab[];} binary_ops;
+layout(std430,set=0,binding=2) readonly buffer PI {uint tab[];} parents_in;
+layout(std430,set=0,binding=4) readonly buffer AI {ActiveNode tab[];} active_nodes_in;
+layout(std430,set=0,binding=5) buffer PO {uint tab[];} parents_out;
+layout(std430,set=0,binding=6) buffer AO {ActiveNode tab[];} active_nodes_out;
+layout(std430,set=0,binding=7) readonly buffer IO {int tab[];} parent_cells_offset;
+layout(std430,set=0,binding=8) buffer OO {int tab[];} child_cells_offset;
+layout(std430,set=0,binding=9) readonly buffer IC {int tab[];} parent_cells_num_active;
+layout(std430,set=0,binding=10) buffer OC {int tab[];} num_active_out;
+layout(std430,set=0,binding=11) buffer AC {int val;} active_count;
+layout(std430,set=0,binding=12) readonly buffer VI {float tab[];} cell_value_in;
+layout(std430,set=0,binding=13) buffer VO {float tab[];} cell_value_out;
+layout(std430,set=0,binding=14) buffer SC {uint tab[];} old_to_new_scratch;
+layout(std430,set=0,binding=15) buffer TC {int val;} old_to_new_count;
+layout(std430,set=0,binding=16) buffer TM {Tmp tab[];} tmp;
+layout(push_constant) uniform Params {int total_num_nodes;int grid_size;int first_lvl;};
+float BinaryOp_blend_factor(BinaryOp b) {return b.k;}
+float BinaryOp_sign(BinaryOp b) {return b.s;}
+float kernel(float x,float k) {return k==0 ? 0 : pow(max(0,k-x),2)*.25/k;}
+int ActiveNode_index(ActiveNode n) {return int(n.idx_and_sign&32767u);}
+bool ActiveNode_sign(ActiveNode n) {return (n.idx_and_sign&32768u)==0u;}
+ActiveNode ActiveNode_make(int i,bool s) {return ActiveNode(uint(i)|(s ? 0u : 32768u));}
+int Tmp_state_get(Tmp t) {return int(t.x&3u);}
+bool Tmp_active_global_get(Tmp t) {return (t.x&4u)!=0u;}
+bool Tmp_inactive_ancestors_get(Tmp t) {return (t.x&8u)!=0u;}
+bool Tmp_sign_get(Tmp t) {return (t.x&16u)!=0u;}
+int Tmp_parent_get(Tmp t) {return int((t.x>>5)&65535u);}
+void Tmp_state_write(inout Tmp t,int s) {t.x=(t.x&~3u)|uint(s);}
+void write_bit(inout uint x,int i,bool v) {x=(x&~(1u<<i))|(uint(v)<<i);}
+void Tmp_active_global_write(inout Tmp t,bool b) {write_bit(t.x,2,b);}
+void Tmp_inactive_ancestors_write(inout Tmp t,bool b) {write_bit(t.x,3,b);}
+void Tmp_sign_write(inout Tmp t,bool b) {write_bit(t.x,4,b);}
+void Tmp_parent_write(inout Tmp t,uint p) {t.x=(t.x&~(65535u<<5))|(p<<5);}
+uint get_parent_cell_idx(uint i,int size) {return i/64u;}
+float eval_prim(vec3 p,Primitive prim) {return authoredPrimitive(p,authoredNodes[prim.id]);}
+// The donor stores a separate primitive array. Its indices here are program IDs.
+Primitive primitiveAt(int id) {return Primitive(id);}
+// The token pair "prims.tab[node.idx_in_type]" is supplied by a local array
+// indexed identically to the program, with one entry per node.
+#define prims prims_adapter
+struct PrimsAdapter {Primitive tab[2048];};
+PrimsAdapter prims_adapter;
+#include "../third_party/lipschitz_pruning/common_culling.glsl"
+void main() {
+    for(int i=0;i<total_num_nodes;++i) prims_adapter.tab[i]=Primitive(i);
+    uint index=morton(ivec3(gl_GlobalInvocationID));
+    vec3 size=vec3(1.0/float(grid_size));
+    vec3 center=(vec3(gl_GlobalInvocationID)+.5)*size-.5;
+    compute_pruning(center,size,int(index));
+}

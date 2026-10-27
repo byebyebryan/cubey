@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 
@@ -21,9 +22,11 @@ static_assert(sizeof(Camera) == 128);
 constexpr auto hdr_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 } // namespace
 void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent,
-                      VkFormat format, std::uint32_t slots, const Field& field,
-                      const SdfConfig& config, const AuthoredScene* scene) {
-    field_ = &field;
+                      VkFormat format, std::uint32_t slots, const Field* field,
+                      const SdfConfig& config, const AuthoredScene* scene,
+                      const GpuRegionPrograms* regions) {
+    field_ = field;
+    source_tracing_ = config.surface_trace != "sampled";
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
     lighting_.emplace(device, slots);
@@ -60,12 +63,10 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         scene_optics_ = host_buffer(16 * sizeof(MaterialOptics));
     }
     create_environment(device, gpu, config, slots);
-    update_authored(scene);
+    update_authored(device, scene, regions);
     for (std::uint32_t i = 0; i < slots; ++i)
         preview_buffers_.push_back(host_buffer(authored_max_leaves * sizeof(SceneInstruction)));
     std::vector<vulkan::DescriptorSetBindingConfig> bindings{
-        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
-        {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
@@ -73,6 +74,15 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {13, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT},
         {14, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT}};
+    if (field) {
+        bindings.push_back({0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
+        bindings.push_back(
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT});
+    }
+    if (regions) {
+        bindings.push_back({16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
+        bindings.push_back({17, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
+    }
     if (study) {
         bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         for (std::uint32_t binding = 8; binding <= 12; ++binding)
@@ -81,7 +91,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     }
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device, vulkan::DescriptorSetInfo(bindings, slots));
-    update_field(device, field);
+    if (field)
+        update_field(device, *field);
     for (std::uint32_t i = 0; i < slots; ++i) {
         vulkan::DescriptorWriteBatch writes;
         writes.uniform_buffer(descriptors_->set(i), 2, lighting_->buffer({i, slots}).handle(),
@@ -98,6 +109,12 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                               scene_domains_->size());
         writes.storage_buffer(descriptors_->set(i), 14, scene_libraries_->handle(),
                               scene_libraries_->size());
+        if (regions) {
+            writes.storage_buffer(descriptors_->set(i), 16, regions->cells->handle(),
+                                  regions->cells->size());
+            writes.storage_buffer(descriptors_->set(i), 17, regions->references->handle(),
+                                  regions->references->size());
+        }
         if (study_environment_) {
             writes.storage_buffer(descriptors_->set(i), 7, scene_optics_->handle(),
                                   scene_optics_->size());
@@ -114,10 +131,17 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             bind_environment(device, {i, slots});
     }
     const auto path = std::filesystem::path(CUBEY_SDF_SHADER_DIR);
+    std::string fragment = config.surface_trace == "analytic"
+                               ? (study ? "material_analytic.frag.spv" : "sdf_analytic.frag.spv")
+                           : config.surface_trace == "hybrid"
+                               ? (study ? "material_hybrid.frag.spv" : "sdf_hybrid.frag.spv")
+                           : study ? "material_study.frag.spv"
+                           : scene ? "sdf_authored.frag.spv"
+                                   : "sdf.frag.spv";
+    if (regions)
+        fragment.insert(fragment.find(".frag"), "_pruned");
     const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
-                            render::fragment_shader_file(path / (study   ? "material_study.frag.spv"
-                                                                 : scene ? "sdf_authored.frag.spv"
-                                                                         : "sdf.frag.spv"))};
+                            render::fragment_shader_file(path / fragment)};
     const std::array layouts{descriptors_->layout()};
     render::MaterialPassInfo pass{
         .label = "sdf.trace",
@@ -148,7 +172,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         device, {.extent = extent, .color_format = format, .shader_stage_files = post_stages});
     if (!config.common.profile_output_prefix.empty() || config.common.print_frame_stats)
         profiler_.emplace(device, slots, material_atmosphere_ ? 16 : 4);
-    if (profiler_ && material_atmosphere_)
+    if (profiler_)
         whole_profiler_.emplace(device, slots, 1);
     recorded_frames_.resize(slots);
 }
@@ -165,6 +189,23 @@ void Renderer::update_field(vulkan::Device& device, const Field& field) {
     }
 }
 void Renderer::destroy() {
+    // Hosts drain frame submissions before destroying resources. Preserve the
+    // final slots too; collecting only when a slot is reused loses tail samples.
+    if (profile_)
+        for (std::uint32_t i = 0; i < recorded_frames_.size(); ++i) {
+            if (!recorded_frames_[i])
+                continue;
+            for (auto* timer : {profiler_ ? &*profiler_ : nullptr,
+                                whole_profiler_ ? &*whole_profiler_ : nullptr}) {
+                if (!timer)
+                    continue;
+                timer->collect(i);
+                for (const auto& timing : timer->latest_timings())
+                    profile_->record_gpu_span(*recorded_frames_[i], timing.label,
+                                              timing.milliseconds);
+            }
+        }
+    profile_ = nullptr;
     if (material_atmosphere_)
         std::cout << "sdf: environment finish sky_generation="
                   << atmosphere_.reflection_probe().snapshot().generation << " cloud_generation="
@@ -194,13 +235,19 @@ void Renderer::destroy() {
     cloud_sky_only_ = false;
     cloud_sky_generation_ = 0;
     field_ = nullptr;
+    regions_ = nullptr;
 }
-void Renderer::update_authored(const AuthoredScene* scene) {
+void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scene,
+                               const GpuRegionPrograms* regions) {
     if (!scene_optics_ && scene &&
         std::any_of(scene->optics.begin(), scene->optics.end(),
                     [](const auto& o) { return !default_optics(o); }))
         throw std::invalid_argument("non-default material optics require material-study lighting");
-    const auto bytes = authored_program_bytes(scene);
+    auto bytes = authored_program_bytes(scene);
+    if (scene && source_tracing_) {
+        const float guard = authored_evaluation_guard(*scene);
+        std::memcpy(bytes.data() + 12, &guard, 4);
+    }
     scene_program_->upload(bytes.data(), bytes.size());
     if (scene_optics_) {
         const MaterialOptics fallback_optics;
@@ -225,6 +272,17 @@ void Renderer::update_authored(const AuthoredScene* scene) {
     scene_patterns_->upload(scene ? scene->patterns.data() : &plain,
                             scene ? scene->patterns.size() * sizeof(MaterialPattern)
                                   : sizeof(MaterialPattern));
+    regions_ = regions;
+    if (descriptors_ && regions) {
+        vulkan::DescriptorWriteBatch writes;
+        for (std::uint32_t i = 0; i < descriptors_->size(); ++i) {
+            writes.storage_buffer(descriptors_->set(i), 16, regions->cells->handle(),
+                                  regions->cells->size());
+            writes.storage_buffer(descriptors_->set(i), 17, regions->references->handle(),
+                                  regions->references->size());
+        }
+        writes.update(device);
+    }
 }
 void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
@@ -232,6 +290,21 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       profiling::ProfileRecorder* profile, std::uint64_t frame_index,
                       const BoxEdit* cutter, float cutter_opacity,
                       std::span<const SceneInstruction> previews) {
+    profile_ = profile;
+    if (profile) {
+        profile->record_metric(frame_index, "sdf.resources", "field_bytes",
+                               static_cast<double>(field_ ? field_->stats().allocation_bytes : 0));
+        profile->record_metric(frame_index, "sdf.resources", "region_bytes",
+                               static_cast<double>(regions_ ? regions_->allocation_bytes : 0));
+        profile->record_metric(frame_index, "sdf.resources", "region_references",
+                               static_cast<double>(regions_ ? regions_->reference_count : 0));
+        profile->record_metric(frame_index, "sdf.resources", "region_fallback_cells",
+                               regions_ ? regions_->fallback_cells : 0);
+        profile->record_metric(frame_index, "sdf.resources", "region_cpu_scratch_peak_bytes",
+                               static_cast<double>(regions_ ? regions_->scratch_peak_bytes : 0));
+        profile->record_metric(frame_index, "sdf.resources", "region_build_upload_ms",
+                               regions_ ? regions_->build_upload_ms : 0);
+    }
     if (profiler_) {
         profiler_->collect(slot.index);
         if (recorded_frames_[slot.index] && profile)
@@ -319,7 +392,7 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     lighting_->upload(slot, uniforms);
     const Camera camera{
         glm::inverse(vp),
-        {eye, static_cast<float>(field_->atlas_axis)},
+        {eye, static_cast<float>(field_ ? field_->atlas_axis : 0)},
         {study_environment_ && !material_atmosphere_ ? glm::normalize(math::Vec3{-.35F, .42F, .84F})
                                                      : light.primary_light_direction,
          0},
@@ -345,22 +418,26 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                 .extent = {scene_extent_.width, scene_extent_.height, 1},
                                 .format = VK_FORMAT_D32_SFLOAT,
                                 .aspects = VK_IMAGE_ASPECT_DEPTH_BIT});
-    const auto atlas = builder.import_texture(
-        {.label = "sdf.atlas",
-         .extent = field_->atlas().extent(),
-         .format = VK_FORMAT_R16_SFLOAT,
-         .aspects = VK_IMAGE_ASPECT_COLOR_BIT},
-        field_->atlas().handle(), field_->atlas().view(),
-        render::RenderGraphTextureState{
-            VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
-        render::RenderGraphTextureState{VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT,
-                                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT});
-    const auto nodes = builder.import_buffer(
-        {"sdf.nodes", field_->nodes().size()}, field_->nodes().handle(),
-        render::RenderGraphBufferState{VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
-                                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT});
+    std::optional<render::RenderGraphTextureHandle> atlas;
+    std::optional<render::RenderGraphBufferHandle> nodes;
+    if (field_) {
+        atlas = builder.import_texture(
+            {.label = "sdf.atlas",
+             .extent = field_->atlas().extent(),
+             .format = VK_FORMAT_R16_SFLOAT,
+             .aspects = VK_IMAGE_ASPECT_COLOR_BIT},
+            field_->atlas().handle(), field_->atlas().view(),
+            render::RenderGraphTextureState{
+                VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT},
+            render::RenderGraphTextureState{VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_SHADER_READ_BIT,
+                                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT});
+        nodes = builder.import_buffer(
+            {"sdf.nodes", field_->nodes().size()}, field_->nodes().handle(),
+            render::RenderGraphBufferState{VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT});
+    }
     const auto lighting = builder.import_buffer({"sdf.lighting", sizeof(LightingUniforms)},
                                                 lighting_->buffer(slot).handle());
     const auto program =
@@ -376,10 +453,20 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     const auto previews_buffer =
         builder.import_buffer({"sdf.previews", preview_buffers_.at(slot.index)->size()},
                               preview_buffers_.at(slot.index)->handle());
-    builder.add_pass("sdf.trace", render::RenderGraphQueueDomain::Graphics)
-        .read_texture(atlas, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
-        .read_storage_buffer(nodes, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
-        .read_uniform_buffer(lighting, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+    auto trace_pass = builder.add_pass("sdf.trace", render::RenderGraphQueueDomain::Graphics);
+    if (atlas)
+        trace_pass.read_texture(*atlas, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    if (nodes)
+        trace_pass.read_storage_buffer(*nodes, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    if (regions_) {
+        const auto cells = builder.import_buffer({"sdf.regions", regions_->cells->size()},
+                                                 regions_->cells->handle());
+        const auto refs = builder.import_buffer({"sdf.region_refs", regions_->references->size()},
+                                                regions_->references->handle());
+        trace_pass.read_storage_buffer(cells, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        trace_pass.read_storage_buffer(refs, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+    }
+    trace_pass.read_uniform_buffer(lighting, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(program, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(materials, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(patterns, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
