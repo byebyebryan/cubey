@@ -49,6 +49,13 @@ film is optional presentation work; continuous brush editing remains separate.
 Its native receipts do not extend the repository-wide runtime qualification
 above.
 
+Current SDF planning focuses on a bounded
+[tracing/cache/history comparison](notes/sdf-tracing-comparison-plan.md), following
+the [representation review](notes/sdf-representation-design-review.md). It compares
+the current sampled route with proposed opt-in hybrid/analytic routes using
+scripted edits and undo. No candidate is implemented or selected as the default;
+the accepted content and current rendering behavior remain the baseline.
+
 ## Material and SDF demo status
 
 The dated [material and SDF roadmap](notes/material-demo-roadmap.md) separates

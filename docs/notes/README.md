@@ -30,6 +30,15 @@ the architecture and project guides remain current authority.
 - [SDF thread closeout](sdf-thread-closeout.md): the complete port/content/material
   journey, accepted results and deferred experiments; its publication section is
   explicitly an as-of-2026-10-24 checkpoint.
+- [SDF field-update investigation](sdf-field-update-investigation.md): fresh
+  construction/history costs, locality constraints, primary research and a
+  proposed exact CSG-pruning experiment; no accelerated builder is implemented.
+- [SDF representation, hybrid tracing and history review](sdf-representation-design-review.md):
+  the broader pre-decision evaluation of original projectR intent, sharp-feature
+  reconstruction, undo, smoothing/groups and alternative rendering/model choices.
+- [SDF tracing/cache comparison plan](sdf-tracing-comparison-plan.md): bounded
+  native comparison contracts, controls, fixture/action matrix, implementation
+  checkpoints and proposed acceptance targets; no candidate is selected yet.
 - [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
   direction and source/media inventory at intake; the implementation and release
   outcome is recorded in the progress record and current [site guide](../../site/README.md).

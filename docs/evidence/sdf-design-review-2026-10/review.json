@@ -1,0 +1,272 @@
+{
+  "date_utc": "2026-10-27T05:18:29.702872+00:00",
+  "source_review": {
+    "date_utc": "2026-10-27T05:17:15.324347+00:00",
+    "source_head": "d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a",
+    "projectr_revisions": {
+      "jagged-edge": {
+        "revision": "f2c1887cccc38d9a1dbf4a377d164582bdda62c2",
+        "message": "Jagged edge investigation\n\nFor shapes with sharp corners (non axis aligned boxes for example), the edge lines are heavily jagged. Did some expermenting to try to remove it by adjusting how the renderer samples the distance fields but ultimately failed.\nThis leads to a different approach where the renderer directly calculate distance to surface by accessing the edit list. It does render beautifully with super clean edge and intersection lines. However, the performance takes a big hit when the node count gets high (128 edits = 30 fps).\nFor now it's better to stick with the compute distance field idea since it's really really fast (8k edits = > 60 fps).\n\nOn a seperate object, added a small optimization to get rid of storing normals with the distance fields (ie. handle the distance sampling at the brick border without margin cells). Normals might not be super correct but so far there are no visiable artifacts. Might considering implement the same trick for the marching cubes mesher since the margin cells are always a big complication for managing chunks."
+      },
+      "hybrid": {
+        "revision": "1ef76e3bbd823c1f20130373d9a8d615d9769760",
+        "message": "Hybrid distance calculation\n\nAdded a hybrid rendering mode that starts with sampling distance from SDF and switch to calculating distance directly from edits results when close enough to the surface. It comes with a noticable performance cost but improves the edge lines considerably. Needs to play with the parameters more to find a good balance.\n\nDrafted a single pass marching cubes mesher based on the brick engine compute structure. Did not test it but it did compile.\n\nRemoved the old kernel folder which are no longer used."
+      },
+      "incremental-options": {
+        "revision": "906cb159c292e276bfc3994f183f5a252a51004b",
+        "message": "Incremental Edits Partially Tested\n\nIt's complicated...\nGood:\n- wll it worked, the tricky overwrite/inheritance logic seemed to be holding up alright, all that needed to be fixed was some stupid mistakes in the builder cs\n- bumped the res up to 256^3 x 8^3, the brick pool is now 128^3 x 8^3 with half instead of float, and the drop in accuracy is not visiable\n- added \"ball of match sticks\" test\n- the old renderer holds strong, ~200 fps kind of fast without compute, we still need to add shadows/ao though\nBad:\n- cpu code for the brick engine really is a mess, needs a lot of work there\n- the pool is now 2g, and we need 2 of them now, so that is 4g, this is scary\n- somehow the pool fills up fast (40% with 16k small sticks)\nReally Bad:\n- the compute part slows right down with more edits (<30 fps with 16k small edits), which really defeats the idea of having incremental compute at the first place. We have less edits to filter/compute per node but now we have to COPY the result from a previous pool, and remember now we have a pool that's 2g in size? And remember all the posts says for gpu compute power >> memory bandwidth? I feel so stupid right now\n- store a previous pool is just a really stupid idea, especially when most of those data are unchanged\nSolution A:\n- maybe we have a single copy of the depth data and do the update inplace\n- now we have to deal with much more complex pool management that allow us to recliam empty bricks\n- and how the hell we gonna do undo/redo?\nSolution B:\n- another way to fix this is instead of starting with the previous depth data we store the previous edit list\n- even if we have a very long edit list remember that whenever a solid operation happens the list gets truncated, and the leaf nodes are small enough that most likely the list will not be very long. Anyway it will be much much less data than the depth data\n- the previous version didn't worked so well because we always check for the full list for all the nodes. The work will be significantly less if we just process the new edits"
+      },
+      "chunk-undo": {
+        "revision": "5a562821f7d76e5e872856361cf5ad8dd0af293b",
+        "message": "Undo/Redo Fixes\n\nFixed a bug where undo/redo will cause corruption of cached distance fields.\nNow undo will still save distance fields into cache. But the cache will be recyled at that point. New data won't be saved anymore. On redo, the modifications will restart from scratch."
+      },
+      "brick-tip": {
+        "revision": "6a7c5f9a8a6d58ad5d07850b1b625b399385a2f0",
+        "message": "3rd Party Packages Rearranged/Updated\n\nmoved ext packages from plugins folder to external folder\nadded the lab renderer for ref and some skyboxes"
+      }
+    },
+    "inspected_files": [
+      {
+        "revision": "1ef76e3bbd823c1f20130373d9a8d615d9769760",
+        "path": "Assets/ComputeShaders/BrickEngineRenderer.shader",
+        "sha256": "7840bd98964f84588c8ca278a4580010d97ff7a8a7bf43bac53c94b4fded9637"
+      },
+      {
+        "revision": "1ef76e3bbd823c1f20130373d9a8d615d9769760",
+        "path": "Assets/ComputeShaders/BrickEngineFilter.compute",
+        "sha256": "1ccffd480437971dead4384bedb206cddb60c2775c84519910ed5caf39ab90f3"
+      },
+      {
+        "revision": "6a7c5f9a8a6d58ad5d07850b1b625b399385a2f0",
+        "path": "Assets/Scripts/BrickEngine/Workspace.cs",
+        "sha256": "a65999484005338e55c3b4a31d917247474d1fc8ac355feb34ded4dec0cceb58"
+      },
+      {
+        "revision": "6a7c5f9a8a6d58ad5d07850b1b625b399385a2f0",
+        "path": "Assets/Shaders/BrickEngineBuilder.compute",
+        "sha256": "91a5091a639a29fd297e9bdc8273b91e071029f2cb77553ddadbfb2aa93ac6b2"
+      }
+    ],
+    "scope": "Source and commit inspection; no Unity runtime was launched.",
+    "current_files": {
+      "projects/sdf/shaders/trace.glsl": "3a641b9db15e43cf81277db19b36b2dead518d270fa075581b6bd4130468f79e",
+      "projects/sdf/shaders/authored.glsl": "497f72513a3065988bf8d791f26dc24f14cdd42836853b3804c45c1cf092e558",
+      "projects/sdf/shaders/authored_material.glsl": "374589952eec0a40c4f323c95838ba95b14b14cf6f2c7d943d200888dd674dd0",
+      "projects/sdf/sdf_authored.cpp": "4058ade87140c82e2637d78dd7d62b82d28cec29bf9ae640a2d9d1d1515c6ef9",
+      "projects/sdf/sdf_history.cpp": "2d5a0f84c0676514d689ff9aeaf7f8a8b6da1521f4080f4f9d91584c7217a5b8",
+      "projects/sdf/sdf_field.cpp": "ccf0e987a0c52ea2cca7c84348b5ee3ed37d99d7dcfe0bcb68435a22fe2df2c2"
+    }
+  },
+  "diagnostics": {
+    "scope": "Independent float64 numerical slices and analytic examples. No native hybrid tracer implemented; no GPU timings or native image acceptance.",
+    "units": "Distances normalized to sample spacing h; radial zero-crossing errors use rays from origin in a 2D slice, not a 3D Hausdorff metric.",
+    "radial_method": "4096 directions, first sign-change bracket from h/64 samples, then 50 bisections. Narrower sign excursions are not ruled out by this diagnostic.",
+    "sample_spacing_world": 0.0005580357142857143,
+    "source_head": "d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a",
+    "environment": {
+      "python": "3.13.14",
+      "numpy": "2.5.4",
+      "matplotlib": "3.11.2",
+      "pillow": "13.0.0"
+    },
+    "cases": {
+      "oblique-plane": {
+        "field_error_h": {
+          "median": 1.1102230246251565e-16,
+          "p95": 1.7763568394002505e-15,
+          "max": 7.105427357601002e-15
+        },
+        "r16_field_error_h": {
+          "median": 0.0005406616553891297,
+          "p95": 0.002430211872558985,
+          "max": 0.006826929848129382
+        }
+      },
+      "rotated-box": {
+        "field_error_h": {
+          "median": 8.881784197001252e-16,
+          "p95": 0.04480399752460862,
+          "max": 0.5140338615376914
+        },
+        "r16_field_error_h": {
+          "median": 0.00033402244686309146,
+          "p95": 0.04483034450725576,
+          "max": 0.5152987786981926
+        },
+        "radial_zero_error_h": {
+          "median": 0.0,
+          "p95": 0.020286111196647028,
+          "max": 0.46128827918431625
+        },
+        "r16_radial_zero_error_h": {
+          "median": 3.8770285717859565e-05,
+          "p95": 0.020276822453977772,
+          "max": 0.46131961472561755
+        }
+      },
+      "crossed-thin-sticks": {
+        "field_error_h": {
+          "median": 0.00525166175736036,
+          "p95": 0.12590626186112958,
+          "max": 0.4610791147828776
+        },
+        "r16_field_error_h": {
+          "median": 0.005154267338069007,
+          "p95": 0.1258580248370514,
+          "max": 0.46102162155573545
+        },
+        "radial_zero_error_h": {
+          "median": 0.06378552241057833,
+          "p95": 0.6155223287492237,
+          "max": 1.4217964003722088
+        },
+        "r16_radial_zero_error_h": {
+          "median": 0.0638083988318836,
+          "p95": 0.6156306420855516,
+          "max": 1.4222318012861805
+        }
+      }
+    },
+    "subgrid_sphere": {
+      "center_h": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "radius_h": 0.35,
+      "all_eight_corner_distances_h": 0.5160254037844386,
+      "interpolated_center_distance_h": 0.5160254037844386,
+      "exact_center_distance_h": -0.35,
+      "trilinear_zero_set_inside_this_cell": false,
+      "maximum_lipschitz_interpolation_error_bound_h": 0.8660254037844386
+    },
+    "smooth_associativity": {
+      "a": 0.0,
+      "b": 0.0,
+      "c": 0.05,
+      "k": 0.1,
+      "left_grouped": -0.026562500000000003,
+      "right_grouped": -0.028222656250000002,
+      "difference": 0.0016601562499999993
+    },
+    "undo_compaction": {
+      "probe_x": 0.15,
+      "history_1": [
+        "sphere A radius .1",
+        "union sphere B radius .3"
+      ],
+      "history_2": [
+        "sphere C radius .2",
+        "union sphere B radius .3"
+      ],
+      "visible_value_history_1": -0.15,
+      "visible_value_history_2": -0.15,
+      "value_after_undo_B_history_1": 0.04999999999999999,
+      "value_after_undo_B_history_2": -0.05000000000000002,
+      "finding": "Identical current geometry and a current-only pruned list do not identify the state to recover on undo. Retain authoritative history or historical data."
+    },
+    "snapshot_accounting": {
+      "scope": "Capacity-based calculation for one full published atlas + one node array; excludes scratch, working buffers, sharing, compression and driver overhead.",
+      "one_published_state_bytes": 345131300,
+      "sixty_six_unshared_states_bytes": 22778665800,
+      "current_full_field_resource_bytes": 912997552
+    },
+    "probe_sha256": "7fb48b42a625b0c0cddcf7cb270947df2f267848bd86646d3f2e2a7cefe54abd"
+  },
+  "references": [
+    {
+      "id": "lipschitz-pruning",
+      "title": "Lipschitz Pruning: Hierarchical Simplification of Primitive-Based SDFs",
+      "url": "https://wbrbr.org/publications/LipschitzPruning/",
+      "code": "https://github.com/wbrbr/LipschitzPruning",
+      "revision": "b3c5fee4d951ad8942775206d111cd421d2ef31c",
+      "assessment": "Exact region pruning supports hard and compact smooth CSG; approximate far-field constants and partial-update future work are separate. Source inspected in the earlier baseline pass, not run."
+    },
+    {
+      "id": "mpr",
+      "title": "Massively Parallel Rendering of Complex Closed-Form Implicit Surfaces",
+      "url": "https://www.mattkeeter.com/research/mpr/",
+      "assessment": "Interval/tape reduction is a broader reference for continuous implicit functions and some warps that break 1-Lipschitz bounds. No local benchmark or transplant."
+    },
+    {
+      "id": "fidget",
+      "title": "Fidget current WGPU backend and tape simplifier",
+      "url": "https://github.com/mkeeter/fidget",
+      "revision": "17853f767b05a5b70bb835a63238ca3174f1204f",
+      "assessment": "Current source inspected in the earlier pass; broader arithmetic expression architecture and MPL-2.0 license. Not treated as CPU-only."
+    },
+    {
+      "id": "level-set-filter",
+      "title": "OpenVDB LevelSetFilter",
+      "url": "https://www.openvdb.org/documentation/doxygen/LevelSetFilter_8h.html",
+      "assessment": "Surface smoothing and level-set filters are different operations from a polynomial smooth Boolean."
+    },
+    {
+      "id": "nanovdb",
+      "title": "NanoVDB FAQ",
+      "url": "https://www.openvdb.org/documentation/doxygen/NanoVDB_FAQ.html",
+      "assessment": "GPU-friendly grid query representation with static tree topology; not an automatic dynamic sculpting/undo solution."
+    },
+    {
+      "id": "dcsdd",
+      "title": "Dual Contouring of Signed Distance Data",
+      "url": "https://gatc.cs.columbia.edu/projects/dual-contouring-of-signed-distance-data.html",
+      "repo": "xianacarrera/dual-contouring-of-signed-distance-data",
+      "revision": "0edfd78e8cf23bfdd2e6e689c3461dd547cc79d1",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      },
+      "scope": "Primary source/repository assessment only; no donor code was executed or copied into runtime.",
+      "assessment": "Sharp-feature reconstruction alternative from discrete data. No native execution; not a guarantee of exact recovery of arbitrary missing features."
+    },
+    {
+      "id": "generalized-lipschitz",
+      "title": "Generalized Lipschitz Tracing of Implicit Surfaces",
+      "url": "https://onlinelibrary.wiley.com/doi/10.1111/cgf.15202",
+      "assessment": "Queries original geometry while caching derivative-bound estimates; published fast GPU fitting can underestimate bounds and lacks automatic failure correction. Broader research reference rather than a correctness-ready replacement."
+    },
+    {
+      "id": "hart",
+      "title": "Sphere tracing: a geometric method for the antialiased ray tracing of implicit surfaces",
+      "url": "https://experts.illinois.edu/en/publications/sphere-tracing-a-geometric-method-for-the-antialiased-ray-tracing/",
+      "assessment": "Safe marching relies on valid bounds on field variation; changing representation or coordinate domain requires revisiting bounds."
+    },
+    {
+      "id": "segment-tracing",
+      "title": "Segment Tracing using Local Lipschitz Bounds",
+      "url": "https://aparis69.github.io/public_html/projects/galin2020_Segment.html",
+      "assessment": "Local bounds can reduce marching queries; orthogonal to reducing expression cost per query. Not locally benchmarked."
+    }
+  ],
+  "validation_scope": "Independent reconstruction, associativity and undo-information probes only. No native candidate renderer, sculpting editor, hybrid speedup or recovered Unity runtime is qualified.",
+  "raw_hashes": {
+    "modern-reconstruction-reference.json": "529fa7f9cd98a02159e23326a066894de68d3892b9bb091484e1e95b470af33f",
+    "probe.stdout.json": "c6f022460cdb6656b949e71f83ecd5caf63b43a70a35a12765b9afe6cba8fca9",
+    "reconstruction.json": "c6f022460cdb6656b949e71f83ecd5caf63b43a70a35a12765b9afe6cba8fca9",
+    "reconstruction.png": "860386ad10fbc8667a12734036d62d9cd220593b534fadc6fdcc764e195d4020",
+    "reconstruction.svg": "6aeed25031d0ec0740a25316ed980b4bc62669ad615ce1b032af84b832842061",
+    "reconstruction_probe.py": "7fb48b42a625b0c0cddcf7cb270947df2f267848bd86646d3f2e2a7cefe54abd",
+    "source-review.json": "98665a9ef33e847c5b67001f993469784d04d8f399d7fdf1293cf30a8f4cdc71",
+    "subgrid-sphere.png": "91bcaff1e4598822da30fb28035f1f0353e1a4ceb7a4cd6c7bca75828f287c0c",
+    "subgrid-sphere.svg": "42842d47288f2db661eb7f79ba7eb361d4799327787f1423d4d3a9c3c0e6328c"
+  },
+  "archived_artifacts": {
+    "reconstruction_probe.py": "7fb48b42a625b0c0cddcf7cb270947df2f267848bd86646d3f2e2a7cefe54abd",
+    "reconstruction.png": "860386ad10fbc8667a12734036d62d9cd220593b534fadc6fdcc764e195d4020",
+    "reconstruction.svg": "6aeed25031d0ec0740a25316ed980b4bc62669ad615ce1b032af84b832842061",
+    "subgrid-sphere.png": "91bcaff1e4598822da30fb28035f1f0353e1a4ceb7a4cd6c7bca75828f287c0c",
+    "subgrid-sphere.svg": "42842d47288f2db661eb7f79ba7eb361d4799327787f1423d4d3a9c3c0e6328c"
+  },
+  "validation": {
+    "numerical_probe": "passed: affine control, subgrid sign loss, smooth grouping, undo distinction",
+    "visual_review": "Both generated figures inspected",
+    "runtime_changes": "none",
+    "source_head": "d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a",
+    "documentation_checks": "3/3 passed: documentation_hygiene, documentation_media, documentation_rules",
+    "tracked_whitespace": "git diff --check passed; archived text and identities checked separately"
+  }
+}
