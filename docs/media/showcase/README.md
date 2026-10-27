@@ -1,5 +1,10 @@
 # Cubey showcase media
 
+Status: retained historical publication package. The [media ownership guide](../README.md)
+distinguishes these pinned captures from current site selections. The files,
+recipes and attachment identities below remain the original gallery's evidence;
+the candidate shots in its old storyboard are not an active capture backlog.
+
 This directory retains the original five-film README gallery, independently of
 GitHub's presentation layer. The current visual collection lives on the
 [presentation site](https://dev.byebyebryan.com/cubey/); its

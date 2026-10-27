@@ -119,8 +119,8 @@ fixtures also require the Khronos validation layer.
 
 For documentation and presentation integrity, use `ctest --preset dev-docs`
 after the normal build. It checks tracked local links/navigation, sealed study
-boundaries, current gallery hashes and documented native option parsing. Native
-recipes exit after writing a temporary configuration template, with no usable
+boundaries, retained publication-media hashes and documented native option
+parsing. Native recipes exit after writing a temporary configuration template, with no usable
 Vulkan ICD or display. This lane does not render, decode media, load optional
 assets or qualify GUI/solver behavior. See the [repository tools](../tools/README.md#documentation-gate).
 
@@ -278,8 +278,12 @@ When Cubey is built with FFmpeg/libav, the same host can produce MP4 directly:
   --output /tmp/cubey-ocean.mp4
 ```
 
-The committed showcase clips, exact recipes, hashes, and poster timestamps are
-recorded in the [showcase manifest](media/showcase/manifest.json).
+The [public site](https://dev.byebyebryan.com/cubey/) presents the current demo
+collection; its [media ledger and attribution](../site/media/README.md) own the
+selected web captures. The [tracked-media guide](media/README.md) distinguishes
+current selections from archived publication packages. Exact recipes, hashes
+and poster timestamps for the earlier five-film README gallery remain in its
+[retained showcase manifest](media/showcase/manifest.json).
 
 For bounded performance work without image readback or encoding, reuse the
 offscreen Vulkan host in render-only mode:

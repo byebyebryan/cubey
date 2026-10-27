@@ -8,6 +8,9 @@ and explicit LOD diagnostics.
 The accepted scope is a surface and curved-local ocean. Global ocean topology,
 aerial/orbit water, shorelines, bathymetry, refraction, spray, wakes, and
 shallow-water flow remain separate integration work.
+The current visual overview is the
+[Ocean page](https://dev.byebyebryan.com/cubey/demos/ocean/); this guide retains
+the native run, rendering and diagnostic contracts.
 
 GodotOceanWaves is MIT licensed; its notice is in
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
@@ -40,26 +43,11 @@ preset-owned settings appear as `Custom` in the GUI.
 
 ## Showcase highlight
 
-[![Ocean showcase poster](../../docs/media/showcase/ocean.png)](../../docs/media/showcase/ocean.mp4)
-
-The highlight holds one Windy sea state while afternoon light moves through
-golden hour, dusk, and into night. A 30-degree eased camera arc reveals the
-changing reflection and foreground waves without losing the horizon.
-
-The exact capture uses the default camera, no size-reference pillar, and a
-14:00-to-21:00 solar sweep over 480 frames at 60 FPS:
-
-```sh
-./build/dev/projects/ocean/ocean --headless --capture video --frames 480 --fps 60 \
-  --width 1280 --height 720 --ocean-sea-state windy \
-  --ocean-camera-preset default --capture-video-orbit-degrees 30 \
-  --no-ocean-size-reference --time-of-day-mode solar --time-hours 14.0 \
-  --time-speed-hours-per-second 0.875 \
-  --output outputs/showcase/audition-2/ocean/ocean-day-dusk-night-30deg-60fps-source.mp4
-```
-
-See the [showcase media manifest](../../docs/media/showcase/manifest.json) for
-the publication hash and complete provenance.
+The previous Windy sea-state day-to-night film remains in the
+[showcase archive package](../../docs/media/showcase/README.md), which retains
+the poster, film, publication hash and provenance. Its exact source command is
+in the [capture history](docs/showcase-history.md). The current site page above owns
+the public visual overview.
 
 ## Controls
 

@@ -77,3 +77,19 @@ All 119 baseline public media/thumbnail files retain their hashes. The new
 historical still adds two WebP files. The collection remains seven subjects,
 21 demo entries, 13 native owners and 15 film-backed selections; the chapter is
 an editorial route, not another native demo identity.
+
+<a id="published-outcome"></a>
+
+## Published outcome — 2026-10-25
+
+The chapter is live at
+[`/cubey/demos/sdf/inside-a-solid/`](https://dev.byebyebryan.com/cubey/demos/sdf/inside-a-solid/)
+from source `48fa1ed1c7c7d02d0d6892466fecc2dec0afeb42`. The
+[Pages run](https://github.com/byebyebryan/cubey/actions/runs/40244161355)
+passed; `outputs/cubey-site/sdf-story-2026-10-25/publication.json` records 148
+files / 29,120,488 bytes and byte parity with the published build. Its
+`live-browser.json` receipt records the native 1280×720, 16-second video and the
+illustration/cut interactions. This completes publication of the web chapter;
+it does not complete the separate native authored-content showcase or Guardian
+construction-film refresh described in the
+[material/SDF roadmap](material-demo-roadmap.md).

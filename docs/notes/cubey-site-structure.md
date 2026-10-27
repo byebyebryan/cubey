@@ -5,14 +5,16 @@ Date: 2026-10-24
 Status: recommended design, updated by the completed workshop-alignment goal. Study A's dark
 visual direction is selected. This specification supersedes the six-demo roster
 and optional-glTF framing in the first visual study. It does not start production
-implementation or claim user approval of every proposed label/view.
+implementation at this checkpoint or claim user approval of every proposed
+label/view; the authored site was built and published later, as linked below.
 
 [Open the aligned mockups and review](http://starship:8787/reports/6339d2350e5953a016b2dbc209720f5f93e78b8664646f2a7f6b1c1b58657922/).
 
-The authored implementation now follows this specification under `site/`.
-[Open its implementation preview](http://starship:8787/reports/88586fd156f27958d95c5f813f389b601c9bbb0c2aed901e62f704581f4c940a/);
-the [implementation progress record](cubey-site-implementation-progress.md)
-owns current media/build/browser evidence. The mockups above remain design history.
+The authored implementation followed this specification under `site/` and is
+now published. The [implementation progress record](cubey-site-implementation-progress.md)
+retains the release history; the [site guide](../../site/README.md) owns current
+routes, media policy and publication details. The mockups above remain design
+history, including the proposed eight-subject roster.
 
 ## Structure decision
 

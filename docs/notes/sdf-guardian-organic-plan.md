@@ -2,8 +2,11 @@
 
 Date: 2026-10-22
 
-Status: implemented, qualified and delivered for visual review. See the
-[execution evidence](sdf-guardian-organic-evidence.md).
+Status at initial delivery: implemented, qualified and delivered for visual
+review; see the [execution evidence](sdf-guardian-organic-evidence.md). Later
+user review settled the organic mirrored Guardian and accepted materials; the
+[Guardian closeout](sdf-guardian-closeout.md) owns that verdict and current
+boundary. This plan retains the original candidate brief.
 
 The user selects the guardian, asks for a more organic jaw/chin and skull,
 more detail, and a construction closer to 1,000 edits than 100. Driftwood stays

@@ -2,10 +2,13 @@
 
 Date: 2026-10-24
 
-Status: implementation and evidence captured; this thread is closed as an
-active work stream. Presentation/site work transfers through the
-[cubey-site handoff](cubey-site-handoff.md). That migration is the user's next
-direction, not a reason to reopen SDF modeling or material realism.
+Status at the 2026-10-24 closeout: implementation and evidence were captured and
+this thread closed as an active work stream. The site migration was the next
+direction at that point; it was later implemented and published. See the
+[site implementation record](cubey-site-implementation-progress.md),
+[current site guide](../../site/README.md) and
+[published SDF chapter](cubey-site-sdf-story.md#published-outcome). The original
+handoff remains at [cubey-site-handoff](cubey-site-handoff.md).
 
 ## What this thread delivered
 
@@ -55,7 +58,7 @@ can be separate even though the latter two use the same native SDF executable.
   approximates rough spread; mesh uses its forward thickness/refraction route.
   Shared recipes do not establish equivalent transport, nested media or caustics.
 
-## Current qualification and publication state
+## Qualification and publication state at the 2026-10-24 closeout
 
 Before these closeout notes, local `main` was clean at `5525445f` and eleven
 commits ahead of the verified GitHub `main` at `b72c7c5c`. All SDF/shared-material
@@ -69,11 +72,13 @@ Those are dated, scoped receipts, not a repository-wide runtime qualification.
 This closeout rechecks committed media hashes and documentation rather than
 rerendering settled material/sculpture matrices.
 
-The latest presentation report is
+The latest presentation report at this closeout was
 [Material, light, and a cut](http://starship:8787/reports/5ddba21d5b0e6a6e2ff2a88ccb788cce0a4e2c0527ea8c5bc89b4a0c0bf8d71e/).
 It is hosted on the shared Starship report server. Its publication is separate
-from GitHub source push and a public Cubey site. The root gallery still contains
-the five earlier highlights; the new material films have not been promoted there.
+from GitHub source push and a public Cubey site. At this checkpoint the root
+gallery still contained the five earlier highlights; the new material films had
+not been promoted there. Later site publication and README cutover are recorded
+in the linked site implementation and guide.
 
 The six selected material media files match their committed hashes. Their
 [manifest](../media/material-workshops/manifest.json) and
@@ -99,6 +104,7 @@ the older complete film matches the current geometry/history but uses an earlier
 marble appearance. A finished object alone does not explain the saved SDF process.
 
 Reopen runtime work for a concrete failure, a selected new experiment or a
-presentation requirement demonstrated by the site work. The next owner should
-start from the committed results and their scoped limitations, then develop the
-site migration with the user.
+presentation requirement demonstrated by the site work. At this closeout, the
+next owner was to start from the committed results and their scoped limitations,
+then develop the site migration with the user. That migration was later
+completed; see the site implementation and publication records linked above.

@@ -11,6 +11,11 @@ The [committed media package](../media/material-workshops/README.md) keeps both
 native masters, gallery films, posters, recipes and hashes independently of
 report hosting.
 
+The public site now presents selected material media as part of its materials
+showcase; current public behavior is in the [site guide](../../site/README.md).
+This publication does not by itself settle the separate human visual-acceptance
+gate for the shot choices recorded here.
+
 ## Selected direction
 
 The [plan](material-presentation-plan.md) separates two questions. PBR shows

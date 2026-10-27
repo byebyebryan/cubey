@@ -2,10 +2,12 @@
 
 Date: 2026-10-24
 
-Status: design-only goal complete. The user is mostly comfortable with the dark
-design and supplied the project's fuller identity. This pass carries that context
-through the actual mockups and planning authorities. Final wording/shots remain
-proposals; production implementation has not started.
+Status: design-only goal complete at this checkpoint. The user was mostly
+comfortable with the dark design and supplied the project's fuller identity.
+Production implementation and publication followed; see the
+[implementation progress](cubey-site-implementation-progress.md) and current
+[site guide](../../site/README.md). This record retains the mockups and the
+wording/shot proposals reviewed before implementation.
 
 [Open the aligned design review and navigable mockups](http://starship:8787/reports/6339d2350e5953a016b2dbc209720f5f93e78b8664646f2a7f6b1c1b58657922/).
 

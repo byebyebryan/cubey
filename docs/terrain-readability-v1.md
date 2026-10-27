@@ -1,5 +1,9 @@
 # Shared terrain readability study V1
 
+Status: dated study and approved promotion from 2026-10-12. The current
+[Terrain guide](../projects/terrain/README.md) owns native use; the observations
+and qualification below retain their original inputs and acceptance scope.
+
 The original study below was opt-in. After visual approval, the simple shared
 material was promoted on 2026-10-12; see the promotion section at the end. Original
 report artifacts remain unchanged. The study itself did not change terrain or

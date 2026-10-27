@@ -15,17 +15,25 @@ there when implementation boundaries matter.
   next work.
 - [Public showcase](https://dev.byebyebryan.com/cubey/): the current visual
   collection, organized by subject and demo.
+- [Tracked media and retained packages](media/README.md): current site assets,
+  the approved root README media, and immutable archive-package ownership.
 - [Presentation site](../site/README.md): authored static showcase, web-media
   attribution, build/review workflow and GitHub Pages publishing.
 
 ## Current Design
 
-- [Material and SDF demo roadmap](notes/material-demo-roadmap.md): separates
-  the implemented mesh/SDF material workshops from the authored-content showcase;
-  [PBR material demo plan](notes/pbr-material-demo-plan.md) develops the first
-  workshop and the shared parameterized material-content gap. The
+- [Material and SDF demo roadmap](notes/material-demo-roadmap.md): the dated
+  implementation plan and scope boundaries for the mesh/SDF workshops and
+  authored-content work. Both native workshops are implemented; current entry
+  points are the [PBR guide](../projects/pbr_materials/README.md) and
+  [SDF guide](../projects/sdf/README.md), with shared behavior in
+  [material recipes](architecture/material-recipes.md) and the
+  [PBR workshop plan](notes/pbr-material-demo-plan.md). The
+  [SDF construction chapter](https://dev.byebyebryan.com/cubey/demos/sdf/inside-a-solid/)
+  is published as a web story; it does not by itself complete a separate native
+  authored-content or Guardian-film package. The dated
   [material presentation evidence](notes/material-presentation-evidence.md)
-  records native presets, two short stories and a compact published report.
+  retains native capture qualification and its original review scope.
 - [C++ style guide](cpp-style.md): naming, ownership, formatting, and review
   standards.
 
@@ -88,9 +96,12 @@ Detailed current foundation notes live under
 
 Project-specific design stays beside the project:
 
-This section indexes active projects and retained studies with a local README.
-The [public showcase](https://dev.byebyebryan.com/cubey/demos/) presents visual
-subjects; these guides retain source ownership and technical instructions.
+This section indexes native projects and retained studies with a local README.
+The [public showcase](https://dev.byebyebryan.com/cubey/demos/) presents selected
+visual subjects; these guides retain source ownership and technical
+instructions. The native Fractal 2D project remains available here, while its
+public-site presentation is deferred. Terrain Water's recorded SynxFlow route
+remains separate from builtin [Fluid 2.5D](../projects/fluid/fluid_25d/README.md).
 
 Active projects:
 
@@ -108,10 +119,12 @@ Active projects:
 - [glTF Viewer](../projects/gltf_viewer/README.md)
 - [Ocean](../projects/ocean/README.md)
 - [Fractal 2D](../projects/fractal_2d/README.md)
-- [PBR materials](../projects/pbr_materials/README.md): shared mesh material gallery and parameter workshop, with a matched SDF workshop.
-- [SDF](../projects/sdf/README.md): procedural demos, an authored robot and four
-  sculpture studies, including the settled guardian, with sparse field
-  rendering, plain/procedural stone materials and construction/orbit playback.
+- [PBR materials](../projects/pbr_materials/README.md): shared mesh material
+  gallery and parameter workshop, with a matched SDF workshop.
+- [SDF](../projects/sdf/README.md): native procedural and authored scenes,
+  saved construction history, the settled Guardian and shared material
+  workshop. Older sculpture studies and technical chronology stay in its
+  [technical reference](../projects/sdf/docs/technical-reference.md).
 
 Internal validation:
 

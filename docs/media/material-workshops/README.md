@@ -1,6 +1,13 @@
 # Material presentation media
 
-Two independent eight-second stories use the accepted shared material library.
+Status: retained initial material-presentation package. The current
+[material showcase](https://dev.byebyebryan.com/cubey/demos/materials/) presents
+twelve materials in both renderers and a four-material cut study. This package
+preserves the earlier four-specimen PBR and wood-only SDF stories; the
+[media ownership guide](../README.md) explains their separate archival lifetime.
+
+Two independent eight-second stories use the shared material library at the
+recorded source revisions below.
 The [presentation report](http://starship:8787/reports/5ddba21d5b0e6a6e2ff2a88ccb788cce0a4e2c0527ea8c5bc89b4a0c0bf8d71e/)
 contains playable films and an interactive comparison of saved SDF states.
 The [plan](../../notes/material-presentation-plan.md) and
@@ -22,6 +29,8 @@ Encoded cadence is separate from live performance.
 and poster timestamps. Each story keeps its own capture identity.
 The complete raw qualification stays in `outputs/material-presentation/qualification`
 and the immutable report. These are Cubey-generated MIT media.
+Use those recorded source revisions and inputs when reproducing this checkpoint;
+captures from newer code do not renew its original qualification or byte hashes.
 
 The PBR group selects wood, rust, cloth and bronze. Frosted glass remains in
 the library but is less readable in this group. The SDF film previews a tool,
@@ -43,6 +52,8 @@ CUBEY_PRESENTATION_PRIVATE_XVFB=1 xvfb-run -a -s '-screen 0 1280x1024x24' python
 
 After the scoped test/CLI receipts are present, the presentation exporter is
 `projects/pbr_materials/tools/build_presentation_report.py`. It requires an empty
-export directory and verifies the native media and control receipts. Root-gallery
-selection and GitHub attachment publication are separate editorial steps; this
-package does not replace the existing five published highlights.
+export directory and verifies the native media and control receipts. At this
+checkpoint, root-gallery selection and GitHub attachment publication were
+separate editorial steps, and this package did not replace the five highlights.
+Current public presentation now belongs to the site; this package and its
+report retain the original capture and delivery scope.

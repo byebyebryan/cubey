@@ -3,9 +3,10 @@
 Date: 2026-10-24
 
 Status: the initial design-only goal, follow-on refinement and workshop-alignment
-goal are complete. The later user-launched implementation is under `site/`; its
-[progress record](cubey-site-implementation-progress.md) owns current execution.
-The contracts and evidence below describe the completed design phases.
+goal are complete. Production implementation and publication followed under
+`site/`; the [progress record](cubey-site-implementation-progress.md) retains
+milestone outcomes and the [site guide](../../site/README.md) owns current
+behavior. The contracts and evidence below describe the completed design phases.
 
 ## Current contract
 

@@ -5,7 +5,12 @@ Date: 2026-10-23
 Status: implemented and technically qualified; the new shot choices await user
 visual review. The [presentation evidence](material-presentation-evidence.md)
 records the selected stories, source identities, committed media and delivery.
-The original proposal below retains the intended scope and completion boundary.
+The original proposal below retains the intended scope and completion boundary;
+current front doors and run commands belong in the
+[PBR guide](../../projects/pbr_materials/README.md) and
+[SDF guide](../../projects/sdf/README.md). A separate first
+[SDF web chapter](cubey-site-sdf-story.md) is published; it does not complete the
+native authored-content showcase in Stage C.
 The current twelve-material appearance is accepted for the bounded library
 milestone. Its [review fixes and qualification](material-library-evidence.md#review-and-refinement)
 are committed and pushed through `b72c7c5c`. This plan develops the presentation
@@ -112,7 +117,12 @@ The existing complete guardian construction and settled limestone/marble
 results can be linked as the next authored-content chapter. A new guardian film,
 robot revision or sculpture is not required to finish these two stories.
 
-## Current capabilities and implementation gaps
+## Implementation baseline and gaps recorded for this pass
+
+This table records the starting point before this presentation pass. The
+selected layouts and saved history were implemented and qualified in the
+[presentation evidence](material-presentation-evidence.md); current run behavior
+belongs in the PBR and SDF project guides.
 
 | Area | Verified starting point | Small proposed addition |
 | --- | --- | --- |

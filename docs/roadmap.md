@@ -49,54 +49,55 @@ film is optional presentation work; continuous brush editing remains separate.
 Its native receipts do not extend the repository-wide runtime qualification
 above.
 
-## Material and SDF demo direction
+## Material and SDF demo status
 
-The [material and SDF roadmap](notes/material-demo-roadmap.md) separates a mesh
-PBR material workshop, an SDF material workshop using the same recipes, and an
-SDF authored-content showcase led by construction playback.
+The dated [material and SDF roadmap](notes/material-demo-roadmap.md) separates
+the mesh PBR workshop, the SDF workshop and authored SDF content. Both native
+workshops are implemented and have bounded
+[qualification evidence](notes/material-workshops-evidence.md):
+`pbr_materials` provides ordinary-mesh specimens and parameter editing;
+`sdf --workshop sphere|block|cut-block|swatch|csg` provides matched specimens,
+material inspection and CSG examples. The shared recipe and procedural
+evaluation contract lives in [material recipes](architecture/material-recipes.md).
+PBR edits use bounded retired-frame tables; existing immutable material
+consumers and accepted SDF content retain their behavior.
 
-The first two stages are implemented and [qualified](notes/material-workshops-evidence.md):
-`pbr_materials` provides an ordinary-mesh gallery and parameter workshop;
-`sdf --workshop sphere|block|csg` provides matched specimens and CSG inspection.
-[Shared recipes and procedural evaluation](architecture/material-recipes.md)
-now sit outside SDF. PBR editing uses bounded retired-frame tables; existing
-immutable material consumers and accepted SDF content retain their behavior.
+The bounded [material library expansion](notes/material-library-expansion-plan.md)
+is implemented and [qualified](notes/material-library-evidence.md), informed by
+[surface research](notes/material-library-surface-research.md). Wood, rusted
+steel, woven cloth, kraft cardboard and frosted glass extend the accepted seven
+looks; all twelve shared recipes work in both workshops with catalog and
+persistence support. These evidence notes are scoped native checkpoints, not a
+repository-wide performance or general artistic-acceptance claim.
 
-The bounded [material library expansion](notes/material-library-expansion-plan.md) is
-implemented and [qualified](notes/material-library-evidence.md),
-informed by [surface research](notes/material-library-surface-research.md): wood,
-rusted steel, woven cloth, kraft cardboard and frosted glass, with useful
-specimens and shared catalog/persistence support. Twelve shared recipes now work
-in both workshops; the new report includes matched specimens, components and
-bounded optical comparisons. Stage C and deeper material realism remain deferred. The workshop
-evidence is a bounded native checkpoint, not a repository-wide performance or
-artistic acceptance claim.
-
-The [material presentation pass](notes/material-presentation-evidence.md)
-delivers separate PBR and SDF short stories, native presets, committed media and
-a compact report. Technical/delivery checks pass; new shot choices await user
-review. New materials and the guardian construction-film refresh remain separate.
+The [native material presentation record](notes/material-presentation-evidence.md)
+retains its presets, captures and technical/delivery checks. Its 2026-10-23 note
+records the native shot review as open; publishing the later web chapter did not
+recapture those scenes or change that evidence scope.
 
 ## Public presentation
 
-The [public presentation site](https://dev.byebyebryan.com/cubey/) now owns the
-visual demo collection, audience-facing introductions and project navigation.
-The compact root README owns repository entry and development links. The
-[site guide](../site/README.md) describes the authored Astro build and Pages
-publication; [the polish record](notes/cubey-site-polish.md) records the reviewed
-seven-subject overview and its media/interaction boundaries.
+The [public presentation site](https://dev.byebyebryan.com/cubey/) owns the
+current visual collection, audience-facing introductions and project
+navigation. The compact root README owns repository entry and development
+links. The [site guide](../site/README.md) describes the authored Astro build
+and Pages publication; the [polish record](notes/cubey-site-polish.md) retains
+its source-pinned review scope.
 
-The first detailed chapter, [Building and cutting a solid](notes/cubey-site-sdf-story.md),
-connects native SDF construction and material cuts with small interactive 2D
-illustrations and a short development history. Further detailed stories remain
-editorial choices. The chapter does not reopen native brush, incremental-field,
-GI or material-realism experiments.
+The SDF web chapter, [Building and cutting a solid](https://dev.byebyebryan.com/cubey/demos/sdf/inside-a-solid/),
+was published on 2026-10-25. It connects existing native construction and
+material-cut captures with interactive 2D explanations and a short history; it
+does not claim live sculpting or new native runtime capabilities. This initial
+web chapter is published, while a broader native authored-content/Guardian-film
+package remains separately scoped. A Guardian construction-film refresh,
+continuous brush editing, incremental field updates, GI and deeper material
+realism remain deferred choices.
 
-The earlier five-film [media package](media/showcase/README.md),
-[manifest](media/showcase/manifest.json) and [showcase plan](showcase.md) retain
-their exact media, recipes, attachments and license boundaries as historical
-publication evidence. The glTF composite holds one saved water state; Terrain
-Water shows a recorded timelapse. Neither is a live solver-performance claim.
+The earlier five-film [showcase archive package](media/showcase/README.md),
+[manifest](media/showcase/manifest.json) and [storyboard](showcase.md) retain
+their exact media, recipes, attachments and license boundaries. The glTF
+composite contains one saved water state; Terrain Water shows recorded SynxFlow
+fields. Neither is a live solver-performance claim.
 
 ## Next work and deferred boundaries
 
@@ -111,6 +112,9 @@ consumer pressure:
 - Reopen glTF decode throughput, concurrency or streaming from product evidence.
   Single-asset upload responsiveness is closed. A specialized sheen environment
   needs a real directional-quality failure first.
+- Keep SDF desktop/VR brush sculpting, incremental field updates, GI, terrain
+  coupling, deeper rough refraction and AI-generated content deferred until a
+  concrete experiment is selected.
 - Keep shoreline/bathymetry, shallow-water coupling, close terrain and
   planet-surface navigation as separately chosen products.
 - Keep timeline semaphores, split queues, parallel recording, graph aliasing,

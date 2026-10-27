@@ -2,9 +2,12 @@
 
 Date: 2026-10-22
 
-Status: implemented, qualified and delivered for visual review. This is a separate candidate
-for visual review, not user acceptance. The clean 106-leaf guardian, original
-sculptures and retired driftwood experiment remain intact.
+Status at delivery: implemented and qualified as a separate candidate for visual
+review, not yet user acceptance. Later user review settled the organic mirrored
+Guardian; the [Guardian closeout](sdf-guardian-closeout.md) owns the accepted
+form/materials and current boundary. This record retains the candidate's original
+qualification evidence. The clean 106-leaf guardian, original sculptures and
+retired driftwood experiment remain intact.
 
 [Open the completed organic guardian gallery](http://starship:8787/reports/1f385381082f8cb914e5deb57eec6cd42dd17508f7369cb69f250b36bb370931/).
 It contains matched comparisons, an eight-second orbit and the full 150-second

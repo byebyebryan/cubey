@@ -8,6 +8,16 @@ versioned section and use that section as the release notes.
 
 ### Added
 
+- A [presentation site](https://dev.byebyebryan.com/cubey/) with playable demo
+  cards, deferred hover previews, renderer comparisons and a first SDF technique
+  chapter. Its media ledger records selected captures and attribution.
+- `projects/sdf`, a native implicit-surface workshop with procedural and authored
+  scenes, construction-history replay, shared material recipes and diagnostic
+  views. Live brush editing and the deferred native authored-content presentation
+  package remain separate work.
+- `projects/pbr_materials`, a forward-PBR workshop using the shared twelve-material
+  library. Matching SDF and forward showcases expose each renderer's appearance;
+  shared recipes do not imply identical optical transport.
 - C++20/CMake project bootstrap with presets, warning settings, formatting, and
   clang-tidy defaults.
 - C++ style guide covering formatting, naming, Vulkan structure, and review
@@ -187,6 +197,9 @@ versioned section and use that section as the release notes.
 
 ### Changed
 
+- The README is a compact repository entry point with a composite banner and
+  live-site link. Project guides focus on native use and contracts; historical
+  capture recipes and publication media retain explicit archival owners.
 - The normal presets require Clang 16+ and CMake 3.25+; tests use one
   configure-time Python 3.11+ interpreter. Setup instructions include OpenSSL,
   HTTPS certificates and Linux window-backend development packages, and

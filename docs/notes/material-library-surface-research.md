@@ -2,10 +2,13 @@
 
 Date: 2026-10-23
 
-Status: research and recommendations, checked against source at `7b7bfd07`.
-No new material or rendering capability is implemented by this document. The
-[implementation plan](material-library-expansion-plan.md) turns these findings
-into a bounded follow-up to the [qualified workshops](material-workshops-evidence.md).
+Status: completed pre-expansion research, checked against source at `7b7bfd07`.
+Its capability audit is a snapshot, not current gaps. The shared material
+contract now lives in [architecture](../architecture/material-recipes.md); the
+implemented result and limits are in
+[library evidence](material-library-evidence.md). The
+[implementation plan](material-library-expansion-plan.md) records the bounded
+follow-up to the then-qualified workshops.
 
 ## Direction
 
@@ -177,9 +180,11 @@ a physical checkerboard behind the object would test a different missing feature
 Full scene refraction, caustics, nested media and a Monte Carlo transport path
 remain outside the proposed milestone.
 
-## Current capability audit
+## Pre-expansion capability audit at `7b7bfd07`
 
-These are current source findings, separate from the proposed material models.
+These source findings predate the library expansion and are separate from the
+proposed material models. See the linked evidence above for the implemented
+catalog and remaining limits.
 
 | Area | Available now | Required follow-up |
 | --- | --- | --- |

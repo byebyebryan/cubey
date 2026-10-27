@@ -3,6 +3,9 @@
 `water_3d` is the first 3D liquid sandbox for Cubey. It uses the same particle-grid
 direction as `water_2d`: particles carry water volume, a staggered MAC grid solves
 velocity and pressure, and APIC is the default particle transfer mode.
+The current visual overview is the
+[Water 3D page](https://dev.byebyebryan.com/cubey/demos/simulation/water-3d/);
+this guide covers the native solver, renderer and controls.
 
 The default scene is a long showcase tank. A left-biased dam break seeds the
 initial volume, and a horizontal wave driver adds low-frequency motion. Hose,
@@ -75,23 +78,10 @@ Common runs:
 
 ## Showcase highlight
 
-[![Water 3D showcase poster](../../../docs/media/showcase/water-3d.png)](../../../docs/media/showcase/water-3d.mp4)
-
-The highlight follows one substantial dam break from collapse through impact
-and rebound. Wave forcing is disabled so the motion comes entirely from the
-initial volume; the clear sky and close three-quarter view keep the reconstructed
-surface, foam, and whitewater readable.
-
-The exact capture uses initial fill `0.60/0.75/0.75`, whitewater intensity
-`1.35`, speed threshold `0.85`, a 0.5-second pre-roll, camera distance `2.2`,
-and a 30-degree eased arc. It retains frames 30:510 from this source:
-
-```sh
-./build/dev/projects/fluid/water_3d/water_3d --headless --capture video --frames 510 --fps 60 --width 1280 --height 720 --capture-camera-distance 2.2 --capture-video-orbit-degrees 30 --time-of-day-mode solar --time-hours 13.5625 --time-speed-hours-per-second 0.875 --no-clouds --cloud-weather-preset broken-cumulus --cloud-quality full --no-water3d-wave --water3d-whitewater --water3d-whitewater-intensity 1.35 --water3d-whitewater-speed-threshold 0.85 --water3d-initial-fill-width 0.60 --water3d-initial-fill-height 0.75 --water3d-initial-fill-depth 0.75 --output outputs/showcase/audition-2/water/water-3d-refine-dam-only-fill-60-75-75-no-clouds-preroll-source.mp4
-```
-
-The retained and publication trim commands, exact hash, and poster timestamp
-are recorded in the [showcase media manifest](../../../docs/media/showcase/manifest.json).
+The current site page above presents the recorded dam-break highlight. Its
+trim, hash and poster timestamp remain in the [showcase archive package](../../../docs/media/showcase/README.md)
+and [media manifest](../../../docs/media/showcase/manifest.json); the exact
+source command is retained in the [capture history](docs/showcase-history.md).
 
 Interactive controls include fill size/placement, render-domain scale, hose,
 drain, wave, rain, solver settings, surface reconstruction, whitewater, and

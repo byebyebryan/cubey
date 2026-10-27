@@ -2,6 +2,12 @@
 
 Date: 2026-10-21
 
+This is the V2 authored-history checkpoint for the robot at the native source
+revision recorded below. Current material-enabled authored scenes use V3 while
+the V2 path remains supported; see the [current SDF guide](../../projects/sdf/README.md#authored-scenes)
+and [shared material contract](../architecture/material-recipes.md). The
+measurements and V2 history contract below remain pinned to this checkpoint.
+
 The [first authored robot](sdf-authored-content-evidence.md) now has an explicit
 edit-by-edit presentation. This work exposes its construction using the same
 geometry, pose, materials, hard shadows and shared atmosphere.

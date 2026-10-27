@@ -1,5 +1,10 @@
 # Cubey default hover previews — 2026-10-25
 
+Status: collection-wide preview preparation and validation are implemented. The
+selected previews are included in the verified published snapshot recorded in
+the [SDF story outcome](cubey-site-sdf-story.md#published-outcome); current
+behavior belongs in the [site guide](../../site/README.md).
+
 The five-card hover pilot is now the default for every selected film in the
 showcase. Still-only selections remain still. The media manifest is the source
 of truth: preview preparation discovers film-backed selections automatically,
@@ -24,5 +29,7 @@ The current set has 15 film-backed selections and 15 valid previews. Robot uses
 the late construction segment around 9–12.5 seconds; the SDF material preview
 covers the saved cuts from about 1.5–5 seconds. Short inputs produce shorter
 clips. Full films, posters, capture identities and renderer behavior are
-unchanged. This records local source and build policy; browser review and any
-publication remain separate acceptance steps.
+unchanged. This records the implementation-time source and build policy. The
+later published snapshot includes the collection-wide preview policy and
+derivatives; the publication receipt is linked above rather than treated as a
+separate preview-only deployment.

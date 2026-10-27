@@ -1,22 +1,17 @@
 # Terrain Water
 
-Terrain-water simulation, rendering and integration. The current featured scene
-uses rain on unmodified Terrain Diffusion hills: streams form downhill, join,
-collect in basins, and recede when supply stops. Rain is a scenario, not the
-project identity. The retained builtin shallow-water experiments remain in
-[Fluid 2.5D](../fluid/fluid_25d/README.md).
+Terrain Water is Cubey's external SynxFlow simulation, rendering and integration
+path. The current [site entry](https://dev.byebyebryan.com/cubey/demos/terrain/#terrain-water)
+shows recorded SynxFlow fields with a separate lighting timeline; it is not a
+live solver demonstration. This remains distinct from the builtin shallow-water
+experiments in [Fluid 2.5D](../fluid/fluid_25d/README.md).
 
-https://github.com/user-attachments/assets/453158a4-156c-4031-85ec-f6481780ea08
-
-[Published sunset highlight](../../docs/media/showcase/fluid-25d.mp4) ·
-[1080p master](../../docs/media/showcase/fluid-25d-master-1080p.mp4) ·
-[Frozen recipe](../../docs/media/showcase/fluid-25d-recipe.json) ·
-[Publication receipt](../../docs/media/showcase/fluid-25d-publication.json)
-
-The media keeps its historical `fluid-25d` filenames and source commands. This
-is the existing owner-selected Joining valleys film, not a new capture or a live
-performance claim: approximately six physical hours become 5.6 active seconds
-in an eight-second edit; 72 saved water states are held between saves.
+The historical Joining valleys film keeps its original `fluid-25d` filenames
+and source commands. It compresses approximately six physical hours into 5.6
+active seconds in an eight-second edit and holds 72 saved water states between
+saves. The film, native master, recipe and receipt remain in the
+[showcase archive package](../../docs/media/showcase/README.md) and
+[publication record](../../docs/media/showcase/fluid-25d-publication.json).
 
 ## Build and explicit setup
 

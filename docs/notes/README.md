@@ -28,10 +28,14 @@ manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
 - [SDF thread closeout](sdf-thread-closeout.md): the complete port/content/material
-  journey, accepted results, retained limits, commit/publication state and deferred
-  experiments.
+  journey, accepted results and deferred experiments; its publication section is
+  explicitly an as-of-2026-10-24 checkpoint.
 - [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
-  migration direction, source/media inventory and next-phase ownership.
+  direction and source/media inventory at intake; the implementation and release
+  outcome is recorded in the progress record and current [site guide](../../site/README.md).
+- [Documentation/media reconciliation](cubey-docs-media-reconciliation.md):
+  approved reconciliation of current guide ownership, note status and media
+  provenance after the published-site cutover.
 - [Cubey native showcase refinement](cubey-site-native-showcases.md): landscape
   recaptures, matched twelve-material films, cut examples and publication evidence.
 - [Cubey hover-preview trial](cubey-site-hover-preview-trial.md): bounded preview
@@ -40,11 +44,14 @@ the architecture and project guides remain current authority.
   film-backed selections, importer preparation, parent attribution and build checks.
 - [Cubey showcase polish](cubey-site-polish.md): full-site copy and layout review,
   clearer source credits, narrow-screen refinements and browser acceptance scope.
-- [Cubey SDF presentation story](cubey-site-sdf-story.md): native construction
-  and material cuts, interactive 2D explanations, concise development history
-  and the first detailed visual chapter's acceptance boundary.
+- [Cubey SDF presentation story](cubey-site-sdf-story.md): the published web
+  chapter, its native construction/cut sources, interactive 2D explanations,
+  development history, publication receipt and limits.
 
 - [SDF implementation evidence](sdf-implementation-evidence.md): native field, traversal and batch checkpoints for the boxes-only port.
+- [SDF procedural prototype closeout](sdf-procedural-prototype-closeout.md):
+  settled historical carving presentation, final camera/source checkpoint and
+  its boundary as a procedural tech demo.
 - [SDF authored content evidence](sdf-authored-content-evidence.md): the first survey robot, grouped geometry/material contracts and native visual/performance qualification.
 - [SDF authored history evidence](sdf-authored-history-evidence.md): edit-by-edit robot construction, cut previews, step controls and native state/replay qualification.
 - [SDF robot detail evidence](sdf-robot-detail-evidence.md): the mechanical detail variant, matched visual comparisons and atlas-sampling precision correction.
@@ -96,6 +103,9 @@ the architecture and project guides remain current authority.
 - [Material library expansion evidence](material-library-evidence.md): versioned
   twelve-material library, native mesh/SDF comparisons, bounded edit/resource
   checks, retained control images and the published review report.
+- [Material presentation evidence](material-presentation-evidence.md): the
+  implemented PBR/SDF stories, saved cut states, source identities and scoped
+  qualification; human visual acceptance remains a separate gate.
 - [SDF material workshop contract](sdf-material-workshop-plan.md): shared recipes and compact CSG inspection on the existing renderer.
 
 ## Exploration candidates
@@ -104,37 +114,44 @@ These records retain research, implementation plans and deferred experiments.
 Each record's status and evidence link identifies what is implemented.
 
 - [Cubey presentation-site implementation brief](cubey-site-plan.md): subject-led
-  showcase, component/page contracts, media work and later execution/release
-  boundaries; the authored implementation is under `site/`.
+  showcase and component/page contracts. Its pre-release acceptance boundaries
+  are planning-time snapshots; the implementation and release are recorded in
+  the progress note, with current details in the [site guide](../../site/README.md).
 - [Cubey site structure specification](cubey-site-structure.md): eight subjects,
-  demo/variant models, feature-led glTF, representative mockups and visitor paths.
+  demo/variant models, feature-led glTF, representative mockups and visitor paths;
+  the proposed eight-subject roster is design history.
 - [Cubey structure/design refinement](cubey-site-refinement.md): follow-on review,
   visual directory, visible chapters, fewer repeated pages and purposeful native
-  comparisons before implementation.
+  comparisons from before implementation.
 - [Cubey site implementation progress](cubey-site-implementation-progress.md):
-  authored Astro site, selected native media, checks and review-preview delivery.
+  authored Astro site, initial public release and README cutover; later hover and
+  SDF chapter publications have their own linked receipts.
 - [Cubey workshop-alignment review](cubey-site-workshop-alignment.md): personal
   workshop identity, coding-agent collaboration, experiment/foundation feedback,
-  connected demo mockups and completed design-only review.
+  connected demo mockups and the completed pre-implementation design review.
 - [Cubey site content map](cubey-site-content-map.json): source-guided presentation
   inventory across fourteen native projects, with proposed scenes and media gaps.
 - [Cubey showcase design review](cubey-site-design-review.md): historical dark/
   light studies; A selected, with the earlier six-demo roster now superseded.
 - [Cubey site design-loop progress](cubey-site-design-progress.md): completed
   design-only structure, refinement and workshop-alignment goals, with milestones
-  and evidence; production implementation remains out of scope.
-- [Material library surface research](material-library-surface-research.md):
-  primary references and current capability gaps for wood, rust, woven cloth,
-  kraft cardboard and frosted glass.
-- [Material library expansion plan](material-library-expansion-plan.md): five
-  distinct surface studies, shared catalog/persistence contracts, bounded
-  rendering additions, specimen design and staged native acceptance.
+  and evidence; production implementation followed as a separate phase.
+- [Material library expansion plan](material-library-expansion-plan.md): the
+  implemented five-surface expansion, shared catalog/persistence contracts,
+  bounded rendering additions and native acceptance; current contracts belong
+  in [shared material architecture](../architecture/material-recipes.md).
 - [Material and SDF demo roadmap](material-demo-roadmap.md): staged mesh PBR
   material workshop, SDF material workshop and authored-content showcase, with
-  shared material recipes/evaluation and separate completion boundaries.
+  shared material recipes/evaluation and separate completion boundaries. Stage C
+  remains the separate native authored-content showcase; the published web
+  chapter is an editorial layer, not its completion.
+- [Material workshop presentation plan](material-presentation-plan.md): the
+  completed two-story proposal for stages A/B; native shot-choice acceptance and
+  the separate Stage C showcase remain distinct.
 - [PBR material demo plan](pbr-material-demo-plan.md): proposed seven-material
   mesh workshop, portable procedural content, bounded live editing, retained
-  environment integration and native presentation/acceptance checkpoints.
+  environment integration and native presentation/acceptance checkpoints; the
+  implemented behavior is in the [PBR guide](../../projects/pbr_materials/README.md).
 - [projectR architecture and source review](projectr-architecture-review.md):
   edit representation, hierarchy and brick construction, renderer generations,
   interaction, persistence and source-level correctness findings.
@@ -149,7 +166,8 @@ Each record's status and evidence link identifies what is implemented.
   visual/performance acceptance for the first procedural demo.
 - [SDF authored content plan](sdf-authored-content-plan.md): a first stylized
   robot, early native blockout review, grouped composition and plain materials;
-  implemented through native presentation and accepted as the first experiment.
+  implemented and positively reviewed, with later detail and joint revisions
+  complete; current behavior is in the [SDF guide](../../projects/sdf/README.md).
 - [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;
@@ -161,7 +179,8 @@ Each record's status and evidence link identifies what is implemented.
   guardian cleanup and retirement of the unsuccessful driftwood candidate.
 - [SDF organic guardian plan](sdf-guardian-organic-plan.md): a separate organic
   sculpt, roughly 1,000 leaf reveals, bounded capacity and history-loading work,
-  with native form and presentation checkpoints.
+  with native form and presentation checkpoints; the later user verdict is in
+  [Guardian closeout](sdf-guardian-closeout.md).
 - [SDF mirrored stroke plan](sdf-mirror-plan.md): implemented X mirror authoring
   and grouped history, preserving explicit geometry and legacy leaf histories.
 - [SDF procedural material plan](sdf-procedural-materials-plan.md): implemented
@@ -336,6 +355,28 @@ or a separately chosen new product.
 - [Terrain V1 Runtime Checkpoint](terrain-v1-runtime-checkpoint.md)
 - [Terrain V1 Visual Closure](terrain-visual-closure-v1.md)
 - [Terrain Water Bodies Scope](terrain-water-bodies-scope.md)
+
+### SDF procedural prototype and carving lineage
+
+These dated records retain the procedural tests that led to the accepted
+carving presentation. Earlier geometry/camera trials remain valid evidence for
+their pinned inputs; the [prototype closeout](sdf-procedural-prototype-closeout.md)
+owns the final historical presentation and limits.
+
+- [Negative sticks carving plan](sdf-negative-sticks-plan.md)
+- [Negative-sticks implementation evidence](sdf-negative-sticks-evidence.md)
+- [Subtracting the original slender sticks](sdf-thin-negative-sticks-evidence.md)
+- [Negative sticks: intermediate width](sdf-intermediate-width-evidence.md)
+- [Negative sphere shape comparison](sdf-negative-sphere-evidence.md)
+- [Negative sphere density study](sdf-negative-sphere-density-evidence.md)
+- [Dense negative sticks and through-hole introduction](sdf-dense-bore-evidence.md)
+
+### Shared material-library pre-expansion research
+
+- [Material library surface research](material-library-surface-research.md):
+  source-pinned capability audit at `7b7bfd07` that informed the completed
+  [library expansion](material-library-evidence.md); its “available now” table
+  is a historical snapshot, not current capability guidance.
 
 ### Procedural research and working history
 

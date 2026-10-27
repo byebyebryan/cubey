@@ -2,11 +2,13 @@
 
 Date: 2026-10-24
 
-Status: implementation and review preview are complete under `site/`.
-The [implementation progress record](cubey-site-implementation-progress.md) owns
-current milestones and evidence. Study A's dark visual direction is user-selected.
-The subject/page structure below is the reviewed recommendation, ready for user
-review; it is not a claim that every label, capture or release choice is approved.
+Status: this implementation brief and review preview are complete. Public release
+and README cutover followed in the
+[implementation progress record](cubey-site-implementation-progress.md); the
+[site guide](../../site/README.md) owns current behavior and publication details.
+Study A's dark visual direction is user-selected. The subject/page structure
+below remains the reviewed design record, not a current release checklist or a
+claim that every label, capture or release choice was approved.
 
 [Open the workshop-aligned design review and navigable mockups](http://starship:8787/reports/6339d2350e5953a016b2dbc209720f5f93e78b8664646f2a7f6b1c1b58657922/).
 
@@ -263,9 +265,10 @@ or certification. Keep these distinctions concise where they affect a visual.
 
 ## Implementation milestones
 
-The user has launched the implementation goal. This is its execution sequence;
-the [progress record](cubey-site-implementation-progress.md) owns current results.
-Publication/cutover remain separately scoped.
+At this plan's closeout, the user had launched the implementation goal. This was
+its execution sequence; later publication/cutover results are in the
+[progress record](cubey-site-implementation-progress.md) and current
+[site guide](../../site/README.md).
 
 1. Adopt the structure/release scope and implementation stack. Astro 7.4.2 is
    selected for the authored static site; work is on the scoped local branch.
@@ -314,18 +317,20 @@ polishing after the acceptance audit does not.
 - Initial viewing does not fetch every film/master; images have suitable
   derivatives and dimensions, and lower-page media is deferred. No font CDN is
   required. Clean static delivery is a hosting property, not a Markdown constraint.
-- Documentation/layout/media gates stay meaningful. The current media checker
-  requires the five root README players; migrate that contract during cutover
-  while preserving hashes, attribution, source navigation and native recipes.
-  Test native code only when native behaviour or capture tools actually change.
+- Documentation/layout/media gates stay meaningful. At the planning baseline,
+  the media checker required the five root README players. The later README
+  cutover migrated that contract while preserving hashes, attribution, source
+  navigation and native recipes. Test native code only when native behaviour
+  or capture tools actually change.
 - Recheck exact local/remote refs, tracking/dirty state and complete push range
-  before any later source publication. Current local main has twelve inherited
-  commits beyond local origin/main; this design work does not publish them.
+  before any later source publication. At this design checkpoint, local `main`
+  had twelve inherited commits beyond local `origin/main`; this design work did
+  not publish them.
 
-Proposed destination remains an in-repo site at `dev.byebyebryan.com/cubey/`
-using GitHub Pages. It has not been configured by this goal. Stack, public
-release endpoint, homepage emphasis, final names and capture selections remain
-visible decisions for user review, not blockers to completing the design study.
+At plan closeout, the proposed destination remained an in-repo site at
+`dev.byebyebryan.com/cubey/` using GitHub Pages, and its endpoint was not yet
+configured. The later public release is recorded in the implementation progress
+record; the current endpoint and operating details are in the site guide.
 
 ## Evidence and retained context
 
@@ -342,7 +347,9 @@ not a production/native qualification or artistic pass.
 The [SDF thread closeout](sdf-thread-closeout.md),
 [original site handoff](cubey-site-handoff.md) and
 [first visual study](cubey-site-design-review.md) retain the prior context.
-The README gallery remains unchanged. Implementation is under `site/`; source
-push and public hosting/cutover remain separate. The
-previous broad structure/refinement reports remain historical evidence; the linked
-workshop-alignment report is the current design review.
+At this design-plan checkpoint, the README gallery remained unchanged and source
+push/public hosting/cutover were still separate. Later implementation and
+publication are recorded in the progress record and site guide. The
+previous broad structure/refinement reports remain historical evidence; at this
+design-plan checkpoint, the linked workshop-alignment report was the latest design
+review.

@@ -5,7 +5,12 @@ Date: 2026-10-23
 Status: implemented and qualified on 2026-10-23, alongside the SDF material
 workshop. The [closeout evidence](material-workshops-evidence.md) records native
 results and the review report. The original accepted implementation contract
-below is retained; authored showcase expansion remains deferred. No push.
+below is retained; authored showcase expansion remains deferred. Current run
+commands and workshop behavior belong in the
+[PBR guide](../../projects/pbr_materials/README.md),
+[SDF guide](../../projects/sdf/README.md) and
+[shared material contract](../architecture/material-recipes.md). “No push” below
+describes this dated qualification checkpoint.
 
 ## Goal and V1 result
 
@@ -23,7 +28,13 @@ Keep the furnace's conformance fixtures and the glTF viewer's asset workflow
 intact. The new project must run without importing SDF geometry or depending on
 files under `outputs/`, optional asset downloads or the SDF Python generators.
 
-## Current implementation and actual gaps
+## Implementation baseline and gaps recorded for this plan
+
+This table describes the pre-implementation state. The workshop and bounded
+editing path are implemented; current behavior is in the
+[PBR guide](../../projects/pbr_materials/README.md) and
+[SDF guide](../../projects/sdf/README.md), with shared recipe semantics in
+[material architecture](../architecture/material-recipes.md).
 
 | Existing source | Reuse or required change |
 | --- | --- |

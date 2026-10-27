@@ -4,10 +4,13 @@ Date: 2026-10-21
 
 Status: implemented through native presentation and qualification after the
 [procedural prototype closeout](sdf-procedural-prototype-closeout.md); user visual
-review of the first robot and its build presentation was positive. A separate
-[mechanical detail study](sdf-robot-detail-evidence.md) continues the content work.
-The [authored content evidence](sdf-authored-content-evidence.md) records native
-checkpoints and visual decisions.
+review of the first robot and its build presentation was positive. The separate
+[mechanical detail study](sdf-robot-detail-evidence.md), field-kit variant and
+[joint review](sdf-robot-joint-review.md) followed and are complete; the accepted
+robot result is summarized in the current
+[SDF guide](../../projects/sdf/README.md#authored-scenes). The
+[authored content evidence](sdf-authored-content-evidence.md) records the original
+native checkpoints and visual decisions.
 The user selected a small stylized robot or mechanical toy as the first subject.
 Appearance uses plain materials and, optionally, procedural or noise patterns.
 Image textures and UV mapping are outside this experiment.

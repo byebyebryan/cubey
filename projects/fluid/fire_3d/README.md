@@ -5,6 +5,9 @@ app fixes the solver mode to fire, while `projects/fluid/sim/pyro_3d` owns the
 volume resources, source model, combustion pass, shadow volume, and raymarch
 renderer shared with `explosion_3d`. A configurable ball obstacle is embedded in
 the volume so the plume has a solid object to flow around and shadow against.
+The current visual overview is the
+[Fire 3D page](https://dev.byebyebryan.com/cubey/demos/simulation/fire-3d/);
+this guide owns the native simulation and renderer behavior.
 
 By default, the raymarch and shadow passes consume the shared procedural
 atmosphere for dynamic light direction, color, sky tint, and exposure; pass
@@ -41,25 +44,10 @@ Useful commands:
 
 ## Showcase highlight
 
-[![Fire 3D showcase poster](../../../docs/media/showcase/fire-3d.png)](../../../docs/media/showcase/fire-3d.mp4)
-
-The highlight opens on a mature plume and lets the fire and smoke carry the
-motion as daylight fades into night. A fixed camera and empty environment keep
-the flame core, side breakup, and darker smoke structure easy to read.
-
-The exact capture uses one source, no obstacle, no terrain, no clouds, a
-camera distance of `1.65`, three seconds of hidden warm-up, and the
-15:30-to-22:30 retained window. Its Balanced simulation overrides are
-`source-radius 0.11`, `soot 13`, `soot-yield 0.35`, `expansion 1.10`,
-`flame-cooling 3.4`, `shredding 4.2`, `turbulence 1.2`, `buoyancy 2.1`, and
-`source-force 8.0`. The source capture is:
-
-```bash
-./build/dev/projects/fluid/fire_3d/fire_3d --headless --capture video --frames 660 --fps 60 --width 1280 --height 720 --capture-video-orbit-degrees 0 --capture-camera-distance 1.65 --pyro-sources 1 --pyro-obstacle-radius 0 --time-of-day-mode solar --time-hours 12.875 --time-speed-hours-per-second 0.875 --pyro-source-radius 0.11 --pyro-soot 13 --pyro-soot-yield 0.35 --pyro-expansion 1.10 --pyro-flame-cooling 3.4 --pyro-shredding 4.2 --pyro-turbulence 1.2 --pyro-buoyancy 2.1 --pyro-source-force 8.0 --output outputs/showcase/audition-2/pyro/fire-3d-refine-sim-balanced-source.mp4
-```
-
-The frame-180 trim, publication command, exact hash, and poster timestamp are
-recorded in the [showcase media manifest](../../../docs/media/showcase/manifest.json).
+The current site page above presents the recorded fire-and-smoke clip. Its
+trim, hash and poster timestamp remain in the [showcase archive package](../../../docs/media/showcase/README.md)
+and [media manifest](../../../docs/media/showcase/manifest.json); the exact
+source command is retained in the [capture history](docs/showcase-history.md).
 
 For headless video, `--capture-video-orbit-degrees N` authors an eased bounded
 move over the complete frame range; use `0` for a fixed camera or omit the

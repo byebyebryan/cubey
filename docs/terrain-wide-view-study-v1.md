@@ -1,5 +1,11 @@
 # Saved-landscape wide-view rendering study V1
 
+Status: dated study and retained trial from 2026-10-13. The verdict and
+qualification below describe that checkpoint. See the current
+[Terrain guide](../projects/terrain/README.md) for native use and the
+[working-note index](notes/README.md) for later decisions; this record does not
+renew the original performance or visual qualification.
+
 Verdict: retain one explicit lighting-only experiment,
 `--terrain-readability filtered-study`. It reduces the distant terrain peppering
 in these frozen views without changing geometry, captured fields or water

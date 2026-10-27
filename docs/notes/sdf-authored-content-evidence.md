@@ -2,6 +2,12 @@
 
 Date: 2026-10-21
 
+This is the original robot blockout and native qualification checkpoint. Later
+positive review and the accepted detail/pose revisions are recorded in the
+[robot detail study](sdf-robot-detail-evidence.md),
+[joint review](sdf-robot-joint-review.md) and current
+[SDF guide](../../projects/sdf/README.md#authored-scenes).
+
 Implementation follows the [authored content plan](sdf-authored-content-plan.md).
 This record distinguishes native checks and assistant visual selection from
 the user's assessment of the resulting content.

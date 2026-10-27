@@ -2,8 +2,10 @@
 
 Date: 2026-10-24
 
-Status: follow-on review complete. These are refined recommendations within the
-selected dark direction A. Production implementation remains unstarted.
+Status: this follow-on design review was complete before production began. The
+recommendations were later implemented and the site published; see the
+[implementation progress](cubey-site-implementation-progress.md) and current
+[site guide](../../site/README.md). This document retains the mockup-era review.
 
 The [workshop-alignment review](cubey-site-workshop-alignment.md) is the current
 design package following the author's fuller project context. The browsing and

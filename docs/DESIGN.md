@@ -271,16 +271,22 @@ This is critical for AI-assisted development — the agent gets structured pass/
 - **Desktop (Vulkan):** GLSL → SPIR-V at build time via glslangValidator
 - Shared shader includes (lighting, noise functions, math utilities) in a common directory
 
-## Projected Projects
+<a id="projected-projects"></a>
 
-| Project | Source | Notes |
-|------|--------|-------|
-| Smoke 2D | cubey1 rewrite warmup | First project target; compute-updated 2D dye/velocity field with headless capture output |
-| Fire 3D / Explosion 3D | cubey1 rewrite | Shared dense pyro solver with fire and explosion app front ends |
-| Particle System | cubey1 rewrite | Prototype attractor motion now lives under `examples/particle_cubes`; a larger project would need a clear compute + indirect draw contract before graduating |
-| Marching Cubes | cubey1 rewrite | Isosurface extraction via compute + indirect draw |
-| Fractal 2D | cubey1 rewrite | Mandelbrot/Julia renderer |
-| SDF Sculpting | projectR port | Sparse SDF brick tree, raymarched rendering, Morton-coded spatial indexing |
+## Project Origins and Current Status
+
+Several entries began as plans for the OpenGL/Cubey 1 rewrite. Their origins
+remain part of the project history; the status below describes the current
+native repository:
+
+| Project | Origin | Current status |
+|------|--------|----------------|
+| Smoke 2D | cubey1 rewrite warmup | Native fluid application with headless capture. |
+| Fire 3D / Explosion 3D | cubey1 rewrite | Native front ends over the shared dense 3D pyro solver. |
+| Particle System | cubey1 rewrite | Attractor prototype remains in `examples/particle_cubes`; a larger project awaits a concrete compute and indirect-draw contract. |
+| Marching Cubes | cubey1 rewrite | Proposed isosurface extraction project; not a current application. |
+| Fractal 2D | cubey1 rewrite | Native project remains under `projects/fractal_2d`; its public-site presentation is deferred, not retired. |
+| SDF | projectR port | Native project under `projects/sdf` with procedural CSG, authored scenes, saved construction history and a material workshop. It is not a live desktop sculpting editor; freehand and incremental field editing remain deferred. |
 
 ## Reference Sources
 

@@ -102,8 +102,14 @@ class ShowcaseMedia(unittest.TestCase):
         for key in ("issue_remains_closed", "original_four_attachment_mappings_unchanged",
                     "fluid_publication_comment_retained", "morning_publication_comment_retained"):
             self.assertTrue(verification[key])
-        for path in (ROOT / "projects/gltf_viewer/README.md", MEDIA / "README.md"):
-            self.assertIn(publication["github_attachment_url"], path.read_text())
+        self.assertIn(publication["github_attachment_url"], (MEDIA / "README.md").read_text())
+        guide = (ROOT / "projects/gltf_viewer/README.md").read_text()
+        history = (ROOT / "projects/gltf_viewer/docs/landscape-history.md").read_text()
+        self.assertIn("https://dev.byebyebryan.com/cubey/demos/gltf/", guide)
+        self.assertIn("](docs/landscape-history.md)", guide)
+        self.assertIn("](../../../docs/media/showcase/README.md)", history)
+        self.assertIn("](../../../docs/media/showcase/manifest.json)", history)
+        self.assertNotIn("github.com/user-attachments/", guide)
 
     def test_morning_recipe_and_receipt_are_retained_as_exact_history(self):
         previous = self.entry["previous_saved_water"]

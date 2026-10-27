@@ -5,10 +5,14 @@ Date: 2026-10-23
 Status: Stages A and B implemented and qualified on 2026-10-23. The
 [workshop evidence](material-workshops-evidence.md) records current front doors,
 compatibility, measured costs and the native review report. Stage C remains
-deferred. The material milestones and review fixes are pushed through `b72c7c5c`.
+deferred as the native authored-content showcase described below. The first
+detailed [SDF web chapter](cubey-site-sdf-story.md) has since been published; it
+reuses saved native replay and cut media but does not complete the separate
+native showcase or Guardian-film refresh. The material milestones and review
+fixes are pushed through `b72c7c5c`.
 The [presentation pass](material-presentation-evidence.md) now delivers two
 native material stories and a compact report, with new shot choices awaiting
-user review. A refreshed authored-content film remains separate.
+user visual acceptance. A refreshed authored-content film remains separate.
 
 ## Purpose
 

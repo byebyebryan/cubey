@@ -2,6 +2,9 @@
 
 Date: 2026-10-23. Status: implemented and qualified alongside the PBR material workshop.
 See the [closeout evidence](material-workshops-evidence.md) for native results and limits.
+The [SDF guide](../../projects/sdf/README.md#material-workshop) owns current
+front-door behavior; shared recipe semantics belong in
+[material architecture](../architecture/material-recipes.md).
 
 Stage B uses an explicit workshop mode in the existing SDF executable, retaining
 one renderer, field implementation and accepted scene path. The shared recipe

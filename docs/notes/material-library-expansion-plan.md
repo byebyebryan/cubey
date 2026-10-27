@@ -6,7 +6,10 @@ Status: implemented and natively qualified; [checkpoint evidence](material-libra
 records the finished scope, measured costs and review report. The plan follows the
 [surface research](material-library-surface-research.md). The bounded appearances
 are accepted by user review; a [presentation pass](material-presentation-plan.md)
-is proposed separately.
+is recorded separately. Current recipe and evaluator contracts belong in
+[shared material architecture](../architecture/material-recipes.md), with current
+front doors in the [PBR guide](../../projects/pbr_materials/README.md) and
+[SDF guide](../../projects/sdf/README.md).
 Baseline: `7b7bfd07`, the [qualified mesh/SDF workshops](material-workshops-evidence.md).
 
 ## Outcome and scope
@@ -133,12 +136,12 @@ Catalog metadata is excluded from the appearance fingerprint; resolved recipe
 values, seed, domain and active response fields are included. Appearance changes
 must preserve geometry fingerprints and field-cache hits.
 
-The current shared-recipe-to-inline-v2 SDF adapter cannot silently discard new
-parameters. Recommended route: add an explicit authored-scene v3 material form
-containing self-contained resolved shared recipes. Retain v2 loading, writing
-and legacy hashes unchanged for old scenes; geometry/history semantics remain
-the same. New scenes must not depend on an external recipe file retaining its
-future contents. Do this before claiming scene-export support for new materials.
+At this plan's baseline, the shared-recipe-to-inline-v2 SDF adapter could not
+silently discard new parameters. The implementation added authored-scene V3
+material records containing self-contained resolved shared recipes; the current
+schema is documented in [shared material architecture](../architecture/material-recipes.md)
+and the [SDF guide](../../projects/sdf/README.md). V2 loading/writing and legacy
+hashes remain unchanged for old scenes, with geometry/history semantics intact.
 
 Keep CSG material selection and smooth blending explicit. Blend resolved opaque
 response channels consistently; retain current glass restrictions rather than

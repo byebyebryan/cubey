@@ -2,11 +2,14 @@
 
 Date: 2026-10-24
 
-Status: implementation goal complete, explicitly launched by the user after the
-completed workshop-alignment design. Work is on the local
-`codex/cubey-site-implementation` branch, based on `492fac84`. The twelve inherited
-commits beyond local origin/main remain unpublished. Prior planning edits belong
-to this thread and are preserved.
+Status: implementation goal, public release and README cutover are complete. This
+record covers the initial implementation and release milestones through 2026-10-24;
+the later collection-wide preview and SDF story outcomes are recorded in their
+[separate note](cubey-site-default-hover-previews.md) and the
+[published SDF story record](cubey-site-sdf-story.md#published-outcome). The
+[site guide](../../site/README.md) owns current behavior and publication details.
+The branch/base and inherited-commit statements below describe their original
+implementation checkpoint.
 
 ## Contract and decisions
 

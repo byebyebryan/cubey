@@ -5,8 +5,15 @@ Date: 2026-10-24
 Recipient: the existing `cubey-site` thread in `/home/bryan/code/cubey`.
 Source: the long-running SDF/material thread. Read the
 [SDF closeout](sdf-thread-closeout.md) for the complete stage/evidence map.
-This transfers context for the site's next planning phase; it does not implement
-the migration or request a push/deployment.
+
+Status: this was an intake handoff for the site's next planning phase. The
+implementation, publication and README cutover were later completed; see the
+[implementation progress](cubey-site-implementation-progress.md),
+[current site guide](../../site/README.md) and
+[published SDF story outcome](cubey-site-sdf-story.md#published-outcome).
+
+At handoff time, this transferred context; it did not implement the migration or
+request a push/deployment.
 
 ## User direction
 

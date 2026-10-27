@@ -7,12 +7,14 @@ Run these stdlib Python 3.11+ tools from the repository root:
 - `python3 -B tools/check_documentation.py` checks all tracked, repository-owned
   Markdown links/anchors and navigation from the root README. Directory links
   follow their README; vendored docs and ignored private builds are excluded.
-- `python3 -B tools/check_documentation.py --check media` verifies current gallery
-  files, sizes, SHA-256, PNG dimensions, MP4 fast-start layout and player order.
+- `python3 -B tools/check_documentation.py --check media` verifies the retained
+  README gallery's files, sizes, SHA-256, PNG dimensions, MP4 fast-start layout
+  and player order.
   Player mappings/order live in the retained gallery package README; the root
   README points to the public presentation site. Historical recipes retain their
-  original hashes; this check reads the current manifest rather than treating
-  superseded file paths as current assets.
+  original hashes; this check reads that package's manifest rather than treating
+  superseded file paths as current assets. The [media ownership guide](../docs/media/README.md)
+  distinguishes this archive from the site's selected-media ledger and checks.
 - `python3 -B tools/report_server.py` serves local reports under `outputs/`.
   See the [report browser guide](../docs/getting-started.md#browse-local-result-reports)
   for configuration and operation.

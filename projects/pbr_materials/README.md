@@ -4,6 +4,9 @@ Ordinary mesh spheres, a beveled block, an oriented swatch and a bored block use
 twelve standalone recipes in [`assets/materials`](../../assets/materials).
 The [reviewed plan](../../docs/notes/pbr-material-demo-plan.md) and
 [SDF workshop contract](../../docs/notes/sdf-material-workshop-plan.md) define scope.
+The current visual collection is on the
+[Materials page](https://dev.byebyebryan.com/cubey/demos/materials/#mesh-materials);
+this guide remains the native run and editing reference.
 
 ## Presentation
 
@@ -21,12 +24,11 @@ camera, lighting, recipe coordinates and optical limits.
 
 ### Frozen four-specimen study
 
-[![Four contrasting material specimens](../../docs/media/material-workshops/pbr-poster.png)](../../docs/media/material-workshops/pbr.mp4)
-
-Wood, rusted steel, woven cloth and bronze share one frozen low-sun environment
-while an eased camera arc reveals their different surfaces. Watch the
-[presentation and inspectable SDF cut](http://starship:8787/reports/5ddba21d5b0e6a6e2ff2a88ccb788cce0a4e2c0527ea8c5bc89b4a0c0bf8d71e/)
-or run the preset:
+This retained native preset is a dated capture setup, not the current public
+gallery. Its poster, film, native master, recipe and provenance remain in the
+[material-workshop archive package](../../docs/media/material-workshops/README.md)
+and [presentation evidence](../../docs/notes/material-presentation-evidence.md).
+Run the preset locally:
 
 ```sh
 build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materials/presets/presentation/contrast.json
@@ -35,9 +37,8 @@ build/release/projects/pbr_materials/pbr_materials --config projects/pbr_materia
 Controls start collapsed; expand the title bar for pause/replay and the full
 material workshop. Space pauses, R restarts, and drag/scroll still orbit/zoom.
 `--presentation-time 4` selects a reproducible snapshot. The alternative
-`surfaces.json` preset retains the frosted-glass group audition. The
-[media package](../../docs/media/material-workshops/README.md) retains both
-1080p masters and 720p clips with capture provenance.
+`surfaces.json` preset retains the frosted-glass group audition. The archive
+package above retains both 1080p masters and 720p clips with capture provenance.
 
 ## Workshop
 
@@ -86,7 +87,8 @@ V3 preserve new parameters through save/reload. V1 content remains unchanged.
 shared recipe round trips, native editing checks and measured 1080p costs.
 The seven-material mesh gallery measures 0.303 ms in studio and 2.607 ms with
 clouds on the qualified RTX 5070 Ti run; setup and encoding are separate.
-New visual presentation remains open to user review.
+These figures and review statements retain the evidence record's original
+source, device and scope; the public visual presentation is linked above.
 
 Reproduce the bounded native matrix with
 `python3 projects/pbr_materials/tools/qualify_workshops.py --stage all`.
