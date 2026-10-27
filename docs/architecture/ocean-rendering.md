@@ -128,9 +128,10 @@ material, but it follows the same linear-HDR environment and exposure contract.
 slope data. Ocean currently binds a synthetic diagnostic field and has a small
 opt-in shoreline foam hook. It does not yet consume live terrain output.
 
-Terrain should own bathymetry, shoreline distance, water masks, local datum,
-and flow hints. Ocean should own open-water displacement, normals, foam, and
-material response. Lakes may reuse parts of this renderer after those products
+An independently selected terrain/coastal product would own bathymetry,
+shoreline distance, water masks, local datum and flow hints; these are not part
+of the current Terrain V1 backdrop contract. Ocean owns open-water displacement,
+normals, foam and material response. Lakes may reuse parts of this renderer after those products
 exist; rivers and shallow flow need a separate solver/model.
 
 ## Planet Boundary

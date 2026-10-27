@@ -1,5 +1,9 @@
 # Fluid 2.5D — builtin shallow water
 
+The [shallow-water showcase](https://dev.byebyebryan.com/cubey/demos/simulation/shallow-water/)
+presents this builtin experiment; this guide covers native use and its boundary
+from the separate external Terrain Water project.
+
 A standalone demo of Cubey's own Vulkan shallow-water solvers. This is not the
 SynxFlow terrain-water showcase; that lives in [Terrain Water](../../terrain_water/README.md).
 

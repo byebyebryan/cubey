@@ -36,6 +36,9 @@ the architecture and project guides remain current authority.
 - [Documentation/media reconciliation](cubey-docs-media-reconciliation.md):
   approved reconciliation of current guide ownership, note status and media
   provenance after the published-site cutover.
+- [Current-doc source reconciliation](cubey-docs-source-reconciliation.md):
+  current startup/ownership guidance, complete native showcase links and the
+  versioned loading-profile reader repair with historical replay preservation.
 - [Cubey native showcase refinement](cubey-site-native-showcases.md): landscape
   recaptures, matched twelve-material films, cut examples and publication evidence.
 - [Cubey hover-preview trial](cubey-site-hover-preview-trial.md): bounded preview

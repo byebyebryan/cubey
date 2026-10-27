@@ -4,6 +4,9 @@
 fluid simulation used to exercise the project/runtime boundary before moving to
 larger simulation work.
 
+The [Smoke 2D showcase](https://dev.byebyebryan.com/cubey/demos/simulation/smoke-2d/)
+owns the visual overview; this guide covers native behavior and reproduction.
+
 The project is intentionally more substantial than an example, but it still owns
 its simulation policy locally. Cubey provides the Vulkan/runtime pieces; this
 project owns the field layout, compute passes, interaction model, render modes,
@@ -31,11 +34,14 @@ Implemented:
   headless field diagnostics.
 - Integration with `cubey::host::WindowedHost`, `cubey::host::HeadlessPngHost`, and
   `cubey::ProjectRuntimeAdapter`.
+- Shared render-graph declaration for the coarse simulation-to-render boundary;
+  solver-internal barriers and simulation policy remain project-owned.
 
 Deferred:
 
 - A reusable simulation abstraction.
-- A full renderer-owned render graph or scene system.
+- A general simulation framework or editor/scene system beyond the current
+  coarse render-graph integration.
 - Editor-style UI beyond the compact live-tuning panel.
 - External asset loading.
 
@@ -98,7 +104,7 @@ Near-term improvements worth trying:
 - Richer injectors, turbulence/detail synthesis, and more deliberate smoke or
   dye shading.
 
-Separate experiments worth considering once the current grid path is cleaner:
+Related techniques and separate experiment boundaries:
 
 - 2D level-set liquid: signed distance field plus marching-squares surface,
   useful for free-surface blobs and sloshing in cross-section.
@@ -106,12 +112,14 @@ Separate experiments worth considering once the current grid path is cleaner:
   loss.
 - Volume of fluid: better mass conservation than pure level set, with a more
   awkward interface reconstruction path.
-- 2D PIC/FLIP/APIC: grid pressure solve plus particles for advection, likely
-  more visually rewarding for liquid than pure level set.
+- 2D PIC/FLIP/APIC: already implemented in [Water 2D](../water_2d/README.md),
+  with a 3D tank counterpart in [Water 3D](../water_3d/README.md). Free-surface
+  liquid work belongs in those projects rather than a second smoke solver mode.
 - Lattice Boltzmann: useful for flow-around-obstacle experiments, less directly
   aligned with free-surface water.
-- Reaction, buoyancy, or combustion: good if this project becomes a smoke/fire
-  lab rather than a liquid lab.
+- Reaction, buoyancy, or combustion: further 2D experiments remain possible;
+  [Fire 3D](../fire_3d/README.md) and [Explosion 3D](../explosion_3d/README.md)
+  already host the shared dense 3D pyro baseline.
 
 Level-set water should be treated as a distinct mode or later project slice, not
 as a tiny tweak to the current dye solver:
@@ -131,8 +139,9 @@ Scaling guidance:
 
 - `smoke_2d` is useful for solver learning, diagnostics, and stylized
   smoke/dye/liquid cross-sections.
-- `fluid_25d` is the better path for scalable terrain water, rivers, and
-  flooding.
+- [Terrain Water](../../terrain_water/README.md) owns the prepared external
+  terrain-water demo. [Fluid 2.5D](../fluid_25d/README.md) retains builtin
+  shallow-water experiments and numerical diagnostics.
 - A future sparse 3D gas/smoke project is the better path for a modernized
   GPU-Gems-style volumetric demo.
 
@@ -157,9 +166,10 @@ Scaling guidance:
 ## Next Slices
 
 - Compare Jacobi and RBGS with diagnostics before adding CG/SOR/multigrid.
-- Decide whether `smoke_2d` should lean smoke/dye, free-surface liquid, or split
-  those into separate project modes.
-- Consider a project-local HUD only if title-bar stats are not enough.
+- Keep `smoke_2d` focused on smoke/dye; use the existing Water projects for
+  free-surface liquid experiments.
+- Extend the existing runtime panel when a selected solver experiment needs
+  another control or diagnostic.
 - Revisit reusable helpers when buffer ping-pong descriptors, fixed-step
   simulation orchestration, or capture/readback polling have a clear shared
   contract across the fluid projects.

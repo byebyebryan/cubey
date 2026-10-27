@@ -2,15 +2,16 @@
 
 ## What It Is
 
-A minimal C++ library and workbench for GPU-driven procedural graphics
-experiments. Not a game engine, not a polished external SDK - a personal
-workbench for trying graphics ideas quickly while keeping the reusable runtime
-small and explicit.
+A personal graphics and simulation workshop supported by a C++20/Vulkan engine
+foundation. Focused projects explore rendering and simulation; their needs
+shape the shared runtime. The foundation stays small and explicit rather than
+growing toward a general game engine or external SDK.
 
 ## Background
 
-Cubey 2.0 is a ground-up native Vulkan rewrite of the original C++/OpenGL/GPGPU
-Cubey experiments. Historical spike notes and migration context live under
+Cubey 2.0 is a native Vulkan successor to the original C++/OpenGL/GPGPU
+Cubey experiments. It continues the workshop approach rather than the old
+OpenGL codebase. Historical spike notes and migration context live under
 `docs/archive/` and `docs/notes/`; this document should stay focused on the
 current design.
 
@@ -18,11 +19,11 @@ current design.
 
 - **Minimal library, maximum project.** The C++ runtime exists to get out of the way. The interesting work happens in shaders and compute.
 - **Primary target: desktop with full GPU power.** No compromises for portability. Native Vulkan is the foundation.
-- **Headless rendering is first-class.** Every project should eventually render to image without a window. Enables automated testing and AI-assisted development.
+- **Headless rendering is first-class.** Active visual projects support offscreen captures for automated checks and visual review.
 - **Shaders compile at build time.** No runtime hot-reload complexity. GLSL → SPIR-V via glslangValidator at build time.
-- **Async-ready before heavily threaded.** Shape project code around jobs,
-  queued uploads, queued captures, and explicit GPU ownership before adding a
-  dedicated render thread or parallel command recording.
+- **Explicit CPU and GPU ownership.** CPU jobs prepare work; queued uploads,
+  captures and a strict GPU owner preserve resource lifetimes. Dedicated render
+  scheduling, parallel command recording and split queues remain deferred.
 - **Intentional foundation, not accidental extraction.** Rendering engines are
   inherently contract-heavy. Cubey should design small shared library
   boundaries for durable graphics/runtime concepts early, then revise them as
@@ -71,13 +72,15 @@ constraints that affect correctness visible.
 
 ### Vulkan Layer Seams
 
-The near-term Vulkan layer should split around real ownership boundaries:
+The Vulkan and host layers split around real ownership boundaries:
 
-- `Device` — instance, physical device, logical device, queue selection, validation
-- `Surface` / `Swapchain` — platform surface handoff, surface extent ownership,
+- `Instance` / `Device` — instance validation, physical-device selection, logical
+  device and queue access
+- `GlfwWindow` / `Swapchain` — platform surface handoff, surface extent ownership,
   image views, present-mode constraints, and resize/out-of-date recreation
 - `Buffer` / `Image` — allocation, views, staging uploads, readback
-- `Shader` / `Pipeline` — build-time shader paths, compute and graphics pipelines
+- `ShaderModule`, `GraphicsPipeline` / `ComputePipeline` — build-time shader
+  paths and explicit pipeline ownership
 - `CommandPool` / `FrameResources` — command pool ownership, command-buffer
   allocation, sync objects, and per-frame-slot submitted GPU tickets
 - `SubmissionCoordinator` — serialized queue submission helper and monotonic
@@ -92,16 +95,15 @@ driven by a concrete project need rather than symmetry.
 
 ### Resource Vocabulary
 
-Projects and examples should eventually interact with a small set of rendering
-concepts:
+Projects and examples use a small set of rendering concepts:
 
 - `Buffer` — GPU buffer (vertex, storage, uniform, index, indirect)
 - `Image` / `Texture2D` / `TextureCube` — image and sampled texture data
-- `Pipeline` — compute or graphics pipeline
-- `DescriptorSet` — Vulkan resource binding set
+- `GraphicsPipeline` / `ComputePipeline` — graphics or compute pipeline
+- `VkDescriptorSet` — Vulkan resource bindings with shared layout/pool helpers
 
 Core operations: create resources, dispatch compute, draw, synchronize, submit,
-present, and read back. In the first version, those operations map directly to
+present, and read back. Those operations map directly to
 Vulkan and remain free to expose Vulkan-specific requirements where useful.
 
 ### Transform, Camera, And Renderable Vocabulary
@@ -183,9 +185,8 @@ Reusable spatial types should stay explicit and narrow:
 
 The broader entity/component shape is captured in the
 [entity and component foundation](architecture/entity-component-foundation.md):
-Cubey should move toward manager-oriented, MT-stable component storage with
-explicit read views and edit commits before adding broader material,
-environment, or renderer ownership.
+The implemented managers use MT-stable component storage with explicit read
+views and edit commits. Further component ownership needs a concrete consumer.
 
 `cubey::Engine` is the scoped root owner for engine services and scene
 creation. It owns project runtime services, render resource handle identity,
@@ -216,8 +217,8 @@ contracts are clearer and safer than ad hoc project code. Repetition is useful
 evidence, but it is not a required gate for graphics concepts that are already
 well-established or correctness-sensitive.
 
-Before this becomes a broad host, projects should move toward the async-ready
-shape described in [threading and async design](architecture/threading-and-async.md):
+Projects use the async-ready shape described in
+[threading and async design](architecture/threading-and-async.md):
 project/application state produces render packets, CPU jobs run behind Cubey APIs,
 upload/capture requests are queued, and one GPU owner serializes queue
 submission and resource lifetime decisions. Today that GPU owner is
@@ -229,33 +230,32 @@ code the raw submission coordinator. Actual submission completion and deferred
 GPU retirement remain owned by `GpuRuntime`, so project timing cannot be
 mistaken for GPU progress.
 
-```cpp
-struct App {
-    virtual void setup() = 0;
-    virtual void update(float dt) = 0;
-    virtual void render() = 0;
-    virtual void ui() = 0;  // ImGui panel
-    virtual void on_key(...) {}   // optional
-    virtual void on_mouse(...) {} // optional
-};
-```
+Applications supply project-owned parse and run functions. The shared
+`run_configured_app` startup handles configuration-template early exit, default
+titles and errors; the application then selects windowed or headless callbacks.
+There is no universal virtual `App` base class. For example, the
+[Smoke 2D entry point](../projects/fluid/smoke_2d/main.cpp) uses:
 
-Entry point:
 ```cpp
-int main() {
-    return cubey::run<MyProject>(Config{.title = "fluid sim", .width = 1280, .height = 720});
+int main(int argc, char** argv) {
+    return cubey::host::run_configured_app(
+        argc, argv,
+        {.app_name = "smoke_2d", .default_title = "cubey smoke 2D"},
+        cubey::projects::fluid::smoke_2d::parse_smoke_2d_project_config,
+        cubey::projects::fluid::smoke_2d::run_smoke_2d);
 }
 ```
 
 ## Testing & Feedback Loop
 
-Every non-trivial project should eventually support two modes:
+Active visual projects support two modes:
 
-**Interactive:** Opens a window, renders at 60fps, ImGui controls for parameters.
+**Interactive:** A native window with project controls and diagnostics. Frame
+pacing and measured performance depend on the selected workload and device.
 
 **Headless:**
 ```bash
-./fluid_sim --headless --frames 60 --width 1280 --height 720 --output result.png
+./build/dev/projects/fluid/smoke_2d/smoke_2d --headless --frames 60 --width 1280 --height 720 --output result.png
 ```
 
 Headless mode enables:
@@ -310,10 +310,14 @@ before inventing vocabulary or architecture. Preferred references:
 - Graphics papers, GPUOpen/NVIDIA/Intel notes, and mature OSS renderers when a
   topic is more specific than the engine-level references above.
 
-Use these sources for terminology and contract shape. Do not copy code, and do
-not import large engine architecture wholesale when Cubey only needs a narrow
-foundation type. For nontrivial foundation work, record the main precedents
-consulted in the design note, roadmap update, PR description, or working notes.
+Use engine documentation for terminology and contract shape. For runnable
+reference implementations, follow the
+[reference-first workflow](architecture/rendering-feature-workflow.md): port a
+compatible licensed core, retain its notices and provenance, and establish a
+visual baseline before extending it. Keep the imported scope narrow rather
+than adopting a whole engine architecture. For nontrivial foundation work,
+record the main precedents consulted in the design note, roadmap update, PR
+description, or working notes.
 
 ## Borrowing from Filament
 

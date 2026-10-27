@@ -126,15 +126,18 @@ clean pinned Sample Assets checkout and a fresh output directory; summary-only
 replay instead uses the retained manifest/profile CSVs without requiring that
 checkout or a viewer binary.
 
-The runner requires one complete 46-metric `gltf_loading` generation set per
-profile and writes `runs.csv`, `summary.csv`, metadata, and a deterministic
-observation manifest. Alongside the existing staged-envelope values, the set
+New live runs require one complete 48-metric `gltf_loading` generation set per
+profile and write a `gltf_loading_profile_v2` observation manifest, `runs.csv`,
+`summary.csv` and metadata. Replay of retained `gltf_loading_profile_v1`
+manifests (or admitted legacy metadata) keeps the exact 46-metric schema and
+report columns. Missing counters are not filled in or inferred from row count.
+Alongside the existing staged-envelope values, the current set
 contains exclusive CPU timings for document parse, buffer load, validation,
 image payload, image decode, and remaining asset assembly, plus incremental
 upload work, owner-step, staging-pool, completion-latency, and frame-correlation
-metrics, including the configured physical-step byte cap and logical-copy byte
-target. Its first observation is not a cold-cache claim. Metric definitions,
-capture environment, and recorded results are in the
+metrics, including the configured physical-step byte cap, logical-copy byte
+target and logical/physical default-texture counts. Its first observation is
+not a cold-cache claim. Metric definitions, capture environment and recorded results are in the
 [glTF loading profile note](gltf-loading-profile.md).
 
 Use `projects/gltf_viewer/tools/profile_gltf_windowed_upload_jitter.sh` for a

@@ -4,6 +4,10 @@
 the sky model and cloud integration before consumers such as Ocean use them for
 sky, reflection, sun lighting, and horizon aerial perspective.
 
+The [Atmosphere showcase](https://dev.byebyebryan.com/cubey/demos/atmosphere/)
+presents scattering, clouds and the night sky. This guide owns native controls,
+capture workflows and the shared-runtime boundaries.
+
 The first implementation is direct ray-marched single scattering with Rayleigh
 air scattering, Mie aerosol scattering, ozone absorption, transmittance, a sun
 disk, and debug views. LUT-backed production rendering is intentionally deferred.

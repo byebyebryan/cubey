@@ -5,6 +5,9 @@ Shared foundation components supply source-bound heightfields, terrain material,
 fixed-focus detail/LOD, shadows and optional captured water. It is not a general
 traversable terrain engine or a hydrology simulator.
 
+The [terrain showcase](https://dev.byebyebryan.com/cubey/demos/terrain/#terrain-rendering)
+owns the visual overview; this guide covers native setup and contracts.
+
 [Terrain Water](../terrain_water/README.md) owns live SynxFlow and recorded flow
 experiments. Terrain consumes prepared snapshots without a solver. The
 [glTF viewer](../gltf_viewer/README.md#showcase-highlight) is another accepted

@@ -13,7 +13,8 @@ UPLOAD_OWNER_TARGET_MS="${UPLOAD_OWNER_TARGET_MS:-2}"
 UPLOAD_STEP_BYTE_CAP="${UPLOAD_STEP_BYTE_CAP:-33554432}"
 
 SAMPLE_ASSETS_PIN="2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf"
-MANIFEST_SCHEMA="gltf_loading_profile_v1"
+MANIFEST_SCHEMA="gltf_loading_profile_v2"
+LEGACY_MANIFEST_SCHEMA="gltf_loading_profile_v1"
 MODEL_INDEX="${ASSET_ROOT}/Models/model-index.json"
 PROFILES_DIR="${OUT_DIR}/profiles"
 LOGS_DIR="${OUT_DIR}/logs"
@@ -37,7 +38,8 @@ LANE_PATHS=(
     Models/Sponza/glTF/Sponza.gltf
 )
 
-METRIC_NAMES=(
+# V1 retains the exact pre-default-texture inventory for historical replay.
+LEGACY_METRIC_NAMES=(
     generation_id
     source_file_bytes
     metadata_probe_ms
@@ -85,6 +87,11 @@ METRIC_NAMES=(
     gpu_upload_submission_frame
     gpu_upload_completion_frame
 )
+METRIC_NAMES=(
+    "${LEGACY_METRIC_NAMES[@]}"
+    default_texture_logical_binding_count
+    default_texture_physical_upload_count
+)
 
 declare -a MANIFEST_LANES=()
 declare -a MANIFEST_OBSERVATIONS=()
@@ -97,6 +104,7 @@ declare -A MANIFEST_PREFIX_SEEN=()
 declare -A MANIFEST_LANE_SEEN=()
 declare -A MANIFEST_LANE_ASSET=()
 MANIFEST_WARM_REPEATS=""
+LOADED_MANIFEST_SCHEMA=""
 ACTIVE_RUNS_CSV=""
 ACTIVE_SUMMARY_CSV=""
 
@@ -298,6 +306,7 @@ reset_manifest() {
     MANIFEST_LANE_SEEN=()
     MANIFEST_LANE_ASSET=()
     MANIFEST_WARM_REPEATS=""
+    LOADED_MANIFEST_SCHEMA=""
 }
 
 manifest_expected_prefix() {
@@ -320,8 +329,19 @@ add_manifest_entry() {
     local relative_asset="$6"
     local profile_prefix="$7"
 
-    [[ "${schema}" == "${MANIFEST_SCHEMA}" ]] ||
-        fail "unsupported profile manifest schema '${schema}'"
+    case "${schema}" in
+        "${MANIFEST_SCHEMA}"|"${LEGACY_MANIFEST_SCHEMA}") ;;
+        *) fail "unsupported profile manifest schema '${schema}'" ;;
+    esac
+    if [[ -z "${LOADED_MANIFEST_SCHEMA}" ]]; then
+        LOADED_MANIFEST_SCHEMA="${schema}"
+        METRIC_NAMES=("${LEGACY_METRIC_NAMES[@]}")
+        if [[ "${schema}" == "${MANIFEST_SCHEMA}" ]]; then
+            METRIC_NAMES+=(default_texture_logical_binding_count default_texture_physical_upload_count)
+        fi
+    elif [[ "${LOADED_MANIFEST_SCHEMA}" != "${schema}" ]]; then
+        fail 'profile manifest has inconsistent metric schemas'
+    fi
     require_positive_integer 'manifest warm_repeats' "${warm_repeats}"
     validate_lane_name "${lane}"
     validate_relative_asset "${relative_asset}"
@@ -477,11 +497,11 @@ load_legacy_manifest_from_metadata() {
         [[ -z "${extra:-}" && -n "${lane}" && -n "${relative_asset}" &&
             "${size_bytes}" =~ ^[1-9][0-9]*$ && "${sha256}" =~ ^[0-9a-fA-F]{64}$ ]] ||
             fail "legacy metadata has a malformed lane inventory row: ${line}"
-        add_manifest_entry "${MANIFEST_SCHEMA}" "${legacy_repeats}" "${lane}" first 0 \
+        add_manifest_entry "${LEGACY_MANIFEST_SCHEMA}" "${legacy_repeats}" "${lane}" first 0 \
             "${relative_asset}" "$(manifest_expected_prefix "${lane}" first 0)"
         local repeat
         for ((repeat = 1; repeat <= legacy_repeats; ++repeat)); do
-            add_manifest_entry "${MANIFEST_SCHEMA}" "${legacy_repeats}" "${lane}" warm "${repeat}" \
+            add_manifest_entry "${LEGACY_MANIFEST_SCHEMA}" "${legacy_repeats}" "${lane}" warm "${repeat}" \
                 "${relative_asset}" "$(manifest_expected_prefix "${lane}" warm "${repeat}")"
         done
         rows=$((rows + 1))

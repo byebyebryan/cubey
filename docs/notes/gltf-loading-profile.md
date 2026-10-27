@@ -4,6 +4,10 @@ Date: 2026-09-10
 
 Status: incremental-upload profile captured and the windowed responsiveness
 checkpoint is closed; the result is not a release benchmark or cold-cache claim.
+The workflow below is current; measured environments and result tables retain
+their recorded 2026-09-10 source. The
+[2026-10-26 reconciliation](cubey-docs-source-reconciliation.md) repairs the
+profile reader without running a new renderer benchmark.
 
 ## Evidence boundary
 
@@ -62,8 +66,19 @@ profile CSVs. It does not require a viewer binary or Sample Assets checkout,
 does not read the caller's `REPEATS` or current lane list, and does not rewrite
 metadata or the manifest.
 
-The runner rejects a missing or malformed `.metrics.csv` unless it contains
-exactly one complete 46-metric `gltf_loading` generation set. It writes a
+New live runs write `gltf_loading_profile_v2` manifests and require exactly one
+complete 48-metric `gltf_loading` generation set per profile, including
+`default_texture_logical_binding_count` and
+`default_texture_physical_upload_count`. Retained `gltf_loading_profile_v1`
+manifests select the exact historical 46-metric inventory without those two
+counters. The pinned legacy metadata fallback also selects that 46-metric
+inventory; earlier metric inventories require their original tooling/evidence.
+Replay never invents absent counter values or changes a manifest's version.
+
+All observations in one manifest must use the same schema. Missing, duplicate,
+unknown, mixed-frame or wrong-width metric sets fail instead of being silently
+downgraded. Failed replay preserves the previous `runs.csv` and `summary.csv`.
+The runner writes a
 machine-readable `runs.csv` row per observation and a wide `summary.csv` with
 the first observation plus warm median/min/max values. `metadata.txt` records
 the Cubey revision and dirty state, Sample Assets pin and revision, app hash,
@@ -73,9 +88,11 @@ If a lane fails, the runner stops and reports the original log. It never
 silently substitutes another model. A Sponza failure is explicitly returned as
 an architecture decision because it would invalidate the large-scene lane.
 
-## Current environment
+<a id="current-environment"></a>
 
-The current headless corpus command was:
+## Recorded environment — 2026-09-10
+
+The headless corpus command at this checkpoint was:
 
 ```sh
 cmake --preset release
@@ -123,7 +140,10 @@ monotonic clock. On a failed load the optional output is reset at entry and may
 contain only attempted work before the exception; no failed or superseded
 request reaches the viewer's successfully activated-generation metric emission.
 
-The exact 48-metric generation inventory is: `generation_id`,
+The current emitter's 48-metric inventory is listed below. Its two
+default-texture counters postdate the historical 46-metric capture reported
+later in this note; that capture and its timings are not relabelled as a new run.
+The inventory is: `generation_id`,
 `source_file_bytes`, `metadata_probe_ms`, `asset_load_ms`,
 `document_parse_ms`, `buffer_load_ms`, `asset_validate_ms`,
 `image_payload_ms`, `image_decode_ms`, `asset_assembly_ms`,

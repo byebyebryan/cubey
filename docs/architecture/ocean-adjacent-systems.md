@@ -22,7 +22,11 @@ ocean renderer through small data and shader contracts:
 - `studies/terrain/hydrology`: paused regional terrain-product evidence for
   exported fields, routing, and future shoreline/bathymetry work.
 - `projects/fluid/fluid_25d`: shallow-water simulation over heightfields for rivers,
-  flooding, sources, sinks, and later dynamic shoreline coupling.
+  flooding, sources and sinks, retained as builtin solver experiments and
+  numerical diagnostics.
+- `projects/terrain_water`: the prepared external SynxFlow integration and
+  recorded terrain-water frontend. It remains separate from builtin Fluid and
+  does not currently feed dynamic shoreline state into Ocean.
 - `studies/planet`: paused orbital-only globe and whole-world visual reference. It
   does not own surface LOD, a landed frame, or ocean integration; those require
   a separately scoped planet-surface product.
@@ -126,7 +130,9 @@ Ocean integration target:
 products such as drainage, shoreline distance, and exported bathymetry belong
 in a resumed product-generation track based on the paused
 `studies/terrain/hydrology`; dynamic gameplay water belongs in
-`projects/fluid/fluid_25d`. The earlier coastal field contract is preserved in
+the selected solver frontend: builtin studies in `projects/fluid/fluid_25d` or
+the prepared external demo in `projects/terrain_water`. The earlier coastal
+field contract is preserved in
 [`terrain-ocean-field-contract.md`](../archive/terrain/terrain-ocean-field-contract.md),
 not as an implementation target.
 
@@ -148,13 +154,15 @@ Current foundation checkpoint:
 
 ## Fluid 2.5D Relationship
 
-`projects/fluid/fluid_25d` is still the right home for terrain-bound water simulation.
-It should not block the first terrain or ocean presentation work. Static
+Terrain-bound water has two explicit owners: builtin solver experiments in
+[Fluid 2.5D](../../projects/fluid/fluid_25d/README.md), and the prepared external
+SynxFlow integration in [Terrain Water](../../projects/terrain_water/README.md).
+Neither currently supplies dynamic Ocean shoreline fields. Static
 bathymetry and shoreline masks are cheaper and provide clearer visual signal for
-the ocean renderer.
+an independently selected coastal integration.
 
-Once `fluid_25d` has stable shallow-water state, it can feed dynamic versions of
-the same terrain-water contract:
+A future adapter from a selected solver could feed dynamic versions of the
+terrain-ocean field contract:
 
 - water depth;
 - surface height;
@@ -235,9 +243,9 @@ outside that helper.
    the ocean's generated diagnostic texture without changing the wave core.
 4. Add shallow attenuation, seafloor visibility, shoreline foam, and wet-edge
    composition in independently inspectable slices.
-5. Resume `fluid_25d` only when dynamic terrain-bound water is required, then
-   feed its state through the same contract rather than adding solver policy to
-   ocean.
+5. Select a builtin Fluid or external Terrain Water adapter only when dynamic
+   coastal state is required, then feed it through the same contract rather than
+   adding solver policy to Ocean. Existing inland demos do not imply that coupling.
 6. If planet-surface work is approved later, establish its frame, LOD,
    streaming, and local-sky contracts before making ocean itself planet-scale.
 

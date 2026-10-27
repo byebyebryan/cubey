@@ -1,5 +1,11 @@
 # Procedural Generation Foundation
 
+Status: implemented CPU/reference primitives, source-field recipes, shader
+parity contracts and generated-artifact cache. The current API lives under
+`include/cubey/procedural`; this document separates those contracts from
+retained migration history and unselected extensions. Current Terrain behavior
+belongs in [Terrain V1](terrain-v1.md), not the archived generator reboot plan.
+
 Cubey uses procedural assets across terrain, planet detail, ocean-adjacent
 fields, fluids, clouds, atmosphere backdrops, generated textures, and validation
 scenes. The removed terrain lab and coastal demo made the shared problem
@@ -10,22 +16,21 @@ noise.
 
 ## Direction
 
-The near-term goal is a CPU/reference procedural foundation that project code can
-use before a GPU or node-graph version exists. It should provide deterministic
-building blocks:
+The shared CPU/reference layer provides deterministic building blocks:
 
 - scalar field containers or views for local 2D grids;
 - seeded noise sources and domain warping;
 - common field operators such as remap, clamp, blur/smooth, ridge, terrace, and
   composition helpers;
 - summary/stat helpers for tests and debug views;
-- hydrology-oriented utilities once the river and SimpleHydrology reference
-  review is complete.
+- named field sets, sample/patch domains, artifact identity and caching.
 
-The first shared layer should stay data-oriented and renderer-independent. It
-should not own Terrain Lab policy, planet LOD, ocean shoreline contracts,
-materials, foliage, or Vulkan resources. Early terrain project contracts can be
-deprecated or rebooted when they conflict with the cleaner foundation model.
+The layer stays data-oriented and renderer-independent. Shared
+[surface/material evaluators](material-recipes.md) also belong here as pure
+procedural content. Terrain product policy, planet LOD, ocean shoreline
+contracts, renderer material ownership, foliage and Vulkan resources remain
+outside it. Further process/hydrology helpers need a separately selected
+consumer and reference review.
 
 ## Consumer Taxonomy
 
@@ -54,9 +59,11 @@ snapshots should not be deduplicated until the comparison value is gone.
 The removed terrain lab and coastal demo are archived experiments. They remain
 useful evidence for what worked, what failed, and what
 downstream terrain or shoreline consumers may need, but new foundation work
-should not migrate further toward their current contracts. The planned terrain
-reboot can consume the shared foundation later without inheriting either
-project's early payload shape. The current rule is:
+should not migrate further toward their former contracts. The subsequent
+generator-reboot direction is [archived context](terrain-reboot.md); the active
+Terrain V1 product consumes validated external heightfields and caches derived
+CPU geometry. Neither old experiment's payload is a current migration target.
+The procedural composition rule remains:
 
 ```text
 source field -> reusable operators -> feature/process driver -> project recipe
@@ -78,18 +85,18 @@ hydrology, start with:
 - `~/code/ref/SimpleHydrology` for process-state and hydrology diagnostics;
 - published hydrology and erosion work already cited by Terrain Lab.
 
-The first integration pass should favor small, deterministic, testable utilities
+New integrations should favor small, deterministic, testable utilities
 over a full node graph, full hydraulic simulator, or heavy erosion pipeline.
 
-For coherent noise specifically, Cubey should use FastNoiseLite as the first
-shared dependency. It is small, MIT-licensed, header-only for C++, has matching
-GLSL/HLSL ports for later shader parity, and covers the immediate source-field
+For coherent noise, Cubey wraps FastNoiseLite as its shared dependency. It is
+MIT-licensed and header-only for C++, with matching GLSL/HLSL ports and bounded
+CPU/GLSL parity coverage. It covers the current source-field
 needs: OpenSimplex, Perlin, value, cellular/Voronoi, fractal variants, and
 domain warping. FastNoise2 remains worth a later spike if CPU-side field
 generation needs SIMD throughput or a node-graph representation, but it is too
-large for the first foundation step.
+large to add without a measured need.
 
-The initial FastNoiseLite integration should be wrapped by `cubey::procedural`
+The FastNoiseLite integration is wrapped by `cubey::procedural`
 instead of exposed directly to projects. Existing hash/value-noise functions
 remain available as a legacy deterministic backend so old captures and tests do
 not silently change.
@@ -110,7 +117,7 @@ A broader local reference pass over `~/code/ref/3DWorld`,
 
 ## Current Foundation Slice
 
-The first shared CPU-side layer lives under `include/cubey/procedural` and is
+The shared CPU-side layer lives under `include/cubey/procedural` and is
 compiled into `cubey::core`:
 
 - `Grid2DDesc` and `ScalarField2D` provide local 2D scalar-field storage,
@@ -165,12 +172,11 @@ compiled into `cubey::core`:
   golden-value pass before becoming CPU API, domain formulas stay project-owned,
   and reference snapshots stay untouched while they remain useful comparisons.
 
-The near-term cleanup target is shared plumbing that active consumers already
-use: stable procedural hashing, generated artifact metadata construction, and
-the atmosphere/cloud descriptors that report those identities. This cleanup
-does not migrate the removed terrain experiments, planet terrain
-detail formulas, or reference cloud snapshots; those remain legacy evidence or
-domain-owned formulas until a terrain reboot or focused parity pass needs them.
+Active consumers use shared stable hashing, generated-artifact metadata
+construction and atmosphere/cloud descriptors. These integrations do not migrate
+removed terrain experiments, paused Planet detail formulas or reference cloud
+snapshots. Those remain evidence or domain-owned formulas until a selected
+consumer and focused parity pass justify a change.
 
 The removed Terrain Lab consumed this shared layer for scalar helpers,
 deterministic FBM, opt-in FastNoiseLite, and warped FastNoiseLite dune sources.
@@ -186,8 +192,9 @@ through shared primitives where the formulas already matched:
 - The paused `studies/planet` orbital reboot uses shared deterministic 3D CPU
   FBM for its cached surface fields, keeping shaping constants study-owned.
   Earlier planet-terrain CPU/GLSL migrations remain historical evidence.
-- The removed terrain lab, `projects/ocean`, and `projects/fluid/water_2d`
-  consume shared GLSL value-noise helpers for matching shader breakup/noise.
+- `projects/ocean` and `projects/fluid/water_2d` consume shared GLSL value-noise
+  helpers for matching shader breakup/noise. The removed terrain lab was an
+  earlier consumer.
 - `projects/fluid/water_2d` and `projects/fluid/water_3d` consume shared GLSL
   uint hash-to-unit helpers for particle spawn jitter, emission randomness, and
   deterministic transfer tie-breaks.
@@ -274,6 +281,10 @@ versioned CPU product and climate diagnostics. The canonical stride-3 entry is
 generation/encode/store, while all cold/warm captures remained byte-identical.
 
 ## Migration Tiers
+
+The following records the completed migration batches and the ownership rules
+they established. Batch ordering is historical; remaining candidates below
+require a new selected goal.
 
 Procedural unification should move in tiers instead of forcing every project
 through one noise API:
@@ -367,8 +378,7 @@ Near-term non-goals:
 - no full procedural node graph;
 - no compatibility promise for the removed terrain experiments
   payloads;
-- no further migration of the removed terrain experiments as a foundation
-  milestone before the terrain reboot;
+- no further migration of removed terrain experiments as a foundation milestone;
 - no migration of atmosphere, cloud, ocean, or fluid visual formulas in the seed
   and sample-domain batch;
 - no JSON sidecar or file export format for generated artifact metadata until
@@ -376,8 +386,8 @@ Near-term non-goals:
 - no tile streaming, quadtree, or planet LOD policy in the deterministic patch
   descriptor layer;
 - no resurrection of the removed Terrain Lab as a foundation consumer;
-- no FastNoiseLite GLSL migration before a dedicated GPU or shader-side parity
-  pass;
+- no additional FastNoiseLite GLSL migration outside the covered configurations
+  without a dedicated GPU parity or visual-review pass;
 - no CPU migration of generated atmosphere lunar/night-sky atlas noise until it
   has its own golden-value or image-review pass;
 - keep the opt-in `studies/cloud/terrainengine` reference distinct; `cloud_ref_2` and

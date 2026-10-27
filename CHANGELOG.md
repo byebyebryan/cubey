@@ -197,6 +197,10 @@ versioned section and use that section as the release notes.
 
 ### Changed
 
+- The glTF loading-profile runner accepts the current 48-metric output through
+  V2 manifests while replaying historical V1 recordings with their original
+  46-metric report columns. Current design and simulation guides now reflect
+  implemented startup and project ownership.
 - The README is a compact repository entry point with a composite banner and
   live-site link. Project guides focus on native use and contracts; historical
   capture recipes and publication media retain explicit archival owners.

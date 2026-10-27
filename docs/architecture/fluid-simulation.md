@@ -35,8 +35,9 @@ is a small set of focused projects, each with different scaling assumptions:
   baselines with shared 3D storage textures, compute
   advection/injection/combustion/projection, and fullscreen volume raymarching.
   These are the deliberate first step before sparse or tiled active regions.
-- Future particle/hybrid liquid project: PBF, DFSPH, FLIP/APIC, or MLS-MPM for
-  small interactive liquid volumes and multiphase material experiments.
+- Further particle/hybrid candidates: PBF, DFSPH or MLS-MPM for local liquids
+  and multiphase material experiments. The FLIP/APIC family already has the
+  Water 2D and Water 3D baselines above.
 
 The older GPU Gems style fluid demo was still a success for Cubey. It was a
 cost-effective graphics project: limited implementation time produced a flashy,
@@ -146,7 +147,7 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 | Saint-Venant finite volume | Active terrain-water path | Separate SynxFlow worker is preferred for the prepared demo; Cubey's builtin finite-volume comparison also exists. No solver port is implied. |
 | SPH / DFSPH | Medium | Good for small particle liquids and splashes; particle-count-bound. |
 | PBF | Medium | Stable real-time interactive liquid toy; less physically rigorous. |
-| FLIP/APIC | High | `water_2d` now uses APIC by default with a PIC/FLIP fallback. Meshing, richer collision, stronger pressure solves, and 3D coupling remain substantial later work. |
+| FLIP/APIC | Implemented baseline | `water_2d` and `water_3d` use APIC by default with a PIC/FLIP fallback. Meshing, richer collision and stronger pressure solves remain separate experiments. |
 | MPM / MLS-MPM | Medium later | Interesting for mud, snow, sand, viscous fluids, and multiphase effects. |
 | Lattice Boltzmann | Medium/low | Interesting flow-around-obstacle lab; not first choice for Cubey water. |
 | Sparse 3D gas | High later | Best modern answer to the old dense 3D smoke/fire box. |
@@ -154,9 +155,10 @@ visual result now that Cubey has already done the basic GPU Gems version once.
 
 ## Candidate Particle And Hybrid Projects
 
-These are techniques Cubey should try, but not before the current terrain-water
-and grid-fluid paths give us stronger runtime, debugging, and validation
-pressure.
+The FLIP/APIC section describes the implemented Water baselines. Other particle
+and hybrid methods remain unselected experiment candidates, not an active
+implementation queue. Existing terrain-water and grid-fluid consumers provide
+the runtime, debugging and validation requirements for any later choice.
 
 ### FLIP / PIC / APIC
 
@@ -256,6 +258,10 @@ rendering. Use that to decide whether a later DFSPH or 3D particle-liquid
 project is worth the complexity.
 
 ## Suggested Order
+
+This is dependency guidance for future selected experiments, not a scheduled
+backlog. The current work boundaries and reopen triggers belong in the
+[roadmap](../roadmap.md).
 
 1. Keep `projects/ocean` on the promoted experimental base, but use explicit
    feature-isolation controls and repeatable captures to decide which cascade

@@ -1,5 +1,8 @@
 # Water 2D
 
+The [Water 2D showcase](https://dev.byebyebryan.com/cubey/demos/simulation/water-2d/)
+owns the visual overview; this guide covers the native solver, renderer and controls.
+
 `water_2d` is Cubey's first free-surface liquid project. It uses particles for
 material motion, APIC particle-grid transfer by default, a PIC/FLIP fallback for
 comparison, and a face-centered MAC grid for pressure, boundaries, and

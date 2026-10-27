@@ -7,6 +7,9 @@ hot flash, an expanding smoke shell, and the buoyant plume that rises from the
 injected heat and soot. The obstacle is disabled by default, but a configurable
 ball obstacle can be enabled when the impulse should break around a solid shape.
 
+The [Explosion 3D showcase](https://dev.byebyebryan.com/cubey/demos/simulation/explosion-3d/)
+owns the visual overview; this guide covers native controls and capture recipes.
+
 By default, the raymarch and shadow passes consume the shared procedural
 atmosphere for dynamic light direction, color, sky tint, and exposure; pass
 `--pbr-environment-source static` for the legacy fixed-light fallback.
