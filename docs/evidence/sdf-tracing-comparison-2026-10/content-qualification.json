@@ -1,0 +1,222 @@
+[
+  {
+    "name": "analytic-full-16",
+    "regular_hits": 106,
+    "grazing_hits": 0,
+    "hits": 106,
+    "max_depth_difference": 0,
+    "failures": [],
+    "cases": [
+      {
+        "compile_upload_query_readback_ms": 6.743683,
+        "derived_probe_count": 1456,
+        "derived_probe_max_error": 5.960464477539063e-08,
+        "field_build_ms": 0.0,
+        "field_bytes": 0,
+        "geometry_hash": 15329115976364195548,
+        "instructions": 163,
+        "mode": "analytic-full",
+        "name": "robot",
+        "program_bytes": 10448,
+        "region_axis": 0,
+        "region_build_upload_ms": 0.0,
+        "region_bytes": 0,
+        "region_fallback_cells": 0,
+        "region_references": 0
+      },
+      {
+        "compile_upload_query_readback_ms": 173.702605,
+        "derived_probe_count": 7959,
+        "derived_probe_max_error": 2.980232238769531e-07,
+        "field_build_ms": 0.0,
+        "field_bytes": 0,
+        "geometry_hash": 15419350890978506480,
+        "instructions": 2021,
+        "mode": "analytic-full",
+        "name": "guardian",
+        "program_bytes": 129360,
+        "region_axis": 0,
+        "region_build_upload_ms": 0.0,
+        "region_bytes": 0,
+        "region_fallback_cells": 0,
+        "region_references": 0
+      }
+    ]
+  },
+  {
+    "name": "analytic-pruned-16",
+    "regular_hits": 106,
+    "grazing_hits": 0,
+    "hits": 106,
+    "max_depth_difference": 1.1920928955078125e-07,
+    "failures": [],
+    "cases": [
+      {
+        "compile_upload_query_readback_ms": 10.821258,
+        "derived_probe_count": 1456,
+        "derived_probe_max_error": 5.960464477539063e-08,
+        "field_build_ms": 0.0,
+        "field_bytes": 0,
+        "geometry_hash": 15329115976364195548,
+        "instructions": 163,
+        "mode": "analytic-pruned",
+        "name": "robot",
+        "program_bytes": 10448,
+        "region_axis": 16,
+        "region_build_upload_ms": 4.939998,
+        "region_bytes": 562344,
+        "region_fallback_cells": 0,
+        "region_references": 132390
+      },
+      {
+        "compile_upload_query_readback_ms": 181.919304,
+        "derived_probe_count": 7959,
+        "derived_probe_max_error": 8.940696716308594e-08,
+        "field_build_ms": 0.0,
+        "field_bytes": 0,
+        "geometry_hash": 15419350890978506480,
+        "instructions": 2021,
+        "mode": "analytic-pruned",
+        "name": "guardian",
+        "program_bytes": 129360,
+        "region_axis": 16,
+        "region_build_upload_ms": 34.5126,
+        "region_bytes": 2999712,
+        "region_fallback_cells": 0,
+        "region_references": 741732
+      }
+    ]
+  },
+  {
+    "name": "hybrid-pruned-16",
+    "regular_hits": 106,
+    "grazing_hits": 0,
+    "hits": 106,
+    "max_depth_difference": 1.5735626220703125e-05,
+    "failures": [],
+    "cases": [
+      {
+        "compile_upload_query_readback_ms": 102.546707,
+        "derived_probe_count": 1456,
+        "derived_probe_max_error": 5.960464477539063e-08,
+        "field_build_ms": 91.471779,
+        "field_bytes": 912997552,
+        "geometry_hash": 15329115976364195548,
+        "instructions": 163,
+        "mode": "hybrid-pruned",
+        "name": "robot",
+        "program_bytes": 10448,
+        "region_axis": 16,
+        "region_build_upload_ms": 5.109588,
+        "region_bytes": 562344,
+        "region_fallback_cells": 0,
+        "region_references": 132390
+      },
+      {
+        "compile_upload_query_readback_ms": 1106.081542,
+        "derived_probe_count": 7959,
+        "derived_probe_max_error": 8.940696716308594e-08,
+        "field_build_ms": 918.599129,
+        "field_bytes": 912997552,
+        "geometry_hash": 15419350890978506480,
+        "instructions": 2021,
+        "mode": "hybrid-pruned",
+        "name": "guardian",
+        "program_bytes": 129360,
+        "region_axis": 16,
+        "region_build_upload_ms": 35.103522,
+        "region_bytes": 2999712,
+        "region_fallback_cells": 0,
+        "region_references": 741732
+      }
+    ]
+  },
+  {
+    "name": "analytic-pruned-64",
+    "regular_hits": 106,
+    "grazing_hits": 0,
+    "hits": 106,
+    "max_depth_difference": 1.1920928955078125e-07,
+    "failures": [],
+    "cases": [
+      {
+        "compile_upload_query_readback_ms": 83.775661,
+        "derived_probe_count": 1888,
+        "derived_probe_max_error": 5.960464477539063e-08,
+        "field_build_ms": 0.0,
+        "field_bytes": 0,
+        "geometry_hash": 15329115976364195548,
+        "instructions": 163,
+        "mode": "analytic-pruned",
+        "name": "robot",
+        "program_bytes": 10448,
+        "region_axis": 64,
+        "region_build_upload_ms": 77.798131,
+        "region_bytes": 9252504,
+        "region_fallback_cells": 0,
+        "region_references": 1788834
+      },
+      {
+        "compile_upload_query_readback_ms": 570.806669,
+        "derived_probe_count": 8391,
+        "derived_probe_max_error": 8.940696716308594e-08,
+        "field_build_ms": 0.0,
+        "field_bytes": 0,
+        "geometry_hash": 15419350890978506480,
+        "instructions": 2021,
+        "mode": "analytic-pruned",
+        "name": "guardian",
+        "program_bytes": 129360,
+        "region_axis": 64,
+        "region_build_upload_ms": 425.00288,
+        "region_bytes": 54677832,
+        "region_fallback_cells": 0,
+        "region_references": 13145166
+      }
+    ]
+  },
+  {
+    "name": "hybrid-pruned-64",
+    "regular_hits": 106,
+    "grazing_hits": 0,
+    "hits": 106,
+    "max_depth_difference": 1.5735626220703125e-05,
+    "failures": [],
+    "cases": [
+      {
+        "compile_upload_query_readback_ms": 174.682599,
+        "derived_probe_count": 1888,
+        "derived_probe_max_error": 5.960464477539063e-08,
+        "field_build_ms": 91.203438,
+        "field_bytes": 912997552,
+        "geometry_hash": 15329115976364195548,
+        "instructions": 163,
+        "mode": "hybrid-pruned",
+        "name": "robot",
+        "program_bytes": 10448,
+        "region_axis": 64,
+        "region_build_upload_ms": 77.820281,
+        "region_bytes": 9252504,
+        "region_fallback_cells": 0,
+        "region_references": 1788834
+      },
+      {
+        "compile_upload_query_readback_ms": 1503.688198,
+        "derived_probe_count": 8391,
+        "derived_probe_max_error": 8.940696716308594e-08,
+        "field_build_ms": 920.686167,
+        "field_bytes": 912997552,
+        "geometry_hash": 15419350890978506480,
+        "instructions": 2021,
+        "mode": "hybrid-pruned",
+        "name": "guardian",
+        "program_bytes": 129360,
+        "region_axis": 64,
+        "region_build_upload_ms": 420.578165,
+        "region_bytes": 54677832,
+        "region_fallback_cells": 0,
+        "region_references": 13145166
+      }
+    ]
+  }
+]

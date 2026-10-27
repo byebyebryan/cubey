@@ -7,6 +7,10 @@ incremental editing path, renderer change or new authoring interaction is
 implemented by this work. Source baseline is
 `d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a`.
 
+Later implementation evidence is in the
+[bounded tracing/cache comparison result](sdf-tracing-comparison-results.md).
+This dated investigation remains the source-pinned build/update baseline.
+
 Scope update, later on 2026-10-26: the
 [representation, hybrid tracing and history review](sdf-representation-design-review.md)
 reopens the design comparison before selecting an implementation. The measured

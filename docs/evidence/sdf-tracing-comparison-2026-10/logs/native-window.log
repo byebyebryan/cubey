@@ -1,0 +1,7 @@
+cubey_window_backend: x11
+cubey_swapchain_present_mode: 0 (0=immediate,1=mailbox,2=fifo)
+sdf: authored geometry=d4bbf5c36bf3fedc appearance=dc843f1505d4eee5
+sdf: trace=analytic field_bytes=0
+sdf: NVIDIA GeForce RTX 5070 Ti rendering sparse SDF bricks at 640x360
+windowed_render_ready: NVIDIA GeForce RTX 5070 Ti at 640x360 slots=2 pacing_hz=0
+windowed_render_complete: frames=154 wall_s=1.004122 reason=wall_limit

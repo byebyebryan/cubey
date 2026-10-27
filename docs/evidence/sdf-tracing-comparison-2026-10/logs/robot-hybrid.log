@@ -1,0 +1,4 @@
+sdf: authored instructions=163 leaves=82 bricks=138444/262144 allocated=912997552 build_ms=91.4039 filter_gpu_ms=1.12141 brick_gpu_ms=89.0788 builds=1
+sdf: authored geometry=d4bbf5c36bf3fedc appearance=dc843f1505d4eee5
+sdf: trace=hybrid field_bytes=912997552
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/sdf/tracing-comparison-20261026/native/robot-hybrid.png at 640x360

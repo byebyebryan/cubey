@@ -50,7 +50,9 @@ def main():
     p.add_argument("--full", action="store_true")
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    manifest = dict(binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(), runs=[], skips=[])
+    manifest = dict(binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(),
+                    source_head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                    runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(), runs=[], skips=[])
     destination = args.output/"benchmarks.json"
 
     def save():

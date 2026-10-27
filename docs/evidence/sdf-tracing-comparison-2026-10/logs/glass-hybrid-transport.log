@@ -1,0 +1,5 @@
+sdf: authored instructions=1 leaves=1 bricks=89240/262144 allocated=912997552 build_ms=5.24121 filter_gpu_ms=0.348224 brick_gpu_ms=3.88336 builds=1
+sdf: authored geometry=cce9b98450e7eb8b appearance=c3a0a8c13b1ac499
+sdf: trace=hybrid field_bytes=912997552
+sdf: study IBL setup_ms=245.089
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/sdf/tracing-comparison-20261026/native-optics/glass-hybrid-transport.png at 640x360

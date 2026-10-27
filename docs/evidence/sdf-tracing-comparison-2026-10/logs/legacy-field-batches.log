@@ -1,0 +1,32 @@
+sdf: edits=0 batches=0 bricks=0/262144 references=0 allocated=912997552 build_ms=0.00012 filter_gpu_ms=0 brick_gpu_ms=0 other_wall_ms=0.00012 copied=0 updated=0
+sdf: oracle rays=253 hits=0 mismatches=0 exhausted=0 max_hit_error=0 max_surface_error=0 sampling_ambiguous=0
+sdf: edits=128 batches=1 bricks=14496/262144 references=17252 allocated=912997552 build_ms=2.0609 filter_gpu_ms=0.696672 brick_gpu_ms=0.574048 other_wall_ms=0.790177 copied=0 updated=14496
+sdf: oracle rays=386 hits=145 mismatches=0 exhausted=0 max_hit_error=0.00012207 max_surface_error=0.00010986 sampling_ambiguous=0
+sdf: edits=129 batches=1 bricks=14613/262144 references=134 allocated=912997552 build_ms=1.04556 filter_gpu_ms=0.060096 brick_gpu_ms=0.102656 other_wall_ms=0.882811 copied=14496 updated=117
+sdf: oracle rays=387 hits=146 mismatches=0 exhausted=0 max_hit_error=0.00012207 max_surface_error=0.00010986 sampling_ambiguous=0
+sdf: edits=256 batches=1 bricks=29034/262144 references=17282 allocated=912997552 build_ms=2.50224 filter_gpu_ms=0.764128 brick_gpu_ms=0.674272 other_wall_ms=1.06384 copied=14496 updated=14538
+sdf: oracle rays=514 hits=287 mismatches=0 exhausted=0 max_hit_error=0.000122309 max_surface_error=0.000111369 sampling_ambiguous=0
+sdf: edits=257 batches=1 bricks=29144/262144 references=133 allocated=912997552 build_ms=1.24613 filter_gpu_ms=0.10464 brick_gpu_ms=0.202784 other_wall_ms=0.93871 copied=29034 updated=110
+sdf: oracle rays=515 hits=288 mismatches=0 exhausted=0 max_hit_error=0.000122309 max_surface_error=0.000111369 sampling_ambiguous=0
+sdf: oracle rays=515 hits=288 mismatches=0 exhausted=0 max_hit_error=0.000122309 max_surface_error=0.000111369 sampling_ambiguous=0
+sdf: edits=129 batches=2 bricks=14613/262144 references=17252 allocated=912997552 build_ms=3.3197 filter_gpu_ms=0.77856 brick_gpu_ms=0.692256 other_wall_ms=1.84889 copied=14496 updated=14613
+sdf: oracle rays=387 hits=146 mismatches=0 exhausted=0 max_hit_error=0.00012207 max_surface_error=0.00010986 sampling_ambiguous=0
+sdf: edits=128 batches=0 bricks=14496/262144 references=0 allocated=912997552 build_ms=0.00142 filter_gpu_ms=0 brick_gpu_ms=0 other_wall_ms=0.00142 copied=0 updated=0
+sdf: oracle rays=386 hits=145 mismatches=0 exhausted=0 max_hit_error=0.00012207 max_surface_error=0.00010986 sampling_ambiguous=0
+sdf: edits=0 batches=0 bricks=0/262144 references=0 allocated=912997552 build_ms=0.535062 filter_gpu_ms=0 brick_gpu_ms=0 other_wall_ms=0.535062 copied=0 updated=0
+sdf: oracle rays=253 hits=0 mismatches=0 exhausted=0 max_hit_error=0 max_surface_error=0 sampling_ambiguous=0
+sdf: edits=257 batches=3 bricks=29144/262144 references=17282 allocated=912997552 build_ms=4.91549 filter_gpu_ms=1.56384 brick_gpu_ms=1.46246 other_wall_ms=1.88918 copied=43530 updated=29144
+sdf: oracle rays=515 hits=288 mismatches=0 exhausted=0 max_hit_error=0.000122309 max_surface_error=0.000111369 sampling_ambiguous=0
+sdf: edits=257 batches=5 bricks=29144/262144 references=8675 allocated=912997552 build_ms=6.60385 filter_gpu_ms=1.6303 brick_gpu_ms=1.55158 other_wall_ms=3.42197 copied=72536 updated=29144
+sdf: oracle rays=515 hits=288 mismatches=0 exhausted=0 max_hit_error=0.000122309 max_surface_error=0.000111369 sampling_ambiguous=0
+sdf: edits=0 batches=0 bricks=0/16 references=0 allocated=910900528 build_ms=4e-05 filter_gpu_ms=0 brick_gpu_ms=0 other_wall_ms=4e-05 copied=0 updated=0
+sdf: oracle rays=253 hits=0 mismatches=0 exhausted=0 max_hit_error=0 max_surface_error=0 sampling_ambiguous=0
+sdf: edits=0 batches=0 bricks=0/262144 references=0 allocated=845889200 build_ms=3e-05 filter_gpu_ms=0 brick_gpu_ms=0 other_wall_ms=3e-05 copied=0 updated=0
+sdf: oracle rays=253 hits=0 mismatches=0 exhausted=0 max_hit_error=0 max_surface_error=0 sampling_ambiguous=0
+sdf: batch/reset matrix passed (forward, unchanged, backward, reset, 64/128 edit batches, frontier/reference overflow recovery)
+sdf: edits=1 batches=1 bricks=101856/262144 references=110193 allocated=912997552 build_ms=10.5605 filter_gpu_ms=5.03082 brick_gpu_ms=4.41686 other_wall_ms=1.11287 copied=0 updated=101856
+sdf: oracle rays=259 hits=103 mismatches=0 exhausted=0 max_hit_error=5.3525e-05 max_surface_error=0.00011132 sampling_ambiguous=0
+sdf: recipe hash=cac92b960ef072a
+sdf: trace=sampled field_bytes=912997552
+headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti at 32x32 slots=2 pacing_hz=0 readback=0 encode=0
+headless_render_only_complete: frames=1 wall_s=0.000859 readback=0 encode=0

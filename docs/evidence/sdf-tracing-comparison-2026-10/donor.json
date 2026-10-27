@@ -1,0 +1,296 @@
+{
+  "cases": [
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "sphere-control",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "subgrid-sphere",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "aligned-small-sphere",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "smooth-identical-0.0001",
+      "references": 168,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "smooth-identical-0.01",
+      "references": 168,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "smooth-identical-0.1",
+      "references": 168,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "nested-smooth-left",
+      "references": 280,
+      "source_instructions": 5
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "nested-smooth-right",
+      "references": 280,
+      "source_instructions": 5
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "box-0-0",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "box-0-0.00027901786",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "box-23-0",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "box-23-0.00027901786",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "box-45-0",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "box-45-0.00027901786",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "thin-stick-0.5h",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "thin-stick-1.5h",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "thin-stick-4h",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "cut-owner-False",
+      "references": 128,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "cut-owner-True",
+      "references": 128,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "subgrid-cavity",
+      "references": 72,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "uniform-group",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "capsule",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "cylinder",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "torus",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "capped-cone",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "round-cone",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "sphere-tangent",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "smooth-subtract-0.0001",
+      "references": 128,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "smooth-subtract-0.01",
+      "references": 128,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "smooth-subtract-0.1",
+      "references": 128,
+      "source_instructions": 3
+    },
+    {
+      "exact_points": 1728,
+      "far_cells": 0,
+      "far_points": 0,
+      "max_exact_error": 0.0,
+      "name": "workspace-clip",
+      "references": 64,
+      "source_instructions": 1
+    },
+    {
+      "exact_points": 1512,
+      "far_cells": 8,
+      "far_points": 216,
+      "max_exact_error": 0.0,
+      "name": "crossed-thin-sticks",
+      "references": 168,
+      "source_instructions": 3
+    }
+  ],
+  "donor_revision": "b3c5fee4d951ad8942775206d111cd421d2ef31c",
+  "format": "cubey.sdf.donor-qualification",
+  "grid": 4,
+  "scope": "Adapted original compute core, first refinement, 32-bit descriptor storage and Cubey leaf evaluator; far constants checked as bounds, not exact values."
+}

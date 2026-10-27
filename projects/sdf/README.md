@@ -155,6 +155,13 @@ retains the full procedural CSG, capture and qualification command catalog.
 
 ## Supporting evidence
 
+An opt-in [tracing/cache comparison](../../docs/notes/sdf-tracing-comparison-results.md)
+adds authored `--surface-trace analytic|hybrid` and `--csg-evaluation pruned`
+with `--region-axis 4|16|64`. The default remains `sampled` / `full`; these study
+routes have measured quality/memory benefits and content-dependent performance
+limits. [Commands and receipts](../../docs/evidence/sdf-tracing-comparison-2026-10/README.md)
+include the bounded query, undo and native inspection tools.
+
 - [Shared material and optical contract](../../docs/architecture/material-recipes.md)
 - [SDF thread closeout and evidence map](../../docs/notes/sdf-thread-closeout.md)
 - [Accepted Guardian closeout](../../docs/notes/sdf-guardian-closeout.md)

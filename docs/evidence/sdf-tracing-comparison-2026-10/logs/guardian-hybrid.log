@@ -1,0 +1,4 @@
+sdf: authored instructions=2021 leaves=1011 bricks=107286/262144 allocated=912997552 build_ms=918.397 filter_gpu_ms=12.4605 brick_gpu_ms=904.367 builds=1
+sdf: authored geometry=d5fc89f0abe076f0 appearance=a47c7610956fe7d2
+sdf: trace=hybrid field_bytes=912997552
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/sdf/tracing-comparison-20261026/native/guardian-hybrid.png at 320x180

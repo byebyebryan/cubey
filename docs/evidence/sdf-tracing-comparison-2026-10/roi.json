@@ -1,0 +1,122 @@
+[
+  {
+    "fixture": "subgrid-sphere",
+    "mode": "sampled",
+    "csg": "full",
+    "hits": 0,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/subgrid-sphere-sampled-full.png",
+    "curated_file": "roi/subgrid-sphere-sampled-full.png",
+    "sha256": "bd201413980023db0d8aebab0e607a9eec9cf46c4ef7302a97cf995c06c3564f"
+  },
+  {
+    "fixture": "thin-stick-0.5h",
+    "mode": "sampled",
+    "csg": "full",
+    "hits": 5248,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/thin-stick-0.5h-sampled-full.png",
+    "curated_file": "roi/thin-stick-0.5h-sampled-full.png",
+    "sha256": "b70de21bcbf2b5af15c616b269ab93b2db4fa4cb9d37d7aacff22260e9847def"
+  },
+  {
+    "fixture": "subgrid-sphere",
+    "mode": "analytic",
+    "csg": "full",
+    "hits": 824,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/subgrid-sphere-analytic-full.png",
+    "curated_file": "roi/subgrid-sphere-analytic-full.png",
+    "sha256": "3c44bbbd6d0833b43750d7500671335aae63dd0c411b4eecfac879f32807d322"
+  },
+  {
+    "fixture": "thin-stick-0.5h",
+    "mode": "analytic",
+    "csg": "full",
+    "hits": 3840,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/thin-stick-0.5h-analytic-full.png",
+    "curated_file": "roi/thin-stick-0.5h-analytic-full.png",
+    "sha256": "6fc4c030a18fec05fae620f2c549c872bf042c314b9426e7620e92313dc186b9"
+  },
+  {
+    "fixture": "subgrid-sphere",
+    "mode": "hybrid",
+    "csg": "full",
+    "hits": 824,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/subgrid-sphere-hybrid-full.png",
+    "curated_file": "roi/subgrid-sphere-hybrid-full.png",
+    "sha256": "3c44bbbd6d0833b43750d7500671335aae63dd0c411b4eecfac879f32807d322"
+  },
+  {
+    "fixture": "thin-stick-0.5h",
+    "mode": "hybrid",
+    "csg": "full",
+    "hits": 3840,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/thin-stick-0.5h-hybrid-full.png",
+    "curated_file": "roi/thin-stick-0.5h-hybrid-full.png",
+    "sha256": "6fc4c030a18fec05fae620f2c549c872bf042c314b9426e7620e92313dc186b9"
+  },
+  {
+    "fixture": "subgrid-sphere",
+    "mode": "analytic",
+    "csg": "pruned",
+    "hits": 824,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/subgrid-sphere-analytic-pruned.png",
+    "curated_file": "roi/subgrid-sphere-analytic-pruned.png",
+    "sha256": "3c44bbbd6d0833b43750d7500671335aae63dd0c411b4eecfac879f32807d322"
+  },
+  {
+    "fixture": "thin-stick-0.5h",
+    "mode": "analytic",
+    "csg": "pruned",
+    "hits": 3840,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/thin-stick-0.5h-analytic-pruned.png",
+    "curated_file": "roi/thin-stick-0.5h-analytic-pruned.png",
+    "sha256": "6fc4c030a18fec05fae620f2c549c872bf042c314b9426e7620e92313dc186b9"
+  },
+  {
+    "fixture": "subgrid-sphere",
+    "mode": "hybrid",
+    "csg": "pruned",
+    "hits": 824,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/subgrid-sphere-hybrid-pruned.png",
+    "curated_file": "roi/subgrid-sphere-hybrid-pruned.png",
+    "sha256": "3c44bbbd6d0833b43750d7500671335aae63dd0c411b4eecfac879f32807d322"
+  },
+  {
+    "fixture": "thin-stick-0.5h",
+    "mode": "hybrid",
+    "csg": "pruned",
+    "hits": 3840,
+    "exhausted": 0,
+    "size": 128,
+    "viewport_world": 0.0016741071428571428,
+    "file": "outputs/sdf/tracing-comparison-20261026/roi/thin-stick-0.5h-hybrid-pruned.png",
+    "curated_file": "roi/thin-stick-0.5h-hybrid-pruned.png",
+    "sha256": "6fc4c030a18fec05fae620f2c549c872bf042c314b9426e7620e92313dc186b9"
+  }
+]

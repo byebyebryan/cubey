@@ -1,0 +1,105 @@
+[
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--surface-trace",
+      "hybrid"
+    ],
+    "returncode": 1,
+    "output": "sdf: source tracing requires an authored scene\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--authored-scene",
+      "projects/sdf/comparison/initial.json",
+      "--surface-trace",
+      "analytic",
+      "--debug",
+      "4"
+    ],
+    "returncode": 1,
+    "output": "sdf: brick debug is unavailable for source tracing\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--authored-scene",
+      "projects/sdf/comparison/initial.json",
+      "--csg-evaluation",
+      "pruned"
+    ],
+    "returncode": 1,
+    "output": "sdf: pruned evaluation requires authored source tracing and region axis 4, 16 or 64\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--comparison-input",
+      "projects/sdf/comparison/fixtures.json",
+      "--comparison-output",
+      "outputs/sdf/invalid-study.json",
+      "--surface-trace",
+      "analytic",
+      "--csg-evaluation",
+      "pruned",
+      "--region-axis",
+      "3"
+    ],
+    "returncode": 1,
+    "output": "sdf: pruned study requires source tracing and region axis 4, 16 or 64\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--comparison-donor"
+    ],
+    "returncode": 1,
+    "output": "sdf: select exactly one tracing query or action study for its receipt\n"
+  }
+]

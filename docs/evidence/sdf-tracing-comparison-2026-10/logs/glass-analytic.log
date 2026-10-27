@@ -1,0 +1,4 @@
+sdf: authored geometry=cce9b98450e7eb8b appearance=c3a0a8c13b1ac499
+sdf: trace=analytic field_bytes=0
+sdf: study IBL setup_ms=257.338
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote outputs/sdf/tracing-comparison-20261026/native-optics/glass-analytic.png at 640x360

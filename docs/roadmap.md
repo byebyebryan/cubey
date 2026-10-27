@@ -49,12 +49,14 @@ film is optional presentation work; continuous brush editing remains separate.
 Its native receipts do not extend the repository-wide runtime qualification
 above.
 
-Current SDF planning focuses on a bounded
+The bounded SDF
 [tracing/cache/history comparison](notes/sdf-tracing-comparison-plan.md), following
-the [representation review](notes/sdf-representation-design-review.md). It compares
-the current sampled route with proposed opt-in hybrid/analytic routes using
-scripted edits and undo. No candidate is implemented or selected as the default;
-the accepted content and current rendering behavior remain the baseline.
+the [representation review](notes/sdf-representation-design-review.md), now has
+implemented opt-in analytic/hybrid controls, exact region programs and scripted
+undo/publication evidence. The [decision report](notes/sdf-tracing-comparison-results.md)
+records Robot's quality/memory alternative and Guardian's failed scaling gate.
+The sampled default and accepted content stay fixed; Guardian query-cost
+diagnosis is the recommended next investigation, not an adopted new work stream.
 
 ## Material and SDF demo status
 

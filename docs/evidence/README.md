@@ -18,4 +18,8 @@ packs; they are not golden-image tests.
 
 - [SDF representation and hybrid design review](sdf-design-review-2026-10/README.md):
   original-source review, independent reconstruction/undo probes and primary
-  references; candidate renderers remain unimplemented.
+  references from the pre-implementation design pass.
+
+- [SDF tracing/cache comparison](sdf-tracing-comparison-2026-10/README.md): implemented
+  opt-in controls and region programs, source/history checks, native images,
+  completed timing samples and explicit practicality/acceptance gaps.

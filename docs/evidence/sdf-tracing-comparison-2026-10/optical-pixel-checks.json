@@ -1,0 +1,32 @@
+[
+  {
+    "mode": "sampled",
+    "center_rgb": [
+      0,
+      0,
+      137
+    ],
+    "exhaustion_pixels": 0,
+    "passed": true
+  },
+  {
+    "mode": "analytic",
+    "center_rgb": [
+      0,
+      0,
+      137
+    ],
+    "exhaustion_pixels": 0,
+    "passed": true
+  },
+  {
+    "mode": "hybrid",
+    "center_rgb": [
+      0,
+      0,
+      137
+    ],
+    "exhaustion_pixels": 0,
+    "passed": true
+  }
+]

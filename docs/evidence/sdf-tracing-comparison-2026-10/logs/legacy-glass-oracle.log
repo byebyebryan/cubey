@@ -1,0 +1,10 @@
+sdf: authored instructions=1 leaves=1 bricks=89240/262144 allocated=912997552 build_ms=5.19121 filter_gpu_ms=0.329792 brick_gpu_ms=3.77827 builds=1
+sdf: oracle rays=320 hits=139 mismatches=0 exhausted=0 max_hit_error=5.60284e-05 max_surface_error=0.000111818 sampling_ambiguous=0
+sdf: authored CPU/GPU points=736 max_distance_error=5.96046e-08 max_material_error=0 max_gradient_error=0 max_normal_error=2.98023e-08 max_shortcut_error=0 part_mismatches=0
+sdf: material-only cache check passed builds=1
+sdf: optics-only cache check passed builds=1
+sdf: authored geometry=cce9b98450e7eb8b appearance=c3a0a8c13b1ac499
+sdf: trace=sampled field_bytes=912997552
+sdf: study IBL setup_ms=249.24
+headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti at 32x32 slots=2 pacing_hz=0 readback=0 encode=0
+headless_render_only_complete: frames=1 wall_s=0.000826 readback=0 encode=0

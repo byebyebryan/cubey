@@ -1,0 +1,13 @@
+{
+  "date_utc": "2026-10-27T07:18:51.286581+00:00",
+  "command": [
+    "ctest",
+    "--test-dir",
+    "build/release",
+    "-R",
+    "^(documentation_(hygiene|media|rules)|sdf_(region|recipe|authored|material|workshop|normal_projection|mirror_author)_tests)$",
+    "--output-on-failure"
+  ],
+  "returncode": 0,
+  "scope": "Seven SDF CPU tests and three documentation checks; native GPU/window evidence is separate."
+}

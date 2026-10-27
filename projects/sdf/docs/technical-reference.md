@@ -8,6 +8,20 @@ The [public SDF forms](https://dev.byebyebryan.com/cubey/demos/sdf/) and
 own the visual presentation. Dated review and qualification statements below
 retain their original scope; they do not imply a new native run or visual review.
 
+## Experimental source tracing
+
+For the separately qualified, opt-in source tracing study, see the
+[comparison result](../../../docs/notes/sdf-tracing-comparison-results.md) and
+[reproduction commands](../../../docs/evidence/sdf-tracing-comparison-2026-10/README.md).
+`--surface-trace analytic` avoids the brick field; `hybrid` retains it. Either
+can select `--csg-evaluation pruned --region-axis 4|16|64`. These routes require
+an authored scene, reject brick debug view 4 and use the comparison query oracle;
+the existing `--validate-field`/batch/history validators remain sampled-route
+controls. A sampled/pruned combination is not implemented. Existing presets,
+source budgets and serialization stay fixed.
+The [pinned pruning donor and adapter](../third_party/lipschitz_pruning/README.md)
+retain source provenance, MIT attribution and the isolated qualification scope.
+
 ## Native material presentation recipes
 
 The [public material showcase](https://dev.byebyebryan.com/cubey/demos/materials/)

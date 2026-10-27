@@ -6,6 +6,7 @@ publication. Expected-state compilation happens before that timer. Completion
 is a serialized queue-idle observation of the first rendered frame.
 """
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -18,6 +19,9 @@ def main():
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--repeats", type=int, default=3)
     args = p.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
+    provenance = dict(binary_sha256=hashlib.sha256(args.binary.read_bytes()).hexdigest(),
+                      source_head=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+                      runner_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     scenes = {"robot": "survey-robot-fieldkit", "guardian": "sculpture-guardian-limestone"}
     inputs = {}
     for name, filename in scenes.items():
@@ -53,6 +57,7 @@ def main():
             values = [a["request_to_waited_gpu_completion_ms"] for a in data["actions"]]
             row = dict(name=name, scene=scene, mode=mode, csg=csg, region_axis=axis, repeat=repeat,
                        p95_ms=percentile(values, .95), max_ms=max(values), actions=data["actions"], command=command)
+            row.update(provenance)
             summary.append(row)
             (args.output/"action-benchmarks.json").write_text(json.dumps(summary, indent=2)+"\n")
             print(json.dumps({k: v for k, v in row.items() if k not in ("actions", "command")}), flush=True)

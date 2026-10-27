@@ -2,9 +2,11 @@
 
 Date: 2026-10-26
 
-Status: proposed implementation plan for a bounded comparison milestone.
-No candidate renderer, pruning implementation or editor is implemented by this
-document. No rendering architecture or new default is selected.
+Status: retained planning contract for the completed bounded comparison.
+The [result](sdf-tracing-comparison-results.md) and
+[execution receipt](sdf-tracing-comparison-progress.md) distinguish implemented
+controls, qualified scopes and failed practicality gates. No new default is
+selected; the proposed targets below are retained for comparison with results.
 
 Inputs: the [representation review](sdf-representation-design-review.md),
 [measured build/update baseline](sdf-field-update-investigation.md), original

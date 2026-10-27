@@ -1,0 +1,30 @@
+Test project /home/bryan/code/cubey/build/release
+      Start   8: documentation_hygiene
+ 1/10 Test   #8: documentation_hygiene ............   Passed    0.48 sec
+      Start   9: documentation_media
+ 2/10 Test   #9: documentation_media ..............   Passed    0.04 sec
+      Start  10: documentation_rules
+ 3/10 Test  #10: documentation_rules ..............   Passed    0.13 sec
+      Start 263: sdf_region_tests
+ 4/10 Test #263: sdf_region_tests .................   Passed    0.06 sec
+      Start 264: sdf_recipe_tests
+ 5/10 Test #264: sdf_recipe_tests .................   Passed    0.04 sec
+      Start 265: sdf_authored_tests
+ 6/10 Test #265: sdf_authored_tests ...............   Passed    0.30 sec
+      Start 266: sdf_material_tests
+ 7/10 Test #266: sdf_material_tests ...............   Passed    0.02 sec
+      Start 267: sdf_normal_projection_tests
+ 8/10 Test #267: sdf_normal_projection_tests ......   Passed    0.03 sec
+      Start 268: sdf_mirror_author_tests
+ 9/10 Test #268: sdf_mirror_author_tests ..........   Passed    0.04 sec
+      Start 269: sdf_workshop_tests
+10/10 Test #269: sdf_workshop_tests ...............   Passed    0.04 sec
+
+100% tests passed out of 10
+
+Label Time Summary:
+docs      =   0.65 sec*proc (3 tests)
+policy    =   0.65 sec*proc (3 tests)
+unit      =   0.65 sec*proc (3 tests)
+
+Total Test time (real) =   1.18 sec

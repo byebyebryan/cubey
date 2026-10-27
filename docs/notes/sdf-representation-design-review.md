@@ -7,6 +7,10 @@ This broadens the [field-update investigation](sdf-field-update-investigation.md
 Its measured rebuild costs remain valid; its proposed pruning-first sequence
 is provisional and is not an adopted architecture or implementation priority.
 
+The later [bounded comparison result](sdf-tracing-comparison-results.md) tests
+these hypotheses with opt-in native routes. This record retains the earlier
+pre-decision assessment and reference review.
+
 ## Assessment
 
 The original projectR design contains ideas worth retaining: keeping authored
