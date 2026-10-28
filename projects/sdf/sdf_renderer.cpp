@@ -27,6 +27,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                       const GpuRegionPrograms* regions) {
     field_ = field;
     source_tracing_ = config.surface_trace != "sampled";
+    acceleration_uploads_ = config.acceleration_variant != "off" ? &gpu : nullptr;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
     lighting_.emplace(device, slots);
@@ -39,7 +40,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
                                              (local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : 0U)});
     };
-    scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction),
+    if (!acceleration_uploads_)
+        scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction),
                                  config.comparison_residency == "program" ||
                                      config.comparison_residency == "all");
     if (config.comparison_stage != "off") {
@@ -173,6 +175,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     }
     if (config.comparison_tight_root)
         fragment.insert(0, "tight_");
+    if (config.acceleration_variant != "off")
+        fragment.insert(0, "accel_");
     const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
                             render::fragment_shader_file(path / fragment)};
     const std::array layouts{descriptors_->layout()};
@@ -270,8 +274,19 @@ void Renderer::destroy() {
     field_ = nullptr;
     regions_ = nullptr;
 }
+std::unique_ptr<vulkan::Buffer> Renderer::prepare_program(const AuthoredScene* scene) {
+    if (!acceleration_uploads_) return {};
+    auto bytes = authored_program_bytes(scene);
+    if (scene) {
+        const float guard = authored_evaluation_guard(*scene);
+        std::memcpy(bytes.data() + 12, &guard, 4);
+    }
+    return std::make_unique<vulkan::Buffer>(vulkan::upload_device_buffer(
+        *acceleration_uploads_, bytes.data(), bytes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+}
 void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scene,
-                               const GpuRegionPrograms* regions) {
+                               const GpuRegionPrograms* regions,
+                               std::unique_ptr<vulkan::Buffer> prepared) {
     if (!scene_optics_ && scene &&
         std::any_of(scene->optics.begin(), scene->optics.end(),
                     [](const auto& o) { return !default_optics(o); }))
@@ -281,7 +296,10 @@ void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scen
         const float guard = authored_evaluation_guard(*scene);
         std::memcpy(bytes.data() + 12, &guard, 4);
     }
-    scene_program_->upload(bytes.data(), bytes.size());
+    if (acceleration_uploads_)
+        scene_program_ = prepared ? std::move(prepared) : prepare_program(scene);
+    else
+        scene_program_->upload(bytes.data(), bytes.size());
     if (scene_optics_) {
         const MaterialOptics fallback_optics;
         scene_optics_->upload(scene ? scene->optics.data() : &fallback_optics,
@@ -309,6 +327,8 @@ void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scen
     if (descriptors_ && regions) {
         vulkan::DescriptorWriteBatch writes;
         for (std::uint32_t i = 0; i < descriptors_->size(); ++i) {
+            writes.storage_buffer(descriptors_->set(i), 3, scene_program_->handle(),
+                                  scene_program_->size());
             writes.storage_buffer(descriptors_->set(i), 16, regions->cells->handle(),
                                   regions->cells->size());
             writes.storage_buffer(descriptors_->set(i), 17, regions->references->handle(),

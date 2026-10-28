@@ -1,4 +1,5 @@
 #include "sdf_regions.h"
+#include <cubey/engine/project_gpu_services.h>
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -206,7 +207,7 @@ float region_distance(math::Vec3 p, const AuthoredScene& scene, const RegionProg
 }
 GpuRegionPrograms::GpuRegionPrograms(vulkan::Device& device, const AuthoredScene& scene,
                                      std::uint32_t dimension, std::size_t limit,
-                                     bool device_local) {
+                                     bool device_local, ProjectGpuServices* uploads) {
     const auto start = std::chrono::steady_clock::now();
     const auto cpu = build_region_programs(scene, dimension, limit);
     axis = cpu.axis;
@@ -224,14 +225,30 @@ GpuRegionPrograms::GpuRegionPrograms(vulkan::Device& device, const AuthoredScene
                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
                                      (device_local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : 0U)});
     };
-    cells = allocate(16 + cpu.headers.size() * sizeof(RegionPrograms::Header));
-    references = allocate(std::max<std::size_t>(4, cpu.references.size() * 4));
     const std::array<std::uint32_t, 4> header{axis, 0, 0, 0};
-    cells->upload(header.data(), 16);
-    if (!cpu.headers.empty())
-        cells->upload(cpu.headers.data(), cpu.headers.size() * sizeof(RegionPrograms::Header), 16);
-    if (!cpu.references.empty())
-        references->upload(cpu.references.data(), cpu.references.size() * 4);
+    if (uploads) {
+        std::vector<std::uint32_t> data(header.begin(), header.end());
+        for (const auto h : cpu.headers) {
+            data.push_back(h.offset);
+            data.push_back(h.count);
+        }
+        auto refs = cpu.references;
+        if (refs.empty()) refs.push_back(0);
+        const std::array<vulkan::DeviceBufferUpload, 2> requests{{
+            {data.data(), data.size() * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT},
+            {refs.data(), refs.size() * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT}}};
+        auto batch = uploads->upload_device_buffers(requests, "sdf acceleration regions");
+        cells = std::make_unique<vulkan::Buffer>(std::move(batch.buffers[0]));
+        references = std::make_unique<vulkan::Buffer>(std::move(batch.buffers[1]));
+    } else {
+        cells = allocate(16 + cpu.headers.size() * sizeof(RegionPrograms::Header));
+        references = allocate(std::max<std::size_t>(4, cpu.references.size() * 4));
+        cells->upload(header.data(), 16);
+        if (!cpu.headers.empty())
+            cells->upload(cpu.headers.data(), cpu.headers.size() * sizeof(RegionPrograms::Header), 16);
+        if (!cpu.references.empty())
+            references->upload(cpu.references.data(), cpu.references.size() * 4);
+    }
     allocation_bytes = cells->size() + references->size();
     build_upload_ms =
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();

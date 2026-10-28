@@ -2,6 +2,8 @@
 #include "sdf_authored.h"
 #include <cubey/vulkan/buffer.h>
 
+namespace cubey { class ProjectGpuServices; }
+
 namespace cubey::projects::sdf {
 inline constexpr std::size_t region_reference_limit = 32U * 1024U * 1024U;
 [[nodiscard]] float authored_evaluation_guard(const AuthoredScene& scene);
@@ -26,7 +28,7 @@ build_region_programs(const AuthoredScene& scene, std::uint32_t axis,
 struct GpuRegionPrograms {
     GpuRegionPrograms(vulkan::Device& device, const AuthoredScene& scene, std::uint32_t axis,
                       std::size_t reference_limit = region_reference_limit,
-                      bool device_local = false);
+                      bool device_local = false, ProjectGpuServices* uploads = nullptr);
     std::unique_ptr<vulkan::Buffer> cells, references;
     std::uint64_t geometry_hash = 0, allocation_bytes = 0, scratch_peak_bytes = 0;
     std::uint32_t axis = 0, fallback_cells = 0;

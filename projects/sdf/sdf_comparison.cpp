@@ -251,6 +251,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
             : "comparison_sampled.comp.spv";
     if (config.comparison_tight_root)
         shader.insert(0, "tight_");
+    if (config.acceleration_variant != "off")
+        shader.insert(0, "accel_");
     render::ComputePipelineResource pipeline(
         device, {.shader_stage = render::compute_shader_file(
                      std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader),
@@ -261,7 +263,9 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         const auto scene = parse_authored_scene(c.at("scene").dump());
         std::unique_ptr<GpuRegionPrograms> regions;
         if (pruned)
-            regions = std::make_unique<GpuRegionPrograms>(device, scene, config.region_axis);
+            regions = std::make_unique<GpuRegionPrograms>(device, scene, config.region_axis,
+                region_reference_limit, false,
+                config.acceleration_variant != "off" ? &gpu : nullptr);
         if (field)
             field->build(scene);
         std::vector<Query> queries;
@@ -449,6 +453,10 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
 }
 } // namespace
 int run_tracing_comparison(const SdfConfig& config) {
+    if (config.acceleration_variant != "off" &&
+        (config.csg_evaluation != "pruned" || config.region_axis != 64 ||
+         config.surface_trace == "sampled" || config.comparison_tight_root || config.comparison_donor))
+        throw std::invalid_argument("acceleration queries require pruned source at axis 64");
     if (!config.common.headless || config.comparison_output.empty())
         throw std::invalid_argument("tracing study requires --headless and --comparison-output");
     if (config.comparison_stage != "off" || config.comparison_residency != "host" ||

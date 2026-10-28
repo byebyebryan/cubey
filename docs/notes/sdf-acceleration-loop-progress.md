@@ -27,3 +27,9 @@ separate decisions.
 
 - Initial worktree clean; research proposal re-read. No concurrent edits found.
 - Goal loop active. No new GPU results yet.
+
+- E0 implemented: private `control` selector, ordinary padded-root shaders,
+  portable staging/device-local source and region buffers. Source allocation is
+  prepared before publication. Both source modes pass 155 frozen independent
+  checks and the 20-action replay; seven existing CPU tests pass. Raw receipts:
+  `outputs/sdf/acceleration-loop-20261028/e0/`. Timings pending.

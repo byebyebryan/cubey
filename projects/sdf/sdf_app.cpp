@@ -61,6 +61,13 @@ class App {
                 std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
         if (authored_)
             validate_authored_motion(*authored_);
+        if (config_.acceleration_variant != "off" &&
+            (!config_.common.headless || !authored_ || config_.timeline.motion != "static" ||
+             config_.csg_evaluation != "pruned" || config_.surface_trace == "sampled" ||
+             config_.region_axis != 64 || config_.comparison_stage != "off" ||
+             config_.comparison_tight_root || config_.comparison_residency != "host"))
+            throw std::invalid_argument("acceleration study requires static headless authored "
+                                        "pruned source at axis 64 and no diagnostic ablations");
         if (config_.comparison_residency != "host" &&
             (config_.comparison_stage == "off" || config_.surface_trace == "sampled"))
             throw std::invalid_argument("residency ablation requires a source comparison stage");
@@ -399,7 +406,8 @@ class App {
                     regions_ = std::make_unique<GpuRegionPrograms>(
                         device, *displayed_authored_, config_.region_axis, region_reference_limit,
                         config_.comparison_residency == "regions" ||
-                            config_.comparison_residency == "all");
+                            config_.comparison_residency == "all",
+                        config_.acceleration_variant != "off" ? &runtime_.gpu() : nullptr);
                     ++region_builds_;
                 }
                 if (field_)
@@ -503,7 +511,9 @@ class App {
                 next_regions = std::make_unique<GpuRegionPrograms>(
                     device, next, config_.region_axis, region_reference_limit,
                     config_.comparison_residency == "regions" ||
-                        config_.comparison_residency == "all");
+                        config_.comparison_residency == "all",
+                    config_.acceleration_variant != "off" ? &runtime_.gpu() : nullptr);
+            auto next_program = renderer_.prepare_program(&next);
             if (study_fault_ == "region" || study_fault_ == "field")
                 throw CapacityExceeded("injected study failure before " + study_fault_ +
                                        " publication");
@@ -517,7 +527,8 @@ class App {
             }
             if (field_)
                 renderer_.update_field(device, *field_);
-            renderer_.update_authored(device, &*displayed_authored_, regions_.get());
+            renderer_.update_authored(device, &*displayed_authored_, regions_.get(),
+                                      std::move(next_program));
             active_prefix_ = timeline_.prefix;
             error_.clear();
             if (authored_build())

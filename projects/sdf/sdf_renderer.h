@@ -34,8 +34,10 @@ class Renderer {
                 const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr);
     void destroy();
     void update_field(vulkan::Device& device, const Field& field);
+    [[nodiscard]] std::unique_ptr<vulkan::Buffer> prepare_program(const AuthoredScene* scene);
     void update_authored(vulkan::Device& device, const AuthoredScene* scene,
-                         const GpuRegionPrograms* regions = nullptr);
+                         const GpuRegionPrograms* regions = nullptr,
+                         std::unique_ptr<vulkan::Buffer> prepared = {});
     void set_environment_elapsed_seconds(double seconds) {
         environment_seconds_ = seconds;
     }
@@ -82,6 +84,7 @@ class Renderer {
     const GpuRegionPrograms* regions_ = nullptr;
     profiling::ProfileRecorder* profile_ = nullptr;
     bool source_tracing_ = false;
+    vulkan::GpuRuntime* acceleration_uploads_ = nullptr;
     VkExtent2D scene_extent_{};
 };
 } // namespace cubey::projects::sdf
