@@ -44,6 +44,11 @@ the architecture and project guides remain current authority.
   Robot/Guardian tradeoffs and a recommendation to retain the sampled default.
 - [SDF comparison execution receipt](sdf-tracing-comparison-progress.md): local
   checkpoint and candidate revisions, completed gates and explicit limitations.
+- [SDF acceleration research plan](sdf-acceleration-research-plan.md) and
+  [primary-source evidence](../evidence/sdf-acceleration-research-2026-10/README.md):
+  staged root/region bound experiments and deferred alternatives.
+- [SDF acceleration loop progress](sdf-acceleration-loop-progress.md): bounded
+  E0–E3 implementation, qualification and measurement checkpoints.
 - [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
   direction and source/media inventory at intake; the implementation and release
   outcome is recorded in the progress record and current [site guide](../../site/README.md).
