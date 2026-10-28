@@ -1,0 +1,17 @@
+{
+  "head": "b4b9c85e3a7c35438a7375c249c83228540928e8",
+  "source_sha256": {
+    "projects/sdf/sdf_regions.cpp": "963b908757e7a6e22f91831e1773ba871955a364379e269d8252c788795117e0",
+    "projects/sdf/shaders/regions.glsl": "663449e8905f76ec17bb295ce0f7a61ea89e4660afa8d2fa9bd30e70b20dbe56",
+    "projects/sdf/shaders/selected_trace.glsl": "76fe014e6ec9464f70cdcf23784b687c29884f84536d499280c5f582992254fc",
+    "projects/sdf/shaders/source_trace.glsl": "bb5ad2c86f9e4620b5b118f616c7b350c11dbba47ed622a39b30514f31be0393",
+    "projects/sdf/shaders/authored_filter.comp": "6e9dcc6f4eff0997a093a0359ed19d2a52f3593fdd5fc4230c962c68c9ae2220",
+    "projects/sdf/third_party/lipschitz_pruning/common_culling.glsl": "6b1245a31578862ad9f3128cd22aa2b8b56c267c1cc16bec2b985294337070c9",
+    "docs/evidence/sdf-guardian-investigation-2026-10/summary.json": "e10bc61e3ce5056882adcf096964b7ead95172684a751a3296a45537926e462a"
+  },
+  "new_gpu_measurements": false,
+  "contracts_probe_sha256": "9b63db9a9000adeb9bf662371e6e057c5bb44029ca76def50885e140d2e04154",
+  "probe_result_sha256": "de2fd308342f961c1c83c48c7fae8a71d3ccfc0b70fe8c27c20999787987c484",
+  "runtime_source_unchanged": true,
+  "plan_sha256": "8cf787e8fd34c3f136ceafb5749fac8daf382ec399f30ab66082df7a007100ba"
+}

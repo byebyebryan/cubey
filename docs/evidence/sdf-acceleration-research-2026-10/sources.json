@@ -1,0 +1,128 @@
+{
+  "checked_on": "2026-10-28",
+  "scope": "Focused primary-source search; not an exhaustive survey or new native benchmark",
+  "sources": [
+    {
+      "id": "LIP25",
+      "title": "Lipschitz Pruning: Hierarchical Simplification of Primitive-Based SDFs",
+      "year": 2025,
+      "url": "https://wbrbr.org/publications/LipschitzPruning/",
+      "paper": "https://wbrbr.org/publications/LipschitzPruning/documents/LipschitzPruning_submitted_to_EG25.pdf",
+      "doi": "10.1111/cgf.70057",
+      "inspected": "Sections 3.4-3.6, 4, 5 and 6.1; existing pinned common_culling.glsl",
+      "finding": "Exact pruning and far-field constants are separate operations. GPU construction uses a spatial hierarchy; partial updates and sparse adaptive structure remain future directions.",
+      "cubey_decision": "Extend the existing method before treating the current exact-only CPU/64 prototype as its performance ceiling.",
+      "donor_revision": "b3c5fee4d951ad8942775206d111cd421d2ef31c",
+      "local_source": "projects/sdf/third_party/lipschitz_pruning/common_culling.glsl",
+      "scope_limit": "Earlier isolated first-level donor qualification is not a full native hierarchy/allocator qualification."
+    },
+    {
+      "id": "HART96",
+      "title": "Sphere tracing: A geometric method for the antialiased ray tracing of implicit surfaces",
+      "year": 1996,
+      "url": "https://experts.illinois.edu/en/publications/sphere-tracing-a-geometric-method-for-the-antialiased-ray-tracing/",
+      "doi": "10.1007/s003710050084",
+      "inspected": "Author institution publication record and abstract; plan supplies its own lower-bound derivation",
+      "finding": "Distance lower bounds support safe ray advances.",
+      "cubey_decision": "Audit whether the existing globally safe sampled point bound needs its extra cell-exit clamp.",
+      "scope_limit": "No new native safety or speed claim follows from the mathematical derivation alone."
+    },
+    {
+      "id": "PROXY25",
+      "title": "Accelerating Signed Distance Functions",
+      "year": 2025,
+      "url": "https://perso.liris.cnrs.fr/eric.galin/Articles/2025-lod.pdf",
+      "doi": "10.1111/cgf.70258",
+      "inspected": "Sections 4.1-4.3, 5 and discussion; publication metadata from author page",
+      "finding": "Cheap proxy nodes and geometry-changing LOD are distinct. Discontinuous proxies have operator-placement restrictions; even continuous field changes can affect a parent blend.",
+      "cubey_decision": "Keep root traversal bounds first; subtree proxy insertion is a conditional alternative with additional field-value contracts.",
+      "scope_limit": "No proxy or LOD implementation was imported, run or benchmarked."
+    },
+    {
+      "id": "CARVE25",
+      "title": "Sphere Carving: Bounding Volumes for Signed Distance Fields",
+      "year": 2025,
+      "url": "https://aparis69.github.io/SphereCarving/index.html",
+      "paper": "https://aparis69.github.io/SphereCarving/documents/paper.pdf",
+      "code": "https://github.com/H-Schott/SphereCarvingRelease/",
+      "inspected": "Project, paper bounds construction/results/limitations, author-provided release README",
+      "finding": "Conservative black-box field queries can build tight bounds. Difficult fields and multi-part decomposition may require seconds.",
+      "cubey_decision": "Conditional tighter-proxy generation after analytic model bounds are measured.",
+      "scope_limit": "The MIT release explicitly differs from the paper implementation; neither was run in this pass."
+    },
+    {
+      "id": "SEG20",
+      "title": "Segment Tracing Using Local Lipschitz Bounds",
+      "year": 2020,
+      "url": "https://aparis69.github.io/public_html/projects/galin2020_Segment.html",
+      "doi": "10.1111/cgf.13951",
+      "code": "https://github.com/aparis69/Segment-Tracing",
+      "inspected": "Author project page, publisher paper abstract and source README",
+      "finding": "Local segment bounds reduce query count without requiring a precomputed spatial cache.",
+      "cubey_decision": "Conditional iteration-cost experiment after query work is cheaper.",
+      "scope_limit": "The author release notes that its scenes/timings differ from those in the paper; no port or new benchmark."
+    },
+    {
+      "id": "EST14",
+      "title": "Enhanced Sphere Tracing",
+      "year": 2014,
+      "url": "https://diglib.eg.org/items/8ea5fa60-fe2f-4fef-8fd0-3783cb3200f0",
+      "doi": "10.2312/stag.20141233",
+      "inspected": "Publisher abstract and method scope",
+      "finding": "Checked over-relaxation is a possible iteration accelerator; the paper also presents other quality/stopping mechanisms.",
+      "cubey_decision": "Only the checked stepping idea is a later candidate; keep current exact hit/exhaustion rules.",
+      "scope_limit": "No assumption that every paper enhancement meets the frozen Cubey surface contract."
+    },
+    {
+      "id": "MPR20",
+      "title": "Massively Parallel Rendering of Complex Closed-Form Implicit Surfaces",
+      "year": 2020,
+      "url": "https://www.mattkeeter.com/research/mpr/",
+      "paper": "https://www.mattkeeter.com/research/mpr/keeter_mpr20.pdf",
+      "inspected": "Author overview and paper architecture overview",
+      "finding": "GPU-friendly hierarchical interval evaluation can cull regions and reduce expression tapes for a broad expression class.",
+      "cubey_decision": "Broader representation/compiler alternative, not the first primitive-SDF acceleration change.",
+      "scope_limit": "No backend integration or source/value equivalence qualification."
+    },
+    {
+      "id": "FIDGET",
+      "title": "Fidget",
+      "year": null,
+      "url": "https://github.com/mkeeter/fidget",
+      "writeup": "https://www.mattkeeter.com/projects/fidget/",
+      "inspected": "Current repository README/crate layout and author writeup",
+      "finding": "Expression tapes, simplification and fast native evaluation are available. The project emphasizes CPU evaluation and also contains a WGPU crate.",
+      "cubey_decision": "Research reference for a future compiler/representation decision.",
+      "scope_limit": "README calls it experimental; no library/API/version adoption. MPL-2.0 repository metadata observed, not a license-integration assessment."
+    },
+    {
+      "id": "GLT24",
+      "title": "Generalized Lipschitz Tracing of Implicit Surfaces",
+      "year": 2025,
+      "first_online": "2024-09-23",
+      "url": "https://onlinelibrary.wiley.com/doi/10.1111/cgf.15202",
+      "doi": "10.1111/cgf.15202",
+      "inspected": "Full publisher text: introduction, bound-generation assumptions and limitations",
+      "finding": "Directional derivative fields can guide original-function tracing. The fast procedural GPU fit is approximate and lacks automatic failure detection/mitigation.",
+      "cubey_decision": "Defer while the current known-Lipschitz source admits simpler qualified bounds.",
+      "scope_limit": "No heuristic fit is accepted as a certified replacement for the current contract."
+    },
+    {
+      "id": "SYNC23",
+      "title": "Synchronized-tracing of implicit surfaces",
+      "year": 2023,
+      "url": "https://arxiv.org/abs/2304.09673",
+      "inspected": "Author preprint abstract and pipeline description",
+      "finding": "Tile coherence and on-demand blobtree pruning are another rendering architecture.",
+      "cubey_decision": "Alternative pipeline research if shared 3D acceleration fails the workload.",
+      "scope_limit": "Preprint; no current-source operator/secondary-ray compatibility or performance qualification."
+    }
+  ],
+  "search_axes": [
+    "Local CSG reduction and conservative far-field acceleration",
+    "Ray and model bounds for empty-space queries",
+    "Sphere/segment tracing variants and their safety contracts",
+    "GPU hierarchy construction and update limitations",
+    "Alternative proxy/expression pipelines with source-quality constraints"
+  ]
+}

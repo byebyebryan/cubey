@@ -4,6 +4,9 @@ Date: 2026-10-28. Baseline: `0662f40c` on `sdf-tracing-comparison`.
 Diagnostic source candidate: `7b9ceb4` (committed locally after measurement).
 Status: bounded investigation complete; diagnostic routes remain opt-in.
 
+The subsequent [acceleration research and experiment plan](sdf-acceleration-research-plan.md)
+reviews candidate methods and proposes the next bounded implementation loop.
+
 Guardian has both avoidable implementation overhead and a substantial remaining
 CSG-query workload. The measured bottlenecks are primary tracing and hard
 shadows. Material detail and the six-sample geometric normal stencil are smaller

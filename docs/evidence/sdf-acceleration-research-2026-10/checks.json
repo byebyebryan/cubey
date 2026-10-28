@@ -1,0 +1,17 @@
+{
+  "planning_probe": {
+    "assertions_passed": true,
+    "scope": "five independent mathematical planning examples; no renderer qualification"
+  },
+  "documentation": {
+    "command": "ctest --test-dir build/release --output-on-failure -R '^documentation_(hygiene|media|rules)$'",
+    "returncode": 0,
+    "passed": 3
+  },
+  "runtime_source_unchanged": true,
+  "new_native_or_gpu_measurements": false,
+  "diff_check": {
+    "command": "git diff --check",
+    "returncode": 0
+  }
+}
