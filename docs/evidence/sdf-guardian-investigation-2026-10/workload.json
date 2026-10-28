@@ -1,0 +1,1300 @@
+{
+  "runs": [
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 468.4488925015241,
+        "p50": 493.0,
+        "p95": 911.0,
+        "max": 949
+      },
+      "primary_steps": {
+        "mean": 3.060763888888889,
+        "p95": 11.0,
+        "max": 355.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 176300,
+          "instructions": 57059590,
+          "mean_instructions": 323.6505388542258,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            0,
+            0,
+            2879,
+            0,
+            18005,
+            1857,
+            25033,
+            128526
+          ],
+          "trace_iterations": 176300,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 13831412,
+          "mean_instructions": 468.4485538169749,
+          "max_instructions": 949,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1362,
+            0,
+            659,
+            27505
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 68725,
+          "instructions": 29671309,
+          "mean_instructions": 431.73967260822116,
+          "max_instructions": 983,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1863,
+            0,
+            2889,
+            63973
+          ],
+          "trace_iterations": 68725,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 2999712,
+      "region_build_upload_ms": 35.40097,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.55392047156315,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-analytic-16.guardian.work.bin": "a45b2a414bc0a4a7e0690cc24dfd6fdde7b04e9d44ec8881101340d16aacb078",
+        "guardian-analytic-16.guardian.rays.bin": "58b8733314d5684dbfd16e7164a1f45a282ed74dc962ee5e7ea95fb0faf9e275"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 77.98841698841699,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.06078125,
+        "p95": 11.0,
+        "max": 355.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 176301,
+          "instructions": 21586053,
+          "mean_instructions": 122.4386305239335,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            18626,
+            16874,
+            4294,
+            2725,
+            18521,
+            29288,
+            59691,
+            26282
+          ],
+          "trace_iterations": 176301,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2302530,
+          "mean_instructions": 77.9831335094493,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1465,
+            739,
+            923,
+            3908,
+            2970,
+            8425,
+            7066
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 68724,
+          "instructions": 5190550,
+          "mean_instructions": 75.52747220767127,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            5301,
+            2201,
+            1769,
+            1832,
+            7281,
+            13749,
+            24843,
+            11748
+          ],
+          "trace_iterations": 68724,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 452.253052,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7422674724276829,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-analytic-64.guardian.work.bin": "96475b42470e07d1089368e605c0b20b55ee86e44ddeb25c930d3f25c615039a",
+        "guardian-analytic-64.guardian.rays.bin": "e054994902897ae5963deeecafbbdcb595715403e4c5b45a8967d9e4666324e3"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 468.4488925015241,
+        "p50": 493.0,
+        "p95": 911.0,
+        "max": 949
+      },
+      "primary_steps": {
+        "mean": 3.498246527777778,
+        "p95": 14.0,
+        "max": 411.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 167926,
+          "instructions": 53693234,
+          "mean_instructions": 319.7434226980932,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            0,
+            0,
+            2878,
+            1,
+            17243,
+            1850,
+            24734,
+            121220
+          ],
+          "trace_iterations": 201499,
+          "cache_attempts": 201499,
+          "cache_accepted": 33573,
+          "uniform_cell_cache_rejections": 137766
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 13831458,
+          "mean_instructions": 468.4501117659012,
+          "max_instructions": 949,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1362,
+            0,
+            659,
+            27505
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 54535,
+          "instructions": 22785315,
+          "mean_instructions": 417.81085541395436,
+          "max_instructions": 983,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1161,
+            0,
+            2582,
+            50792
+          ],
+          "trace_iterations": 89549,
+          "cache_attempts": 89549,
+          "cache_accepted": 35014,
+          "uniform_cell_cache_rejections": 50013
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 2999712,
+      "region_build_upload_ms": 38.416947,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.5778635907831515,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-hybrid-16.guardian.work.bin": "e2cd7b8cea42a842993b2e674fa90ab382dd5afaff3385573130d4c871b6d91c",
+        "guardian-hybrid-16.guardian.rays.bin": "df27a68e7e63941d6527a551f525843706cac14225d86060e784d83baab3e92c"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 77.94655557813452,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.498107638888889,
+        "p95": 14.0,
+        "max": 411.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 167926,
+          "instructions": 21019896,
+          "mean_instructions": 125.17356454628825,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            17820,
+            16202,
+            3964,
+            2466,
+            17036,
+            27994,
+            57671,
+            24773
+          ],
+          "trace_iterations": 201491,
+          "cache_attempts": 201491,
+          "cache_accepted": 33565,
+          "uniform_cell_cache_rejections": 137766
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2301682,
+          "mean_instructions": 77.95441305967621,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1469,
+            739,
+            923,
+            3908,
+            2969,
+            8426,
+            7062
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 54535,
+          "instructions": 4039647,
+          "mean_instructions": 74.07439259191345,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            3924,
+            1631,
+            1483,
+            1252,
+            5610,
+            11511,
+            20657,
+            8467
+          ],
+          "trace_iterations": 89544,
+          "cache_attempts": 89544,
+          "cache_accepted": 35009,
+          "uniform_cell_cache_rejections": 50013
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 459.355221,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7575317213748346,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-hybrid-64.guardian.work.bin": "8023590b0925000c7378f2995a6d61dbd0dfdb8e2a156155a14edbec29f843ec",
+        "guardian-hybrid-64.guardian.rays.bin": "729aa818a9b81b1e68e2292a2cdd3a807a5b95d6dd5e326af6c998fe75d9494b"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 28.185786435786436,
+        "p50": 29.0,
+        "p95": 45.0,
+        "max": 55
+      },
+      "primary_steps": {
+        "mean": 3.3399305555555556,
+        "p95": 13.0,
+        "max": 794.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 192380,
+          "instructions": 6294180,
+          "mean_instructions": 32.71743424472398,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            161,
+            5054,
+            14964,
+            19976,
+            63003,
+            79048,
+            5918,
+            4256
+          ],
+          "trace_iterations": 192380,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 937596,
+          "mean_instructions": 28.186507936507937,
+          "max_instructions": 55,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            120,
+            1068,
+            3552,
+            16140,
+            12384,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 76889,
+          "instructions": 2269521,
+          "mean_instructions": 29.516848964091093,
+          "max_instructions": 101,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            189,
+            2509,
+            6001,
+            36827,
+            30830,
+            533,
+            0
+          ],
+          "trace_iterations": 76889,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 562344,
+      "region_build_upload_ms": 5.687816,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.6684297239672206,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-analytic-16.robot.work.bin": "eb6781acf3b55fedf09ba320dfec914277d3e90699c7becc1763fea784aa4eb5",
+        "robot-analytic-16.robot.rays.bin": "c4745b654f6ab71448c6c8630afdc908e591760e6c64928106a6c8511872dc89"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 4.891774891774892,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.3399305555555556,
+        "p95": 13.0,
+        "max": 794.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 192380,
+          "instructions": 1826100,
+          "mean_instructions": 9.492150951242333,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            43302,
+            47307,
+            46758,
+            40969,
+            9699,
+            89,
+            0,
+            4256
+          ],
+          "trace_iterations": 192380,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162698,
+          "mean_instructions": 4.891113516113516,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8824,
+            6485,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 76889,
+          "instructions": 480429,
+          "mean_instructions": 6.248345016842461,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            17087,
+            15784,
+            17895,
+            23752,
+            2371,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 76889,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 90.321264,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7368517605826626,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-analytic-64.robot.work.bin": "31be423a3003151a762e101be507070b019737d2c4c1e66d2cd309dd9d96a539",
+        "robot-analytic-64.robot.rays.bin": "0c3dce365fc0de14764b383d678f88d8350f95db2d620a9a823e3a52298dbb33"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 28.185786435786436,
+        "p50": 29.0,
+        "p95": 45.0,
+        "max": 55
+      },
+      "primary_steps": {
+        "mean": 3.906059027777778,
+        "p95": 15.0,
+        "max": 1062.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 178558,
+          "instructions": 5953486,
+          "mean_instructions": 33.342028920574826,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            158,
+            4621,
+            13619,
+            18051,
+            57025,
+            74910,
+            5918,
+            4256
+          ],
+          "trace_iterations": 224989,
+          "cache_attempts": 224989,
+          "cache_accepted": 46431,
+          "uniform_cell_cache_rejections": 142846
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 937596,
+          "mean_instructions": 28.186507936507937,
+          "max_instructions": 55,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            120,
+            1068,
+            3552,
+            16140,
+            12384,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 60596,
+          "instructions": 1834502,
+          "mean_instructions": 30.274308535216846,
+          "max_instructions": 101,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            91,
+            1663,
+            4384,
+            28343,
+            25574,
+            541,
+            0
+          ],
+          "trace_iterations": 95922,
+          "cache_attempts": 95922,
+          "cache_accepted": 35326,
+          "uniform_cell_cache_rejections": 54656
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 562344,
+      "region_build_upload_ms": 5.585865,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.6926531783227508,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-hybrid-16.robot.work.bin": "43b41b54d6b99dedb826666b900041b38fbf1e2088a66af55c3f90a11bfd26f2",
+        "robot-hybrid-16.robot.rays.bin": "d348d7b94b667afd18348325026ac3bb69ce61ed1a3f2ad42f36d3938359feaa"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 4.890331890331891,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.906059027777778,
+        "p95": 15.0,
+        "max": 1062.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 178558,
+          "instructions": 1763954,
+          "mean_instructions": 9.87888529217397,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            38135,
+            44585,
+            43321,
+            38734,
+            9438,
+            89,
+            0,
+            4256
+          ],
+          "trace_iterations": 224989,
+          "cache_attempts": 224989,
+          "cache_accepted": 46431,
+          "uniform_cell_cache_rejections": 142846
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162668,
+          "mean_instructions": 4.89021164021164,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8828,
+            6481,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 60596,
+          "instructions": 391958,
+          "mean_instructions": 6.4683807512047,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            12531,
+            12800,
+            13326,
+            19982,
+            1957,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 95922,
+          "cache_attempts": 95922,
+          "cache_accepted": 35326,
+          "uniform_cell_cache_rejections": 54656
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 89.09213,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7569046585115031,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-hybrid-64.robot.work.bin": "ffe664357651d7eb28815eb2e0a0a459e84cec7753835c3b90332f8068010c0d",
+        "robot-hybrid-64.robot.rays.bin": "dd0fc29bffba3e0953cccf0f58c34853d23118bb9cb8aa3f4a0e27cea7ca21fc"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 77.98841698841699,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.057378472222222,
+        "p95": 11.0,
+        "max": 355.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 176105,
+          "instructions": 11254101,
+          "mean_instructions": 63.90563016382272,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            18669,
+            16866,
+            4292,
+            2778,
+            18561,
+            29444,
+            62810,
+            22685
+          ],
+          "trace_iterations": 176105,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2302530,
+          "mean_instructions": 77.9831335094493,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1465,
+            739,
+            923,
+            3908,
+            2970,
+            8425,
+            7066
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 68710,
+          "instructions": 5189020,
+          "mean_instructions": 75.5205938000291,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            5301,
+            2201,
+            1769,
+            1832,
+            7281,
+            13749,
+            24833,
+            11744
+          ],
+          "trace_iterations": 68710,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 423.35035,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.6092952249140113,
+      "active_primary_rays": 36221,
+      "payload_sha256": {
+        "guardian-analytic-64.guardian.work.bin": "4e8cdd16b31313e22b2efdac238f4d3a9d0057c757e499c8bb69b54fbd48a533",
+        "guardian-analytic-64.guardian.rays.bin": "68d51e98681dd63d58eb28ef60ad84e61eafe8510a67822ee0a6ac6bcf8ff348"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 77.94655557813452,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.4949131944444445,
+        "p95": 14.0,
+        "max": 411.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 167729,
+          "instructions": 10687879,
+          "mean_instructions": 63.72111560910755,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            17862,
+            16194,
+            3962,
+            2519,
+            17077,
+            28150,
+            60788,
+            21177
+          ],
+          "trace_iterations": 201307,
+          "cache_attempts": 201307,
+          "cache_accepted": 33578,
+          "uniform_cell_cache_rejections": 137568
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2301682,
+          "mean_instructions": 77.95441305967621,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1469,
+            739,
+            923,
+            3908,
+            2969,
+            8426,
+            7062
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 54523,
+          "instructions": 4038405,
+          "mean_instructions": 74.06791629220696,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            3924,
+            1631,
+            1483,
+            1252,
+            5610,
+            11511,
+            20646,
+            8466
+          ],
+          "trace_iterations": 89532,
+          "cache_attempts": 89532,
+          "cache_accepted": 35009,
+          "uniform_cell_cache_rejections": 50001
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 421.801914,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.6322831686249442,
+      "active_primary_rays": 36221,
+      "payload_sha256": {
+        "guardian-hybrid-64.guardian.work.bin": "26a94b76fa6dd82e2476afb656dd57444c8857678f25af17a65da8fb36720a5c",
+        "guardian-hybrid-64.guardian.rays.bin": "1efe1bd8a579daa06b22f95569ace19f6bb68982989fc7973beb517b9ebd0a2b"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 4.891774891774892,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.336076388888889,
+        "p95": 13.0,
+        "max": 794.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 192158,
+          "instructions": 1178234,
+          "mean_instructions": 6.131589629367499,
+          "max_instructions": 33,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            43420,
+            47848,
+            47638,
+            42683,
+            10470,
+            99,
+            0,
+            0
+          ],
+          "trace_iterations": 192158,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162698,
+          "mean_instructions": 4.891113516113516,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8824,
+            6485,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 76873,
+          "instructions": 480271,
+          "mean_instructions": 6.247590181207967,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            17087,
+            15780,
+            17895,
+            23741,
+            2370,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 76873,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 77.212139,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.6744721337187689,
+      "active_primary_rays": 36417,
+      "payload_sha256": {
+        "robot-analytic-64.robot.work.bin": "474ee72f89d263189aedfec55d3f719890c991ea7fd7c15f9efaef05f3d736c8",
+        "robot-analytic-64.robot.rays.bin": "4abc725f875ad0fd44b95c1bedd12e46a06066630ffb44f353c6554e0ee74915"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 4.890331890331891,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.9020486111111112,
+        "p95": 15.0,
+        "max": 1062.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 178332,
+          "instructions": 1116092,
+          "mean_instructions": 6.258506605656865,
+          "max_instructions": 33,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            38252,
+            45122,
+            44202,
+            40447,
+            10210,
+            99,
+            0,
+            0
+          ],
+          "trace_iterations": 224758,
+          "cache_attempts": 224758,
+          "cache_accepted": 46426,
+          "uniform_cell_cache_rejections": 142619
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162668,
+          "mean_instructions": 4.89021164021164,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8828,
+            6481,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 60588,
+          "instructions": 391864,
+          "mean_instructions": 6.467683369644154,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            12531,
+            12797,
+            13326,
+            19979,
+            1955,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 95914,
+          "cache_attempts": 95914,
+          "cache_accepted": 35326,
+          "uniform_cell_cache_rejections": 54648
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 78.398688,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.7026866960788178,
+      "active_primary_rays": 36417,
+      "payload_sha256": {
+        "robot-hybrid-64.robot.work.bin": "addd9dbf923889a4cfb662b7aeeb9a57b2ab7c44cb0710c272cd6a24f0d88e31",
+        "robot-hybrid-64.robot.rays.bin": "43d4c2e6f7e761ca0eb75d49e26e750301a66782083d0df91af17d2c96e50c99"
+      }
+    }
+  ]
+}

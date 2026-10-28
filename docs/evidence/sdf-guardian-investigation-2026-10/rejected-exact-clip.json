@@ -1,0 +1,14 @@
+{
+  "rejected_extent": 0.499,
+  "reason": "hybrid workspace-clip inside exit misses; final t exceeds strict endpoint by 4.190951585769653e-09",
+  "unchanged_fixture": "workspace-clip/1",
+  "replacement_extent": 0.4995,
+  "actual_surface_clip": 0.499,
+  "margin": 0.0005,
+  "excluded_runs": [
+    "final/timing-tight (all inner variants)",
+    "final/residency (all inner variants)",
+    "final/workload-tight"
+  ],
+  "accepted_outer_runs": "unchanged shader hashes; final/residency outer variants remain controls"
+}

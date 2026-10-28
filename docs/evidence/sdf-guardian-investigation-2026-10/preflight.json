@@ -1,0 +1,86 @@
+[
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--config",
+      "projects/sdf/presets/sculpture-guardian-limestone.json",
+      "--comparison-stage",
+      "primary",
+      "--surface-trace",
+      "analytic",
+      "--csg-evaluation",
+      "full"
+    ],
+    "returncode": 1,
+    "output": "sdf: comparison stages require static authored headless atmosphere rendering, debug 0, no AO/ground/clouds/occluder or scripted actions; source stages require pruned evaluation\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--config",
+      "projects/sdf/presets/sculpture-guardian-limestone.json",
+      "--comparison-residency",
+      "all"
+    ],
+    "returncode": 1,
+    "output": "sdf: residency ablation requires a source comparison stage\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--config",
+      "projects/sdf/presets/sculpture-guardian-limestone.json",
+      "--comparison-tight-root"
+    ],
+    "returncode": 1,
+    "output": "sdf: tight-root rendering requires a source comparison stage\n"
+  },
+  {
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--config",
+      "projects/sdf/presets/sculpture-guardian-limestone.json",
+      "--comparison-stage",
+      "normal",
+      "--ground"
+    ],
+    "returncode": 1,
+    "output": "sdf: comparison stages require static authored headless atmosphere rendering, debug 0, no AO/ground/clouds/occluder or scripted actions; source stages require pruned evaluation\n"
+  }
+]

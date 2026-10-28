@@ -1,0 +1,37 @@
+{
+  "cpu_sdf": {
+    "command": "ctest --test-dir build/release --output-on-failure -R '^sdf_(region|recipe|authored|material|normal_projection|mirror_author|workshop)_tests$'",
+    "returncode": 0,
+    "passed": 7,
+    "tests": [
+      "region",
+      "recipe",
+      "authored",
+      "material",
+      "normal_projection",
+      "mirror_author",
+      "workshop"
+    ]
+  },
+  "documentation": {
+    "command": "ctest --test-dir build/release --output-on-failure -R '^documentation_(hygiene|media|rules)$'",
+    "returncode": 0,
+    "passed": 3
+  },
+  "cli_preflight": {
+    "passed": 4,
+    "receipt": "preflight.json"
+  },
+  "native_geometry": {
+    "complete": true,
+    "receipt": "qualification.json"
+  },
+  "pixel_checks": {
+    "passed": true,
+    "receipt": "images.json"
+  },
+  "diff_check": {
+    "command": "git diff --check",
+    "returncode": 0
+  }
+}

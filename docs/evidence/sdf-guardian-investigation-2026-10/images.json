@@ -1,0 +1,150 @@
+[
+  {
+    "scene": "guardian",
+    "mode": "analytic",
+    "width": 320,
+    "height": 180,
+    "comparisons": {
+      "host-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+      },
+      "host-inner": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+      },
+      "local-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+      },
+      "local-inner": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+      }
+    },
+    "description": "GPU-local placement alone is pixel-identical. Padded entry changes 0 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+  },
+  {
+    "scene": "guardian",
+    "mode": "hybrid",
+    "width": 320,
+    "height": 180,
+    "comparisons": {
+      "host-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "1ceb699468fe74b1fbb7d89049ad32557344646d694b593e86186cd201ed727d"
+      },
+      "host-inner": {
+        "maximum_channel_difference": 1,
+        "mean_channel_difference": 5.787037037037037e-06,
+        "changed_pixels": 1,
+        "exhaustion_pixels": 0,
+        "sha256": "e0ebb8f3adee4892203667f056a7954f8e17c9db6109c96c236b3425d071e388"
+      },
+      "local-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "1ceb699468fe74b1fbb7d89049ad32557344646d694b593e86186cd201ed727d"
+      },
+      "local-inner": {
+        "maximum_channel_difference": 1,
+        "mean_channel_difference": 5.787037037037037e-06,
+        "changed_pixels": 1,
+        "exhaustion_pixels": 0,
+        "sha256": "e0ebb8f3adee4892203667f056a7954f8e17c9db6109c96c236b3425d071e388"
+      }
+    },
+    "description": "GPU-local placement alone is pixel-identical. Padded entry changes 1 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+  },
+  {
+    "scene": "robot",
+    "mode": "analytic",
+    "width": 320,
+    "height": 180,
+    "comparisons": {
+      "host-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+      },
+      "host-inner": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+      },
+      "local-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+      },
+      "local-inner": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+      }
+    },
+    "description": "GPU-local placement alone is pixel-identical. Padded entry changes 0 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+  },
+  {
+    "scene": "robot",
+    "mode": "hybrid",
+    "width": 320,
+    "height": 180,
+    "comparisons": {
+      "host-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+      },
+      "host-inner": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+      },
+      "local-outer": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+      },
+      "local-inner": {
+        "maximum_channel_difference": 0,
+        "mean_channel_difference": 0.0,
+        "changed_pixels": 0,
+        "exhaustion_pixels": 0,
+        "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+      }
+    },
+    "description": "GPU-local placement alone is pixel-identical. Padded entry changes 0 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+  }
+]

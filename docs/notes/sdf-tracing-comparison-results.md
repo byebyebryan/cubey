@@ -5,6 +5,10 @@ The [bounded comparison plan](sdf-tracing-comparison-plan.md) has been exercised
 through its decision gate. The default remains sampled/full. No push, public
 media refresh, content revision or default adoption is part of this result.
 
+The subsequent [Guardian query investigation](sdf-guardian-investigation.md)
+separates tracing/shading work, allocation placement and boundary-entry overhead.
+It retains the original measurements here as their own comparison snapshot.
+
 ## Decision supported by this pass
 
 Retain the complete authored source and history as authoritative. Spatially

@@ -1,0 +1,4391 @@
+{
+  "date": "2026-10-28",
+  "timing": [
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "off",
+      "low": 0.45851519999999985,
+      "high": 0.46314719999999987,
+      "mid": 0.46194559999999985,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "full",
+      "low": 0.44508800000000004,
+      "high": 0.4679904,
+      "mid": 0.46348479999999986,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "primary",
+      "low": 0.21476799999999993,
+      "high": 0.2835615999999996,
+      "mid": 0.2798879999999996,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "normal",
+      "low": 0.21758559999999996,
+      "high": 0.2920416,
+      "mid": 0.2830191999999996,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "material",
+      "low": 0.28271039999999964,
+      "high": 0.2954224,
+      "mid": 0.2857359999999996,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "shadow",
+      "low": 0.44964159999999986,
+      "high": 0.45330879999999985,
+      "mid": 0.45266879999999987,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "no-shadow",
+      "low": 0.2372192,
+      "high": 0.30582079999999995,
+      "mid": 0.29550079999999956,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "no-pattern",
+      "low": 0.4572847999999999,
+      "high": 0.4696336,
+      "mid": 0.4609488,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "off",
+      "low": 14.5408672,
+      "high": 14.6556928,
+      "mid": 14.620047999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        443.801472,
+        447.942847,
+        460.039297
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "full",
+      "low": 13.9695376,
+      "high": 14.0283456,
+      "mid": 14.0139888,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        443.75045,
+        448.289717,
+        470.997618
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "primary",
+      "low": 8.673248000000001,
+      "high": 8.790392,
+      "mid": 8.7635824,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        444.900344,
+        442.14985,
+        480.456985
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "normal",
+      "low": 9.1531264,
+      "high": 9.1728896,
+      "mid": 9.1691488,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        459.706707,
+        445.207809,
+        479.14518
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "material",
+      "low": 9.1111104,
+      "high": 9.1615392,
+      "mid": 9.1140096,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        453.769129,
+        441.492839,
+        477.457195
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 12.6037888,
+      "high": 12.6506832,
+      "mid": 12.615828800000001,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        445.649295,
+        442.415842,
+        483.708703
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "no-shadow",
+      "low": 9.546800000000001,
+      "high": 9.6930608,
+      "mid": 9.6253296,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        439.890227,
+        451.185647,
+        477.989526
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "no-pattern",
+      "low": 14.6015664,
+      "high": 14.731516799999998,
+      "mid": 14.7280976,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        455.288043,
+        454.188977,
+        478.487857
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "off",
+      "low": 17.541420799999997,
+      "high": 17.6707088,
+      "mid": 17.5741888,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        442.608094,
+        454.043546,
+        483.568632
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "full",
+      "low": 17.6945552,
+      "high": 17.7363888,
+      "mid": 17.7033296,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        447.525368,
+        437.366309,
+        500.989861
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "primary",
+      "low": 9.610656,
+      "high": 9.6489616,
+      "mid": 9.6445312,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        454.275327,
+        441.664192,
+        469.102419
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "normal",
+      "low": 9.975236800000001,
+      "high": 10.0382272,
+      "mid": 9.978798399999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        446.516943,
+        444.14644,
+        469.015349
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "material",
+      "low": 9.988512,
+      "high": 10.0536464,
+      "mid": 10.0458528,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        445.5976,
+        450.618009,
+        457.383035
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 15.6343824,
+      "high": 15.683268799999999,
+      "mid": 15.662263999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        440.032213,
+        451.332232,
+        476.712649
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "no-shadow",
+      "low": 9.865072,
+      "high": 9.937088,
+      "mid": 9.873108799999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        453.563112,
+        441.544564,
+        492.459024
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "no-pattern",
+      "low": 17.5974096,
+      "high": 17.7491056,
+      "mid": 17.6158096,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        453.917693,
+        441.897445,
+        477.111899
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "off",
+      "low": 0.7021744,
+      "high": 0.7067984,
+      "mid": 0.7065824,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "full",
+      "low": 0.7069936,
+      "high": 0.713792,
+      "mid": 0.7125072,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "primary",
+      "low": 0.6175424,
+      "high": 0.6198768,
+      "mid": 0.619312,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "normal",
+      "low": 0.6149663999999999,
+      "high": 0.6189087999999999,
+      "mid": 0.6157872,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "material",
+      "low": 0.6860095999999999,
+      "high": 0.6878848000000001,
+      "mid": 0.687088,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "shadow",
+      "low": 0.627464,
+      "high": 0.6376736,
+      "mid": 0.6335871999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "no-shadow",
+      "low": 0.6834783999999999,
+      "high": 0.6894,
+      "mid": 0.684544,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "sampled",
+      "axis": 16,
+      "stage": "no-pattern",
+      "low": 0.6990223999999999,
+      "high": 0.7052592,
+      "mid": 0.7041488,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "off",
+      "low": 0.9539679999999999,
+      "high": 0.9855039999999999,
+      "mid": 0.9827376,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        81.115638,
+        81.638316,
+        80.84105
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "full",
+      "low": 0.9181632000000001,
+      "high": 0.9291024,
+      "mid": 0.9217311999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        81.439699,
+        81.783956,
+        82.082744
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "primary",
+      "low": 0.6273679999999999,
+      "high": 0.6329184,
+      "mid": 0.6285984,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        81.68151,
+        84.913075,
+        83.049376
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "normal",
+      "low": 0.639648,
+      "high": 0.6473088,
+      "mid": 0.6436911999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        82.1066,
+        81.143004,
+        80.200038
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "material",
+      "low": 0.7007648,
+      "high": 0.7081056,
+      "mid": 0.702736,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        82.13539,
+        82.750289,
+        81.928464
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 0.8192768,
+      "high": 0.8348015999999998,
+      "mid": 0.8314688,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        83.191594,
+        84.413324,
+        85.863925
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "no-shadow",
+      "low": 0.7420751999999999,
+      "high": 0.7641391999999999,
+      "mid": 0.7558576,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        82.766943,
+        80.746773,
+        83.676748
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "no-pattern",
+      "low": 0.9827488,
+      "high": 1.0030351999999998,
+      "mid": 0.9871312,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        82.925623,
+        82.211107,
+        81.993504
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "off",
+      "low": 1.6148639999999999,
+      "high": 1.6192576,
+      "mid": 1.6160896,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        83.149854,
+        81.913877,
+        81.899133
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "full",
+      "low": 1.6094704,
+      "high": 1.6356384,
+      "mid": 1.6140336,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        81.612589,
+        85.597727,
+        81.766193
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "primary",
+      "low": 1.3784096000000001,
+      "high": 1.40476,
+      "mid": 1.3924927999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        83.903046,
+        80.391953,
+        80.000308
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "normal",
+      "low": 1.4144464,
+      "high": 1.4645728,
+      "mid": 1.414584,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        81.674659,
+        83.475321,
+        80.80728
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "material",
+      "low": 1.480784,
+      "high": 1.503672,
+      "mid": 1.4880112,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        84.125046,
+        81.750607,
+        84.944061
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 1.5190704,
+      "high": 1.5268592,
+      "mid": 1.5232144,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        85.597541,
+        81.344505,
+        81.085721
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "no-shadow",
+      "low": 1.4894192,
+      "high": 1.4990976,
+      "mid": 1.4927135999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        84.433747,
+        83.576441,
+        82.821465
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "no-pattern",
+      "low": 1.6275984,
+      "high": 1.6397439999999999,
+      "mid": 1.629256,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        80.841827,
+        94.231693,
+        83.173187
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 16,
+      "stage": "off",
+      "low": 53.4029664,
+      "high": 53.508142400000004,
+      "mid": 53.4276816,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        36.589257,
+        38.996362,
+        37.397077
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 16,
+      "stage": "primary",
+      "low": 37.589816,
+      "high": 37.7046352,
+      "mid": 37.5915792,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        42.131113,
+        41.32587,
+        40.637335
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 16,
+      "stage": "normal",
+      "low": 38.3799408,
+      "high": 38.487497600000005,
+      "mid": 38.3869616,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        40.135397,
+        42.001092,
+        40.650886
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 16,
+      "stage": "shadow",
+      "low": 44.1637776,
+      "high": 44.1991312,
+      "mid": 44.1760448,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        39.680216,
+        42.677414,
+        41.956469
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 16,
+      "stage": "off",
+      "low": 71.4653536,
+      "high": 71.5612672,
+      "mid": 71.4700656,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        41.06176,
+        39.648965,
+        40.222774
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 16,
+      "stage": "primary",
+      "low": 39.9319744,
+      "high": 39.987544,
+      "mid": 39.9766848,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        44.195659,
+        41.573501,
+        37.310556
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 16,
+      "stage": "normal",
+      "low": 40.8523264,
+      "high": 40.8603184,
+      "mid": 40.8523872,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        41.836052,
+        40.764558,
+        41.944689
+      ],
+      "memory": []
+    },
+    {
+      "group": "stages",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 16,
+      "stage": "shadow",
+      "low": 59.635808000000004,
+      "high": 59.6823712,
+      "mid": 59.6612848,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        39.952407,
+        38.892983,
+        42.44498
+      ],
+      "memory": []
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "root-control",
+      "low": 14.7012016,
+      "high": 14.8347344,
+      "mid": 14.7637824,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        459.219497,
+        436.69097,
+        430.251204
+      ],
+      "memory": []
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "full",
+      "low": 12.5687072,
+      "high": 12.589158399999999,
+      "mid": 12.572264,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        428.814166,
+        426.087226,
+        447.632713
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "primary",
+      "low": 6.9374512,
+      "high": 6.9431488,
+      "mid": 6.9377008,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        428.51914,
+        431.596284,
+        436.403176
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "normal",
+      "low": 7.2733664,
+      "high": 7.2769856,
+      "mid": 7.2734112,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        424.213377,
+        445.974162,
+        433.772796
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 11.0875936,
+      "high": 11.1872736,
+      "mid": 11.1717984,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        426.386509,
+        460.733172,
+        428.295868
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "root-control",
+      "low": 17.5877872,
+      "high": 17.650944,
+      "mid": 17.6117344,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        425.045197,
+        425.57975,
+        435.824873
+      ],
+      "memory": []
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "full",
+      "low": 16.4061952,
+      "high": 16.4537472,
+      "mid": 16.4334896,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        452.781375,
+        438.22794,
+        455.28883
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "primary",
+      "low": 7.7504816,
+      "high": 7.7687984000000005,
+      "mid": 7.766656,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        454.794622,
+        426.300897,
+        458.067241
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "normal",
+      "low": 8.104456,
+      "high": 8.1154688,
+      "mid": 8.1058016,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        420.714206,
+        451.666129,
+        453.422056
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 14.262455999999998,
+      "high": 14.3255488,
+      "mid": 14.2674848,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        424.179533,
+        428.214351,
+        449.305713
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "root-control",
+      "low": 0.8158943999999999,
+      "high": 0.825344,
+      "mid": 0.8215952,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        85.622681,
+        78.46758,
+        86.13598
+      ],
+      "memory": []
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "full",
+      "low": 0.713256,
+      "high": 0.7142495999999999,
+      "mid": 0.714008,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        84.163561,
+        76.957249,
+        85.434895
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "primary",
+      "low": 0.4539408,
+      "high": 0.4545248,
+      "mid": 0.4539776,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        79.316678,
+        76.994429,
+        80.201331
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "normal",
+      "low": 0.4728032,
+      "high": 0.4746912,
+      "mid": 0.474624,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        75.696754,
+        76.570278,
+        76.88341
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 0.598248,
+      "high": 0.6025344,
+      "mid": 0.5987216,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        77.364935,
+        78.44792,
+        76.84602
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "root-control",
+      "low": 1.4489728,
+      "high": 1.4624688,
+      "mid": 1.450704,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        79.006146,
+        78.41363,
+        76.749099
+      ],
+      "memory": []
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "full",
+      "low": 1.4262496,
+      "high": 1.4422784,
+      "mid": 1.4393136,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        77.415775,
+        77.239662,
+        76.611948
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "primary",
+      "low": 1.1995296,
+      "high": 1.2056288,
+      "mid": 1.2039568,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        77.016282,
+        77.287573,
+        76.84146
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "normal",
+      "low": 1.2306064,
+      "high": 1.2311632000000001,
+      "mid": 1.2311424,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        75.191219,
+        76.87139,
+        76.600498
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "tight",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "shadow",
+      "low": 1.3774688,
+      "high": 1.3839072,
+      "mid": 1.3779375999999999,
+      "samples_per_run": 64,
+      "region_build_upload_ms": [
+        77.205473,
+        78.000858,
+        77.225931
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "host-outer",
+      "low": 14.003862400000001,
+      "high": 14.0803104,
+      "mid": 14.049753599999999,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        449.296282,
+        462.858381,
+        459.503241
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "regions-outer",
+      "low": 11.697827199999999,
+      "high": 11.7149632,
+      "mid": 11.7100672,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        429.983739,
+        466.638502,
+        451.929471
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "program-outer",
+      "low": 12.6419824,
+      "high": 12.7964016,
+      "mid": 12.705016,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        459.013207,
+        449.712356,
+        472.867588
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "all-outer",
+      "low": 10.9276368,
+      "high": 10.9322912,
+      "mid": 10.9292752,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        464.458073,
+        456.792726,
+        444.42966
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "host-outer",
+      "low": 17.788272,
+      "high": 17.8065936,
+      "mid": 17.7912944,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        448.786629,
+        447.708791,
+        465.868878
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "regions-outer",
+      "low": 15.2328864,
+      "high": 15.265656,
+      "mid": 15.2585552,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        456.998371,
+        462.256182,
+        466.967526
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "program-outer",
+      "low": 16.2484448,
+      "high": 16.28424,
+      "mid": 16.2558416,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        466.050285,
+        444.484434,
+        469.648476
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "all-outer",
+      "low": 14.3978944,
+      "high": 14.4420336,
+      "mid": 14.4329584,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        444.352255,
+        444.379074,
+        450.510876
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "host-outer",
+      "low": 0.7649328000000001,
+      "high": 0.7678224,
+      "mid": 0.7676752,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        81.119072,
+        80.825551,
+        84.281118
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "regions-outer",
+      "low": 0.5946368,
+      "high": 0.5957616,
+      "mid": 0.5957296000000001,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        80.997032,
+        83.462188,
+        85.092776
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "program-outer",
+      "low": 0.7224768,
+      "high": 0.7252864,
+      "mid": 0.7225968,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        83.488319,
+        93.414095,
+        82.068112
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "all-outer",
+      "low": 0.5727072,
+      "high": 0.5730944,
+      "mid": 0.5728112,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        81.106302,
+        83.583488,
+        90.32407
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "host-outer",
+      "low": 1.4521008,
+      "high": 1.4607888,
+      "mid": 1.4550752,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        83.403408,
+        81.153982,
+        84.151643
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "regions-outer",
+      "low": 1.2306496,
+      "high": 1.234168,
+      "mid": 1.2335392,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        83.069327,
+        83.499798,
+        84.621296
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "program-outer",
+      "low": 1.4282752,
+      "high": 1.4323039999999998,
+      "mid": 1.4299168,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        81.891353,
+        81.040981,
+        86.217982
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "all-outer",
+      "low": 1.2087744,
+      "high": 1.2103392000000002,
+      "mid": 1.2093536,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        83.044027,
+        84.703341,
+        83.424801
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "host-inner",
+      "low": 12.5621504,
+      "high": 12.5807296,
+      "mid": 12.570744,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        426.568122,
+        430.249921,
+        440.762249
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "regions-inner",
+      "low": 10.2209024,
+      "high": 10.2250768,
+      "mid": 10.2231872,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        433.282338,
+        458.66256,
+        425.616902
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "program-inner",
+      "low": 12.149772800000001,
+      "high": 12.161952,
+      "mid": 12.1613776,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        447.580243,
+        442.82601,
+        429.595231
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "all-inner",
+      "low": 10.132024,
+      "high": 10.1327152,
+      "mid": 10.132497599999999,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        449.287766,
+        429.962006,
+        427.040789
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "host-inner",
+      "low": 16.4041872,
+      "high": 16.4296768,
+      "mid": 16.413483199999998,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        456.191985,
+        427.417661,
+        428.825307
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "regions-inner",
+      "low": 13.717168,
+      "high": 13.753344,
+      "mid": 13.7437344,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        454.710114,
+        429.247061,
+        424.827863
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "program-inner",
+      "low": 15.7883056,
+      "high": 15.7986864,
+      "mid": 15.7886544,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        463.934662,
+        427.196407,
+        428.357626
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "all-inner",
+      "low": 13.5808816,
+      "high": 13.6172656,
+      "mid": 13.615907199999999,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        425.686373,
+        421.283619,
+        436.042674
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "host-inner",
+      "low": 0.7141392,
+      "high": 0.715472,
+      "mid": 0.7150911999999999,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        76.823717,
+        77.628939,
+        80.487685
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "regions-inner",
+      "low": 0.5250912,
+      "high": 0.52544,
+      "mid": 0.5252,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        76.264564,
+        76.329141,
+        78.097641
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "program-inner",
+      "low": 0.7121088,
+      "high": 0.7206464,
+      "mid": 0.7136688,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        77.429381,
+        77.69767,
+        78.825225
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "stage": "all-inner",
+      "low": 0.520824,
+      "high": 0.5211584,
+      "mid": 0.520896,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        76.152693,
+        75.924629,
+        81.643072
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "host-inner",
+      "low": 1.4362624,
+      "high": 1.437072,
+      "mid": 1.4366976,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        78.147874,
+        77.49912,
+        78.433313
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "regions-inner",
+      "low": 1.1813616,
+      "high": 1.1821616,
+      "mid": 1.1815536,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        77.197819,
+        77.719691,
+        78.589303
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "program-inner",
+      "low": 1.4339632,
+      "high": 1.4427504,
+      "mid": 1.4365952,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        78.96068,
+        78.138603,
+        81.41257
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        },
+        {
+          "name": "region-refs",
+          "type": 2,
+          "heap": 1,
+          "flags": 6
+        }
+      ]
+    },
+    {
+      "group": "residency",
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "stage": "all-inner",
+      "low": 1.175712,
+      "high": 1.1769808,
+      "mid": 1.176248,
+      "samples_per_run": 150,
+      "region_build_upload_ms": [
+        75.727439,
+        77.987812,
+        84.329967
+      ],
+      "memory": [
+        {
+          "name": "program",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-cells",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        },
+        {
+          "name": "region-refs",
+          "type": 4,
+          "heap": 0,
+          "flags": 7
+        }
+      ]
+    }
+  ],
+  "workload": [
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 468.4488925015241,
+        "p50": 493.0,
+        "p95": 911.0,
+        "max": 949
+      },
+      "primary_steps": {
+        "mean": 3.060763888888889,
+        "p95": 11.0,
+        "max": 355.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 176300,
+          "instructions": 57059590,
+          "mean_instructions": 323.6505388542258,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            0,
+            0,
+            2879,
+            0,
+            18005,
+            1857,
+            25033,
+            128526
+          ],
+          "trace_iterations": 176300,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 13831412,
+          "mean_instructions": 468.4485538169749,
+          "max_instructions": 949,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1362,
+            0,
+            659,
+            27505
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 68725,
+          "instructions": 29671309,
+          "mean_instructions": 431.73967260822116,
+          "max_instructions": 983,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1863,
+            0,
+            2889,
+            63973
+          ],
+          "trace_iterations": 68725,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 2999712,
+      "region_build_upload_ms": 35.40097,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.55392047156315,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-analytic-16.guardian.work.bin": "a45b2a414bc0a4a7e0690cc24dfd6fdde7b04e9d44ec8881101340d16aacb078",
+        "guardian-analytic-16.guardian.rays.bin": "58b8733314d5684dbfd16e7164a1f45a282ed74dc962ee5e7ea95fb0faf9e275"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 77.98841698841699,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.06078125,
+        "p95": 11.0,
+        "max": 355.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 176301,
+          "instructions": 21586053,
+          "mean_instructions": 122.4386305239335,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            18626,
+            16874,
+            4294,
+            2725,
+            18521,
+            29288,
+            59691,
+            26282
+          ],
+          "trace_iterations": 176301,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2302530,
+          "mean_instructions": 77.9831335094493,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1465,
+            739,
+            923,
+            3908,
+            2970,
+            8425,
+            7066
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 68724,
+          "instructions": 5190550,
+          "mean_instructions": 75.52747220767127,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            5301,
+            2201,
+            1769,
+            1832,
+            7281,
+            13749,
+            24843,
+            11748
+          ],
+          "trace_iterations": 68724,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 452.253052,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7422674724276829,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-analytic-64.guardian.work.bin": "96475b42470e07d1089368e605c0b20b55ee86e44ddeb25c930d3f25c615039a",
+        "guardian-analytic-64.guardian.rays.bin": "e054994902897ae5963deeecafbbdcb595715403e4c5b45a8967d9e4666324e3"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 468.4488925015241,
+        "p50": 493.0,
+        "p95": 911.0,
+        "max": 949
+      },
+      "primary_steps": {
+        "mean": 3.498246527777778,
+        "p95": 14.0,
+        "max": 411.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 167926,
+          "instructions": 53693234,
+          "mean_instructions": 319.7434226980932,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            0,
+            0,
+            2878,
+            1,
+            17243,
+            1850,
+            24734,
+            121220
+          ],
+          "trace_iterations": 201499,
+          "cache_attempts": 201499,
+          "cache_accepted": 33573,
+          "uniform_cell_cache_rejections": 137766
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 13831458,
+          "mean_instructions": 468.4501117659012,
+          "max_instructions": 949,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1362,
+            0,
+            659,
+            27505
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 54535,
+          "instructions": 22785315,
+          "mean_instructions": 417.81085541395436,
+          "max_instructions": 983,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            0,
+            0,
+            0,
+            1161,
+            0,
+            2582,
+            50792
+          ],
+          "trace_iterations": 89549,
+          "cache_attempts": 89549,
+          "cache_accepted": 35014,
+          "uniform_cell_cache_rejections": 50013
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 2999712,
+      "region_build_upload_ms": 38.416947,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.5778635907831515,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-hybrid-16.guardian.work.bin": "e2cd7b8cea42a842993b2e674fa90ab382dd5afaff3385573130d4c871b6d91c",
+        "guardian-hybrid-16.guardian.rays.bin": "df27a68e7e63941d6527a551f525843706cac14225d86060e784d83baab3e92c"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 77.94655557813452,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.498107638888889,
+        "p95": 14.0,
+        "max": 411.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 167926,
+          "instructions": 21019896,
+          "mean_instructions": 125.17356454628825,
+          "max_instructions": 2021,
+          "full_fallback_queries": 5410,
+          "instruction_bins": [
+            17820,
+            16202,
+            3964,
+            2466,
+            17036,
+            27994,
+            57671,
+            24773
+          ],
+          "trace_iterations": 201491,
+          "cache_attempts": 201491,
+          "cache_accepted": 33565,
+          "uniform_cell_cache_rejections": 137766
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2301682,
+          "mean_instructions": 77.95441305967621,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1469,
+            739,
+            923,
+            3908,
+            2969,
+            8426,
+            7062
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 54535,
+          "instructions": 4039647,
+          "mean_instructions": 74.07439259191345,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            3924,
+            1631,
+            1483,
+            1252,
+            5610,
+            11511,
+            20657,
+            8467
+          ],
+          "trace_iterations": 89544,
+          "cache_attempts": 89544,
+          "cache_accepted": 35009,
+          "uniform_cell_cache_rejections": 50013
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 459.355221,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7575317213748346,
+      "active_primary_rays": 36270,
+      "payload_sha256": {
+        "guardian-hybrid-64.guardian.work.bin": "8023590b0925000c7378f2995a6d61dbd0dfdb8e2a156155a14edbec29f843ec",
+        "guardian-hybrid-64.guardian.rays.bin": "729aa818a9b81b1e68e2292a2cdd3a807a5b95d6dd5e326af6c998fe75d9494b"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 28.185786435786436,
+        "p50": 29.0,
+        "p95": 45.0,
+        "max": 55
+      },
+      "primary_steps": {
+        "mean": 3.3399305555555556,
+        "p95": 13.0,
+        "max": 794.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 192380,
+          "instructions": 6294180,
+          "mean_instructions": 32.71743424472398,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            161,
+            5054,
+            14964,
+            19976,
+            63003,
+            79048,
+            5918,
+            4256
+          ],
+          "trace_iterations": 192380,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 937596,
+          "mean_instructions": 28.186507936507937,
+          "max_instructions": 55,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            120,
+            1068,
+            3552,
+            16140,
+            12384,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 76889,
+          "instructions": 2269521,
+          "mean_instructions": 29.516848964091093,
+          "max_instructions": 101,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            189,
+            2509,
+            6001,
+            36827,
+            30830,
+            533,
+            0
+          ],
+          "trace_iterations": 76889,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 562344,
+      "region_build_upload_ms": 5.687816,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.6684297239672206,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-analytic-16.robot.work.bin": "eb6781acf3b55fedf09ba320dfec914277d3e90699c7becc1763fea784aa4eb5",
+        "robot-analytic-16.robot.rays.bin": "c4745b654f6ab71448c6c8630afdc908e591760e6c64928106a6c8511872dc89"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 4.891774891774892,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.3399305555555556,
+        "p95": 13.0,
+        "max": 794.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 192380,
+          "instructions": 1826100,
+          "mean_instructions": 9.492150951242333,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            43302,
+            47307,
+            46758,
+            40969,
+            9699,
+            89,
+            0,
+            4256
+          ],
+          "trace_iterations": 192380,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162698,
+          "mean_instructions": 4.891113516113516,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8824,
+            6485,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 76889,
+          "instructions": 480429,
+          "mean_instructions": 6.248345016842461,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            17087,
+            15784,
+            17895,
+            23752,
+            2371,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 76889,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 90.321264,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7368517605826626,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-analytic-64.robot.work.bin": "31be423a3003151a762e101be507070b019737d2c4c1e66d2cd309dd9d96a539",
+        "robot-analytic-64.robot.rays.bin": "0c3dce365fc0de14764b383d678f88d8350f95db2d620a9a823e3a52298dbb33"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 16,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 28.185786435786436,
+        "p50": 29.0,
+        "p95": 45.0,
+        "max": 55
+      },
+      "primary_steps": {
+        "mean": 3.906059027777778,
+        "p95": 15.0,
+        "max": 1062.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 178558,
+          "instructions": 5953486,
+          "mean_instructions": 33.342028920574826,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            158,
+            4621,
+            13619,
+            18051,
+            57025,
+            74910,
+            5918,
+            4256
+          ],
+          "trace_iterations": 224989,
+          "cache_attempts": 224989,
+          "cache_accepted": 46431,
+          "uniform_cell_cache_rejections": 142846
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 937596,
+          "mean_instructions": 28.186507936507937,
+          "max_instructions": 55,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            120,
+            1068,
+            3552,
+            16140,
+            12384,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 60596,
+          "instructions": 1834502,
+          "mean_instructions": 30.274308535216846,
+          "max_instructions": 101,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            0,
+            91,
+            1663,
+            4384,
+            28343,
+            25574,
+            541,
+            0
+          ],
+          "trace_iterations": 95922,
+          "cache_attempts": 95922,
+          "cache_accepted": 35326,
+          "uniform_cell_cache_rejections": 54656
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 562344,
+      "region_build_upload_ms": 5.585865,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.6926531783227508,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-hybrid-16.robot.work.bin": "43b41b54d6b99dedb826666b900041b38fbf1e2088a66af55c3f90a11bfd26f2",
+        "robot-hybrid-16.robot.rays.bin": "d348d7b94b667afd18348325026ac3bb69ce61ed1a3f2ad42f36d3938359feaa"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 1.1920928955078125e-07,
+      "surface_program": {
+        "mean": 4.890331890331891,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.906059027777778,
+        "p95": 15.0,
+        "max": 1062.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 178558,
+          "instructions": 1763954,
+          "mean_instructions": 9.87888529217397,
+          "max_instructions": 163,
+          "full_fallback_queries": 4256,
+          "instruction_bins": [
+            38135,
+            44585,
+            43321,
+            38734,
+            9438,
+            89,
+            0,
+            4256
+          ],
+          "trace_iterations": 224989,
+          "cache_attempts": 224989,
+          "cache_accepted": 46431,
+          "uniform_cell_cache_rejections": 142846
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162668,
+          "mean_instructions": 4.89021164021164,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8828,
+            6481,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 60596,
+          "instructions": 391958,
+          "mean_instructions": 6.4683807512047,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            12531,
+            12800,
+            13326,
+            19982,
+            1957,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 95922,
+          "cache_attempts": 95922,
+          "cache_accepted": 35326,
+          "uniform_cell_cache_rejections": 54656
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 89.09213,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": false,
+      "primary_miss_instruction_fraction": 0.7569046585115031,
+      "active_primary_rays": 36467,
+      "payload_sha256": {
+        "robot-hybrid-64.robot.work.bin": "ffe664357651d7eb28815eb2e0a0a459e84cec7753835c3b90332f8068010c0d",
+        "robot-hybrid-64.robot.rays.bin": "dd0fc29bffba3e0953cccf0f58c34853d23118bb9cb8aa3f4a0e27cea7ca21fc"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 77.98841698841699,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.057378472222222,
+        "p95": 11.0,
+        "max": 355.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 176105,
+          "instructions": 11254101,
+          "mean_instructions": 63.90563016382272,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            18669,
+            16866,
+            4292,
+            2778,
+            18561,
+            29444,
+            62810,
+            22685
+          ],
+          "trace_iterations": 176105,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2302530,
+          "mean_instructions": 77.9831335094493,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1465,
+            739,
+            923,
+            3908,
+            2970,
+            8425,
+            7066
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 68710,
+          "instructions": 5189020,
+          "mean_instructions": 75.5205938000291,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            5301,
+            2201,
+            1769,
+            1832,
+            7281,
+            13749,
+            24833,
+            11744
+          ],
+          "trace_iterations": 68710,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 423.35035,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.6092952249140113,
+      "active_primary_rays": 36221,
+      "payload_sha256": {
+        "guardian-analytic-64.guardian.work.bin": "4e8cdd16b31313e22b2efdac238f4d3a9d0057c757e499c8bb69b54fbd48a533",
+        "guardian-analytic-64.guardian.rays.bin": "68d51e98681dd63d58eb28ef60ad84e61eafe8510a67822ee0a6ac6bcf8ff348"
+      }
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 4921,
+      "misses": 52679,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 77.94655557813452,
+        "p50": 71.0,
+        "p95": 195.0,
+        "max": 307
+      },
+      "primary_steps": {
+        "mean": 3.4949131944444445,
+        "p95": 14.0,
+        "max": 411.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 167729,
+          "instructions": 10687879,
+          "mean_instructions": 63.72111560910755,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            17862,
+            16194,
+            3962,
+            2519,
+            17077,
+            28150,
+            60788,
+            21177
+          ],
+          "trace_iterations": 201307,
+          "cache_attempts": 201307,
+          "cache_accepted": 33578,
+          "uniform_cell_cache_rejections": 137568
+        },
+        "normal": {
+          "source_queries": 29526,
+          "instructions": 2301682,
+          "mean_instructions": 77.95441305967621,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            4030,
+            1469,
+            739,
+            923,
+            3908,
+            2969,
+            8426,
+            7062
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 54523,
+          "instructions": 4038405,
+          "mean_instructions": 74.06791629220696,
+          "max_instructions": 307,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            3924,
+            1631,
+            1483,
+            1252,
+            5610,
+            11511,
+            20646,
+            8466
+          ],
+          "trace_iterations": 89532,
+          "cache_attempts": 89532,
+          "cache_accepted": 35009,
+          "uniform_cell_cache_rejections": 50001
+        }
+      },
+      "geometry_hash": 15419350890978506480,
+      "instructions": 2021,
+      "region_bytes": 54677832,
+      "region_build_upload_ms": 421.801914,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.6322831686249442,
+      "active_primary_rays": 36221,
+      "payload_sha256": {
+        "guardian-hybrid-64.guardian.work.bin": "26a94b76fa6dd82e2476afb656dd57444c8857678f25af17a65da8fb36720a5c",
+        "guardian-hybrid-64.guardian.rays.bin": "1efe1bd8a579daa06b22f95569ace19f6bb68982989fc7973beb517b9ebd0a2b"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 4.891774891774892,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.336076388888889,
+        "p95": 13.0,
+        "max": 794.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 192158,
+          "instructions": 1178234,
+          "mean_instructions": 6.131589629367499,
+          "max_instructions": 33,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            43420,
+            47848,
+            47638,
+            42683,
+            10470,
+            99,
+            0,
+            0
+          ],
+          "trace_iterations": 192158,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162698,
+          "mean_instructions": 4.891113516113516,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8824,
+            6485,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 76873,
+          "instructions": 480271,
+          "mean_instructions": 6.247590181207967,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            17087,
+            15780,
+            17895,
+            23741,
+            2370,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 76873,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 77.212139,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.6744721337187689,
+      "active_primary_rays": 36417,
+      "payload_sha256": {
+        "robot-analytic-64.robot.work.bin": "474ee72f89d263189aedfec55d3f719890c991ea7fd7c15f9efaef05f3d736c8",
+        "robot-analytic-64.robot.rays.bin": "4abc725f875ad0fd44b95c1bedd12e46a06066630ffb44f353c6554e0ee74915"
+      }
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "axis": 64,
+      "query_count": 57600,
+      "hits": 5544,
+      "misses": 52056,
+      "exhausted": 0,
+      "max_boundary_excess": 0.0,
+      "surface_program": {
+        "mean": 4.890331890331891,
+        "p50": 3.0,
+        "p95": 13.0,
+        "max": 17
+      },
+      "primary_steps": {
+        "mean": 3.9020486111111112,
+        "p95": 15.0,
+        "max": 1062.0
+      },
+      "phases": {
+        "primary": {
+          "source_queries": 178332,
+          "instructions": 1116092,
+          "mean_instructions": 6.258506605656865,
+          "max_instructions": 33,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            38252,
+            45122,
+            44202,
+            40447,
+            10210,
+            99,
+            0,
+            0
+          ],
+          "trace_iterations": 224758,
+          "cache_attempts": 224758,
+          "cache_accepted": 46426,
+          "uniform_cell_cache_rejections": 142619
+        },
+        "normal": {
+          "source_queries": 33264,
+          "instructions": 162668,
+          "mean_instructions": 4.89021164021164,
+          "max_instructions": 17,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            10680,
+            6675,
+            8828,
+            6481,
+            600,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 0,
+          "cache_attempts": 0,
+          "cache_accepted": 0,
+          "uniform_cell_cache_rejections": 0
+        },
+        "shadow": {
+          "source_queries": 60588,
+          "instructions": 391864,
+          "mean_instructions": 6.467683369644154,
+          "max_instructions": 31,
+          "full_fallback_queries": 0,
+          "instruction_bins": [
+            12531,
+            12797,
+            13326,
+            19979,
+            1955,
+            0,
+            0,
+            0
+          ],
+          "trace_iterations": 95914,
+          "cache_attempts": 95914,
+          "cache_accepted": 35326,
+          "uniform_cell_cache_rejections": 54648
+        }
+      },
+      "geometry_hash": 15329115976364195548,
+      "instructions": 163,
+      "region_bytes": 9252504,
+      "region_build_upload_ms": 78.398688,
+      "region_fallback_cells": 0,
+      "bin_upper_bounds": [
+        1,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        null
+      ],
+      "inner": true,
+      "primary_miss_instruction_fraction": 0.7026866960788178,
+      "active_primary_rays": 36417,
+      "payload_sha256": {
+        "robot-hybrid-64.robot.work.bin": "addd9dbf923889a4cfb662b7aeeb9a57b2ab7c44cb0710c272cd6a24f0d88e31",
+        "robot-hybrid-64.robot.rays.bin": "43d4c2e6f7e761ca0eb75d49e26e750301a66782083d0df91af17d2c96e50c99"
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "width": 320,
+      "height": 180,
+      "comparisons": {
+        "host-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+        },
+        "host-inner": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+        },
+        "local-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+        },
+        "local-inner": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "72b0ba8c7bbaf4eaacc6fee5d49a8d81252e61addfe8b695f42084f8ace632f4"
+        }
+      },
+      "description": "GPU-local placement alone is pixel-identical. Padded entry changes 0 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "width": 320,
+      "height": 180,
+      "comparisons": {
+        "host-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "1ceb699468fe74b1fbb7d89049ad32557344646d694b593e86186cd201ed727d"
+        },
+        "host-inner": {
+          "maximum_channel_difference": 1,
+          "mean_channel_difference": 5.787037037037037e-06,
+          "changed_pixels": 1,
+          "exhaustion_pixels": 0,
+          "sha256": "e0ebb8f3adee4892203667f056a7954f8e17c9db6109c96c236b3425d071e388"
+        },
+        "local-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "1ceb699468fe74b1fbb7d89049ad32557344646d694b593e86186cd201ed727d"
+        },
+        "local-inner": {
+          "maximum_channel_difference": 1,
+          "mean_channel_difference": 5.787037037037037e-06,
+          "changed_pixels": 1,
+          "exhaustion_pixels": 0,
+          "sha256": "e0ebb8f3adee4892203667f056a7954f8e17c9db6109c96c236b3425d071e388"
+        }
+      },
+      "description": "GPU-local placement alone is pixel-identical. Padded entry changes 1 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "width": 320,
+      "height": 180,
+      "comparisons": {
+        "host-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+        },
+        "host-inner": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+        },
+        "local-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+        },
+        "local-inner": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "7f741bcb51115aa547794c67932004ef6bfd6caf8d29f39b71252be52bda51e9"
+        }
+      },
+      "description": "GPU-local placement alone is pixel-identical. Padded entry changes 0 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "width": 320,
+      "height": 180,
+      "comparisons": {
+        "host-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+        },
+        "host-inner": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+        },
+        "local-outer": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+        },
+        "local-inner": {
+          "maximum_channel_difference": 0,
+          "mean_channel_difference": 0.0,
+          "changed_pixels": 0,
+          "exhaustion_pixels": 0,
+          "sha256": "1eb1085a69737714be11f5d91883ad2dd52730e08207860a373c2b6da4b4d549"
+        }
+      },
+      "description": "GPU-local placement alone is pixel-identical. Padded entry changes 0 of 57600 pixels; mean RGB byte difference 0.0000; zero exhaustion pixels."
+    }
+  ],
+  "provenance": {
+    "baseline_head": "0662f40cd0dff662e671a9c218a7aa5b77224f8c",
+    "head": "7b9ceb4008c3622b4314d787b513f8c34972cf6c",
+    "source_state": "local diagnostic source committed after measurement; file and binary hashes pin the measured candidate; no default adoption",
+    "binary_sha256": "88f6b1a20eb6a77fca3f47ec63b0ff7f039b616b747132c154ee56121e9a569e",
+    "source_sha256": {
+      "projects/sdf/CMakeLists.txt": "8511ccefdb3d2ed126b28d8524353f97ffdc05e8b4661c32dffd5dba805c8b6b",
+      "projects/sdf/main.cpp": "388d9cc28c0f06ed9d1df6d01a8e7d4944cf24e8d7149a2769e2bffcb59e9a29",
+      "projects/sdf/sdf_app.cpp": "a9640af2d61f968ce6dd2e43fbd95f9f13da0ee81b74ac87b54727b4f020aed9",
+      "projects/sdf/sdf_authored.cpp": "3e72b7e818a6e0aeebb36b2c64d07d76a6b1c2b816bcc69c048eadc27154440d",
+      "projects/sdf/sdf_authored.h": "ed2f9e7323e9c01ceb231172345da54c7de0fa012bd2c7b992411063df02d8c9",
+      "projects/sdf/sdf_authored_tests.cpp": "19b0fa5cf76c63fbdd8bc30db0feaa85f7672a7cbea1aba2328bddfc2565dbfc",
+      "projects/sdf/sdf_comparison.cpp": "be739903441996162db89edc30928f426052e3bec7f738f40e92335ccb71b756",
+      "projects/sdf/sdf_comparison.h": "c069be80ab5baf0c4b717b3a18e6a0059407a43dc3d18b1cbf450e7d103c90ce",
+      "projects/sdf/sdf_config.h": "cd5b898c78b4f3872e7f51c77cf2a2cba23a2bbe8a02442e07660db5a928a10c",
+      "projects/sdf/sdf_environment.cpp": "3a73b86a798c721953520a12ca92c6e2a86d165671a21f104a6b926dee693a10",
+      "projects/sdf/sdf_field.cpp": "ccf0e987a0c52ea2cca7c84348b5ee3ed37d99d7dcfe0bcb68435a22fe2df2c2",
+      "projects/sdf/sdf_field.h": "25d7b96acab8e6b6355b1f0d63386ab1eeed3f98762ae028777bf3f32558eec5",
+      "projects/sdf/sdf_history.cpp": "2d5a0f84c0676514d689ff9aeaf7f8a8b6da1521f4080f4f9d91584c7217a5b8",
+      "projects/sdf/sdf_history.h": "9ee06139dca9c84ef56b6e0933002df685191e68661dcff235b3e404b8740db9",
+      "projects/sdf/sdf_material.cpp": "d808e95ed372742edcf7313351fe266aeeb041b5f0bd5d02f7e7fb9fd5ffb870",
+      "projects/sdf/sdf_material.h": "418ea7f57de73c47f7e228a2288c191409ca8583a645b08d7ba322af66a9d718",
+      "projects/sdf/sdf_material_tests.cpp": "db375f1ec56dd5dc447dc6c7802f18aaaef4255503827e3e3b64ecd004d2f506",
+      "projects/sdf/sdf_recipe.cpp": "2a396d815d536e3010c78c38a4b910f65dae9ec552b63d62c2e0a4a8713d5b06",
+      "projects/sdf/sdf_recipe.h": "aa1b4f1a481ab9ae65a1cd9235ec5b32c41a1db62ac45cc7a6cca77322023da1",
+      "projects/sdf/sdf_recipe_tests.cpp": "c7baf28eca536afd2a6e9cf527e092f509e2c8b9c3c2765efbe1ccd8250b9dd7",
+      "projects/sdf/sdf_region_tests.cpp": "eaba14ff290072e5978be75b8754ab7bdfc84adfb0b6941b05ea097feb0b5865",
+      "projects/sdf/sdf_regions.cpp": "963b908757e7a6e22f91831e1773ba871955a364379e269d8252c788795117e0",
+      "projects/sdf/sdf_regions.h": "4f83e8d94c0c7451b80692054ffdd9c748c5cb3e86e19707d1bd8f9df755bdf0",
+      "projects/sdf/sdf_renderer.cpp": "8d9d1a3e75421a213d64205e96f895686542fd16131d97c9ab45a5232ff09082",
+      "projects/sdf/sdf_renderer.h": "ab31eb9433b1515e12956004737d89ad3abee763a6343f3cd09400825fb073a2",
+      "projects/sdf/sdf_timeline.cpp": "4afc0de789af56f03a9db59767d3dc2d93d4b040e03e50370e5fe56695efc093",
+      "projects/sdf/sdf_timeline.h": "7a9821cdd90ed4e1cda358748a99d2c548c567fea5b5bf065df4814800ab5df6",
+      "projects/sdf/sdf_validation.cpp": "165f025fa290ae79eeb578decf0490297ebe991ae02f1465f21d0e3959b249bc",
+      "projects/sdf/sdf_validation.h": "3d05bbd5dbab34e00abf14cb3901610627275302aa8602fcaf44cf2a64dd5ae4",
+      "projects/sdf/sdf_workshop.cpp": "d0752f80e6bf4db5ce29385d277842dc5555abe576c8be9ed4e70d166c85aa58",
+      "projects/sdf/sdf_workshop.h": "308b64a33647d94050bfcefc4ec19538b7616c96bc14ff5f9778c9e3a1549cfe",
+      "projects/sdf/sdf_workshop_tests.cpp": "cddc3e857379a51e89e16081caf9a01aca4b0e46ae4a32d23c9993119d16975f",
+      "projects/sdf/shaders/authored.glsl": "497f72513a3065988bf8d791f26dc24f14cdd42836853b3804c45c1cf092e558",
+      "projects/sdf/shaders/authored_bricks.comp": "9f62a2a70257eafb505a5d0990d7b3be818b53d4998c5e27a793488870d05717",
+      "projects/sdf/shaders/authored_filter.comp": "6e9dcc6f4eff0997a093a0359ed19d2a52f3593fdd5fc4230c962c68c9ae2220",
+      "projects/sdf/shaders/authored_material.glsl": "374589952eec0a40c4f323c95838ba95b14b14cf6f2c7d943d200888dd674dd0",
+      "projects/sdf/shaders/authored_validate.comp": "fbf5c18e031b88d0433a96b6d67cbad33dc3b32949d6961d90a2def6a07a0f11",
+      "projects/sdf/shaders/bricks.comp": "716c1aee86935b366f4c10c4f121cdd183f5a7566349897fcea6ba90d7c4e945",
+      "projects/sdf/shaders/comparison_analytic_pruned.comp": "a558d303a4249482c7c3a71797dd7dd20d7f1422c24b72fd3a8e74844feaf8cb",
+      "projects/sdf/shaders/comparison_donor.comp": "84b92b47a4e7c3812859dad3ed635bd74a69a26cca3ad2da0aa9bbd7901f296f",
+      "projects/sdf/shaders/comparison_full.comp": "d5ed9ee32a19eb0f7f7875e89129586903e608c7fdfc12d1a827599fa11b26c6",
+      "projects/sdf/shaders/comparison_hybrid.comp": "cc60140c02194e38ec66ad02b083d37ce6dfff3a112143111ecd975d5329b7af",
+      "projects/sdf/shaders/comparison_hybrid_pruned.comp": "69e3fe6b87867555b0bdef1c857fe52ebe511447a9c72eaacb976be9e8459967",
+      "projects/sdf/shaders/comparison_queries.glsl": "14bbea8e18750ff24f4abda9d0df9daae92183526b8c8a31dd3c1a6508477285",
+      "projects/sdf/shaders/comparison_sampled.comp": "6b6774cd4b864baea5e864047c82e60cc83f5fae5498a74ec66ce82ea0d2bc59",
+      "projects/sdf/shaders/field.glsl": "824f087482760219b3bf0087efcfdd74c12b6dfd7abfcfad86316fda6471ae5b",
+      "projects/sdf/shaders/filter.comp": "be0aed2cc4890a747b8f9c9bb74a2f21890827d7f8f10c4f676eec19e793d0d1",
+      "projects/sdf/shaders/investigate_sdf_analytic_pruned.frag": "0250500f071a8597cffe09cec9b5db2968626a4229bf8d9dc6759e0fd030d598",
+      "projects/sdf/shaders/investigate_sdf_authored.frag": "08f7184ba5b44a37b4dba0865d4b386bf74f1d7eb136c7c6ebec1db1e9fe1a63",
+      "projects/sdf/shaders/investigate_sdf_hybrid_pruned.frag": "0b5083badd779682d2deb49ba53b29a5859ff5ef930649bc7bb50d5ecc4790bf",
+      "projects/sdf/shaders/lighting.glsl": "06688742e4de1c114a4b38582e1750f0166f8a2f3fe046b78646446e9b24e973",
+      "projects/sdf/shaders/material_analytic.frag": "982db62b585a127a88b004720eb89e4ec1a4d2a43079c545b87dfafbcf633141",
+      "projects/sdf/shaders/material_analytic_pruned.frag": "ef4b194911e14601b7fa9ee93dd43e0f4930b4455f3e089e1ddc63285fae69ab",
+      "projects/sdf/shaders/material_hybrid.frag": "2fb79afb93c0fa08ef20797d41edac3e2094db526dbd1b9399f987ba1dfe4d83",
+      "projects/sdf/shaders/material_hybrid_pruned.frag": "582e48aa933f7156d2d247d638d320d117c1251d9eb7ca6e5be025a72fd92a80",
+      "projects/sdf/shaders/material_study.frag": "ea46015346971782f4c54dc27f428ced71f1e6733f7592aa8925627db6074f4f",
+      "projects/sdf/shaders/occluder.frag": "068db6c922f852ce14c7b9934b18ac4028b47359773df307bd86f69eae2ce446",
+      "projects/sdf/shaders/occluder.vert": "c5ca2fb1ab83e0a189f6942e1e22cf2bd839b6bcef9f4aae94920fd2df9b67ae",
+      "projects/sdf/shaders/optics_math.glsl": "e15aa201565a773fbb8d5db816ba2db6f859fd233957fe3064d2ffffcb045be4",
+      "projects/sdf/shaders/regions.glsl": "663449e8905f76ec17bb295ce0f7a61ea89e4660afa8d2fa9bd30e70b20dbe56",
+      "projects/sdf/shaders/sdf.frag": "540000a3c965f3b5009994dae20bcfcf88b77ef74155690fec650f434dfa4b95",
+      "projects/sdf/shaders/sdf.vert": "eeddaabf3fa8614fc2fc36209f17f8c8fbf0674579b8ea3589dcb3d4c4196931",
+      "projects/sdf/shaders/sdf_analytic.frag": "d9c0d95622441c884e9b10c53cea2e170897d9f5b9364d353366df275f1f8af2",
+      "projects/sdf/shaders/sdf_analytic_pruned.frag": "3f41ae59d496f1cd29acc8676b3f28a4d8e8fae51f68171041478111183443a9",
+      "projects/sdf/shaders/sdf_authored.frag": "dd68f9450ad4466df8052b0cdf4f18ed73c4d1a58d989fa340a55f6ce92073d5",
+      "projects/sdf/shaders/sdf_hybrid.frag": "01d6183b0027fd2cb1471e8b9b34fc60709d1014105c81c6dd5292681d46412c",
+      "projects/sdf/shaders/sdf_hybrid_pruned.frag": "e64bb10ab803d308d9038f869636c55656df444d279450c160601f1e73d4609b",
+      "projects/sdf/shaders/sdf_surface.glsl": "f6f53b6203aba1655777ef3d0b061aa068b337db7a7a7cdb105093429da94331",
+      "projects/sdf/shaders/selected_trace.glsl": "76fe014e6ec9464f70cdcf23784b687c29884f84536d499280c5f582992254fc",
+      "projects/sdf/shaders/source_trace.glsl": "bb5ad2c86f9e4620b5b118f616c7b350c11dbba47ed622a39b30514f31be0393",
+      "projects/sdf/shaders/surface_pattern.glsl": "7d645b6d7fc3c3fbead2f678a7270b0387e6b3c2b6d0d69bc85062e45a158276",
+      "projects/sdf/shaders/tight_comparison_analytic_pruned.comp": "0219bfef96fb3a331129a072f8fd24351c3c6563ee496a43ae6991a2a407eadd",
+      "projects/sdf/shaders/tight_comparison_hybrid_pruned.comp": "ca15147e16b4b65e620424c237c4f340eeede5a164ecf03009f212b99e75954b",
+      "projects/sdf/shaders/tight_investigate_sdf_analytic_pruned.frag": "d58870e78626d574d3a64f43caba27aeb8645cfceb0813653434b70721809197",
+      "projects/sdf/shaders/tight_investigate_sdf_hybrid_pruned.frag": "9e774d0cccb99fc2db39b712d08bedb93c28a0006fd110972e4b69e1e814e2ac",
+      "projects/sdf/shaders/tight_workload_analytic.comp": "ba9d50b34e56b1807787e971f9b4cb7242fac1d01bfbe0668ffbd608ad200ed0",
+      "projects/sdf/shaders/tight_workload_hybrid.comp": "08b8a76a040bc847c2112c3620422e3a4e6ca1ed0d436cc0d7e8365268be8ba8",
+      "projects/sdf/shaders/trace.glsl": "3a641b9db15e43cf81277db19b36b2dead518d270fa075581b6bd4130468f79e",
+      "projects/sdf/shaders/validate.comp": "e0ec69211cfdf0277d57bb6bb5a04e71d8ae0e4536354fe9e89c0a997f989ca6",
+      "projects/sdf/shaders/workload.glsl": "7ca1dadc48628ccc4c2da69880aa59ca62a4415947bb7890b18cd0a1c3b26065",
+      "projects/sdf/shaders/workload_analytic.comp": "2be121e2e7d13b330f3808d94469719a61c7676e26dfaea8dff61674b0ad14c7",
+      "projects/sdf/shaders/workload_hybrid.comp": "2533bd51cd040f9aa1560bd5bcec53c0e5da1205832e79878055ad4c9e33b38d",
+      "projects/sdf/shaders/workload_queries.glsl": "a4efd1b658f55788c50100bbe70d97d689a197a05369a80149cd037af1f75570",
+      "projects/sdf/tools/investigate_guardian.py": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+      "projects/sdf/tools/qualify_guardian_investigation.py": "cf45e63a2401579ac4865f38a9863157613cae73a4c5d0a3a8f01f49fd8dea7b"
+    },
+    "shader_sha256": {
+      "atmosphere.frag.spv": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b",
+      "atmosphere.vert.spv": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87",
+      "atmosphere_reflection_prefilter.frag.spv": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d",
+      "authored_bricks.comp.spv": "6792b381fdac5bfb8ce3e9207bb8e5581e73cf1e662bbeb73f471aa58d726880",
+      "authored_filter.comp.spv": "def16143f1e0d4d008a6b58cec85d21053361fb14775040beb40a63ca1feb806",
+      "authored_validate.comp.spv": "28c8411c0781b07578de27bbc543bd0017895bc41ecf2c53f9545e63c462e921",
+      "bricks.comp.spv": "90a2ec847d648475fc93e400231c80c48ed444eb3274f687b88bb71ba8f2bb26",
+      "cloud.vert.spv": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570",
+      "cloud_blue_noise.comp.spv": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb",
+      "cloud_composite_background_depth.frag.spv": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3",
+      "cloud_environment_prefilter.frag.spv": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc",
+      "cloud_march.comp.spv": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1",
+      "cloud_perlin_worley.comp.spv": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572",
+      "cloud_planar_filter.frag.spv": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778",
+      "cloud_shadow.comp.spv": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1",
+      "cloud_temporal.comp.spv": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759",
+      "cloud_weather.comp.spv": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0",
+      "cloud_worley.comp.spv": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0",
+      "comparison_analytic_pruned.comp.spv": "a6ef22930872de54700d3162e558e2d9705f4ee470586da86de812715d946a0e",
+      "comparison_donor.comp.spv": "3c7a06cf2483b5aba5e52fa47aa786ce11d416f632b5a86d16d8bde87bae79a4",
+      "comparison_full.comp.spv": "daea996f3dbcadbb21b77484eb10adf69cf180072af6c8f1f284ef9487da99fe",
+      "comparison_hybrid.comp.spv": "4a1c9148a6d5a6368a3c37729850f37609d745f5dc9c24957e5022d03ac09524",
+      "comparison_hybrid_pruned.comp.spv": "fe6833a7739747f3a4b3de6e40150dce4d67b28328839a449f610c46553f5494",
+      "comparison_sampled.comp.spv": "3e672b4043ec24922c7d89dc2cb836ea0f0b519e5b961a1fc5d075d873a9b963",
+      "filter.comp.spv": "f3589f2ef32c4d06a9b30ec8b00e7ac2c5456cf359d026f8f4e0638b9ed19c6c",
+      "forward_pbr_post.frag.spv": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526",
+      "forward_pbr_post.vert.spv": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c",
+      "investigate_sdf_analytic_pruned.frag.spv": "c3179e8a67e5b1c6d56bb0255d1a5338dd8681f132cd5a3806efdb53b56019d1",
+      "investigate_sdf_authored.frag.spv": "e7635111f2cde0ae8f3abcc65f9aa2409bbfb89ec0dd927303aaa1cc09f5821c",
+      "investigate_sdf_hybrid_pruned.frag.spv": "2053949e00178ded9503a92258a9459eb72875c2dd17507546e83d5232472c0f",
+      "material_analytic.frag.spv": "59e6e0492b9d69dc3dcd27690283514a86bf11a44cce64d1a64efa0eaa52a488",
+      "material_analytic_pruned.frag.spv": "d8e150533dd2c208f12862fb8c4473537c32067aca9b182643986788cc790d21",
+      "material_hybrid.frag.spv": "0e17938790ef37c80b4df95518eaf6f2f8f90e2801c9009245e5a8c670075094",
+      "material_hybrid_pruned.frag.spv": "9fd390b991970916764b1c9a8d5dd4bfe7980980c2cba0f8defd7160d47550f1",
+      "material_study.frag.spv": "64dfd0bd1930162b843458332845c471a104b68098d098c174ba007249bea56c",
+      "occluder.frag.spv": "e592d45c44f430da47367715bd58068a78d914861e13e5d2df5bf0df55a5775e",
+      "occluder.vert.spv": "d20392e4249444cf65afbdad2cd01de9c703256d0c4fe912d6b2a309a92bfe3a",
+      "sdf.frag.spv": "44dd5df203134bbbf1757309328400c68db96348a80f86ab48a40cb31cf3b3b6",
+      "sdf.vert.spv": "ae9983b94db66576a2d02fb1e286ac642aca8252887cf39d4d9b82af48f1ebd0",
+      "sdf_analytic.frag.spv": "c7f78cbebee817494baae557ce2ae3abf34c06600dacc628ab4296fc51bd53d3",
+      "sdf_analytic_pruned.frag.spv": "ecd56b8565943ff503ed1f0682113f069caa4c43f3f714a1f84445c380100f5f",
+      "sdf_authored.frag.spv": "fc623a7a0b9e99aad040c47d34c0ddbd8b6a09a97dbc9d6663780f48626a9942",
+      "sdf_hybrid.frag.spv": "170a291183916de591560b5d9cadf9431b1378e66785f4cc1f23b3a285ba269e",
+      "sdf_hybrid_pruned.frag.spv": "2c039e4694063c847bfef3b0c1d96aaefe246157ec42d8b5a1aa10501036f667",
+      "surface_cloud_march.comp.spv": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3",
+      "tight_comparison_analytic_pruned.comp.spv": "b1e7782f17aef2295e4750313db264a0d934d7c350f7cb3502a1d65600f99c26",
+      "tight_comparison_hybrid_pruned.comp.spv": "8011c6f714663918139950803c26667a20deb4bb39ce7a72ff0cf1a0b207faa3",
+      "tight_investigate_sdf_analytic_pruned.frag.spv": "32f55d747d6abbadf30c3f722584323aeade9eff08316ac2caecb1c21163f765",
+      "tight_investigate_sdf_hybrid_pruned.frag.spv": "f8d7d9e399669473e9cdf93add95ac9246e535d55c3880a7d868318f19131d31",
+      "tight_workload_analytic.comp.spv": "5c9fd8b6341103c63c2882ef82f85d99607ff01eabd3622a12e7095ce79dc03d",
+      "tight_workload_hybrid.comp.spv": "a2fe2323b52ac318304e4f619e1c5444bf7216d8e9d00bd96cb5a40319a5d2bc",
+      "validate.comp.spv": "46f0591dac8a4cd15c8a7d8e398226b833ee9b2b3153de65f202842239eb7f26",
+      "workload_analytic.comp.spv": "b80460dab415cb3a44e5b0ed5e87b4edee5218fd0db7d132285534b6c2e9fc92",
+      "workload_hybrid.comp.spv": "04ec54813ee39dcdb6c8d2d2bf18e51448141c86630aace1ab742e4a03d49b09"
+    },
+    "preserved_files": 181,
+    "preserved_shaders": 43,
+    "preserved_content": 138,
+    "changed_protected_files": [],
+    "raw_root": "/home/bryan/code/cubey/outputs/sdf/guardian-investigation-20261028",
+    "accepted_timing_runs": 324,
+    "accepted_camera_replay_runs": 12,
+    "camera_rays": 691200,
+    "independent_checks": 620,
+    "sparse_uninstrumented_checks": 28800,
+    "dense_differential_queries": 230400,
+    "fixture_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+    "device": "RTX 5070 Ti, driver 610.57.04",
+    "extent": [
+      320,
+      180
+    ],
+    "rejected_exact_clip": {
+      "rejected_extent": 0.499,
+      "reason": "hybrid workspace-clip inside exit misses; final t exceeds strict endpoint by 4.190951585769653e-09",
+      "unchanged_fixture": "workspace-clip/1",
+      "replacement_extent": 0.4995,
+      "actual_surface_clip": 0.499,
+      "margin": 0.0005,
+      "excluded_runs": [
+        "final/timing-tight (all inner variants)",
+        "final/residency (all inner variants)",
+        "final/workload-tight"
+      ],
+      "accepted_outer_runs": "unchanged shader hashes; final/residency outer variants remain controls"
+    }
+  },
+  "bin_labels": [
+    "1",
+    "2\u20134",
+    "5\u20138",
+    "9\u201316",
+    "17\u201332",
+    "33\u201364",
+    "65\u2013128",
+    ">128"
+  ]
+}
