@@ -30,15 +30,41 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
     lighting_.emplace(device, slots);
-    const auto host_buffer = [&](std::size_t bytes) {
+    const auto host_buffer = [&](std::size_t bytes, bool local = false) {
         return std::make_unique<vulkan::Buffer>(
-            device,
-            vulkan::BufferConfig{.size = bytes,
-                                 .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                 .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+            device, vulkan::BufferConfig{.size = bytes,
+                                         .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                         .memory_properties =
+                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+                                             (local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : 0U)});
     };
-    scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction));
+    scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction),
+                                 config.comparison_residency == "program" ||
+                                     config.comparison_residency == "all");
+    if (config.comparison_stage != "off") {
+        const auto memory = [&](const char* name, const vulkan::Buffer& buffer, bool local) {
+            VkMemoryRequirements requirements;
+            vkGetBufferMemoryRequirements(device.handle(), buffer.handle(), &requirements);
+            const auto type = device.find_memory_type(
+                requirements.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+                    (local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : 0U));
+            VkPhysicalDeviceMemoryProperties properties;
+            vkGetPhysicalDeviceMemoryProperties(device.physical_device(), &properties);
+            std::cout << "sdf: study memory " << name << " type=" << type
+                      << " heap=" << properties.memoryTypes[type].heapIndex
+                      << " flags=" << properties.memoryTypes[type].propertyFlags << '\n';
+        };
+        memory("program", *scene_program_,
+               config.comparison_residency == "program" || config.comparison_residency == "all");
+        if (regions) {
+            const bool local =
+                config.comparison_residency == "regions" || config.comparison_residency == "all";
+            memory("region-cells", *regions->cells, local);
+            memory("region-refs", *regions->references, local);
+        }
+    }
     scene_materials_ = host_buffer(16 * sizeof(SurfaceMaterial));
     scene_patterns_ = host_buffer(16 * sizeof(MaterialPattern));
     scene_domains_ = host_buffer(16 * sizeof(math::Mat4));
@@ -140,6 +166,13 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                                    : "sdf.frag.spv";
     if (regions)
         fragment.insert(fragment.find(".frag"), "_pruned");
+    if (config.comparison_stage != "off") {
+        if (study)
+            throw std::invalid_argument("comparison stages require atmosphere lighting");
+        fragment.insert(0, "investigate_");
+    }
+    if (config.comparison_tight_root)
+        fragment.insert(0, "tight_");
     const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
                             render::fragment_shader_file(path / fragment)};
     const std::array layouts{descriptors_->layout()};
@@ -397,7 +430,12 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                                      : light.primary_light_direction,
          0},
         {static_cast<float>(config.debug), static_cast<float>(config.shadows),
-         config.ground ? 1.0F : 0.0F, 0},
+         config.ground ? 1.0F : 0.0F,
+         config.comparison_stage == "primary"    ? 1.F
+         : config.comparison_stage == "normal"   ? 2.F
+         : config.comparison_stage == "material" ? 3.F
+         : config.comparison_stage == "shadow"   ? 4.F
+                                                 : 0.F},
         {glm::normalize(target_point - eye),
          2.0F * std::tan(glm::radians(22.5F)) / static_cast<float>(scene_extent_.height)}};
     const bool raw_diagnostic = (config.debug > 0 && config.debug < 10) || config.debug == 12;

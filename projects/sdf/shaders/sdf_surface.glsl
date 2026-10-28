@@ -96,6 +96,13 @@ void main() {
     gl_FragDepth=1.0;
     if (hit.status==2) { color=vec4(1,0,1,1); return; }
     bool object=hit.status==1;
+#ifdef SDF_INVESTIGATE
+    // Private diagnostic pipeline only. The ordinary shader compiles unchanged.
+    if(camera.options.w>.5 && !object) {color=vec4(.02,.02,.02,1);return;}
+    if(camera.options.w>.5 && camera.options.w<1.5) {
+        color=vec4(object ? vec3(hit.t*.25) : vec3(0.02),1);return;
+    }
+#endif
 #ifdef SDF_MATERIAL_STUDY
     if(lighting.transport_options.w>.5 && camera.options.x<.5 && !object && groundT>=1e5) discard;
 #endif
@@ -103,6 +110,27 @@ void main() {
     if (t<1e5) {
         vec3 p=camera.eye.xyz+direction*t;
         vec3 normal=object ? hitNormal(p,hit) : vec3(0,1,0);
+#ifdef SDF_INVESTIGATE
+        if(camera.options.w>1.5 && camera.options.w<2.5) {
+            color=vec4(normal*.5+.5,1);return;
+        }
+        if(camera.options.w>2.5 && camera.options.w<3.5) {
+            float footprint=t*camera.forward.w/max(abs(dot(normal,-direction)),.2);
+            MaterialSample m=authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,
+                                                      lighting.surface_options.z>.5);
+            // Keep the normal observable even when the uniform-material shortcut applies.
+            color=vec4(m.material.base_roughness.xyz*.3+(normal*.5+.5)*.3+
+                m.height_gradient*.01+m.material.emission.xyz*.01+
+                vec3(m.material.base_roughness.w+m.metallic)*.05+m.sheen.xyz*.01+vec3(m.rough_glass)*.01,1);return;
+        }
+        if(camera.options.w>3.5 && camera.options.w<4.5) {
+            bool exhausted=false;
+            float visibility=shadowVisibility(p,normal,camera.sunlight.xyz,
+                                              int(camera.options.y+.5),exhausted);
+            color=exhausted ? vec4(1,0,1,1) : vec4(vec3(visibility)*.5+(normal*.5+.5)*.5,1);
+            return;
+        }
+#endif
         // Conservative projected pixel footprint, avoiding derivatives inside
         // divergent hit/miss control flow. Grain fades at distance/grazing angles.
         float footprint=t*camera.forward.w/max(abs(dot(normal,-direction)),.2);

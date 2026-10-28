@@ -19,6 +19,12 @@ cubey_add_app_target(
         shaders/material_analytic.frag shaders/material_hybrid.frag
         shaders/sdf_analytic_pruned.frag shaders/sdf_hybrid_pruned.frag
         shaders/material_analytic_pruned.frag shaders/material_hybrid_pruned.frag
+        shaders/investigate_sdf_authored.frag
+        shaders/investigate_sdf_analytic_pruned.frag shaders/investigate_sdf_hybrid_pruned.frag
+        shaders/workload_analytic.comp shaders/workload_hybrid.comp
+        shaders/tight_investigate_sdf_analytic_pruned.frag shaders/tight_investigate_sdf_hybrid_pruned.frag
+        shaders/tight_comparison_analytic_pruned.comp shaders/tight_comparison_hybrid_pruned.comp
+        shaders/tight_workload_analytic.comp shaders/tight_workload_hybrid.comp
         shaders/occluder.vert shaders/occluder.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"

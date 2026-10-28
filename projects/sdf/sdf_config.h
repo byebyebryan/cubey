@@ -16,6 +16,9 @@ struct SdfConfig {
     std::filesystem::path authored_path, export_authored_path;
     std::filesystem::path comparison_input, comparison_output;
     std::filesystem::path comparison_actions;
+    std::string comparison_stage = "off";
+    bool comparison_tight_root = false;
+    std::string comparison_residency = "host";
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -72,6 +75,12 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto csg =
         option("csg-evaluation", "Authored geometry evaluation (study)", config::ValueType::Enum);
     csg.enum_values = {"full", "pruned"};
+    auto stage =
+        option("comparison-stage", "Private Guardian query ablation", config::ValueType::Enum);
+    stage.enum_values = {"off", "primary", "normal", "material", "shadow", "full"};
+    auto residency = option("comparison-residency", "Private GPU-local buffer ablation",
+                            config::ValueType::Enum);
+    residency.enum_values = {"host", "regions", "program", "all"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -150,6 +159,11 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .compose(host::common_run_config_schema(c.common))
         .bind(surface_trace, c.surface_trace)
         .bind(csg, c.csg_evaluation)
+        .bind(stage, c.comparison_stage)
+        .bind(residency, c.comparison_residency)
+        .bind(option("comparison-tight-root", "Private inner-clip entry ablation",
+                     config::ValueType::Bool),
+              c.comparison_tight_root)
         .bind(option("region-axis", "Exact region grid (4, 16 or 64)", config::ValueType::UInt32),
               c.region_axis)
         .bind(option("comparison-donor", "Qualify pinned donor compute core",

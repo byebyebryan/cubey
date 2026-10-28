@@ -214,11 +214,16 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         return;
     }
     Json receipt{{"format", "cubey.sdf.tracing-results"}, {"version", 1}, {"cases", Json::array()}};
+    const bool workload = manifest.value("workload", false);
+    if (workload && (config.csg_evaluation != "pruned" || config.surface_trace == "sampled"))
+        throw std::invalid_argument("workload replay requires pruned source tracing");
     std::vector<vulkan::DescriptorSetBindingConfig> bindings{
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
         {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT},
         {15, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT}};
     std::unique_ptr<Field> field;
+    if (workload)
+        bindings.push_back({18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
     const bool pruned = config.csg_evaluation == "pruned";
     if (pruned) {
         if (config.surface_trace == "sampled")
@@ -234,18 +239,23 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
     }
     vulkan::DescriptorSetBundle descriptors(device, vulkan::DescriptorSetInfo(bindings));
     const std::array layouts{descriptors.layout()};
-    const std::array<VkPushConstantRange, 1> push{{{VK_SHADER_STAGE_COMPUTE_BIT, 0, 8}}};
+    const std::array<VkPushConstantRange, 1> push{
+        {{VK_SHADER_STAGE_COMPUTE_BIT, 0, workload ? 32U : 8U}}};
+    std::string shader =
+        workload ? (config.surface_trace == "analytic" ? "workload_analytic.comp.spv"
+                                                       : "workload_hybrid.comp.spv")
+        : config.surface_trace == "analytic"
+            ? (pruned ? "comparison_analytic_pruned.comp.spv" : "comparison_full.comp.spv")
+        : config.surface_trace == "hybrid"
+            ? (pruned ? "comparison_hybrid_pruned.comp.spv" : "comparison_hybrid.comp.spv")
+            : "comparison_sampled.comp.spv";
+    if (config.comparison_tight_root)
+        shader.insert(0, "tight_");
     render::ComputePipelineResource pipeline(
-        device,
-        {.shader_stage = render::compute_shader_file(
-             std::filesystem::path(CUBEY_SDF_SHADER_DIR) /
-             (config.surface_trace == "analytic"
-                  ? (pruned ? "comparison_analytic_pruned.comp.spv" : "comparison_full.comp.spv")
-              : config.surface_trace == "hybrid"
-                  ? (pruned ? "comparison_hybrid_pruned.comp.spv" : "comparison_hybrid.comp.spv")
-                  : "comparison_sampled.comp.spv")),
-         .descriptor_set_layouts = layouts,
-         .push_constants = push});
+        device, {.shader_stage = render::compute_shader_file(
+                     std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader),
+                 .descriptor_set_layouts = layouts,
+                 .push_constants = push});
     for (const auto& c : manifest.at("cases")) {
         const auto start = std::chrono::steady_clock::now();
         const auto scene = parse_authored_scene(c.at("scene").dump());
@@ -265,30 +275,32 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         // Derived equivalence probes supplement the independent known answers.
         // Fixed grid, every region seam +/- the normal stencil, and leaf centers.
         const auto point = [&](math::Vec3 p) { queries.push_back({{p, 1}, {0, 0, 0, 0}}); };
-        for (int z = 0; z <= 8; ++z)
-            for (int y = 0; y <= 8; ++y)
-                for (int x = 0; x <= 8; ++x)
-                    point(math::Vec3{x, y, z} / 8.F - .5F);
-        constexpr float delta = 1.F / (256 * 7 * 16);
-        for (unsigned i = 0; i <= config.region_axis; ++i)
-            for (int a = 0; a < 3; ++a)
-                for (float offset : {-delta, 0.F, delta}) {
-                    math::Vec3 p{0};
-                    p[a] = static_cast<float>(i) / static_cast<float>(config.region_axis) - .5F +
-                           offset;
+        if (!workload) {
+            for (int z = 0; z <= 8; ++z)
+                for (int y = 0; y <= 8; ++y)
+                    for (int x = 0; x <= 8; ++x)
+                        point(math::Vec3{x, y, z} / 8.F - .5F);
+            constexpr float delta = 1.F / (256 * 7 * 16);
+            for (unsigned i = 0; i <= config.region_axis; ++i)
+                for (int a = 0; a < 3; ++a)
+                    for (float offset : {-delta, 0.F, delta}) {
+                        math::Vec3 p{0};
+                        p[a] = static_cast<float>(i) / static_cast<float>(config.region_axis) -
+                               .5F + offset;
+                        point(p);
+                    }
+            for (const auto& n : scene.program)
+                if (n.center_code.w < 10) {
+                    const auto p = math::Vec3(n.center_code);
                     point(p);
+                    for (int a = 0; a < 3; ++a) {
+                        auto d = math::Vec3{0};
+                        d[a] = delta;
+                        point(p - d);
+                        point(p + d);
+                    }
                 }
-        for (const auto& n : scene.program)
-            if (n.center_code.w < 10) {
-                const auto p = math::Vec3(n.center_code);
-                point(p);
-                for (int a = 0; a < 3; ++a) {
-                    auto d = math::Vec3{0};
-                    d[a] = delta;
-                    point(p - d);
-                    point(p + d);
-                }
-            }
+        }
         if (queries.empty() || queries.size() > 65536)
             throw std::invalid_argument("study query budget");
         auto program = authored_program_bytes(&scene);
@@ -302,6 +314,12 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
             device, vulkan::device_local_buffer_config(queries.size() * sizeof(Result),
                                                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
+        std::unique_ptr<vulkan::Buffer> work_output;
+        if (workload)
+            work_output = std::make_unique<vulkan::Buffer>(
+                device, vulkan::device_local_buffer_config(
+                            queries.size() * 52 * sizeof(std::uint32_t),
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
         vulkan::DescriptorWriteBatch writes;
         if (regions) {
             writes.storage_buffer(descriptors.set(), 16, regions->cells->handle(),
@@ -318,6 +336,9 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         writes.storage_buffer(descriptors.set(), 2, query_buffer.handle(), query_buffer.size());
         writes.storage_buffer(descriptors.set(), 3, program_buffer.handle(), program_buffer.size());
         writes.storage_buffer(descriptors.set(), 15, output.handle(), output.size());
+        if (work_output)
+            writes.storage_buffer(descriptors.set(), 18, work_output->handle(),
+                                  work_output->size());
         writes.update(device);
         static_cast<void>(gpu.submit_and_wait(
             {.label = "sdf study queries", .work = [&](vulkan::GpuOwnerContext& owner) {
@@ -326,15 +347,54 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
                  r.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
                  r.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
                                        descriptors.set());
-                 r.push_constants(
-                     pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                     std::array<std::uint32_t, 2>{static_cast<std::uint32_t>(queries.size()), 64});
+                 if (workload) {
+                     struct WorkPush {
+                         std::array<std::uint32_t, 4> settings;
+                         math::Vec4 sunlight;
+                     };
+                     static_assert(sizeof(WorkPush) == 32);
+                     r.push_constants(
+                         pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                         WorkPush{{static_cast<std::uint32_t>(queries.size()), 64, 0, 0},
+                                  {glm::normalize(vec(manifest.at("sunlight"))), 0}});
+                 } else
+                     r.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                      std::array<std::uint32_t, 2>{
+                                          static_cast<std::uint32_t>(queries.size()), 64});
                  r.dispatch(static_cast<std::uint32_t>((queries.size() + 63) / 64), 1, 1);
                  commands.submit_and_wait();
              }}));
         const auto bytes = gpu.readback_buffer(output.handle(), output.size(), "study results");
+        Json workload_files;
+        if (work_output) {
+            const auto stats = gpu.readback_buffer(work_output->handle(), work_output->size(),
+                                                   "workload counters");
+            const auto prefix =
+                config.comparison_output.parent_path() /
+                (config.comparison_output.stem().string() + "." + c.at("name").get<std::string>());
+            const auto rays_path = prefix.string() + ".rays.bin";
+            const auto stats_path = prefix.string() + ".work.bin";
+            std::ofstream rays_file(rays_path, std::ios::binary),
+                stats_file(stats_path, std::ios::binary);
+            if (!rays_file || !stats_file)
+                throw std::runtime_error("cannot write workload payload");
+            rays_file.write(reinterpret_cast<const char*>(bytes.data()),
+                            static_cast<std::streamsize>(bytes.size()));
+            stats_file.write(reinterpret_cast<const char*>(stats.data()),
+                             static_cast<std::streamsize>(stats.size()));
+            if (!rays_file || !stats_file)
+                throw std::runtime_error("incomplete workload payload");
+            workload_files = {{"rays_file", rays_path},
+                              {"stats_file", stats_path},
+                              {"query_count", queries.size()},
+                              {"rays_stride", sizeof(Result)},
+                              {"stats_stride", 52 * sizeof(std::uint32_t)},
+                              {"layout",
+                               "little-endian u32: totals[3][4], bins_low[3][4], bins_high[3][4], "
+                               "walk[3][4], hit[4]; phases primary, normal, shadow"}};
+        }
         Json results = Json::array();
-        for (std::size_t i = 0; i < declared_queries; ++i) {
+        for (std::size_t i = 0; !workload && i < declared_queries; ++i) {
             Result r;
             std::memcpy(&r, bytes.data() + i * sizeof(Result), sizeof(Result));
             results.push_back(queries[i].origin.w > .5F
@@ -377,6 +437,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
              {"compile_upload_query_readback_ms",
               std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
                   .count()}});
+        if (workload)
+            receipt["cases"].back()["workload"] = workload_files;
     }
     std::ofstream output(config.comparison_output);
     if (!output)
@@ -389,6 +451,10 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
 int run_tracing_comparison(const SdfConfig& config) {
     if (!config.common.headless || config.comparison_output.empty())
         throw std::invalid_argument("tracing study requires --headless and --comparison-output");
+    if (config.comparison_stage != "off" || config.comparison_residency != "host" ||
+        (config.comparison_tight_root && config.csg_evaluation != "pruned"))
+        throw std::invalid_argument(
+            "query studies use no native comparison stage; tight root requires pruned evaluation");
     if (config.csg_evaluation == "pruned" &&
         (config.surface_trace == "sampled" ||
          (config.region_axis != 4 && config.region_axis != 16 && config.region_axis != 64)))

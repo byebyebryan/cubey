@@ -61,6 +61,22 @@ class App {
                 std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
         if (authored_)
             validate_authored_motion(*authored_);
+        if (config_.comparison_residency != "host" &&
+            (config_.comparison_stage == "off" || config_.surface_trace == "sampled"))
+            throw std::invalid_argument("residency ablation requires a source comparison stage");
+        if (config_.comparison_tight_root &&
+            (config_.comparison_stage == "off" || config_.surface_trace == "sampled"))
+            throw std::invalid_argument("tight-root rendering requires a source comparison stage");
+        if (config_.comparison_stage != "off" &&
+            (!config_.common.headless || !authored_ || config_.timeline.motion != "static" ||
+             config_.lighting != "atmosphere" || config_.debug != 0 || config_.ao ||
+             config_.ground || config_.clouds || config_.occluder ||
+             !config_.comparison_actions.empty() ||
+             (config_.surface_trace != "sampled" && config_.csg_evaluation != "pruned")))
+            throw std::invalid_argument(
+                "comparison stages require static authored headless atmosphere rendering, "
+                "debug 0, no AO/ground/clouds/occluder or scripted actions; source stages "
+                "require pruned evaluation");
         if (config_.csg_evaluation == "pruned" &&
             (!authored_ || config_.surface_trace == "sampled" ||
              (config_.region_axis != 4 && config_.region_axis != 16 && config_.region_axis != 64)))
@@ -380,8 +396,10 @@ class App {
                                           ? authored_history_scene(*authored_, timeline_.prefix)
                                           : *authored_;
                 if (config_.csg_evaluation == "pruned") {
-                    regions_ = std::make_unique<GpuRegionPrograms>(device, *displayed_authored_,
-                                                                   config_.region_axis);
+                    regions_ = std::make_unique<GpuRegionPrograms>(
+                        device, *displayed_authored_, config_.region_axis, region_reference_limit,
+                        config_.comparison_residency == "regions" ||
+                            config_.comparison_residency == "all");
                     ++region_builds_;
                 }
                 if (field_)
@@ -482,8 +500,10 @@ class App {
             std::unique_ptr<GpuRegionPrograms> next_regions;
             if (config_.csg_evaluation == "pruned" &&
                 (!regions_ || regions_->geometry_hash != authored_geometry_hash(next)))
-                next_regions =
-                    std::make_unique<GpuRegionPrograms>(device, next, config_.region_axis);
+                next_regions = std::make_unique<GpuRegionPrograms>(
+                    device, next, config_.region_axis, region_reference_limit,
+                    config_.comparison_residency == "regions" ||
+                        config_.comparison_residency == "all");
             if (study_fault_ == "region" || study_fault_ == "field")
                 throw CapacityExceeded("injected study failure before " + study_fault_ +
                                        " publication");

@@ -205,7 +205,8 @@ float region_distance(math::Vec3 p, const AuthoredScene& scene, const RegionProg
                : authored_distance(p, scene);
 }
 GpuRegionPrograms::GpuRegionPrograms(vulkan::Device& device, const AuthoredScene& scene,
-                                     std::uint32_t dimension, std::size_t limit) {
+                                     std::uint32_t dimension, std::size_t limit,
+                                     bool device_local) {
     const auto start = std::chrono::steady_clock::now();
     const auto cpu = build_region_programs(scene, dimension, limit);
     axis = cpu.axis;
@@ -218,8 +219,10 @@ GpuRegionPrograms::GpuRegionPrograms(vulkan::Device& device, const AuthoredScene
             device,
             vulkan::BufferConfig{.size = size,
                                  .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                                 .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+                                 .memory_properties =
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+                                     (device_local ? VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT : 0U)});
     };
     cells = allocate(16 + cpu.headers.size() * sizeof(RegionPrograms::Header));
     references = allocate(std::max<std::size_t>(4, cpu.references.size() * 4));

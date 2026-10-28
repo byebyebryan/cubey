@@ -25,7 +25,8 @@ build_region_programs(const AuthoredScene& scene, std::uint32_t axis,
                                     const RegionPrograms& regions);
 struct GpuRegionPrograms {
     GpuRegionPrograms(vulkan::Device& device, const AuthoredScene& scene, std::uint32_t axis,
-                      std::size_t reference_limit = region_reference_limit);
+                      std::size_t reference_limit = region_reference_limit,
+                      bool device_local = false);
     std::unique_ptr<vulkan::Buffer> cells, references;
     std::uint64_t geometry_hash = 0, allocation_bytes = 0, scratch_peak_bytes = 0;
     std::uint32_t axis = 0, fallback_cells = 0;

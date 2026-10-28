@@ -19,9 +19,17 @@
 float hybridBound(vec3 p,vec3 direction) {
     ivec3 cell;uint level;
     uint header=lookup(p,direction,cell,level);
+#ifdef SDF_WORKLOAD
+    workloadWalk[workloadPhase].y++;
+#endif
     // Uniform-cell labels are not an exact distance cache. Evaluate the source
     // there, including hidden features, rather than treating labels as samples.
-    if((header&SUBDIVIDED)==0u) return 0.0;
+    if((header&SUBDIVIDED)==0u) {
+#ifdef SDF_WORKLOAD
+        workloadWalk[workloadPhase].w++;
+#endif
+        return 0.0;
+    }
     uint pointer=header&POINTER;
     float g=sampleBrick(p,cell,pointer);
     // A local brick of a 1-Lipschitz field spans at most sqrt(3)/256.
@@ -31,7 +39,13 @@ float hybridBound(vec3 p,vec3 direction) {
     float E=sqrt(3.0)*.5/(256.0*7.0)+cornerBound/1024.0+max(1e-5,uintBitsToFloat(authoredHeader.w));
     vec3 low=vec3(cell)/256.0-.5;
     vec2 interval=sampledRayBox(p,direction,low,low+1.0/256.0);
+#ifdef SDF_WORKLOAD
+    float bound=min(max(abs(g)-E,0.0),max(interval.y,0.0));
+    if(bound>1.0/(256.0*7.0*32.0)) workloadWalk[workloadPhase].z++;
+    return bound;
+#else
     return min(max(abs(g)-E,0.0),max(interval.y,0.0));
+#endif
 }
 #define SDF_STEP_BOUND hybridBound
 #endif
