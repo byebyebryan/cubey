@@ -49,6 +49,9 @@ the architecture and project guides remain current authority.
   staged root/region bound experiments and deferred alternatives.
 - [SDF acceleration loop progress](sdf-acceleration-loop-progress.md): bounded
   E0–E3 implementation, qualification and measurement checkpoints.
+- [SDF acceleration loop results](sdf-acceleration-loop-results.md): completed
+  empty-space experiments, memory/edit gains, measured frame limits and retained
+  native boundary behavior; the sampled default is unchanged.
 - [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
   direction and source/media inventory at intake; the implementation and release
   outcome is recorded in the progress record and current [site guide](../../site/README.md).

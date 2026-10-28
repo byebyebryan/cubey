@@ -1,0 +1,13 @@
+{
+  "command": [
+    "ctest",
+    "--test-dir",
+    "build/release",
+    "-R",
+    "^sdf_.*tests$|^documentation_(hygiene|media|rules)$",
+    "--output-on-failure"
+  ],
+  "returncode": 0,
+  "log": "outputs/sdf/acceleration-loop-20261028/final-checks.log",
+  "scope": "Seven SDF CPU tests and three documentation checks. Frozen GPU fixture and native gates are separate receipts."
+}

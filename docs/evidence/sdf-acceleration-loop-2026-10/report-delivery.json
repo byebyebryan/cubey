@@ -1,0 +1,24 @@
+{
+  "url": "http://starship:8787/reports/97230212e85f8861e2663f916c7d17c8dcccf618a9684d35d2b10e1856bb7720/",
+  "project": "cubey",
+  "report_id": "97230212e85f8861e2663f916c7d17c8dcccf618a9684d35d2b10e1856bb7720",
+  "file_count": 59,
+  "byte_count": 2213672,
+  "http_delivery": true,
+  "all_bundle_file_hashes_verified": true,
+  "filter_combinations": 18,
+  "invalid_numbers": false,
+  "console_errors": 0,
+  "broken_images": 0,
+  "desktop_width": 1600,
+  "mobile_viewport": [
+    390,
+    844
+  ],
+  "mobile_document_width": 375,
+  "viewport_reset": true,
+  "screenshots": [
+    "outputs/sdf/acceleration-loop-20261028/report/desktop.png",
+    "outputs/sdf/acceleration-loop-20261028/report/mobile.png"
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "scope": "Conservative requested geometry payload bookkeeping envelope, not allocator-resident or whole-process peak. CPU allocations and staging counted explicitly; original Field allocation metric already includes paired storage.",
+  "formula": "F + 5R + S + 6 * (16 + 2048 * 64)",
+  "rows": [
+    {
+      "scene": "guardian",
+      "name": "A64",
+      "field_bytes": 0.0,
+      "region_bytes": 56775016.0,
+      "region_gpu_publication_overlap_bytes": 113550032.0,
+      "region_cpu_builder_scratch_bytes": 71166696.0,
+      "conservative_requested_payload_envelope_bytes": 355828304.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "guardian",
+      "name": "H64",
+      "field_bytes": 912997552.0,
+      "region_bytes": 56775016.0,
+      "region_gpu_publication_overlap_bytes": 113550032.0,
+      "region_cpu_builder_scratch_bytes": 71166696.0,
+      "conservative_requested_payload_envelope_bytes": 1268825856.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "guardian",
+      "name": "H64-unclamped",
+      "field_bytes": 912997552.0,
+      "region_bytes": 56775016.0,
+      "region_gpu_publication_overlap_bytes": 113550032.0,
+      "region_cpu_builder_scratch_bytes": 71166696.0,
+      "conservative_requested_payload_envelope_bytes": 1268825856.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "guardian",
+      "name": "A64-root",
+      "field_bytes": 0.0,
+      "region_bytes": 56775016.0,
+      "region_gpu_publication_overlap_bytes": 113550032.0,
+      "region_cpu_builder_scratch_bytes": 71166696.0,
+      "conservative_requested_payload_envelope_bytes": 355828304.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "guardian",
+      "name": "A64-far",
+      "field_bytes": 0.0,
+      "region_bytes": 6443520.0,
+      "region_gpu_publication_overlap_bytes": 12887040.0,
+      "region_cpu_builder_scratch_bytes": 8197080.0,
+      "conservative_requested_payload_envelope_bytes": 41201208.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "guardian",
+      "name": "A64-root-far",
+      "field_bytes": 0.0,
+      "region_bytes": 6443520.0,
+      "region_gpu_publication_overlap_bytes": 12887040.0,
+      "region_cpu_builder_scratch_bytes": 8197080.0,
+      "conservative_requested_payload_envelope_bytes": 41201208.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "robot",
+      "name": "A64",
+      "field_bytes": 0.0,
+      "region_bytes": 11349688.0,
+      "region_gpu_publication_overlap_bytes": 22699376.0,
+      "region_cpu_builder_scratch_bytes": 16237512.0,
+      "conservative_requested_payload_envelope_bytes": 73772480.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "robot",
+      "name": "H64",
+      "field_bytes": 912997552.0,
+      "region_bytes": 11349688.0,
+      "region_gpu_publication_overlap_bytes": 22699376.0,
+      "region_cpu_builder_scratch_bytes": 16237512.0,
+      "conservative_requested_payload_envelope_bytes": 986770032.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "robot",
+      "name": "H64-unclamped",
+      "field_bytes": 912997552.0,
+      "region_bytes": 11349688.0,
+      "region_gpu_publication_overlap_bytes": 22699376.0,
+      "region_cpu_builder_scratch_bytes": 16237512.0,
+      "conservative_requested_payload_envelope_bytes": 986770032.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "robot",
+      "name": "A64-root",
+      "field_bytes": 0.0,
+      "region_bytes": 11349688.0,
+      "region_gpu_publication_overlap_bytes": 22699376.0,
+      "region_cpu_builder_scratch_bytes": 16237512.0,
+      "conservative_requested_payload_envelope_bytes": 73772480.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "robot",
+      "name": "A64-far",
+      "field_bytes": 0.0,
+      "region_bytes": 4422660.0,
+      "region_gpu_publication_overlap_bytes": 8845320.0,
+      "region_cpu_builder_scratch_bytes": 4805816.0,
+      "conservative_requested_payload_envelope_bytes": 27705644.0,
+      "within_2_GiB": true
+    },
+    {
+      "scene": "robot",
+      "name": "A64-root-far",
+      "field_bytes": 0.0,
+      "region_bytes": 4422660.0,
+      "region_gpu_publication_overlap_bytes": 8845320.0,
+      "region_cpu_builder_scratch_bytes": 4805816.0,
+      "conservative_requested_payload_envelope_bytes": 27705644.0,
+      "within_2_GiB": true
+    }
+  ]
+}

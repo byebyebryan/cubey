@@ -4,6 +4,11 @@ Date: 2026-10-28. Baseline: `b4b9c85e3a7c35438a7375c249c83228540928e8`.
 Status: researched proposal for a bounded implementation loop; no new renderer
 implementation, adoption or GPU benchmark is part of this search pass.
 
+The subsequent E0–E3 loop is complete; see the
+[measured results](sdf-acceleration-loop-results.md). The proposal below is
+retained as the original experiment contract, not an instruction to continue
+automatically into E4 or E5.
+
 ## Recommendation in plain language
 
 Keep the authored CSG and undo history. Try three small changes before choosing

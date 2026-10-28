@@ -1,0 +1,365 @@
+{
+  "scope": "One isolated high-contrast Robot pixel (145,62) changes material owner and native normal near a source CSG/material boundary. The fixed source material and normal functions are unchanged. The separate generated camera-query ray differs by 5.960464477539063e-06 in hit depth and has matching normals; it does not reproduce the native normal change. Dense/sparse generated-ray qualification is separate from native pixel identity. This remains a visual boundary limitation; no default adoption.",
+  "diagnostics": [
+    {
+      "name": "A64",
+      "debug": 1,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "control",
+        "--debug",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-debug1.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        188,
+        188,
+        255
+      ]
+    },
+    {
+      "name": "A64",
+      "debug": 5,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "control",
+        "--debug",
+        "5",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-debug5.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        167,
+        246,
+        173
+      ]
+    },
+    {
+      "name": "A64",
+      "debug": 6,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "control",
+        "--debug",
+        "6",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-debug6.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        246,
+        168,
+        59
+      ]
+    },
+    {
+      "name": "A64-far",
+      "debug": 1,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "far",
+        "--debug",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-far-debug1.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        133,
+        109,
+        224
+      ]
+    },
+    {
+      "name": "A64-far",
+      "debug": 5,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "far",
+        "--debug",
+        "5",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-far-debug5.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        186,
+        221,
+        206
+      ]
+    },
+    {
+      "name": "A64-far",
+      "debug": 6,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "far",
+        "--debug",
+        "6",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-far-debug6.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        37,
+        51,
+        59
+      ]
+    },
+    {
+      "name": "A64-root-far",
+      "debug": 1,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--debug",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-root-far-debug1.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        128,
+        104,
+        217
+      ]
+    },
+    {
+      "name": "A64-root-far",
+      "debug": 5,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--debug",
+        "5",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-root-far-debug5.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        186,
+        221,
+        206
+      ]
+    },
+    {
+      "name": "A64-root-far",
+      "debug": 6,
+      "command": [
+        "build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--debug",
+        "6",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/acceleration-loop-20261028/native/robot-boundary-A64-root-far-debug6.png"
+      ],
+      "pixel": [
+        145,
+        62
+      ],
+      "rgb": [
+        37,
+        51,
+        59
+      ]
+    }
+  ]
+}
