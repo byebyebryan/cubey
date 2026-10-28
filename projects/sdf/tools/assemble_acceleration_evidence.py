@@ -71,6 +71,12 @@ def main():
         shutil.copy2(source,out/'optics'/source.name)
     for key,path in inputs.items():
         shutil.copy2(raw/path,out/(key+'.json'))
+    for name in ('memory-envelope.json','cpu-fixture-correction.txt'):
+        shutil.copy2(raw/name,out/name)
+    shutil.copy2(raw/'native/material-boundary.json',out/'material-boundary.json')
+    (out/'boundary').mkdir()
+    for source in (raw/'native').glob('robot-boundary-*.png'):
+        shutil.copy2(source,out/'boundary'/source.name)
     for name in ('A64','H64','H64-unclamped','A64-root','A64-far','A64-root-far'):
         shutil.copy2(raw/'qualification-final'/(name+'-actions.json'),out/(name+'-semantic-actions.json'))
     baseline=json.loads(Path('outputs/sdf/guardian-investigation-20261028/baseline.json').read_text())

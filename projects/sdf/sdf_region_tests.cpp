@@ -56,8 +56,13 @@ int main(int argc, char** argv) {
         for (unsigned z = 0; z < 16; ++z)
             for (unsigned y = 0; y < 16; ++y)
                 for (unsigned x = 0; x < 16; ++x)
-                    for (float offset : {.00001F, .5F, .99999F})
-                        bound_check((cubey::math::Vec3{x, y, z} + offset) / 16.F - .5F);
+                    for (float dx : {.00001F, .5F, .99999F})
+                        for (float dy : {.00001F, .5F, .99999F})
+                            for (float dz : {.00001F, .5F, .99999F})
+                                bound_check(
+                                    (cubey::math::Vec3{x, y, z} + cubey::math::Vec3{dx, dy, dz}) /
+                                        16.F -
+                                    .5F);
         for (unsigned axis : {4U, 16U, 64U}) {
             if (axis == 64 && c.at("name") != "nested-smooth-left" &&
                 c.at("name") != "smooth-subtract-0.1" && c.at("name") != "subgrid-cavity")
