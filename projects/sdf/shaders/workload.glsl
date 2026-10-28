@@ -6,6 +6,9 @@ uvec4 workloadTotals[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
 uvec4 workloadLow[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
 uvec4 workloadHigh[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
 uvec4 workloadWalk[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
+#ifdef SDF_ACCELERATION
+uvec4 workloadAid[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
+#endif
 void workloadProgram(uint count,bool fallback) {
     workloadTotals[workloadPhase].x++;
     workloadTotals[workloadPhase].y+=count;

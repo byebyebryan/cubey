@@ -7,7 +7,7 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp
+    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp
     SHADERS shaders/material_study.frag shaders/sdf.vert shaders/sdf.frag shaders/sdf_authored.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
         ${CUBEY_SDF_CLOUD_SHADERS}
         shaders/authored_filter.comp shaders/authored_bricks.comp
@@ -33,6 +33,22 @@ cubey_add_app_target(
         shaders/accel_comparison_hybrid_pruned.comp
         shaders/accel_workload_analytic.comp
         shaders/accel_workload_hybrid.comp
+        shaders/unclamped_sdf_hybrid_pruned.frag
+        shaders/unclamped_material_hybrid_pruned.frag
+        shaders/unclamped_comparison_hybrid_pruned.comp
+        shaders/unclamped_workload_hybrid.comp
+        shaders/root_sdf_analytic_pruned.frag
+        shaders/root_material_analytic_pruned.frag
+        shaders/root_comparison_analytic_pruned.comp
+        shaders/root_workload_analytic.comp
+        shaders/far_sdf_analytic_pruned.frag
+        shaders/far_material_analytic_pruned.frag
+        shaders/far_comparison_analytic_pruned.comp
+        shaders/far_workload_analytic.comp
+        shaders/root_far_sdf_analytic_pruned.frag
+        shaders/root_far_material_analytic_pruned.frag
+        shaders/root_far_comparison_analytic_pruned.comp
+        shaders/root_far_workload_analytic.comp
         shaders/occluder.vert shaders/occluder.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -44,7 +60,7 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
-    add_executable(cubey_project_sdf_region_tests sdf_regions.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_region_tests.cpp)
+    add_executable(cubey_project_sdf_region_tests sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_region_tests.cpp)
     target_link_libraries(cubey_project_sdf_region_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_region_tests COMMAND cubey_project_sdf_region_tests "${CMAKE_CURRENT_SOURCE_DIR}/comparison/fixtures.json")
     add_executable(cubey_project_sdf_recipe_tests sdf_recipe.cpp sdf_recipe_tests.cpp sdf_timeline.cpp)

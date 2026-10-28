@@ -42,8 +42,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     };
     if (!acceleration_uploads_)
         scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction),
-                                 config.comparison_residency == "program" ||
-                                     config.comparison_residency == "all");
+                                     config.comparison_residency == "program" ||
+                                         config.comparison_residency == "all");
     if (config.comparison_stage != "off") {
         const auto memory = [&](const char* name, const vulkan::Buffer& buffer, bool local) {
             VkMemoryRequirements requirements;
@@ -92,6 +92,27 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     }
     create_environment(device, gpu, config, slots);
     update_authored(device, scene, regions);
+    if (acceleration_uploads_) {
+        const auto memory = [&](const char* name, const vulkan::Buffer& buffer) {
+            VkMemoryRequirements requirements;
+            vkGetBufferMemoryRequirements(device.handle(), buffer.handle(), &requirements);
+            const auto type = device.find_memory_type(requirements.memoryTypeBits,
+                                                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            VkPhysicalDeviceMemoryProperties properties;
+            vkGetPhysicalDeviceMemoryProperties(device.physical_device(), &properties);
+            std::cout << "sdf: acceleration memory " << name << " type=" << type
+                      << " heap=" << properties.memoryTypes[type].heapIndex
+                      << " flags=" << properties.memoryTypes[type].propertyFlags << '\n';
+        };
+        memory("program", *scene_program_);
+        memory("region-cells", *regions->cells);
+        memory("region-refs", *regions->references);
+        std::cout << "sdf: acceleration root low=" << regions->root.low.x << ','
+                  << regions->root.low.y << ',' << regions->root.low.z
+                  << " high=" << regions->root.high.x << ',' << regions->root.high.y << ','
+                  << regions->root.high.z << " empty=" << regions->root.empty
+                  << " far_cells=" << regions->far_cells << '\n';
+    }
     for (std::uint32_t i = 0; i < slots; ++i)
         preview_buffers_.push_back(host_buffer(authored_max_leaves * sizeof(SceneInstruction)));
     std::vector<vulkan::DescriptorSetBindingConfig> bindings{
@@ -176,7 +197,10 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     if (config.comparison_tight_root)
         fragment.insert(0, "tight_");
     if (config.acceleration_variant != "off")
-        fragment.insert(0, "accel_");
+        fragment.insert(0, config.acceleration_variant == "control" ? "accel_"
+                           : config.acceleration_variant == "root-far"
+                               ? "root_far_"
+                               : config.acceleration_variant + "_");
     const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
                             render::fragment_shader_file(path / fragment)};
     const std::array layouts{descriptors_->layout()};
@@ -275,7 +299,8 @@ void Renderer::destroy() {
     regions_ = nullptr;
 }
 std::unique_ptr<vulkan::Buffer> Renderer::prepare_program(const AuthoredScene* scene) {
-    if (!acceleration_uploads_) return {};
+    if (!acceleration_uploads_)
+        return {};
     auto bytes = authored_program_bytes(scene);
     if (scene) {
         const float guard = authored_evaluation_guard(*scene);
@@ -351,6 +376,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                static_cast<double>(regions_ ? regions_->allocation_bytes : 0));
         profile->record_metric(frame_index, "sdf.resources", "region_references",
                                static_cast<double>(regions_ ? regions_->reference_count : 0));
+        profile->record_metric(frame_index, "sdf.resources", "region_far_cells",
+                               regions_ ? regions_->far_cells : 0);
         profile->record_metric(frame_index, "sdf.resources", "region_fallback_cells",
                                regions_ ? regions_->fallback_cells : 0);
         profile->record_metric(frame_index, "sdf.resources", "region_cpu_scratch_peak_bytes",

@@ -7,7 +7,11 @@ layout(push_constant) uniform Params {uvec4 settings;vec4 sunlight;} pc;
 layout(local_size_x=64) in;
 struct Query {vec4 origin;vec4 direction;};
 struct Result {vec4 hit;vec4 normal;};
-struct WorkResult {uvec4 totals[3];uvec4 low[3];uvec4 high[3];uvec4 walk[3];uvec4 hit;};
+struct WorkResult {uvec4 totals[3];uvec4 low[3];uvec4 high[3];uvec4 walk[3];uvec4 hit;
+#ifdef SDF_ACCELERATION
+    uvec4 aid[3];
+#endif
+};
 layout(std430,set=0,binding=2) readonly buffer Queries {Query queries[];};
 layout(std430,set=0,binding=15) writeonly buffer Results {Result results[];};
 layout(std430,set=0,binding=18) writeonly buffer WorkResults {WorkResult workResults[];};
@@ -30,6 +34,9 @@ void main() {
     for(uint phase=0u;phase<3u;++phase) {
         w.totals[phase]=workloadTotals[phase];w.low[phase]=workloadLow[phase];
         w.high[phase]=workloadHigh[phase];w.walk[phase]=workloadWalk[phase];
+#ifdef SDF_ACCELERATION
+        w.aid[phase]=workloadAid[phase];
+#endif
     }
     w.hit=uvec4(uint(h.status),surfaceCount,shadowStatus,floatBitsToUint(workloadBoundaryExcess));workResults[i]=w;
 }

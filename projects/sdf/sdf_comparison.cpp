@@ -215,6 +215,7 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
     }
     Json receipt{{"format", "cubey.sdf.tracing-results"}, {"version", 1}, {"cases", Json::array()}};
     const bool workload = manifest.value("workload", false);
+    const unsigned work_stride = config.acceleration_variant != "off" ? 64U : 52U;
     if (workload && (config.csg_evaluation != "pruned" || config.surface_trace == "sampled"))
         throw std::invalid_argument("workload replay requires pruned source tracing");
     std::vector<vulkan::DescriptorSetBindingConfig> bindings{
@@ -252,7 +253,10 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
     if (config.comparison_tight_root)
         shader.insert(0, "tight_");
     if (config.acceleration_variant != "off")
-        shader.insert(0, "accel_");
+        shader.insert(0, config.acceleration_variant == "control" ? "accel_"
+                         : config.acceleration_variant == "root-far"
+                             ? "root_far_"
+                             : config.acceleration_variant + "_");
     render::ComputePipelineResource pipeline(
         device, {.shader_stage = render::compute_shader_file(
                      std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader),
@@ -263,9 +267,9 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         const auto scene = parse_authored_scene(c.at("scene").dump());
         std::unique_ptr<GpuRegionPrograms> regions;
         if (pruned)
-            regions = std::make_unique<GpuRegionPrograms>(device, scene, config.region_axis,
-                region_reference_limit, false,
-                config.acceleration_variant != "off" ? &gpu : nullptr);
+            regions = std::make_unique<GpuRegionPrograms>(
+                device, scene, config.region_axis, region_reference_limit, false,
+                config.acceleration_variant != "off" ? &gpu : nullptr, config.acceleration_variant);
         if (field)
             field->build(scene);
         std::vector<Query> queries;
@@ -322,7 +326,7 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         if (workload)
             work_output = std::make_unique<vulkan::Buffer>(
                 device, vulkan::device_local_buffer_config(
-                            queries.size() * 52 * sizeof(std::uint32_t),
+                            queries.size() * work_stride * sizeof(std::uint32_t),
                             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT));
         vulkan::DescriptorWriteBatch writes;
         if (regions) {
@@ -392,7 +396,7 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
                               {"stats_file", stats_path},
                               {"query_count", queries.size()},
                               {"rays_stride", sizeof(Result)},
-                              {"stats_stride", 52 * sizeof(std::uint32_t)},
+                              {"stats_stride", work_stride * sizeof(std::uint32_t)},
                               {"layout",
                                "little-endian u32: totals[3][4], bins_low[3][4], bins_high[3][4], "
                                "walk[3][4], hit[4]; phases primary, normal, shadow"}};
@@ -436,6 +440,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
              {"region_bytes", regions ? regions->allocation_bytes : 0},
              {"region_references", regions ? regions->reference_count : 0},
              {"region_fallback_cells", regions ? regions->fallback_cells : 0},
+             {"region_far_cells", regions ? regions->far_cells : 0},
+             {"acceleration_variant", config.acceleration_variant},
              {"region_build_upload_ms", regions ? regions->build_upload_ms : 0},
              {"field_build_ms", field ? field->stats().build_ms : 0},
              {"compile_upload_query_readback_ms",
@@ -453,9 +459,14 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
 }
 } // namespace
 int run_tracing_comparison(const SdfConfig& config) {
+    if ((config.acceleration_variant == "unclamped" && config.surface_trace != "hybrid") ||
+        (config.acceleration_variant != "off" && config.acceleration_variant != "control" &&
+         config.acceleration_variant != "unclamped" && config.surface_trace != "analytic"))
+        throw std::invalid_argument("acceleration variant does not match its source mode");
     if (config.acceleration_variant != "off" &&
         (config.csg_evaluation != "pruned" || config.region_axis != 64 ||
-         config.surface_trace == "sampled" || config.comparison_tight_root || config.comparison_donor))
+         config.surface_trace == "sampled" || config.comparison_tight_root ||
+         config.comparison_donor))
         throw std::invalid_argument("acceleration queries require pruned source at axis 64");
     if (!config.common.headless || config.comparison_output.empty())
         throw std::invalid_argument("tracing study requires --headless and --comparison-output");

@@ -82,9 +82,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto residency = option("comparison-residency", "Private GPU-local buffer ablation",
                             config::ValueType::Enum);
     residency.enum_values = {"host", "regions", "program", "all"};
-    auto acceleration = option("acceleration-variant", "Private acceleration experiment",
-                               config::ValueType::Enum);
-    acceleration.enum_values = {"off", "control"};
+    auto acceleration =
+        option("acceleration-variant", "Private acceleration experiment", config::ValueType::Enum);
+    acceleration.enum_values = {"off", "control", "unclamped", "root", "far", "root-far"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",

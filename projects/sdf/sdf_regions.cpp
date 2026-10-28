@@ -1,9 +1,10 @@
 #include "sdf_regions.h"
-#include <cubey/engine/project_gpu_services.h>
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <chrono>
 #include <cmath>
+#include <cubey/engine/project_gpu_services.h>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
@@ -76,7 +77,7 @@ float authored_evaluation_guard(const AuthoredScene& scene) {
     return size ? stack[0] + 8 * u * magnitude : 0;
 }
 RegionPrograms build_region_programs(const AuthoredScene& scene, std::uint32_t axis,
-                                     std::size_t limit) {
+                                     std::size_t limit, bool far_bounds) {
     if (axis != 4 && axis != 16 && axis != 64)
         throw std::invalid_argument("region axis must be 4, 16 or 64");
     const auto start = std::chrono::steady_clock::now();
@@ -114,11 +115,17 @@ RegionPrograms build_region_programs(const AuthoredScene& scene, std::uint32_t a
                     const auto parent_index =
                         dim == 4 ? 0 : ((z / 4 * pdim + y / 4) * pdim + x / 4);
                     const auto h = parent.headers[parent_index];
+                    if (h.kind == 1) {
+                        // Inherit the established parent certificate unchanged.
+                        next.headers[index] = h;
+                        ++next.far_cells;
+                        continue;
+                    }
                     const auto refs = h.count ? std::span<const std::uint32_t>(parent.references)
                                                     .subspan(h.offset, h.count)
                                               : std::span<const std::uint32_t>{};
                     if (refs.empty()) {
-                        next.headers[index] = {0, 0};
+                        next.headers[index] = {0, 0, 2, 0};
                         ++next.fallback_cells;
                         continue;
                     }
@@ -149,6 +156,20 @@ RegionPrograms build_region_programs(const AuthoredScene& scene, std::uint32_t a
                         stack.at(size++) = static_cast<int>(entries.size());
                         entries.push_back(e);
                     }
+                    if (far_bounds) {
+                        // entries.back() omits the final workspace clip. Include it
+                        // before abs(): a clip-face surface can lie inside a solid.
+                        const auto q = glm::abs(p) - math::Vec3{.499F};
+                        const float clip = glm::length(glm::max(q, math::Vec3{0})) +
+                                           std::min(std::max({q.x, q.y, q.z}), 0.F);
+                        const float d = std::max(entries.back().value, clip);
+                        if (std::abs(d) - guard > 2 * radius) {
+                            const float b = std::nextafter(std::abs(d) - guard - radius, 0.F);
+                            next.headers[index] = {0, 0, 1, std::copysign(b, d)};
+                            ++next.far_cells;
+                            continue;
+                        }
+                    }
                     compact.clear();
                     const auto emit = [&](auto&& self, int id, bool flip) -> void {
                         const auto& e = entries[static_cast<std::size_t>(id)];
@@ -167,7 +188,7 @@ RegionPrograms build_region_programs(const AuthoredScene& scene, std::uint32_t a
                     };
                     emit(emit, stack[0], false);
                     if (next.references.size() + compact.size() > limit) {
-                        next.headers[index] = {0, 0};
+                        next.headers[index] = {0, 0, 2, 0};
                         ++next.fallback_cells;
                     } else {
                         next.headers[index] = {static_cast<std::uint32_t>(next.references.size()),
@@ -191,7 +212,7 @@ RegionPrograms build_region_programs(const AuthoredScene& scene, std::uint32_t a
     return parent;
 }
 float region_distance(math::Vec3 p, const AuthoredScene& scene, const RegionPrograms& regions) {
-    if (!regions.axis)
+    if (!regions.axis || glm::any(glm::greaterThan(glm::abs(p), math::Vec3{.5F})))
         return authored_distance(p, scene);
     const auto cell =
         glm::clamp(glm::ivec3(glm::floor((p + .5F) * static_cast<float>(regions.axis))),
@@ -206,12 +227,16 @@ float region_distance(math::Vec3 p, const AuthoredScene& scene, const RegionProg
                : authored_distance(p, scene);
 }
 GpuRegionPrograms::GpuRegionPrograms(vulkan::Device& device, const AuthoredScene& scene,
-                                     std::uint32_t dimension, std::size_t limit,
-                                     bool device_local, ProjectGpuServices* uploads) {
+                                     std::uint32_t dimension, std::size_t limit, bool device_local,
+                                     ProjectGpuServices* uploads, std::string_view acceleration) {
     const auto start = std::chrono::steady_clock::now();
-    const auto cpu = build_region_programs(scene, dimension, limit);
+    const bool far = acceleration == "far" || acceleration == "root-far";
+    const auto cpu = build_region_programs(scene, dimension, limit, far);
+    if (acceleration == "root" || acceleration == "root-far")
+        root = authored_model_bounds(scene);
     axis = cpu.axis;
     fallback_cells = cpu.fallback_cells;
+    far_cells = cpu.far_cells;
     reference_count = cpu.references.size();
     scratch_peak_bytes = cpu.scratch_peak_bytes;
     geometry_hash = authored_geometry_hash(scene);
@@ -228,24 +253,39 @@ GpuRegionPrograms::GpuRegionPrograms(vulkan::Device& device, const AuthoredScene
     const std::array<std::uint32_t, 4> header{axis, 0, 0, 0};
     if (uploads) {
         std::vector<std::uint32_t> data(header.begin(), header.end());
+        data[1] = root.empty ? 1U : 0U;
+        data[2] = far_cells;
+        data[3] = fallback_cells;
+        for (const auto v : {math::Vec4{root.low, 0}, math::Vec4{root.high, 0}})
+            for (int i = 0; i < 4; ++i)
+                data.push_back(std::bit_cast<std::uint32_t>(v[i]));
         for (const auto h : cpu.headers) {
             data.push_back(h.offset);
             data.push_back(h.count);
+            data.push_back(h.kind);
+            data.push_back(std::bit_cast<std::uint32_t>(h.bound));
         }
         auto refs = cpu.references;
-        if (refs.empty()) refs.push_back(0);
-        const std::array<vulkan::DeviceBufferUpload, 2> requests{{
-            {data.data(), data.size() * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT},
-            {refs.data(), refs.size() * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT}}};
+        if (refs.empty())
+            refs.push_back(0);
+        const std::array<vulkan::DeviceBufferUpload, 2> requests{
+            {{data.data(), data.size() * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT},
+             {refs.data(), refs.size() * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT}}};
         auto batch = uploads->upload_device_buffers(requests, "sdf acceleration regions");
         cells = std::make_unique<vulkan::Buffer>(std::move(batch.buffers[0]));
         references = std::make_unique<vulkan::Buffer>(std::move(batch.buffers[1]));
     } else {
-        cells = allocate(16 + cpu.headers.size() * sizeof(RegionPrograms::Header));
+        // Preserve the original eight-byte GPU cell layout for unselected routes.
+        std::vector<std::uint32_t> data;
+        for (const auto h : cpu.headers) {
+            data.push_back(h.offset);
+            data.push_back(h.count);
+        }
+        cells = allocate(16 + data.size() * 4);
         references = allocate(std::max<std::size_t>(4, cpu.references.size() * 4));
         cells->upload(header.data(), 16);
         if (!cpu.headers.empty())
-            cells->upload(cpu.headers.data(), cpu.headers.size() * sizeof(RegionPrograms::Header), 16);
+            cells->upload(data.data(), data.size() * 4, 16);
         if (!cpu.references.empty())
             references->upload(cpu.references.data(), cpu.references.size() * 4);
     }

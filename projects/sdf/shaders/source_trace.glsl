@@ -15,7 +15,10 @@ struct Hit { float t; int status; uint steps; ivec3 cell; uint pointer; };
 #endif
 Hit trace(vec3 origin,vec3 direction,float limit) {
     Hit hit=Hit(0,0,0u,ivec3(0),0u);
-#ifdef SDF_TIGHT_ROOT
+#ifdef SDF_ACCELERATION
+    if(regionHeader.y!=0u) return hit;
+    vec2 root=rayBox(origin,direction,modelLow.xyz,modelHigh.xyz);
+#elif defined(SDF_TIGHT_ROOT)
     // Keep an empty margin around the .499 authored clip. Using the exact clip
     // interval loses an inside exit when a cached step rounds past its endpoint.
     // This padded box still keeps initial points safely inside the .5 region domain.
@@ -24,7 +27,12 @@ Hit trace(vec3 origin,vec3 direction,float limit) {
     vec2 root=rayBox(origin,direction,vec3(-.5),vec3(.5));
 #endif
     float t=max(root.x,0.0),end=min(root.y,limit);
-    if(t>end) return hit;
+    if(t>end) {
+#if defined(SDF_WORKLOAD) && defined(SDF_ACCELERATION)
+        workloadAid[workloadPhase].w++;
+#endif
+        return hit;
+    }
     for(uint i=0u;i<4096u && t<=end;++i) {
         ++hit.steps;
 #ifdef SDF_WORKLOAD

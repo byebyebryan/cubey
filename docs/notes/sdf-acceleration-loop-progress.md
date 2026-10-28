@@ -33,3 +33,12 @@ separate decisions.
   prepared before publication. Both source modes pass 155 frozen independent
   checks and the 20-action replay; seven existing CPU tests pass. Raw receipts:
   `outputs/sdf/acceleration-loop-20261028/e0/`. Timings pending.
+
+- E1–E3 implemented as private variants. Preliminary candidate matrix passes
+  all six sets of 155 frozen checks and all six 20-action semantic replays.
+  Far certificates include the workspace clip and retain inherited parent
+  certificates without shrinking their construction radius. Exact far-cell
+  requests use the full source. Root bounds propagate sublevels through smooth
+  unions. The hybrid controls share an additional independent numeric allowance.
+- All 54 previously recorded shader binaries retain their hashes. Final expanded
+  qualification, ordinary timings and decision report remain pending.
