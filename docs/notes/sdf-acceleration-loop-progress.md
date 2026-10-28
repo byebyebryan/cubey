@@ -42,3 +42,10 @@ separate decisions.
   unions. The hybrid controls share an additional independent numeric allowance.
 - All 54 previously recorded shader binaries retain their hashes. Final expanded
   qualification, ordinary timings and decision report remain pending.
+
+- Expanded CPU bounds checks pass after correcting a synthetic fixture that
+  omitted required source metadata. Seven CPU tests now pass, including
+  transformed cases for all seven primitives and separate far-bound inequalities.
+- Existing background NVENC encoding was observed. The user was asked whether
+  to wait or measure alongside it; no unrelated process was changed. Per-run
+  GPU/encoder load, clocks, temperature and power are recorded for timing.

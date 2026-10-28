@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import statistics
 import struct
+import subprocess
 from investigate_guardian import PRESETS, ROOT, camera_queries, digest, invoke, metadata
 from benchmark_tracing import percentile
 from tracing_comparison import EPS, check, dot
@@ -31,6 +32,12 @@ def save(path, data):
 
 def study_metadata(binary):
     return dict(metadata(binary), acceleration_runner_sha256=digest(Path(__file__)))
+
+
+def gpu_state():
+    return subprocess.check_output(['nvidia-smi',
+        '--query-gpu=utilization.gpu,utilization.encoder,clocks.sm,clocks.mem,temperature.gpu,power.draw,memory.used',
+        '--format=csv,noheader'], text=True).strip()
 
 
 def base(args):
@@ -106,7 +113,9 @@ def timing(args):
                 command = base(args)+['--config', f'projects/sdf/presets/{preset}.json', '--headless-render-only',
                     '--frames', '180', '--profile-warmup-frames', '30', '--profile-output', str(prefix),
                     '--width', str(width), '--height', str(height), '--yaw', str(yaw), *flags(mode, variant)]
+                environment_before = gpu_state()
                 wall = invoke(command, prefix)
+                environment_after = gpu_state()
                 groups = {}
                 for row in csv.DictReader(prefix.with_suffix('.passes.csv').open()):
                     if row['kind'] == 'gpu':
@@ -117,6 +126,8 @@ def timing(args):
                 resources = {r['name']:float(r['value']) for r in metrics if r['category'] == 'sdf.resources'}
                 row = dict(scene=scene, view=view, name=name, repeat=repeat, width=width, height=height,
                     command=command, wall_seconds=wall, resources=resources,
+                    gpu_state_fields='gpu_pct,encoder_pct,sm_MHz,mem_MHz,temp_C,power_W,used_MiB',
+                    gpu_before=environment_before, gpu_after=environment_after,
                     passes={k:dict(samples=len(v), median_ms=statistics.median(v), p95_ms=percentile(v,.95)) for k,v in groups.items()})
                 row['memory'] = [dict(name=m[0],type=int(m[1]),heap=int(m[2]),flags=int(m[3])) for m in re.findall(
                     r'sdf: acceleration memory ([\w-]+) type=(\d+) heap=(\d+) flags=(\d+)', prefix.with_suffix('.log').read_text())]

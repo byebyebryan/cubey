@@ -115,7 +115,8 @@ int main(int argc, char** argv) {
             throw std::runtime_error("nested complement pruning failed");
     }
     for (unsigned code = 1; code <= 7; ++code) {
-        AuthoredScene transformed;
+        auto transformed = parse_authored_scene(manifest.at("cases").at(0).at("scene").dump());
+        transformed.program.clear();
         const auto q = glm::normalize(cubey::math::Quat{.8F, .2F, -.3F, .1F});
         transformed.program.push_back({{.02F, -.03F, .04F, float(code)},
                                        {q.x, q.y, q.z, q.w},
