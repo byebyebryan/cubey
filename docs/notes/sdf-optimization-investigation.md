@@ -31,3 +31,12 @@ complete source/history semantics intact. Work stays local.
   profiling tools, change machine-wide caches/settings, push or deploy.
 
 Raw receipts: `outputs/sdf/optimization-investigation-20261029/`.
+
+## Completed investigation
+
+- 0fef50a0 and 1ccd71ca: selected stages, specialization statistics and admission checks.
+- dbed1a97 and 3bb17e9d: private zero-light shadow probe and order-only control.
+- 153 repeated runs / 22,950 GPU samples, exact capture parity, preserved source/kernel bytes and primary-source review.
+- [Findings](sdf-optimization-opportunities.md) recommend shadow qualification
+  before adoption, then independent primitive-preparation / guarded-step trials
+  and a budgeted finer-pruning survey.

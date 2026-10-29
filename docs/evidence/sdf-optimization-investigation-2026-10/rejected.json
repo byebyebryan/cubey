@@ -1,0 +1,10 @@
+[
+  {
+    "scope": "Rejected test-harness expectation, not an admitted invalid renderer configuration",
+    "reason": "Matcher expected the word requires; existing source-mode compatibility guard correctly rejected first with different wording.",
+    "log": "initial-negative-matcher.log",
+    "sha256": "37ecc26092a87dfbde0dc6ca02fef2c15c75fd5007ff2c9bfe5284f6760e1fbe",
+    "correction_commit": "1ccd71ca",
+    "admission_weakened": false
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "view": "preset",
+    "name": "selected",
+    "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6",
+    "path": "images/preset-selected.png"
+  },
+  {
+    "view": "preset",
+    "name": "cull-dark-shadows",
+    "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6",
+    "path": "images/preset-cull-dark-shadows.png"
+  },
+  {
+    "view": "preset",
+    "name": "reorder-shadow",
+    "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6",
+    "path": "images/preset-reorder-shadow.png"
+  },
+  {
+    "view": "side",
+    "name": "selected",
+    "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2",
+    "path": "images/side-selected.png"
+  },
+  {
+    "view": "side",
+    "name": "cull-dark-shadows",
+    "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2",
+    "path": "images/side-cull-dark-shadows.png"
+  },
+  {
+    "view": "side",
+    "name": "reorder-shadow",
+    "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2",
+    "path": "images/side-reorder-shadow.png"
+  },
+  {
+    "view": "rear",
+    "name": "selected",
+    "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372",
+    "path": "images/rear-selected.png"
+  },
+  {
+    "view": "rear",
+    "name": "cull-dark-shadows",
+    "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372",
+    "path": "images/rear-cull-dark-shadows.png"
+  },
+  {
+    "view": "rear",
+    "name": "reorder-shadow",
+    "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372",
+    "path": "images/rear-reorder-shadow.png"
+  }
+]

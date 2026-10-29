@@ -1,0 +1,72 @@
+{
+  "status": "Proposed independent trials, not adopted implementation",
+  "trials": [
+    {
+      "id": "dark-shadow-culling",
+      "rank": 1,
+      "title": "Avoid shadows with zero direct-light contribution",
+      "track": "frame time",
+      "evidence": "Three-view captures are byte-identical. Repeated 1080p rear timing falls from about 20.9 ms to 17.1 ms; front/side improve less. Order-only controls remain close to baseline.",
+      "trial": "First qualify zero-contribution shadow culling for the eligible opaque one-material lit path. Keep the final bump-normal test and geometric shadow origin. Leave original/general/debug paths available.",
+      "risk": "Measured only in a private static one-material opaque atmosphere path. Broad appearance/history/optical qualification and exhaustion-policy review remain; all views still miss 16.7 ms.",
+      "gate": "Do not adopt from visit counts or static images alone. Retain material/debug/transport/history behavior, exhaustion semantics and full lit parity; qualify GPU time and compiled resource cost."
+    },
+    {
+      "id": "primitive-preparation",
+      "rank": 2,
+      "title": "Precompute round-cone shape invariants",
+      "track": "frame time",
+      "evidence": "Guardian root contains 996 round cones. Every primitive query recomputes shape-only divisions and a square root in authoredPrimitive.",
+      "trial": "Add an opt-in disposable geometry-derived GPU cache for round-cone invariants, retaining the complete authored program and all CSG operations. Benchmark against unchanged evaluation.",
+      "risk": "Extra loads/cache footprint can erase arithmetic savings; CPU/GPU rounding can move near-boundary normals. No gain measured yet.",
+      "gate": "Frozen geometry checks, exact/derived query comparisons, all native view/transport/history controls; then three repeated selected-path timings. Stop on tolerance changes or no useful GPU gain."
+    },
+    {
+      "id": "guarded-stepping",
+      "rank": 3,
+      "title": "Guarded larger sphere-tracing steps",
+      "track": "frame time",
+      "evidence": "Camera-only diagnostics remain 14.8\u201320.6 ms; primary and shadow loops use plain abs(d) advancement.",
+      "trial": "Compare fixed relaxation and author-described adaptive relaxation independently. Keep conservative overlap/backtracking checks and reset learned state across far-certificate advances.",
+      "risk": "Retries can outweigh saved evaluations. Preserve inside exits, root endpoint rules, hard/smooth CSG, hidden sub-grid features and exact hit/normal tolerances.",
+      "gate": "Retain current stepping as a fallback; record retries, exact evaluations, exhaustion and GPU time for every view. Do not infer speed from step counts alone."
+    },
+    {
+      "id": "local-refinement",
+      "rank": 4,
+      "title": "Refine expensive near-surface regional programs",
+      "track": "frame time and build cost",
+      "evidence": "The unchanged 320p replay gives mean/p95 hit program lengths 78/195 (preset), 37/137 (side), and 25/95 (rear).",
+      "trial": "First survey axis-64 near-surface cells and a bounded finer child level offline. Forecast active references, lookup overhead, build time and peak live memory before a renderer trial.",
+      "risk": "A dense 256-cubed 16-byte header table alone is 256 MiB. More build work can worsen the outstanding edit-latency target.",
+      "gate": "Same exact-field, far-bound and material ownership contracts; explicit allocation/fallback caps. Promote only if total frame time improves without unacceptable publication/memory cost."
+    },
+    {
+      "id": "interactive-preview",
+      "rank": 5,
+      "title": "Optional lower-resolution motion preview",
+      "track": "interactive preview",
+      "evidence": "Native 540p/720p selected-path timings are measured separately from 1080p.",
+      "trial": "If desired, render the same exact CSG tracer at a smaller image size while moving, then return to full resolution when settled.",
+      "risk": "Fewer pixels reduce image detail and change procedural filtering. This is not native 1080p optimization or integrated upscale acceptance.",
+      "gate": "Visual acceptance of edges/thin features and proper native upscaled-frame timing before adoption; preserve full-resolution final mode."
+    },
+    {
+      "id": "pipeline-cache",
+      "rank": 6,
+      "title": "Pipeline caching and creation feedback",
+      "track": "startup",
+      "evidence": "Engine graphics pipeline construction passes VK_NULL_HANDLE for the application cache. The prior first windowed material pool took 32.5 seconds; cached pools took tens of milliseconds.",
+      "trial": "Measure per-pipeline creation feedback, then compare explicit persistent cache reuse with robust device/driver invalidation and clean fallback.",
+      "risk": "A controlled first-use cache study is still missing. This does not reduce the 21\u201323 ms steady GPU cost.",
+      "gate": "Qualify same-device reuse, invalid/corrupt cache fallback, driver/device changes and window recreation; retain prebuilt selection without compiling during edits."
+    }
+  ],
+  "deprioritized": [
+    "More sky/material splitting: current ablations show little headroom",
+    "Reducing the normal stencil first: no compelling isolated timing signal; geometric/CSG-normal risk",
+    "GPU builder for FPS: addresses publication latency, not shader execution",
+    "Disabling shadows or loosening hit tolerances: changed-output controls, not accepted optimization",
+    "Wavefront tracing, mesh proxies and hardware ray tracing: larger representation/pipeline changes before smaller trials"
+  ]
+}

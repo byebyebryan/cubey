@@ -1,0 +1,737 @@
+{
+  "scope": "Investigation only; private static probes, no production optimization or default adoption",
+  "groups": {
+    "ablations": [
+      {
+        "view": "preset",
+        "name": "full",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.3338032,
+        "max_ms": 21.642716800000002,
+        "p95_ms": [
+          21.642716800000002,
+          21.3338032,
+          21.433353599999997
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "material",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 24.5027648,
+        "max_ms": 25.0023232,
+        "p95_ms": [
+          25.0023232,
+          24.5027648,
+          24.9031216
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "no-bump",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.413025599999997,
+        "max_ms": 21.6586608,
+        "p95_ms": [
+          21.4816784,
+          21.413025599999997,
+          21.6586608
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "no-procedural",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.358289600000003,
+        "max_ms": 21.807911999999998,
+        "p95_ms": [
+          21.792863999999998,
+          21.358289600000003,
+          21.807911999999998
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "no-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 15.966382399999999,
+        "max_ms": 16.04056,
+        "p95_ms": [
+          15.966382399999999,
+          16.04056,
+          16.017190399999997
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "no-sky",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.3220992,
+        "max_ms": 21.6299344,
+        "p95_ms": [
+          21.3423472,
+          21.6299344,
+          21.3220992
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "normal",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 15.133020799999999,
+        "max_ms": 15.277008,
+        "p95_ms": [
+          15.133020799999999,
+          15.210375999999998,
+          15.277008
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "primary",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 14.8164608,
+        "max_ms": 14.845945599999999,
+        "p95_ms": [
+          14.845945599999999,
+          14.8227744,
+          14.8164608
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.470936000000002,
+        "max_ms": 21.662993599999997,
+        "p95_ms": [
+          21.470936000000002,
+          21.66152,
+          21.662993599999997
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "shadow",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.2951136,
+        "max_ms": 20.5027456,
+        "p95_ms": [
+          20.2951136,
+          20.463110399999998,
+          20.5027456
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "full",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.8376368,
+        "max_ms": 20.9287344,
+        "p95_ms": [
+          20.9286128,
+          20.8376368,
+          20.9287344
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "material",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 24.9324928,
+        "max_ms": 25.1013776,
+        "p95_ms": [
+          24.9324928,
+          24.9530928,
+          25.1013776
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "no-bump",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.9050144,
+        "max_ms": 21.018227200000002,
+        "p95_ms": [
+          21.018227200000002,
+          20.971251199999998,
+          20.9050144
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "no-procedural",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.8179376,
+        "max_ms": 20.947064,
+        "p95_ms": [
+          20.947064,
+          20.9195904,
+          20.8179376
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "no-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 16.4689792,
+        "max_ms": 16.5898848,
+        "p95_ms": [
+          16.5898848,
+          16.4977408,
+          16.4689792
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "no-sky",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.4935808,
+        "max_ms": 20.5880304,
+        "p95_ms": [
+          20.5880304,
+          20.584992,
+          20.4935808
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "normal",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 15.9530896,
+        "max_ms": 16.1053952,
+        "p95_ms": [
+          16.1053952,
+          16.071144,
+          15.9530896
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "primary",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 15.638024,
+        "max_ms": 15.705663999999999,
+        "p95_ms": [
+          15.705663999999999,
+          15.6437008,
+          15.638024
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.846992,
+        "max_ms": 20.9160128,
+        "p95_ms": [
+          20.846992,
+          20.8895936,
+          20.9160128
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "shadow",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.3120048,
+        "max_ms": 20.4184208,
+        "p95_ms": [
+          20.3330752,
+          20.4184208,
+          20.3120048
+        ]
+      },
+      {
+        "view": "side",
+        "name": "full",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.9079248,
+        "max_ms": 23.0350352,
+        "p95_ms": [
+          22.9258624,
+          23.0350352,
+          22.9079248
+        ]
+      },
+      {
+        "view": "side",
+        "name": "material",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 30.5300256,
+        "max_ms": 30.718817599999998,
+        "p95_ms": [
+          30.718817599999998,
+          30.7108816,
+          30.5300256
+        ]
+      },
+      {
+        "view": "side",
+        "name": "no-bump",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.946924799999998,
+        "max_ms": 23.064984,
+        "p95_ms": [
+          22.9733344,
+          23.064984,
+          22.946924799999998
+        ]
+      },
+      {
+        "view": "side",
+        "name": "no-procedural",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.8900304,
+        "max_ms": 23.028339199999998,
+        "p95_ms": [
+          23.028339199999998,
+          22.954987199999998,
+          22.8900304
+        ]
+      },
+      {
+        "view": "side",
+        "name": "no-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.8711968,
+        "max_ms": 20.9594448,
+        "p95_ms": [
+          20.9594448,
+          20.9261616,
+          20.8711968
+        ]
+      },
+      {
+        "view": "side",
+        "name": "no-sky",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.8764032,
+        "max_ms": 23.033529599999998,
+        "p95_ms": [
+          23.033529599999998,
+          22.962304,
+          22.8764032
+        ]
+      },
+      {
+        "view": "side",
+        "name": "normal",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.365704,
+        "max_ms": 20.5470752,
+        "p95_ms": [
+          20.365704,
+          20.488905599999995,
+          20.5470752
+        ]
+      },
+      {
+        "view": "side",
+        "name": "primary",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.1909888,
+        "max_ms": 20.595128,
+        "p95_ms": [
+          20.595128,
+          20.3248656,
+          20.1909888
+        ]
+      },
+      {
+        "view": "side",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.903417599999997,
+        "max_ms": 22.9819392,
+        "p95_ms": [
+          22.903417599999997,
+          22.974166399999998,
+          22.9819392
+        ]
+      },
+      {
+        "view": "side",
+        "name": "shadow",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.3911216,
+        "max_ms": 22.5537152,
+        "p95_ms": [
+          22.3911216,
+          22.5537152,
+          22.4799216
+        ]
+      }
+    ],
+    "resolution": [
+      {
+        "view": "preset",
+        "name": "selected",
+        "width": 960,
+        "height": 540,
+        "min_ms": 11.9816224,
+        "max_ms": 11.9975072,
+        "p95_ms": [
+          11.9882992,
+          11.9975072,
+          11.9816224
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "selected",
+        "width": 1280,
+        "height": 720,
+        "min_ms": 18.3914736,
+        "max_ms": 18.4745024,
+        "p95_ms": [
+          18.3914736,
+          18.4745024,
+          18.424667200000002
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "selected",
+        "width": 960,
+        "height": 540,
+        "min_ms": 8.15632,
+        "max_ms": 8.1645696,
+        "p95_ms": [
+          8.15632,
+          8.1644496,
+          8.1645696
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "selected",
+        "width": 1280,
+        "height": 720,
+        "min_ms": 14.833990400000001,
+        "max_ms": 14.8651248,
+        "p95_ms": [
+          14.833990400000001,
+          14.8552912,
+          14.8651248
+        ]
+      },
+      {
+        "view": "side",
+        "name": "selected",
+        "width": 960,
+        "height": 540,
+        "min_ms": 12.341476799999999,
+        "max_ms": 12.4749792,
+        "p95_ms": [
+          12.341476799999999,
+          12.4749792,
+          12.356910399999999
+        ]
+      },
+      {
+        "view": "side",
+        "name": "selected",
+        "width": 1280,
+        "height": 720,
+        "min_ms": 15.035441599999999,
+        "max_ms": 16.774959999999997,
+        "p95_ms": [
+          15.035441599999999,
+          16.774959999999997,
+          16.738780799999997
+        ]
+      }
+    ],
+    "shadow-pilot": [
+      {
+        "view": "preset",
+        "name": "cull-dark-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 19.3720304,
+        "max_ms": 19.4298896,
+        "p95_ms": [
+          19.3802624,
+          19.3720304,
+          19.4298896
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.349648,
+        "max_ms": 21.577247999999997,
+        "p95_ms": [
+          21.442137600000002,
+          21.577247999999997,
+          21.349648
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "cull-dark-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 17.0958976,
+        "max_ms": 17.3389648,
+        "p95_ms": [
+          17.0958976,
+          17.259969599999998,
+          17.3389648
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.8408944,
+        "max_ms": 20.9146704,
+        "p95_ms": [
+          20.875956799999997,
+          20.9146704,
+          20.8408944
+        ]
+      },
+      {
+        "view": "side",
+        "name": "cull-dark-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.5680768,
+        "max_ms": 21.6673568,
+        "p95_ms": [
+          21.6673568,
+          21.6396016,
+          21.5680768
+        ]
+      },
+      {
+        "view": "side",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.9226624,
+        "max_ms": 23.131391999999998,
+        "p95_ms": [
+          22.9226624,
+          23.131391999999998,
+          23.1264944
+        ]
+      }
+    ],
+    "shadow-controlled": [
+      {
+        "view": "preset",
+        "name": "cull-dark-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 19.2697312,
+        "max_ms": 19.6121664,
+        "p95_ms": [
+          19.2697312,
+          19.6121664,
+          19.4462496
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "reorder-shadow",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.007913600000002,
+        "max_ms": 21.248833599999998,
+        "p95_ms": [
+          21.007913600000002,
+          21.248833599999998,
+          21.105896
+        ]
+      },
+      {
+        "view": "preset",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.3905104,
+        "max_ms": 21.555137600000002,
+        "p95_ms": [
+          21.5503184,
+          21.555137600000002,
+          21.3905104
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "cull-dark-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 17.089104,
+        "max_ms": 17.171168,
+        "p95_ms": [
+          17.137559999999997,
+          17.089104,
+          17.171168
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "reorder-shadow",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.6699664,
+        "max_ms": 20.69324,
+        "p95_ms": [
+          20.6911856,
+          20.69324,
+          20.6699664
+        ]
+      },
+      {
+        "view": "rear",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 20.8026416,
+        "max_ms": 20.9746176,
+        "p95_ms": [
+          20.9746176,
+          20.8026416,
+          20.884448
+        ]
+      },
+      {
+        "view": "side",
+        "name": "cull-dark-shadows",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 21.6097024,
+        "max_ms": 21.7718848,
+        "p95_ms": [
+          21.6097024,
+          21.680940800000002,
+          21.7718848
+        ]
+      },
+      {
+        "view": "side",
+        "name": "reorder-shadow",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.7356624,
+        "max_ms": 22.9428912,
+        "p95_ms": [
+          22.7356624,
+          22.881992,
+          22.9428912
+        ]
+      },
+      {
+        "view": "side",
+        "name": "selected",
+        "width": 1920,
+        "height": 1080,
+        "min_ms": 22.925974399999998,
+        "max_ms": 23.0365232,
+        "p95_ms": [
+          22.926023999999998,
+          23.0365232,
+          22.925974399999998
+        ]
+      }
+    ]
+  },
+  "timing_runs": 153,
+  "completed_gpu_samples": 22950,
+  "protected_files": 246,
+  "protected_changes": [],
+  "historical_workload_kernel_unchanged": true,
+  "encoder_boundary_count": 306,
+  "encoder_nonzero_boundaries": 0,
+  "candidate_head": "3bb17e9d41b6b8aab767cf86a56a32d463e92b2c",
+  "compiler": [
+    {
+      "request": "lit_root_far_sdf_analytic_pruned.frag.spv",
+      "Register Count": 128,
+      "Binary Size": 376832
+    },
+    {
+      "request": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "Register Count": 96,
+      "Binary Size": 256896
+    },
+    {
+      "request": "profile_opt-cull-dark-shadows.frag.spv",
+      "Register Count": 80,
+      "Binary Size": 202624
+    },
+    {
+      "request": "profile_opt-full.frag.spv",
+      "Register Count": 96,
+      "Binary Size": 256896
+    },
+    {
+      "request": "profile_opt-material.frag.spv",
+      "Register Count": 127,
+      "Binary Size": 203136
+    },
+    {
+      "request": "profile_opt-no-sky.frag.spv",
+      "Register Count": 96,
+      "Binary Size": 248960
+    },
+    {
+      "request": "profile_opt-normal.frag.spv",
+      "Register Count": 48,
+      "Binary Size": 64896
+    },
+    {
+      "request": "profile_opt-primary.frag.spv",
+      "Register Count": 39,
+      "Binary Size": 18304
+    },
+    {
+      "request": "profile_opt-reorder-shadow.frag.spv",
+      "Register Count": 80,
+      "Binary Size": 202368
+    },
+    {
+      "request": "profile_opt-shadow.frag.spv",
+      "Register Count": 48,
+      "Binary Size": 82688
+    }
+  ],
+  "local_memory_statistic_usable": false
+}

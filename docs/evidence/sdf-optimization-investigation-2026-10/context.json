@@ -1,0 +1,19 @@
+{
+  "baseline": "651b9074bc0b429f019a000fd4ccd7183dda4731",
+  "investigation_head": "3bb17e9d41b6b8aab767cf86a56a32d463e92b2c",
+  "runtime_binary_hashes": {
+    "ablations": "f77d1a820c269cc85018c30e65797ca31cebc583a8022f772a1f51926bc0789f",
+    "resolution": "f77d1a820c269cc85018c30e65797ca31cebc583a8022f772a1f51926bc0789f",
+    "shadow-pilot": "36f7928cacc102169c930631e4c2df3e702aa9e5184ff7368c39eae18db1ffaf",
+    "shadow-controlled": "b4c8f24f10d44f47e79a3ca886d5428c17ab6609239726812783230e45e5bd68"
+  },
+  "measured_shader_note": "Private admission/shader variants were added between phases. Every retained timing shader hash still matches; final shadow comparisons remeasure all controls on one binary.",
+  "workload_note": "Existing 320p counters, not current 1080p hardware times. Raw payload hashes are in workload.json; kernel and protected content hashes match.",
+  "workload_kernel": {
+    "name": "root_far_workload_analytic.comp.spv",
+    "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb",
+    "unchanged": true
+  },
+  "raw_root": "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029",
+  "no_production_adoption": true
+}

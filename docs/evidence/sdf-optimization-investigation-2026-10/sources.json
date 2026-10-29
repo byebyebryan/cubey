@@ -1,0 +1,54 @@
+[
+  {
+    "id": "auto-relaxation",
+    "title": "Automatic Step Size Relaxation in Sphere Tracing (B\u00e1n and Valasek, 2023)",
+    "url": "https://diglib.eg.org/items/56b3a5fa-9c27-4036-a21f-7287dd83af11",
+    "type": "primary paper",
+    "supports": "Adaptive over-relaxation with robust fallback is a candidate for reducing evaluations, not a guaranteed Cubey speedup.",
+    "access": "Search-indexed publisher PDF; direct publisher PDF fetch returned 403."
+  },
+  {
+    "id": "auto-relaxation-code",
+    "title": "Author implementation, pinned revision",
+    "url": "https://github.com/Bundas102/auto-relaxed-trace/blob/2e9ca0c9d4e4ba9b4ae375457016d27a289a8965/Shaders/trace.slang",
+    "type": "primary code",
+    "commit": "2e9ca0c9d4e4ba9b4ae375457016d27a289a8965",
+    "sha256": "ab26fee1b5d3ce8c2cfebc59ab2bb6a88bf8edba21fc1e38551e6cb9d727ac5c",
+    "supports": "Overlap-checked backsteps and adaptive step state. Cubey stopping, inside-exit, root and certificate contracts require a separate port."
+  },
+  {
+    "id": "pruning",
+    "title": "Lipschitz Pruning (Barbier et al., 2025)",
+    "url": "https://wbrbr.org/publications/LipschitzPruning/documents/LipschitzPruning_submitted_to_EG25.pdf",
+    "type": "primary paper",
+    "supports": "Hierarchical exact regional simplification and separate conservative far bounds; a finer near-surface level is a relevant next comparison."
+  },
+  {
+    "id": "pipeline-cache",
+    "title": "Khronos Vulkan Guide: Pipeline Cache",
+    "url": "https://docs.vulkan.org/guide/latest/pipeline_cache.html",
+    "type": "official documentation",
+    "supports": "Persisted application pipeline-cache data can reduce repeated creation cost; this targets startup rather than steady rendering."
+  },
+  {
+    "id": "creation-feedback",
+    "title": "Khronos: VkPipelineCreationFeedbackCreateInfo",
+    "url": "https://docs.vulkan.org/refpages/latest/refpages/source/VkPipelineCreationFeedbackCreateInfo.html",
+    "type": "official documentation",
+    "supports": "Per-pipeline and per-stage creation feedback can qualify the startup path."
+  },
+  {
+    "id": "shader-profiler",
+    "title": "NVIDIA Nsight Graphics Shader Profiler",
+    "url": "https://docs.nvidia.com/nsight-graphics/UserGuide/shader-profiler.html",
+    "type": "official documentation",
+    "supports": "Live stall and divergence attribution requires hardware profiling; static executable statistics do not provide it."
+  },
+  {
+    "id": "pipeline-library",
+    "title": "Khronos: Graphics Pipeline Libraries",
+    "url": "https://docs.vulkan.org/refpages/latest/refpages/source/VK_EXT_graphics_pipeline_library.html",
+    "type": "official documentation",
+    "supports": "Separately compiled pipeline parts are a larger optional startup architecture; not the first change for a three-pipeline source pool."
+  }
+]

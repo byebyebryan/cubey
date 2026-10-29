@@ -1,0 +1,1202 @@
+{
+  "binary_sha256": "36f7928cacc102169c930631e4c2df3e702aa9e5184ff7368c39eae18db1ffaf",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "dbed1a97c27fb391789018f4a15a9ad62620af45",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "selected_runner_sha256": "7b6e2f77ed073a9c037c401fa9407a70d469b793b3bdf25234d1f062e12eec01",
+  "scope": "Static private diagnostics; no optimization or quality/default adoption",
+  "runs": [
+    {
+      "view": "preset",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/preset-selected-1920-r1"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "0 %, 0 %, 180 MHz, 810 MHz, 34, 23.95 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 42, 97.30 W, 517 MiB",
+      "wall_seconds": 4.138183082017349,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.817499
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.363824,
+          "p95_ms": 21.4312992
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.01088,
+          "p95_ms": 0.0110896
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.374736,
+          "p95_ms": 21.442137600000002
+        }
+      }
+    },
+    {
+      "view": "preset",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/preset-cull-dark-shadows-1920-r1",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 42, 97.30 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 99.54 W, 517 MiB",
+      "wall_seconds": 3.7220275359868538,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.336384
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 18.518031999999998,
+          "p95_ms": 19.369304
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0112032
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 18.52896,
+          "p95_ms": 19.3802624
+        }
+      }
+    },
+    {
+      "view": "side",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "1.9707963267948965",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/side-selected-1920-r1"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 99.54 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 89.33 W, 517 MiB",
+      "wall_seconds": 4.414292537985602,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 40.407674
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 22.080016,
+          "p95_ms": 22.911672
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.01088,
+          "p95_ms": 0.011139199999999998
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 22.09088,
+          "p95_ms": 22.9226624
+        }
+      }
+    },
+    {
+      "view": "side",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "1.9707963267948965",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/side-cull-dark-shadows-1920-r1",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 89.33 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 85.40 W, 517 MiB",
+      "wall_seconds": 4.1719923820055556,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.571065
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.985776,
+          "p95_ms": 21.656441599999997
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0112176
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 21.000880000000002,
+          "p95_ms": 21.6673568
+        }
+      }
+    },
+    {
+      "view": "rear",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "3.541592653589793",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/rear-selected-1920-r1"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 85.34 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 83.81 W, 517 MiB",
+      "wall_seconds": 4.087021384999389,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.540717
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.372528,
+          "p95_ms": 20.865094399999997
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.0112
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.383472,
+          "p95_ms": 20.875956799999997
+        }
+      }
+    },
+    {
+      "view": "rear",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "3.541592653589793",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/rear-cull-dark-shadows-1920-r1",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 83.81 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 83.18 W, 517 MiB",
+      "wall_seconds": 3.378015145979589,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.549335
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 16.616287999999997,
+          "p95_ms": 17.084871999999997
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.011121599999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 16.631312,
+          "p95_ms": 17.0958976
+        }
+      }
+    },
+    {
+      "view": "rear",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "3.541592653589793",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/rear-cull-dark-shadows-1920-r2",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 83.18 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 44, 83.40 W, 517 MiB",
+      "wall_seconds": 3.389182685990818,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.698666
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 16.642960000000002,
+          "p95_ms": 17.249008
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0110432
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 16.653872,
+          "p95_ms": 17.259969599999998
+        }
+      }
+    },
+    {
+      "view": "rear",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "3.541592653589793",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/rear-selected-1920-r2"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 44, 83.40 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 44, 84.11 W, 517 MiB",
+      "wall_seconds": 4.095306250004796,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.869159
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.406336,
+          "p95_ms": 20.9037744
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.011299199999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.417264,
+          "p95_ms": 20.9146704
+        }
+      }
+    },
+    {
+      "view": "side",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "1.9707963267948965",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/side-cull-dark-shadows-1920-r2",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 44, 84.11 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 85.94 W, 517 MiB",
+      "wall_seconds": 4.188890891004121,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.570375
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 21.115392,
+          "p95_ms": 21.6285968
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010976,
+          "p95_ms": 0.0112816
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 21.127888,
+          "p95_ms": 21.6396016
+        }
+      }
+    },
+    {
+      "view": "side",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "1.9707963267948965",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/side-selected-1920-r2"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 85.94 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 90.59 W, 517 MiB",
+      "wall_seconds": 4.434233492007479,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.151175
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 22.226048,
+          "p95_ms": 23.120427199999998
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0112176
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 22.237008,
+          "p95_ms": 23.131391999999998
+        }
+      }
+    },
+    {
+      "view": "preset",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/preset-cull-dark-shadows-1920-r2",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 90.59 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 47, 101.29 W, 517 MiB",
+      "wall_seconds": 3.737815693981247,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.830496
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 18.597392,
+          "p95_ms": 19.3610048
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010976,
+          "p95_ms": 0.0111856
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 18.608416,
+          "p95_ms": 19.3720304
+        }
+      }
+    },
+    {
+      "view": "preset",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/preset-selected-1920-r2"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 47, 101.29 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 99.39 W, 517 MiB",
+      "wall_seconds": 4.1309388389927335,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.717847
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.546256,
+          "p95_ms": 21.5662688
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.011008
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.557248,
+          "p95_ms": 21.577247999999997
+        }
+      }
+    },
+    {
+      "view": "preset",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/preset-selected-1920-r3"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 99.39 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 100.12 W, 517 MiB",
+      "wall_seconds": 4.121239617001265,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 37.872033
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.505264,
+          "p95_ms": 21.3348416
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.011072
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.516352,
+          "p95_ms": 21.349648
+        }
+      }
+    },
+    {
+      "view": "preset",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/preset-cull-dark-shadows-1920-r3",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 100.12 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 102.21 W, 517 MiB",
+      "wall_seconds": 3.7240131459839176,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.630195
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 18.549248,
+          "p95_ms": 19.4188608
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010976,
+          "p95_ms": 0.0112032
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 18.560144,
+          "p95_ms": 19.4298896
+        }
+      }
+    },
+    {
+      "view": "side",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "1.9707963267948965",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/side-selected-1920-r3"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 102.21 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 91.76 W, 517 MiB",
+      "wall_seconds": 4.4192320099973585,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.965038
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 22.130224,
+          "p95_ms": 23.1153296
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0111536
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 22.141184000000003,
+          "p95_ms": 23.1264944
+        }
+      }
+    },
+    {
+      "view": "side",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "1.9707963267948965",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/side-cull-dark-shadows-1920-r3",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 91.76 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 87.38 W, 517 MiB",
+      "wall_seconds": 4.185181488021044,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.676076
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 21.076320000000003,
+          "p95_ms": 21.557025600000003
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010976,
+          "p95_ms": 0.0111536
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 21.087263999999998,
+          "p95_ms": 21.5680768
+        }
+      }
+    },
+    {
+      "view": "rear",
+      "name": "selected",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "3.541592653589793",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/rear-selected-1920-r3"
+      ],
+      "shader": "lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader_sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 87.38 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 85.90 W, 517 MiB",
+      "wall_seconds": 4.094389170000795,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.643646
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.377375999999998,
+          "p95_ms": 20.8299248
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.011057599999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.388351999999998,
+          "p95_ms": 20.8408944
+        }
+      }
+    },
+    {
+      "view": "rear",
+      "name": "cull-dark-shadows",
+      "width": 1920,
+      "height": 1080,
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "3.541592653589793",
+        "--headless-render-only",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/optimization-investigation-20261029/cull-timing/rear-cull-dark-shadows-1920-r3",
+        "--frame-profile",
+        "opt-cull-dark-shadows"
+      ],
+      "shader": "profile_opt-cull-dark-shadows.frag.spv",
+      "shader_sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae",
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 85.90 W, 517 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 85.16 W, 517 MiB",
+      "wall_seconds": 3.3955587860255037,
+      "selection": {
+        "route": 0.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 1.0,
+        "pipeline_setup_ms": 3.354585
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 16.66064,
+          "p95_ms": 17.3280832
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010976,
+          "p95_ms": 0.0112032
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 16.671632,
+          "p95_ms": 17.3389648
+        }
+      }
+    }
+  ],
+  "frames": 180,
+  "warmup": 30,
+  "complete": true
+}

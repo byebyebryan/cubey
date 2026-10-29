@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "ctest_groups": 12,
+  "log": "checks.log",
+  "protected_files": 246,
+  "protected_changes": [],
+  "captures": "Four matching hashes in each of three 1080p views",
+  "negative_configs": 5,
+  "production_optimization_adopted": false,
+  "scope": "Focused SDF/documentation/build checks and static headless diagnostics; broad editor/optical qualification remains open"
+}

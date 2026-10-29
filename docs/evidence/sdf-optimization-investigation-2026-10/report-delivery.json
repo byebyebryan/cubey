@@ -1,0 +1,210 @@
+{
+  "report_id": "27a4641b1f78f6ee417cbd3ba2d834259f66b91601be1b9588034111196e47f2",
+  "title": "Cubey SDF — Next optimization opportunities",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-10-29T02:36:19.134959+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/27a4641b1f78f6ee417cbd3ba2d834259f66b91601be1b9588034111196e47f2",
+  "file_count": 30,
+  "byte_count": 4771198,
+  "url": "http://starship:8787/reports/27a4641b1f78f6ee417cbd3ba2d834259f66b91601be1b9588034111196e47f2/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-10-29T02:36:19.548177+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 37731,
+    "verified_url": "http://starship:8787/reports/27a4641b1f78f6ee417cbd3ba2d834259f66b91601be1b9588034111196e47f2/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "authoring": "outputs/sdf/optimization-investigation-20261029/build_report.py",
+  "http_files": [
+    {
+      "path": "evidence/README.md",
+      "bytes": 1349,
+      "sha256": "5a1cbe3e21a23b2230048f7322a6ed8b35079d458148bace43ca5690b61b7f78"
+    },
+    {
+      "path": "evidence/ablations.json",
+      "bytes": 171988,
+      "sha256": "0f73e9ecc3b253ac74adc6b1849a1841ea9cbdad8378f671b559737eb60426ff"
+    },
+    {
+      "path": "evidence/author-source.json",
+      "bytes": 275,
+      "sha256": "4b5ca6a92bf24ee138dfc66f1e01f62662199d8c2738677c0186133ca32d0f3c"
+    },
+    {
+      "path": "evidence/baseline.json",
+      "bytes": 33592,
+      "sha256": "9974aa6bc2e5bc213b17df0237a142ee9c4cbaefd92e003015b3c9a9e264aab7"
+    },
+    {
+      "path": "evidence/checks.json",
+      "bytes": 389,
+      "sha256": "b3dfd8b7100af790cb41f1ba26ae4d256a11d05ed14a800686dd2c7dd6af08d1"
+    },
+    {
+      "path": "evidence/checks.log",
+      "bytes": 1619,
+      "sha256": "3fe8f1fcceadea3db3752273faaf39fd218225b8451edd18a63bdce03db97428"
+    },
+    {
+      "path": "evidence/compiler.json",
+      "bytes": 35690,
+      "sha256": "1faf94a47aebaf17c7e07a149a24d5f19f6876e3b340c16a208130c72976114c"
+    },
+    {
+      "path": "evidence/context.json",
+      "bytes": 1185,
+      "sha256": "410c0a688528ec68dc6e7ebe9b9284b25c786cb305b9fbf8118e91ffcb0e2193"
+    },
+    {
+      "path": "evidence/images/preset-cull-dark-shadows.png",
+      "bytes": 476521,
+      "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+    },
+    {
+      "path": "evidence/images/preset-reorder-shadow.png",
+      "bytes": 476521,
+      "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+    },
+    {
+      "path": "evidence/images/preset-selected.png",
+      "bytes": 476521,
+      "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+    },
+    {
+      "path": "evidence/images/rear-cull-dark-shadows.png",
+      "bytes": 412815,
+      "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+    },
+    {
+      "path": "evidence/images/rear-reorder-shadow.png",
+      "bytes": 412815,
+      "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+    },
+    {
+      "path": "evidence/images/rear-selected.png",
+      "bytes": 412815,
+      "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+    },
+    {
+      "path": "evidence/images/side-cull-dark-shadows.png",
+      "bytes": 538504,
+      "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2"
+    },
+    {
+      "path": "evidence/images/side-reorder-shadow.png",
+      "bytes": 538504,
+      "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2"
+    },
+    {
+      "path": "evidence/images/side-selected.png",
+      "bytes": 538504,
+      "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2"
+    },
+    {
+      "path": "evidence/images.json",
+      "bytes": 1671,
+      "sha256": "1affc1473b33b88d413abf8b31395204ec64c9225a66a40fdea5125827224c2f"
+    },
+    {
+      "path": "evidence/opportunities.json",
+      "bytes": 5651,
+      "sha256": "67850c6197b3fafcc743213a9694dab0506f34bf43500db07b0a3f245a63d03d"
+    },
+    {
+      "path": "evidence/qualification.json",
+      "bytes": 13647,
+      "sha256": "8f0cbd9cf3590cbc24a61d4c18f60399f12c1cb4c2245bcf151e5df03e3ac737"
+    },
+    {
+      "path": "evidence/resolution.json",
+      "bytes": 34369,
+      "sha256": "275a0cd855dcd368a16164bd0d3162f092c1edcbcfb9a2b4ab6d4ea0f376632d"
+    },
+    {
+      "path": "evidence/shadow-controlled.json",
+      "bytes": 52917,
+      "sha256": "702fde0ec2f6aa6492351a5b9e25f7b957c9439578b0324fc89b78e69e315305"
+    },
+    {
+      "path": "evidence/shadow-pilot.json",
+      "bytes": 35167,
+      "sha256": "4a03511699cf263d5819fc7ed8af243df7c4c8af2e449d2bc8b78229079222f5"
+    },
+    {
+      "path": "evidence/shadow-qualification.json",
+      "bytes": 16653,
+      "sha256": "071dc11b921d8047495164faecbe4d5590f24350cd37c527e665aea9bfb1dae5"
+    },
+    {
+      "path": "evidence/sources.json",
+      "bytes": 2829,
+      "sha256": "0020d934b7b286993d67503cfb5642569249cfdd8cbe8c4807deab3a1d5bc4ee"
+    },
+    {
+      "path": "evidence/summary.json",
+      "bytes": 16230,
+      "sha256": "5d1fef95d44fd593835d202840c586785650bb102f5624b1d8a7e981cf870685"
+    },
+    {
+      "path": "evidence/workload.json",
+      "bytes": 13323,
+      "sha256": "46a113613342bad134b9cdd4cb232704d11bf4aa95676a67cd836106d10aa6fa"
+    },
+    {
+      "path": "index.html",
+      "bytes": 37731,
+      "sha256": "d82cd47020982973d8fe33383c093fcf4af845228e4ce877ec191a243ba8dcc1"
+    },
+    {
+      "path": "report.css",
+      "bytes": 6816,
+      "sha256": "bc5c289114f09bd43aff24ce70d66214632ee5a378bbe1443c43fc0ea745697d"
+    },
+    {
+      "path": "report.js",
+      "bytes": 4587,
+      "sha256": "fe4af663ef18a19a010c1d0f6fe674a398759866e0cf06835c64e55c0ce89443"
+    }
+  ],
+  "http_verified_files": 30,
+  "http_verified_bytes": 4771198,
+  "browser_acceptance": {
+    "passed": true,
+    "desktop": true,
+    "mobile_viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "interactions": [
+      "three-view timings and ablations",
+      "current/probe captures",
+      "all six trial detail selectors",
+      "responsive view/trial selection"
+    ],
+    "horizontal_overflow": false,
+    "broken_images": 0,
+    "page_console_errors": 0,
+    "viewport_reset": true
+  }
+}

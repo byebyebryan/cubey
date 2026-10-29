@@ -55,6 +55,9 @@ the architecture and project guides remain current authority.
 - [Guardian current-candidate frame profile](sdf-guardian-frame-profile-progress.md):
   stage ablations, driver compiler statistics and qualified shader-specialization
   diagnostics for the measured full-HD rear-view cost.
+- [SDF optimization investigation](sdf-optimization-investigation.md) and
+  [opportunities](sdf-optimization-opportunities.md): current-path controls,
+  a private zero-light shadow probe and bounded query-cost trials.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
   [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
   published-material selection, exact capture parity, current 1080p measurements

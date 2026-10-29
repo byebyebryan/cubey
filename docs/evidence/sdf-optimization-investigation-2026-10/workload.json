@@ -1,0 +1,441 @@
+{
+  "scope": "Historical unchanged 320x180 counter replay, not current 1080p timings or measured GPU warp layout",
+  "views": [
+    {
+      "view": "preset",
+      "queries": 57600,
+      "hits": 4921,
+      "hit_fraction": 0.08543402777777778,
+      "raw_sha256": "a633bc8b20d78ed0c23d9ac1f09c37e62a784805240e4d472422fdb06f172615",
+      "surface_program": {
+        "mean": 77.94574273521641,
+        "p95": 195.0,
+        "max": 307
+      },
+      "phases": {
+        "primary": {
+          "exact_queries": 62705,
+          "csg_visits": 3994661,
+          "mean_program": 63.705621561279,
+          "fallback_queries": 0,
+          "iterations": 183507,
+          "bound_lookups": 183507,
+          "bound_advances": 120802,
+          "uniform_rejections": 0,
+          "far_lookups": 183507,
+          "far_advances": 120802,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 29378,
+          "hit_ray_visits": 3385479,
+          "miss_ray_visits": 609182
+        },
+        "normal": {
+          "exact_queries": 29526,
+          "csg_visits": 2301690,
+          "mean_program": 77.95468400731559,
+          "fallback_queries": 0,
+          "iterations": 0,
+          "bound_lookups": 0,
+          "bound_advances": 0,
+          "uniform_rejections": 0,
+          "far_lookups": 0,
+          "far_advances": 0,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 0,
+          "hit_ray_visits": 2301690,
+          "miss_ray_visits": 0
+        },
+        "shadow": {
+          "exact_queries": 45376,
+          "csg_visits": 3349316,
+          "mean_program": 73.8125,
+          "fallback_queries": 0,
+          "iterations": 72840,
+          "bound_lookups": 72840,
+          "bound_advances": 27464,
+          "uniform_rejections": 0,
+          "far_lookups": 72840,
+          "far_advances": 27464,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 0,
+          "hit_ray_visits": 3349316,
+          "miss_ray_visits": 0
+        }
+      },
+      "tails": {
+        "primary_steps": {
+          "median": 10,
+          "p95": 25,
+          "p99": 43,
+          "max": 107,
+          "mean": 12.541353383458647,
+          "top_1pct_work_share": 0.045936223993777954,
+          "top_10pct_work_share": 0.23728044591353945
+        },
+        "primary_queries": {
+          "median": 7,
+          "p95": 22,
+          "p99": 41,
+          "max": 103,
+          "mean": 9.572241414346678,
+          "top_1pct_work_share": 0.05700031843753317,
+          "top_10pct_work_share": 0.27650992463645047
+        },
+        "primary_visits": {
+          "median": 508,
+          "p95": 2003,
+          "p99": 3571,
+          "max": 13341,
+          "mean": 687.9656573867101,
+          "top_1pct_work_share": 0.08237977550591807,
+          "top_10pct_work_share": 0.3551104585200499
+        },
+        "normal_visits": {
+          "median": 426,
+          "p95": 1170,
+          "p99": 1506,
+          "max": 1842,
+          "mean": 467.7281040438935,
+          "top_1pct_work_share": 0.03377431365648719,
+          "top_10pct_work_share": 0.2610759919884954
+        },
+        "shadow_queries": {
+          "median": 7,
+          "p95": 21,
+          "p99": 40,
+          "max": 183,
+          "mean": 9.220890062995327,
+          "top_1pct_work_share": 0.06269834273624823,
+          "top_10pct_work_share": 0.27023095909732014
+        },
+        "shadow_visits": {
+          "median": 548,
+          "p95": 1936,
+          "p99": 3645,
+          "max": 13179,
+          "mean": 680.6169477748425,
+          "top_1pct_work_share": 0.08196778088421636,
+          "top_10pct_work_share": 0.35547944714682045
+        },
+        "surface_program": {
+          "median": 71,
+          "p95": 195,
+          "p99": 251,
+          "max": 307,
+          "mean": 77.94574273521641,
+          "top_1pct_work_share": 0.033785140169616576,
+          "top_10pct_work_share": 0.2611459156192726
+        }
+      },
+      "geometric_backface_shadow_opportunity": {
+        "scope": "Geometric normal only, not final bump-normal culling eligibility or GPU cost",
+        "hits": 4921,
+        "backfacing_hits": 113,
+        "hit_fraction": 0.022962812436496647,
+        "shadow_query_fraction": 0.0664888928067701,
+        "shadow_visit_fraction": 0.06672556426446474,
+        "sunlight": [
+          0.35355339059327373,
+          0.7071067811865475,
+          0.6123724356957946
+        ]
+      }
+    },
+    {
+      "view": "side",
+      "queries": 57600,
+      "hits": 4589,
+      "hit_fraction": 0.0796701388888889,
+      "raw_sha256": "6399f5273bad6dc26789d61f108dda68532788db081b6cce06a95225ed789cb8",
+      "surface_program": {
+        "mean": 36.78426672477664,
+        "p95": 137.0,
+        "max": 231
+      },
+      "phases": {
+        "primary": {
+          "exact_queries": 65196,
+          "csg_visits": 2707970,
+          "mean_program": 41.53583041904411,
+          "fallback_queries": 0,
+          "iterations": 197706,
+          "bound_lookups": 197706,
+          "bound_advances": 132510,
+          "uniform_rejections": 0,
+          "far_lookups": 197706,
+          "far_advances": 132510,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 28146,
+          "hit_ray_visits": 1879841,
+          "miss_ray_visits": 828129
+        },
+        "normal": {
+          "exact_queries": 27534,
+          "csg_visits": 1012664,
+          "mean_program": 36.77867363986344,
+          "fallback_queries": 0,
+          "iterations": 0,
+          "bound_lookups": 0,
+          "bound_advances": 0,
+          "uniform_rejections": 0,
+          "far_lookups": 0,
+          "far_advances": 0,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 0,
+          "hit_ray_visits": 1012664,
+          "miss_ray_visits": 0
+        },
+        "shadow": {
+          "exact_queries": 93059,
+          "csg_visits": 2860071,
+          "mean_program": 30.733953728279907,
+          "fallback_queries": 0,
+          "iterations": 106996,
+          "bound_lookups": 106996,
+          "bound_advances": 13937,
+          "uniform_rejections": 0,
+          "far_lookups": 106996,
+          "far_advances": 13937,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 0,
+          "hit_ray_visits": 2860071,
+          "miss_ray_visits": 0
+        }
+      },
+      "tails": {
+        "primary_steps": {
+          "median": 10,
+          "p95": 31,
+          "p99": 56,
+          "max": 245,
+          "mean": 13.650904336456744,
+          "top_1pct_work_share": 0.06725304897516123,
+          "top_10pct_work_share": 0.2760839026882064
+        },
+        "primary_queries": {
+          "median": 7,
+          "p95": 26,
+          "p99": 53,
+          "max": 243,
+          "mean": 10.56417520156897,
+          "top_1pct_work_share": 0.08383011200726087,
+          "top_10pct_work_share": 0.32220136553971823
+        },
+        "primary_visits": {
+          "median": 148,
+          "p95": 1519,
+          "p99": 3491,
+          "max": 26751,
+          "mean": 409.6406624536936,
+          "top_1pct_work_share": 0.15389227067608377,
+          "top_10pct_work_share": 0.5191061371679839
+        },
+        "normal_visits": {
+          "median": 114,
+          "p95": 822,
+          "p99": 1146,
+          "max": 1386,
+          "mean": 220.67204183918065,
+          "top_1pct_work_share": 0.05235892655411864,
+          "top_10pct_work_share": 0.39375548059376064
+        },
+        "shadow_queries": {
+          "median": 14,
+          "p95": 52,
+          "p99": 91,
+          "max": 299,
+          "mean": 20.278709958596643,
+          "top_1pct_work_share": 0.058865880785308244,
+          "top_10pct_work_share": 0.30045455033903223
+        },
+        "shadow_visits": {
+          "median": 380,
+          "p95": 2022,
+          "p99": 4180,
+          "max": 10741,
+          "mean": 623.2449335367182,
+          "top_1pct_work_share": 0.08665868784376332,
+          "top_10pct_work_share": 0.39682826055716797
+        },
+        "surface_program": {
+          "median": 19,
+          "p95": 137,
+          "p99": 191,
+          "max": 231,
+          "mean": 36.78426672477664,
+          "top_1pct_work_share": 0.05235096532644562,
+          "top_10pct_work_share": 0.3938555594391095
+        }
+      },
+      "geometric_backface_shadow_opportunity": {
+        "scope": "Geometric normal only, not final bump-normal culling eligibility or GPU cost",
+        "hits": 4589,
+        "backfacing_hits": 1975,
+        "hit_fraction": 0.4303769884506428,
+        "shadow_query_fraction": 0.4642860980668178,
+        "shadow_visit_fraction": 0.5340056243358994,
+        "sunlight": [
+          0.35355339059327373,
+          0.7071067811865475,
+          0.6123724356957946
+        ]
+      }
+    },
+    {
+      "view": "rear",
+      "queries": 57600,
+      "hits": 5041,
+      "hit_fraction": 0.08751736111111111,
+      "raw_sha256": "8c8d193e42d065002d6097eb6b9842185a568cb438e1ee2fb1683e4f659ff10b",
+      "surface_program": {
+        "mean": 25.354691529458442,
+        "p95": 95.0,
+        "max": 199
+      },
+      "phases": {
+        "primary": {
+          "exact_queries": 66112,
+          "csg_visits": 1847920,
+          "mean_program": 27.95135527589545,
+          "fallback_queries": 0,
+          "iterations": 197603,
+          "bound_lookups": 197603,
+          "bound_advances": 131491,
+          "uniform_rejections": 0,
+          "far_lookups": 197603,
+          "far_advances": 131491,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 27042,
+          "hit_ray_visits": 1186528,
+          "miss_ray_visits": 661392
+        },
+        "normal": {
+          "exact_queries": 30246,
+          "csg_visits": 766970,
+          "mean_program": 25.357733253983998,
+          "fallback_queries": 0,
+          "iterations": 0,
+          "bound_lookups": 0,
+          "bound_advances": 0,
+          "uniform_rejections": 0,
+          "far_lookups": 0,
+          "far_advances": 0,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 0,
+          "hit_ray_visits": 766970,
+          "miss_ray_visits": 0
+        },
+        "shadow": {
+          "exact_queries": 63815,
+          "csg_visits": 1357827,
+          "mean_program": 21.277552299616076,
+          "fallback_queries": 0,
+          "iterations": 68728,
+          "bound_lookups": 68728,
+          "bound_advances": 4913,
+          "uniform_rejections": 0,
+          "far_lookups": 68728,
+          "far_advances": 4913,
+          "far_exact_fallbacks": 0,
+          "root_rejected": 0,
+          "hit_ray_visits": 1357827,
+          "miss_ray_visits": 0
+        }
+      },
+      "tails": {
+        "primary_steps": {
+          "median": 10,
+          "p95": 26,
+          "p99": 47,
+          "max": 551,
+          "mean": 12.295774647887324,
+          "top_1pct_work_share": 0.060274591420228125,
+          "top_10pct_work_share": 0.2611683848797251
+        },
+        "primary_queries": {
+          "median": 7,
+          "p95": 23,
+          "p99": 45,
+          "max": 548,
+          "mean": 9.373140249950406,
+          "top_1pct_work_share": 0.07566137566137567,
+          "top_10pct_work_share": 0.30526984126984125
+        },
+        "primary_visits": {
+          "median": 75,
+          "p95": 1023,
+          "p99": 1959,
+          "max": 8116,
+          "mean": 235.37552073001387,
+          "top_1pct_work_share": 0.13781891367081098,
+          "top_10pct_work_share": 0.5397984708325467
+        },
+        "normal_visits": {
+          "median": 30,
+          "p95": 570,
+          "p99": 1170,
+          "max": 1194,
+          "mean": 152.146399523904,
+          "top_1pct_work_share": 0.0766966113407304,
+          "top_10pct_work_share": 0.45916789444176437
+        },
+        "shadow_queries": {
+          "median": 7,
+          "p95": 38,
+          "p99": 81,
+          "max": 270,
+          "mean": 12.65919460424519,
+          "top_1pct_work_share": 0.09978845099114628,
+          "top_10pct_work_share": 0.386821280263261
+        },
+        "shadow_visits": {
+          "median": 105,
+          "p95": 951,
+          "p99": 2447,
+          "max": 12928,
+          "mean": 269.35667526284465,
+          "top_1pct_work_share": 0.1717376366797832,
+          "top_10pct_work_share": 0.52447992270002
+        },
+        "surface_program": {
+          "median": 5,
+          "p95": 95,
+          "p99": 195,
+          "max": 199,
+          "mean": 25.354691529458442,
+          "top_1pct_work_share": 0.07670581239779992,
+          "top_10pct_work_share": 0.4592177634512921
+        }
+      },
+      "geometric_backface_shadow_opportunity": {
+        "scope": "Geometric normal only, not final bump-normal culling eligibility or GPU cost",
+        "hits": 5041,
+        "backfacing_hits": 4193,
+        "hit_fraction": 0.8317794088474509,
+        "shadow_query_fraction": 0.7388545012927995,
+        "shadow_visit_fraction": 0.7897795521815372,
+        "sunlight": [
+          0.35355339059327373,
+          0.7071067811865475,
+          0.6123724356957946
+        ]
+      }
+    }
+  ],
+  "scene_node_types": {
+    "smooth-subtract": 5,
+    "smooth-union": 2,
+    "box": 1,
+    "round-cone": 996,
+    "capsule": 9,
+    "union": 92,
+    "sphere": 5
+  },
+  "tools": {
+    "ncu": null,
+    "nsys": null,
+    "ngfx": null,
+    "renderdoccmd": null,
+    "vulkaninfo": "/usr/bin/vulkaninfo"
+  }
+}

@@ -27,3 +27,6 @@ packs; they are not golden-image tests.
 - [SDF source shader selection](sdf-shader-selection-2026-10/README.md): published
   material/debug eligibility, completed-frame pixel parity, window lifecycle,
   unchanged shader/content baseline and fresh 1080p timing.
+
+- [Selected SDF optimization investigation](sdf-optimization-investigation-2026-10/README.md):
+  current-path controls, exact private shadow-probe captures and ranked next trials.
