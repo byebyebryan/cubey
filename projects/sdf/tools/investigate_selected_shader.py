@@ -53,7 +53,8 @@ def qualify(args):
         command=base(args,"rear")+["--frame-profile","opt-full","--headless-render-only","--frames","1",*flags]
         run=subprocess.run(command,cwd=ROOT,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
         (args.output/(label+".log")).write_text(run.stdout)
-        if not run.returncode or "requires" not in run.stdout:raise RuntimeError("invalid profile admitted: "+label)
+        expected = "acceleration variant does not match" if label == "hybrid" else "requires"
+        if not run.returncode or expected not in run.stdout:raise RuntimeError("unexpected negative-profile result: "+label)
         receipt["negative"].append(dict(label=label,command=command,exit=run.returncode,message=run.stdout.strip()))
     receipt["complete"]=True;save(args.output/"qualification.json",receipt)
 
