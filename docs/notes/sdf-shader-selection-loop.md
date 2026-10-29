@@ -52,3 +52,15 @@ semantics remain; all pipelines are prepared before a renderer becomes usable.
    a new editor, public media, push or default-tracer adoption.
 
 Raw evidence: `outputs/sdf/shader-selection-20261029/`.
+
+
+## Execution closeout
+
+- `a8c0b5f`: contract checkpoint and protected baseline saved.
+- `9b610900`: automatic lit/material pipelines and eligibility boundary test.
+- `dcdd86eb`: completed action-frame readback and PNG admission guard.
+- `375bcc5d`: completed-frame qualification and source window recreation harness.
+- 141 final-binary native jobs, 114 identical image comparisons, ten frozen
+  155-check routes, a passed native Xvfb lifecycle, and 36 timing runs complete.
+  [Results and remaining boundaries](sdf-shader-selection-results.md) retain
+  startup cost, rejected attempts and explicit non-adoption of a default tracer.

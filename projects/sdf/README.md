@@ -162,6 +162,13 @@ routes have measured quality/memory benefits and content-dependent performance
 limits. [Commands and receipts](../../docs/evidence/sdf-tracing-comparison-2026-10/README.md)
 include the bounded query, undo and native inspection tools.
 
+The opt-in source paths now use [automatic shader selection](../../docs/notes/sdf-shader-selection-results.md):
+prebuilt lit/debug and eligible one-material pipelines follow published material
+state and current view settings. `--source-shaders general` selects the original
+source shader for comparison. Guardian improves substantially but remains above
+the 1080p GPU target; startup compilation can be expensive. Sampled/full stays
+the default.
+
 - [Shared material and optical contract](../../docs/architecture/material-recipes.md)
 - [SDF thread closeout and evidence map](../../docs/notes/sdf-thread-closeout.md)
 - [Accepted Guardian closeout](../../docs/notes/sdf-guardian-closeout.md)

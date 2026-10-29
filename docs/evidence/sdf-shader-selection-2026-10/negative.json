@@ -1,0 +1,38 @@
+[
+  {
+    "label": "multi-frame-png",
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--frames",
+      "21",
+      "--authored-scene",
+      "outputs/sdf/shader-selection-20261029/qualification-final/selection-initial.json",
+      "--comparison-actions",
+      "outputs/sdf/shader-selection-20261029/multi-frame-png-negative.json",
+      "--comparison-output",
+      "outputs/sdf/shader-selection-20261029/multi-frame-png-unexpected.json"
+    ],
+    "exit": 1,
+    "message": "sdf: multi-frame action studies require render-only or video; per-frame PNG readback requires render-only",
+    "passed": true
+  },
+  {
+    "label": "capture-png",
+    "command": [
+      "build/release/projects/sdf/sdf",
+      "--headless",
+      "--frames",
+      "1",
+      "--authored-scene",
+      "outputs/sdf/shader-selection-20261029/qualification-final/selection-initial.json",
+      "--comparison-actions",
+      "outputs/sdf/shader-selection-20261029/capture-png-negative.json",
+      "--comparison-output",
+      "outputs/sdf/shader-selection-20261029/capture-png-unexpected.json"
+    ],
+    "exit": 1,
+    "message": "sdf: multi-frame action studies require render-only or video; per-frame PNG readback requires render-only",
+    "passed": true
+  }
+]

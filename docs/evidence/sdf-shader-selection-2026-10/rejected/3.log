@@ -1,0 +1,11 @@
+sdf: authored geometry=e423b93edd1d5817 appearance=4114610afffd0287
+sdf: trace=analytic field_bytes=0
+sdf: acceleration memory program type=1 heap=0 flags=1
+sdf: acceleration memory region-cells type=1 heap=0 flags=1
+sdf: acceleration memory region-refs type=1 heap=0 flags=1
+sdf: acceleration root low=-0.100039,-0.100039,-0.100039 high=0.100039,0.100039,0.100039 empty=0 far_cells=260304
+sdf: shader pipelines=1 setup_ms=4.07401 route=general
+headless_render_only_ready: NVIDIA GeForce RTX 5070 Ti at 320x180 slots=2 pacing_hz=0 readback=0 encode=0
+vulkan validation error: vkCmdCopyImageToBuffer(): srcImage Invalid VkImage Object 0x430000000043.
+The Vulkan spec states: srcImage must be a valid VkImage handle (https://docs.vulkan.org/spec/latest/chapters/copies.html#VUID-vkCmdCopyImageToBuffer-srcImage-parameter)
+vulkan validation error: vkCmdCopyImageToBuffer(): Couldn't find VkImage Object 0x430000000043. This should not happen and may indicate a bug in the application.

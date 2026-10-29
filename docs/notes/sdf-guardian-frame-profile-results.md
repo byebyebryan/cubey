@@ -145,6 +145,10 @@ to a different tracing control, nor constitute general production/editor adoptio
 
 ## Next recommendation
 
+Follow-up: the [source shader selection loop](sdf-shader-selection-results.md)
+implements and qualifies this recommendation on the opt-in source routes. The
+measurements below remain the earlier investigation checkpoint.
+
 Prioritize proper shader/pipeline separation before another CSG backend change:
 separate debug views from the common lit shader, and make the eligible material
 shortcut a validated compile-time/pipeline choice. Preserve the general evaluator

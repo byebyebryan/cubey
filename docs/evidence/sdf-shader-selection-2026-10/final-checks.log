@@ -1,0 +1,19 @@
+Test project /home/bryan/code/cubey/build/release
+    Start  8: documentation_hygiene
+1/4 Test  #8: documentation_hygiene ............   Passed    0.51 sec
+    Start  9: documentation_media
+2/4 Test  #9: documentation_media ..............   Passed    0.04 sec
+    Start 10: documentation_rules
+3/4 Test #10: documentation_rules ..............   Passed    0.13 sec
+    Start 13: shader_build_rules
+4/4 Test #13: shader_build_rules ...............   Passed    0.90 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+build     =   0.90 sec*proc (1 test)
+docs      =   0.68 sec*proc (3 tests)
+policy    =   1.58 sec*proc (4 tests)
+unit      =   1.58 sec*proc (4 tests)
+
+Total Test time (real) =   1.58 sec

@@ -1,0 +1,52 @@
+{
+  "build": {
+    "passed": true,
+    "target": "cubey_project_sdf",
+    "configuration": "Release",
+    "existing_warnings": [
+      "two signedness conversions in motion_names UI indexing"
+    ]
+  },
+  "sdf_ctest": {
+    "passed": true,
+    "tests": [
+      "sdf_shader_selection_tests",
+      "sdf_region_tests",
+      "sdf_recipe_tests",
+      "sdf_authored_tests",
+      "sdf_material_tests",
+      "sdf_normal_projection_tests",
+      "sdf_mirror_author_tests",
+      "sdf_workshop_tests"
+    ],
+    "total": 8,
+    "elapsed_seconds": 1.42,
+    "evidence": "Live CTest output after completed-frame readback change"
+  },
+  "repository_checks": {
+    "passed": true,
+    "tests": [
+      "documentation_hygiene",
+      "documentation_media",
+      "documentation_rules",
+      "shader_build_rules"
+    ],
+    "total": 4,
+    "log": "final-checks.log"
+  },
+  "protected_baseline": {
+    "passed": true,
+    "checked": 226,
+    "changed": []
+  },
+  "negative_capture_contracts": {
+    "passed": true,
+    "total": 2,
+    "receipt": "negative.json"
+  },
+  "native_window": {
+    "passed": true,
+    "receipt": "window.json"
+  },
+  "scope": "Focused SDF and repository documentation/build checks; no repository-wide runtime acceptance claim"
+}

@@ -224,7 +224,8 @@ if args.history_controls:
                    "previous to 4 and next to 5","scrub to final and enter numeric midpoint","stable paused field",
                    "restart empty","resume and pause playback","Escape"]}
 else:
-    source_tracing=json.loads(args.config.read_text()).get('surface-trace','sampled')!='sampled'
+    source_config=json.loads(args.config.read_text())
+    source_tracing=source_config.get('surface-trace','sampled')!='sampled'
     assert builds==(0 if source_tracing else 1),builds
     updates=re.findall(r"authored update geometry=(\w+) appearance=(\w+) field_rebuilt=(\d)",text)
     assert (updates or args.readonly_material) and all(row[2]=="0" for row in updates),text
@@ -242,7 +243,8 @@ else:
     "actions":["resize twice","orbit","zoom","pause/reset","change material roughness without field rebuild","Escape"]}
     if source_tracing:
         pipelines=[int(n) for n in re.findall(r'sdf: shader pipelines=(\d+)',text)]
-        assert len(pipelines)>=3 and all(n==3 for n in pipelines),pipelines
+        expected_pipelines=1 if source_config.get('source-shaders','automatic')=='general' else 3
+        assert len(pipelines)>=3 and all(n==expected_pipelines for n in pipelines),pipelines
         receipt['source_tracing']=True
         receipt['source_pipeline_counts']=pipelines
     if args.readonly_material:

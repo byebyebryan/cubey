@@ -55,8 +55,12 @@ the [representation review](notes/sdf-representation-design-review.md), now has
 implemented opt-in analytic/hybrid controls, exact region programs and scripted
 undo/publication evidence. The [decision report](notes/sdf-tracing-comparison-results.md)
 records Robot's quality/memory alternative and Guardian's failed scaling gate.
-The sampled default and accepted content stay fixed; Guardian query-cost
-diagnosis is the recommended next investigation, not an adopted new work stream.
+The sampled default and accepted content stay fixed. The subsequent
+[shader selection loop](notes/sdf-shader-selection-results.md) qualifies prebuilt
+lit/debug and published-material selection on the opt-in source paths. Guardian
+1080p rear GPU p95 improves from about 51 ms to 21 ms; its three measured views
+still exceed 16.7 ms. Startup shader compilation, remaining source execution and
+region-builder/edit latency retain separate investigation boundaries.
 
 ## Material and SDF demo status
 

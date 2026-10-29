@@ -1,0 +1,17 @@
+cubey_window_backend: x11
+cubey_swapchain_present_mode: 0 (0=immediate,1=mailbox,2=fifo)
+sdf: authored geometry=cce9b98450e7eb8b appearance=e0421314866e2945
+sdf: trace=analytic field_bytes=0
+sdf: study IBL setup_ms=247.754
+sdf: shader pipelines=3 setup_ms=32476.4 route=lit-single-material
+sdf: NVIDIA GeForce RTX 5070 Ti rendering sparse SDF bricks at 900x1000
+windowed_render_ready: NVIDIA GeForce RTX 5070 Ti at 900x1000 slots=2 pacing_hz=0
+framebuffer resized; recreating swapchain
+cubey_swapchain_present_mode: 0 (0=immediate,1=mailbox,2=fifo)
+sdf: study IBL setup_ms=253.551
+sdf: shader pipelines=3 setup_ms=39.5008 route=lit-single-material
+framebuffer resized; recreating swapchain
+cubey_swapchain_present_mode: 0 (0=immediate,1=mailbox,2=fifo)
+sdf: study IBL setup_ms=251.651
+sdf: shader pipelines=3 setup_ms=38.1531 route=lit-single-material
+profile: wrote /home/bryan/code/cubey/outputs/sdf/shader-selection-20261029/window-profile.{frames.csv,passes.csv,metrics.csv,trace.json,summary.txt}

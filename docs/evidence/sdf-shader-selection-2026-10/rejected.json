@@ -1,0 +1,38 @@
+[
+  {
+    "raw": "qualification/analytic-full-atmosphere-multi-general.log",
+    "reason": "Generated test scene omitted required names; corrected before qualification",
+    "log": "rejected/0.log",
+    "sha256": "2592cb7096888e34a61188727c359f7d797972a12737572821c71d3334591410"
+  },
+  {
+    "raw": "qualification-v2/analytic-control-atmosphere-general.log",
+    "reason": "Acceleration test used axis 16; retained axis-64 admission contract",
+    "log": "rejected/1.log",
+    "sha256": "e741efb0e7cb9ef57e9cffaac8e75bad79715582e3212322b2ebe7469ed16852"
+  },
+  {
+    "raw": "appearance/analytic-4-automatic.log",
+    "reason": "PNG prefix assumption rejected: only first frame rendered; replaced with per-frame readback",
+    "log": "rejected/2.log",
+    "sha256": "c3a10534771813d4d1607475fa5988452d94adac3d41a94582992328cd1f81f4"
+  },
+  {
+    "raw": "appearance-v3/analytic-general.log",
+    "reason": "Late final-frame copy used an expired host slot; copy is now queued during record before host slot teardown",
+    "log": "rejected/3.log",
+    "sha256": "503bda21e479ff12612cb6126dd3b03a6fa884b79e204ffbf496a01f8a961659"
+  },
+  {
+    "raw": "window/logs/windowed-interaction.log",
+    "reason": "Window harness config used CLI spelling instead of profile.output",
+    "log": "rejected/4.log",
+    "sha256": "c4c07c8007d39d41917da5a3368ad288bd398ff0c40d1e769e597245a241822e"
+  },
+  {
+    "raw": "window-v2/logs/windowed-interaction.log",
+    "reason": "Material control was below the clipped panel; one inspected scroll exposes the actual roughness control",
+    "log": "rejected/5.log",
+    "sha256": "671bc483b646ef25eafc0adea1c4292962f82b3df0b0da66bd8b10bfcf8b3fdb"
+  }
+]

@@ -1,0 +1,9 @@
+sdf: authored geometry=e423b93edd1d5817 appearance=4114610afffd0287
+sdf: trace=analytic field_bytes=0
+sdf: acceleration memory program type=1 heap=0 flags=1
+sdf: acceleration memory region-cells type=1 heap=0 flags=1
+sdf: acceleration memory region-refs type=1 heap=0 flags=1
+sdf: acceleration root low=-0.100039,-0.100039,-0.100039 high=0.100039,0.100039,0.100039 empty=0 far_cells=260304
+sdf: shader pipelines=3 setup_ms=33.1393 route=lit-single-material
+headless_png: NVIDIA GeForce RTX 5070 Ti wrote /home/bryan/code/cubey/outputs/sdf/shader-selection-20261029/appearance/analytic-4-automatic.png at 320x180
+profile: wrote /home/bryan/code/cubey/outputs/sdf/shader-selection-20261029/appearance/analytic-4-automatic.{frames.csv,passes.csv,metrics.csv,trace.json,summary.txt}

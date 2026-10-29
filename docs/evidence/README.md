@@ -23,3 +23,7 @@ packs; they are not golden-image tests.
 - [SDF tracing/cache comparison](sdf-tracing-comparison-2026-10/README.md): implemented
   opt-in controls and region programs, source/history checks, native images,
   completed timing samples and explicit practicality/acceptance gaps.
+
+- [SDF source shader selection](sdf-shader-selection-2026-10/README.md): published
+  material/debug eligibility, completed-frame pixel parity, window lifecycle,
+  unchanged shader/content baseline and fresh 1080p timing.

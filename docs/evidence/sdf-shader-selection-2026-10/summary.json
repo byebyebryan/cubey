@@ -1,0 +1,248 @@
+{
+  "candidate_commit": "375bcc5d41918cd1fc0d0cfe29aaaaf67c74d8c9",
+  "binary_sha256": "aace81e6d3ebb1c83c4da25a678013d030f04f6c1227e26c018065306640270e",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "timing": [
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "general": {
+        "p95_min_ms": 53.466033599999996,
+        "p95_max_ms": 53.8710288,
+        "per_repeat_p95_ms": [
+          53.466033599999996,
+          53.63078079999999,
+          53.8710288
+        ],
+        "setup_ms": [
+          3.680716,
+          4.70924,
+          4.004738
+        ]
+      },
+      "automatic": {
+        "p95_min_ms": 21.42756,
+        "p95_max_ms": 21.5160176,
+        "per_repeat_p95_ms": [
+          21.42756,
+          21.5160176,
+          21.4562928
+        ],
+        "setup_ms": [
+          32.540619,
+          33.67904,
+          33.925983
+        ]
+      },
+      "speedup_range": [
+        2.4849409678861756,
+        2.5141000095204493
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "general": {
+        "p95_min_ms": 50.7321552,
+        "p95_max_ms": 51.098908800000004,
+        "per_repeat_p95_ms": [
+          50.8758384,
+          51.098908800000004,
+          50.7321552
+        ],
+        "setup_ms": [
+          3.721327,
+          3.926628,
+          4.012829
+        ]
+      },
+      "automatic": {
+        "p95_min_ms": 22.8536864,
+        "p95_max_ms": 23.0457904,
+        "per_repeat_p95_ms": [
+          23.042540799999998,
+          22.8536864,
+          23.0457904
+        ],
+        "setup_ms": [
+          36.838549,
+          33.678228,
+          33.231293
+        ]
+      },
+      "speedup_range": [
+        2.201363212953633,
+        2.2359153751230263
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "general": {
+        "p95_min_ms": 51.286696,
+        "p95_max_ms": 51.3438144,
+        "per_repeat_p95_ms": [
+          51.3438144,
+          51.3051776,
+          51.286696
+        ],
+        "setup_ms": [
+          4.501499,
+          3.929347,
+          4.007249
+        ]
+      },
+      "automatic": {
+        "p95_min_ms": 20.8117776,
+        "p95_max_ms": 20.9234624,
+        "per_repeat_p95_ms": [
+          20.8710544,
+          20.9234624,
+          20.8117776
+        ],
+        "setup_ms": [
+          33.573825,
+          36.678193,
+          34.611987
+        ]
+      },
+      "speedup_range": [
+        2.4511572233857435,
+        2.4670556925420923
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "general": {
+        "p95_min_ms": 6.3281328,
+        "p95_max_ms": 6.3719056,
+        "per_repeat_p95_ms": [
+          6.344271999999999,
+          6.3281328,
+          6.3719056
+        ],
+        "setup_ms": [
+          4.174778,
+          4.174678,
+          3.856519
+        ]
+      },
+      "automatic": {
+        "p95_min_ms": 5.1125072,
+        "p95_max_ms": 5.1445584,
+        "per_repeat_p95_ms": [
+          5.1125072,
+          5.1445584,
+          5.1243568
+        ],
+        "setup_ms": [
+          36.523182,
+          36.884913,
+          33.671246
+        ]
+      },
+      "speedup_range": [
+        1.230063361706614,
+        1.2463367484352883
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "general": {
+        "p95_min_ms": 4.0438992,
+        "p95_max_ms": 4.1181472,
+        "per_repeat_p95_ms": [
+          4.0438992,
+          4.1181472,
+          4.089143999999999
+        ],
+        "setup_ms": [
+          4.039808,
+          3.829117,
+          3.742558
+        ]
+      },
+      "automatic": {
+        "p95_min_ms": 3.4173663999999997,
+        "p95_max_ms": 3.4380575999999996,
+        "per_repeat_p95_ms": [
+          3.4380575999999996,
+          3.4173663999999997,
+          3.4364383999999997
+        ],
+        "setup_ms": [
+          33.450216,
+          36.261301,
+          33.035154
+        ]
+      },
+      "speedup_range": [
+        1.1762162448936284,
+        1.2050645783841032
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "general": {
+        "p95_min_ms": 4.1168624,
+        "p95_max_ms": 4.1445184,
+        "per_repeat_p95_ms": [
+          4.1214736,
+          4.1168624,
+          4.1445184
+        ],
+        "setup_ms": [
+          3.930468,
+          4.153288,
+          5.054682
+        ]
+      },
+      "automatic": {
+        "p95_min_ms": 3.6191152,
+        "p95_max_ms": 3.6580991999999997,
+        "per_repeat_p95_ms": [
+          3.6580991999999997,
+          3.657736,
+          3.6191152
+        ],
+        "setup_ms": [
+          36.244861,
+          36.301281,
+          34.244567
+        ]
+      },
+      "speedup_range": [
+        1.1254102677149924,
+        1.1451744890574358
+      ]
+    }
+  ],
+  "timing_runs": 36,
+  "completed_gpu_samples": 5400,
+  "native_jobs": 141,
+  "static_image_pairs": 60,
+  "action_image_pairs": 54,
+  "frozen_fixture_routes": 10,
+  "frozen_checks_per_route": 155,
+  "protected_files": 226,
+  "protected_changes": [],
+  "encoder_boundary_max_pct": 0,
+  "encoder_nonzero_boundaries": 0,
+  "encoder_boundary_count": 72,
+  "window_passed": true,
+  "default": "sampled/full, one original trace pipeline",
+  "source_pool": "three prebuilt pipelines; published registered-material eligibility; original debug/general fallback",
+  "controlled_cold_cache_benchmark": false,
+  "first_window_setup_ms": 32476.4,
+  "caveats": [
+    "GPU/driver-specific fixed scenes; physical desktop and human visual acceptance remain separate",
+    "Registered material count is conservative; unused registered materials disable single-material specialization",
+    "Setup timings are observed driver-cache states, not controlled cold-cache timings",
+    "Shader/driver private allocation size, occupancy, cache stalls and spills are unmeasured",
+    "Prior root-far versus A64 boundary differences and cache/edit latency limits remain",
+    "Captured action completion includes optional readback; it is not an edit-latency benchmark"
+  ]
+}

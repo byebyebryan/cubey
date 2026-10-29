@@ -1,0 +1,62 @@
+[
+  {
+    "name": "guardian-preset-general.png",
+    "raw": "qualification-final/guardian-preset-general.png",
+    "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+  },
+  {
+    "name": "guardian-preset-automatic.png",
+    "raw": "qualification-final/guardian-preset-automatic.png",
+    "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+  },
+  {
+    "name": "guardian-rear-general.png",
+    "raw": "qualification-final/guardian-rear-general.png",
+    "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+  },
+  {
+    "name": "guardian-rear-automatic.png",
+    "raw": "qualification-final/guardian-rear-automatic.png",
+    "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+  },
+  {
+    "name": "robot-preset-general.png",
+    "raw": "qualification-final/robot-preset-general.png",
+    "sha256": "1e4f9d88dfb7dbdc053cf02bc98f0c44524c4b23b011c0b8747866afa747c228"
+  },
+  {
+    "name": "robot-preset-automatic.png",
+    "raw": "qualification-final/robot-preset-automatic.png",
+    "sha256": "1e4f9d88dfb7dbdc053cf02bc98f0c44524c4b23b011c0b8747866afa747c228"
+  },
+  {
+    "name": "glass-general.png",
+    "raw": "qualification-final/material-study-sphere-glass-debug0-general.png",
+    "sha256": "bc6b315c591ac63f164290773131f4727d8ad6660865bae26464a131d69b4ee7"
+  },
+  {
+    "name": "glass-automatic.png",
+    "raw": "qualification-final/material-study-sphere-glass-debug0-automatic.png",
+    "sha256": "bc6b315c591ac63f164290773131f4727d8ad6660865bae26464a131d69b4ee7"
+  },
+  {
+    "name": "glass-transport.png",
+    "raw": "qualification-final/material-study-sphere-glass-debug9-automatic.png",
+    "sha256": "d01434145432a3e0568dfc755cff5ebc0e697a62bb916654812a1f019612b818"
+  },
+  {
+    "name": "pattern-before.png",
+    "raw": "appearance-v4/analytic-automatic-receipt.frame-0.png",
+    "sha256": "2bb6cb4a137477020a282608c199425c4e9e4aafb341f6434d015c68ad7d46c2"
+  },
+  {
+    "name": "pattern-after.png",
+    "raw": "appearance-v4/analytic-automatic-receipt.frame-3.png",
+    "sha256": "361b81f147fc02053d50a1823257e5e03d10b159195535fa6f7b294ecc391152"
+  },
+  {
+    "name": "window-material-edited.png",
+    "raw": "window-v3/captures/window-material-edited.png",
+    "sha256": "d9c5d4f31c6368b73eb206be81674b35bab23c7ddc44e05ec8b2db8edec83828"
+  }
+]

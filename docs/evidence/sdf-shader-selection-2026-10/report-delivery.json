@@ -1,0 +1,248 @@
+{
+  "title": "Cubey SDF \u2014 Shader selection results",
+  "report_id": "726d08d3e9412206ad5c96ca3c2f5e97d73ae38f18490b8874c3cf6415afce09",
+  "url": "http://starship:8787/reports/726d08d3e9412206ad5c96ca3c2f5e97d73ae38f18490b8874c3cf6415afce09/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "source": "outputs/sdf/shader-selection-20261029/report",
+  "authoring": "outputs/sdf/shader-selection-20261029/build_report.py",
+  "http_verified_files": 43,
+  "http_verified_bytes": 3110545,
+  "http_checks": [
+    {
+      "path": "evidence/README.md",
+      "bytes": 1742,
+      "sha256": "2a29cd8e32fa2d61ac25376440558a002969240ad165696db59bfcc692887a00"
+    },
+    {
+      "path": "evidence/action-pixels.json",
+      "bytes": 18185,
+      "sha256": "7196edfac5727adc235b31f0a47384db3e13add38bc31f0167940eb8fc5b0b1b"
+    },
+    {
+      "path": "evidence/actions/appearance-v4-analytic-automatic-receipt.json",
+      "bytes": 5590,
+      "sha256": "e9c4edcb298f0ef7504fb5373dad460cd4a221c149fe832ce4f9c0aa05ba910f"
+    },
+    {
+      "path": "evidence/actions/appearance-v4-analytic-general-receipt.json",
+      "bytes": 5506,
+      "sha256": "4932f19c67cfae0d5357ff860274859784313681fa1755ec80e2c1de077d06a2"
+    },
+    {
+      "path": "evidence/actions/appearance-v4-hybrid-automatic-receipt.json",
+      "bytes": 5635,
+      "sha256": "f8af3a855baa1414b3db23e501ee01acd7f2010e4b6fc72516586fe6b5f1704b"
+    },
+    {
+      "path": "evidence/actions/appearance-v4-hybrid-general-receipt.json",
+      "bytes": 5552,
+      "sha256": "7e164ece9a92fa0e476391d6f06cf1109ee4863d02912768060b50575ae70d57"
+    },
+    {
+      "path": "evidence/actions/qualification-final-analytic-automatic-replay.json",
+      "bytes": 19025,
+      "sha256": "244845477a19ad7b1388eb70cb37c627ca7119c1b4f5b66c51674848a6874b6f"
+    },
+    {
+      "path": "evidence/actions/qualification-final-analytic-general-replay.json",
+      "bytes": 18837,
+      "sha256": "02e1714fe6cf58de4b5a4653adbff0dd5d73e610cf1b0a9e12108e5321e513db"
+    },
+    {
+      "path": "evidence/actions/qualification-final-hybrid-automatic-replay.json",
+      "bytes": 19211,
+      "sha256": "f0236fe3370230688917c2fefa2ebb94e20535598e097194518dc049b9f13972"
+    },
+    {
+      "path": "evidence/actions/qualification-final-hybrid-general-replay.json",
+      "bytes": 19012,
+      "sha256": "20085c060a2bd5de234288b8d090374aea04ab78ba002dccae930cc7ba7eb9f8"
+    },
+    {
+      "path": "evidence/appearance.json",
+      "bytes": 19029,
+      "sha256": "7449206aeca849fff7eddd3c341c3560a5008d68c38e764210d58337b2482038"
+    },
+    {
+      "path": "evidence/baseline.json",
+      "bytes": 30646,
+      "sha256": "6c62c5dfcf835e490f2b046c745d9d06c3df4c8a1e495333574e429c19c96076"
+    },
+    {
+      "path": "evidence/checks.json",
+      "bytes": 1245,
+      "sha256": "64b5ee3003bbe26a1019cd439b9cfe0d2dbaafee56ac93cba669946357ea3e53"
+    },
+    {
+      "path": "evidence/context.json",
+      "bytes": 12034,
+      "sha256": "a05bdff3311e55e7040383dffcc0fc57c09d9e475075d7891a2c4d9682381333"
+    },
+    {
+      "path": "evidence/final-checks.log",
+      "bytes": 704,
+      "sha256": "20dc120020b0b021c00f0631a93724d4cea98dd6ef28c8809fa5e0296a6e395c"
+    },
+    {
+      "path": "evidence/images/glass-automatic.png",
+      "bytes": 25081,
+      "sha256": "bc6b315c591ac63f164290773131f4727d8ad6660865bae26464a131d69b4ee7"
+    },
+    {
+      "path": "evidence/images/glass-general.png",
+      "bytes": 25081,
+      "sha256": "bc6b315c591ac63f164290773131f4727d8ad6660865bae26464a131d69b4ee7"
+    },
+    {
+      "path": "evidence/images/glass-transport.png",
+      "bytes": 2778,
+      "sha256": "d01434145432a3e0568dfc755cff5ebc0e697a62bb916654812a1f019612b818"
+    },
+    {
+      "path": "evidence/images/guardian-preset-automatic.png",
+      "bytes": 476521,
+      "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+    },
+    {
+      "path": "evidence/images/guardian-preset-general.png",
+      "bytes": 476521,
+      "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+    },
+    {
+      "path": "evidence/images/guardian-rear-automatic.png",
+      "bytes": 412815,
+      "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+    },
+    {
+      "path": "evidence/images/guardian-rear-general.png",
+      "bytes": 412815,
+      "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+    },
+    {
+      "path": "evidence/images/pattern-after.png",
+      "bytes": 25857,
+      "sha256": "361b81f147fc02053d50a1823257e5e03d10b159195535fa6f7b294ecc391152"
+    },
+    {
+      "path": "evidence/images/pattern-before.png",
+      "bytes": 25739,
+      "sha256": "2bb6cb4a137477020a282608c199425c4e9e4aafb341f6434d015c68ad7d46c2"
+    },
+    {
+      "path": "evidence/images/robot-preset-automatic.png",
+      "bytes": 295316,
+      "sha256": "1e4f9d88dfb7dbdc053cf02bc98f0c44524c4b23b011c0b8747866afa747c228"
+    },
+    {
+      "path": "evidence/images/robot-preset-general.png",
+      "bytes": 295316,
+      "sha256": "1e4f9d88dfb7dbdc053cf02bc98f0c44524c4b23b011c0b8747866afa747c228"
+    },
+    {
+      "path": "evidence/images/window-material-edited.png",
+      "bytes": 133473,
+      "sha256": "d9c5d4f31c6368b73eb206be81674b35bab23c7ddc44e05ec8b2db8edec83828"
+    },
+    {
+      "path": "evidence/images.json",
+      "bytes": 2358,
+      "sha256": "04afa9a625bff17425e895970ad747c30ac26f2116e9758d60bccaa85d5717ad"
+    },
+    {
+      "path": "evidence/negative.json",
+      "bytes": 1276,
+      "sha256": "2544e12951d991939379b33da7ad193e3fd01d04a8a4d01fd14b254edf6e5da8"
+    },
+    {
+      "path": "evidence/qualification.json",
+      "bytes": 191240,
+      "sha256": "52bd9b7d66b24f995cf941b2b7851b336b1ceb4810e22982823e6064ca00a3d8"
+    },
+    {
+      "path": "evidence/rejected/0.log",
+      "bytes": 60,
+      "sha256": "2592cb7096888e34a61188727c359f7d797972a12737572821c71d3334591410"
+    },
+    {
+      "path": "evidence/rejected/1.log",
+      "bytes": 111,
+      "sha256": "e741efb0e7cb9ef57e9cffaac8e75bad79715582e3212322b2ebe7469ed16852"
+    },
+    {
+      "path": "evidence/rejected/2.log",
+      "bytes": 779,
+      "sha256": "c3a10534771813d4d1607475fa5988452d94adac3d41a94582992328cd1f81f4"
+    },
+    {
+      "path": "evidence/rejected/3.log",
+      "bytes": 982,
+      "sha256": "503bda21e479ff12612cb6126dd3b03a6fa884b79e204ffbf496a01f8a961659"
+    },
+    {
+      "path": "evidence/rejected/4.log",
+      "bytes": 43,
+      "sha256": "c4c07c8007d39d41917da5a3368ad288bd398ff0c40d1e769e597245a241822e"
+    },
+    {
+      "path": "evidence/rejected/5.log",
+      "bytes": 1002,
+      "sha256": "671bc483b646ef25eafc0adea1c4292962f82b3df0b0da66bd8b10bfcf8b3fdb"
+    },
+    {
+      "path": "evidence/rejected.json",
+      "bytes": 1679,
+      "sha256": "9dc0842faeb51cf7bcce0088c07888f65aae6c8e7284a9109afbc87187748282"
+    },
+    {
+      "path": "evidence/summary.json",
+      "bytes": 6011,
+      "sha256": "16fa5b49ed81ff5a900532058c16837a47dde4956925783a5c91648deecbfefc"
+    },
+    {
+      "path": "evidence/timing.json",
+      "bytes": 63184,
+      "sha256": "8805f4ca0c5b717521a87a0eff87af70471dc2d930b5d246f13174c0855532ab"
+    },
+    {
+      "path": "evidence/window.json",
+      "bytes": 12389,
+      "sha256": "132043de65ea43ce284b354055202047acd01a573673be2a0940c207b487bd3d"
+    },
+    {
+      "path": "index.html",
+      "bytes": 30443,
+      "sha256": "c3280116a3b6f16a22bacf0754a548b414bb2f0a6ab47ae96d71f36a6a0aed38"
+    },
+    {
+      "path": "report.css",
+      "bytes": 5901,
+      "sha256": "e9f38ba2412d13df546bf16dfa3b722a0f760e0682a1b3b190505cdc8a86eacb"
+    },
+    {
+      "path": "report.js",
+      "bytes": 3821,
+      "sha256": "145c11f055e1f11efcdcbfca7945573c1b189cf940c02e59acd3507fa1e8bda2"
+    }
+  ],
+  "browser": {
+    "passed": true,
+    "desktop": true,
+    "mobile_viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "horizontal_overflow": false,
+    "broken_images_after_decode": 0,
+    "page_console_errors": 0,
+    "interactions": [
+      "one/two registered materials",
+      "debug general fallback",
+      "material shortcut disabled",
+      "Robot and view timing selection",
+      "general/automatic and scene image selection",
+      "published unused material and rejected edit receipts"
+    ],
+    "viewport_reset": true
+  },
+  "server": "Existing codex-report-server reused and left running"
+}

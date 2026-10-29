@@ -55,9 +55,13 @@ the architecture and project guides remain current authority.
 - [Guardian current-candidate frame profile](sdf-guardian-frame-profile-progress.md):
   stage ablations, driver compiler statistics and qualified shader-specialization
   diagnostics for the measured full-HD rear-view cost.
+- [SDF source shader selection scope](sdf-shader-selection-loop.md) and
+  [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
+  published-material selection, exact capture parity, current 1080p measurements
+  and remaining startup/frame-time limits.
 - [Guardian frame-profile findings](sdf-guardian-frame-profile-results.md):
   a byte-identical specialization reduces approximately 51 ms to 21 ms;
-  compiled shader cost is a major issue and production selection remains deferred.
+  compiled shader cost is a major issue; the following shader-selection loop implements the bounded source route.
 - [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
   direction and source/media inventory at intake; the implementation and release
   outcome is recorded in the progress record and current [site guide](../../site/README.md).
