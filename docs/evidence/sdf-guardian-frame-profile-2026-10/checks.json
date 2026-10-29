@@ -1,0 +1,31 @@
+{
+  "scope": "Observed accepted ctest executions, separate from GPU/native qualification.",
+  "checks": [
+    {
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build/release",
+        "-R",
+        "^sdf_.*tests$|^documentation_(hygiene|media|rules)$",
+        "--output-on-failure"
+      ],
+      "passed": 10,
+      "failed": 0,
+      "returncode": 0
+    },
+    {
+      "command": [
+        "ctest",
+        "--test-dir",
+        "build/release",
+        "-R",
+        "^shader_build_rules$",
+        "--output-on-failure"
+      ],
+      "passed": 1,
+      "failed": 0,
+      "returncode": 0
+    }
+  ]
+}

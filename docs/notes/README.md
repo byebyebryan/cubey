@@ -55,6 +55,9 @@ the architecture and project guides remain current authority.
 - [Guardian current-candidate frame profile](sdf-guardian-frame-profile-progress.md):
   stage ablations, driver compiler statistics and qualified shader-specialization
   diagnostics for the measured full-HD rear-view cost.
+- [Guardian frame-profile findings](sdf-guardian-frame-profile-results.md):
+  a byte-identical specialization reduces approximately 51 ms to 21 ms;
+  compiled shader cost is a major issue and production selection remains deferred.
 - [cubey-site handoff](cubey-site-handoff.md): the user's full presentation-site
   direction and source/media inventory at intake; the implementation and release
   outcome is recorded in the progress record and current [site guide](../../site/README.md).

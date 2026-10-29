@@ -1,0 +1,511 @@
+{
+  "date": "2026-10-28",
+  "scope": "Guardian rear, 1920x1080, root-far analytic axis64",
+  "ranges": [
+    {
+      "name": "ordinary",
+      "p95_ms_min": 51.1886576,
+      "p95_ms_max": 51.5553792,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    },
+    {
+      "name": "runtime-primary",
+      "p95_ms_min": 25.3717088,
+      "p95_ms_max": 25.4591808,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "name": "runtime-normal",
+      "p95_ms_min": 26.5715696,
+      "p95_ms_max": 26.7269088,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "name": "runtime-material",
+      "p95_ms_min": 26.4774992,
+      "p95_ms_max": 26.721547199999996,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "name": "runtime-shadow",
+      "p95_ms_min": 35.6559584,
+      "p95_ms_max": 35.8153776,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "name": "runtime-full",
+      "p95_ms_min": 51.3011792,
+      "p95_ms_max": 51.4894368,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "name": "fixed-primary",
+      "p95_ms_min": 15.6040832,
+      "p95_ms_max": 15.7012576,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_fixed_primary.frag.spv",
+      "shader_sha256": "b1d20a7020c56257d86e8470222c0a0c9e0f8705925402bd34aae3604a1626db"
+    },
+    {
+      "name": "fixed-normal",
+      "p95_ms_min": 15.9757536,
+      "p95_ms_max": 16.1160064,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_fixed_normal.frag.spv",
+      "shader_sha256": "7805d21fbf80ad7e65eb08a1d118c3eb7c8415834c455258a07ced9fe70c99e7"
+    },
+    {
+      "name": "fixed-material",
+      "p95_ms_min": 24.9177056,
+      "p95_ms_max": 25.0286096,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_fixed_material.frag.spv",
+      "shader_sha256": "a63d7c9e85c1529cd97bca3e2c38fe80760eec4f48b6f97d0533b5d9e08f5f1e"
+    },
+    {
+      "name": "fixed-shadow",
+      "p95_ms_min": 20.221294399999998,
+      "p95_ms_max": 20.2771312,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_fixed_shadow.frag.spv",
+      "shader_sha256": "3e68a7ab59257a8854907bd93318fed89f6b8dd3c04b443a603601c7b18770ea"
+    },
+    {
+      "name": "fixed-full",
+      "p95_ms_min": 51.0766656,
+      "p95_ms_max": 51.3106704,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_fixed_full.frag.spv",
+      "shader_sha256": "684f63d6a48200dbb44fcfca850e35d9a5128210ec35c5a21d4224a3a271fc12"
+    },
+    {
+      "name": "nodebug",
+      "p95_ms_min": 39.605331199999995,
+      "p95_ms_max": 39.87476,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_nodebug.frag.spv",
+      "shader_sha256": "8943b51e5b1bd154b271ba7b2859cc054b410d86ddf17a53f0786e95d9c9068f"
+    },
+    {
+      "name": "single-material",
+      "p95_ms_min": 50.754088,
+      "p95_ms_max": 50.9832896,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_single-material.frag.spv",
+      "shader_sha256": "ed2261b95c4499c8941b261bf4f2e21c58f7d000b0f9e87b9e52946f8b866c72"
+    },
+    {
+      "name": "specialized",
+      "p95_ms_min": 20.8360176,
+      "p95_ms_max": 21.0127104,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_specialized.frag.spv",
+      "shader_sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+    },
+    {
+      "name": "no-sky",
+      "p95_ms_min": 38.8041248,
+      "p95_ms_max": 38.9782144,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "profile_no-sky.frag.spv",
+      "shader_sha256": "f87baae1822c5cd0d580a87bc9195a0efa5d5cbcf8d3b5ddfa291f62f1b25df6"
+    },
+    {
+      "name": "no-shadow",
+      "p95_ms_min": 27.1247248,
+      "p95_ms_max": 27.221311999999998,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    },
+    {
+      "name": "no-procedural",
+      "p95_ms_min": 51.3286704,
+      "p95_ms_max": 51.464657599999995,
+      "repetitions": 3,
+      "samples_per_run": 150,
+      "shader": "root_far_sdf_analytic_pruned.frag.spv",
+      "shader_sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    }
+  ],
+  "compiler": [
+    {
+      "shader": "profile_fixed_full.frag.spv",
+      "statistics": {
+        "Register Count": 128,
+        "Binary Size": 427776,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_fixed_material.frag.spv",
+      "statistics": {
+        "Register Count": 128,
+        "Binary Size": 309120,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_fixed_normal.frag.spv",
+      "statistics": {
+        "Register Count": 48,
+        "Binary Size": 64896,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_fixed_primary.frag.spv",
+      "statistics": {
+        "Register Count": 39,
+        "Binary Size": 18304,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_fixed_shadow.frag.spv",
+      "statistics": {
+        "Register Count": 48,
+        "Binary Size": 82816,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_no-sky.frag.spv",
+      "statistics": {
+        "Register Count": 96,
+        "Binary Size": 425728,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_nodebug.frag.spv",
+      "statistics": {
+        "Register Count": 128,
+        "Binary Size": 376832,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_single-material.frag.spv",
+      "statistics": {
+        "Register Count": 96,
+        "Binary Size": 325120,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "profile_specialized.frag.spv",
+      "statistics": {
+        "Register Count": 96,
+        "Binary Size": 256896,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "statistics": {
+        "Register Count": 128,
+        "Binary Size": 650496,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    },
+    {
+      "shader": "root_far_sdf_analytic_pruned.frag.spv",
+      "statistics": {
+        "Register Count": 128,
+        "Binary Size": 427648,
+        "Stack Size": 0
+      },
+      "internal_representations": 0
+    }
+  ],
+  "qualification": {
+    "binary_sha256": "cded2ed6a9bd2e154ea53f349c39d5fb7eeb6e3192586dcdcee67558984fb40a",
+    "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+    "source_head": "754c60764dd0547bd7593142fd1cb0e6b67ee660",
+    "source_diff_sha256": "2276af5f88bafbd7b5f43f821622195f324ebfdc8e4422740c2ff982e1f83693",
+    "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+    "score": {
+      "passed": true,
+      "scored": 155,
+      "modes": [
+        "analytic-pruned"
+      ],
+      "maxima": {
+        "depth": 0.002638292312622026,
+        "point": 2.8163194656580237e-08,
+        "normal_degrees": 0.22949957087194034,
+        "residual": 1.7404556274414062e-05
+      },
+      "failures": []
+    },
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "32",
+      "--height",
+      "32",
+      "--surface-trace",
+      "analytic",
+      "--csg-evaluation",
+      "pruned",
+      "--region-axis",
+      "64",
+      "--acceleration-variant",
+      "root-far",
+      "--comparison-input",
+      "projects/sdf/comparison/fixtures.json",
+      "--comparison-output",
+      "/home/bryan/code/cubey/outputs/sdf/guardian-frame-profile-20261028/qualification/fixtures.json"
+    ],
+    "negative": [
+      {
+        "name": "multi-material",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--headless",
+          "--headless-render-only",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--width",
+          "32",
+          "--height",
+          "32",
+          "--surface-trace",
+          "analytic",
+          "--csg-evaluation",
+          "pruned",
+          "--region-axis",
+          "64",
+          "--acceleration-variant",
+          "root-far",
+          "--config",
+          "projects/sdf/presets/sculpture-guardian-limestone.json",
+          "--frame-profile",
+          "specialized",
+          "--config",
+          "projects/sdf/presets/survey-robot-fieldkit.json"
+        ],
+        "returncode": 1,
+        "output": "sdf: single-material profile requires the eligible one-material shortcut\n"
+      },
+      {
+        "name": "shortcut-disabled",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--headless",
+          "--headless-render-only",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--width",
+          "32",
+          "--height",
+          "32",
+          "--surface-trace",
+          "analytic",
+          "--csg-evaluation",
+          "pruned",
+          "--region-axis",
+          "64",
+          "--acceleration-variant",
+          "root-far",
+          "--config",
+          "projects/sdf/presets/sculpture-guardian-limestone.json",
+          "--frame-profile",
+          "specialized",
+          "--no-material-fast-path"
+        ],
+        "returncode": 1,
+        "output": "sdf: single-material profile requires the eligible one-material shortcut\n"
+      },
+      {
+        "name": "debug-active",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--headless",
+          "--headless-render-only",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--width",
+          "32",
+          "--height",
+          "32",
+          "--surface-trace",
+          "analytic",
+          "--csg-evaluation",
+          "pruned",
+          "--region-axis",
+          "64",
+          "--acceleration-variant",
+          "root-far",
+          "--config",
+          "projects/sdf/presets/sculpture-guardian-limestone.json",
+          "--frame-profile",
+          "nodebug",
+          "--debug",
+          "5"
+        ],
+        "returncode": 1,
+        "output": "sdf: frame profiling requires static headless root-far analytic atmosphere, debug 0, no AO/ground/clouds/actions; runtime/fixed profiles require a comparison stage, other profiles require stage off\n"
+      },
+      {
+        "name": "fixed-no-stage",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--headless",
+          "--headless-render-only",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--width",
+          "32",
+          "--height",
+          "32",
+          "--surface-trace",
+          "analytic",
+          "--csg-evaluation",
+          "pruned",
+          "--region-axis",
+          "64",
+          "--acceleration-variant",
+          "root-far",
+          "--config",
+          "projects/sdf/presets/sculpture-guardian-limestone.json",
+          "--frame-profile",
+          "fixed"
+        ],
+        "returncode": 1,
+        "output": "sdf: frame profiling requires static headless root-far analytic atmosphere, debug 0, no AO/ground/clouds/actions; runtime/fixed profiles require a comparison stage, other profiles require stage off\n"
+      },
+      {
+        "name": "query-profile",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--headless",
+          "--headless-render-only",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--width",
+          "32",
+          "--height",
+          "32",
+          "--surface-trace",
+          "analytic",
+          "--csg-evaluation",
+          "pruned",
+          "--region-axis",
+          "64",
+          "--acceleration-variant",
+          "root-far",
+          "--config",
+          "projects/sdf/presets/sculpture-guardian-limestone.json",
+          "--frame-profile",
+          "specialized",
+          "--comparison-input",
+          "projects/sdf/comparison/fixtures.json",
+          "--comparison-output",
+          "/home/bryan/code/cubey/outputs/sdf/guardian-frame-profile-20261028/qualification/invalid.json"
+        ],
+        "returncode": 1,
+        "output": "sdf: frame profiles are native rendering diagnostics, not query routes\n"
+      }
+    ],
+    "captures": [
+      {
+        "folder": "capture-hd",
+        "checks": 6,
+        "all_identical": true,
+        "image_sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+      },
+      {
+        "folder": "capture-side-hd",
+        "checks": 6,
+        "all_identical": true,
+        "image_sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2"
+      },
+      {
+        "folder": "capture-preset",
+        "checks": 6,
+        "all_identical": true,
+        "image_sha256": "584ec1067240dce39002022f71ad84f6c9251cb7971ad55761f8ea3bc2dd82ca"
+      }
+    ],
+    "protected_files": 216,
+    "changed_protected_files": []
+  },
+  "source_identity": "cded2ed6a9bd2e154ea53f349c39d5fb7eeb6e3192586dcdcee67558984fb40a",
+  "notes": [
+    "All stage rows are whole-scene ablations, not additive component timestamps.",
+    "Register and binary-size statistics are compiler resource evidence, not live occupancy or cache counters.",
+    "Local-memory statistic is excluded: trivial vertex shader reports an implausible value even after explicit zero initialization.",
+    "Shader specialization is diagnostic and guarded to one material, existing fast path, debug 0 and static authored headless atmosphere.",
+    "No default change or new acceleration structure."
+  ],
+  "native_captures": [
+    {
+      "folder": "capture-hd",
+      "checks": 6,
+      "all_byte_identical": true,
+      "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+    },
+    {
+      "folder": "capture-side-hd",
+      "checks": 6,
+      "all_byte_identical": true,
+      "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2"
+    },
+    {
+      "folder": "capture-preset",
+      "checks": 6,
+      "all_byte_identical": true,
+      "sha256": "584ec1067240dce39002022f71ad84f6c9251cb7971ad55761f8ea3bc2dd82ca"
+    }
+  ]
+}

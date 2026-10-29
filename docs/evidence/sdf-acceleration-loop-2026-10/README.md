@@ -29,8 +29,10 @@ Date: 2026-10-28. See the [decision report](../../notes/sdf-acceleration-loop-re
 
 Raw profiler CSVs, ray/counter payloads, logs and superseded action-control
 receipts remain local under `outputs/sdf/acceleration-loop-20261028/`.
-The existing NVENC encode ran throughout the measurements; no idle-device
-acceptance, physical display latency, default adoption, push or deployment is claimed.
+An existing NVENC encode was active earlier in the batch. Boundary snapshots
+around the cited full-HD rear runs show zero encoder activity; no encoding
+overhead is established for those runs. No idle-device acceptance, physical
+display latency, default adoption, push or deployment is claimed.
 
 ## Reproduction
 

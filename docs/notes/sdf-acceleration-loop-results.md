@@ -9,6 +9,12 @@ contains the scene/view/resolution controls, native images and evidence links.
 
 ## Decision
 
+Follow-up: the [current-candidate shader investigation](sdf-guardian-frame-profile-results.md)
+identifies a substantial compiled-shader cost and a guarded, byte-identical
+approximately 21 ms diagnostic. The measurements below remain the original
+comparison; its 51 ms route was the general shader, not a lower bound on this
+scene's source-tracing cost.
+
 Keep the separate far-region bound route as an opt-in research candidate. It
 reduces Guardian's regional payload from **56.78 MB to 6.44 MB**, without a sampled
 field, and substantially improves completed source-history transitions. It does
@@ -23,8 +29,10 @@ this loop implements neither finer regions nor GPU construction.
 
 ## Measured frames
 
-All timings below are **shared-GPU measurements** on the RTX 5070 Ti, driver
-610.57.04, while an existing NVENC encode ran. No unrelated process was changed.
+All timings below were collected on the shared RTX 5070 Ti, driver 610.57.04.
+An existing NVENC encode was active earlier in the batch; the retained boundary
+snapshots around the cited full-HD rear runs report 0% encoder activity. No
+encoding overhead is established for those runs, and no unrelated process was changed.
 Three interleaved repetitions use 180 frames, 30 warmup and 150 completed GPU
 samples. The table gives ranges of per-run whole-scene GPU p95, with ordinary
 native shaders and matched scene/lighting/view settings. Do not substitute the

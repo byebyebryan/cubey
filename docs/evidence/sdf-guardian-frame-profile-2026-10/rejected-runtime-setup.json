@@ -1,0 +1,33 @@
+{
+  "command": [
+    "stdbuf",
+    "-oL",
+    "-eL",
+    "build/release/projects/sdf/sdf",
+    "--headless",
+    "--headless-render-only",
+    "--require-validation",
+    "--frames",
+    "1",
+    "--width",
+    "32",
+    "--height",
+    "32",
+    "--config",
+    "projects/sdf/presets/sculpture-guardian-limestone.json",
+    "--surface-trace",
+    "analytic",
+    "--csg-evaluation",
+    "pruned",
+    "--region-axis",
+    "64",
+    "--acceleration-variant",
+    "root-far",
+    "--frame-profile",
+    "runtime",
+    "--comparison-stage",
+    "primary"
+  ],
+  "returncode": -11,
+  "output": "sdf: authored geometry=d5fc89f0abe076f0 appearance=a47c7610956fe7d2\nsdf: trace=analytic field_bytes=0\n"
+}

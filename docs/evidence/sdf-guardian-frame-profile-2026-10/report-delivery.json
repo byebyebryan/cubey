@@ -1,0 +1,23 @@
+{
+  "url": "http://starship:8787/reports/3e679d6dca5e9ebe020d7915f42058d47b1e9df5c5d0727880f39ba07546c890/",
+  "report_id": "3e679d6dca5e9ebe020d7915f42058d47b1e9df5c5d0727880f39ba07546c890",
+  "http_files_verified": 17,
+  "bytes": 2215247,
+  "image_controls_tested": 3,
+  "chart_rows": 4,
+  "stage_rows": 5,
+  "desktop_width": 1600,
+  "mobile_viewport": [
+    390,
+    844
+  ],
+  "mobile_document_width": 375,
+  "invalid_numbers": false,
+  "broken_images": 0,
+  "console_errors": 0,
+  "viewport_reset": true,
+  "screenshots": [
+    "outputs/sdf/guardian-frame-profile-20261028/report/desktop.png",
+    "outputs/sdf/guardian-frame-profile-20261028/report/mobile.png"
+  ]
+}
