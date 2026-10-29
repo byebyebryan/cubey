@@ -557,11 +557,14 @@ class App {
                         config_.comparison_residency == "all",
                     config_.acceleration_variant != "off" ? &runtime_.gpu() : nullptr,
                     config_.acceleration_variant);
-            auto next_program = renderer_.prepare_program(&next);
+            auto next_program = renderer_.prepare_authored(device, &next,
+                next_regions ? next_regions.get() : regions_.get(), study_fault_);
             if (study_fault_ == "region" || study_fault_ == "field")
                 throw CapacityExceeded("injected study failure before " + study_fault_ +
                                        " publication");
             runtime_.gpu().wait_queue_idle("sdf authored publication");
+            if (study_fault_ == "activate")
+                throw CapacityExceeded("injected failure before authored activation");
             if (field_)
                 field_->build(next);
             displayed_authored_ = std::move(next);
@@ -619,6 +622,7 @@ class App {
         }
     }
     void apply_study_action(vulkan::Device& device, std::uint64_t frame) {
+        const auto cones_before = renderer_.cone_builds();
         const auto& action = study_actions_.at("actions").at(frame);
         const auto oracle_start = std::chrono::steady_clock::now();
         auto expected = parse_authored_scene(action.at("visible_scene").dump());
@@ -677,6 +681,11 @@ class App {
         if (action.value("geometry_unchanged", false) && (field_delta || region_delta))
             throw std::runtime_error(
                 "appearance or failed action rebuilt a published geometry cache");
+        const auto cone_delta = renderer_.cone_builds() - cones_before;
+        if (renderer_.cone_hash() && renderer_.cone_hash() != expected_geometry)
+            throw std::runtime_error("study published a stale prepared cone generation");
+        if (action.value("geometry_unchanged", false) && cone_delta)
+            throw std::runtime_error("appearance or failed action replaced the prepared cache");
         const auto shader = source_shader_route_name(renderer_.shader_route(config_));
         if (action.contains("expect_shader") && action.at("expect_shader") != shader)
             throw std::runtime_error("study selected unexpected published shader route");
@@ -689,6 +698,9 @@ class App {
              {"failed", failed},
              {"shader_route", shader},
              {"source_optimization", optimization},
+             {"cone_builds", renderer_.cone_builds()},
+             {"cone_build_delta", cone_delta},
+             {"cone_geometry_hash", renderer_.cone_hash()},
              {"shader_pipeline_count", renderer_.shader_pipeline_count()},
              {"published_material_count", displayed_authored_->materials.size()},
              {"debug", config_.debug},

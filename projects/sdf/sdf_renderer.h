@@ -1,6 +1,7 @@
 #pragma once
 #include "sdf_config.h"
 #include "sdf_field.h"
+#include "sdf_prepared_cones.h"
 #include "sdf_regions.h"
 #include "sdf_shader_selection.h"
 
@@ -30,19 +31,38 @@ static_assert(offsetof(LightingUniforms, cutter) % 16 == 0);
 static_assert(offsetof(LightingUniforms, cutter_style) == offsetof(LightingUniforms, cutter) + 48);
 class Renderer {
   public:
+    struct PreparedAuthored {
+        std::unique_ptr<vulkan::Buffer> program, cones, materials, patterns, domains, libraries;
+        std::optional<PreparedCones> cone_data;
+        std::unique_ptr<vulkan::DescriptorSetArray> descriptors;
+        double preparation_ms = 0;
+        std::uint64_t cone_allocation_bytes = 0, cone_peak_bytes = 0;
+    };
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent, VkFormat format,
                 std::uint32_t slots, const Field* field, const SdfConfig& config,
                 const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr);
     void destroy();
     void update_field(vulkan::Device& device, const Field& field);
     [[nodiscard]] std::unique_ptr<vulkan::Buffer> prepare_program(const AuthoredScene* scene);
+    [[nodiscard]] PreparedAuthored prepare_authored(vulkan::Device& device,
+                                                    const AuthoredScene* scene,
+                                                    const GpuRegionPrograms* regions,
+                                                    std::string_view fault = {});
     void update_authored(vulkan::Device& device, const AuthoredScene* scene,
-                         const GpuRegionPrograms* regions = nullptr,
-                         std::unique_ptr<vulkan::Buffer> prepared = {});
+                         const GpuRegionPrograms* regions = nullptr);
+    void update_authored(vulkan::Device& device, const AuthoredScene* scene,
+                         const GpuRegionPrograms* regions, PreparedAuthored prepared);
     [[nodiscard]] SourceShaderRoute shader_route(const SdfConfig& config) const;
     [[nodiscard]] std::string_view source_optimization(const SdfConfig& config) const {
-        return shadow_candidate_ && shader_route(config) == SourceShaderRoute::LitSingleMaterial
-                   ? "shadow" : "reference";
+        if (shader_route(config) != SourceShaderRoute::LitSingleMaterial)
+            return "reference";
+        return prepared_candidate_ ? "prepared-cones" : shadow_candidate_ ? "shadow" : "reference";
+    }
+    [[nodiscard]] std::uint64_t cone_builds() const {
+        return cone_builds_;
+    }
+    [[nodiscard]] std::uint64_t cone_hash() const {
+        return cone_data_ ? cone_data_->geometry_hash : 0;
     }
     [[nodiscard]] unsigned shader_pipeline_count() const {
         return shader_pipeline_count_;
@@ -82,6 +102,11 @@ class Renderer {
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
     std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_, scene_patterns_,
         scene_domains_, scene_libraries_;
+    std::unique_ptr<vulkan::Buffer> scene_cones_;
+    std::optional<PreparedCones> cone_data_;
+    std::vector<vulkan::DescriptorSetBindingConfig> cone_descriptor_bindings_;
+    std::uint64_t cone_builds_ = 0, cone_allocation_bytes_ = 0, cone_peak_bytes_ = 0;
+    double cone_preparation_ms_ = 0;
     std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
     std::optional<render::GraphicsPipelineResource> lit_general_pipeline_, lit_single_pipeline_;
@@ -98,6 +123,7 @@ class Renderer {
     profiling::ProfileRecorder* profile_ = nullptr;
     bool source_tracing_ = false;
     bool shadow_candidate_ = false;
+    bool prepared_candidate_ = false;
     vulkan::GpuRuntime* acceleration_uploads_ = nullptr;
     VkExtent2D scene_extent_{};
 };

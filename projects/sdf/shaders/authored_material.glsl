@@ -47,7 +47,7 @@ SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
         uint code=uint(node.center_code.w);
         if (code<10u) {
             MaterialSample m=materials[uint(node.settings.z)];
-            stack[size++]=SceneSurface(authoredPrimitive(p,node),m.material,i,m.height_gradient,materialOptics(uint(node.settings.z)),m.sheen,m.rough_glass);
+            stack[size++]=SceneSurface(AUTHORED_PRIMITIVE(p,node,i),m.material,i,m.height_gradient,materialOptics(uint(node.settings.z)),m.sheen,m.rough_glass);
             stack[size-1].optics.settings.x=m.metallic;
         } else {
             SceneSurface b=stack[--size],a=stack[size-1];

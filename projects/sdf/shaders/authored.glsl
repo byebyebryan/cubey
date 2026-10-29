@@ -56,6 +56,12 @@ float authoredPrimitive(vec3 p,SceneInstruction node) {
     }
     return d*node.settings.x;
 }
+#ifdef SDF_PREPARED_CONES
+#include "prepared_cones.glsl"
+#define AUTHORED_PRIMITIVE(p,node,id) authoredPreparedPrimitive(p,node,id)
+#else
+#define AUTHORED_PRIMITIVE(p,node,id) authoredPrimitive(p,node)
+#endif
 float authoredDistance(vec3 p) {
     if (authoredHeader.x==0u) return 1000.0;
     float stack[32];
@@ -63,7 +69,7 @@ float authoredDistance(vec3 p) {
     for (uint i=0u;i<authoredHeader.x;++i) {
         SceneInstruction node=authoredNodes[i];
         uint code=uint(node.center_code.w);
-        if (code<10u) stack[size++]=authoredPrimitive(p,node);
+        if (code<10u) stack[size++]=AUTHORED_PRIMITIVE(p,node,i);
         else {
             float b=stack[--size],a=stack[size-1];
             if (code==10u) a=min(a,b);

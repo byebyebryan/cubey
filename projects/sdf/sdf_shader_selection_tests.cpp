@@ -85,4 +85,20 @@ int main() {
     config.frame_profile = "off";
     config.comparison_stage = "primary";
     rejected();
+    config.comparison_stage = "off";
+    config.source_optimization = "prepared-cones";
+    rejected();
+    config.common.headless = true;
+    config.csg_evaluation = "pruned";
+    config.region_axis = 64;
+    config.acceleration_variant = "root-far";
+    validate_source_optimization(config);
+    if (!source_prepared_cones_enabled(config) || source_shadow_pipeline_enabled(config))
+        throw std::runtime_error("independent prepared-cone mode failed");
+    config.surface_trace = "hybrid";
+    rejected();
+    config.surface_trace = "analytic";
+    config.source_optimization = "automatic";
+    if (source_shadow_pipeline_enabled(config) || source_prepared_cones_enabled(config))
+        throw std::runtime_error("automatic opted into an unpromoted trial");
 }

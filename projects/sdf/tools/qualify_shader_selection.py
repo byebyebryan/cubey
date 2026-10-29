@@ -303,7 +303,7 @@ def main():
     parser.add_argument("phase",choices=["qualify","appearance","timing"])
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--qualification",type=Path)
-    parser.add_argument("--source-optimization",choices=["automatic","reference","shadow"])
+    parser.add_argument("--source-optimization",choices=["automatic","reference","shadow","prepared-cones","combined"])
     parser.add_argument("--resume",action="store_true",help="Reuse verified static capture receipts for the identical binary; rerun all action and oracle jobs")
     parser.add_argument("--binary",type=Path,default=ROOT/"build/release/projects/sdf/sdf")
     args=parser.parse_args();args.binary=args.binary.resolve();args.output=args.output.resolve()

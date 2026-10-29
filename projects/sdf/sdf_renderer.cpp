@@ -28,6 +28,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     field_ = field;
     source_tracing_ = config.surface_trace != "sampled";
     shadow_candidate_ = source_shadow_pipeline_enabled(config);
+    prepared_candidate_ = source_prepared_cones_enabled(config);
     acceleration_uploads_ = config.acceleration_variant != "off" ? &gpu : nullptr;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
@@ -133,6 +134,10 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         bindings.push_back({16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         bindings.push_back({17, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
     }
+    if (prepared_candidate_) {
+        bindings.push_back({19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
+        cone_descriptor_bindings_ = bindings;
+    }
     if (study) {
         bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         for (std::uint32_t binding = 8; binding <= 12; ++binding)
@@ -159,6 +164,9 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                               scene_domains_->size());
         writes.storage_buffer(descriptors_->set(i), 14, scene_libraries_->handle(),
                               scene_libraries_->size());
+        if (prepared_candidate_)
+            writes.storage_buffer(descriptors_->set(i), 19, scene_cones_->handle(),
+                                  scene_cones_->size());
         if (regions) {
             writes.storage_buffer(descriptors_->set(i), 16, regions->cells->handle(),
                                   regions->cells->size());
@@ -232,9 +240,11 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             auto files = lit_files;
             if (single_material && shadow_candidate_)
                 files[1] = render::fragment_shader_file(path / ("shadow_lit_" + fragment));
+            if (single_material && prepared_candidate_)
+                files[1] = render::fragment_shader_file(path / ("prepared_lit_" + fragment));
             const render::ShaderProgram program(device, files);
             std::vector<VkPipelineShaderStageCreateInfo> lit_stages(program.stages().begin(),
-                                                                   program.stages().end());
+                                                                    program.stages().end());
             const VkSpecializationInfo specialization{1, &entry, sizeof(single_material),
                                                       &single_material};
             for (auto& stage : lit_stages)
@@ -334,6 +344,11 @@ void Renderer::destroy() {
     scene_domains_.reset();
     scene_libraries_.reset();
     scene_program_.reset();
+    scene_cones_.reset();
+    cone_data_.reset();
+    cone_descriptor_bindings_.clear();
+    cone_builds_ = cone_allocation_bytes_ = cone_peak_bytes_ = 0;
+    cone_preparation_ms_ = 0;
     preview_buffers_.clear();
     lighting_.reset();
     sky_background_.destroy();
@@ -357,9 +372,132 @@ std::unique_ptr<vulkan::Buffer> Renderer::prepare_program(const AuthoredScene* s
     return std::make_unique<vulkan::Buffer>(vulkan::upload_device_buffer(
         *acceleration_uploads_, bytes.data(), bytes.size(), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
 }
+Renderer::PreparedAuthored Renderer::prepare_authored(vulkan::Device& device,
+                                                      const AuthoredScene* scene,
+                                                      const GpuRegionPrograms* regions,
+                                                      std::string_view fault) {
+    PreparedAuthored next;
+    next.program = prepare_program(scene);
+    if (!prepared_candidate_)
+        return next;
+    if (!scene || !regions || scene_optics_)
+        throw std::invalid_argument(
+            "prepared cone publication requires authored analytic atmosphere regions");
+    if (std::any_of(scene->optics.begin(), scene->optics.end(),
+                    [](const auto& o) { return !default_optics(o); }))
+        throw std::invalid_argument("non-default material optics require material-study lighting");
+    const auto start = std::chrono::steady_clock::now();
+    if (fault == "cone-prepare")
+        throw CapacityExceeded("injected cone preparation failure");
+    if (!cone_data_ || !cone_data_->matches(*scene)) {
+        next.cone_data.emplace(prepare_cones(*scene));
+        const auto bytes =
+            std::max<std::size_t>(16, next.cone_data->entries.size() * sizeof(math::Vec4));
+        const math::Vec4 empty{0};
+        next.cones = std::make_unique<vulkan::Buffer>(vulkan::upload_device_buffer(
+            *acceleration_uploads_,
+            next.cone_data->entries.empty() ? &empty : next.cone_data->entries.data(), bytes,
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT));
+        VkMemoryRequirements requirements;
+        vkGetBufferMemoryRequirements(device.handle(), next.cones->handle(), &requirements);
+        next.cone_allocation_bytes = requirements.size;
+        next.cone_peak_bytes = cone_allocation_bytes_ + requirements.size;
+    }
+    if (fault == "cone-upload")
+        throw CapacityExceeded("injected failure after cone upload");
+    const auto host = [&](const void* data, std::size_t bytes) {
+        auto buffer = std::make_unique<vulkan::Buffer>(
+            device,
+            vulkan::BufferConfig{.size = bytes,
+                                 .usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                 .memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+        buffer->upload(data, bytes);
+        return buffer;
+    };
+    const SurfaceMaterial material;
+    const MaterialPattern pattern;
+    next.materials =
+        host(scene->materials.empty() ? &material : scene->materials.data(),
+             std::max<std::size_t>(1, scene->materials.size()) * sizeof(SurfaceMaterial));
+    next.patterns =
+        host(scene->patterns.empty() ? &pattern : scene->patterns.data(),
+             std::max<std::size_t>(1, scene->patterns.size()) * sizeof(MaterialPattern));
+    std::array<math::Mat4, 16> domains;
+    domains.fill(math::Mat4{1});
+    if (!scene->material_domains.empty())
+        std::copy(scene->material_domains.begin(), scene->material_domains.end(), domains.begin());
+    next.domains = host(domains.data(), sizeof(domains));
+    std::array<procedural::SurfaceLibrary, 16> libraries;
+    if (!scene->libraries.empty())
+        std::copy(scene->libraries.begin(), scene->libraries.end(), libraries.begin());
+    next.libraries = host(libraries.data(), sizeof(libraries));
+    if (fault == "appearance-upload")
+        throw CapacityExceeded("injected failure after appearance uploads");
+    if (descriptors_) {
+        // A complete unpublished descriptor generation keeps update/allocations
+        // out of activation. Compatible layouts preserve the three pipelines.
+        next.descriptors = std::make_unique<vulkan::DescriptorSetArray>(
+            device, vulkan::DescriptorSetInfo(cone_descriptor_bindings_, descriptors_->size()));
+        const auto* cones = next.cones ? next.cones.get() : scene_cones_.get();
+        vulkan::DescriptorWriteBatch writes;
+        for (std::uint32_t i = 0; i < next.descriptors->size(); ++i) {
+            writes.uniform_buffer(next.descriptors->set(i), 2,
+                                  lighting_->buffer({i, next.descriptors->size()}).handle(),
+                                  sizeof(LightingUniforms));
+            for (const auto& [binding, buffer] :
+                 std::array<std::pair<unsigned, const vulkan::Buffer*>, 9>{
+                     {{3, next.program.get()},
+                      {4, next.materials.get()},
+                      {5, preview_buffers_[i].get()},
+                      {6, next.patterns.get()},
+                      {13, next.domains.get()},
+                      {14, next.libraries.get()},
+                      {16, regions->cells.get()},
+                      {17, regions->references.get()},
+                      {19, cones}}}) {
+                writes.storage_buffer(next.descriptors->set(i), binding, buffer->handle(),
+                                      buffer->size());
+            }
+        }
+        writes.update(device);
+    }
+    if (fault == "descriptors")
+        throw CapacityExceeded("injected failure after candidate descriptors");
+    next.preparation_ms =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
+    return next;
+}
 void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scene,
-                               const GpuRegionPrograms* regions,
-                               std::unique_ptr<vulkan::Buffer> prepared) {
+                               const GpuRegionPrograms* regions) {
+    update_authored(device, scene, regions, PreparedAuthored{});
+}
+void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scene,
+                               const GpuRegionPrograms* regions, PreparedAuthored prepared) {
+    if (prepared_candidate_) {
+        if (!prepared.materials)
+            prepared = prepare_authored(device, scene, regions);
+        // Candidate buffers and descriptor writes are already complete. The app
+        // retires all prior in-flight use before this non-allocating activation.
+        scene_program_ = std::move(prepared.program);
+        scene_materials_ = std::move(prepared.materials);
+        scene_patterns_ = std::move(prepared.patterns);
+        scene_domains_ = std::move(prepared.domains);
+        scene_libraries_ = std::move(prepared.libraries);
+        if (prepared.cones) {
+            scene_cones_ = std::move(prepared.cones);
+            cone_data_ = std::move(prepared.cone_data);
+            cone_allocation_bytes_ = prepared.cone_allocation_bytes;
+            cone_peak_bytes_ = std::max(cone_peak_bytes_, prepared.cone_peak_bytes);
+            ++cone_builds_;
+        }
+        if (prepared.descriptors)
+            descriptors_ = std::move(prepared.descriptors);
+        cone_preparation_ms_ = prepared.preparation_ms;
+        regions_ = regions;
+        published_material_count_ = scene->materials.size();
+        return;
+    }
     if (!scene_optics_ && scene &&
         std::any_of(scene->optics.begin(), scene->optics.end(),
                     [](const auto& o) { return !default_optics(o); }))
@@ -370,7 +508,7 @@ void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scen
         std::memcpy(bytes.data() + 12, &guard, 4);
     }
     if (acceleration_uploads_)
-        scene_program_ = prepared ? std::move(prepared) : prepare_program(scene);
+        scene_program_ = prepared.program ? std::move(prepared.program) : prepare_program(scene);
     else
         scene_program_->upload(bytes.data(), bytes.size());
     if (scene_optics_) {
@@ -439,6 +577,16 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                shader_pipeline_setup_ms_);
         profile->record_metric(frame_index, "sdf.shader_selection", "shadow_optimized",
                                source_optimization(config) == "shadow" ? 1 : 0);
+        profile->record_metric(frame_index, "sdf.prepared_cones", "builds",
+                               static_cast<double>(cone_builds_));
+        profile->record_metric(frame_index, "sdf.prepared_cones", "payload_bytes",
+                               static_cast<double>(scene_cones_ ? scene_cones_->size() : 0));
+        profile->record_metric(frame_index, "sdf.prepared_cones", "allocation_bytes",
+                               static_cast<double>(cone_allocation_bytes_));
+        profile->record_metric(frame_index, "sdf.prepared_cones", "device_generations_peak_bytes",
+                               static_cast<double>(cone_peak_bytes_));
+        profile->record_metric(frame_index, "sdf.prepared_cones", "publication_prepare_ms",
+                               cone_preparation_ms_);
         profile->record_metric(frame_index, "sdf.resources", "field_bytes",
                                static_cast<double>(field_ ? field_->stats().allocation_bytes : 0));
         profile->record_metric(frame_index, "sdf.resources", "region_bytes",

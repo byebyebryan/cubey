@@ -7,9 +7,12 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp
+    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp
     SHADERS
         shaders/shadow_contract_reference.comp shaders/shadow_contract_candidate.comp
+        shaders/prepared_cone_probe.comp
+        shaders/prepared_lit_root_far_sdf_analytic_pruned.frag
+        shaders/prepared_root_far_comparison_analytic_pruned.comp
         shaders/shadow_lit_accel_sdf_analytic_pruned.frag
         shaders/shadow_lit_accel_sdf_hybrid_pruned.frag
         shaders/shadow_lit_far_sdf_analytic_pruned.frag
@@ -112,6 +115,8 @@ cubey_add_app_target(
 if (BUILD_TESTING)
     add_executable(cubey_project_sdf_shadow_contract tools/shadow_contract.cpp)
     target_link_libraries(cubey_project_sdf_shadow_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
+    add_executable(cubey_project_sdf_prepared_cone_probe tools/prepared_cone_probe.cpp sdf_prepared_cones.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
+    target_link_libraries(cubey_project_sdf_prepared_cone_probe PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_shader_selection_tests sdf_shader_selection.cpp sdf_shader_selection_tests.cpp)
     target_link_libraries(cubey_project_sdf_shader_selection_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_shader_selection_tests COMMAND cubey_project_sdf_shader_selection_tests)

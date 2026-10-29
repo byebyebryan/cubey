@@ -28,5 +28,77 @@ committed at `0737bec9`. Work remains local on `sdf-tracing-comparison`.
   uses an enclosing clipped sphere at admitted camera distances; no camera
   guard was weakened. The first documentation check needed an index link.
 
-Performance and the independent B trial are pending. Automatic remains reference;
-these checks do not establish interactive root-far support or physical acceptance.
+## A measured result and native completion
+
+Three interleaved repetitions / 5,400 completed GPU timestamps compare current
+automatic reference and explicit shadow selection on Guardian and Robot:
+
+| Guardian view | Reference GPU p95 ms | Shadow GPU p95 ms |
+| --- | ---: | ---: |
+| Preset | 21.510–21.645 | 19.183–19.403 |
+| Side | 22.914–22.942 | 21.694–21.839 |
+| Rear | 20.867–21.002 | 16.964–17.286 |
+
+Robot ranges overlap without a meaningful regression. No owned build/test/capture
+overlapped these timings. The source window additionally proves normal-debug
+switching, identical restored lit pixels, retained pixels after an invalid owned
+scene reload, and successful retry. Cursor-free captures are required: early
+window attempts recorded the X11 pointer, and arrow keys controlled orbit rather
+than selecting the debug dropdown. The successful harness uses inspected rows.
+
+These results permit A's bounded automatic selection; final-binary verification
+and evidence closeout remain required. Interactive root-far and physical acceptance
+remain outside the admitted scope.
+
+## B numerical and certificate audit
+
+The separate primitive probe checks 82,388 points/stencils: 51,792 on Guardian
+cones and 30,596 synthetic samples including cap/body seams, containing-sphere
+boundaries, zero/equal radii and the minimum legal half-length. Both the original
+CPU evaluator and original GPU function remain independent references. No new
+point or normal failures occur against the frozen 2e-6 point / 1 degree normal
+contracts. The largest GPU field change is 5.96e-8; the maximum Guardian normal
+difference is 0.184 degrees. The probe's aggregate table includes independent
+synthetic nodes in addition to the 2,021-instruction Guardian program; its larger
+allocation is not a newly admitted authored source size.
+
+The cache computes the same single-precision slope, `std::sqrt(max(0,1-s*s))`
+and height-times-radial expressions as the unchanged canonical CPU primitive.
+It stores their rounded float values in a 16-byte companion entry. Degenerate
+containing-sphere entries retain the original evaluator. GPU field evaluation
+keeps the original transforms, point-dependent lengths/dots, cap/body tests,
+scaling and CSG operations. Source indices, not compacted program offsets, index
+the table. No authored instruction, source hash, normal stencil or tolerance is
+changed.
+
+The pruning guard bounds GPU evaluation against the canonical CPU field, not
+against a previous GPU image. Replacing GPU-only shape-invariant arithmetic
+with its canonical CPU float values removes those error sources from the
+existing operation budget; it adds no new arithmetic stage to that comparison.
+Point-dependent operations and operator paths retain the original budget.
+Root bounds and far certificates still come from the original source/CPU
+builder. No guard widening is used. This audit depends on retaining that exact
+coefficient expression and float layout; algebraic rewrites would reopen it.
+Vulkan allows differing division/square-root rounding and preserves buffer-load
+bits, so this does not promise GPU bit identity across implementations.
+[Primary precision rules](https://docs.vulkan.org/spec/latest/appendices/spirvenv.html).
+
+The independent frozen 155-check native query suite also passes with prepared
+values active. Initial native captures change only 96 / 185 / 79 Guardian
+1080p pixels (preset/side/rear), maximum one color level; Robot's ineligible
+multiple-material path is exact. Native differences are retained, not approved
+by refreshing a golden. Publication tests must compare retained generations
+with fresh prepared states, while separately reporting original-GPU differences.
+
+## B publication boundary
+
+B stays explicit, static headless analytic/pruned A64 root-far atmosphere. Its
+candidate snapshot prepares the source program, derived table, appearance
+buffers and a compatible descriptor generation before activation. Queue-idle
+retires old in-flight use; activation only moves prepared resources and published
+metadata. Appearance-only changes retain the cone generation. Geometry, source
+reordering, undo and redo replace it coherently. Faults cover preparation,
+upload, appearance upload, descriptor preparation and the activation boundary.
+No engine API or windowed root-far admission is changed.
+
+B performance, combination admission and final evidence are pending.

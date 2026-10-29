@@ -35,7 +35,7 @@ float regionDistance(vec3 p) {
     for(uint i=0u;i<h.y;++i) {
         uint ref=regionRefs[h.x+i];SceneInstruction node=authoredNodes[ref&0x7fffffffu];
         uint code=uint(node.center_code.w);float d;
-        if(code<10u) d=authoredPrimitive(p,node);
+        if(code<10u) d=AUTHORED_PRIMITIVE(p,node,ref&0x7fffffffu);
         else {
             float b=stack[--size],a=stack[--size];
             if(code==10u) d=min(a,b);
