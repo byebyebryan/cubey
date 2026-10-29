@@ -113,6 +113,11 @@ class Renderer {
     std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
     std::optional<render::GraphicsPipelineResource> lit_general_pipeline_, lit_single_pipeline_;
+    std::unique_ptr<vulkan::Buffer> query_workload_;
+    std::optional<render::ComputePipelineResource> query_workload_pipeline_;
+    std::optional<render::GraphicsPipelineResource> query_camera_pipeline_;
+    std::optional<vulkan::Sampler> query_camera_sampler_;
+    std::filesystem::path query_workload_path_;
     std::size_t published_material_count_ = 0;
     unsigned shader_pipeline_count_ = 0;
     double shader_pipeline_setup_ms_ = 0;

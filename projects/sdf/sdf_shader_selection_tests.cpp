@@ -107,4 +107,18 @@ int main() {
         throw std::runtime_error("qualified independent candidates did not combine");
     config.common.headless = false;
     rejected();
+    config.common.headless = true;
+    config.query_workload_output = "private-query.bin";
+    config.common.frames = 1;
+    validate_source_optimization(config);
+    config.common.frames = 2;
+    rejected();
+    config.common.frames = 1;
+    config.ao = true;
+    rejected();
+    config.ao = false;
+    config.comparison_input = "fixtures.json";
+    rejected();
+    config.comparison_input.clear();
+    validate_source_optimization(config);
 }

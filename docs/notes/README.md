@@ -69,6 +69,9 @@ the architecture and project guides remain current authority.
 - [SDF query acceleration research plan](sdf-query-acceleration-research-plan.md):
   primary-source comparison of guarded stepping and finer pruning, current
   workload gaps, sparse-level capacity scenarios and proposed experiment gates.
+- [SDF query acceleration loop progress](sdf-query-acceleration-progress.md):
+  qualified current-path workload, bounded child-pruning pilot and guarded-step
+  experiment checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
   [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
   published-material selection, exact capture parity, current 1080p measurements

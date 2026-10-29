@@ -7,6 +7,19 @@ bool source_shader_variants_enabled(const SdfConfig& config) {
            config.comparison_stage == "off" && config.frame_profile == "off";
 }
 void validate_source_optimization(const SdfConfig& config) {
+    if (!config.query_workload_output.empty() &&
+        (!config.common.headless || config.common.frames != 1 ||
+         config.surface_trace != "analytic" || config.csg_evaluation != "pruned" ||
+         config.region_axis != 64 || config.acceleration_variant != "root-far" ||
+         config.timeline.motion != "static" || config.lighting != "atmosphere" ||
+         config.debug != 0 || config.source_shaders != "automatic" ||
+         config.frame_profile != "off" || config.ao || config.clouds || config.occluder ||
+         !config.comparison_actions.empty() || !config.comparison_input.empty() ||
+         config.comparison_stage != "off" || config.supersample != 1 ||
+         (config.source_optimization != "shadow" && config.source_optimization != "combined")))
+        throw std::invalid_argument(
+            "query workload requires one static headless analytic A64 "
+            "root-far atmosphere frame, shadow/combined and no AO/overlays");
     const auto& mode = config.source_optimization;
     if (mode == "automatic" || mode == "reference")
         return;

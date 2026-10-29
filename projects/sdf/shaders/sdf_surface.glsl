@@ -30,6 +30,10 @@ layout(push_constant) uniform Camera {
 #include "authored.glsl"
 #include "authored_material.glsl"
 #endif
+#ifdef SDF_QUERY_VALIDATE
+vec4 queryNativeHit=vec4(0),queryNativeNormal=vec4(0);
+uint queryNativeShadowRays=0u,queryNativeSkipped=0u;
+#endif
 #include "lighting.glsl"
 const vec3 SUBTRACTION_HIGHLIGHT=vec3(2.0,0.08,0.04);
 // Color-only guide for the next cutter's bounding box. Test both box faces so
@@ -103,6 +107,9 @@ void main() {
         (lighting.quality.w-camera.eye.y)/direction.y : 1e6;
     if (groundT<0.0) groundT=1e6;
     Hit hit=trace(camera.eye.xyz,direction,groundT);
+#ifdef SDF_QUERY_VALIDATE
+    queryNativeHit=vec4(hit.t,float(hit.status),float(hit.steps),0);
+#endif
     vec3 radiance=vec3(0.02);
     gl_FragDepth=1.0;
     if (hit.status==2) { color=vec4(1,0,1,1); return; }
@@ -121,6 +128,9 @@ void main() {
     if (t<1e5) {
         vec3 p=camera.eye.xyz+direction*t;
         vec3 normal=object ? hitNormal(p,hit) : vec3(0,1,0);
+#ifdef SDF_QUERY_VALIDATE
+        queryNativeNormal=vec4(normal,0);
+#endif
 #ifdef SDF_INVESTIGATE
         if(SDF_INV_STAGE>1.5 && SDF_INV_STAGE<2.5) {
             color=vec4(normal*.5+.5,1);return;

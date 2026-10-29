@@ -41,7 +41,12 @@ Hit trace(vec3 origin,vec3 direction,float limit) {
         vec3 p=origin+direction*t;
 #ifdef SDF_STEP_BOUND
         float cached=SDF_STEP_BOUND(p,direction);
-        if(cached>EPSILON) { t+=cached;continue; }
+        if(cached>EPSILON) {
+#ifdef SDF_QUERY_WORKLOAD
+            if(workloadPhase==0u) queryEndRun();
+#endif
+            t+=cached;continue;
+        }
 #endif
         float d=SDF_SOURCE_DISTANCE(p);
         if(abs(d)<=EPSILON) { hit.t=t;hit.status=1;return hit; }

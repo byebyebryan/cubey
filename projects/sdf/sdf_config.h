@@ -16,6 +16,7 @@ struct SdfConfig {
     std::filesystem::path authored_path, export_authored_path;
     std::filesystem::path comparison_input, comparison_output;
     std::filesystem::path comparison_actions;
+    std::filesystem::path query_workload_output;
     std::string comparison_stage = "off";
     bool comparison_tight_root = false;
     std::string comparison_residency = "host";
@@ -110,7 +111,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     source_shaders.enum_values = {"automatic", "general"};
     auto source_optimization =
         option("source-optimization", "Source query optimization control", config::ValueType::Enum);
-    source_optimization.enum_values = {"automatic", "reference", "shadow", "prepared-cones", "combined"};
+    source_optimization.enum_values = {"automatic", "reference", "shadow", "prepared-cones",
+                                       "combined"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -195,6 +197,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(frame_profile, c.frame_profile)
         .bind(source_shaders, c.source_shaders)
         .bind(source_optimization, c.source_optimization)
+        .bind(option("query-workload-output", "Private selected-query replay payload",
+                     config::ValueType::Path),
+              c.query_workload_output)
         .bind(option("comparison-tight-root", "Private inner-clip entry ablation",
                      config::ValueType::Bool),
               c.comparison_tight_root)

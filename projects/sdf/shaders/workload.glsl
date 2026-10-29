@@ -1,5 +1,19 @@
 // Private counters, stored once per camera ray. No atomics and no timing claims.
 uint workloadPhase=0u;
+#ifdef SDF_QUERY_WORKLOAD
+uvec4 queryRuns[2]=uvec4[2](uvec4(0),uvec4(0));
+uvec4 queryStats=uvec4(0); // required shadow rays, skipped calls, max run, run count
+uint queryRun=0u;
+vec3 queryShadingNormal=vec3(0);
+void queryEndRun() {
+    if(queryRun==0u) return;
+    uint bucket=queryRun<=1u ? 0u : queryRun<=2u ? 1u : queryRun<=4u ? 2u :
+        queryRun<=8u ? 3u : queryRun<=16u ? 4u : queryRun<=32u ? 5u : queryRun<=64u ? 6u : 7u;
+    queryRuns[bucket/4u][bucket%4u]++;
+    queryStats.z=max(queryStats.z,queryRun);queryStats.w++;
+    queryRun=0u;
+}
+#endif
 float workloadBoundaryExcess=0.0;
 float workloadIntervalOvershoot=0.0;
 uvec4 workloadTotals[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
@@ -10,6 +24,9 @@ uvec4 workloadWalk[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
 uvec4 workloadAid[3]=uvec4[3](uvec4(0),uvec4(0),uvec4(0));
 #endif
 void workloadProgram(uint count,bool fallback) {
+#ifdef SDF_QUERY_WORKLOAD
+    if(workloadPhase==0u) queryRun++;
+#endif
     workloadTotals[workloadPhase].x++;
     workloadTotals[workloadPhase].y+=count;
     workloadTotals[workloadPhase].z=max(workloadTotals[workloadPhase].z,count);

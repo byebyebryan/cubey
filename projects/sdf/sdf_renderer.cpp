@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstring>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 
 namespace cubey::projects::sdf {
@@ -138,6 +139,25 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         bindings.push_back({19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         cone_descriptor_bindings_ = bindings;
     }
+    if (!config.query_workload_output.empty()) {
+        const std::uint64_t count = ((scene_extent_.width + 7U) / 8U) *
+                                    static_cast<std::uint64_t>((scene_extent_.height + 3U) / 4U);
+        const auto bytes = 16U + count * 256U;
+        if (bytes + static_cast<std::uint64_t>(scene_extent_.width) * scene_extent_.height * 8U >
+            32U * 1024U * 1024U)
+            throw std::invalid_argument("query workload exceeds 32 MiB storage cap");
+        query_workload_ = host_buffer(bytes);
+        const std::array<std::uint32_t, 4> dimensions{scene_extent_.width, scene_extent_.height, 8,
+                                                      static_cast<std::uint32_t>(count)};
+        query_workload_->upload(dimensions.data(), sizeof(dimensions));
+        query_workload_path_ = config.query_workload_output;
+        for (auto& binding : bindings)
+            binding.stage_flags |= VK_SHADER_STAGE_COMPUTE_BIT;
+        bindings.push_back({18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+                            VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT});
+        bindings.push_back(
+            {20, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT});
+    }
     if (study) {
         bindings.push_back({7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         for (std::uint32_t binding = 8; binding <= 12; ++binding)
@@ -167,6 +187,9 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         if (prepared_candidate_)
             writes.storage_buffer(descriptors_->set(i), 19, scene_cones_->handle(),
                                   scene_cones_->size());
+        if (query_workload_)
+            writes.storage_buffer(descriptors_->set(i), 18, query_workload_->handle(),
+                                  query_workload_->size());
         if (regions) {
             writes.storage_buffer(descriptors_->set(i), 16, regions->cells->handle(),
                                   regions->cells->size());
@@ -243,6 +266,12 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             if (single_material && prepared_candidate_)
                 files[1] = render::fragment_shader_file(
                     path / ((shadow_candidate_ ? "combined_lit_" : "prepared_lit_") + fragment));
+            if (query_workload_)
+                files[1] = render::fragment_shader_file(
+                    path / (single_material
+                                ? (prepared_candidate_ ? "query_validate_combined.frag.spv"
+                                                       : "query_validate_shadow.frag.spv")
+                                : "query_validate_reference.frag.spv"));
             const render::ShaderProgram program(device, files);
             std::vector<VkPipelineShaderStageCreateInfo> lit_stages(program.stages().begin(),
                                                                     program.stages().end());
@@ -262,6 +291,30 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         };
         create_lit(lit_general_pipeline_, VK_FALSE);
         create_lit(lit_single_pipeline_, VK_TRUE);
+    }
+    if (query_workload_) {
+        const bool single = shader_route(config) == SourceShaderRoute::LitSingleMaterial;
+        const std::string variant =
+            single ? (prepared_candidate_ ? "combined" : "shadow") : "reference";
+        const std::array<VkPushConstantRange, 1> push{
+            {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(Camera)}}};
+        query_workload_pipeline_.emplace(
+            device, render::ComputePipelineResourceConfig{
+                        .shader_stage = render::compute_shader_file(
+                            path / ("query_workload_" + variant + ".comp.spv")),
+                        .descriptor_set_layouts = layouts,
+                        .push_constants = push});
+        const std::array uv_stages{render::vertex_shader_file(path / "sdf.vert.spv"),
+                                   render::fragment_shader_file(path / "query_camera.frag.spv")};
+        query_camera_pipeline_.emplace(device, render::GraphicsPipelineFileResourceConfig{
+                                                   .extent = scene_extent_,
+                                                   .color_format = VK_FORMAT_R32G32_SFLOAT,
+                                                   .shader_stage_files = uv_stages,
+                                                   .material_pass = {.label = "sdf.query-camera"}});
+        query_camera_sampler_.emplace(
+            device, vulkan::SamplerConfig{.min_filter = VK_FILTER_NEAREST,
+                                          .mag_filter = VK_FILTER_NEAREST,
+                                          .address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE});
     }
     shader_pipeline_setup_ms_ =
         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pipeline_start)
@@ -304,6 +357,20 @@ void Renderer::update_field(vulkan::Device& device, const Field& field) {
     }
 }
 void Renderer::destroy() {
+    if (query_workload_) {
+        std::vector<std::uint8_t> bytes(query_workload_->size());
+        query_workload_->download(bytes.data(), bytes.size());
+        std::ofstream file(query_workload_path_, std::ios::binary);
+        file.write(reinterpret_cast<const char*>(bytes.data()),
+                   static_cast<std::streamsize>(bytes.size()));
+        if (!file)
+            throw std::runtime_error("cannot write query workload payload");
+    }
+    query_workload_pipeline_.reset();
+    query_camera_pipeline_.reset();
+    query_camera_sampler_.reset();
+    query_workload_.reset();
+    query_workload_path_.clear();
     // Hosts drain frame submissions before destroying resources. Preserve the
     // final slots too; collecting only when a slot is reused loses tail samples.
     if (profile_)
@@ -769,18 +836,73 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     const auto previews_buffer =
         builder.import_buffer({"sdf.previews", preview_buffers_.at(slot.index)->size()},
                               preview_buffers_.at(slot.index)->handle());
+    std::optional<render::RenderGraphBufferHandle> query_buffer, region_cells, region_refs;
+    if (regions_) {
+        region_cells = builder.import_buffer({"sdf.regions", regions_->cells->size()},
+                                             regions_->cells->handle());
+        region_refs = builder.import_buffer({"sdf.region_refs", regions_->references->size()},
+                                            regions_->references->handle());
+    }
+    if (query_workload_pipeline_) {
+        const auto ray_uv =
+            builder.create_texture({.label = "sdf.query-camera",
+                                    .extent = {scene_extent_.width, scene_extent_.height, 1},
+                                    .format = VK_FORMAT_R32G32_SFLOAT,
+                                    .aspects = VK_IMAGE_ASPECT_COLOR_BIT});
+        query_buffer = builder.import_buffer(
+            {"sdf.query-workload", query_workload_->size()}, query_workload_->handle(),
+            render::RenderGraphBufferState{VK_ACCESS_HOST_WRITE_BIT, VK_PIPELINE_STAGE_HOST_BIT},
+            render::RenderGraphBufferState{VK_ACCESS_HOST_READ_BIT, VK_PIPELINE_STAGE_HOST_BIT});
+        builder.add_pass("sdf.query-camera", render::RenderGraphQueueDomain::Graphics)
+            .write_color(ray_uv)
+            .execute([&, ray_uv](const render::RenderGraphExecutionContext& ctx) {
+                render::record_render_target_pass(
+                    ctx.recorder(),
+                    render::render_target_view(render::resolved_color_target_view(ctx, ray_uv)), {},
+                    [&](const vulkan::CommandRecorder& pass) {
+                        pass.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                           query_camera_pipeline_->pipeline());
+                        render::record_fullscreen_triangle(pass);
+                    });
+            });
+        auto replay =
+            builder.add_pass("sdf.query-workload", render::RenderGraphQueueDomain::Compute);
+        replay.read_texture(ray_uv, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+            .read_write_storage_buffer(*query_buffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT)
+            .read_uniform_buffer(lighting, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        for (auto resource :
+             {program, materials, patterns, domains, libraries, *region_cells, *region_refs})
+            replay.read_storage_buffer(resource, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        replay.execute([&, ray_uv, camera](const render::RenderGraphExecutionContext& ctx) {
+            const auto sampled = render::resolved_sampled_texture_view(ctx, ray_uv);
+            vulkan::DescriptorWriteBatch writes;
+            writes.combined_image_sampler(descriptors_->set(slot.index), 20,
+                                          query_camera_sampler_->handle(), sampled.view,
+                                          sampled.layout);
+            writes.update(device);
+            const auto& query = ctx.recorder();
+            query.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                query_workload_pipeline_->pipeline());
+            query.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                      query_workload_pipeline_->layout(), 0,
+                                      descriptors_->set(slot.index));
+            query.push_constants(query_workload_pipeline_->layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                 camera);
+            const auto count =
+                ((scene_extent_.width + 7U) / 8U) * ((scene_extent_.height + 3U) / 4U);
+            query.dispatch((count + 63U) / 64U, 1, 1);
+        });
+    }
     auto trace_pass = builder.add_pass("sdf.trace", render::RenderGraphQueueDomain::Graphics);
+    if (query_buffer)
+        trace_pass.read_storage_buffer(*query_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     if (atlas)
         trace_pass.read_texture(*atlas, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     if (nodes)
         trace_pass.read_storage_buffer(*nodes, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     if (regions_) {
-        const auto cells = builder.import_buffer({"sdf.regions", regions_->cells->size()},
-                                                 regions_->cells->handle());
-        const auto refs = builder.import_buffer({"sdf.region_refs", regions_->references->size()},
-                                                regions_->references->handle());
-        trace_pass.read_storage_buffer(cells, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-        trace_pass.read_storage_buffer(refs, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        trace_pass.read_storage_buffer(*region_cells, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        trace_pass.read_storage_buffer(*region_refs, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     }
     trace_pass.read_uniform_buffer(lighting, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .read_storage_buffer(program, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)

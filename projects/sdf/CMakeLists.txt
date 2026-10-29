@@ -9,6 +9,9 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp
     SHADERS
+        shaders/query_workload_shadow.comp shaders/query_workload_combined.comp shaders/query_workload_reference.comp
+        shaders/query_camera.frag
+        shaders/query_validate_shadow.frag shaders/query_validate_combined.frag shaders/query_validate_reference.frag
         shaders/shadow_contract_reference.comp shaders/shadow_contract_candidate.comp
         shaders/prepared_cone_probe.comp
         shaders/prepared_lit_root_far_sdf_analytic_pruned.frag
@@ -114,6 +117,8 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_query_pruning_pilot tools/query_pruning_pilot.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
+    target_link_libraries(cubey_project_sdf_query_pruning_pilot PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_shadow_contract tools/shadow_contract.cpp)
     target_link_libraries(cubey_project_sdf_shadow_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_prepared_cone_probe tools/prepared_cone_probe.cpp sdf_prepared_cones.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)

@@ -67,6 +67,12 @@ float shadowVisibility(vec3 p,vec3 n,vec3 lightDirection,int mode,inout bool exh
     const vec2 disk[4]=vec2[4](vec2(-0.5,-0.5),vec2(0.5,-0.5),vec2(-0.5,0.5),vec2(0.5,0.5));
     float visibility=0;
     int samples=mode==1 ? 1 : 4;
+#ifdef SDF_QUERY_WORKLOAD
+    queryStats.x+=uint(samples);
+#endif
+#ifdef SDF_QUERY_VALIDATE
+    queryNativeShadowRays+=uint(samples);
+#endif
     for (int i=0;i<samples;++i) {
         vec3 direction=mode==1 ? lightDirection : normalize(lightDirection+
             lighting.quality.y*(right*disk[i].x+up*disk[i].y));
@@ -249,6 +255,13 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     float nl=max(lightCosine,0.0),nv=max(dot(n,viewDirection),0.001);
     bool skipShadow=!any(isnan(n)) && !any(isinf(n)) &&
                     !isnan(lightCosine) && !isinf(lightCosine) && nl==0.0;
+#ifdef SDF_QUERY_WORKLOAD
+    queryShadingNormal=n;
+    queryStats.y+=skipShadow ? 1u : 0u;
+#endif
+#ifdef SDF_QUERY_VALIDATE
+    queryNativeSkipped+=skipShadow ? 1u : 0u;
+#endif
     // The final shading normal decides contribution; geometric offsets stay intact.
     // A skipped query cannot exhaust. General/reference retains exhaustive diagnostics.
     float visibility=skipShadow ? 1.0 : shadowVisibility(p,shadowNormal,lightDirection,
