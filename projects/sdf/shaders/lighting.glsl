@@ -222,7 +222,7 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     return studyRadiance(p,n,viewDirection,footprint,exhausted);
 #else
     vec3 lightDirection=camera.sunlight.xyz;
-#ifdef SDF_PROFILE_CULL_DARK_SHADOWS
+#if defined(SDF_PROFILE_CULL_DARK_SHADOWS) || defined(SDF_PROFILE_SHADOW_AFTER_MATERIAL)
     vec3 shadowNormal=n;
 #else
     float visibility=shadowVisibility(p,n,lightDirection,int(camera.options.y+0.5),exhausted);
@@ -250,6 +250,9 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     // the geometric normal for the shadow ray origin.
     float visibility=nl>0.0 ? shadowVisibility(p,shadowNormal,lightDirection,
                                              int(camera.options.y+0.5),exhausted) : 1.0;
+#elif defined(SDF_PROFILE_SHADOW_AFTER_MATERIAL)
+    float visibility=shadowVisibility(p,shadowNormal,lightDirection,
+                                     int(camera.options.y+0.5),exhausted);
 #endif
     vec3 f=cubey_pbr_fresnel_schlick(max(dot(h,viewDirection),0.0),vec3(0.04));
     float d=cubey_pbr_distribution_ggx(max(dot(n,h),0.0),roughness);

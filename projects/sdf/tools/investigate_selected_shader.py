@@ -39,6 +39,7 @@ def qualify(args):
     receipt=provenance(args)
     capture_cases=[CASES[0],CASES[1],("legacy-specialized",["--frame-profile","specialized"],"profile_specialized.frag.spv")]
     if args.phase=="cull-qualify":capture_cases=[CASES[0],CASES[1],("cull-dark-shadows",["--frame-profile","opt-cull-dark-shadows"],"profile_opt-cull-dark-shadows.frag.spv")]
+    if args.phase=="cull-qualify":capture_cases.append(("reorder-shadow",["--frame-profile","opt-reorder-shadow"],"profile_opt-reorder-shadow.frag.spv"))
     for view,_ in VIEWS:
         image_hashes={}
         for name,flags,shader in capture_cases:
@@ -69,7 +70,7 @@ def timing(args):
     receipt.update(frames=180,warmup=30)
     cases=[(view,name,flags,shader,1920,1080) for view,_ in VIEWS for name,flags,shader in CASES]
     if args.phase=="cull":
-        cases=[(view,name,flags,shader,1920,1080) for view,_ in VIEWS for name,flags,shader in [CASES[0],("cull-dark-shadows",["--frame-profile","opt-cull-dark-shadows"],"profile_opt-cull-dark-shadows.frag.spv")]]
+        cases=[(view,name,flags,shader,1920,1080) for view,_ in VIEWS for name,flags,shader in [CASES[0],("cull-dark-shadows",["--frame-profile","opt-cull-dark-shadows"],"profile_opt-cull-dark-shadows.frag.spv"),("reorder-shadow",["--frame-profile","opt-reorder-shadow"],"profile_opt-reorder-shadow.frag.spv")]]
     if args.phase=="scale":
         cases=[(view,"selected",[],CASES[0][2],w,h) for view,_ in VIEWS for w,h in [(960,540),(1280,720)]]
     if args.phase=="pilot":
@@ -99,7 +100,7 @@ def timing(args):
 
 def compiler(args):
     receipt=provenance(args)
-    shaders=sorted({row[2] for row in CASES}|{"lit_root_far_sdf_analytic_pruned.frag.spv","profile_opt-cull-dark-shadows.frag.spv"})
+    shaders=sorted({row[2] for row in CASES}|{"lit_root_far_sdf_analytic_pruned.frag.spv","profile_opt-cull-dark-shadows.frag.spv","profile_opt-reorder-shadow.frag.spv"})
     command=[str(args.binary.parent/"cubey_project_sdf_shader_stats"),str(args.binary.parent/"shaders"),str(args.output),*shaders]
     invoke(command,args.output/"compiler",timeout=300)
     receipt.update(command=command,complete=True);save(args.output/"context.json",receipt)

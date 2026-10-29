@@ -102,7 +102,8 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
                                  "opt-material",
                                  "opt-shadow",
                                  "opt-no-sky",
-                                 "opt-cull-dark-shadows"};
+                                 "opt-cull-dark-shadows",
+                                 "opt-reorder-shadow"};
     auto source_shaders =
         option("source-shaders", "Source shader selection control", config::ValueType::Enum);
     source_shaders.enum_values = {"automatic", "general"};
