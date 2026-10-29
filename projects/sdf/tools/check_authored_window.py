@@ -24,6 +24,8 @@ parser.add_argument("--procedural-controls",action="store_true",
                     help="Check pattern/bump toggles and grain editing after five material scroll notches")
 parser.add_argument("--marble-controls",action="store_true",
                     help="Check marble detail presets and body tint after eight material scroll notches")
+parser.add_argument("--source-contract",action="store_true",
+                    help="Check native debug switching and failed/retried reload using an owned adjacent scene copy")
 args=parser.parse_args()
 if not args.config or args.height != 1000:
     raise SystemExit("Authored material controls require --config and --height 1000")
@@ -76,7 +78,7 @@ with log.open("w") as stream:
             time.sleep(.1)
         x.XMoveWindow(d,window,20,20);x.XSetInputFocus(d,window,1,0);x.XSync(d,0);time.sleep(1)
         def capture(name):
-            subprocess.run(["ffmpeg","-v","error","-f","x11grab","-video_size",f"900x{args.height}","-i",os.environ["DISPLAY"]+"+20,20","-frames:v","1","-y",str(out/"captures"/name)],check=True)
+            subprocess.run(["ffmpeg","-v","error","-f","x11grab","-draw_mouse","0","-video_size",f"900x{args.height}","-i",os.environ["DISPLAY"]+"+20,20","-frames:v","1","-y",str(out/"captures"/name)],check=True)
         capture("window-before.png")
         x.XResizeWindow(d,window,1100,700);x.XSync(d,0);time.sleep(.4)
         x.XResizeWindow(d,window,900,args.height);x.XSync(d,0);time.sleep(.4)
@@ -94,6 +96,36 @@ with log.open("w") as stream:
             t.XTestFakeMotionEvent(d,-1,cx+20,cy+20,0)
             t.XTestFakeButtonEvent(d,1,1,0);x.XSync(d,0);time.sleep(.07)
             t.XTestFakeButtonEvent(d,1,0,0);x.XSync(d,0);time.sleep(.35)
+        if args.source_contract:
+            preset=json.loads(args.config.read_text())
+            owned_scene=Path(preset['authored-scene']).resolve()
+            assert owned_scene.is_relative_to(args.config.resolve().parent), 'Requires an owned scene beside the test config'
+            assert preset.get('surface-trace') in ('analytic','hybrid') and not args.history_controls
+            def source_pixels(name):
+                return subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'captures'/name),
+                    '-vf','crop=450:700:440:150','-f','rawvideo','-pix_fmt','rgb24','-'])
+            capture('window-source-lit.png')
+            # Inspectable fixed dropdown rows; arrow keys also orbit the camera.
+            click(180,236);click(180,286);time.sleep(.3)
+            capture('window-source-debug.png')
+            assert source_pixels('window-source-debug.png')!=source_pixels('window-source-lit.png')
+            click(180,236);click(180,266);time.sleep(.3)
+            capture('window-source-lit-restored.png')
+            assert source_pixels('window-source-lit-restored.png')==source_pixels('window-source-lit.png')
+            original=owned_scene.read_text()
+            updates_before=log.read_text().count('sdf: authored update geometry=')
+            try:
+                owned_scene.write_text('{"format":"invalid-owned-window-fixture"}')
+                click(160,574);capture('window-source-rejected.png')
+                assert proc.poll() is None
+                assert 'sdf: authored update rejected:' in log.read_text()
+                assert log.read_text().count('sdf: authored update geometry=')==updates_before
+                assert source_pixels('window-source-rejected.png')==source_pixels('window-source-lit.png')
+            finally:
+                owned_scene.write_text(original)
+            click(160,574);capture('window-source-retried.png')
+            assert log.read_text().count('sdf: authored update geometry=')==updates_before+1
+            assert source_pixels('window-source-retried.png')==source_pixels('window-source-lit.png')
         if args.history_controls:
             import re
             observed=[]
@@ -247,6 +279,12 @@ else:
         assert len(pipelines)>=3 and all(n==expected_pipelines for n in pipelines),pipelines
         receipt['source_tracing']=True
         receipt['source_pipeline_counts']=pipelines
+        if args.source_contract:
+            assert text.count('sdf: authored update rejected:')==1
+            receipt['source_contract']=True
+            receipt['actions']+=['switch normal debug and return to identical lit pixels',
+                'reject owned invalid scene reload with identical retained model pixels',
+                'retry restored scene with identical model pixels']
     if args.readonly_material:
         receipt['readonly_material']=True
         receipt['actions']=['resize twice','orbit','zoom','pause/reset',
