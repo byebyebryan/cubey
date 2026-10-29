@@ -34,3 +34,7 @@ packs; they are not golden-image tests.
 - [SDF source-query optimization loop](sdf-source-query-optimization-2026-10/README.md):
   automatic shadow qualification, prepared/combined studies, native publication
   and history checks, full-HD timings and raw completed GPU samples.
+
+- [SDF quality/speed research](sdf-quality-speed-research-2026-10/README.md):
+  planning-only source audit, distinct historical cached/analytical identities,
+  primary-source research and proposed approximation/measurement boundaries.

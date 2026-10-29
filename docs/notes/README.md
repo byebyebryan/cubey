@@ -75,6 +75,9 @@ the architecture and project guides remain current authority.
 - [SDF query acceleration results](sdf-query-acceleration-results.md): adaptive
   headless study gains, frozen numerical checks, retained shadow-pixel differences
   and the CPU construction limit on full near-surface refinement.
+- [SDF quality/speed research plan](sdf-quality-speed-research-plan.md): proposed
+  matched cached/analytical endpoints, reconstruction versus representation
+  diagnosis, quality/motion measurements and bounded approximation candidates.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
   [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
   published-material selection, exact capture parity, current 1080p measurements

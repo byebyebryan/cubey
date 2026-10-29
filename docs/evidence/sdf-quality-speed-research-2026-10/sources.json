@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-29",
+  "status": "Primary-source research and local source audit; no rendering experiment",
+  "sources": [
+    {
+      "id": "adfs-2000",
+      "title": "Adaptively Sampled Distance Fields: A General Representation of Shape for Computer Graphics",
+      "authors": "Sarah F. Frisken, Ronald N. Perry, Alyn P. Rockwood, Thouis R. Jones",
+      "year": 2000,
+      "url": "https://www.merl.com/publications/TR2000-15",
+      "paper": "https://www.merl.com/publications/docs/TR2000-15.pdf",
+      "access": "Read publisher abstract and full text of the eight-page MERL PDF including cover pages.",
+      "sections": ["3.1: octree-based ADFs", "3.2: generating ADFs", "3.3: reconstructing ADFs", "4.1: precise carving and reconstructed-field ray casting"],
+      "supports": "Sampling detail, interpolation, gradients and root solving are distinct design choices.",
+      "cubey_inference": "Test whether the current cache can reconstruct an adequate surface before designing another hierarchy. Finite sampled error tests alone are not universal certificates.",
+      "limits": "No new ADF builder is proposed for the first loop; historical image quality and timing do not predict Cubey results."
+    },
+    {
+      "id": "sdf-grids-2022",
+      "title": "Ray Tracing of Signed Distance Function Grids",
+      "authors": "Herman Hansson-Soderlund, Alex Evans, Tomas Akenine-Moller",
+      "year": 2022,
+      "url": "https://research.nvidia.com/publication/2022-09_ray-tracing-signed-distance-function-grids",
+      "journal": "https://jcgt.org/published/0011/03/06/",
+      "paper": "https://jcgt.org/published/0011/03/06/paper.pdf",
+      "access": "Read the authors' NVIDIA research abstract. Journal landing page returned no text. Full PDF retrieval failed because its 49,723,521-byte response exceeded the web reader limit; no detailed algorithm inspection is claimed.",
+      "supports": "Compares voxel traversal/intersection combinations and describes trilinear surface intersections and continuous normals.",
+      "cubey_inference": "Treat faithful cached-surface intersection as separate from exact authored-source evaluation.",
+      "limits": "No cubic solver, BVH or hardware ray-tracing port selected. Full paper/code inspection is a prerequisite if that mechanism is chosen."
+    },
+    {
+      "id": "epic-mesh-distance-fields",
+      "title": "Mesh Distance Fields",
+      "authors": "Epic Games",
+      "url": "https://dev.epicgames.com/documentation/unreal-engine/mesh-distance-fields-in-unreal-engine?lang=en-US",
+      "access": "Read official documentation, particularly Quality and Global Distance Field. The retrieved page identifies Unreal Engine 5.8; engine-specific limits are not Cubey limits.",
+      "supports": "Resolution affects corner and thin-surface fidelity and storage cost.",
+      "cubey_inference": "Measure actual visible feature loss separately from normal or shading improvement.",
+      "limits": "Offline mesh generation and engine-specific clipmaps are not qualified for Cubey's editable CSG."
+    },
+    {
+      "id": "epic-distance-field-shadows",
+      "title": "Distance Field Soft Shadows",
+      "authors": "Epic Games",
+      "url": "https://dev.epicgames.com/documentation/en-us/unreal-engine/distance-field-soft-shadows-in-unreal-engine",
+      "access": "Read official documentation, especially Mesh Distance Field Quality and its reconstruction/temporal-support discussion.",
+      "supports": "Shadow evaluation can use reduced resolution with depth-aware reconstruction and temporal antialiasing, with remaining artifacts.",
+      "cubey_inference": "Shadow fidelity is a separate research axis, with a reconstruction dependency.",
+      "limits": "Cubey has not qualified the corresponding temporal resolve. Do not transplant engine timings or claim cheaper shadows repair primary geometry."
+    }
+  ],
+  "local_evidence": "baseline-audit.json",
+  "limits": [
+    "No new native benchmark or implementation in this planning pass.",
+    "Earlier sampled and latest analytical timings have different executable/run identities.",
+    "Quality budgets are proposed measurement bands, not accepted defaults.",
+    "Approximation policies, numerical validity, history correctness and human visual acceptance are distinct gates."
+  ]
+}

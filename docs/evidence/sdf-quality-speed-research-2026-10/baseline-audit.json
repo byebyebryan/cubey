@@ -1,0 +1,306 @@
+{
+  "date": "2026-10-29",
+  "status": "Planning and source audit only; no new native measurements",
+  "source_head": "59273c2cb410f46f4b900c404581560113ad11f0",
+  "native_jobs_run": 0,
+  "historical_sampled": {
+    "receipt": "docs/evidence/sdf-tracing-comparison-2026-10/benchmarks.json",
+    "receipt_sha256": "377716c06b1681e53c2921625ce5f8b42cfbf66f5c3eaad2131997ee57038060",
+    "binary_sha256": "8e8864d24ef31afabcaca871c5ca694b2ed29c456b2da33fd1db7ae20fa15312",
+    "source_head": "cea1f1289173312e779783e4b51b6d38ed2a856e",
+    "extent": [
+      1920,
+      1080
+    ],
+    "scenes": {
+      "guardian": {
+        "view": "preset only",
+        "p95_ms": [
+          1.907816,
+          1.9214559999999998,
+          1.9155472
+        ],
+        "samples_per_run": [
+          150,
+          150,
+          150
+        ],
+        "commands": [
+          [
+            "build/release/projects/sdf/sdf",
+            "--config",
+            "projects/sdf/presets/sculpture-guardian-limestone.json",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--frames",
+            "180",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--supersample",
+            "1",
+            "--shadows",
+            "1",
+            "--surface-trace",
+            "sampled",
+            "--csg-evaluation",
+            "full",
+            "--region-axis",
+            "16",
+            "--profile-warmup-frames",
+            "30",
+            "--profile-output",
+            "outputs/sdf/tracing-comparison-20261026/final-frames/guardian-sampled-full-16-1920-r1"
+          ],
+          [
+            "build/release/projects/sdf/sdf",
+            "--config",
+            "projects/sdf/presets/sculpture-guardian-limestone.json",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--frames",
+            "180",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--supersample",
+            "1",
+            "--shadows",
+            "1",
+            "--surface-trace",
+            "sampled",
+            "--csg-evaluation",
+            "full",
+            "--region-axis",
+            "16",
+            "--profile-warmup-frames",
+            "30",
+            "--profile-output",
+            "outputs/sdf/tracing-comparison-20261026/final-frames/guardian-sampled-full-16-1920-r2"
+          ],
+          [
+            "build/release/projects/sdf/sdf",
+            "--config",
+            "projects/sdf/presets/sculpture-guardian-limestone.json",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--frames",
+            "180",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--supersample",
+            "1",
+            "--shadows",
+            "1",
+            "--surface-trace",
+            "sampled",
+            "--csg-evaluation",
+            "full",
+            "--region-axis",
+            "16",
+            "--profile-warmup-frames",
+            "30",
+            "--profile-output",
+            "outputs/sdf/tracing-comparison-20261026/final-frames/guardian-sampled-full-16-1920-r3"
+          ]
+        ]
+      },
+      "robot": {
+        "view": "preset only",
+        "p95_ms": [
+          4.230830399999999,
+          4.2488576,
+          4.2251328
+        ],
+        "samples_per_run": [
+          150,
+          150,
+          150
+        ],
+        "commands": [
+          [
+            "build/release/projects/sdf/sdf",
+            "--config",
+            "projects/sdf/presets/survey-robot-fieldkit.json",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--frames",
+            "180",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--supersample",
+            "1",
+            "--shadows",
+            "1",
+            "--surface-trace",
+            "sampled",
+            "--csg-evaluation",
+            "full",
+            "--region-axis",
+            "16",
+            "--profile-warmup-frames",
+            "30",
+            "--profile-output",
+            "outputs/sdf/tracing-comparison-20261026/final-frames/robot-sampled-full-16-1920-r1"
+          ],
+          [
+            "build/release/projects/sdf/sdf",
+            "--config",
+            "projects/sdf/presets/survey-robot-fieldkit.json",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--frames",
+            "180",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--supersample",
+            "1",
+            "--shadows",
+            "1",
+            "--surface-trace",
+            "sampled",
+            "--csg-evaluation",
+            "full",
+            "--region-axis",
+            "16",
+            "--profile-warmup-frames",
+            "30",
+            "--profile-output",
+            "outputs/sdf/tracing-comparison-20261026/final-frames/robot-sampled-full-16-1920-r2"
+          ],
+          [
+            "build/release/projects/sdf/sdf",
+            "--config",
+            "projects/sdf/presets/survey-robot-fieldkit.json",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--frames",
+            "180",
+            "--width",
+            "1920",
+            "--height",
+            "1080",
+            "--supersample",
+            "1",
+            "--shadows",
+            "1",
+            "--surface-trace",
+            "sampled",
+            "--csg-evaluation",
+            "full",
+            "--region-axis",
+            "16",
+            "--profile-warmup-frames",
+            "30",
+            "--profile-output",
+            "outputs/sdf/tracing-comparison-20261026/final-frames/robot-sampled-full-16-1920-r3"
+          ]
+        ]
+      }
+    },
+    "limit": "Older preset-only measurements; not paired against the current analytical receipt."
+  },
+  "previous_analytical": {
+    "receipt": "docs/evidence/sdf-query-acceleration-loop-2026-10/summary.json",
+    "receipt_sha256": "ecee25899fefce635b6567a48d3a123bc28e8cb33c67ae163fa5078336f2dfca",
+    "implementation_head": "603f073af5e0927ab324b7ca7bed03b4770596e5",
+    "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+    "guardian_combined": [
+      {
+        "scene": "guardian",
+        "view": "preset",
+        "source_optimization": "combined",
+        "ordinary_p95_ms": [
+          18.625366399999997,
+          18.4830336,
+          18.3065552
+        ],
+        "adaptive_p95_ms": [
+          17.9057696,
+          17.7984688,
+          17.8352496
+        ]
+      },
+      {
+        "scene": "guardian",
+        "view": "side",
+        "source_optimization": "combined",
+        "ordinary_p95_ms": [
+          20.8114528,
+          20.661041599999997,
+          20.6803808
+        ],
+        "adaptive_p95_ms": [
+          19.2989664,
+          19.3083616,
+          19.22296
+        ]
+      },
+      {
+        "scene": "guardian",
+        "view": "rear",
+        "source_optimization": "combined",
+        "ordinary_p95_ms": [
+          16.296252799999998,
+          16.2130512,
+          16.1495776
+        ],
+        "adaptive_p95_ms": [
+          15.336627199999999,
+          15.3429632,
+          15.2539008
+        ]
+      }
+    ],
+    "load_boundary": "All boundaries have shared encoder activity; no idle-GPU or interactive/windowed root-far qualification."
+  },
+  "current_binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+  "current_binary_matches_previous": true,
+  "source_observations": {
+    "sample_spacing_workspace": 0.0005580357142857143,
+    "sampled_hit_band_in_sample_spacings": 0.2,
+    "analytical_hit_band_in_sample_spacings": 0.03125,
+    "sampled_to_analytical_hit_band_ratio": 6.4,
+    "sampled_normal_half_stencil_in_sample_spacings": 0.5,
+    "analytical_normal_half_stencil_in_sample_spacings": 0.0625,
+    "normal_contract_note": "Sampled gradients are clamped to the hit brick. Analytical gradients make six exact source queries.",
+    "cached_semantics_note": "Uniform-cell labels are occupancy labels, not exact distance samples. Post-hit refinement does not recover unflagged cached misses.",
+    "admission_note": "Prepared cones, guarded stepping, root-far and current selected-query diagnostics have static headless restrictions; motion/mixed routes need separate qualification."
+  },
+  "inspected_source_sha256": {
+    "projects/sdf/shaders/trace.glsl": "3a641b9db15e43cf81277db19b36b2dead518d270fa075581b6bd4130468f79e",
+    "projects/sdf/shaders/selected_trace.glsl": "3270f737f304ed08e433147219570158602c9c33927b0683c340ac438b3b6fb2",
+    "projects/sdf/shaders/source_trace.glsl": "33b5637684a8ee9e905fb417110d277b87ba851ec9f104e89a66f229ddb13c8b",
+    "projects/sdf/shaders/sdf_surface.glsl": "02b49cf4f3466abbb634646b4a678d73f3e652df0f6af50cecc77e3922c59e3e",
+    "projects/sdf/sdf_shader_selection.cpp": "9e64b80f89f9ff0296d6370725696e85fb367aa21bb4c2c2e54ea9f5c4f9dc1e",
+    "projects/sdf/sdf_config.h": "f8e03f9ed97dcbd75f1eb6d6a96d7fbb39ece4ec6483e940a42efe2ef6a628c9",
+    "projects/sdf/sdf_renderer.cpp": "d0c076dc4404a7627d2feaaa611d2d8f4d07ea110458259c1165c8dbbd3e6365",
+    "projects/sdf/sdf_timeline.cpp": "4afc0de789af56f03a9db59767d3dc2d93d4b040e03e50370e5fe56695efc093",
+    "projects/sdf/tools/benchmark_tracing.py": "a4b8773dd980625b9e324da2fcb98cec4f6dc5c95fd5831674c9986c3d34d06c",
+    "projects/sdf/tools/query_acceleration_loop.py": "6011dc257691dcd0e31e9e1cc42811f425f377fb55553a8d2372ea329cd9d18c",
+    "projects/sdf/presets/sculpture-guardian-limestone.json": "55e07578aaa17fda60c48dde20572d17e6cd16fd5bfc0abe5b81159208d80990",
+    "projects/sdf/presets/survey-robot-fieldkit.json": "e612351b793ac1eec50d6e8a6efa3b0a78a5a6af5708fad80d16856c9f0a7cb7",
+    "projects/sdf/scenes/sculpture-guardian-limestone.json": "8798cc07330548c8aded5d267659e01d8a13720d5c7d0f3022fb4f06eab16fe5",
+    "projects/sdf/scenes/survey-robot-fieldkit.json": "1aceb1131170a0b750671a0126a5756e43a746e7164db16b9ad02c27622b6c44"
+  },
+  "limits": [
+    "No new frame/edit benchmark",
+    "No native candidate or quality policy implemented",
+    "No motion, windowed or visual acceptance",
+    "No default or source/history change"
+  ]
+}
