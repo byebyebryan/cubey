@@ -1,6 +1,7 @@
 // Separate, compile-only Vulkan diagnostic. Never enables features on the app's device.
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -27,7 +28,8 @@ std::vector<std::uint32_t> read(const fs::path& path) {
 int main(int argc, char** argv) {
     try {
         if (argc < 4)
-            throw std::invalid_argument("shader-directory output-directory fragment.spv ...");
+            throw std::invalid_argument(
+                "shader-directory output-directory fragment.spv[@single] ...");
         const fs::path shaders = argv[1], output = argv[2];
         fs::create_directories(output);
         const VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -186,15 +188,21 @@ int main(int argc, char** argv) {
                     {"pipelines", Json::array()}};
         result["local_memory_statistic_usable"] = true;
         for (int arg = 3; arg < argc; ++arg) {
-            const fs::path name = argv[arg];
+            const std::string request = argv[arg];
+            const bool single_material = request.ends_with("@single");
+            const fs::path name = single_material ? request.substr(0, request.size() - 7) : request;
             if (name.has_parent_path())
                 throw std::invalid_argument("fragment name must be a basename");
             const auto fragment = module(shaders / name);
+            const VkBool32 single = VK_TRUE;
+            const VkSpecializationMapEntry entry{0, 0, sizeof(single)};
+            const VkSpecializationInfo specialization{1, &entry, sizeof(single), &single};
             const std::array<VkPipelineShaderStageCreateInfo, 2> stages{
                 {{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
                   VK_SHADER_STAGE_VERTEX_BIT, vertex, "main", nullptr},
                  {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-                  VK_SHADER_STAGE_FRAGMENT_BIT, fragment, "main", nullptr}}};
+                  VK_SHADER_STAGE_FRAGMENT_BIT, fragment, "main",
+                  single_material ? &specialization : nullptr}}};
             VkGraphicsPipelineCreateInfo ci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
                                             &rendering};
             ci.flags = VK_PIPELINE_CREATE_CAPTURE_STATISTICS_BIT_KHR |
@@ -210,14 +218,22 @@ int main(int argc, char** argv) {
             ci.pColorBlendState = &blend;
             ci.layout = layout;
             VkPipeline pipeline;
+            const auto start = std::chrono::steady_clock::now();
             check(vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &ci, nullptr, &pipeline));
+            const auto setup_ms =
+                std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
+                    .count();
             VkPipelineInfoKHR pi{VK_STRUCTURE_TYPE_PIPELINE_INFO_KHR, nullptr, pipeline};
             count = 0;
             check(getProperties(device, &pi, &count, nullptr));
             std::vector<VkPipelineExecutablePropertiesKHR> executables(
                 count, {VK_STRUCTURE_TYPE_PIPELINE_EXECUTABLE_PROPERTIES_KHR});
             check(getProperties(device, &pi, &count, executables.data()));
-            Json row{{"shader", name.string()}, {"executables", Json::array()}};
+            Json row{{"request", request},
+                     {"shader", name.string()},
+                     {"single_material", single_material},
+                     {"pipeline_setup_ms", setup_ms},
+                     {"executables", Json::array()}};
             for (unsigned e = 0; e < count; ++e) {
                 const auto& prop = executables[e];
                 Json erow{{"name", prop.name},           {"description", prop.description},

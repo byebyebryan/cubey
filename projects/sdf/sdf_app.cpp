@@ -92,7 +92,8 @@ class App {
                     "analytic atmosphere, debug 0, no AO/ground/clouds/actions; runtime/fixed "
                     "profiles require a comparison stage, other profiles require stage off");
             if ((config_.frame_profile == "single-material" ||
-                 config_.frame_profile == "specialized") &&
+                 config_.frame_profile == "specialized" ||
+                 config_.frame_profile.starts_with("opt-")) &&
                 (authored_->materials.size() != 1 || !config_.material_fast_path))
                 throw std::invalid_argument(
                     "single-material profile requires the eligible one-material shortcut");

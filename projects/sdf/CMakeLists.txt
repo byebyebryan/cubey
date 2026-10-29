@@ -79,6 +79,12 @@ cubey_add_app_target(
         shaders/profile_nodebug.frag
         shaders/profile_single-material.frag
         shaders/profile_specialized.frag
+        shaders/profile_opt-full.frag
+        shaders/profile_opt-primary.frag
+        shaders/profile_opt-normal.frag
+        shaders/profile_opt-material.frag
+        shaders/profile_opt-shadow.frag
+        shaders/profile_opt-no-sky.frag
         shaders/profile_no-sky.frag
         shaders/occluder.vert shaders/occluder.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"

@@ -89,8 +89,10 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     acceleration.enum_values = {"off", "control", "unclamped", "root", "far", "root-far"};
     auto frame_profile = option("frame-profile", "Private current-candidate shader profile",
                                 config::ValueType::Enum);
-    frame_profile.enum_values = {"off",         "runtime", "fixed", "nodebug", "single-material",
-                                 "specialized", "no-sky"};
+    frame_profile.enum_values = {
+        "off",          "runtime",    "fixed",     "nodebug",     "single-material",
+        "specialized",  "no-sky",     "opt-full",  "opt-primary", "opt-normal",
+        "opt-material", "opt-shadow", "opt-no-sky"};
     auto source_shaders =
         option("source-shaders", "Source shader selection control", config::ValueType::Enum);
     source_shaders.enum_values = {"automatic", "general"};
