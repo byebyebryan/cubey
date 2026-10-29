@@ -87,7 +87,7 @@ class Study:
         self.output = args.output
         self.base = [str(args.binary), "--headless", "--require-validation", "--supersample", "1"]
         self.receipt = dict(metadata(args.binary), runner_sha256=digest(Path(__file__)), runs=[])
-        if args.resume:
+        if getattr(args, "resume", False):
             previous=json.loads((args.output/"qualification.json").read_text())
             if previous["binary_sha256"]!=digest(args.binary):raise RuntimeError("resume binary differs")
             self.receipt=previous

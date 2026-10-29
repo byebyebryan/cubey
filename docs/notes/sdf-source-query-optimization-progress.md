@@ -16,5 +16,17 @@ committed at `0737bec9`. Work remains local on `sdf-tracing-comparison`.
   with forced trace exhaustion. It checks front/back/grazing/tiny-sign and
   nonfinite inputs, exhaustion propagation and geometric query origins.
 
-Qualification, native window evidence, performance and the independent B trial
-are pending. A candidate build is not adoption or interactive root-far support.
+- `09ca1d74`: A candidate checkpoint. Its 129-job main qualification passes,
+  including ten frozen 155-check query routes, Guardian/Robot 1080p captures,
+  analytic/hybrid history and 21-action per-frame eligibility/failure replays.
+  Another 12 appearance jobs and 42 lighting/near-surface image jobs pass.
+- The 14-case controlled GPU exhaustion/nonfinite/origin fixture passes. A real
+  Xvfb source window survives two resizes/recreations, orbit, zoom, reset and
+  material editing with no field build and exactly three pipelines each time.
+- Rejected harness attempts are retained: missing resume metadata, then camera
+  distances below the existing 0.6 admission limit. The completed edge suite
+  uses an enclosing clipped sphere at admitted camera distances; no camera
+  guard was weakened. The first documentation check needed an index link.
+
+Performance and the independent B trial are pending. Automatic remains reference;
+these checks do not establish interactive root-far support or physical acceptance.
