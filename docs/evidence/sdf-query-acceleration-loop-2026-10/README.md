@@ -71,3 +71,18 @@ archive from a completed pack with the recorded phase names. It checks every
 GPU frame index/p95, numerical kernel identity, undo/redo/failure image hashes,
 the retained shader/content hashes and canonical CPU/shared-engine preservation.
 It does not launch benchmarks or manufacture a pass from incomplete phases.
+
+## HTML report delivery
+
+[Adaptive stepping results](http://starship:8787/reports/baf8361bd5840455f922c302cf52775abf6f7d414c1e9903f663c1274d4647dd/)
+bundles interactive timing controls, native image comparisons, pixel magnification,
+the shadow ablation and downloadable evidence. [Delivery receipt](report-delivery.json)
+records verified HTTP byte parity for all 36 files and 21 offline control cases,
+including the HTTP copy/select fallback. No browser was connected during this
+delivery, so browser rendering/layout acceptance is not claimed.
+
+Rebuild a fresh explicit export with `query_acceleration_report.py --output ...`;
+it reads this archive and the retained native PNGs, checks source image hashes,
+and copies only the intended report assets. Publish that directory through the
+shared report publisher under project `cubey`. Its own delivery receipt is
+excluded from the bundle to avoid a recursive publication identity.

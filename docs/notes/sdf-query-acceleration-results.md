@@ -150,3 +150,8 @@ expansion, new modeling vocabulary, default change or public publication.
 
 The local loop is complete with an explicit numerical/performance winner and
 recorded visual limits. [Receipts and reproduction](../evidence/sdf-query-acceleration-loop-2026-10/README.md).
+
+[Interactive HTML report](http://starship:8787/reports/baf8361bd5840455f922c302cf52775abf6f7d414c1e9903f663c1274d4647dd/)
+includes all stepping controls, native image comparisons and the shadow ablation.
+HTTP delivery and offline controls are verified; no browser rendering pass was
+available in the delivery session.

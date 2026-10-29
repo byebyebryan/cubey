@@ -1,0 +1,311 @@
+{
+  "publication": {
+    "report_id": "baf8361bd5840455f922c302cf52775abf6f7d414c1e9903f663c1274d4647dd",
+    "title": "Cubey SDF \u2014 Adaptive stepping results",
+    "project": "cubey",
+    "entrypoint": "index.html",
+    "created_at": "2026-10-29T18:20:23.371877+00:00",
+    "state": "published",
+    "schema": 1,
+    "publication": "created",
+    "origin": "starship",
+    "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/baf8361bd5840455f922c302cf52775abf6f7d414c1e9903f663c1274d4647dd",
+    "file_count": 36,
+    "byte_count": 8194455,
+    "url": "http://starship:8787/reports/baf8361bd5840455f922c302cf52775abf6f7d414c1e9903f663c1274d4647dd/",
+    "catalog": {
+      "state": "updated"
+    },
+    "delivery": {
+      "checked_at": "2026-10-29T18:20:23.768004+00:00",
+      "checked_from": "starship",
+      "state": "verified",
+      "http_status": 200,
+      "bytes": 192027,
+      "verified_url": "http://starship:8787/reports/baf8361bd5840455f922c302cf52775abf6f7d414c1e9903f663c1274d4647dd/"
+    },
+    "catalog_url": "http://starship:8787/reports/",
+    "project_url": "http://starship:8787/reports/#project=cubey",
+    "server": {
+      "state": "running",
+      "session": "codex-report-server",
+      "session_id": "$0",
+      "pid": 23164,
+      "url": "http://starship:8787/reports/",
+      "version": "0.1.0-preview.10",
+      "reused": true
+    }
+  },
+  "validation": {
+    "status": "verified HTTP bytes and offline control logic",
+    "browser_connected": false,
+    "browser_rendering_qualified": false,
+    "offline_controls_passed": true,
+    "offline_control_cases": 21,
+    "verified_files": 36,
+    "verified_bytes": 8194455,
+    "files": [
+      {
+        "path": "index.html",
+        "status": 200,
+        "bytes": 192027,
+        "sha256": "aec04d0a7815dc508bacc13246568880ca08396ba7f83db189c100caec287014",
+        "content_type": "text/html"
+      },
+      {
+        "path": "asset-manifest.json",
+        "status": 200,
+        "bytes": 8668,
+        "sha256": "6033efdbba4ee59489290a2cf8c0205eca236cd7889fe0ff414f6568efbdc31c",
+        "content_type": "application/json"
+      },
+      {
+        "path": "images/preset-shadows-ordinary.png",
+        "status": 200,
+        "bytes": 476299,
+        "sha256": "3e14006f869badad8e3b536c5901cc94111f725b580566595674f08f066e4f9b",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/preset-shadows-adaptive.png",
+        "status": 200,
+        "bytes": 476491,
+        "sha256": "8799573d7915b0129114019c05da12d37a3a2a81d5d12b71dfd96cefdee62b27",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/preset-unshadowed-ordinary.png",
+        "status": 200,
+        "bytes": 479657,
+        "sha256": "f76b75f8f8d55e4dcf856a61b8cb9feb60ae86a1993653bf332ceff570fe572b",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/preset-unshadowed-adaptive.png",
+        "status": 200,
+        "bytes": 479762,
+        "sha256": "e4b9adc6c178b8e4d3f3d45df3645f96b4eb64b3011fb4b232a98723544a1d2c",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/side-shadows-ordinary.png",
+        "status": 200,
+        "bytes": 538669,
+        "sha256": "bcbcb122b2f884e838680775e61420be905a160cdedfacaffddb4479c6f3249c",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/side-shadows-adaptive.png",
+        "status": 200,
+        "bytes": 538644,
+        "sha256": "969fa38054a1476f098f3006413b6f96321eccc302f317c36498d9ddaa348dcf",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/side-unshadowed-ordinary.png",
+        "status": 200,
+        "bytes": 566234,
+        "sha256": "e4cdfc39104b6193a2885b06cb18a1ffbff94c1fa779ff8ba82de58290cf545e",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/side-unshadowed-adaptive.png",
+        "status": 200,
+        "bytes": 566015,
+        "sha256": "ff4730ede5eadd30d68b13ee65ef76d8a7443827eb048026cfa9c3e7c3cf025b",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/rear-shadows-ordinary.png",
+        "status": 200,
+        "bytes": 413220,
+        "sha256": "8bdf600aa48edcd899cd9aad26a1fbddd1f0ee5f145dae56cee3ef2192890e6d",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/rear-shadows-adaptive.png",
+        "status": 200,
+        "bytes": 413205,
+        "sha256": "6afe67a94b908616fe62ec280bc39b0700a2dd4ea9a50ba5ebebe6f938ea53f9",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/rear-unshadowed-ordinary.png",
+        "status": 200,
+        "bytes": 424651,
+        "sha256": "6ce94736ea84fa5a1d4ec18f2a8ac7a3b16d303a47060df7b7359fba19de33a2",
+        "content_type": "image/png"
+      },
+      {
+        "path": "images/rear-unshadowed-adaptive.png",
+        "status": 200,
+        "bytes": 424631,
+        "sha256": "50b5eefe5694912ac758bf420774902d6e15ea96367af6898b0b8fa996fc135f",
+        "content_type": "image/png"
+      },
+      {
+        "path": "evidence/summary.json",
+        "status": 200,
+        "bytes": 24630,
+        "sha256": "ecee25899fefce635b6567a48d3a123bc28e8cb33c67ae163fa5078336f2dfca",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/timing.json",
+        "status": 200,
+        "bytes": 281180,
+        "sha256": "32f018be5171e40f23be4d261b6b66768b1308be50b3a51f77124f4bbe8695dc",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/gpu-samples.json",
+        "status": 200,
+        "bytes": 1018413,
+        "sha256": "b5bb6b6fb370b6fd1478ec21ab319d7fb77820c82adeecde0ccf74058fc49d23",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/resources.json",
+        "status": 200,
+        "bytes": 106565,
+        "sha256": "6b16035fc25cc9b6b875f271226b4c4d016134c97b4e5e331c0963eca180e8e3",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/workload.json",
+        "status": 200,
+        "bytes": 188764,
+        "sha256": "2ab6c9ee5cbbd6576bc5851d709b64ec28eff091dfa0cbe1666390a1615e3bb2",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/pruning-pilot.json",
+        "status": 200,
+        "bytes": 84947,
+        "sha256": "3d3fa8f916b1608c860624b072c775b9f4a094a235e24a083ebfd7a07b9b0b35",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/numerical.json",
+        "status": 200,
+        "bytes": 36601,
+        "sha256": "6ee99f0c714c9d5997501d48a756d5f05aab1222a9405c338cf38b29b1df6a16",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/controlled.json",
+        "status": 200,
+        "bytes": 4574,
+        "sha256": "0fd81f7bab3074edbab5a964ea20be90a93732b5fb11541d353835fe8c6ce05b",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/thin-contracts.json",
+        "status": 200,
+        "bytes": 11838,
+        "sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/cone-contracts.json",
+        "status": 200,
+        "bytes": 13892,
+        "sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/captures.json",
+        "status": 200,
+        "bytes": 60312,
+        "sha256": "468efc8e717f8925b1a62749e2b6a9a8afd018f1776e2f203719b2d51881dc27",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/shadow-review.json",
+        "status": 200,
+        "bytes": 24871,
+        "sha256": "edaa62cc9e3734bed04a14f718504547f80d97b27101f9a9d42cbd485d130d08",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/publication.json",
+        "status": 200,
+        "bytes": 174894,
+        "sha256": "928afceed87962eb51dcbbcc7bb82fcac807847bcd4001a6d6a700e39943c992",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/negative.json",
+        "status": 200,
+        "bytes": 4501,
+        "sha256": "03aaf18727f4d98694bb82737e3c3e6f7192af0dc162bd91f8225c40f3c210b0",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/compiler.json",
+        "status": 200,
+        "bytes": 29197,
+        "sha256": "bcb5493c1bdb35c1520e74e8d2c8d15c7ec46b31f4cf78abb1125fb1e9502927",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/preservation.json",
+        "status": 200,
+        "bytes": 83831,
+        "sha256": "bbe1f75d5e464d721ef3be671b2870a5c8911651b6ffe2a713382b39a2194bb0",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/checks.json",
+        "status": 200,
+        "bytes": 871,
+        "sha256": "e4ddc0ef4a60e3f480f1fbe264778996aa2b9d4dfef68d1b3687b0d80d7f2d0e",
+        "content_type": "application/json"
+      },
+      {
+        "path": "evidence/results.md",
+        "status": 200,
+        "bytes": 8735,
+        "sha256": "b8a4a7659662ed753334aec34587a842d0b1f27846fb95ee0b1b5dce3477fbe1",
+        "content_type": "text/markdown"
+      },
+      {
+        "path": "evidence/plan.md",
+        "status": 200,
+        "bytes": 16086,
+        "sha256": "535106cb9c77f1ef9d27edee5c71b0735d0e5459e598e438b1644e30e0f0b343",
+        "content_type": "text/markdown"
+      },
+      {
+        "path": "evidence/progress.md",
+        "status": 200,
+        "bytes": 10102,
+        "sha256": "97f93b3160490328ab6dba9eb8edd4286bba57eb93bd7de8b24212ad9a042ee7",
+        "content_type": "text/markdown"
+      },
+      {
+        "path": "evidence/README.md",
+        "status": 200,
+        "bytes": 4885,
+        "sha256": "762908d4506a517d85083f8eee63585ae3ee5663bc1a067a330fcbb975353051",
+        "content_type": "text/markdown"
+      },
+      {
+        "path": "evidence/sources.json",
+        "status": 200,
+        "bytes": 6593,
+        "sha256": "410ee34ff1f142dc3747bae8d4c9daeba3f9d7762ec42d04101a24e2b0f63a61",
+        "content_type": "application/json"
+      }
+    ],
+    "offline_controls": {
+      "scope": "Offline script/control smoke checks; no browser renderer or layout acceptance",
+      "passed": true,
+      "control_cases": 21,
+      "clipboard_success_and_http_fallback": true,
+      "browser_connected": false,
+      "browser_rendering_qualified": false
+    },
+    "browser_limitation": "Browser runtime initialized but reported no available browser; discovery returned an empty list. No browser rendering/layout acceptance is claimed."
+  }
+}
