@@ -84,6 +84,7 @@ cubey_add_app_target(
         shaders/profile_opt-normal.frag
         shaders/profile_opt-material.frag
         shaders/profile_opt-shadow.frag
+        shaders/profile_opt-cull-dark-shadows.frag
         shaders/profile_opt-no-sky.frag
         shaders/profile_no-sky.frag
         shaders/occluder.vert shaders/occluder.frag

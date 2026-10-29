@@ -222,7 +222,11 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     return studyRadiance(p,n,viewDirection,footprint,exhausted);
 #else
     vec3 lightDirection=camera.sunlight.xyz;
+#ifdef SDF_PROFILE_CULL_DARK_SHADOWS
+    vec3 shadowNormal=n;
+#else
     float visibility=shadowVisibility(p,n,lightDirection,int(camera.options.y+0.5),exhausted);
+#endif
     float ambientVisibility=environmentVisibility(p,n,exhausted);
     vec3 base=object ? lighting.material.xyz : vec3(0.12,0.14,0.16);
     float roughness=object ? lighting.quality.x : 0.8;
@@ -241,6 +245,12 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     vec3 halfVector=lightDirection+viewDirection;
     vec3 h=dot(halfVector,halfVector)>1e-8 ? normalize(halfVector) : n;
     float nl=max(dot(n,lightDirection),0.0),nv=max(dot(n,viewDirection),0.001);
+#ifdef SDF_PROFILE_CULL_DARK_SHADOWS
+    // Private static diagnostic. Test the final shading normal; retain
+    // the geometric normal for the shadow ray origin.
+    float visibility=nl>0.0 ? shadowVisibility(p,shadowNormal,lightDirection,
+                                             int(camera.options.y+0.5),exhausted) : 1.0;
+#endif
     vec3 f=cubey_pbr_fresnel_schlick(max(dot(h,viewDirection),0.0),vec3(0.04));
     float d=cubey_pbr_distribution_ggx(max(dot(n,h),0.0),roughness);
     float v=cubey_pbr_visibility_smith_ggx_correlated(nv,nl,roughness);

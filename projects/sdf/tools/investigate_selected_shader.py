@@ -37,14 +37,17 @@ def provenance(args):
 
 def qualify(args):
     receipt=provenance(args)
+    capture_cases=[CASES[0],CASES[1],("legacy-specialized",["--frame-profile","specialized"],"profile_specialized.frag.spv")]
+    if args.phase=="cull-qualify":capture_cases=[CASES[0],CASES[1],("cull-dark-shadows",["--frame-profile","opt-cull-dark-shadows"],"profile_opt-cull-dark-shadows.frag.spv")]
     for view,_ in VIEWS:
         image_hashes={}
-        for name,flags,shader in [CASES[0],CASES[1],("legacy-specialized",["--frame-profile","specialized"],"profile_specialized.frag.spv")]:
+        for name,flags,shader in capture_cases:
             prefix=args.output/(view+"-"+name)
             command=base(args,view)+["--frames","1","--output",str(prefix.with_suffix(".png")),*flags]
             invoke(command,prefix,timeout=180)
             image_hashes[name]=digest(prefix.with_suffix(".png"))
             receipt["runs"].append(dict(view=view,name=name,command=command,image_sha256=image_hashes[name]))
+        save(args.output/"qualification.json",receipt)
         if len(set(image_hashes.values()))!=1:raise RuntimeError("full diagnostic differs from actual selected route")
     receipt["negative"]=[]
     for label,flags in [("debug",["--debug","1"]),("shortcut-disabled",["--no-material-fast-path"]),
@@ -65,6 +68,8 @@ def timing(args):
     receipt=provenance(args)
     receipt.update(frames=180,warmup=30)
     cases=[(view,name,flags,shader,1920,1080) for view,_ in VIEWS for name,flags,shader in CASES]
+    if args.phase=="cull":
+        cases=[(view,name,flags,shader,1920,1080) for view,_ in VIEWS for name,flags,shader in [CASES[0],("cull-dark-shadows",["--frame-profile","opt-cull-dark-shadows"],"profile_opt-cull-dark-shadows.frag.spv")]]
     if args.phase=="scale":
         cases=[(view,"selected",[],CASES[0][2],w,h) for view,_ in VIEWS for w,h in [(960,540),(1280,720)]]
     if args.phase=="pilot":
@@ -94,7 +99,7 @@ def timing(args):
 
 def compiler(args):
     receipt=provenance(args)
-    shaders=sorted({row[2] for row in CASES}|{"lit_root_far_sdf_analytic_pruned.frag.spv"})
+    shaders=sorted({row[2] for row in CASES}|{"lit_root_far_sdf_analytic_pruned.frag.spv","profile_opt-cull-dark-shadows.frag.spv"})
     command=[str(args.binary.parent/"cubey_project_sdf_shader_stats"),str(args.binary.parent/"shaders"),str(args.output),*shaders]
     invoke(command,args.output/"compiler",timeout=300)
     receipt.update(command=command,complete=True);save(args.output/"context.json",receipt)
@@ -105,13 +110,13 @@ def compiler(args):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("phase",choices=["qualify","pilot","timing","scale","compiler"])
+    p.add_argument("phase",choices=["qualify","cull-qualify","cull","pilot","timing","scale","compiler"])
     p.add_argument("--output",type=Path,required=True)
     p.add_argument("--qualification",type=Path)
     p.add_argument("--binary",type=Path,default=ROOT/"build/release/projects/sdf/sdf")
     args=p.parse_args();args.output=args.output.resolve();args.binary=args.binary.resolve()
     args.output.mkdir(parents=True,exist_ok=False)
-    (qualify if args.phase=="qualify" else compiler if args.phase=="compiler" else timing)(args)
+    (qualify if args.phase in ("qualify","cull-qualify") else compiler if args.phase=="compiler" else timing)(args)
 
 
 if __name__=="__main__":main()
