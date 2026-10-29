@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-29",
+  "status": "Primary-source research and source inspection; no new rendering experiment",
+  "sources": [
+    {
+      "id": "fixed-relaxation-2014",
+      "title": "Enhanced Sphere Tracing",
+      "authors": "Keinert et al.",
+      "year": 2014,
+      "url": "https://diglib.eg.org/items/8ea5fa60-fe2f-4fef-8fd0-3783cb3200f0",
+      "inspected_copy": "https://kev.town/raymarching/media/enhanced_sphere_tracing.pdf",
+      "access": "Read the authored paper through a PDF mirror; publisher item access returned 403.",
+      "sections": ["3.1: safe over-relaxation", "Listing 2: combined algorithm", "3.2-3.5: other techniques and changed contracts"],
+      "supports": "Overlap-checked fixed relaxation with ordinary fallback. Additional state, branches and rejected queries can offset query-count gains.",
+      "cubey_inference": "Use only the checked-stepping mechanism initially. Exclude screen-space forced hits, changed secondary offsets, hit smoothing and assumptions that the entire model is convex."
+    },
+    {
+      "id": "planar-prediction-2018",
+      "title": "Accelerating Sphere Tracing",
+      "authors": "Csaba Bálint and Gábor Valasek",
+      "year": 2018,
+      "url": "https://diglib.eg.org/items/ce5ffffe-d78a-4d90-8ace-5184cc0f336c",
+      "author_pdf": "https://people.inf.elte.hu/csabix/publications/articles/eurographics-2018-shortpaper.pdf",
+      "access": "Publisher abstract and author-PDF indexed first page; this pass does not claim full algorithm qualification.",
+      "supports": "Locally planar step prediction with relaxation, and a separate multiresolution contribution.",
+      "cubey_inference": "Relevant alternate predictor for oblique surfaces. Defer an additional predictor and omit multiresolution from this fixed-quality comparison."
+    },
+    {
+      "id": "automatic-relaxation-2023",
+      "title": "Automatic Step Size Relaxation in Sphere Tracing",
+      "authors": "Róbert Bán and Gábor Valasek",
+      "year": 2023,
+      "url": "https://diglib.eg.org/items/56b3a5fa-9c27-4036-a21f-7287dd83af11",
+      "access": "Publisher paper search-indexed; direct paper retrieval returned 403. Detailed inspection uses the author implementation below.",
+      "code": {
+        "url": "https://github.com/Bundas102/auto-relaxed-trace/blob/2e9ca0c9d4e4ba9b4ae375457016d27a289a8965/Shaders/trace.slang",
+        "commit": "2e9ca0c9d4e4ba9b4ae375457016d27a289a8965",
+        "sha256": "ab26fee1b5d3ce8c2cfebc59ab2bb6a88bf8edba21fc1e38551e6cb9d727ac5c",
+        "functions_inspected": ["traceClassic", "traceRelaxed", "traceEnhanced", "traceAutoRelaxation"]
+      },
+      "supports": "The implementation compares fixed, planar and adaptive prediction. Adaptive state uses a smoothed accepted-sample slope and a conservative reset after a failed overlap test.",
+      "cubey_inference": "Inside exits, root coverage, cached-bound resets, finite progress, first-hit coverage and numerical guard need an independent port. Endpoint residual and the donor's one-sided termination are insufficient."
+    },
+    {
+      "id": "segment-tracing-2020",
+      "title": "Segment Tracing Using Local Lipschitz Bounds",
+      "authors": "Eric Galin, Eric Guérin, Axel Paris and Adrien Peytavie",
+      "year": 2020,
+      "url": "https://aparis69.github.io/public_html/projects/galin2020_Segment.html",
+      "code": {
+        "url": "https://github.com/aparis69/Segment-Tracing/tree/084b8268b798907316cbb44b6490cb2015c80374",
+        "commit": "084b8268b798907316cbb44b6490cb2015c80374",
+        "files": [
+          {
+            "path": "Code/Source/blobtree.cpp",
+            "sha256": "33365742fbab6257d7ce362957d35e463ed18aa23f2b088d755f5872f0c30ce7",
+            "functions_inspected": ["BlobTreeBlend::K(const Segment&)", "BlobTreePoint::K(const Segment&)"]
+          },
+          {
+            "path": "Code/Source/fundamentals.cpp",
+            "sha256": "16cbb27106e55fe641d2524cc45aa00562dfa7df5d6630ca7ac7230f118ddcd2",
+            "inspection": "Downloaded identity only; no algorithm claim depends on this file."
+          }
+        ]
+      },
+      "access": "Read author project abstract, repository README and relevant primitive/recursive segment-bound routines. README says this code reproduces only some results and differs from the paper's scene implementation.",
+      "supports": "Certified bounds over a segment require more information than sampled field values. The inspected implementation computes directional primitive bounds and combines bounds recursively.",
+      "cubey_inference": "Cubey would need a bound evaluator for its own primitives and operators. Defer that additional evaluator until checked point-sample relaxation is assessed."
+    },
+    {
+      "id": "lipschitz-pruning-2025",
+      "title": "Lipschitz Pruning: Hierarchical Simplification of Primitive-Based SDFs",
+      "authors": "Barbier et al.",
+      "year": 2025,
+      "url": "https://wbrbr.org/publications/LipschitzPruning/",
+      "paper": "https://wbrbr.org/publications/LipschitzPruning/documents/LipschitzPruning_submitted_to_EG25.pdf",
+      "code": "https://github.com/wbrbr/LipschitzPruning",
+      "access": "Read authored PDF, including the distinction between exact local programs and far constants, and section 6.1.",
+      "supports": "Hierarchical pruning preserves exact local values, while far constants are lower bounds. Section 6.1 explicitly leaves sparse adaptive partitioning and partial updates as future work.",
+      "cubey_inference": "An active-parent-only child level is a new Cubey extension. Its reference count, construction cost, publication behavior and performance need independent qualification."
+    }
+  ],
+  "local_sources_inspected": [
+    "docs/notes/sdf-source-query-optimization-results.md",
+    "docs/evidence/sdf-source-query-optimization-2026-10/four-way-timing.json",
+    "docs/evidence/sdf-optimization-investigation-2026-10/workload.json",
+    "projects/sdf/sdf_regions.cpp",
+    "projects/sdf/sdf_regions.h",
+    "projects/sdf/shaders/source_trace.glsl",
+    "projects/sdf/shaders/selected_trace.glsl",
+    "projects/sdf/shaders/regions.glsl",
+    "projects/sdf/shaders/sdf_surface.glsl",
+    "projects/sdf/shaders/workload_queries.glsl"
+  ],
+  "limits": [
+    "No literature speedup is used as a Cubey forecast.",
+    "Historical workload counts are not a current optimized-path GPU cost breakdown.",
+    "Sparse child capacities are scenarios, not sampled or built child programs.",
+    "Research-code inspection is not native renderer qualification or automatic adoption."
+  ]
+}

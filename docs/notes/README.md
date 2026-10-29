@@ -66,6 +66,9 @@ the architecture and project guides remain current authority.
 - [SDF source-query optimization results](sdf-source-query-optimization-results.md):
   qualified automatic shadow culling, explicit prepared/combined studies,
   final matched timings and preserved numerical/publication contracts.
+- [SDF query acceleration research plan](sdf-query-acceleration-research-plan.md):
+  primary-source comparison of guarded stepping and finer pruning, current
+  workload gaps, sparse-level capacity scenarios and proposed experiment gates.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
   [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
   published-material selection, exact capture parity, current 1080p measurements

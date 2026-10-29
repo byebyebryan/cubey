@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "status": "planning forecast; no child programs built or new GPU measurements",
+  "date": "2026-10-29",
+  "source_head": "17a4219c",
+  "baseline": {
+    "metrics_path": "outputs/sdf/source-query-optimization-20261029/final-timing/guardian-side-combined-r1.metrics.csv",
+    "metrics_sha256": "b28b80efc2a05fa1dd806082047d34cb782fb970ea2e303b2c1b86baab233ae7",
+    "frame_index": 30,
+    "axis": 64,
+    "total_cells": 262144,
+    "far_cells": 249086,
+    "active_cells": 13058,
+    "active_fraction": 0.04981231689453125,
+    "references": 562292,
+    "mean_references_per_active_cell": 43.06111196201562,
+    "region_bytes": 6443520,
+    "region_MiB": 6.14501953125,
+    "field_bytes": 0,
+    "cpu_scratch_peak_bytes": 8197080,
+    "one_run_region_build_upload_ms_descriptive": 147.972043
+  },
+  "forecast": {
+    "refinement_factor_per_axis": 4,
+    "child_cells_if_all_active_parents_refined": 835712,
+    "child_headers_bytes": 13371392,
+    "child_headers_MiB": 12.751953125,
+    "base_plus_child_headers_bytes": 19814912,
+    "base_plus_child_headers_MiB": 18.89697265625,
+    "dense_256_headers_bytes": 268435456,
+    "new_references_no_pruning_upper_bound": 35986688,
+    "new_reference_bytes_no_pruning_upper_bound": 143946752,
+    "single_generation_bytes_no_pruning_upper_bound": 163761664,
+    "current_reference_limit_entries": 33554432,
+    "current_reference_limit_payload_bytes": 134217728,
+    "proposed_retained_region_payload_cap_bytes": 67108864,
+    "mean_child_reference_ceiling_under_proposed_cap": 14.147802113646806,
+    "scenarios": [
+      {
+        "mean_references_per_child_assumed": 1,
+        "new_references": 835712,
+        "new_reference_bytes": 3342848,
+        "single_generation_bytes": 23157760,
+        "single_generation_MiB": 22.0849609375,
+        "two_device_generations_bytes": 46315520,
+        "fits_proposed_64_MiB_payload_budget": true
+      },
+      {
+        "mean_references_per_child_assumed": 5,
+        "new_references": 4178560,
+        "new_reference_bytes": 16714240,
+        "single_generation_bytes": 36529152,
+        "single_generation_MiB": 34.8369140625,
+        "two_device_generations_bytes": 73058304,
+        "fits_proposed_64_MiB_payload_budget": true
+      },
+      {
+        "mean_references_per_child_assumed": 10,
+        "new_references": 8357120,
+        "new_reference_bytes": 33428480,
+        "single_generation_bytes": 53243392,
+        "single_generation_MiB": 50.77685546875,
+        "two_device_generations_bytes": 106486784,
+        "fits_proposed_64_MiB_payload_budget": true
+      },
+      {
+        "mean_references_per_child_assumed": 15,
+        "new_references": 12535680,
+        "new_reference_bytes": 50142720,
+        "single_generation_bytes": 69957632,
+        "single_generation_MiB": 66.716796875,
+        "two_device_generations_bytes": 139915264,
+        "fits_proposed_64_MiB_payload_budget": false
+      },
+      {
+        "mean_references_per_child_assumed": 20,
+        "new_references": 16714240,
+        "new_reference_bytes": 66856960,
+        "single_generation_bytes": 86671872,
+        "single_generation_MiB": 82.65673828125,
+        "two_device_generations_bytes": 173343744,
+        "fits_proposed_64_MiB_payload_budget": false
+      }
+    ],
+    "exclusions": [
+      "allocator capacity and alignment",
+      "CPU build scratch and retained CPU copies",
+      "staging",
+      "source/material/field/other renderer allocations",
+      "descriptor and driver allocations"
+    ],
+    "formulas": [
+      "active = 64^3 - far_cells",
+      "children = active * 4^3",
+      "child_headers = children * 16",
+      "retained_payload = current_region_bytes + child_headers + children * assumed_mean_references * 4",
+      "inherited_reference_upper_bound = current_references * 4^3",
+      "two_device_generations = 2 * retained_payload"
+    ],
+    "assumptions": [
+      "Every active A64 parent is refined in the full-refinement forecast.",
+      "Children only remove instructions from their inherited parent programs.",
+      "Existing parent programs remain resident as fallback.",
+      "The baseline has zero root-fallback cells.",
+      "Reference means in scenarios are assumptions, not measurements."
+    ]
+  },
+  "frame_budget": {
+    "receipt_path": "docs/evidence/sdf-source-query-optimization-2026-10/four-way-timing.json",
+    "receipt_sha256": "5334d50514319280cd0a5eba65a7d37d25b8e6b199a97a0bd3acc3865a71f20e",
+    "combined_side_p95_ms": [
+      20.863046399999998,
+      20.7473216,
+      20.7439536
+    ],
+    "target_ms": 16.7,
+    "mean_of_three_p95_ms_for_scenarios": 20.784773866666665,
+    "required_fractional_time_reduction": 0.1965272219399785,
+    "required_throughput_ratio": 1.24459723752495,
+    "load_boundary": "Final four-way batch had shared encoder activity; not idle-GPU qualification.",
+    "amdahl_assumptions": [
+      {
+        "accelerated_fraction_assumed": 0.25,
+        "required_speedup_of_that_fraction": 4.675276076350157
+      },
+      {
+        "accelerated_fraction_assumed": 0.5,
+        "required_speedup_of_that_fraction": 1.6475942362814135
+      },
+      {
+        "accelerated_fraction_assumed": 0.75,
+        "required_speedup_of_that_fraction": 1.355080194962481
+      }
+    ],
+    "amdahl_formula": "total_time_ratio = 1 - accelerated_fraction + accelerated_fraction / accelerated_part_speedup",
+    "warning": "Accelerated fractions are hypothetical, not current measured GPU attribution."
+  }
+}
