@@ -300,6 +300,7 @@ class App {
                               << (field_ && field_->stats().build_count != before) << '\n';
                 } catch (const std::exception& error) {
                     error_ = error.what();
+                    std::cout << "sdf: authored update rejected: " << error.what() << '\n';
                 }
                 reload_authored_ = false;
                 materials_changed_ = false;
