@@ -459,6 +459,9 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
 }
 } // namespace
 int run_tracing_comparison(const SdfConfig& config) {
+    if (config.frame_profile != "off")
+        throw std::invalid_argument(
+            "frame profiles are native rendering diagnostics, not query routes");
     if ((config.acceleration_variant == "unclamped" && config.surface_trace != "hybrid") ||
         (config.acceleration_variant != "off" && config.acceleration_variant != "control" &&
          config.acceleration_variant != "unclamped" && config.surface_trace != "analytic"))

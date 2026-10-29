@@ -68,10 +68,29 @@ class App {
         if (config_.acceleration_variant != "off" &&
             (!config_.common.headless || !authored_ || config_.timeline.motion != "static" ||
              config_.csg_evaluation != "pruned" || config_.surface_trace == "sampled" ||
-             config_.region_axis != 64 || config_.comparison_stage != "off" ||
+             config_.region_axis != 64 ||
+             (config_.comparison_stage != "off" && config_.frame_profile == "off") ||
              config_.comparison_tight_root || config_.comparison_residency != "host"))
             throw std::invalid_argument("acceleration study requires static headless authored "
                                         "pruned source at axis 64 and no diagnostic ablations");
+        if (config_.frame_profile != "off") {
+            const bool stages =
+                config_.frame_profile == "runtime" || config_.frame_profile == "fixed";
+            if (config_.acceleration_variant != "root-far" || config_.surface_trace != "analytic" ||
+                !config_.common.headless || !authored_ || config_.timeline.motion != "static" ||
+                config_.lighting != "atmosphere" || config_.debug || config_.ao || config_.ground ||
+                config_.clouds || config_.occluder || !config_.comparison_actions.empty() ||
+                stages == (config_.comparison_stage == "off"))
+                throw std::invalid_argument(
+                    "frame profiling requires static headless root-far "
+                    "analytic atmosphere, debug 0, no AO/ground/clouds/actions; runtime/fixed "
+                    "profiles require a comparison stage, other profiles require stage off");
+            if ((config_.frame_profile == "single-material" ||
+                 config_.frame_profile == "specialized") &&
+                (authored_->materials.size() != 1 || !config_.material_fast_path))
+                throw std::invalid_argument(
+                    "single-material profile requires the eligible one-material shortcut");
+        }
         if (config_.comparison_residency != "host" &&
             (config_.comparison_stage == "off" || config_.surface_trace == "sampled"))
             throw std::invalid_argument("residency ablation requires a source comparison stage");

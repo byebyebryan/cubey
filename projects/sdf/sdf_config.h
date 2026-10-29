@@ -20,6 +20,7 @@ struct SdfConfig {
     bool comparison_tight_root = false;
     std::string comparison_residency = "host";
     std::string acceleration_variant = "off";
+    std::string frame_profile = "off";
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -85,6 +86,10 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto acceleration =
         option("acceleration-variant", "Private acceleration experiment", config::ValueType::Enum);
     acceleration.enum_values = {"off", "control", "unclamped", "root", "far", "root-far"};
+    auto frame_profile = option("frame-profile", "Private current-candidate shader profile",
+                                config::ValueType::Enum);
+    frame_profile.enum_values = {"off",         "runtime", "fixed", "nodebug", "single-material",
+                                 "specialized", "no-sky"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -166,6 +171,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(stage, c.comparison_stage)
         .bind(residency, c.comparison_residency)
         .bind(acceleration, c.acceleration_variant)
+        .bind(frame_profile, c.frame_profile)
         .bind(option("comparison-tight-root", "Private inner-clip entry ablation",
                      config::ValueType::Bool),
               c.comparison_tight_root)

@@ -1,3 +1,14 @@
+// Private compiler ablations. Unselected expansion retains the original tokens.
+#ifdef SDF_PROFILE_DEBUG_ZERO
+#define SDF_DEBUG_MODE 0.0
+#else
+#define SDF_DEBUG_MODE camera.options.x
+#endif
+#ifdef SDF_FIXED_STAGE
+#define SDF_INV_STAGE float(SDF_FIXED_STAGE)
+#else
+#define SDF_INV_STAGE camera.options.w
+#endif
 #include "field.glsl"
 layout(location=0) in vec2 uv;
 layout(location=0) out vec4 color;
@@ -98,23 +109,23 @@ void main() {
     bool object=hit.status==1;
 #ifdef SDF_INVESTIGATE
     // Private diagnostic pipeline only. The ordinary shader compiles unchanged.
-    if(camera.options.w>.5 && !object) {color=vec4(.02,.02,.02,1);return;}
-    if(camera.options.w>.5 && camera.options.w<1.5) {
+    if(SDF_INV_STAGE>.5 && !object) {color=vec4(.02,.02,.02,1);return;}
+    if(SDF_INV_STAGE>.5 && SDF_INV_STAGE<1.5) {
         color=vec4(object ? vec3(hit.t*.25) : vec3(0.02),1);return;
     }
 #endif
 #ifdef SDF_MATERIAL_STUDY
-    if(lighting.transport_options.w>.5 && camera.options.x<.5 && !object && groundT>=1e5) discard;
+    if(lighting.transport_options.w>.5 && SDF_DEBUG_MODE<.5 && !object && groundT>=1e5) discard;
 #endif
     float t=object ? hit.t : groundT;
     if (t<1e5) {
         vec3 p=camera.eye.xyz+direction*t;
         vec3 normal=object ? hitNormal(p,hit) : vec3(0,1,0);
 #ifdef SDF_INVESTIGATE
-        if(camera.options.w>1.5 && camera.options.w<2.5) {
+        if(SDF_INV_STAGE>1.5 && SDF_INV_STAGE<2.5) {
             color=vec4(normal*.5+.5,1);return;
         }
-        if(camera.options.w>2.5 && camera.options.w<3.5) {
+        if(SDF_INV_STAGE>2.5 && SDF_INV_STAGE<3.5) {
             float footprint=t*camera.forward.w/max(abs(dot(normal,-direction)),.2);
             MaterialSample m=authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,
                                                       lighting.surface_options.z>.5);
@@ -123,7 +134,7 @@ void main() {
                 m.height_gradient*.01+m.material.emission.xyz*.01+
                 vec3(m.material.base_roughness.w+m.metallic)*.05+m.sheen.xyz*.01+vec3(m.rough_glass)*.01,1);return;
         }
-        if(camera.options.w>3.5 && camera.options.w<4.5) {
+        if(SDF_INV_STAGE>3.5 && SDF_INV_STAGE<4.5) {
             bool exhausted=false;
             float visibility=shadowVisibility(p,normal,camera.sunlight.xyz,
                                               int(camera.options.y+.5),exhausted);
@@ -135,23 +146,23 @@ void main() {
         // divergent hit/miss control flow. Grain fades at distance/grazing angles.
         float footprint=t*camera.forward.w/max(abs(dot(normal,-direction)),.2);
         bool exhausted=false;
-        if (camera.options.x<0.5) radiance=surfaceRadiance(p,normal,-direction,object,footprint,exhausted);
+        if (SDF_DEBUG_MODE<0.5) radiance=surfaceRadiance(p,normal,-direction,object,footprint,exhausted);
         if (exhausted) { color=vec4(1,0,1,1); return; }
-        if (camera.options.x>0.5 && camera.options.x<1.5) radiance=normal*0.5+0.5;
-        if (camera.options.x>1.5 && camera.options.x<2.5) radiance=vec3(t/2.0);
-        if (camera.options.x>2.5 && camera.options.x<3.5) radiance=mix(vec3(0.03,0.15,0.3),vec3(1,0.2,0),min(float(hit.steps)/160.0,1.0));
-        if (camera.options.x>3.5 && camera.options.x<4.5) {
+        if (SDF_DEBUG_MODE>0.5 && SDF_DEBUG_MODE<1.5) radiance=normal*0.5+0.5;
+        if (SDF_DEBUG_MODE>1.5 && SDF_DEBUG_MODE<2.5) radiance=vec3(t/2.0);
+        if (SDF_DEBUG_MODE>2.5 && SDF_DEBUG_MODE<3.5) radiance=mix(vec3(0.03,0.15,0.3),vec3(1,0.2,0),min(float(hit.steps)/160.0,1.0));
+        if (SDF_DEBUG_MODE>3.5 && SDF_DEBUG_MODE<4.5) {
             uint code=morton(hit.cell)*1664525u+1013904223u;
             radiance=object ? vec3(uvec3(code,code>>8,code>>16)&255u)/255.0 : vec3(0.025);
         }
-        if (camera.options.x>4.5 && camera.options.x<8.5) {
+        if (SDF_DEBUG_MODE>4.5 && SDF_DEBUG_MODE<8.5) {
 #ifdef SDF_AUTHORED
             if (object && authoredHeader.x>0u) {
                 SceneSurface surface=authoredSurface(p,footprint,lighting.surface_options.x>.5);
                 uint code=(surface.part+1u)*1664525u+1013904223u;
-                radiance=camera.options.x<5.5 ? vec3(uvec3(code,code>>8,code>>16)&255u)/255.0 :
-                    (camera.options.x<6.5 ? surface.material.base_roughness.xyz :
-                     camera.options.x<7.5 ? vec3(surface.material.base_roughness.w) :
+                radiance=SDF_DEBUG_MODE<5.5 ? vec3(uvec3(code,code>>8,code>>16)&255u)/255.0 :
+                    (SDF_DEBUG_MODE<6.5 ? surface.material.base_roughness.xyz :
+                     SDF_DEBUG_MODE<7.5 ? vec3(surface.material.base_roughness.w) :
                      materialShadingNormal(normal,lighting.surface_options.y>.5 ? surface.height_gradient : vec3(0))*.5+.5);
             } else radiance=vec3(0.025);
 #else
@@ -159,7 +170,7 @@ void main() {
 #endif
         }
 #ifdef SDF_MATERIAL_STUDY
-        if(camera.options.x>8.5 && camera.options.x<9.5) {
+        if(SDF_DEBUG_MODE>8.5 && SDF_DEBUG_MODE<9.5) {
             radiance=vec3(0);
             if(object) {
                 bool glassExhausted=false;
@@ -168,21 +179,27 @@ void main() {
                 radiance=glassDiagnostics;
             }
         }
-        if(camera.options.x>9.5 && camera.options.x<11.5) {
+        if(SDF_DEBUG_MODE>9.5 && SDF_DEBUG_MODE<11.5) {
             radiance=studyRadiance(p,normal,-direction,footprint,exhausted);
             if(exhausted) { color=vec4(1,0,1,1);return; }
         }
-        if(camera.options.x>11.5) {
+        if(SDF_DEBUG_MODE>11.5) {
             radiance=vec3(authoredShadingMaterial(p,footprint,lighting.surface_options.x>.5,true).metallic);
         }
 #endif
         float viewZ=dot(p-camera.eye.xyz,camera.forward.xyz);
         gl_FragDepth=clamp(100.0/99.99-(1.0/99.99)/viewZ,0.0,1.0);
-    } else if (camera.options.x<0.5) radiance=backgroundRadiance(direction);
-    if (camera.options.x<0.5)
+    } else if (SDF_DEBUG_MODE<0.5) {
+#ifdef SDF_PROFILE_NO_SKY
+        radiance=vec3(.02);
+#else
+        radiance=backgroundRadiance(direction);
+#endif
+    }
+    if (SDF_DEBUG_MODE<0.5)
         radiance=mix(radiance,SUBTRACTION_HIGHLIGHT,cutterOutline(camera.eye.xyz,direction,t));
 #ifdef SDF_AUTHORED
-    if (camera.options.x<0.5)
+    if (SDF_DEBUG_MODE<0.5)
         radiance=mix(radiance,SUBTRACTION_HIGHLIGHT,authoredCutPreview(camera.eye.xyz,direction,t));
 #endif
     color=vec4(radiance,1);

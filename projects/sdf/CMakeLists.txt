@@ -49,6 +49,16 @@ cubey_add_app_target(
         shaders/root_far_material_analytic_pruned.frag
         shaders/root_far_comparison_analytic_pruned.comp
         shaders/root_far_workload_analytic.comp
+        shaders/root_far_investigate_sdf_analytic_pruned.frag
+        shaders/profile_fixed_full.frag
+        shaders/profile_fixed_primary.frag
+        shaders/profile_fixed_normal.frag
+        shaders/profile_fixed_material.frag
+        shaders/profile_fixed_shadow.frag
+        shaders/profile_nodebug.frag
+        shaders/profile_single-material.frag
+        shaders/profile_specialized.frag
+        shaders/profile_no-sky.frag
         shaders/occluder.vert shaders/occluder.frag
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.vert"
         "${CMAKE_SOURCE_DIR}/shaders/cubey/forward_pbr/forward_pbr_post.frag"
@@ -60,6 +70,8 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_shader_stats tools/profile_shader_stats.cpp)
+    target_link_libraries(cubey_project_sdf_shader_stats PRIVATE Vulkan::Vulkan nlohmann_json::nlohmann_json)
     add_executable(cubey_project_sdf_region_tests sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_region_tests.cpp)
     target_link_libraries(cubey_project_sdf_region_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_region_tests COMMAND cubey_project_sdf_region_tests "${CMAKE_CURRENT_SOURCE_DIR}/comparison/fixtures.json")

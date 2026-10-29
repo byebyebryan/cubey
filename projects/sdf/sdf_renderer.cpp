@@ -44,7 +44,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         scene_program_ = host_buffer(16 + authored_max_instructions * sizeof(SceneInstruction),
                                      config.comparison_residency == "program" ||
                                          config.comparison_residency == "all");
-    if (config.comparison_stage != "off") {
+    if (config.comparison_stage != "off" && !acceleration_uploads_) {
         const auto memory = [&](const char* name, const vulkan::Buffer& buffer, bool local) {
             VkMemoryRequirements requirements;
             vkGetBufferMemoryRequirements(device.handle(), buffer.handle(), &requirements);
@@ -201,6 +201,10 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                            : config.acceleration_variant == "root-far"
                                ? "root_far_"
                                : config.acceleration_variant + "_");
+    if (config.frame_profile == "fixed")
+        fragment = "profile_fixed_" + config.comparison_stage + ".frag.spv";
+    else if (config.frame_profile != "off" && config.frame_profile != "runtime")
+        fragment = "profile_" + config.frame_profile + ".frag.spv";
     const std::array stages{render::vertex_shader_file(path / "sdf.vert.spv"),
                             render::fragment_shader_file(path / fragment)};
     const std::array layouts{descriptors_->layout()};
