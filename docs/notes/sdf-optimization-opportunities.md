@@ -11,6 +11,11 @@ one-material probe has byte-identical 1080p captures in all three Guardian views
 It reduces rear GPU p95 from about 20.9 ms to **17.09–17.17 ms**. It still misses
 16.7 ms, and broader material/history/optical qualification remains necessary.
 
+The proposed [execution plan](sdf-source-query-optimization-plan.md) bounds the
+next loop to that qualification and an independent prepared-cone trial. It
+defines reference controls, numerical/publication gates and stop conditions;
+planning does not adopt either optimization.
+
 ## Controlled shadow experiment
 
 Ranges of three per-run whole-scene GPU p95s in ms, 1920×1080, supersample 1,
