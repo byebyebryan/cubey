@@ -13,25 +13,25 @@ void validate_source_optimization(const SdfConfig& config) {
     if (!source_shader_variants_enabled(config))
         throw std::invalid_argument(
             "explicit source optimization requires automatic source shaders without diagnostics");
-    if (mode == "combined")
-        throw std::invalid_argument(
-            "combined study awaits independent prepared-cone qualification");
-    if (mode == "prepared-cones" &&
+    if ((mode == "prepared-cones" || mode == "combined") &&
         (!config.common.headless || config.surface_trace != "analytic" ||
          config.csg_evaluation != "pruned" || config.region_axis != 64 ||
          config.acceleration_variant != "root-far" || config.timeline.motion != "static" ||
          config.lighting != "atmosphere"))
         throw std::invalid_argument("prepared-cones study requires static headless analytic pruned "
                                     "root-far atmosphere at axis 64");
-    if (mode != "shadow" && mode != "prepared-cones")
+    if (mode != "shadow" && mode != "prepared-cones" && mode != "combined")
         throw std::invalid_argument("unknown source optimization");
 }
 bool source_shadow_pipeline_enabled(const SdfConfig& config) {
     return source_shader_variants_enabled(config) && config.lighting == "atmosphere" &&
-           (config.source_optimization == "shadow" || config.source_optimization == "automatic");
+           (config.source_optimization == "shadow" || config.source_optimization == "automatic" ||
+            config.source_optimization == "combined");
 }
 bool source_prepared_cones_enabled(const SdfConfig& config) {
-    return source_shader_variants_enabled(config) && config.source_optimization == "prepared-cones";
+    return source_shader_variants_enabled(config) &&
+           (config.source_optimization == "prepared-cones" ||
+            config.source_optimization == "combined");
 }
 SourceShaderRoute select_source_shader(const SdfConfig& config, std::size_t material_count) {
     if (!source_shader_variants_enabled(config) || config.debug != 0)

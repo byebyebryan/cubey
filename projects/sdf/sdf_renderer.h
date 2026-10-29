@@ -56,7 +56,9 @@ class Renderer {
     [[nodiscard]] std::string_view source_optimization(const SdfConfig& config) const {
         if (shader_route(config) != SourceShaderRoute::LitSingleMaterial)
             return "reference";
-        return prepared_candidate_ ? "prepared-cones" : shadow_candidate_ ? "shadow" : "reference";
+        return prepared_candidate_ ? (shadow_candidate_ ? "combined" : "prepared-cones")
+               : shadow_candidate_ ? "shadow"
+                                   : "reference";
     }
     [[nodiscard]] std::uint64_t cone_builds() const {
         return cone_builds_;
@@ -106,6 +108,7 @@ class Renderer {
     std::optional<PreparedCones> cone_data_;
     std::vector<vulkan::DescriptorSetBindingConfig> cone_descriptor_bindings_;
     std::uint64_t cone_builds_ = 0, cone_allocation_bytes_ = 0, cone_peak_bytes_ = 0;
+    std::uint64_t cone_preparations_ = 0, cone_staging_payload_peak_ = 0;
     double cone_preparation_ms_ = 0;
     std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;

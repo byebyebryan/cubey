@@ -113,9 +113,13 @@ class Study:
                 raise RuntimeError("incomplete action replay or missing completed-frame capture")
         metrics = list(csv.DictReader(prefix.with_suffix(".metrics.csv").open()))
         selection = {r["name"]: float(r["value"]) for r in metrics if r["category"] == "sdf.shader_selection"}
+        resources = {r["name"]: float(r["value"]) for r in metrics if r["category"] == "sdf.prepared_cones"}
+        explicit_cones = "--source-optimization" in command and command[command.index("--source-optimization")+1] in ("prepared-cones", "combined")
+        if not explicit_cones and resources.get("payload_bytes", 0) != 0:
+            raise RuntimeError("reference/sampled/shadow path allocated a prepared cache")
         log = prefix.with_suffix(".log").read_text()
         if "Validation Error" in log: raise RuntimeError("Vulkan validation failure")
-        row = dict(name=name, command=command, shader_control=shader, wall_seconds=wall, selection=selection)
+        row = dict(name=name, command=command, shader_control=shader, wall_seconds=wall, selection=selection, prepared_resources=resources)
         if not render_only: row["image_sha256"] = digest(prefix.with_suffix(".png"))
         self.receipt["runs"]=[r for r in self.receipt["runs"] if r["name"]!=name]
         self.receipt["runs"].append(row)

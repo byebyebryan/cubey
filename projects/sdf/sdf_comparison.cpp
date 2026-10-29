@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstring>
 #include <cubey/asset/file_digest.h>
+#include <cubey/core/file_io.h>
 #include <cubey/engine/project_gpu_services.h>
 #include <cubey/host/headless_png_host.h>
 #include <cubey/render/pass.h>
@@ -216,7 +217,7 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
     }
     Json receipt{{"format", "cubey.sdf.tracing-results"}, {"version", 1}, {"cases", Json::array()}};
     const bool workload = manifest.value("workload", false);
-    const bool prepared_cones = config.source_optimization == "prepared-cones";
+    const bool prepared_cones = config.source_optimization == "prepared-cones" || config.source_optimization == "combined";
     if (prepared_cones && workload)
         throw std::invalid_argument("prepared-cones queries do not support workload counters");
     const unsigned work_stride = config.acceleration_variant != "off" ? 64U : 52U;
@@ -264,6 +265,11 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
                              ? "root_far_"
                              : config.acceleration_variant + "_");
     if (prepared_cones) shader.insert(0,"prepared_");
+    const auto query_shader_bytes = read_binary_file(std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader);
+    receipt["query_shader"] = shader;
+    receipt["query_shader_sha256"] = asset::sha256_hex(std::as_bytes(std::span(query_shader_bytes)));
+    receipt["prepared_cones"] = prepared_cones;
+    receipt["source_optimization"] = config.source_optimization;
     render::ComputePipelineResource pipeline(
         device, {.shader_stage = render::compute_shader_file(
                      std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader),

@@ -241,7 +241,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             if (single_material && shadow_candidate_)
                 files[1] = render::fragment_shader_file(path / ("shadow_lit_" + fragment));
             if (single_material && prepared_candidate_)
-                files[1] = render::fragment_shader_file(path / ("prepared_lit_" + fragment));
+                files[1] = render::fragment_shader_file(
+                    path / ((shadow_candidate_ ? "combined_lit_" : "prepared_lit_") + fragment));
             const render::ShaderProgram program(device, files);
             std::vector<VkPipelineShaderStageCreateInfo> lit_stages(program.stages().begin(),
                                                                     program.stages().end());
@@ -348,6 +349,7 @@ void Renderer::destroy() {
     cone_data_.reset();
     cone_descriptor_bindings_.clear();
     cone_builds_ = cone_allocation_bytes_ = cone_peak_bytes_ = 0;
+    cone_preparations_ = cone_staging_payload_peak_ = 0;
     cone_preparation_ms_ = 0;
     preview_buffers_.clear();
     lighting_.reset();
@@ -377,6 +379,7 @@ Renderer::PreparedAuthored Renderer::prepare_authored(vulkan::Device& device,
                                                       const GpuRegionPrograms* regions,
                                                       std::string_view fault) {
     PreparedAuthored next;
+    const auto start = std::chrono::steady_clock::now();
     next.program = prepare_program(scene);
     if (!prepared_candidate_)
         return next;
@@ -386,11 +389,11 @@ Renderer::PreparedAuthored Renderer::prepare_authored(vulkan::Device& device,
     if (std::any_of(scene->optics.begin(), scene->optics.end(),
                     [](const auto& o) { return !default_optics(o); }))
         throw std::invalid_argument("non-default material optics require material-study lighting");
-    const auto start = std::chrono::steady_clock::now();
     if (fault == "cone-prepare")
         throw CapacityExceeded("injected cone preparation failure");
     if (!cone_data_ || !cone_data_->matches(*scene)) {
         next.cone_data.emplace(prepare_cones(*scene));
+        ++cone_preparations_;
         const auto bytes =
             std::max<std::size_t>(16, next.cone_data->entries.size() * sizeof(math::Vec4));
         const math::Vec4 empty{0};
@@ -402,6 +405,9 @@ Renderer::PreparedAuthored Renderer::prepare_authored(vulkan::Device& device,
         vkGetBufferMemoryRequirements(device.handle(), next.cones->handle(), &requirements);
         next.cone_allocation_bytes = requirements.size;
         next.cone_peak_bytes = cone_allocation_bytes_ + requirements.size;
+        // Diagnostics include discarded candidates, not only activated ones.
+        cone_peak_bytes_ = std::max(cone_peak_bytes_, next.cone_peak_bytes);
+        cone_staging_payload_peak_ = std::max<std::uint64_t>(cone_staging_payload_peak_, bytes);
     }
     if (fault == "cone-upload")
         throw CapacityExceeded("injected failure after cone upload");
@@ -575,8 +581,12 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                shader_pipeline_count_);
         profile->record_metric(frame_index, "sdf.shader_selection", "pipeline_setup_ms",
                                shader_pipeline_setup_ms_);
-        profile->record_metric(frame_index, "sdf.shader_selection", "shadow_optimized",
-                               source_optimization(config) == "shadow" ? 1 : 0);
+        profile->record_metric(
+            frame_index, "sdf.shader_selection", "shadow_optimized",
+            shadow_candidate_ && route == SourceShaderRoute::LitSingleMaterial ? 1 : 0);
+        profile->record_metric(
+            frame_index, "sdf.shader_selection", "cones_optimized",
+            prepared_candidate_ && route == SourceShaderRoute::LitSingleMaterial ? 1 : 0);
         profile->record_metric(frame_index, "sdf.prepared_cones", "builds",
                                static_cast<double>(cone_builds_));
         profile->record_metric(frame_index, "sdf.prepared_cones", "payload_bytes",
@@ -585,6 +595,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                static_cast<double>(cone_allocation_bytes_));
         profile->record_metric(frame_index, "sdf.prepared_cones", "device_generations_peak_bytes",
                                static_cast<double>(cone_peak_bytes_));
+        profile->record_metric(frame_index, "sdf.prepared_cones", "preparations",
+                               static_cast<double>(cone_preparations_));
+        profile->record_metric(frame_index, "sdf.prepared_cones", "staging_payload_peak_bytes",
+                               static_cast<double>(cone_staging_payload_peak_));
         profile->record_metric(frame_index, "sdf.prepared_cones", "publication_prepare_ms",
                                cone_preparation_ms_);
         profile->record_metric(frame_index, "sdf.resources", "field_bytes",

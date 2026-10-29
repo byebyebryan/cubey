@@ -169,6 +169,16 @@ source shader for comparison. Guardian improves substantially but remains above
 the 1080p GPU target; startup compilation can be expensive. Sampled/full stays
 the default.
 
+Source-query controls are documented in the
+[optimization loop](../../docs/notes/sdf-source-query-optimization-progress.md).
+`--source-optimization automatic` now skips zero-contribution shadows on the
+eligible opaque one-material lit source path. `reference` retains the previous
+automatic shader, while `--source-shaders general` keeps the original complete
+shader. `prepared-cones` and `combined` are explicit static headless
+analytic/pruned A64 root-far studies; they preserve the source/history format
+and existing geometry tolerances. They do not enable windowed root-far or
+change the sampled/full default.
+
 - [Shared material and optical contract](../../docs/architecture/material-recipes.md)
 - [SDF thread closeout and evidence map](../../docs/notes/sdf-thread-closeout.md)
 - [Accepted Guardian closeout](../../docs/notes/sdf-guardian-closeout.md)

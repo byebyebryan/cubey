@@ -101,4 +101,10 @@ int main() {
     config.source_optimization = "automatic";
     if (!source_shadow_pipeline_enabled(config) || source_prepared_cones_enabled(config))
         throw std::runtime_error("automatic did not retain qualified shadow-only behavior");
+    config.source_optimization = "combined";
+    validate_source_optimization(config);
+    if (!source_shadow_pipeline_enabled(config) || !source_prepared_cones_enabled(config))
+        throw std::runtime_error("qualified independent candidates did not combine");
+    config.common.headless = false;
+    rejected();
 }

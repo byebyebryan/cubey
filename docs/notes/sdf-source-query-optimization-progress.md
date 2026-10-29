@@ -101,4 +101,38 @@ reordering, undo and redo replace it coherently. Faults cover preparation,
 upload, appearance upload, descriptor preparation and the activation boundary.
 No engine API or windowed root-far admission is changed.
 
-B performance, combination admission and final evidence are pending.
+## Independent B timing and combination admission
+
+B-only's 36 interleaved runs / 5,400 GPU samples pass the proposed gain/regression
+gate. Guardian GPU p95 ranges are 20.025–20.186 ms preset, 21.870–22.051 ms side,
+and 19.450–19.508 ms rear. Robot remains on the unchanged multiple-material
+shader, without a meaningful regression. Combination admission follows this
+independent result; no gains are added arithmetically.
+
+The combined candidate passes its own 155-check prepared-kernel oracle and
+15-action publication replay against six fresh native states. Its Guardian
+and Robot images are byte-identical to B-only. Six additional patterned/bumped
+cone lighting configurations cover AO/ground/soft shadows, clay, disabled bump,
+disabled procedural shading, grazing light and a raster occluder; combined and
+B-only images match exactly there too.
+
+Supplemental independent analytic fixtures add 21 scored checks per mode for
+equal-radii capsule geometry, tangent depth brackets, clipping, inside exits,
+rotation/scale, zero endpoint radii and adjacent-float containing boundaries.
+All four modes pass with the original tolerances. Twelve real CLI negative
+cases retain the study's headless/source/axis/motion/lighting boundaries.
+
+Actual authored-history prefix replays (nine completed frames per mode) cover
+empty/first/second, undo, redo, branching, appearance reuse and failed-prefix
+retry. B's derived generations follow the resulting compiled geometry exactly.
+Full Guardian replays in all four modes retain failed pixels and restore undo
+pixels exactly. B and combined report 32,336-byte tables, a 64,672-byte peak for
+two device generations, and 32,336 bytes of transient staging payload. These
+figures exclude descriptor/driver allocations and do not claim total VRAM use.
+One replay per mode describes geometry publication at roughly 139–144 ms;
+this is separate from repeated steady GPU frame timing.
+
+Final-binary automatic, B-only and combined qualifications pass. The same binary
+passes twelve focused SDF/shader/documentation test groups. The final four-way
+timing and evidence closeout remain pending; A is automatic only on its eligible
+source route, while B and combination stay explicit studies.

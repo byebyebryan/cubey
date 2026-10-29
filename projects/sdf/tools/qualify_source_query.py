@@ -7,6 +7,8 @@ import json
 import math
 from pathlib import Path
 import statistics
+import struct
+import subprocess
 from acceleration_loop import gpu_state, save
 from benchmark_tracing import percentile
 from investigate_guardian import ROOT, digest, invoke, metadata
@@ -76,8 +78,16 @@ def timing(args):
                 raise RuntimeError("incomplete GPU timestamp tail")
             metrics = list(csv.DictReader(prefix.with_suffix(".metrics.csv").open()))
             selection = {r["name"]: float(r["value"]) for r in metrics if r["category"] == "sdf.shader_selection"}
+            eligible = scene == "guardian"
+            if selection["route"] != (2 if eligible else 1) or selection["pipeline_count"] != 3:
+                raise RuntimeError("timing bound an unexpected source pipeline")
+            if selection["shadow_optimized"] != int(eligible and mode in ("shadow", "automatic", "combined")):
+                raise RuntimeError("timing shadow mode is not active as requested")
+            if "cones_optimized" in selection and selection["cones_optimized"] != int(eligible and mode in ("prepared-cones", "combined")):
+                raise RuntimeError("timing cone mode is not active as requested")
+            resources = {r["name"]: float(r["value"]) for r in metrics if r["category"] == "sdf.prepared_cones"}
             receipt["runs"].append(dict(scene=scene, view=view, mode=mode, repeat=repeat, command=command,
-                gpu_before=before, gpu_after=after, wall_seconds=wall, selection=selection,
+                gpu_before=before, gpu_after=after, wall_seconds=wall, selection=selection, prepared_resources=resources,
                 passes={k: dict(samples=len(v), median_ms=statistics.median(v), p95_ms=percentile(v, .95))
                         for k, v in groups.items()}))
             save(args.output / "timing.json", receipt)
@@ -87,14 +97,21 @@ def timing(args):
 
 
 def cones(args):
-    args.source_optimization = "prepared-cones"
+    candidate_mode = args.source_optimization if args.source_optimization in ("prepared-cones", "combined") else "prepared-cones"
+    args.source_optimization = candidate_mode
     study = Study(args)
+    study.receipt["candidate_mode"] = candidate_mode
     common = route_flags(ROUTES[-1])
     manifest = ROOT / "projects/sdf/comparison/fixtures.json"
     result = args.output / "prepared-fixtures.json"
     study.run("prepared-fixtures", ["--width", "32", "--height", "32", *common,
               "--comparison-input", str(manifest), "--comparison-output", str(result)], render_only=True)
-    score = check(json.loads(manifest.read_text()), json.loads(result.read_text()))
+    query_receipt = json.loads(result.read_text())
+    if not query_receipt.get("prepared_cones") or not query_receipt["query_shader"].startswith("prepared_"):
+        raise RuntimeError("frozen cone checks did not select the prepared query kernel")
+    if query_receipt["query_shader_sha256"] != digest(args.binary.parent / "shaders" / query_receipt["query_shader"]):
+        raise RuntimeError("prepared query shader identity mismatch")
+    score = check(json.loads(manifest.read_text()), query_receipt)
     if not score["passed"]:
         raise RuntimeError("prepared frozen independent oracle failed")
     study.receipt["fixtures"] = score
@@ -106,7 +123,7 @@ def cones(args):
                      "--width", "1920", "--height", "1080", *common, "--yaw", str(config["yaw"] + offset)]
             args.source_optimization = "reference"
             a = study.run(scene + "-" + view + "-reference", flags)
-            args.source_optimization = "prepared-cones"
+            args.source_optimization = candidate_mode
             b = study.run(scene + "-" + view + "-prepared", flags)
             wa, ha, ca, ra = pixels(args.output / (a["name"] + ".png"))
             wb, hb, cb, rb = pixels(args.output / (b["name"] + ".png"))
@@ -162,7 +179,7 @@ def cones(args):
     add("redo-geometry", reordered)
     save(args.output / "cone-initial.json", initial)
     replay_rows = {}
-    for mode in ("reference", "prepared-cones"):
+    for mode in ("reference", candidate_mode):
         manifest_actions = copy.deepcopy(actions)
         if mode == "reference":
             # The original path has no new cone preparation or descriptor stage.
@@ -177,7 +194,7 @@ def cones(args):
                   "--authored-scene", str(args.output / "cone-initial.json"), "--comparison-actions", str(path),
                   "--comparison-output", str(result)], frames=len(actions), render_only=True)
         replay_rows[mode] = json.loads(result.read_text())["actions"]
-    candidate = replay_rows["prepared-cones"]
+    candidate = replay_rows[candidate_mode]
     study.receipt["action_image_comparisons"] = []
     fresh_images = {}
     debug = 0
@@ -195,7 +212,7 @@ def cones(args):
             label = "fresh-cone-state-"+str(len(fresh_images))
             path = args.output / (label+".json")
             save(path, action["visible_scene"])
-            args.source_optimization = "prepared-cones"
+            args.source_optimization = candidate_mode
             fresh = study.run(label, [*common,"--width","320","--height","180",
                 "--authored-scene",str(path),"--debug",str(debug)])
             fresh_images[key] = fresh["image_sha256"]
@@ -218,9 +235,206 @@ def cones(args):
     save(args.output / "qualification.json", study.receipt)
 
 
+def publication(args):
+    study = Study(args)
+    initial = json.loads((ROOT / "projects/sdf/scenes/sculpture-guardian-limestone.json").read_text())
+    edited = copy.deepcopy(initial)
+    def edit_cone(node):
+        if node.get("type") == "round-cone":
+            node["bottom_radius"] *= 1.03
+            return True
+        return any(edit_cone(child) for child in node.get("children", []))
+    if not edit_cone(edited["root"]):
+        raise RuntimeError("Guardian publication fixture found no cone")
+    for key in ("geometry_hash", "appearance_hash"):
+        edited.pop(key, None)
+    appearance = copy.deepcopy(edited)
+    appearance["materials"][0]["base_color"] = [.3, .4, .5]
+    appearance.pop("appearance_hash", None)
+    save(args.output / "guardian-initial.json", initial)
+    actions = [dict(label="initial", scene=initial, visible_scene=initial, geometry_unchanged=True),
+               dict(label="failed-full-cone-upload", scene=edited, visible_scene=initial, fault="cone-upload", expect_failure=True, geometry_unchanged=True),
+               dict(label="retry-full-geometry", scene=edited, visible_scene=edited),
+               dict(label="full-appearance-only", scene=appearance, visible_scene=appearance, geometry_unchanged=True),
+               dict(label="undo-full-geometry", scene=initial, visible_scene=initial)]
+    study.receipt["publication"] = []
+    for mode in ("reference", "shadow", "prepared-cones", "combined"):
+        manifest = copy.deepcopy(actions)
+        if mode in ("reference", "shadow"):
+            manifest[1]["fault"] = "region"
+        path = args.output / (mode+"-actions.json")
+        save(path, dict(format="cubey.sdf.action-study", version=1, actions=manifest, capture_frames=True))
+        result = args.output / (mode+"-replay.json")
+        args.source_optimization = mode
+        study.run(mode+"-guardian-publication", [*route_flags(ROUTES[-1]), "--width", "320", "--height", "180",
+                  "--authored-scene", str(args.output / "guardian-initial.json"), "--comparison-actions", str(path),
+                  "--comparison-output", str(result)], frames=len(actions), render_only=True)
+        rows = json.loads(result.read_text())["actions"]
+        if digest(Path(rows[0]["frame_png"])) != digest(Path(rows[1]["frame_png"])) or digest(Path(rows[0]["frame_png"])) != digest(Path(rows[-1]["frame_png"])):
+            raise RuntimeError("full Guardian failure/undo did not retain/restore pixels")
+        study.receipt["publication"].append(dict(mode=mode, actions=rows))
+        save(args.output / "qualification.json", study.receipt)
+    study.receipt["complete"] = True
+    save(args.output / "qualification.json", study.receipt)
+
+
+def contracts(args):
+    study = Study(args)
+    frozen = json.loads((ROOT / "projects/sdf/comparison/fixtures.json").read_text())
+    tolerance = frozen["contracts"]["regular_depth_tolerance"]
+    epsilon = frozen["contracts"]["epsilon"]
+    cases = []
+    def ray(origin, direction, depth, normal=None, tangent_radius=None):
+        q = dict(kind="ray", origin=origin, direction=direction, expected_t=depth,
+                 depth_tolerance=tolerance, classification="regular")
+        if normal is not None: q["expected_normal"] = normal
+        if tangent_radius is not None:
+            q.update(classification="tangent", depth_tolerance=math.sqrt(2*tangent_radius*epsilon+epsilon*epsilon)+4e-6)
+        return q
+    def add(name, root, queries):
+        scene = dict(format="cubey.sdf.scene", version=2, name=name,
+                     materials=[dict(name="body", base_color=[.5,.4,.3], roughness=.6)],
+                     root=dict(name=name, type="round-cone", material="body", **root))
+        cases.append(dict(name=name, scene=scene, queries=queries))
+    add("equal-radii-capsule", dict(bottom_radius=.1, top_radius=.1, half_length=.15),
+        [ray([0,0,.7],[0,0,-1],.6,[0,0,1]), ray([0,0,0],[1,0,0],.1,[1,0,0]),
+         ray([0,.7,0],[0,-1,0],.45,[0,1,0]), ray([.1,0,.7],[0,0,-1],.7,tangent_radius=.1),
+         dict(kind="point", position=[0,0,.11], expected_distance=.01)])
+    add("domain-clip-and-inside", dict(bottom_radius=.8,top_radius=.8,half_length=.15),
+        [ray([0,0,.7],[0,0,-1],.201,[0,0,1]),ray([0,0,0],[0,0,1],.499,[0,0,1]),
+         dict(kind="point",position=[.51,0,0],expected_distance=.011)])
+    axis=[-math.sqrt(.5),math.sqrt(.5),0]
+    center=[.1,-.05,0]
+    plus=lambda a,b:[x+y for x,y in zip(a,b)]
+    times=lambda a,k:[x*k for x in a]
+    add("rotated-scaled-capsule",dict(bottom_radius=.1,top_radius=.1,half_length=.15,
+        scale=.6,position=center,rotation_xyzw=[0,0,math.sin(math.pi/8),math.cos(math.pi/8)]),
+        [ray(plus(center,times(axis,.7)),times(axis,-1),.55,axis),
+         ray(plus(center,[0,0,.7]),[0,0,-1],.64,[0,0,1]),ray(center,axis,.15,axis)])
+    add("zero-top-radius",dict(bottom_radius=.1,top_radius=0,half_length=.2),
+        [ray([0,.7,0],[0,-1,0],.5),dict(kind="point",position=[0,.21,0],expected_distance=.01)])
+    add("zero-bottom-radius",dict(bottom_radius=0,top_radius=.1,half_length=.2),
+        [ray([0,.7,0],[0,-1,0],.4,[0,1,0]),ray([0,-.7,0],[0,1,0],.5)])
+    bits=struct.unpack("I",struct.pack("f",.2))[0]
+    for offset in (0,1,2):
+        height=struct.unpack("f",struct.pack("I",bits+offset))[0]
+        top=max(-height/2+.3,height/2+.1)
+        bottom=min(-height/2-.3,height/2-.1)
+        add("containing-boundary-ulp-"+str(offset),dict(bottom_radius=.3,top_radius=.1,half_length=height/2),
+            [ray([0,.7,0],[0,-1,0],.7-top,[0,1,0]),ray([0,-.7,0],[0,1,0],.7+bottom,[0,-1,0])])
+    manifest=dict(format=frozen["format"],version=frozen["version"],contracts=frozen["contracts"],cases=cases)
+    path=args.output/"supplemental-contracts.json"
+    save(path,manifest)
+    study.receipt["supplemental_contracts"] = []
+    for mode in ("reference","shadow","prepared-cones","combined"):
+        args.source_optimization=mode
+        result=args.output/(mode+"-contracts.json")
+        study.run(mode+"-contracts",[*route_flags(ROUTES[-1]),"--width","32","--height","32",
+                  "--comparison-input",str(path),"--comparison-output",str(result)],render_only=True)
+        score=check(manifest,json.loads(result.read_text()))
+        if not score["passed"]: raise RuntimeError("supplemental cone contract failed: "+json.dumps(score))
+        study.receipt["supplemental_contracts"].append(dict(mode=mode,score=score))
+    # Check actual CLI rejection without relaxing any existing root-far guards.
+    base=[str(args.binary),"--headless","--headless-render-only","--frames","1",
+          "--surface-trace","analytic","--csg-evaluation","pruned","--region-axis","64",
+          "--acceleration-variant","root-far","--authored-scene","projects/sdf/scenes/material-study/sphere-plain.json"]
+    study.receipt["rejections"] = []
+    for mode in ("prepared-cones","combined"):
+        for label,flags in (("windowed",[]),("hybrid",["--surface-trace","hybrid"]),
+                            ("general",["--source-shaders","general"]),("lighting",["--lighting","material-study"]),
+                            ("axis",["--region-axis","16"]),("motion",["--motion","orbit"])):
+            command=[x for x in base if x!="--headless"] if label=="windowed" else base.copy()
+            if label=="windowed": command.remove("--headless-render-only")
+            command += ["--source-optimization",mode,*flags]
+            run=subprocess.run(command,cwd=ROOT,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+            if run.returncode==0 or "requires" not in run.stdout:
+                raise RuntimeError("unexpected optimization admission: "+mode+"/"+label+": "+run.stdout)
+            study.receipt["rejections"].append(dict(mode=mode,label=label,command=command,exit=run.returncode,output=run.stdout))
+    study.receipt["complete"]=True
+    save(args.output/"qualification.json",study.receipt)
+
+
+def history(args):
+    study=Study(args)
+    scene=dict(format="cubey.sdf.scene",version=2,name="Cone history contract",
+        materials=[dict(name="body",base_color=[.5,.4,.3],roughness=.6)],
+        root=dict(type="union",name="cone-history-root",children=[
+            dict(type="round-cone",name="left",bottom_radius=.08,top_radius=.03,half_length=.15,position=[-.12,0,0],material="body"),
+            dict(type="round-cone",name="right",bottom_radius=.06,top_radius=.02,half_length=.12,position=[.12,0,0],material="body")]),
+        history=[dict(node="left",label="Left cone",seconds=1),dict(node="right",label="Right cone",seconds=1)])
+    branch=copy.deepcopy(scene)
+    branch["root"]["children"][0]["bottom_radius"] = .09
+    appearance=copy.deepcopy(branch)
+    appearance["materials"][0]["base_color"] = [.2,.5,.4]
+    rows=[("empty",scene,0), ("first",scene,1), ("second",scene,2), ("undo",scene,1),
+          ("redo",scene,2), ("branch-first",branch,1), ("branch-appearance",appearance,1),
+          ("failed-prefix",appearance,2), ("retry-prefix",appearance,2)]
+    save(args.output/"initial.json",scene)
+    study.receipt["history"] = []
+    for mode in ("reference","shadow","prepared-cones","combined"):
+        actions=[]
+        for label,source,prefix in rows:
+            action=dict(label=label,scene=source,history_prefix=prefix,visible_scene=source,
+                visible_history_prefix=prefix,geometry_unchanged=label in ("branch-appearance","failed-prefix"))
+            if label=="failed-prefix":
+                action.update(visible_history_prefix=1,expect_failure=True,
+                              fault="cone-upload" if mode in ("prepared-cones","combined") else "region")
+            actions.append(action)
+        path=args.output/(mode+"-history-actions.json")
+        save(path,dict(format="cubey.sdf.action-study",version=1,actions=actions,capture_frames=True))
+        result=args.output/(mode+"-history-replay.json")
+        args.source_optimization=mode
+        study.run(mode+"-authored-history",[*route_flags(ROUTES[-1]),"--width","320","--height","180",
+            "--authored-scene",str(args.output/"initial.json"),"--comparison-actions",str(path),
+            "--comparison-output",str(result)],frames=len(actions),render_only=True)
+        observed=json.loads(result.read_text())["actions"]
+        for a,b in ((1,3),(2,4),(6,7)):
+            if digest(Path(observed[a]["frame_png"]))!=digest(Path(observed[b]["frame_png"])):
+                raise RuntimeError("authored history failed exact undo/redo/retention: "+mode)
+        if mode in ("prepared-cones","combined"):
+            expected=[1,1,1,1,1,1,0,0,1]
+            if [r["cone_build_delta"] for r in observed]!=expected:
+                raise RuntimeError("authored history prepared-cache generations do not follow geometry")
+        study.receipt["history"].append(dict(mode=mode,actions=observed))
+    study.receipt["complete"]=True
+    save(args.output/"qualification.json",study.receipt)
+
+
+def lighting(args):
+    study=Study(args)
+    scene=dict(format="cubey.sdf.scene",version=2,name="Prepared cone lighting",
+        materials=[dict(name="body",base_color=[.5,.4,.3],roughness=.6,
+            procedural=dict(type="marble",seed=9,scale=12,color_strength=.7,
+                secondary_color=[.1,.2,.4],bump_strength=.0007))],
+        root=dict(type="round-cone",name="cone",bottom_radius=.1,top_radius=.04,
+                  half_length=.16,material="body"))
+    path=args.output/"lighting-cone.json"
+    save(path,scene)
+    study.receipt["lighting_images"] = []
+    for label,flags in (("ao-ground-soft",["--ao","--ground","--shadows","2"]),
+            ("clay-ao-ground-soft",["--clay","--ao","--ground","--shadows","2"]),
+            ("bump-off",["--no-bump"]),("procedural-off",["--no-procedural"]),
+            ("grazing-sun",["--sun-elevation","0","--sun-azimuth","180"]),
+            ("raster-occluder",["--occluder"])):
+        captures={}
+        for mode in ("reference","prepared-cones","combined"):
+            args.source_optimization=mode
+            captures[mode]=study.run(label+"-"+mode,[*route_flags(ROUTES[-1]),"--width","320","--height","180",
+                "--authored-scene",str(path),*flags])
+        if captures["prepared-cones"]["image_sha256"]!=captures["combined"]["image_sha256"]:
+            raise RuntimeError("shadow culling changed prepared lighting pixels: "+label)
+        _,_,channels,a=pixels(args.output/(captures["reference"]["name"]+".png"))
+        _,_,_,b=pixels(args.output/(captures["combined"]["name"]+".png"))
+        errors=[max(abs(ar[i+j]-br[i+j]) for j in range(3)) for ar,br in zip(a,b) for i in range(0,len(ar),channels)]
+        study.receipt["lighting_images"].append(dict(label=label,changed_pixels=sum(e!=0 for e in errors),
+            max_channel_error=max(errors),prepared_combined_identical=True))
+    study.receipt["complete"]=True
+    save(args.output/"qualification.json",study.receipt)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("phase", choices=["edges", "timing", "cones"])
+    p.add_argument("phase", choices=["edges", "timing", "cones", "combined", "publication", "contracts", "history", "lighting"])
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--qualification", type=Path)
     p.add_argument("--modes", nargs="+", default=["reference", "shadow"])
@@ -230,10 +444,12 @@ def main():
     args = p.parse_args()
     args.binary = args.binary.resolve()
     args.output = args.output.resolve()
-    if args.resume and args.phase != "cones":
+    if args.resume and args.phase not in ("cones", "combined"):
         raise RuntimeError("only cone qualification supports resume")
     args.output.mkdir(parents=True, exist_ok=args.resume)
-    {"edges": edges, "timing": timing, "cones": cones}[args.phase](args)
+    if args.phase == "combined":
+        args.source_optimization = "combined"
+    {"edges": edges, "timing": timing, "cones": cones, "combined": cones, "publication": publication, "contracts": contracts, "history": history, "lighting": lighting}[args.phase](args)
 
 
 if __name__ == "__main__":

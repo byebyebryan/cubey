@@ -12,6 +12,7 @@ cubey_add_app_target(
         shaders/shadow_contract_reference.comp shaders/shadow_contract_candidate.comp
         shaders/prepared_cone_probe.comp
         shaders/prepared_lit_root_far_sdf_analytic_pruned.frag
+        shaders/combined_lit_root_far_sdf_analytic_pruned.frag
         shaders/prepared_root_far_comparison_analytic_pruned.comp
         shaders/shadow_lit_accel_sdf_analytic_pruned.frag
         shaders/shadow_lit_accel_sdf_hybrid_pruned.frag
