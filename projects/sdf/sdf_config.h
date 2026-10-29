@@ -21,6 +21,7 @@ struct SdfConfig {
     std::string comparison_residency = "host";
     std::string acceleration_variant = "off";
     std::string frame_profile = "off";
+    std::string source_shaders = "automatic";
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -90,6 +91,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
                                 config::ValueType::Enum);
     frame_profile.enum_values = {"off",         "runtime", "fixed", "nodebug", "single-material",
                                  "specialized", "no-sky"};
+    auto source_shaders =
+        option("source-shaders", "Source shader selection control", config::ValueType::Enum);
+    source_shaders.enum_values = {"automatic", "general"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -172,6 +176,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(residency, c.comparison_residency)
         .bind(acceleration, c.acceleration_variant)
         .bind(frame_profile, c.frame_profile)
+        .bind(source_shaders, c.source_shaders)
         .bind(option("comparison-tight-root", "Private inner-clip entry ablation",
                      config::ValueType::Bool),
               c.comparison_tight_root)

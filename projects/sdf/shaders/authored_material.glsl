@@ -97,11 +97,18 @@ SceneSurface authoredSurface(vec3 p,float footprint,bool patterns) {
     return result;
 }
 SceneSurface authoredSurface(vec3 p) { return authoredSurface(p,0.0,true); }
+#ifdef SDF_MATERIAL_SPECIALIZATION
+// Set only for a published scene with exactly one registered material.
+layout(constant_id=0) const bool sdfSingleMaterial = false;
+#endif
 MaterialSample authoredShadingMaterial(vec3 p,float footprint,bool patterns,bool fastPath) {
 #ifdef SDF_PROFILE_SINGLE_MATERIAL
     // Selected only after native validation of the existing eligible shortcut.
     return sampleAuthoredMaterial(0u,p,footprint,patterns);
 #else
+#ifdef SDF_MATERIAL_SPECIALIZATION
+    if (sdfSingleMaterial) return sampleAuthoredMaterial(0u,p,footprint,patterns);
+#endif
     if (authoredHeader.y==1u && fastPath) return sampleAuthoredMaterial(0u,p,footprint,patterns);
     SceneSurface surface=authoredSurface(p,footprint,patterns);
     return MaterialSample(surface.material,surface.height_gradient,surface.optics.settings.x,surface.sheen,surface.rough_glass,0.0);

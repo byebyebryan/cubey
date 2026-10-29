@@ -599,8 +599,19 @@ class App {
         const auto field_before = field_ ? field_->stats().build_count : 0;
         const auto region_before = region_builds_;
         auto previous = *authored_;
+        const auto previous_debug = config_.debug;
+        const auto previous_fast_path = config_.material_fast_path;
         bool failed = false;
         try {
+            if (action.contains("render")) {
+                const auto& render = action.at("render");
+                config_.debug = render.value("debug", config_.debug);
+                config_.material_fast_path =
+                    render.value("material_fast_path", config_.material_fast_path);
+                if (config_.debug > 12 ||
+                    (config_.surface_trace != "sampled" && config_.debug == 4))
+                    throw std::invalid_argument("unsupported study debug view");
+            }
             auto next = parse_authored_scene(action.at("scene").dump());
             if (action.contains("history_prefix"))
                 next = authored_history_scene(next, action.at("history_prefix").get<std::size_t>());
@@ -610,9 +621,13 @@ class App {
             prepare_time(device, 0, true);
         } catch (const CapacityExceeded&) {
             authored_ = std::move(previous);
+            config_.debug = previous_debug;
+            config_.material_fast_path = previous_fast_path;
             failed = true;
         } catch (...) {
             authored_ = std::move(previous);
+            config_.debug = previous_debug;
+            config_.material_fast_path = previous_fast_path;
             study_fault_.clear();
             throw;
         }
@@ -627,10 +642,18 @@ class App {
         if (action.value("geometry_unchanged", false) && (field_delta || region_delta))
             throw std::runtime_error(
                 "appearance or failed action rebuilt a published geometry cache");
+        const auto shader = source_shader_route_name(renderer_.shader_route(config_));
+        if (action.contains("expect_shader") && action.at("expect_shader") != shader)
+            throw std::runtime_error("study selected unexpected published shader route");
         study_receipt_.push_back(
             {{"label", action.at("label")},
              {"frame", frame},
              {"failed", failed},
+             {"shader_route", shader},
+             {"shader_pipeline_count", renderer_.shader_pipeline_count()},
+             {"published_material_count", displayed_authored_->materials.size()},
+             {"debug", config_.debug},
+             {"material_fast_path", config_.material_fast_path},
              {"expected_oracle_before_request_ms", oracle_ms},
              {"geometry_hash", authored_geometry_hash(*displayed_authored_)},
              {"appearance_hash", authored_appearance_hash(*displayed_authored_)},

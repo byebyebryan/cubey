@@ -38,7 +38,7 @@ def main():
           '--config','projects/sdf/presets/sculpture-guardian-limestone.json',
           '--width',str(width),'--height',str(height),'--yaw',str(.4+{'rear':math.pi,'side':math.pi/2,'preset':0}[args.view]),
           '--surface-trace','analytic','--csg-evaluation','pruned','--region-axis','64',
-          '--acceleration-variant','root-far']
+          '--acceleration-variant','root-far','--source-shaders','general']
     if args.phase=='compiler':
         command=[str(ROOT/'build/release/projects/sdf/cubey_project_sdf_shader_stats'),
             str(ROOT/'build/release/projects/sdf/shaders'),str(args.output),

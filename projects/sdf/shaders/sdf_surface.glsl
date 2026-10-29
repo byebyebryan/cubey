@@ -1,5 +1,5 @@
-// Private compiler ablations. Unselected expansion retains the original tokens.
-#ifdef SDF_PROFILE_DEBUG_ZERO
+// Lit pipelines omit debug branches; the general pipeline retains every view.
+#if defined(SDF_PROFILE_DEBUG_ZERO) || defined(SDF_LIT_ONLY)
 #define SDF_DEBUG_MODE 0.0
 #else
 #define SDF_DEBUG_MODE camera.options.x

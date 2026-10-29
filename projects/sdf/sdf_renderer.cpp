@@ -214,6 +214,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         .depth_test = true,
         .depth_write = true,
         .depth_compare_op = VK_COMPARE_OP_LESS_OR_EQUAL};
+    const auto pipeline_start = std::chrono::steady_clock::now();
     pipeline_.emplace(
         device, render::GraphicsPipelineFileResourceConfig{.extent = scene_extent_,
                                                            .color_format = hdr_format,
@@ -221,6 +222,38 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                                                            .shader_stage_files = stages,
                                                            .descriptor_set_layouts = layouts,
                                                            .material_pass = pass});
+    shader_pipeline_count_ = 1;
+    if (source_shader_variants_enabled(config)) {
+        const std::array lit_files{render::vertex_shader_file(path / "sdf.vert.spv"),
+                                   render::fragment_shader_file(path / ("lit_" + fragment))};
+        const render::ShaderProgram lit_program(device, lit_files);
+        std::vector<VkPipelineShaderStageCreateInfo> lit_stages(lit_program.stages().begin(),
+                                                                lit_program.stages().end());
+        const VkSpecializationMapEntry entry{0, 0, sizeof(VkBool32)};
+        const auto create_lit = [&](auto& destination, VkBool32 single_material) {
+            const VkSpecializationInfo specialization{1, &entry, sizeof(single_material),
+                                                      &single_material};
+            for (auto& stage : lit_stages)
+                if (stage.stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+                    stage.pSpecializationInfo = &specialization;
+            destination.emplace(
+                device, render::GraphicsPipelineResourceConfig{.extent = scene_extent_,
+                                                               .color_format = hdr_format,
+                                                               .depth_format = VK_FORMAT_D32_SFLOAT,
+                                                               .shader_stages = lit_stages,
+                                                               .descriptor_set_layouts = layouts,
+                                                               .material_pass = pass});
+            ++shader_pipeline_count_;
+        };
+        create_lit(lit_general_pipeline_, VK_FALSE);
+        create_lit(lit_single_pipeline_, VK_TRUE);
+    }
+    shader_pipeline_setup_ms_ =
+        std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pipeline_start)
+            .count();
+    std::cout << "sdf: shader pipelines=" << shader_pipeline_count_
+              << " setup_ms=" << shader_pipeline_setup_ms_
+              << " route=" << source_shader_route_name(shader_route(config)) << '\n';
     const std::array raster_stages{render::vertex_shader_file(path / "occluder.vert.spv"),
                                    render::fragment_shader_file(path / "occluder.frag.spv")};
     pass.push_constants = {{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Camera)}};
@@ -281,7 +314,12 @@ void Renderer::destroy() {
     recorded_frames_.clear();
     post_.destroy();
     occluder_pipeline_.reset();
+    lit_single_pipeline_.reset();
+    lit_general_pipeline_.reset();
     pipeline_.reset();
+    shader_pipeline_count_ = 0;
+    published_material_count_ = 0;
+    shader_pipeline_setup_ms_ = 0;
     descriptors_.reset();
     scene_optics_.reset();
     study_environment_.reset();
@@ -365,6 +403,12 @@ void Renderer::update_authored(vulkan::Device& device, const AuthoredScene* scen
         }
         writes.update(device);
     }
+    published_material_count_ = scene ? scene->materials.size() : 0;
+}
+SourceShaderRoute Renderer::shader_route(const SdfConfig& config) const {
+    if (!lit_general_pipeline_ || !lit_single_pipeline_)
+        return SourceShaderRoute::General;
+    return select_source_shader(config, published_material_count_);
 }
 void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       render::ColorTargetView target, render::FrameSlot slot, bool present,
@@ -373,7 +417,20 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                       const BoxEdit* cutter, float cutter_opacity,
                       std::span<const SceneInstruction> previews) {
     profile_ = profile;
+    const auto route = shader_route(config);
+    const auto* selected_pipeline =
+        route == SourceShaderRoute::LitSingleMaterial ? &*lit_single_pipeline_
+        : route == SourceShaderRoute::LitGeneral      ? &*lit_general_pipeline_
+                                                      : &*pipeline_;
     if (profile) {
+        profile->record_metric(frame_index, "sdf.shader_selection", "route",
+                               static_cast<unsigned>(route));
+        profile->record_metric(frame_index, "sdf.shader_selection", "published_material_count",
+                               static_cast<double>(published_material_count_));
+        profile->record_metric(frame_index, "sdf.shader_selection", "pipeline_count",
+                               shader_pipeline_count_);
+        profile->record_metric(frame_index, "sdf.shader_selection", "pipeline_setup_ms",
+                               shader_pipeline_setup_ms_);
         profile->record_metric(frame_index, "sdf.resources", "field_bytes",
                                static_cast<double>(field_ ? field_->stats().allocation_bytes : 0));
         profile->record_metric(frame_index, "sdf.resources", "region_bytes",
@@ -564,7 +621,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         .read_storage_buffer(previews_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
         .write_color(scene)
         .write_depth(depth)
-        .execute([&, camera, scene, depth](const render::RenderGraphExecutionContext& ctx) {
+        .execute([&, camera, scene, depth,
+                  selected_pipeline](const render::RenderGraphExecutionContext& ctx) {
             render::record_render_target_pass(
                 ctx.recorder(),
                 render::render_target_view(render::resolved_color_target_view(ctx, scene),
@@ -576,11 +634,13 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                         render::record_fullscreen_pipeline_draw(
                             pass, {.pipeline = &sky_background_.pipeline(),
                                    .descriptor_set = sky_background_.material().set(slot)});
-                    pass.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_->pipeline());
-                    pass.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_->layout(),
-                                             0, descriptors_->set(slot.index));
-                    pass.push_constants(pipeline_->layout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                                        camera);
+                    pass.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       selected_pipeline->pipeline());
+                    pass.bind_descriptor_set(VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                             selected_pipeline->layout(), 0,
+                                             descriptors_->set(slot.index));
+                    pass.push_constants(selected_pipeline->layout(), VK_SHADER_STAGE_FRAGMENT_BIT,
+                                        0, camera);
                     render::record_fullscreen_triangle(pass);
                     if (config.occluder) {
                         pass.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS,

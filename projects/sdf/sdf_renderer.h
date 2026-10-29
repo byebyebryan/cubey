@@ -2,6 +2,7 @@
 #include "sdf_config.h"
 #include "sdf_field.h"
 #include "sdf_regions.h"
+#include "sdf_shader_selection.h"
 
 #include <chrono>
 #include <cubey/core/profiling.h>
@@ -38,6 +39,10 @@ class Renderer {
     void update_authored(vulkan::Device& device, const AuthoredScene* scene,
                          const GpuRegionPrograms* regions = nullptr,
                          std::unique_ptr<vulkan::Buffer> prepared = {});
+    [[nodiscard]] SourceShaderRoute shader_route(const SdfConfig& config) const;
+    [[nodiscard]] unsigned shader_pipeline_count() const {
+        return shader_pipeline_count_;
+    }
     void set_environment_elapsed_seconds(double seconds) {
         environment_seconds_ = seconds;
     }
@@ -75,6 +80,10 @@ class Renderer {
         scene_domains_, scene_libraries_;
     std::vector<std::unique_ptr<vulkan::Buffer>> preview_buffers_;
     std::optional<render::GraphicsPipelineResource> pipeline_, occluder_pipeline_;
+    std::optional<render::GraphicsPipelineResource> lit_general_pipeline_, lit_single_pipeline_;
+    std::size_t published_material_count_ = 0;
+    unsigned shader_pipeline_count_ = 0;
+    double shader_pipeline_setup_ms_ = 0;
     render::HdrPostFrame post_;
     render::RenderGraphFrameExecutor executor_;
     std::optional<vulkan::GpuTimestampProfiler> profiler_;

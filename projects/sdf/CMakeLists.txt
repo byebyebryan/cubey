@@ -7,8 +7,29 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp
-    SHADERS shaders/material_study.frag shaders/sdf.vert shaders/sdf.frag shaders/sdf_authored.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
+    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp
+    SHADERS
+        shaders/lit_sdf_analytic.frag
+        shaders/lit_sdf_hybrid.frag
+        shaders/lit_material_analytic.frag
+        shaders/lit_material_hybrid.frag
+        shaders/lit_sdf_analytic_pruned.frag
+        shaders/lit_sdf_hybrid_pruned.frag
+        shaders/lit_material_analytic_pruned.frag
+        shaders/lit_material_hybrid_pruned.frag
+        shaders/lit_accel_sdf_analytic_pruned.frag
+        shaders/lit_accel_sdf_hybrid_pruned.frag
+        shaders/lit_accel_material_analytic_pruned.frag
+        shaders/lit_accel_material_hybrid_pruned.frag
+        shaders/lit_unclamped_sdf_hybrid_pruned.frag
+        shaders/lit_unclamped_material_hybrid_pruned.frag
+        shaders/lit_root_sdf_analytic_pruned.frag
+        shaders/lit_root_material_analytic_pruned.frag
+        shaders/lit_far_sdf_analytic_pruned.frag
+        shaders/lit_far_material_analytic_pruned.frag
+        shaders/lit_root_far_sdf_analytic_pruned.frag
+        shaders/lit_root_far_material_analytic_pruned.frag
+        shaders/material_study.frag shaders/sdf.vert shaders/sdf.frag shaders/sdf_authored.frag shaders/filter.comp shaders/bricks.comp shaders/validate.comp
         ${CUBEY_SDF_CLOUD_SHADERS}
         shaders/authored_filter.comp shaders/authored_bricks.comp
         shaders/authored_validate.comp
@@ -70,6 +91,9 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_shader_selection_tests sdf_shader_selection.cpp sdf_shader_selection_tests.cpp)
+    target_link_libraries(cubey_project_sdf_shader_selection_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
+    add_test(NAME sdf_shader_selection_tests COMMAND cubey_project_sdf_shader_selection_tests)
     add_executable(cubey_project_sdf_shader_stats tools/profile_shader_stats.cpp)
     target_link_libraries(cubey_project_sdf_shader_stats PRIVATE Vulkan::Vulkan nlohmann_json::nlohmann_json)
     add_executable(cubey_project_sdf_region_tests sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_region_tests.cpp)

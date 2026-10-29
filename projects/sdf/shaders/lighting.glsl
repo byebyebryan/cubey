@@ -205,10 +205,10 @@ vec3 studyRadiance(vec3 p,vec3 geometricNormal,vec3 viewDirection,float footprin
         direct*=directScale;indirect*=viewScale;specularEnvironment*=viewScale;
     }
     // Component views expose the lobes after sheen energy attenuation.
-    if(camera.options.x>10.5)
+    if(SDF_DEBUG_MODE>10.5)
         return directScale*f*d*v*compensation*lighting.direct_color.rgb*nl*shadow+
             specularEnvironment+sheenDirect+sheenEnvironment;
-    if(camera.options.x>9.5)
+    if(SDF_DEBUG_MODE>9.5)
         return directScale*(1-f)*diffuse*diffuseFactor/3.141592654*lighting.direct_color.rgb*nl*shadow+indirect;
     vec3 result=direct+indirect+specularEnvironment+sampleValue.material.emission.rgb;
     if(sheenMaximum>0.0) result+=sheenDirect+sheenEnvironment;
