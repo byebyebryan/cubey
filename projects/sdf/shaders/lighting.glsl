@@ -222,7 +222,7 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
     return studyRadiance(p,n,viewDirection,footprint,exhausted);
 #else
     vec3 lightDirection=camera.sunlight.xyz;
-#if defined(SDF_PROFILE_CULL_DARK_SHADOWS) || defined(SDF_PROFILE_SHADOW_AFTER_MATERIAL)
+#if defined(SDF_PROFILE_CULL_DARK_SHADOWS) || defined(SDF_PROFILE_SHADOW_AFTER_MATERIAL) || defined(SDF_ZERO_LIGHT_SHADOWS)
     vec3 shadowNormal=n;
 #else
     float visibility=shadowVisibility(p,n,lightDirection,int(camera.options.y+0.5),exhausted);
@@ -244,7 +244,18 @@ vec3 surfaceRadiance(vec3 p,vec3 n,vec3 viewDirection,bool object,float footprin
 #endif
     vec3 halfVector=lightDirection+viewDirection;
     vec3 h=dot(halfVector,halfVector)>1e-8 ? normalize(halfVector) : n;
+#ifdef SDF_ZERO_LIGHT_SHADOWS
+    float lightCosine=dot(n,lightDirection);
+    float nl=max(lightCosine,0.0),nv=max(dot(n,viewDirection),0.001);
+    bool skipShadow=!any(isnan(n)) && !any(isinf(n)) &&
+                    !isnan(lightCosine) && !isinf(lightCosine) && nl==0.0;
+    // The final shading normal decides contribution; geometric offsets stay intact.
+    // A skipped query cannot exhaust. General/reference retains exhaustive diagnostics.
+    float visibility=skipShadow ? 1.0 : shadowVisibility(p,shadowNormal,lightDirection,
+                                                        int(camera.options.y+0.5),exhausted);
+#else
     float nl=max(dot(n,lightDirection),0.0),nv=max(dot(n,viewDirection),0.001);
+#endif
 #ifdef SDF_PROFILE_CULL_DARK_SHADOWS
     // Private static diagnostic. Test the final shading normal; retain
     // the geometric normal for the shadow ray origin.

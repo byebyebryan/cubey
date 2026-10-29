@@ -48,4 +48,41 @@ int main() {
                                      : SourceShaderRoute::LitGeneral);
     }
     std::cout << "source shader eligibility/default/debug/appearance/history boundaries passed\n";
+    config = SdfConfig{};
+    const auto rejected = [&] {
+        try {
+            validate_source_optimization(config);
+        } catch (const std::invalid_argument&) {
+            return;
+        }
+        throw std::runtime_error("incompatible optimization was admitted");
+    };
+    config.source_optimization = "shadow";
+    rejected();
+    config.surface_trace = "analytic";
+    validate_source_optimization(config);
+    if (!source_shadow_pipeline_enabled(config))
+        throw std::runtime_error("eligible shadow renderer missing candidate");
+    for (const auto lighting : {"material-study", "material-furnace", "material-atmosphere"}) {
+        config.lighting = lighting;
+        if (source_shadow_pipeline_enabled(config))
+            throw std::runtime_error("optical family opted into shadow candidate");
+    }
+    config.lighting = "atmosphere";
+    config.source_shaders = "general";
+    rejected();
+    config.source_optimization = "automatic";
+    validate_source_optimization(config);
+    if (source_shadow_pipeline_enabled(config))
+        throw std::runtime_error("general control opted into candidate");
+    config.source_shaders = "automatic";
+    config.source_optimization = "reference";
+    if (source_shadow_pipeline_enabled(config))
+        throw std::runtime_error("reference control opted into candidate");
+    config.source_optimization = "shadow";
+    config.frame_profile = "opt-full";
+    rejected();
+    config.frame_profile = "off";
+    config.comparison_stage = "primary";
+    rejected();
 }

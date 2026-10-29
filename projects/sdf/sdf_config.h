@@ -22,6 +22,7 @@ struct SdfConfig {
     std::string acceleration_variant = "off";
     std::string frame_profile = "off";
     std::string source_shaders = "automatic";
+    std::string source_optimization = "automatic";
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -107,6 +108,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto source_shaders =
         option("source-shaders", "Source shader selection control", config::ValueType::Enum);
     source_shaders.enum_values = {"automatic", "general"};
+    auto source_optimization =
+        option("source-optimization", "Source query optimization control", config::ValueType::Enum);
+    source_optimization.enum_values = {"automatic", "reference", "shadow", "prepared-cones", "combined"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -190,6 +194,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(acceleration, c.acceleration_variant)
         .bind(frame_profile, c.frame_profile)
         .bind(source_shaders, c.source_shaders)
+        .bind(source_optimization, c.source_optimization)
         .bind(option("comparison-tight-root", "Private inner-clip entry ablation",
                      config::ValueType::Bool),
               c.comparison_tight_root)

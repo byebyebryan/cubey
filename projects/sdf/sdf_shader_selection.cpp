@@ -6,6 +6,23 @@ bool source_shader_variants_enabled(const SdfConfig& config) {
     return config.surface_trace != "sampled" && config.source_shaders == "automatic" &&
            config.comparison_stage == "off" && config.frame_profile == "off";
 }
+void validate_source_optimization(const SdfConfig& config) {
+    const auto& mode = config.source_optimization;
+    if (mode == "automatic" || mode == "reference")
+        return;
+    if (!source_shader_variants_enabled(config))
+        throw std::invalid_argument(
+            "explicit source optimization requires automatic source shaders without diagnostics");
+    if (mode == "prepared-cones" || mode == "combined")
+        throw std::invalid_argument("prepared-cones study is not qualified");
+    if (mode != "shadow")
+        throw std::invalid_argument("unknown source optimization");
+}
+bool source_shadow_pipeline_enabled(const SdfConfig& config) {
+    // Automatic remains the qualified reference until the shadow gates pass.
+    return source_shader_variants_enabled(config) && config.lighting == "atmosphere" &&
+           config.source_optimization == "shadow";
+}
 SourceShaderRoute select_source_shader(const SdfConfig& config, std::size_t material_count) {
     if (!source_shader_variants_enabled(config) || config.debug != 0)
         return SourceShaderRoute::General;

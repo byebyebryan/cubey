@@ -97,6 +97,8 @@ class Study:
         prefix = self.output/name
         command = self.base + flags + ["--source-shaders", shader, "--frames", str(frames),
                     "--profile-output", str(prefix), "--profile-warmup-frames", "0"]
+        if getattr(self.args, "source_optimization", None):
+            command += ["--source-optimization", self.args.source_optimization if shader == "automatic" and name != "sampled-default" else "reference"]
         command += ["--headless-render-only"] if render_only else ["--output", str(prefix.with_suffix(".png"))]
         if self.args.resume and "--comparison-actions" not in flags and not render_only:
             old=next((r for r in self.receipt["runs"] if r["name"]==name),None)
@@ -301,6 +303,7 @@ def main():
     parser.add_argument("phase",choices=["qualify","appearance","timing"])
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--qualification",type=Path)
+    parser.add_argument("--source-optimization",choices=["automatic","reference","shadow"])
     parser.add_argument("--resume",action="store_true",help="Reuse verified static capture receipts for the identical binary; rerun all action and oracle jobs")
     parser.add_argument("--binary",type=Path,default=ROOT/"build/release/projects/sdf/sdf")
     args=parser.parse_args();args.binary=args.binary.resolve();args.output=args.output.resolve()

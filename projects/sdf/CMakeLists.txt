@@ -9,6 +9,17 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp
     SHADERS
+        shaders/shadow_contract_reference.comp shaders/shadow_contract_candidate.comp
+        shaders/shadow_lit_accel_sdf_analytic_pruned.frag
+        shaders/shadow_lit_accel_sdf_hybrid_pruned.frag
+        shaders/shadow_lit_far_sdf_analytic_pruned.frag
+        shaders/shadow_lit_root_far_sdf_analytic_pruned.frag
+        shaders/shadow_lit_root_sdf_analytic_pruned.frag
+        shaders/shadow_lit_sdf_analytic.frag
+        shaders/shadow_lit_sdf_analytic_pruned.frag
+        shaders/shadow_lit_sdf_hybrid.frag
+        shaders/shadow_lit_sdf_hybrid_pruned.frag
+        shaders/shadow_lit_unclamped_sdf_hybrid_pruned.frag
         shaders/lit_sdf_analytic.frag
         shaders/lit_sdf_hybrid.frag
         shaders/lit_material_analytic.frag
@@ -99,6 +110,8 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_shadow_contract tools/shadow_contract.cpp)
+    target_link_libraries(cubey_project_sdf_shadow_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_shader_selection_tests sdf_shader_selection.cpp sdf_shader_selection_tests.cpp)
     target_link_libraries(cubey_project_sdf_shader_selection_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_shader_selection_tests COMMAND cubey_project_sdf_shader_selection_tests)

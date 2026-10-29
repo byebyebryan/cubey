@@ -10,6 +10,8 @@ enum class SourceShaderRoute : unsigned {
     LitSingleMaterial
 };
 [[nodiscard]] bool source_shader_variants_enabled(const SdfConfig& config);
+void validate_source_optimization(const SdfConfig& config);
+[[nodiscard]] bool source_shadow_pipeline_enabled(const SdfConfig& config);
 // Count comes from the published source/header, never the requested scene.
 [[nodiscard]] SourceShaderRoute select_source_shader(const SdfConfig& config,
                                                      std::size_t published_material_count);

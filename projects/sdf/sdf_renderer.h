@@ -40,6 +40,10 @@ class Renderer {
                          const GpuRegionPrograms* regions = nullptr,
                          std::unique_ptr<vulkan::Buffer> prepared = {});
     [[nodiscard]] SourceShaderRoute shader_route(const SdfConfig& config) const;
+    [[nodiscard]] std::string_view source_optimization(const SdfConfig& config) const {
+        return shadow_candidate_ && shader_route(config) == SourceShaderRoute::LitSingleMaterial
+                   ? "shadow" : "reference";
+    }
     [[nodiscard]] unsigned shader_pipeline_count() const {
         return shader_pipeline_count_;
     }
@@ -93,6 +97,7 @@ class Renderer {
     const GpuRegionPrograms* regions_ = nullptr;
     profiling::ProfileRecorder* profile_ = nullptr;
     bool source_tracing_ = false;
+    bool shadow_candidate_ = false;
     vulkan::GpuRuntime* acceleration_uploads_ = nullptr;
     VkExtent2D scene_extent_{};
 };

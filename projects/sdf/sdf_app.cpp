@@ -679,11 +679,15 @@ class App {
         const auto shader = source_shader_route_name(renderer_.shader_route(config_));
         if (action.contains("expect_shader") && action.at("expect_shader") != shader)
             throw std::runtime_error("study selected unexpected published shader route");
+        const auto optimization = renderer_.source_optimization(config_);
+        if (action.contains("expect_optimization") && action.at("expect_optimization") != optimization)
+            throw std::runtime_error("study selected unexpected published optimization");
         study_receipt_.push_back(
             {{"label", action.at("label")},
              {"frame", frame},
              {"failed", failed},
              {"shader_route", shader},
+             {"source_optimization", optimization},
              {"shader_pipeline_count", renderer_.shader_pipeline_count()},
              {"published_material_count", displayed_authored_->materials.size()},
              {"debug", config_.debug},
@@ -1194,6 +1198,7 @@ class App {
 };
 } // namespace
 int run_sdf(const SdfConfig& config) {
+    validate_source_optimization(config);
     if ((!config.comparison_input.empty() && !config.comparison_actions.empty()) ||
         (config.comparison_donor && config.comparison_input.empty()) ||
         (!config.comparison_output.empty() && config.comparison_input.empty() &&

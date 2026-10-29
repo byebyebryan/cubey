@@ -61,6 +61,8 @@ the architecture and project guides remain current authority.
 - [SDF source-query optimization plan](sdf-source-query-optimization-plan.md):
   proposed shadow-culling qualification and independent prepared-cone trial,
   with numerical, publication, performance and rollback gates.
+- [SDF source-query optimization progress](sdf-source-query-optimization-progress.md):
+  implementation checkpoints and qualification boundaries for that loop.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
   [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
   published-material selection, exact capture parity, current 1080p measurements

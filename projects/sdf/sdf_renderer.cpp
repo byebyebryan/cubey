@@ -27,6 +27,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                       const GpuRegionPrograms* regions) {
     field_ = field;
     source_tracing_ = config.surface_trace != "sampled";
+    shadow_candidate_ = source_shadow_pipeline_enabled(config);
     acceleration_uploads_ = config.acceleration_variant != "off" ? &gpu : nullptr;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
@@ -226,11 +227,14 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     if (source_shader_variants_enabled(config)) {
         const std::array lit_files{render::vertex_shader_file(path / "sdf.vert.spv"),
                                    render::fragment_shader_file(path / ("lit_" + fragment))};
-        const render::ShaderProgram lit_program(device, lit_files);
-        std::vector<VkPipelineShaderStageCreateInfo> lit_stages(lit_program.stages().begin(),
-                                                                lit_program.stages().end());
         const VkSpecializationMapEntry entry{0, 0, sizeof(VkBool32)};
         const auto create_lit = [&](auto& destination, VkBool32 single_material) {
+            auto files = lit_files;
+            if (single_material && shadow_candidate_)
+                files[1] = render::fragment_shader_file(path / ("shadow_lit_" + fragment));
+            const render::ShaderProgram program(device, files);
+            std::vector<VkPipelineShaderStageCreateInfo> lit_stages(program.stages().begin(),
+                                                                   program.stages().end());
             const VkSpecializationInfo specialization{1, &entry, sizeof(single_material),
                                                       &single_material};
             for (auto& stage : lit_stages)
@@ -254,6 +258,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     std::cout << "sdf: shader pipelines=" << shader_pipeline_count_
               << " setup_ms=" << shader_pipeline_setup_ms_
               << " route=" << source_shader_route_name(shader_route(config)) << '\n';
+    std::cout << "sdf: source optimization requested=" << config.source_optimization
+              << " effective=" << source_optimization(config) << '\n';
     const std::array raster_stages{render::vertex_shader_file(path / "occluder.vert.spv"),
                                    render::fragment_shader_file(path / "occluder.frag.spv")};
     pass.push_constants = {{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Camera)}};
@@ -431,6 +437,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
                                shader_pipeline_count_);
         profile->record_metric(frame_index, "sdf.shader_selection", "pipeline_setup_ms",
                                shader_pipeline_setup_ms_);
+        profile->record_metric(frame_index, "sdf.shader_selection", "shadow_optimized",
+                               source_optimization(config) == "shadow" ? 1 : 0);
         profile->record_metric(frame_index, "sdf.resources", "field_bytes",
                                static_cast<double>(field_ ? field_->stats().allocation_bytes : 0));
         profile->record_metric(frame_index, "sdf.resources", "region_bytes",
