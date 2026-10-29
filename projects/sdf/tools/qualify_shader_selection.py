@@ -94,6 +94,12 @@ class Study:
                     "--profile-output", str(prefix), "--profile-warmup-frames", "0"]
         command += ["--headless-render-only"] if render_only else ["--output", str(prefix.with_suffix(".png"))]
         wall = invoke(command, prefix, timeout=180)
+        if "--comparison-actions" in flags:
+            result_path=Path(flags[flags.index("--comparison-output")+1])
+            rows=json.loads(result_path.read_text())["actions"]
+            manifest=json.loads(Path(flags[flags.index("--comparison-actions")+1]).read_text())
+            if len(rows)!=frames or (manifest.get("capture_frames") and any("frame_png" not in r for r in rows)):
+                raise RuntimeError("incomplete action replay or missing completed-frame capture")
         metrics = list(csv.DictReader(prefix.with_suffix(".metrics.csv").open()))
         selection = {r["name"]: float(r["value"]) for r in metrics if r["category"] == "sdf.shader_selection"}
         log = prefix.with_suffix(".log").read_text()
@@ -177,21 +183,12 @@ def qualify(args):
             rows=json.loads(result.read_text())["actions"]
             if len(rows)!=len(actions) or any(r["shader_pipeline_count"]!=(3 if control=="automatic" else 1) for r in rows):
                 raise RuntimeError("incomplete or allocating action replay")
-        # Render each automatic/general action prefix; last-frame capture tests the transition's GPU result.
-        for index in range(1,len(actions)+1):
-            pair_flags=small+flags[:8]
-            for control in ("general","automatic"):
-                manifest=copy.deepcopy(actions[:index])
-                if control=="general":
-                    for action in manifest: action["expect_shader"]="general"
-                path=args.output/f"{mode}-{index}-{control}-prefix.json"
-                save(path,dict(format="cubey.sdf.action-study",version=1,actions=manifest))
-                study.run(f"{mode}-transition-{index}-{control}",pair_flags+["--comparison-actions",str(path),
-                    "--comparison-output",str(args.output/f"{mode}-{index}-{control}-receipt.json")],control,index)
-            a=args.output/f"{mode}-transition-{index}-general.png"
-            b=args.output/f"{mode}-transition-{index}-automatic.png"
-            if digest(a)!=digest(b): raise RuntimeError("transition GPU parity failed")
-        print(mode,"20 original history +",len(actions),"eligibility actions and native transition captures passed",flush=True)
+        general=json.loads((args.output/(mode+"-general-replay.json")).read_text())["actions"]
+        automatic=json.loads((args.output/(mode+"-automatic-replay.json")).read_text())["actions"]
+        for a,b in zip(general,automatic):
+            if digest(Path(a["frame_png"]))!=digest(Path(b["frame_png"])):
+                raise RuntimeError("transition GPU pixel parity failed: "+a["label"])
+        print(mode,"20 original history +",len(actions),"eligibility actions and native per-frame pixels passed",flush=True)
     # Frozen independent compute oracle; source selection does not alter query/CSG code.
     manifest=ROOT/"projects/sdf/comparison/fixtures.json"
     study.receipt["fixtures"]=[]
@@ -208,6 +205,52 @@ def qualify(args):
         raise RuntimeError("sampled default changed")
     study.receipt["complete"]=True
     save(args.output/"qualification.json",study.receipt)
+
+
+def appearance(args):
+    study=Study(args)
+    selection_actions(args.output)
+    plain=json.loads((args.output/"selection-initial.json").read_text())
+    patterned=copy.deepcopy(plain)
+    patterned["materials"][0]["procedural"]=dict(type="marble",seed=9,scale=12,color_strength=.7,
+        secondary_color=[.1,.2,.4],bump_strength=.0007)
+    domain=copy.deepcopy(patterned)
+    domain["materials"][0]["material_from_object"]=[2,0,0,0,0,2,0,0,0,0,2,0,.1,0,0,1]
+    changed=copy.deepcopy(domain)
+    changed["materials"][0]["procedural"].update(seed=17,scale=20,bump_strength=.001)
+    states=[("plain",plain),("add procedural material",patterned),("change material domain",domain),
+            ("change pattern and bump",changed),("undo pattern edit",domain),("redo pattern edit",changed)]
+    actions=[dict(label=label,scene=scene,visible_scene=scene,geometry_unchanged=True)
+             for label,scene in states]
+    study.receipt["appearance_replays"]=[]
+    for mode,acceleration in (("analytic","root-far"),("hybrid","unclamped")):
+        flags=["--surface-trace",mode,"--csg-evaluation","pruned","--region-axis","64",
+               "--acceleration-variant",acceleration,"--width","320","--height","180",
+               "--authored-scene",str(args.output/"selection-initial.json")]
+        for control in ("general","automatic"):
+            path=args.output/f"{mode}-{control}.json"
+            manifest=copy.deepcopy(actions)
+            for a in manifest: a["expect_shader"]="general" if control=="general" else "lit-single-material"
+            save(path,dict(format="cubey.sdf.action-study",version=1,actions=manifest,capture_frames=True))
+            result=args.output/f"{mode}-{control}-receipt.json"
+            study.run(f"{mode}-{control}",flags+["--comparison-actions",str(path),
+                      "--comparison-output",str(result)],control,len(actions),True)
+        general=json.loads((args.output/f"{mode}-general-receipt.json").read_text())["actions"]
+        automatic=json.loads((args.output/f"{mode}-automatic-receipt.json").read_text())["actions"]
+        for a,b in zip(general,automatic):
+            if digest(Path(a["frame_png"]))!=digest(Path(b["frame_png"])):
+                raise RuntimeError("appearance GPU pixel parity failed: "+a["label"])
+            study.receipt["appearance_replays"].append(dict(mode=mode,label=a["label"],identical=True))
+        if digest(Path(automatic[0]["frame_png"]))==digest(Path(automatic[3]["frame_png"])):
+            raise RuntimeError("procedural appearance test did not change rendered pixels")
+    for flags,label in ((["--ao","--clay","--ground","--occluder","--shadows","2"],"ao-clay-ground-occluder-soft-shadow"),
+                        (["--no-material-fast-path"],"disabled-shortcut"),
+                        (["--lighting","material-furnace"],"material-furnace")):
+        study.pair(label,["--width","320","--height","180","--authored-scene",str(args.output/"selection-initial.json"),
+                   *route_flags(ROUTES[-1]),*flags],1 if label=="disabled-shortcut" else 2)
+    study.pair("clouded-glass",["--config","projects/sdf/presets/environment-study/sphere-glass-sunset.json",
+               "--width","320","--height","180",*route_flags(ROUTES[-1]),"--clouds"],2)
+    study.receipt["complete"]=True;save(args.output/"qualification.json",study.receipt)
 
 
 def timing(args):
@@ -245,13 +288,13 @@ def timing(args):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("phase",choices=["qualify","timing"])
+    parser.add_argument("phase",choices=["qualify","appearance","timing"])
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--qualification",type=Path)
     parser.add_argument("--binary",type=Path,default=ROOT/"build/release/projects/sdf/sdf")
     args=parser.parse_args();args.binary=args.binary.resolve();args.output=args.output.resolve()
     args.output.mkdir(parents=True,exist_ok=False)
-    (qualify if args.phase=="qualify" else timing)(args)
+    {"qualify":qualify,"appearance":appearance,"timing":timing}[args.phase](args)
 
 
 if __name__=="__main__":main()

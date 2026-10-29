@@ -55,6 +55,12 @@ class App {
                 throw std::invalid_argument("action study requires authored static headless frames "
                                             "matching its bounded manifest and a receipt path");
             study_receipt_ = nlohmann::json::array();
+            if ((!config_.common.headless_render_only &&
+                 config_.common.capture_mode != CaptureMode::Video && config_.common.frames != 1) ||
+                (study_actions_.value("capture_frames", false) &&
+                 !config_.common.headless_render_only))
+                throw std::invalid_argument("multi-frame action studies require render-only or "
+                                            "video; per-frame PNG readback requires render-only");
         }
         if (!config_.workshop.empty())
             catalog_ = asset::load_material_catalog(
@@ -189,16 +195,27 @@ class App {
                 initialize(ctx.device(), ctx.gpu(), ctx.render_target(),
                            host::headless_capture_frame_slot_count(config_.common));
             };
-            callbacks.record_frame =
-                [&](host::HeadlessPngContext& ctx, const host::HeadlessCaptureFrame& frame,
-                    VkCommandBuffer command, const host::HeadlessRenderTarget& target) {
-                    auto view = config_;
-                    view.debug = timeline_.debug;
-                    renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
-                                     config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
-                                     orbit_.distance(), ctx.profile_recorder(), frame.index,
-                                     current_cutter(), timeline_.cutter_opacity, preview_cutters());
-                };
+            callbacks.record_frame = [&](host::HeadlessPngContext& ctx,
+                                         const host::HeadlessCaptureFrame& frame,
+                                         VkCommandBuffer command,
+                                         const host::HeadlessRenderTarget& target) {
+                auto view = config_;
+                view.debug = timeline_.debug;
+                renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
+                                 config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
+                                 orbit_.distance(), ctx.profile_recorder(), frame.index,
+                                 current_cutter(), timeline_.cutter_opacity, preview_cutters());
+                if (!study_actions_.is_null() && study_actions_.value("capture_frames", false)) {
+                    vulkan::transition_image_layout(
+                        command,
+                        vulkan::finish_color_attachment_for_readback_transition(target.image));
+                    // This queues behind the current owner job's submission.
+                    // Queue the copy while the host's slot image is still alive,
+                    // including the final frame whose slot dies before shutdown.
+                    study_readback_ = runtime_.gpu().enqueue_rgba8_image_readback(
+                        target.image, target.extent, "study completed frame pixels");
+                }
+            };
             callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
                                          const host::HeadlessCaptureFrame& frame) {
                 if (!study_actions_.is_null()) {
@@ -582,6 +599,22 @@ class App {
                                                       *pending_study_action_)
                 .count();
         pending_study_action_.reset();
+        if (study_actions_.value("capture_frames", false)) {
+            if (!study_readback_)
+                throw std::runtime_error("action frame has no rendered target");
+            auto pixels = runtime_.gpu().take_completed_readback(*study_readback_);
+            auto path = config_.comparison_output;
+            path.replace_extension("frame-" + std::to_string(row.at("frame").get<unsigned>()) +
+                                   ".png");
+            auto capture =
+                runtime_.context().capture_queue().enqueue_png({.output_path = path,
+                                                                .width = pixels.width,
+                                                                .height = pixels.height,
+                                                                .rgba8 = std::move(pixels.rgba8)});
+            capture.finish();
+            row["frame_png"] = path.string();
+            study_readback_.reset();
+        }
     }
     void apply_study_action(vulkan::Device& device, std::uint64_t frame) {
         const auto& action = study_actions_.at("actions").at(frame);
@@ -1142,6 +1175,7 @@ class App {
     std::unique_ptr<GpuRegionPrograms> regions_;
     std::uint64_t region_builds_ = 0;
     nlohmann::json study_actions_, study_receipt_;
+    std::optional<ProjectGpuReadbackTicket> study_readback_;
     std::string study_fault_;
     std::optional<std::chrono::steady_clock::time_point> pending_study_action_;
     bool geometry_initialized_ = false;
