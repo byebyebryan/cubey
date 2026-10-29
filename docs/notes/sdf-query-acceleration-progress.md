@@ -72,3 +72,48 @@ retained as failed diagnostics. One attempt launched an older executable after
 a failed build while its shader files had already changed; Vulkan validation
 rejected the missing descriptor binding. It is excluded. Subsequent native
 execution follows a successful build and clean validation.
+
+## Guarded primary candidates
+
+Three explicit controls are implemented: `--query-stepping relaxed-1.2`,
+`relaxed-1.5` and `adaptive-0.5`; `ordinary` remains the default. They require
+static headless analytic/pruned A64 root-far atmosphere with shadow or combined
+source optimization. Native admission stays on the single-material lit route;
+Robot and debug/general fallbacks retain the original shader. Independent
+compute fixtures exercise the candidate even with their multi-material test
+documents. Normals and all secondary rays retain the current evaluator/tracer.
+
+The loop keeps a certified anchor and tests overlapping zero-free radii before
+accepting a speculative endpoint. It subtracts the existing authored/prepared
+arithmetic guard plus a point-reconstruction margin; the overlap comparison
+also reserves rounding error. A far certificate can certify an endpoint, but
+never becomes a signed field sample. Rejections resume the ordinary advance
+from the anchor and consume the shared 4,096-iteration budget. Proposals stop
+at the root/ray endpoint. Existing inside-exit, hit and normal constants remain.
+
+Fixed controls increased sampled Guardian primary queries: roughly 1–4% for
+1.2 and 15–20% for 1.5. This justified one bounded adaptive predictor trial:
+absolute-field secants from consecutive accepted exact samples, smoothing 0.5,
+factor constrained to [1, 1.8]. Cached advances and rejection reset its state.
+It reduces sampled primary queries by 7.28% / 9.60% / 8.97% and primary CSG
+visits by 4.22% / 10.81% / 9.74% across preset/side/rear. These are counters,
+not frame-time gains. This is a Cubey adaptation of the researched predictor,
+not an assertion of identical donor stopping/inside/fallback behavior.
+
+Each candidate passes the frozen 155 checks, 21 cone checks and 12 new paired
+thin/oblique/inside checks separately on A and A+B. A controlled kernel using
+the actual tracing loop adds 21 tests for a tempting later hit after a thin
+surface, inside exit, exact ray endpoint, covered miss, cached-to-exact
+transition, nonfinite diagnostics and exhaustion at exactly 4,096 iterations.
+Fixed candidates demonstrably reject the tempting later endpoint. Large depth
+maxima in the fixture summaries belong to declared tangent brackets; regular
+depth and all other tolerances remain frozen.
+
+Full-scene replay qualification passes all twelve cases per candidate. Forty-eight
+fresh uninstrumented full-HD captures cover ordinary and all three candidates,
+both A and A+B, all Guardian/Robot views. Robot is byte-identical throughout.
+Guardian changes a few hundred to a few thousand pixels. Some differences
+reach 111–139 output levels at shadow decisions, despite the numerical geometry
+contracts passing. No goldens are changed, and these observations do not pass
+automatic visual adoption. Timings are a research comparison; numerical gates,
+image review and default adoption remain separate.

@@ -272,6 +272,15 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                                 ? (prepared_candidate_ ? "query_validate_combined.frag.spv"
                                                        : "query_validate_shadow.frag.spv")
                                 : "query_validate_reference.frag.spv"));
+            if (single_material && config.query_stepping != "ordinary") {
+                const std::string prefix(query_step_prefix(config));
+                const std::string selected =
+                    query_workload_
+                        ? (prepared_candidate_ ? "query_validate_combined.frag.spv"
+                                               : "query_validate_shadow.frag.spv")
+                        : (prepared_candidate_ ? "combined_lit_" : "shadow_lit_") + fragment;
+                files[1] = render::fragment_shader_file(path / (prefix + selected));
+            }
             const render::ShaderProgram program(device, files);
             std::vector<VkPipelineShaderStageCreateInfo> lit_stages(program.stages().begin(),
                                                                     program.stages().end());
@@ -296,12 +305,13 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         const bool single = shader_route(config) == SourceShaderRoute::LitSingleMaterial;
         const std::string variant =
             single ? (prepared_candidate_ ? "combined" : "shadow") : "reference";
+        const std::string prefix = single ? std::string(query_step_prefix(config)) : "";
         const std::array<VkPushConstantRange, 1> push{
             {{VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(Camera)}}};
         query_workload_pipeline_.emplace(
             device, render::ComputePipelineResourceConfig{
                         .shader_stage = render::compute_shader_file(
-                            path / ("query_workload_" + variant + ".comp.spv")),
+                            path / (prefix + "query_workload_" + variant + ".comp.spv")),
                         .descriptor_set_layouts = layouts,
                         .push_constants = push});
         const std::array uv_stages{render::vertex_shader_file(path / "sdf.vert.spv"),
@@ -642,6 +652,12 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     if (profile) {
         profile->record_metric(frame_index, "sdf.shader_selection", "route",
                                static_cast<unsigned>(route));
+        profile->record_metric(
+            frame_index, "sdf.shader_selection", "guarded_stepping",
+            route != SourceShaderRoute::LitSingleMaterial || config.query_stepping == "ordinary" ? 0
+            : config.query_stepping == "relaxed-1.2" ? 12
+            : config.query_stepping == "relaxed-1.5" ? 15
+                                                     : 50);
         profile->record_metric(frame_index, "sdf.shader_selection", "published_material_count",
                                static_cast<double>(published_material_count_));
         profile->record_metric(frame_index, "sdf.shader_selection", "pipeline_count",

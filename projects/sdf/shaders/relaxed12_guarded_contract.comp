@@ -1,0 +1,4 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#define SDF_RELAX_OMEGA 1.2
+#include "guarded_contract.glsl"

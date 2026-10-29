@@ -27,6 +27,9 @@ void main() {
         (lighting.quality.w-camera.eye.y)/direction.y : 1e6;
     if(groundT<0.0) groundT=1e6;
     Hit hit=trace(camera.eye.xyz,direction,groundT);
+#ifdef SDF_GUARDED_STEPS
+    guardedPrimary=false;
+#endif
     queryEndRun();
     vec3 normal=vec3(0),radiance=vec3(0);
     bool exhausted=hit.status==2;
@@ -49,5 +52,8 @@ void main() {
     result.shadingNormal=vec4(queryShadingNormal,0);
     result.identity=uvec4(pixel,id,0x51575231u);
     result.reserved[0]=uvec4(0);result.reserved[1]=uvec4(0);
+#ifdef SDF_GUARDED_STEPS
+    result.reserved[0]=guardedStats;
+#endif
     queryWork[id]=result;
 }

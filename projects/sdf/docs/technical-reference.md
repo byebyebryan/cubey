@@ -22,6 +22,17 @@ source budgets and serialization stay fixed.
 The [pinned pruning donor and adapter](../third_party/lipschitz_pruning/README.md)
 retain source provenance, MIT attribution and the isolated qualification scope.
 
+The [guarded-primary study](../../../docs/notes/sdf-query-acceleration-progress.md)
+adds private `--query-stepping ordinary|relaxed-1.2|relaxed-1.5|adaptive-0.5`
+controls. `ordinary` remains the default. Other values require static headless
+analytic/pruned A64 root-far atmosphere with `--source-optimization shadow` or
+`combined`; only the eligible one-material lit shader uses the candidate.
+They are numerical/performance experiments, with separate image-adoption limits.
+`--query-workload-output FILE` is a one-frame private replay/validation diagnostic
+on that same route, without AO, clouds or occluder overlays. Its counts are not
+GPU time attribution; its sampled buffer and raster-UV image total below 32 MiB
+at full HD. Unsupported configurations and larger payloads are rejected.
+
 ## Native material presentation recipes
 
 The [public material showcase](https://dev.byebyebryan.com/cubey/demos/materials/)

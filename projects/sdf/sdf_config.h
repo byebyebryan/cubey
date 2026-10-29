@@ -24,6 +24,7 @@ struct SdfConfig {
     std::string frame_profile = "off";
     std::string source_shaders = "automatic";
     std::string source_optimization = "automatic";
+    std::string query_stepping = "ordinary";
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -113,6 +114,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         option("source-optimization", "Source query optimization control", config::ValueType::Enum);
     source_optimization.enum_values = {"automatic", "reference", "shadow", "prepared-cones",
                                        "combined"};
+    auto query_stepping =
+        option("query-stepping", "Private guarded primary-step study", config::ValueType::Enum);
+    query_stepping.enum_values = {"ordinary", "relaxed-1.2", "relaxed-1.5", "adaptive-0.5"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -197,6 +201,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(frame_profile, c.frame_profile)
         .bind(source_shaders, c.source_shaders)
         .bind(source_optimization, c.source_optimization)
+        .bind(query_stepping, c.query_stepping)
         .bind(option("query-workload-output", "Private selected-query replay payload",
                      config::ValueType::Path),
               c.query_workload_output)

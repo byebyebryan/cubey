@@ -121,4 +121,17 @@ int main() {
     rejected();
     config.comparison_input.clear();
     validate_source_optimization(config);
+    config.query_workload_output.clear();
+    for (const auto step : {"relaxed-1.2", "relaxed-1.5", "adaptive-0.5"}) {
+        config.query_stepping = step;
+        validate_source_optimization(config);
+        config.surface_trace = "hybrid";
+        rejected();
+        config.surface_trace = "analytic";
+        config.common.headless = false;
+        rejected();
+        config.common.headless = true;
+    }
+    config.query_stepping = "unknown";
+    rejected();
 }

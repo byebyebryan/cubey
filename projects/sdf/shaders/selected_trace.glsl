@@ -64,4 +64,11 @@ float hybridBound(vec3 p,vec3 direction) {
 }
 #define SDF_STEP_BOUND hybridBound
 #endif
+#ifdef SDF_GUARDED_STEPS
+#define trace referenceTrace
 #include "source_trace.glsl"
+#undef trace
+#include "guarded_trace.glsl"
+#else
+#include "source_trace.glsl"
+#endif

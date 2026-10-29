@@ -9,6 +9,31 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp
     SHADERS
+        shaders/relaxed12_guarded_contract.comp shaders/relaxed15_guarded_contract.comp shaders/adaptive50_guarded_contract.comp
+        shaders/adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag
+        shaders/adaptive50_prepared_root_far_comparison_analytic_pruned.comp
+        shaders/adaptive50_query_validate_combined.frag
+        shaders/adaptive50_query_validate_shadow.frag
+        shaders/adaptive50_query_workload_combined.comp
+        shaders/adaptive50_query_workload_shadow.comp
+        shaders/adaptive50_root_far_comparison_analytic_pruned.comp
+        shaders/adaptive50_shadow_lit_root_far_sdf_analytic_pruned.frag
+        shaders/relaxed12_shadow_lit_root_far_sdf_analytic_pruned.frag
+        shaders/relaxed12_combined_lit_root_far_sdf_analytic_pruned.frag
+        shaders/relaxed12_query_validate_shadow.frag
+        shaders/relaxed12_query_validate_combined.frag
+        shaders/relaxed12_query_workload_shadow.comp
+        shaders/relaxed12_query_workload_combined.comp
+        shaders/relaxed12_root_far_comparison_analytic_pruned.comp
+        shaders/relaxed12_prepared_root_far_comparison_analytic_pruned.comp
+        shaders/relaxed15_shadow_lit_root_far_sdf_analytic_pruned.frag
+        shaders/relaxed15_combined_lit_root_far_sdf_analytic_pruned.frag
+        shaders/relaxed15_query_validate_shadow.frag
+        shaders/relaxed15_query_validate_combined.frag
+        shaders/relaxed15_query_workload_shadow.comp
+        shaders/relaxed15_query_workload_combined.comp
+        shaders/relaxed15_root_far_comparison_analytic_pruned.comp
+        shaders/relaxed15_prepared_root_far_comparison_analytic_pruned.comp
         shaders/query_workload_shadow.comp shaders/query_workload_combined.comp shaders/query_workload_reference.comp
         shaders/query_camera.frag
         shaders/query_validate_shadow.frag shaders/query_validate_combined.frag shaders/query_validate_reference.frag
@@ -117,6 +142,8 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_guarded_contract tools/guarded_contract.cpp)
+    target_link_libraries(cubey_project_sdf_guarded_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_query_pruning_pilot tools/query_pruning_pilot.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
     target_link_libraries(cubey_project_sdf_query_pruning_pilot PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_shadow_contract tools/shadow_contract.cpp)

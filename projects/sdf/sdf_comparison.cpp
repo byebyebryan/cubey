@@ -1,8 +1,9 @@
 #include "sdf_comparison.h"
 #include "sdf_authored.h"
 #include "sdf_field.h"
-#include "sdf_regions.h"
 #include "sdf_prepared_cones.h"
+#include "sdf_regions.h"
+#include "sdf_shader_selection.h"
 #include <chrono>
 #include <cstring>
 #include <cubey/asset/file_digest.h>
@@ -217,7 +218,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
     }
     Json receipt{{"format", "cubey.sdf.tracing-results"}, {"version", 1}, {"cases", Json::array()}};
     const bool workload = manifest.value("workload", false);
-    const bool prepared_cones = config.source_optimization == "prepared-cones" || config.source_optimization == "combined";
+    const bool prepared_cones =
+        config.source_optimization == "prepared-cones" || config.source_optimization == "combined";
     if (prepared_cones && workload)
         throw std::invalid_argument("prepared-cones queries do not support workload counters");
     const unsigned work_stride = config.acceleration_variant != "off" ? 64U : 52U;
@@ -264,10 +266,15 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
                          : config.acceleration_variant == "root-far"
                              ? "root_far_"
                              : config.acceleration_variant + "_");
-    if (prepared_cones) shader.insert(0,"prepared_");
-    const auto query_shader_bytes = read_binary_file(std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader);
+    if (prepared_cones)
+        shader.insert(0, "prepared_");
+    if (config.query_stepping != "ordinary")
+        shader.insert(0, query_step_prefix(config));
+    const auto query_shader_bytes =
+        read_binary_file(std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader);
     receipt["query_shader"] = shader;
-    receipt["query_shader_sha256"] = asset::sha256_hex(std::as_bytes(std::span(query_shader_bytes)));
+    receipt["query_shader_sha256"] =
+        asset::sha256_hex(std::as_bytes(std::span(query_shader_bytes)));
     receipt["prepared_cones"] = prepared_cones;
     receipt["source_optimization"] = config.source_optimization;
     render::ComputePipelineResource pipeline(
@@ -332,7 +339,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         std::unique_ptr<vulkan::Buffer> cone_buffer;
         if (prepared_cones) {
             auto cones = prepare_cones(scene);
-            if (cones.entries.empty()) cones.entries.emplace_back(0);
+            if (cones.entries.empty())
+                cones.entries.emplace_back(0);
             cone_buffer = std::make_unique<vulkan::Buffer>(gpu.upload_device_buffer<math::Vec4>(
                 cones.entries, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "study prepared cones"));
         }
@@ -365,7 +373,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         writes.storage_buffer(descriptors.set(), 3, program_buffer.handle(), program_buffer.size());
         writes.storage_buffer(descriptors.set(), 15, output.handle(), output.size());
         if (cone_buffer)
-            writes.storage_buffer(descriptors.set(),19,cone_buffer->handle(),cone_buffer->size());
+            writes.storage_buffer(descriptors.set(), 19, cone_buffer->handle(),
+                                  cone_buffer->size());
         if (work_output)
             writes.storage_buffer(descriptors.set(), 18, work_output->handle(),
                                   work_output->size());

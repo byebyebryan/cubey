@@ -2,11 +2,33 @@
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
+std::string_view query_step_prefix(const SdfConfig& config) {
+    if (config.query_stepping == "ordinary")
+        return "";
+    if (config.query_stepping == "relaxed-1.2")
+        return "relaxed12_";
+    if (config.query_stepping == "relaxed-1.5")
+        return "relaxed15_";
+    if (config.query_stepping == "adaptive-0.5")
+        return "adaptive50_";
+    throw std::invalid_argument("unknown query stepping mode");
+}
 bool source_shader_variants_enabled(const SdfConfig& config) {
     return config.surface_trace != "sampled" && config.source_shaders == "automatic" &&
            config.comparison_stage == "off" && config.frame_profile == "off";
 }
 void validate_source_optimization(const SdfConfig& config) {
+    static_cast<void>(query_step_prefix(config));
+    if (config.query_stepping != "ordinary" &&
+        (!config.common.headless || config.surface_trace != "analytic" ||
+         config.csg_evaluation != "pruned" || config.region_axis != 64 ||
+         config.acceleration_variant != "root-far" || config.timeline.motion != "static" ||
+         config.lighting != "atmosphere" || config.source_shaders != "automatic" ||
+         config.frame_profile != "off" || config.comparison_stage != "off" ||
+         (config.source_optimization != "shadow" && config.source_optimization != "combined")))
+        throw std::invalid_argument(
+            "guarded stepping requires static headless analytic A64 root-far "
+            "atmosphere shadow/combined study");
     if (!config.query_workload_output.empty() &&
         (!config.common.headless || config.common.frames != 1 ||
          config.surface_trace != "analytic" || config.csg_evaluation != "pruned" ||

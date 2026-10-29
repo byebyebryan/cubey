@@ -99,6 +99,9 @@ class Study:
                     "--profile-output", str(prefix), "--profile-warmup-frames", "0"]
         if getattr(self.args, "source_optimization", None):
             command += ["--source-optimization", self.args.source_optimization if shader == "automatic" and name != "sampled-default" else "reference"]
+        step=getattr(self.args,"query_stepping","ordinary")
+        if step!="ordinary" and shader=="automatic" and getattr(self.args,"source_optimization",None) in ("shadow","combined"):
+            command += ["--query-stepping",step]
         command += ["--headless-render-only"] if render_only else ["--output", str(prefix.with_suffix(".png"))]
         if self.args.resume and "--comparison-actions" not in flags and not render_only:
             old=next((r for r in self.receipt["runs"] if r["name"]==name),None)

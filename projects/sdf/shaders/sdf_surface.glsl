@@ -107,6 +107,9 @@ void main() {
         (lighting.quality.w-camera.eye.y)/direction.y : 1e6;
     if (groundT<0.0) groundT=1e6;
     Hit hit=trace(camera.eye.xyz,direction,groundT);
+#ifdef SDF_GUARDED_STEPS
+    guardedPrimary=false;
+#endif
 #ifdef SDF_QUERY_VALIDATE
     queryNativeHit=vec4(hit.t,float(hit.status),float(hit.steps),0);
 #endif

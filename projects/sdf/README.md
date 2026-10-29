@@ -179,6 +179,11 @@ analytic/pruned A64 root-far studies; they preserve the source/history format
 and existing geometry tolerances. They do not enable windowed root-far or
 change the sampled/full default.
 
+The [guarded-step investigation](../../docs/notes/sdf-query-acceleration-progress.md)
+retains further explicit headless query studies. Their numerical qualification,
+frame-time measurements and visual-adoption limits are separate from the
+automatic behavior above.
+
 - [Shared material and optical contract](../../docs/architecture/material-recipes.md)
 - [SDF thread closeout and evidence map](../../docs/notes/sdf-thread-closeout.md)
 - [Accepted Guardian closeout](../../docs/notes/sdf-guardian-closeout.md)
