@@ -106,7 +106,9 @@ int main(int argc, char** argv) {
         if (!getProperties || !getStatistics || !getIR)
             throw std::runtime_error("missing executable diagnostic entry point");
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        for (unsigned i = 0; i <= 17; ++i) {
+        // Prepared source pipelines read binding 19. Keep the diagnostic layout
+        // compatible with the actual renderer before querying compiler statistics.
+        for (unsigned i = 0; i <= 19; ++i) {
             const auto type = i == 2 ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER
                               : i == 1 || (i >= 8 && i <= 12)
                                   ? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER

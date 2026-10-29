@@ -153,8 +153,13 @@ def image_difference(a,b):
     aa,bb=raw
     if len(aa)!=len(bb):raise RuntimeError('image extent mismatch')
     diffs=[abs(x-y) for x,y in zip(aa,bb)]
+    maximum=max(diffs);where=diffs.index(maximum)//3
+    width,height=struct.unpack('>II',a.read_bytes()[16:24])
     return dict(changed_pixels=sum(aa[i:i+3]!=bb[i:i+3] for i in range(0,len(aa),3)),
-        max_channel=max(diffs),mean_channel=sum(diffs)/len(diffs),
+        max_channel=maximum,mean_channel=sum(diffs)/len(diffs),
+        pixels_over_1=sum(max(diffs[i:i+3])>1 for i in range(0,len(diffs),3)),
+        pixels_over_8=sum(max(diffs[i:i+3])>8 for i in range(0,len(diffs),3)),
+        worst_pixel=dict(x=where%width,y=where//width,control=list(aa[where*3:where*3+3]),candidate=list(bb[where*3:where*3+3])),
         magenta_pixels=sum(aa[i:i+3]==bytes([241,0,241]) for i in range(0,len(aa),3)),
         candidate_magenta_pixels=sum(bb[i:i+3]==bytes([241,0,241]) for i in range(0,len(bb),3)))
 
@@ -239,9 +244,34 @@ def publication(args):
     history(args)
 
 
+def shadow_review(args):
+    capture_receipt=json.loads((args.qualification/'captures.json').read_text())
+    if not capture_receipt.get('complete') or capture_receipt['binary_sha256']!=digest(args.binary):
+        raise RuntimeError('shadow review requires current-binary full captures')
+    receipt=dict(metadata(args.binary),runner_sha256=digest(Path(__file__)),runs=[],
+        scope='Lighting ablation explains image differences; not a performance or visual-adoption result')
+    for view in ['preset','side','rear']:
+        control=None
+        for step in STEPS:
+            label=step.replace('.', '_');prefix=args.output/f'{view}-{label}'
+            image=prefix.with_suffix('.png')
+            command=native_command(args,'guardian',view,'combined',step)+['--shadows','0','--frames','1','--output',str(image)]
+            invoke(command,prefix,timeout=180)
+            if step=='ordinary':control=image
+            no_shadows=image_difference(control,image)
+            a=args.qualification/f'guardian-{view}-combined-ordinary.png'
+            b=args.qualification/f'guardian-{view}-combined-{label}.png'
+            shadows=image_difference(a,b)
+            receipt['runs'].append(dict(view=view,step=step,command=command,image_sha256=digest(image),
+                no_shadows=no_shadows,with_shadows=shadows))
+            save(args.output/'shadow-review.json',receipt)
+            print(view,step,'max delta',shadows['max_channel'],'without shadows',no_shadows['max_channel'],flush=True)
+    receipt['complete']=True;save(args.output/'shadow-review.json',receipt)
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase',choices=['workload','contracts','capture','timing','publication'])
+    p.add_argument('phase',choices=['workload','contracts','capture','timing','publication','shadow-review'])
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--binary',type=Path,default=ROOT/'build/release/projects/sdf/sdf')
     p.add_argument('--query-stepping',default='ordinary',choices=['ordinary','relaxed-1.2','relaxed-1.5','adaptive-0.5'])
@@ -251,7 +281,7 @@ def main():
     p.add_argument('--controlled',type=Path)
     args=p.parse_args();args.binary=args.binary.resolve();args.output=args.output.resolve()
     args.output.mkdir(parents=True,exist_ok=False)
-    dict(workload=workload,contracts=step_contracts,capture=capture,timing=timing,publication=publication)[args.phase](args)
+    dict(workload=workload,contracts=step_contracts,capture=capture,timing=timing,publication=publication,**{'shadow-review':shadow_review})[args.phase](args)
 
 
 if __name__=='__main__':main()

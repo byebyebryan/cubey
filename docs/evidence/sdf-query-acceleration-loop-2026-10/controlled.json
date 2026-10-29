@@ -1,0 +1,237 @@
+{
+  "cases": [
+    {
+      "accepted": 4095,
+      "index": 0,
+      "passed": true,
+      "proposed": 4096,
+      "rejected": 0,
+      "status": 2.0,
+      "steps": 4096.0,
+      "t": 0.1512557566165924,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 0,
+      "index": 1,
+      "passed": true,
+      "proposed": 1,
+      "rejected": 1,
+      "status": 1.0,
+      "steps": 3.0,
+      "t": 0.30000001192092896,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 0,
+      "index": 2,
+      "passed": true,
+      "proposed": 1,
+      "rejected": 1,
+      "status": 1.0,
+      "steps": 3.0,
+      "t": 0.20000000298023224,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 0,
+      "index": 3,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 1.0,
+      "steps": 2.0,
+      "t": 0.20000000298023224,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 0,
+      "index": 4,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 0.0,
+      "steps": 1.0,
+      "t": 0.0,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 0,
+      "index": 5,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 2.0,
+      "steps": 1.0,
+      "t": 0.0,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 0,
+      "index": 6,
+      "passed": true,
+      "proposed": 1,
+      "rejected": 1,
+      "status": 1.0,
+      "steps": 5.0,
+      "t": 0.5,
+      "variant": "relaxed12"
+    },
+    {
+      "accepted": 4095,
+      "index": 0,
+      "passed": true,
+      "proposed": 4096,
+      "rejected": 0,
+      "status": 2.0,
+      "steps": 4096.0,
+      "t": 0.18862886726856232,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 0,
+      "index": 1,
+      "passed": true,
+      "proposed": 1,
+      "rejected": 1,
+      "status": 1.0,
+      "steps": 3.0,
+      "t": 0.30000001192092896,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 0,
+      "index": 2,
+      "passed": true,
+      "proposed": 1,
+      "rejected": 1,
+      "status": 1.0,
+      "steps": 3.0,
+      "t": 0.20000000298023224,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 0,
+      "index": 3,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 1.0,
+      "steps": 2.0,
+      "t": 0.20000000298023224,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 0,
+      "index": 4,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 0.0,
+      "steps": 1.0,
+      "t": 0.0,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 0,
+      "index": 5,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 2.0,
+      "steps": 1.0,
+      "t": 0.0,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 0,
+      "index": 6,
+      "passed": true,
+      "proposed": 1,
+      "rejected": 1,
+      "status": 1.0,
+      "steps": 5.0,
+      "t": 0.5,
+      "variant": "relaxed15"
+    },
+    {
+      "accepted": 4094,
+      "index": 0,
+      "passed": true,
+      "proposed": 4095,
+      "rejected": 0,
+      "status": 2.0,
+      "steps": 4096.0,
+      "t": 0.22578579187393188,
+      "variant": "adaptive50"
+    },
+    {
+      "accepted": 0,
+      "index": 1,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 1.0,
+      "steps": 2.0,
+      "t": 0.30000001192092896,
+      "variant": "adaptive50"
+    },
+    {
+      "accepted": 0,
+      "index": 2,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 1.0,
+      "steps": 2.0,
+      "t": 0.20000000298023224,
+      "variant": "adaptive50"
+    },
+    {
+      "accepted": 0,
+      "index": 3,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 1.0,
+      "steps": 2.0,
+      "t": 0.20000000298023224,
+      "variant": "adaptive50"
+    },
+    {
+      "accepted": 0,
+      "index": 4,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 0.0,
+      "steps": 1.0,
+      "t": 0.0,
+      "variant": "adaptive50"
+    },
+    {
+      "accepted": 0,
+      "index": 5,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 2.0,
+      "steps": 1.0,
+      "t": 0.0,
+      "variant": "adaptive50"
+    },
+    {
+      "accepted": 0,
+      "index": 6,
+      "passed": true,
+      "proposed": 0,
+      "rejected": 0,
+      "status": 1.0,
+      "steps": 4.0,
+      "t": 0.5,
+      "variant": "adaptive50"
+    }
+  ],
+  "passed": true,
+  "scope": "Actual guarded loop with controlled 1-Lipschitz fields"
+}

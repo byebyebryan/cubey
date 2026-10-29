@@ -1,0 +1,1019 @@
+{
+  "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+  "runner_sha256": "6011dc257691dcd0e31e9e1cc42811f425f377fb55553a8d2372ea329cd9d18c",
+  "source_head": "603f073af5e0927ab324b7ca7bed03b4770596e5",
+  "source_diff_sha256": "2e3c177d16b3871da19418ea70e53d1c49fa64e273044093ffa1527b2776eae3",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "runs": [
+    {
+      "view": "preset",
+      "step": "ordinary",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "ordinary",
+        "--yaw",
+        "0.4",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/preset-ordinary.png"
+      ],
+      "image_sha256": "f76b75f8f8d55e4dcf856a61b8cb9feb60ae86a1993653bf332ceff570fe572b",
+      "no_shadows": {
+        "changed_pixels": 0,
+        "max_channel": 0,
+        "mean_channel": 0.0,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 0,
+          "y": 0,
+          "control": [
+            213,
+            231,
+            236
+          ],
+          "candidate": [
+            213,
+            231,
+            236
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 0,
+        "max_channel": 0,
+        "mean_channel": 0.0,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 0,
+          "y": 0,
+          "control": [
+            213,
+            231,
+            236
+          ],
+          "candidate": [
+            213,
+            231,
+            236
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "preset",
+      "step": "relaxed-1.2",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "relaxed-1.2",
+        "--yaw",
+        "0.4",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/preset-relaxed-1_2.png"
+      ],
+      "image_sha256": "5c2e2c7617b07619320019de81174ba45299e7f7fa0dcedbd7436b1ffdd30324",
+      "no_shadows": {
+        "changed_pixels": 4135,
+        "max_channel": 25,
+        "mean_channel": 0.0007751414609053498,
+        "pixels_over_1": 24,
+        "pixels_over_8": 2,
+        "worst_pixel": {
+          "x": 814,
+          "y": 612,
+          "control": [
+            95,
+            88,
+            79
+          ],
+          "candidate": [
+            70,
+            66,
+            62
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 3776,
+        "max_channel": 131,
+        "mean_channel": 0.0008407278806584362,
+        "pixels_over_1": 20,
+        "pixels_over_8": 6,
+        "worst_pixel": {
+          "x": 957,
+          "y": 648,
+          "control": [
+            176,
+            167,
+            152
+          ],
+          "candidate": [
+            45,
+            51,
+            62
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "preset",
+      "step": "relaxed-1.5",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "relaxed-1.5",
+        "--yaw",
+        "0.4",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/preset-relaxed-1_5.png"
+      ],
+      "image_sha256": "95d758fc56284ff38bd92926a15af0b91c89c2cc27b030622bf277bab7c1a7f7",
+      "no_shadows": {
+        "changed_pixels": 1717,
+        "max_channel": 21,
+        "mean_channel": 0.0003374164094650206,
+        "pixels_over_1": 10,
+        "pixels_over_8": 1,
+        "worst_pixel": {
+          "x": 933,
+          "y": 627,
+          "control": [
+            49,
+            47,
+            46
+          ],
+          "candidate": [
+            28,
+            29,
+            32
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 1416,
+        "max_channel": 131,
+        "mean_channel": 0.0003444894547325103,
+        "pixels_over_1": 6,
+        "pixels_over_8": 3,
+        "worst_pixel": {
+          "x": 957,
+          "y": 648,
+          "control": [
+            176,
+            167,
+            152
+          ],
+          "candidate": [
+            45,
+            51,
+            62
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "preset",
+      "step": "adaptive-0.5",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "adaptive-0.5",
+        "--yaw",
+        "0.4",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/preset-adaptive-0_5.png"
+      ],
+      "image_sha256": "e4b9adc6c178b8e4d3f3d45df3645f96b4eb64b3011fb4b232a98723544a1d2c",
+      "no_shadows": {
+        "changed_pixels": 4063,
+        "max_channel": 9,
+        "mean_channel": 0.0007527970679012346,
+        "pixels_over_1": 23,
+        "pixels_over_8": 1,
+        "worst_pixel": {
+          "x": 820,
+          "y": 612,
+          "control": [
+            136,
+            126,
+            112
+          ],
+          "candidate": [
+            127,
+            117,
+            104
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 3750,
+        "max_channel": 131,
+        "mean_channel": 0.000752636316872428,
+        "pixels_over_1": 18,
+        "pixels_over_8": 3,
+        "worst_pixel": {
+          "x": 957,
+          "y": 648,
+          "control": [
+            176,
+            167,
+            152
+          ],
+          "candidate": [
+            45,
+            51,
+            62
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "side",
+      "step": "ordinary",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "ordinary",
+        "--yaw",
+        "1.9707963267948965",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/side-ordinary.png"
+      ],
+      "image_sha256": "e4cdfc39104b6193a2885b06cb18a1ffbff94c1fa779ff8ba82de58290cf545e",
+      "no_shadows": {
+        "changed_pixels": 0,
+        "max_channel": 0,
+        "mean_channel": 0.0,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 0,
+          "y": 0,
+          "control": [
+            210,
+            229,
+            234
+          ],
+          "candidate": [
+            210,
+            229,
+            234
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 0,
+        "max_channel": 0,
+        "mean_channel": 0.0,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 0,
+          "y": 0,
+          "control": [
+            210,
+            229,
+            234
+          ],
+          "candidate": [
+            210,
+            229,
+            234
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "side",
+      "step": "relaxed-1.2",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "relaxed-1.2",
+        "--yaw",
+        "1.9707963267948965",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/side-relaxed-1_2.png"
+      ],
+      "image_sha256": "a7bddb7ef412c1a458e5327bd9933caf37dfbde1f81f671787f8d6e9cd8229e4",
+      "no_shadows": {
+        "changed_pixels": 2395,
+        "max_channel": 6,
+        "mean_channel": 0.00041264789094650205,
+        "pixels_over_1": 6,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 1069,
+          "y": 651,
+          "control": [
+            51,
+            52,
+            55
+          ],
+          "candidate": [
+            45,
+            47,
+            51
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 2148,
+        "max_channel": 139,
+        "mean_channel": 0.0004213284465020576,
+        "pixels_over_1": 3,
+        "pixels_over_8": 1,
+        "worst_pixel": {
+          "x": 905,
+          "y": 721,
+          "control": [
+            205,
+            197,
+            185
+          ],
+          "candidate": [
+            66,
+            75,
+            90
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "side",
+      "step": "relaxed-1.5",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "relaxed-1.5",
+        "--yaw",
+        "1.9707963267948965",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/side-relaxed-1_5.png"
+      ],
+      "image_sha256": "3a780e220d5e27d53e65cd214d0707eb75bb78ff695ca3f9effd88cdc253ec86",
+      "no_shadows": {
+        "changed_pixels": 714,
+        "max_channel": 7,
+        "mean_channel": 0.0001282793209876543,
+        "pixels_over_1": 4,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 1069,
+          "y": 651,
+          "control": [
+            51,
+            52,
+            55
+          ],
+          "candidate": [
+            44,
+            47,
+            51
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 647,
+        "max_channel": 1,
+        "mean_channel": 0.00011027520576131688,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 1048,
+          "y": 293,
+          "control": [
+            203,
+            196,
+            183
+          ],
+          "candidate": [
+            203,
+            196,
+            184
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "side",
+      "step": "adaptive-0.5",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "adaptive-0.5",
+        "--yaw",
+        "1.9707963267948965",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/side-adaptive-0_5.png"
+      ],
+      "image_sha256": "ff4730ede5eadd30d68b13ee65ef76d8a7443827eb048026cfa9c3e7c3cf025b",
+      "no_shadows": {
+        "changed_pixels": 2943,
+        "max_channel": 2,
+        "mean_channel": 0.0005010609567901235,
+        "pixels_over_1": 1,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 1067,
+          "y": 653,
+          "control": [
+            101,
+            96,
+            92
+          ],
+          "candidate": [
+            99,
+            95,
+            91
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 2449,
+        "max_channel": 112,
+        "mean_channel": 0.00045605066872427983,
+        "pixels_over_1": 1,
+        "pixels_over_8": 1,
+        "worst_pixel": {
+          "x": 946,
+          "y": 728,
+          "control": [
+            192,
+            186,
+            177
+          ],
+          "candidate": [
+            80,
+            91,
+            109
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "rear",
+      "step": "ordinary",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "ordinary",
+        "--yaw",
+        "3.541592653589793",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/rear-ordinary.png"
+      ],
+      "image_sha256": "6ce94736ea84fa5a1d4ec18f2a8ac7a3b16d303a47060df7b7359fba19de33a2",
+      "no_shadows": {
+        "changed_pixels": 0,
+        "max_channel": 0,
+        "mean_channel": 0.0,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 0,
+          "y": 0,
+          "control": [
+            222,
+            236,
+            240
+          ],
+          "candidate": [
+            222,
+            236,
+            240
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 0,
+        "max_channel": 0,
+        "mean_channel": 0.0,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 0,
+          "y": 0,
+          "control": [
+            222,
+            236,
+            240
+          ],
+          "candidate": [
+            222,
+            236,
+            240
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "rear",
+      "step": "relaxed-1.2",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "relaxed-1.2",
+        "--yaw",
+        "3.541592653589793",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/rear-relaxed-1_2.png"
+      ],
+      "image_sha256": "011dd99048f08fe5ceb104e3589b253f034bca7ca352ab5141ef2a9539c83c38",
+      "no_shadows": {
+        "changed_pixels": 2647,
+        "max_channel": 2,
+        "mean_channel": 0.0004468878600823045,
+        "pixels_over_1": 1,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 896,
+          "y": 668,
+          "control": [
+            63,
+            71,
+            83
+          ],
+          "candidate": [
+            62,
+            69,
+            82
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 2413,
+        "max_channel": 111,
+        "mean_channel": 0.0004504243827160494,
+        "pixels_over_1": 1,
+        "pixels_over_8": 1,
+        "worst_pixel": {
+          "x": 823,
+          "y": 753,
+          "control": [
+            84,
+            95,
+            114
+          ],
+          "candidate": [
+            195,
+            190,
+            184
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "rear",
+      "step": "relaxed-1.5",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "relaxed-1.5",
+        "--yaw",
+        "3.541592653589793",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/rear-relaxed-1_5.png"
+      ],
+      "image_sha256": "9bbbb7b86d33964a08e91938d656a9c6273595b3b7f40118f2df5f47168a8cac",
+      "no_shadows": {
+        "changed_pixels": 461,
+        "max_channel": 1,
+        "mean_channel": 7.587448559670782e-05,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 728,
+          "y": 229,
+          "control": [
+            118,
+            116,
+            115
+          ],
+          "candidate": [
+            119,
+            116,
+            115
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 396,
+        "max_channel": 1,
+        "mean_channel": 6.462191358024691e-05,
+        "pixels_over_1": 0,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 728,
+          "y": 229,
+          "control": [
+            118,
+            116,
+            115
+          ],
+          "candidate": [
+            119,
+            116,
+            115
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    },
+    {
+      "view": "rear",
+      "step": "adaptive-0.5",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--query-stepping",
+        "adaptive-0.5",
+        "--yaw",
+        "3.541592653589793",
+        "--shadows",
+        "0",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/shadow-review/rear-adaptive-0_5.png"
+      ],
+      "image_sha256": "50b5eefe5694912ac758bf420774902d6e15ea96367af6898b0b8fa996fc135f",
+      "no_shadows": {
+        "changed_pixels": 3126,
+        "max_channel": 3,
+        "mean_channel": 0.0005282278806584362,
+        "pixels_over_1": 1,
+        "pixels_over_8": 0,
+        "worst_pixel": {
+          "x": 896,
+          "y": 668,
+          "control": [
+            63,
+            71,
+            83
+          ],
+          "candidate": [
+            60,
+            68,
+            81
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      },
+      "with_shadows": {
+        "changed_pixels": 2846,
+        "max_channel": 111,
+        "mean_channel": 0.0005262988683127572,
+        "pixels_over_1": 2,
+        "pixels_over_8": 2,
+        "worst_pixel": {
+          "x": 823,
+          "y": 753,
+          "control": [
+            84,
+            95,
+            114
+          ],
+          "candidate": [
+            195,
+            190,
+            184
+          ]
+        },
+        "magenta_pixels": 0,
+        "candidate_magenta_pixels": 0
+      }
+    }
+  ],
+  "scope": "Lighting ablation explains image differences; not a performance or visual-adoption result",
+  "complete": true
+}

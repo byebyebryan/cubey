@@ -1,0 +1,498 @@
+{
+  "format": "cubey.sdf.tracing-study",
+  "version": 1,
+  "contracts": {
+    "h0": 0.0005580357142857143,
+    "epsilon": 1.743861607142857e-05,
+    "normal_delta": 3.487723214285714e-05,
+    "regular_depth_tolerance": 6.975446428571428e-05,
+    "normal_degrees": 1,
+    "point_tolerance": 2e-06,
+    "max_steps": 4096,
+    "ambiguity_roster": [
+      "sphere-tangent:0 (declared depth bracket only)"
+    ]
+  },
+  "cases": [
+    {
+      "name": "paired-thin-8e-05",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "paired-oblique-slabs",
+          "type": "union",
+          "children": [
+            {
+              "name": "front",
+              "type": "box",
+              "half_extent": [
+                0.2,
+                0.15,
+                8e-05
+              ],
+              "rotation_xyzw": [
+                0,
+                0.34289780745545134,
+                0,
+                0.9393727128473789
+              ],
+              "position": [
+                0.07730612246852292,
+                0.0,
+                0.09178106247413861
+              ]
+            },
+            {
+              "name": "back",
+              "type": "box",
+              "half_extent": [
+                0.2,
+                0.15,
+                8e-05
+              ],
+              "rotation_xyzw": [
+                0,
+                0.34289780745545134,
+                0,
+                0.9393727128473789
+              ],
+              "position": [
+                -0.07730612246852292,
+                0.0,
+                -0.09178106247413861
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.4509523810663837,
+            0.0,
+            0.5353895310991419
+          ],
+          "direction": [
+            -0.644217687237691,
+            0.0,
+            -0.7648421872844885
+          ],
+          "kind": "ray",
+          "expected_t": 0.57992,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            0.07730612246852292,
+            0.0,
+            0.09178106247413861
+          ],
+          "direction": [
+            0.644217687237691,
+            0.0,
+            0.7648421872844885
+          ],
+          "kind": "ray",
+          "expected_t": 8e-05,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            0.25807935768880574,
+            0.0,
+            0.006170387826818641
+          ],
+          "direction": [
+            -0.9036084890265188,
+            0.0,
+            0.4283593101115136
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            -0.03778440405003315,
+            0.0,
+            0.2553729965395396
+          ],
+          "direction": [
+            0.5757103196676754,
+            0.0,
+            -0.8176537334520911
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        }
+      ]
+    },
+    {
+      "name": "paired-thin-0.0004",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "paired-oblique-slabs",
+          "type": "union",
+          "children": [
+            {
+              "name": "front",
+              "type": "box",
+              "half_extent": [
+                0.2,
+                0.15,
+                0.0004
+              ],
+              "rotation_xyzw": [
+                0,
+                0.34289780745545134,
+                0,
+                0.9393727128473789
+              ],
+              "position": [
+                0.07730612246852292,
+                0.0,
+                0.09178106247413861
+              ]
+            },
+            {
+              "name": "back",
+              "type": "box",
+              "half_extent": [
+                0.2,
+                0.15,
+                0.0004
+              ],
+              "rotation_xyzw": [
+                0,
+                0.34289780745545134,
+                0,
+                0.9393727128473789
+              ],
+              "position": [
+                -0.07730612246852292,
+                0.0,
+                -0.09178106247413861
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.4509523810663837,
+            0.0,
+            0.5353895310991419
+          ],
+          "direction": [
+            -0.644217687237691,
+            0.0,
+            -0.7648421872844885
+          ],
+          "kind": "ray",
+          "expected_t": 0.5796,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            0.07730612246852292,
+            0.0,
+            0.09178106247413861
+          ],
+          "direction": [
+            0.644217687237691,
+            0.0,
+            0.7648421872844885
+          ],
+          "kind": "ray",
+          "expected_t": 0.0004,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            0.2582855073487218,
+            0.0,
+            0.006415137326749684
+          ],
+          "direction": [
+            -0.9036084890265188,
+            0.0,
+            0.4283593101115136
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            -0.0375782543901171,
+            0.0,
+            0.25561774603947063
+          ],
+          "direction": [
+            0.5757103196676754,
+            0.0,
+            -0.8176537334520911
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        }
+      ]
+    },
+    {
+      "name": "paired-thin-0.002",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "paired-oblique-slabs",
+          "type": "union",
+          "children": [
+            {
+              "name": "front",
+              "type": "box",
+              "half_extent": [
+                0.2,
+                0.15,
+                0.002
+              ],
+              "rotation_xyzw": [
+                0,
+                0.34289780745545134,
+                0,
+                0.9393727128473789
+              ],
+              "position": [
+                0.07730612246852292,
+                0.0,
+                0.09178106247413861
+              ]
+            },
+            {
+              "name": "back",
+              "type": "box",
+              "half_extent": [
+                0.2,
+                0.15,
+                0.002
+              ],
+              "rotation_xyzw": [
+                0,
+                0.34289780745545134,
+                0,
+                0.9393727128473789
+              ],
+              "position": [
+                -0.07730612246852292,
+                0.0,
+                -0.09178106247413861
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.4509523810663837,
+            0.0,
+            0.5353895310991419
+          ],
+          "direction": [
+            -0.644217687237691,
+            0.0,
+            -0.7648421872844885
+          ],
+          "kind": "ray",
+          "expected_t": 0.578,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            0.07730612246852292,
+            0.0,
+            0.09178106247413861
+          ],
+          "direction": [
+            0.644217687237691,
+            0.0,
+            0.7648421872844885
+          ],
+          "kind": "ray",
+          "expected_t": 0.002,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            0.2593162556483021,
+            0.0,
+            0.00763888482640486
+          ],
+          "direction": [
+            -0.9036084890265188,
+            0.0,
+            0.4283593101115136
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        },
+        {
+          "origin": [
+            -0.03654750609053678,
+            0.0,
+            0.25684149353912583
+          ],
+          "direction": [
+            0.5757103196676754,
+            0.0,
+            -0.8176537334520911
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.644217687237691,
+            0,
+            0.7648421872844885
+          ]
+        }
+      ]
+    }
+  ]
+}

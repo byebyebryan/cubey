@@ -1,0 +1,652 @@
+{
+  "format": "cubey.sdf.tracing-study",
+  "version": 1,
+  "contracts": {
+    "h0": 0.0005580357142857143,
+    "epsilon": 1.743861607142857e-05,
+    "normal_delta": 3.487723214285714e-05,
+    "regular_depth_tolerance": 6.975446428571428e-05,
+    "normal_degrees": 1,
+    "point_tolerance": 2e-06,
+    "max_steps": 4096,
+    "ambiguity_roster": [
+      "sphere-tangent:0 (declared depth bracket only)"
+    ]
+  },
+  "cases": [
+    {
+      "name": "equal-radii-capsule",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "equal-radii-capsule",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "equal-radii-capsule",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.1,
+          "top_radius": 0.1,
+          "half_length": 0.15
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "expected_t": 0.6,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "expected_t": 0.1,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0.7,
+            0
+          ],
+          "direction": [
+            0,
+            -1,
+            0
+          ],
+          "expected_t": 0.45,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0.1,
+            0,
+            0.7
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "expected_t": 0.7,
+          "depth_tolerance": 0.001871626118797925,
+          "classification": "tangent"
+        },
+        {
+          "kind": "point",
+          "position": [
+            0,
+            0,
+            0.11
+          ],
+          "expected_distance": 0.01
+        }
+      ]
+    },
+    {
+      "name": "domain-clip-and-inside",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "domain-clip-and-inside",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "domain-clip-and-inside",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.8,
+          "top_radius": 0.8,
+          "half_length": 0.15
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "expected_t": 0.201,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0,
+            0,
+            1
+          ],
+          "expected_t": 0.499,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "point",
+          "position": [
+            0.51,
+            0,
+            0
+          ],
+          "expected_distance": 0.011
+        }
+      ]
+    },
+    {
+      "name": "rotated-scaled-capsule",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "rotated-scaled-capsule",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "rotated-scaled-capsule",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.1,
+          "top_radius": 0.1,
+          "half_length": 0.15,
+          "scale": 0.6,
+          "position": [
+            0.1,
+            -0.05,
+            0
+          ],
+          "rotation_xyzw": [
+            0,
+            0,
+            0.3826834323650898,
+            0.9238795325112867
+          ]
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            -0.3949747468305833,
+            0.4449747468305833,
+            0.0
+          ],
+          "direction": [
+            0.7071067811865476,
+            -0.7071067811865476,
+            0
+          ],
+          "expected_t": 0.55,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            -0.7071067811865476,
+            0.7071067811865476,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0.1,
+            -0.05,
+            0.7
+          ],
+          "direction": [
+            0,
+            0,
+            -1
+          ],
+          "expected_t": 0.64,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0.1,
+            -0.05,
+            0
+          ],
+          "direction": [
+            -0.7071067811865476,
+            0.7071067811865476,
+            0
+          ],
+          "expected_t": 0.15,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            -0.7071067811865476,
+            0.7071067811865476,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "zero-top-radius",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "zero-top-radius",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "zero-top-radius",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.1,
+          "top_radius": 0,
+          "half_length": 0.2
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0.7,
+            0
+          ],
+          "direction": [
+            0,
+            -1,
+            0
+          ],
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        },
+        {
+          "kind": "point",
+          "position": [
+            0,
+            0.21,
+            0
+          ],
+          "expected_distance": 0.01
+        }
+      ]
+    },
+    {
+      "name": "zero-bottom-radius",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "zero-bottom-radius",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "zero-bottom-radius",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0,
+          "top_radius": 0.1,
+          "half_length": 0.2
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0.7,
+            0
+          ],
+          "direction": [
+            0,
+            -1,
+            0
+          ],
+          "expected_t": 0.4,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            -0.7,
+            0
+          ],
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        }
+      ]
+    },
+    {
+      "name": "containing-boundary-ulp-0",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "containing-boundary-ulp-0",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "containing-boundary-ulp-0",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.3,
+          "top_radius": 0.1,
+          "half_length": 0.10000000149011612
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0.7,
+            0
+          ],
+          "direction": [
+            0,
+            -1,
+            0
+          ],
+          "expected_t": 0.49999999850988386,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            -0.7,
+            0
+          ],
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "expected_t": 0.29999999850988385,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            -1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "containing-boundary-ulp-1",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "containing-boundary-ulp-1",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "containing-boundary-ulp-1",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.3,
+          "top_radius": 0.1,
+          "half_length": 0.10000000894069672
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0.7,
+            0
+          ],
+          "direction": [
+            0,
+            -1,
+            0
+          ],
+          "expected_t": 0.49999999105930326,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            -0.7,
+            0
+          ],
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "expected_t": 0.29999999105930325,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            -1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "name": "containing-boundary-ulp-2",
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "containing-boundary-ulp-2",
+        "materials": [
+          {
+            "name": "body",
+            "base_color": [
+              0.5,
+              0.4,
+              0.3
+            ],
+            "roughness": 0.6
+          }
+        ],
+        "root": {
+          "name": "containing-boundary-ulp-2",
+          "type": "round-cone",
+          "material": "body",
+          "bottom_radius": 0.3,
+          "top_radius": 0.1,
+          "half_length": 0.10000001639127731
+        }
+      },
+      "queries": [
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            0.7,
+            0
+          ],
+          "direction": [
+            0,
+            -1,
+            0
+          ],
+          "expected_t": 0.49999998360872266,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "kind": "ray",
+          "origin": [
+            0,
+            -0.7,
+            0
+          ],
+          "direction": [
+            0,
+            1,
+            0
+          ],
+          "expected_t": 0.29999998360872265,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            -1,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,797 @@
+{
+  "implementation_head": "603f073af5e0927ab324b7ca7bed03b4770596e5",
+  "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+  "completed_runs": 144,
+  "whole_scene_frame_samples": 21600,
+  "all_gpu_pass_samples": 64800,
+  "decision": "Retain adaptive-0.5 as explicit headless study; automatic remains ordinary. Fixed controls fail useful-gain gate; finer full level deferred by CPU construction forecast.",
+  "load_boundary": "All boundaries have shared encoder activity; no idle-GPU or interactive/windowed root-far qualification.",
+  "encoder": {
+    "ordinary": {
+      "min_percent": 10.0,
+      "max_percent": 50.0,
+      "mean_percent": 32.333333333333336,
+      "zero_observations": 0,
+      "boundary_observations": 72
+    },
+    "relaxed-1.2": {
+      "min_percent": 11.0,
+      "max_percent": 50.0,
+      "mean_percent": 32.77777777777778,
+      "zero_observations": 0,
+      "boundary_observations": 72
+    },
+    "relaxed-1.5": {
+      "min_percent": 11.0,
+      "max_percent": 50.0,
+      "mean_percent": 32.513888888888886,
+      "zero_observations": 0,
+      "boundary_observations": 72
+    },
+    "adaptive-0.5": {
+      "min_percent": 10.0,
+      "max_percent": 50.0,
+      "mean_percent": 32.958333333333336,
+      "zero_observations": 0,
+      "boundary_observations": 72
+    }
+  },
+  "views": [
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "shadow",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            19.2822896,
+            19.5819472,
+            19.4558432
+          ],
+          "min_p95_ms": 19.2822896,
+          "max_p95_ms": 19.5819472,
+          "mean_of_three_p95_ms": 19.440026666666665,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            19.4219248,
+            19.241152,
+            19.204216
+          ],
+          "min_p95_ms": 19.204216,
+          "max_p95_ms": 19.4219248,
+          "mean_of_three_p95_ms": 19.289097599999998,
+          "time_saved_ms": 0.1509290666666665,
+          "fractional_time_reduction": 0.0077638302279420665,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            19.7502432,
+            19.389855999999998,
+            19.680220799999997
+          ],
+          "min_p95_ms": 19.389855999999998,
+          "max_p95_ms": 19.7502432,
+          "mean_of_three_p95_ms": 19.606773333333333,
+          "time_saved_ms": -0.16674666666666838,
+          "fractional_time_reduction": -0.008577491663248836,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            19.064190399999998,
+            18.9667312,
+            18.8322704
+          ],
+          "min_p95_ms": 18.8322704,
+          "max_p95_ms": 19.064190399999998,
+          "mean_of_three_p95_ms": 18.954397333333333,
+          "time_saved_ms": 0.4856293333333319,
+          "fractional_time_reduction": 0.024980898517285913,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "combined",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            18.625366399999997,
+            18.4830336,
+            18.3065552
+          ],
+          "min_p95_ms": 18.3065552,
+          "max_p95_ms": 18.625366399999997,
+          "mean_of_three_p95_ms": 18.47165173333333,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            18.3735904,
+            18.3017632,
+            18.3757968
+          ],
+          "min_p95_ms": 18.3017632,
+          "max_p95_ms": 18.3757968,
+          "mean_of_three_p95_ms": 18.350383466666667,
+          "time_saved_ms": 0.12126826666666446,
+          "fractional_time_reduction": 0.006565101400641273,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            18.4240368,
+            18.490107199999997,
+            18.4284256
+          ],
+          "min_p95_ms": 18.4240368,
+          "max_p95_ms": 18.490107199999997,
+          "mean_of_three_p95_ms": 18.4475232,
+          "time_saved_ms": 0.024128533333332314,
+          "fractional_time_reduction": 0.0013062466574004729,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            17.9057696,
+            17.7984688,
+            17.8352496
+          ],
+          "min_p95_ms": 17.7984688,
+          "max_p95_ms": 17.9057696,
+          "mean_of_three_p95_ms": 17.846496,
+          "time_saved_ms": 0.6251557333333331,
+          "fractional_time_reduction": 0.03384406236964709,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "shadow",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            21.8994608,
+            21.8616128,
+            21.915496
+          ],
+          "min_p95_ms": 21.8616128,
+          "max_p95_ms": 21.915496,
+          "mean_of_three_p95_ms": 21.892189866666666,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            21.7191888,
+            21.6477792,
+            21.5422464
+          ],
+          "min_p95_ms": 21.5422464,
+          "max_p95_ms": 21.7191888,
+          "mean_of_three_p95_ms": 21.6364048,
+          "time_saved_ms": 0.25578506666666456,
+          "fractional_time_reduction": 0.011683850186962167,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            21.2953904,
+            21.3364768,
+            21.3420608
+          ],
+          "min_p95_ms": 21.2953904,
+          "max_p95_ms": 21.3420608,
+          "mean_of_three_p95_ms": 21.324642666666666,
+          "time_saved_ms": 0.5675471999999999,
+          "fractional_time_reduction": 0.025924642690229666,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            20.339952,
+            20.5539392,
+            20.4699488
+          ],
+          "min_p95_ms": 20.339952,
+          "max_p95_ms": 20.5539392,
+          "mean_of_three_p95_ms": 20.454613333333334,
+          "time_saved_ms": 1.4375765333333312,
+          "fractional_time_reduction": 0.0656661824188819,
+          "useful_gain_in_view": true,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "combined",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            20.8114528,
+            20.661041599999997,
+            20.6803808
+          ],
+          "min_p95_ms": 20.661041599999997,
+          "max_p95_ms": 20.8114528,
+          "mean_of_three_p95_ms": 20.717625066666667,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            20.455911999999998,
+            20.5507904,
+            20.4951024
+          ],
+          "min_p95_ms": 20.455911999999998,
+          "max_p95_ms": 20.5507904,
+          "mean_of_three_p95_ms": 20.5006016,
+          "time_saved_ms": 0.21702346666666728,
+          "fractional_time_reduction": 0.010475306217209431,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            20.0809936,
+            20.0877712,
+            20.2402896
+          ],
+          "min_p95_ms": 20.0809936,
+          "max_p95_ms": 20.2402896,
+          "mean_of_three_p95_ms": 20.136351466666667,
+          "time_saved_ms": 0.5812735999999994,
+          "fractional_time_reduction": 0.02805696107201165,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            19.2989664,
+            19.3083616,
+            19.22296
+          ],
+          "min_p95_ms": 19.22296,
+          "max_p95_ms": 19.3083616,
+          "mean_of_three_p95_ms": 19.276762666666666,
+          "time_saved_ms": 1.4408624000000003,
+          "fractional_time_reduction": 0.06954766269606141,
+          "useful_gain_in_view": true,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "shadow",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            17.407220799999997,
+            17.1893088,
+            17.169779199999997
+          ],
+          "min_p95_ms": 17.169779199999997,
+          "max_p95_ms": 17.407220799999997,
+          "mean_of_three_p95_ms": 17.255436266666663,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            17.3486256,
+            17.366968,
+            17.1123952
+          ],
+          "min_p95_ms": 17.1123952,
+          "max_p95_ms": 17.366968,
+          "mean_of_three_p95_ms": 17.275996266666667,
+          "time_saved_ms": -0.020560000000003242,
+          "fractional_time_reduction": -0.0011915085589415202,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            16.9875936,
+            17.013824,
+            16.7790608
+          ],
+          "min_p95_ms": 16.7790608,
+          "max_p95_ms": 17.013824,
+          "mean_of_three_p95_ms": 16.926826133333332,
+          "time_saved_ms": 0.32861013333333133,
+          "fractional_time_reduction": 0.019043861207272212,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            16.3169888,
+            16.3519968,
+            16.2080864
+          ],
+          "min_p95_ms": 16.2080864,
+          "max_p95_ms": 16.3519968,
+          "mean_of_three_p95_ms": 16.29235733333333,
+          "time_saved_ms": 0.9630789333333318,
+          "fractional_time_reduction": 0.055813073540989966,
+          "useful_gain_in_view": true,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "combined",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            16.296252799999998,
+            16.2130512,
+            16.1495776
+          ],
+          "min_p95_ms": 16.1495776,
+          "max_p95_ms": 16.296252799999998,
+          "mean_of_three_p95_ms": 16.219627199999998,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            16.105414399999997,
+            16.2480416,
+            16.1491712
+          ],
+          "min_p95_ms": 16.105414399999997,
+          "max_p95_ms": 16.2480416,
+          "mean_of_three_p95_ms": 16.1675424,
+          "time_saved_ms": 0.052084799999999376,
+          "fractional_time_reduction": 0.0032112205390269007,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            15.8780448,
+            16.0934416,
+            15.9335376
+          ],
+          "min_p95_ms": 15.8780448,
+          "max_p95_ms": 16.0934416,
+          "mean_of_three_p95_ms": 15.968341333333333,
+          "time_saved_ms": 0.25128586666666486,
+          "fractional_time_reduction": 0.015492702980661905,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            15.336627199999999,
+            15.3429632,
+            15.2539008
+          ],
+          "min_p95_ms": 15.2539008,
+          "max_p95_ms": 15.3429632,
+          "mean_of_three_p95_ms": 15.311163733333332,
+          "time_saved_ms": 0.9084634666666656,
+          "fractional_time_reduction": 0.056010132382491855,
+          "useful_gain_in_view": true,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "shadow",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            5.2957392,
+            5.252079999999999,
+            5.328073599999999
+          ],
+          "min_p95_ms": 5.252079999999999,
+          "max_p95_ms": 5.328073599999999,
+          "mean_of_three_p95_ms": 5.291964266666666,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            5.2851344,
+            5.244478399999999,
+            5.2537808
+          ],
+          "min_p95_ms": 5.244478399999999,
+          "max_p95_ms": 5.2851344,
+          "mean_of_three_p95_ms": 5.2611311999999995,
+          "time_saved_ms": 0.030833066666666298,
+          "fractional_time_reduction": 0.00582639358713728,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            5.304307199999999,
+            5.2380368,
+            5.3115296
+          ],
+          "min_p95_ms": 5.2380368,
+          "max_p95_ms": 5.3115296,
+          "mean_of_three_p95_ms": 5.284624533333333,
+          "time_saved_ms": 0.00733973333333271,
+          "fractional_time_reduction": 0.0013869582188157717,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            5.3090687999999995,
+            5.2406496,
+            5.2635456
+          ],
+          "min_p95_ms": 5.2406496,
+          "max_p95_ms": 5.3090687999999995,
+          "mean_of_three_p95_ms": 5.271088,
+          "time_saved_ms": 0.020876266666665977,
+          "fractional_time_reduction": 0.0039448994011850435,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "combined",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            5.2966527999999995,
+            5.2568384,
+            5.2281344
+          ],
+          "min_p95_ms": 5.2281344,
+          "max_p95_ms": 5.2966527999999995,
+          "mean_of_three_p95_ms": 5.260541866666666,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            5.2876688000000005,
+            5.3097376,
+            5.274472
+          ],
+          "min_p95_ms": 5.274472,
+          "max_p95_ms": 5.3097376,
+          "mean_of_three_p95_ms": 5.290626133333333,
+          "time_saved_ms": -0.03008426666666697,
+          "fractional_time_reduction": -0.005718853195959795,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            5.293936,
+            5.2844912,
+            5.327584
+          ],
+          "min_p95_ms": 5.2844912,
+          "max_p95_ms": 5.327584,
+          "mean_of_three_p95_ms": 5.302003733333334,
+          "time_saved_ms": -0.04146186666666729,
+          "fractional_time_reduction": -0.007881672215060144,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            5.2667904,
+            5.2504864,
+            5.3082496
+          ],
+          "min_p95_ms": 5.2504864,
+          "max_p95_ms": 5.3082496,
+          "mean_of_three_p95_ms": 5.275175466666666,
+          "time_saved_ms": -0.014633599999999802,
+          "fractional_time_reduction": -0.002781766664138795,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "shadow",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            3.562712,
+            3.6283807999999995,
+            3.5845135999999997
+          ],
+          "min_p95_ms": 3.562712,
+          "max_p95_ms": 3.6283807999999995,
+          "mean_of_three_p95_ms": 3.5918688,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            3.5590208,
+            3.6180768,
+            3.5693679999999994
+          ],
+          "min_p95_ms": 3.5590208,
+          "max_p95_ms": 3.6180768,
+          "mean_of_three_p95_ms": 3.5821552,
+          "time_saved_ms": 0.009713599999999989,
+          "fractional_time_reduction": 0.002704330403159489,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            3.5281008,
+            3.6187936,
+            3.624736
+          ],
+          "min_p95_ms": 3.5281008,
+          "max_p95_ms": 3.624736,
+          "mean_of_three_p95_ms": 3.5905434666666665,
+          "time_saved_ms": 0.0013253333333334005,
+          "fractional_time_reduction": 0.000368981554485899,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            3.5660624000000003,
+            3.6066496,
+            3.567808
+          ],
+          "min_p95_ms": 3.5660624000000003,
+          "max_p95_ms": 3.6066496,
+          "mean_of_three_p95_ms": 3.580173333333333,
+          "time_saved_ms": 0.011695466666666654,
+          "fractional_time_reduction": 0.0032560951743745912,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "combined",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            3.6470383999999996,
+            3.6443376,
+            3.5971871999999996
+          ],
+          "min_p95_ms": 3.5971871999999996,
+          "max_p95_ms": 3.6470383999999996,
+          "mean_of_three_p95_ms": 3.6295210666666664,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            3.5939615999999996,
+            3.5925391999999996,
+            3.5771824
+          ],
+          "min_p95_ms": 3.5771824,
+          "max_p95_ms": 3.5939615999999996,
+          "mean_of_three_p95_ms": 3.5878943999999997,
+          "time_saved_ms": 0.0416266666666667,
+          "fractional_time_reduction": 0.011468914466143716,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            3.6026208,
+            3.5764304,
+            3.6421952
+          ],
+          "min_p95_ms": 3.5764304,
+          "max_p95_ms": 3.6421952,
+          "mean_of_three_p95_ms": 3.6070821333333334,
+          "time_saved_ms": 0.022438933333333022,
+          "fractional_time_reduction": 0.006182340017092345,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            3.5845264,
+            3.5605472,
+            3.6053232
+          ],
+          "min_p95_ms": 3.5605472,
+          "max_p95_ms": 3.6053232,
+          "mean_of_three_p95_ms": 3.5834656,
+          "time_saved_ms": 0.0460554666666666,
+          "fractional_time_reduction": 0.012689130554892661,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "shadow",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            3.8024816,
+            3.8098528,
+            3.816016
+          ],
+          "min_p95_ms": 3.8024816,
+          "max_p95_ms": 3.816016,
+          "mean_of_three_p95_ms": 3.8094501333333333,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            3.8186288,
+            3.8143648,
+            3.8230287999999994
+          ],
+          "min_p95_ms": 3.8143648,
+          "max_p95_ms": 3.8230287999999994,
+          "mean_of_three_p95_ms": 3.818674133333333,
+          "time_saved_ms": -0.009223999999999677,
+          "fractional_time_reduction": -0.002421346828847585,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            3.8207711999999994,
+            3.7994832,
+            3.8088048
+          ],
+          "min_p95_ms": 3.7994832,
+          "max_p95_ms": 3.8207711999999994,
+          "mean_of_three_p95_ms": 3.8096864,
+          "time_saved_ms": -0.0002362666666666513,
+          "fractional_time_reduction": -6.20211994899941e-05,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            3.7986527999999997,
+            3.8040384,
+            3.8300624
+          ],
+          "min_p95_ms": 3.7986527999999997,
+          "max_p95_ms": 3.8300624,
+          "mean_of_three_p95_ms": 3.8109178666666668,
+          "time_saved_ms": -0.0014677333333334985,
+          "fractional_time_reduction": -0.0003852874514593546,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "combined",
+      "results": {
+        "ordinary": {
+          "p95_ms": [
+            3.7685184,
+            3.7987919999999997,
+            3.8161696
+          ],
+          "min_p95_ms": 3.7685184,
+          "max_p95_ms": 3.8161696,
+          "mean_of_three_p95_ms": 3.794493333333333,
+          "time_saved_ms": 0.0,
+          "fractional_time_reduction": 0.0,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.2": {
+          "p95_ms": [
+            3.8296976000000003,
+            3.8142272,
+            3.7786048
+          ],
+          "min_p95_ms": 3.7786048,
+          "max_p95_ms": 3.8296976000000003,
+          "mean_of_three_p95_ms": 3.807509866666667,
+          "time_saved_ms": -0.013016533333333857,
+          "fractional_time_reduction": -0.003430374542758592,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "relaxed-1.5": {
+          "p95_ms": [
+            3.8272383999999997,
+            3.8268687999999997,
+            3.7657584
+          ],
+          "min_p95_ms": 3.7657584,
+          "max_p95_ms": 3.8272383999999997,
+          "mean_of_three_p95_ms": 3.8066218666666667,
+          "time_saved_ms": -0.012128533333333635,
+          "fractional_time_reduction": -0.003196351203674176,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        },
+        "adaptive-0.5": {
+          "p95_ms": [
+            3.8086767999999998,
+            3.8372623999999997,
+            3.8121647999999997
+          ],
+          "min_p95_ms": 3.8086767999999998,
+          "max_p95_ms": 3.8372623999999997,
+          "mean_of_three_p95_ms": 3.819368,
+          "time_saved_ms": -0.024874666666666823,
+          "fractional_time_reduction": -0.00655546458552222,
+          "useful_gain_in_view": false,
+          "regression_gate_failed": false
+        }
+      }
+    }
+  ]
+}

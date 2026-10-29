@@ -1,7 +1,7 @@
 # SDF query acceleration loop progress
 
 Started 2026-10-29 from `89c06623`, following the
-[research plan](sdf-query-acceleration-research-plan.md). Active local goal;
+[research plan](sdf-query-acceleration-research-plan.md). Local goal;
 no push, default change or windowed root-far admission.
 
 ## Phase 0: current workload and child pilot
@@ -117,3 +117,49 @@ reach 111–139 output levels at shadow decisions, despite the numerical geometr
 contracts passing. No goldens are changed, and these observations do not pass
 automatic visual adoption. Timings are a research comparison; numerical gates,
 image review and default adoption remain separate.
+
+## Completed matched timing and review
+
+Implementation checkpoint `603f073a`; measured executable SHA-256
+`865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d`.
+The 144-run batch is complete: all four stepping controls, A and A+B, six
+Guardian/Robot views, three interleaved repetitions, 180 frames / 30 warmup /
+150 completed samples. Every GPU pass has frame indices 30 through 179.
+
+Adaptive A+B whole-scene GPU p95 ranges are 17.80–17.91 ms preset,
+19.22–19.31 ms side and 15.25–15.34 ms rear. Matched ordinary A+B ranges are
+18.31–18.63 / 20.66–20.81 / 16.15–16.30 ms. Mean-of-three-p95 reductions are
+3.38% / 6.95% / 5.60%. Adaptive also passes the useful-gain gate independently
+on A's side view. Fixed factors fail the proposed 5% useful-gain threshold.
+Robot stays on the original pipeline with no meaningful regression.
+
+All 288 GPU boundary observations show shared encoder use, 10–50%; means are
+32.3–33.0% across stepping controls. This is a matched shared-load result, not
+idle-GPU qualification. No external process was stopped, and no owned build,
+capture or other GPU job overlapped the timed batch.
+
+The shadow ablation narrows the image caveat. With adaptive A+B, 3 / 1 / 2 pixels
+exceed eight output levels in preset/side/rear (out of 2,073,600 pixels per view).
+Disabling shadows reduces maximum differences from 131 / 112 / 111 levels to
+9 / 2 / 3. Small normal/material differences remain; only one no-shadow preset
+pixel exceeds eight levels. This supports visibility discontinuities as the
+main source of the largest differences, not a claim of universal image identity.
+No thresholds or goldens are changed. Automatic visual adoption remains deferred.
+
+Nine-frame authored-history replays pass for every candidate with A and A+B:
+empty/first/second, undo, redo, branching, appearance reuse, failed prefix and
+retry. Undo, redo and failed-state retention match pixels exactly. The unchanged
+reference and prepared-only controls are also replayed. Prepared-cache generation
+deltas retain their existing expected sequence. Six actual CLI rejection checks
+cover hybrid, A16, optical lighting, moving timeline, general shaders and windowed
+requests.
+
+The compiler-statistics utility initially lacked prepared binding 19; that
+compile-only result is excluded. Its layout is corrected and a fresh eight-shader
+pass has clean validation. All selected fragments use 80 registers; adaptive
+code is slightly larger. Driver local-memory statistics remain explicitly
+unusable, including the implausible fullscreen-vertex value. These are static
+statistics, not live occupancy/stall attribution.
+
+The [result and reproduction record](sdf-query-acceleration-results.md) owns the
+final decision and archived receipts.

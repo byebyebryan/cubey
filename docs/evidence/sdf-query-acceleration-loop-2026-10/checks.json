@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "groups": 12,
+  "ctest_exit_code": 0,
+  "command": [
+    "ctest",
+    "--test-dir",
+    "build/release",
+    "-R",
+    "^(documentation_hygiene|documentation_media|documentation_rules|shader_build_rules|sdf_shader_selection_tests|sdf_region_tests|sdf_recipe_tests|sdf_authored_tests|sdf_material_tests|sdf_normal_projection_tests|sdf_mirror_author_tests|sdf_workshop_tests)$",
+    "--output-on-failure"
+  ],
+  "raw_log_sha256": "978d1e57a814b412ad3fe390b0519a73bcb7319ea751029f3c51e6049f445469",
+  "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+  "image_tool_version": "Version: ImageMagick 7.1.2-34 Q16-HDRI x86_64 c5d4ca8a0:20261014 https://imagemagick.org",
+  "limits": "Focused local checks, separate from native numerical/image/publication receipts and any physical or windowed root-far acceptance."
+}

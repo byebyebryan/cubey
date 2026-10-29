@@ -1,0 +1,977 @@
+[
+  {
+    "step": "relaxed-1.2",
+    "receipt": {
+      "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+      "runner_sha256": "c642548f82930532e406aff0fc592466237d5e283b7afba9d7591991b5067845",
+      "source_head": "9613624e4f92d8fefdb6ddeb020ee85d96c6e1ac",
+      "source_diff_sha256": "247e512423dfdba8ad37c808a9b1cfdfa92236020f438370d7b0dcc7ca3c888e",
+      "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+      "runs": [
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+          "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "relaxed-1.2",
+            "--comparison-input",
+            "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/shadow-frozen.json"
+          ],
+          "result_sha256": "d624d8518060dbe80302c4120829524a5e74d4f3d6efbe511a26537d88170def",
+          "score": {
+            "passed": true,
+            "scored": 155,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0026350140571593794,
+              "point": 2.8163194656580237e-08,
+              "normal_degrees": 0.22949957087194034,
+              "residual": 1.735985279083252e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed12_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "26e212fed36830168ae12c14ce211b8db5bd1ac6861e974ec426bb68b161f5a2"
+          }
+        },
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/thin-contracts.json",
+          "input_sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "relaxed-1.2",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/thin-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/shadow-thin.json"
+          ],
+          "result_sha256": "9b4b7be87d2f756a1ec54bae075f7bf3321c33893d0a6c056c21cf62a3f55227",
+          "score": {
+            "passed": true,
+            "scored": 12,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 6.749927997590222e-05,
+              "point": 0.0,
+              "normal_degrees": 0.00011097743825624177,
+              "residual": 1.7176149412989616e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed12_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "26e212fed36830168ae12c14ce211b8db5bd1ac6861e974ec426bb68b161f5a2"
+          }
+        },
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+          "input_sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "relaxed-1.2",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/shadow-supplemental.json"
+          ],
+          "result_sha256": "ee3684be2e19a5681bc721012decff07fffca39b0624a239658f1ce4bc1a1ad1",
+          "score": {
+            "passed": true,
+            "scored": 21,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.00185538530349727,
+              "point": 2.2411346434908497e-08,
+              "normal_degrees": 0.0,
+              "residual": 1.7210841178894043e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed12_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "26e212fed36830168ae12c14ce211b8db5bd1ac6861e974ec426bb68b161f5a2"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+          "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "relaxed-1.2",
+            "--comparison-input",
+            "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/combined-frozen.json"
+          ],
+          "result_sha256": "729c0a797a64ec6d62342275e860afa5a8682408392dba6fc527f1c344239fcd",
+          "score": {
+            "passed": true,
+            "scored": 155,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0026350140571593794,
+              "point": 2.8163194656580237e-08,
+              "normal_degrees": 0.22949957087194034,
+              "residual": 1.735985279083252e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed12_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "8448f8b4f729831244223103db5349598a8eef98e667533b491e8a31381103a9"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/thin-contracts.json",
+          "input_sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "relaxed-1.2",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/thin-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/combined-thin.json"
+          ],
+          "result_sha256": "0ff6106bbe029e94a40de1ac3add7bcdff4dd30003531e0e54af464a492165ef",
+          "score": {
+            "passed": true,
+            "scored": 12,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 6.749927997590222e-05,
+              "point": 0.0,
+              "normal_degrees": 0.00011097743825624177,
+              "residual": 1.7176149412989616e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed12_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "8448f8b4f729831244223103db5349598a8eef98e667533b491e8a31381103a9"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+          "input_sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "relaxed-1.2",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed12/combined-supplemental.json"
+          ],
+          "result_sha256": "4b85b6ae30c1c09bc9d1d0c2462605a695da2a17d9f372f7869beba720a93140",
+          "score": {
+            "passed": true,
+            "scored": 21,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.00185538530349727,
+              "point": 2.2411346434908497e-08,
+              "normal_degrees": 0.0,
+              "residual": 1.7210841178894043e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed12_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "8448f8b4f729831244223103db5349598a8eef98e667533b491e8a31381103a9"
+          }
+        }
+      ],
+      "complete": true
+    }
+  },
+  {
+    "step": "relaxed-1.5",
+    "receipt": {
+      "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+      "runner_sha256": "c642548f82930532e406aff0fc592466237d5e283b7afba9d7591991b5067845",
+      "source_head": "9613624e4f92d8fefdb6ddeb020ee85d96c6e1ac",
+      "source_diff_sha256": "247e512423dfdba8ad37c808a9b1cfdfa92236020f438370d7b0dcc7ca3c888e",
+      "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+      "runs": [
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+          "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "relaxed-1.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/shadow-frozen.json"
+          ],
+          "result_sha256": "14090be95925773252db4dbdeae0fddaa71a7c75897f6d6f25c076f2a88837ac",
+          "score": {
+            "passed": true,
+            "scored": 155,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0026325702667235884,
+              "point": 2.8163194656580237e-08,
+              "normal_degrees": 0.22949957087194034,
+              "residual": 1.7330050468444824e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed15_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "d58419b85d0e9d64986e528bad76ae64fe15ca089cd17a810b9ad0ca805f6419"
+          }
+        },
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/thin-contracts.json",
+          "input_sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "relaxed-1.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/thin-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/shadow-thin.json"
+          ],
+          "result_sha256": "f9bb99beb0e676c21e6468ee16e1c75fa17460786e108ea8ff19e064f86f9c1a",
+          "score": {
+            "passed": true,
+            "scored": 12,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 6.413161754609265e-05,
+              "point": 0.0,
+              "normal_degrees": 0.00016055939256513205,
+              "residual": 1.631399936741218e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed15_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "d58419b85d0e9d64986e528bad76ae64fe15ca089cd17a810b9ad0ca805f6419"
+          }
+        },
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+          "input_sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "relaxed-1.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/shadow-supplemental.json"
+          ],
+          "result_sha256": "db1300550de949bcdeca97fc2aafa661669d3192e8a92a0b9b824eb2b92a8259",
+          "score": {
+            "passed": true,
+            "scored": 21,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0018547296524047407,
+              "point": 2.2411346434908497e-08,
+              "normal_degrees": 0.0,
+              "residual": 1.720339059829712e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed15_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "d58419b85d0e9d64986e528bad76ae64fe15ca089cd17a810b9ad0ca805f6419"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+          "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "relaxed-1.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/combined-frozen.json"
+          ],
+          "result_sha256": "48710456d8c015a0d412a869aebba3a58e72777f9aa203901b1bc01aa89a2f78",
+          "score": {
+            "passed": true,
+            "scored": 155,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0026325702667235884,
+              "point": 2.8163194656580237e-08,
+              "normal_degrees": 0.22949957087194034,
+              "residual": 1.7330050468444824e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed15_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "18dfc53037da68fdb91c91736f21f1c34399b8d5683468f4e1257ec010772bc8"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/thin-contracts.json",
+          "input_sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "relaxed-1.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/thin-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/combined-thin.json"
+          ],
+          "result_sha256": "8708276837823929f22b10f505d5c2f920593228660e7e1ca77209fb3f1f6c8e",
+          "score": {
+            "passed": true,
+            "scored": 12,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 6.413161754609265e-05,
+              "point": 0.0,
+              "normal_degrees": 0.00016055939256513205,
+              "residual": 1.631399936741218e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed15_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "18dfc53037da68fdb91c91736f21f1c34399b8d5683468f4e1257ec010772bc8"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+          "input_sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "relaxed-1.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/final-contracts-relaxed15/combined-supplemental.json"
+          ],
+          "result_sha256": "b1735ccb4666e650dc83302f57bdd328b4b77ebeed4c857b91a0ac52ba71c0f2",
+          "score": {
+            "passed": true,
+            "scored": 21,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0018547296524047407,
+              "point": 2.2411346434908497e-08,
+              "normal_degrees": 0.0,
+              "residual": 1.720339059829712e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "relaxed15_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "18dfc53037da68fdb91c91736f21f1c34399b8d5683468f4e1257ec010772bc8"
+          }
+        }
+      ],
+      "complete": true
+    }
+  },
+  {
+    "step": "adaptive-0.5",
+    "receipt": {
+      "binary_sha256": "865d909326f73267f79d7ebdd4f68cb6409d61ffb8f2be66f5639d608028a68d",
+      "runner_sha256": "0273b68bd9f1e98f449711594c7f1a7ce4c4837fbed1112f32ff71c2be87c56e",
+      "source_head": "9613624e4f92d8fefdb6ddeb020ee85d96c6e1ac",
+      "source_diff_sha256": "765095e9ec17bd802e71ee800f7900c0a568e5e18d08a09f96e7266551dc9e3a",
+      "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+      "runs": [
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+          "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "adaptive-0.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/shadow-frozen.json"
+          ],
+          "result_sha256": "b5c7c99e11e5d89c6cba8693e06fa7f5af9962e938b1a5b225da56d25e89157e",
+          "score": {
+            "passed": true,
+            "scored": 155,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.002629470825195268,
+              "point": 2.8163194656580237e-08,
+              "normal_degrees": 0.22949957087194034,
+              "residual": 1.728534698486328e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "adaptive50_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "ec7961fc8bc1aefcbaf2632d38cc378a7e53e3d61db4fc8b874e897cc6ff8743"
+          }
+        },
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/thin-contracts.json",
+          "input_sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "adaptive-0.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/thin-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/shadow-thin.json"
+          ],
+          "result_sha256": "9014a33353e3453274f72396c2f852ac368c97da32c2239a81f17ec5d2566403",
+          "score": {
+            "passed": true,
+            "scored": 12,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 6.620287895203747e-05,
+              "point": 0.0,
+              "normal_degrees": 0.00016055939256513205,
+              "residual": 1.6840174794197083e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "adaptive50_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "ec7961fc8bc1aefcbaf2632d38cc378a7e53e3d61db4fc8b874e897cc6ff8743"
+          }
+        },
+        {
+          "mode": "shadow",
+          "input": "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+          "input_sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "shadow",
+            "--query-stepping",
+            "adaptive-0.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/shadow-supplemental.json"
+          ],
+          "result_sha256": "3cd1c90670a60db68600826124d5e8d1f1fd1e4a8129bbed740f7cf96d03bea0",
+          "score": {
+            "passed": true,
+            "scored": 21,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0018506765365600142,
+              "point": 2.2411346434908497e-08,
+              "normal_degrees": 0.0,
+              "residual": 1.712888479232788e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "adaptive50_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "ec7961fc8bc1aefcbaf2632d38cc378a7e53e3d61db4fc8b874e897cc6ff8743"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+          "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "adaptive-0.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/combined-frozen.json"
+          ],
+          "result_sha256": "206f207da7de0eb9dedc64c154e09a183ab0843edbd66d8a02912db2b5afa487",
+          "score": {
+            "passed": true,
+            "scored": 155,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.002629470825195268,
+              "point": 2.8163194656580237e-08,
+              "normal_degrees": 0.22949957087194034,
+              "residual": 1.728534698486328e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "adaptive50_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "e2247c0a96719ee76f12714ed777986fc62c3e265fe2710cde637c10797ff893"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/thin-contracts.json",
+          "input_sha256": "b301ca02b775df26d5c5e3dafc0c0c259b1d57096558878f6a1c4605a64f0f79",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "adaptive-0.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/thin-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/combined-thin.json"
+          ],
+          "result_sha256": "998ae3138348e915bd283e5d5577fdcd8cfabd8e238447c47fc17e9513d71440",
+          "score": {
+            "passed": true,
+            "scored": 12,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 6.620287895203747e-05,
+              "point": 0.0,
+              "normal_degrees": 0.00016055939256513205,
+              "residual": 1.6840174794197083e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "adaptive50_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "e2247c0a96719ee76f12714ed777986fc62c3e265fe2710cde637c10797ff893"
+          }
+        },
+        {
+          "mode": "combined",
+          "input": "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+          "input_sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93",
+          "command": [
+            "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+            "--headless",
+            "--headless-render-only",
+            "--require-validation",
+            "--width",
+            "32",
+            "--height",
+            "32",
+            "--frames",
+            "1",
+            "--surface-trace",
+            "analytic",
+            "--csg-evaluation",
+            "pruned",
+            "--region-axis",
+            "64",
+            "--acceleration-variant",
+            "root-far",
+            "--source-optimization",
+            "combined",
+            "--query-stepping",
+            "adaptive-0.5",
+            "--comparison-input",
+            "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/supplemental-contracts/supplemental-contracts.json",
+            "--comparison-output",
+            "/home/bryan/code/cubey/outputs/sdf/query-acceleration-loop-20261029/contracts-adaptive50/combined-supplemental.json"
+          ],
+          "result_sha256": "80f79892451715aa21a696686ed8acf57bbbb54fe73529e827b331902b73581c",
+          "score": {
+            "passed": true,
+            "scored": 21,
+            "modes": [
+              "analytic-pruned"
+            ],
+            "maxima": {
+              "depth": 0.0018506765365600142,
+              "point": 2.2411346434908497e-08,
+              "normal_degrees": 0.0,
+              "residual": 1.712888479232788e-05
+            },
+            "failures": []
+          },
+          "kernel": {
+            "name": "adaptive50_prepared_root_far_comparison_analytic_pruned.comp.spv",
+            "sha256": "e2247c0a96719ee76f12714ed777986fc62c3e265fe2710cde637c10797ff893"
+          }
+        }
+      ],
+      "complete": true
+    }
+  }
+]
