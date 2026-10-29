@@ -28,7 +28,7 @@ void validate_source_optimization(const SdfConfig& config) {
 }
 bool source_shadow_pipeline_enabled(const SdfConfig& config) {
     return source_shader_variants_enabled(config) && config.lighting == "atmosphere" &&
-           config.source_optimization == "shadow";
+           (config.source_optimization == "shadow" || config.source_optimization == "automatic");
 }
 bool source_prepared_cones_enabled(const SdfConfig& config) {
     return source_shader_variants_enabled(config) && config.source_optimization == "prepared-cones";

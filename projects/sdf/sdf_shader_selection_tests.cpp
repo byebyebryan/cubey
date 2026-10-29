@@ -99,6 +99,6 @@ int main() {
     rejected();
     config.surface_trace = "analytic";
     config.source_optimization = "automatic";
-    if (source_shadow_pipeline_enabled(config) || source_prepared_cones_enabled(config))
-        throw std::runtime_error("automatic opted into an unpromoted trial");
+    if (!source_shadow_pipeline_enabled(config) || source_prepared_cones_enabled(config))
+        throw std::runtime_error("automatic did not retain qualified shadow-only behavior");
 }
