@@ -1,0 +1,9 @@
+{
+  "command": "ctest --test-dir build/release -R '^(sdf_.*tests|shader_build_rules|documentation_hygiene|documentation_media|documentation_rules)$' --output-on-failure",
+  "passed": 12,
+  "failed": 0,
+  "binary_sha256": "aace33001393abfa94a20c073e51ca2a3cb7577cfdd038cee031eaaef914c5f2",
+  "log_sha256": "ecd466621fbac12b77870d2055bde2aa25768008e3f413e83df13bfd6dfbe6d0",
+  "raw_log_sha256": "76d14e11d7c17168c5f2fa6ec894c2eeb06278e9c867c44bda86d3b1ab96621b",
+  "archive_normalization": "Terminal blank lines removed; original raw log retained unchanged."
+}

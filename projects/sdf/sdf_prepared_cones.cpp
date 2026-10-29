@@ -3,6 +3,8 @@
 
 namespace cubey::projects::sdf {
 bool PreparedCones::matches(const AuthoredScene& scene) const {
+    // This non-persistent type fixes the format for a renderer lifetime. The
+    // per-entry version tag is also checked by the GPU before using coefficients.
     return instruction_count == scene.program.size() && entries.size() == instruction_count &&
            geometry_hash == authored_geometry_hash(scene);
 }
@@ -23,7 +25,7 @@ PreparedCones prepare_cones(const AuthoredScene& scene) {
         const float radial = std::sqrt(std::max(0.F, 1 - slope * slope));
         const float threshold = height * radial;
         if (std::isfinite(slope) && std::isfinite(radial) && std::isfinite(threshold))
-            result.entries[i] = {slope, radial, threshold, 1};
+            result.entries[i] = {slope, radial, threshold, static_cast<float>(PreparedCones::version)};
     }
     return result;
 }

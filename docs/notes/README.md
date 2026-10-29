@@ -63,6 +63,9 @@ the architecture and project guides remain current authority.
   with numerical, publication, performance and rollback gates.
 - [SDF source-query optimization progress](sdf-source-query-optimization-progress.md):
   implementation checkpoints and qualification boundaries for that loop.
+- [SDF source-query optimization results](sdf-source-query-optimization-results.md):
+  qualified automatic shadow culling, explicit prepared/combined studies,
+  final matched timings and preserved numerical/publication contracts.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
   [results](sdf-shader-selection-results.md): qualified prebuilt lit/debug and
   published-material selection, exact capture parity, current 1080p measurements

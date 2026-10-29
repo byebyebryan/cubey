@@ -134,5 +134,19 @@ this is separate from repeated steady GPU frame timing.
 
 Final-binary automatic, B-only and combined qualifications pass. The same binary
 passes twelve focused SDF/shader/documentation test groups. The final four-way
-timing and evidence closeout remain pending; A is automatic only on its eligible
-source route, while B and combination stay explicit studies.
+batch completes 72 runs / 10,800 GPU samples. Combined p95 is 18.32–18.37 ms
+preset, 20.74–20.86 ms side and 16.14–16.41 ms rear; all proposed candidate
+gain/regression gates pass. A is automatic only on its eligible source route,
+while B and combination stay explicit studies. A final format-tag clarification
+rebuilds to the identical measured binary SHA-256, so no timing identity changes.
+
+The final audit identifies shared encoder activity during the four-way batch:
+8–50% at boundaries, with similar 28–30% means across controls. The independent
+A/B batches have 0% encoder observations. Final four-way results are labelled
+shared-load measurements; idle combined performance remains unqualified. No
+unowned workload is stopped to manufacture an idle result.
+
+[Final decisions, costs and remaining boundary](sdf-source-query-optimization-results.md)
+and [durable receipts/raw samples](../evidence/sdf-source-query-optimization-2026-10/README.md)
+close the loop. No additional tracing algorithm, default-tracer change, windowed
+root-far admission, push or publication is part of this work.

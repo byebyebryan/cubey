@@ -1,0 +1,114 @@
+{
+  "fields": "gpu_pct,encoder_pct,sm_MHz,mem_MHz,temp_C,power_W,used_MiB",
+  "batches": {
+    "a-timing": {
+      "reference": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      },
+      "shadow": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      }
+    },
+    "b-timing": {
+      "reference": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      },
+      "prepared-cones": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      }
+    },
+    "final-timing": {
+      "reference": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 27.86111111111111,
+        "distribution": {
+          "50.0": 11,
+          "8.0": 9,
+          "11.0": 1,
+          "17.0": 1,
+          "41.0": 6,
+          "9.0": 1,
+          "16.0": 3,
+          "12.0": 2,
+          "13.0": 2
+        }
+      },
+      "shadow": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 28.47222222222222,
+        "distribution": {
+          "8.0": 12,
+          "17.0": 1,
+          "16.0": 2,
+          "41.0": 6,
+          "50.0": 12,
+          "9.0": 1,
+          "12.0": 1,
+          "13.0": 1
+        }
+      },
+      "prepared-cones": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 28.583333333333332,
+        "distribution": {
+          "17.0": 1,
+          "8.0": 11,
+          "16.0": 3,
+          "11.0": 2,
+          "41.0": 4,
+          "40.0": 2,
+          "50.0": 12,
+          "10.0": 1
+        }
+      },
+      "combined": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 29.805555555555557,
+        "distribution": {
+          "8.0": 9,
+          "11.0": 3,
+          "17.0": 1,
+          "40.0": 2,
+          "41.0": 4,
+          "50.0": 13,
+          "16.0": 2,
+          "12.0": 1,
+          "13.0": 1
+        }
+      }
+    }
+  },
+  "interpretation": "Independent A/B batches observed encoder 0%; final four-way batch had shared encoder activity. No idle combined-performance claim."
+}

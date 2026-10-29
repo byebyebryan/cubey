@@ -7,7 +7,7 @@ struct PreparedCones {
     static constexpr unsigned version = 1;
     std::uint64_t geometry_hash = 0;
     std::size_t instruction_count = 0;
-    std::vector<math::Vec4> entries; // slope, radial, height*radial, eligible
+    std::vector<math::Vec4> entries; // slope, radial, height*radial, format tag (0: fallback)
     [[nodiscard]] bool matches(const AuthoredScene& scene) const;
 };
 [[nodiscard]] PreparedCones prepare_cones(const AuthoredScene& scene);

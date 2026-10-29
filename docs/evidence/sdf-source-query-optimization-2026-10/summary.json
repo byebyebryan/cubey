@@ -1,0 +1,1245 @@
+{
+  "source_head": "b942d6bb7bc7e7cb910638654dba01e2e4f742ec",
+  "candidate_source_head": "b942d6bb7bc7e7cb910638654dba01e2e4f742ec",
+  "binary_sha256": "aace33001393abfa94a20c073e51ca2a3cb7577cfdd038cee031eaaef914c5f2",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "width": 1920,
+  "height": 1080,
+  "supersample": 1,
+  "frames": 180,
+  "warmup": 30,
+  "samples_per_run": 150,
+  "timing_runs": 144,
+  "gpu_samples": 21600,
+  "preservation": {
+    "shaders": {
+      "checked": 116,
+      "changed": []
+    },
+    "content": {
+      "checked": 155,
+      "changed": []
+    },
+    "canonical_cpu_and_engine": {
+      "changed": false,
+      "paths": [
+        "projects/sdf/sdf_authored.cpp",
+        "projects/sdf/sdf_authored.h",
+        "projects/sdf/sdf_history.cpp",
+        "projects/sdf/sdf_regions.cpp",
+        "projects/sdf/sdf_regions.h",
+        "projects/sdf/sdf_bounds.cpp",
+        "projects/sdf/sdf_field.cpp",
+        "projects/sdf/sdf_field.h",
+        "src/cubey",
+        "include/cubey"
+      ]
+    }
+  },
+  "automatic_resource_boundary_passed": true,
+  "all_final_guardian_views_within_16_7_ms": false,
+  "gates": {
+    "shadow": {
+      "repeatable_guardian_gain": true,
+      "regressions": [],
+      "passed": true
+    },
+    "prepared-cones": {
+      "repeatable_guardian_gain": true,
+      "regressions": [],
+      "passed": true
+    },
+    "combined": {
+      "repeatable_guardian_gain": true,
+      "regressions": [],
+      "passed": true
+    }
+  },
+  "summary": {
+    "guardian": {
+      "preset": {
+        "reference": {
+          "p95_ms": [
+            21.6580576,
+            21.6604784,
+            21.555263999999998
+          ],
+          "min_ms": 21.555263999999998,
+          "max_ms": 21.6604784,
+          "median_p95_ms": 21.6580576,
+          "pipeline_setup_ms": [
+            35.79081,
+            40.461132,
+            41.094166
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "shadow": {
+          "p95_ms": [
+            19.3814512,
+            19.3201024,
+            19.5847968
+          ],
+          "min_ms": 19.3201024,
+          "max_ms": 19.5847968,
+          "median_p95_ms": 19.3814512,
+          "pipeline_setup_ms": [
+            39.208061,
+            36.409339,
+            39.239123
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "prepared-cones": {
+          "p95_ms": [
+            20.3612912,
+            20.0496768,
+            20.1849264
+          ],
+          "min_ms": 20.0496768,
+          "max_ms": 20.3612912,
+          "median_p95_ms": 20.1849264,
+          "pipeline_setup_ms": [
+            40.242697,
+            42.548655,
+            37.242591
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 2.883198
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.414298
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.319977
+            }
+          ]
+        },
+        "combined": {
+          "p95_ms": [
+            18.3748064,
+            18.3180496,
+            18.335494399999998
+          ],
+          "min_ms": 18.3180496,
+          "max_ms": 18.3748064,
+          "median_p95_ms": 18.335494399999998,
+          "pipeline_setup_ms": [
+            42.27124,
+            40.438453,
+            38.84829
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.7001
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.499639
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 8.49264
+            }
+          ]
+        }
+      },
+      "side": {
+        "reference": {
+          "p95_ms": [
+            23.2573984,
+            23.1407408,
+            23.0894608
+          ],
+          "min_ms": 23.0894608,
+          "max_ms": 23.2573984,
+          "median_p95_ms": 23.1407408,
+          "pipeline_setup_ms": [
+            36.686353,
+            41.888363,
+            39.072401
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "shadow": {
+          "p95_ms": [
+            21.7970672,
+            21.8114944,
+            21.9094048
+          ],
+          "min_ms": 21.7970672,
+          "max_ms": 21.9094048,
+          "median_p95_ms": 21.8114944,
+          "pipeline_setup_ms": [
+            39.943334,
+            41.28632,
+            40.218797
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "prepared-cones": {
+          "p95_ms": [
+            21.9642512,
+            22.026611199999998,
+            21.91876
+          ],
+          "min_ms": 21.91876,
+          "max_ms": 22.026611199999998,
+          "median_p95_ms": 21.9642512,
+          "pipeline_setup_ms": [
+            37.604347,
+            41.050109,
+            42.180668
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.509509
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.696841
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.501249
+            }
+          ]
+        },
+        "combined": {
+          "p95_ms": [
+            20.863046399999998,
+            20.7473216,
+            20.7439536
+          ],
+          "min_ms": 20.7439536,
+          "max_ms": 20.863046399999998,
+          "median_p95_ms": 20.7473216,
+          "pipeline_setup_ms": [
+            40.367075,
+            40.721788,
+            38.848708
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.60115
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.847751
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.72518
+            }
+          ]
+        }
+      },
+      "rear": {
+        "reference": {
+          "p95_ms": [
+            21.0662384,
+            21.141580799999996,
+            21.053648
+          ],
+          "min_ms": 21.053648,
+          "max_ms": 21.141580799999996,
+          "median_p95_ms": 21.0662384,
+          "pipeline_setup_ms": [
+            42.038875,
+            40.048084,
+            37.742401
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "shadow": {
+          "p95_ms": [
+            17.2309728,
+            17.4663184,
+            17.4633072
+          ],
+          "min_ms": 17.2309728,
+          "max_ms": 17.4663184,
+          "median_p95_ms": 17.4633072,
+          "pipeline_setup_ms": [
+            40.566404,
+            39.140019,
+            38.973128
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "prepared-cones": {
+          "p95_ms": [
+            19.6320704,
+            19.6628928,
+            19.6432096
+          ],
+          "min_ms": 19.6320704,
+          "max_ms": 19.6628928,
+          "median_p95_ms": 19.6432096,
+          "pipeline_setup_ms": [
+            39.91112,
+            41.00225,
+            38.605015
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.52652
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 2.213894
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.291318
+            }
+          ]
+        },
+        "combined": {
+          "p95_ms": [
+            16.2944672,
+            16.1418064,
+            16.4117616
+          ],
+          "min_ms": 16.1418064,
+          "max_ms": 16.4117616,
+          "median_p95_ms": 16.2944672,
+          "pipeline_setup_ms": [
+            38.233609,
+            40.057455,
+            37.184596
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.47668
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.296528
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 32336.0,
+              "allocation_bytes": 32336.0,
+              "device_generations_peak_bytes": 32336.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 32336.0,
+              "publication_prepare_ms": 1.509958
+            }
+          ]
+        }
+      }
+    },
+    "robot": {
+      "preset": {
+        "reference": {
+          "p95_ms": [
+            5.2669664,
+            5.2771408,
+            5.2694256
+          ],
+          "min_ms": 5.2669664,
+          "max_ms": 5.2771408,
+          "median_p95_ms": 5.2694256,
+          "pipeline_setup_ms": [
+            40.418922,
+            38.261196,
+            39.781631
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "shadow": {
+          "p95_ms": [
+            5.2934544,
+            5.2576912,
+            5.2595567999999995
+          ],
+          "min_ms": 5.2576912,
+          "max_ms": 5.2934544,
+          "median_p95_ms": 5.2595567999999995,
+          "pipeline_setup_ms": [
+            36.146205,
+            36.826586,
+            36.991774
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "prepared-cones": {
+          "p95_ms": [
+            5.2750288,
+            5.2287776,
+            5.2271936
+          ],
+          "min_ms": 5.2271936,
+          "max_ms": 5.2750288,
+          "median_p95_ms": 5.2287776,
+          "pipeline_setup_ms": [
+            37.307543,
+            41.015472,
+            38.028061
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.146927
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.271328
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.136207
+            }
+          ]
+        },
+        "combined": {
+          "p95_ms": [
+            5.275552,
+            5.2546256,
+            5.2497232
+          ],
+          "min_ms": 5.2497232,
+          "max_ms": 5.275552,
+          "median_p95_ms": 5.2546256,
+          "pipeline_setup_ms": [
+            38.815892,
+            36.826266,
+            37.115136
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.246808
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.251208
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.134666
+            }
+          ]
+        }
+      },
+      "side": {
+        "reference": {
+          "p95_ms": [
+            3.6425392,
+            3.6152016,
+            3.6105472
+          ],
+          "min_ms": 3.6105472,
+          "max_ms": 3.6425392,
+          "median_p95_ms": 3.6152016,
+          "pipeline_setup_ms": [
+            37.310312,
+            38.428056,
+            39.407549
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "shadow": {
+          "p95_ms": [
+            3.5768976,
+            3.5967776,
+            3.572864
+          ],
+          "min_ms": 3.572864,
+          "max_ms": 3.5967776,
+          "median_p95_ms": 3.5768976,
+          "pipeline_setup_ms": [
+            37.119301,
+            35.999062,
+            36.606082
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "prepared-cones": {
+          "p95_ms": [
+            3.6193999999999997,
+            3.6055023999999998,
+            3.6160816
+          ],
+          "min_ms": 3.6055023999999998,
+          "max_ms": 3.6193999999999997,
+          "median_p95_ms": 3.6160816,
+          "pipeline_setup_ms": [
+            37.832774,
+            38.723479,
+            38.805085
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.230538
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.166377
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.320358
+            }
+          ]
+        },
+        "combined": {
+          "p95_ms": [
+            3.6172448,
+            3.6418895999999994,
+            3.611809599999999
+          ],
+          "min_ms": 3.611809599999999,
+          "max_ms": 3.6418895999999994,
+          "median_p95_ms": 3.6172448,
+          "pipeline_setup_ms": [
+            38.191447,
+            38.701189,
+            37.662638
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.260108
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.190117
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.335518
+            }
+          ]
+        }
+      },
+      "rear": {
+        "reference": {
+          "p95_ms": [
+            3.7961968,
+            3.8135407999999997,
+            3.821750399999999
+          ],
+          "min_ms": 3.7961968,
+          "max_ms": 3.821750399999999,
+          "median_p95_ms": 3.8135407999999997,
+          "pipeline_setup_ms": [
+            38.77415,
+            36.410595,
+            37.686178
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "shadow": {
+          "p95_ms": [
+            3.8097023999999995,
+            3.8338896,
+            3.8312752
+          ],
+          "min_ms": 3.8097023999999995,
+          "max_ms": 3.8338896,
+          "median_p95_ms": 3.8312752,
+          "pipeline_setup_ms": [
+            37.13455,
+            39.059891,
+            36.503971
+          ],
+          "preparation": [
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            },
+            {
+              "builds": 0.0,
+              "payload_bytes": 0.0,
+              "allocation_bytes": 0.0,
+              "device_generations_peak_bytes": 0.0,
+              "preparations": 0.0,
+              "staging_payload_peak_bytes": 0.0,
+              "publication_prepare_ms": 0.0
+            }
+          ]
+        },
+        "prepared-cones": {
+          "p95_ms": [
+            3.8225616,
+            3.8060207999999998,
+            3.8161024
+          ],
+          "min_ms": 3.8060207999999998,
+          "max_ms": 3.8225616,
+          "median_p95_ms": 3.8161024,
+          "pipeline_setup_ms": [
+            37.759774,
+            38.85327,
+            38.566153
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.124627
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.393709
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.142177
+            }
+          ]
+        },
+        "combined": {
+          "p95_ms": [
+            3.8172944,
+            3.8247007999999996,
+            3.832696
+          ],
+          "min_ms": 3.8172944,
+          "max_ms": 3.832696,
+          "median_p95_ms": 3.8247007999999996,
+          "pipeline_setup_ms": [
+            39.113852,
+            38.652529,
+            37.809088
+          ],
+          "preparation": [
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.160277
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.143607
+            },
+            {
+              "builds": 1.0,
+              "payload_bytes": 2608.0,
+              "allocation_bytes": 2608.0,
+              "device_generations_peak_bytes": 2608.0,
+              "preparations": 1.0,
+              "staging_payload_peak_bytes": 2608.0,
+              "publication_prepare_ms": 1.267748
+            }
+          ]
+        }
+      }
+    }
+  },
+  "derived_format_version": 1,
+  "encoder_observations": {
+    "a-timing": {
+      "reference": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      },
+      "shadow": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      }
+    },
+    "b-timing": {
+      "reference": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      },
+      "prepared-cones": {
+        "observations": 36,
+        "min_pct": 0.0,
+        "max_pct": 0.0,
+        "mean_pct": 0.0,
+        "distribution": {
+          "0.0": 36
+        }
+      }
+    },
+    "final-timing": {
+      "reference": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 27.86111111111111,
+        "distribution": {
+          "50.0": 11,
+          "8.0": 9,
+          "11.0": 1,
+          "17.0": 1,
+          "41.0": 6,
+          "9.0": 1,
+          "16.0": 3,
+          "12.0": 2,
+          "13.0": 2
+        }
+      },
+      "shadow": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 28.47222222222222,
+        "distribution": {
+          "8.0": 12,
+          "17.0": 1,
+          "16.0": 2,
+          "41.0": 6,
+          "50.0": 12,
+          "9.0": 1,
+          "12.0": 1,
+          "13.0": 1
+        }
+      },
+      "prepared-cones": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 28.583333333333332,
+        "distribution": {
+          "17.0": 1,
+          "8.0": 11,
+          "16.0": 3,
+          "11.0": 2,
+          "41.0": 4,
+          "40.0": 2,
+          "50.0": 12,
+          "10.0": 1
+        }
+      },
+      "combined": {
+        "observations": 36,
+        "min_pct": 8.0,
+        "max_pct": 50.0,
+        "mean_pct": 29.805555555555557,
+        "distribution": {
+          "8.0": 9,
+          "11.0": 3,
+          "17.0": 1,
+          "40.0": 2,
+          "41.0": 4,
+          "50.0": 13,
+          "16.0": 2,
+          "12.0": 1,
+          "13.0": 1
+        }
+      }
+    }
+  },
+  "combined_idle_gpu_qualified": false,
+  "assembler_sha256": "96eef921a8f5e4578eef0fb31cc48d73e5b2655af230fb07d141c3e77a06f72e"
+}

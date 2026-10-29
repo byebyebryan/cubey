@@ -1,8 +1,8 @@
 # SDF source-query optimization plan
 
 Date: 2026-10-29. Planning baseline: `8b7a5e71`, local
-`sdf-tracing-comparison`. Status: proposed execution contract; no runtime change
-or new optimization loop has started with this document.
+`sdf-tracing-comparison`. Status: executed contract; results and remaining
+boundaries are linked in the execution section below.
 
 ## Objective and boundary
 
@@ -262,3 +262,9 @@ contract rather than being inferred from a faster headless shader.
 
 The next goal, if requested, is to execute checkpoints 1–5 for A and the bounded
 B trial, then close with evidence. It is not an open-ended goal to reach 60 FPS.
+
+## Execution
+
+The bounded loop is implemented and qualified in the
+[results](sdf-source-query-optimization-results.md), with local checkpoints and
+explicit remaining boundaries in the [progress receipt](sdf-source-query-optimization-progress.md).

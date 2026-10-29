@@ -1,0 +1,2107 @@
+{
+  "cases": [
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 11.406017,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 18108402278844718650,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "sphere-control",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 9.24625,
+      "region_bytes": 4223312,
+      "region_fallback_cells": 0,
+      "region_far_cells": 254904,
+      "region_references": 7240,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            0.26723071932792664,
+            0.5346750020980835,
+            0.8016921281814575
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            -0.8729427456855774,
+            0.4363645911216736,
+            0.21807549893856049
+          ],
+          "residual": 2.9802322387695313e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.4999999403953552
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.20000000298023224
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.20000000298023224
+        },
+        {
+          "distance": 0.0
+        },
+        {
+          "distance": 0.20000000298023224
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.391561,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 16498056370629926624,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "subgrid-sphere",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.645501,
+      "region_bytes": 4194480,
+      "region_fallback_cells": 0,
+      "region_far_cells": 262112,
+      "region_references": 32,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 1.3096723705530167e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973134458065
+        },
+        {
+          "normal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "residual": 1.3096723705530167e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973134458065
+        },
+        {
+          "normal": [
+            0.26549580693244934,
+            0.5327267050743103,
+            0.8035634756088257
+          ],
+          "residual": 1.1641532182693481e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973134458065
+        },
+        {
+          "normal": [
+            -0.8748083114624023,
+            0.43350932002067566,
+            0.2162868231534958
+          ],
+          "residual": 1.4551915228366852e-11,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973134458065
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 1.4551915228366852e-11,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.00019531250291038305
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.00019531250291038305
+        },
+        {
+          "distance": -1.4551915228366852e-11
+        },
+        {
+          "distance": 0.00019531250291038305
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.076341,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 3163061551344856587,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "aligned-small-sphere",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.669543,
+      "region_bytes": 4194480,
+      "region_fallback_cells": 0,
+      "region_far_cells": 262112,
+      "region_references": 32,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.8917489796876907e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973600119352
+        },
+        {
+          "normal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "residual": -1.8917489796876907e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973600119352
+        },
+        {
+          "normal": [
+            0.2654961049556732,
+            0.5327267050743103,
+            0.8035633563995361
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973134458065
+        },
+        {
+          "normal": [
+            -0.8748080730438232,
+            0.43350982666015625,
+            0.21628686785697937
+          ],
+          "residual": -1.1641532182693481e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.004268973134458065
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.00019531250291038305
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.00019531250291038305
+        },
+        {
+          "distance": 0.0
+        },
+        {
+          "distance": 0.00019531250291038305
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.792127,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 6667548872931073813,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-identical-0.0001",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.46938,
+      "region_bytes": 4242352,
+      "region_fallback_cells": 0,
+      "region_far_cells": 258144,
+      "region_references": 12000,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            0.26723071932792664,
+            0.5346750020980835,
+            0.8016921281814575
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            -0.8728512525558472,
+            0.4364256262779236,
+            0.2183196097612381
+          ],
+          "residual": -1.0752046364359558e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.15002501010894775
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.15002501010894775
+        },
+        {
+          "distance": -1.0752046364359558e-08
+        },
+        {
+          "distance": 0.15002498030662537
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.987658,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 45948244489578638,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-identical-0.01",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.61016,
+      "region_bytes": 4243504,
+      "region_fallback_cells": 0,
+      "region_far_cells": 258048,
+      "region_references": 12288,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 2.7474015951156616e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.54749995470047
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 2.7474015951156616e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.54749995470047
+        },
+        {
+          "normal": [
+            0.26726123690605164,
+            0.5345224738121033,
+            0.8017836809158325
+          ],
+          "residual": -3.213062882423401e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5475000143051147
+        },
+        {
+          "normal": [
+            -0.8729020357131958,
+            0.4363442361354828,
+            0.2182789146900177
+          ],
+          "residual": 1.257285475730896e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.54749995470047
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -2.3283064365386963e-09,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.1525000035762787
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.1525000035762787
+        },
+        {
+          "distance": -2.3283064365386963e-09
+        },
+        {
+          "distance": 0.1525000035762787
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.810067,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 13736211298417678956,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-identical-0.1",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.421069,
+      "region_bytes": 4261072,
+      "region_fallback_cells": 0,
+      "region_far_cells": 256584,
+      "region_references": 16680,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            0.26741379499435425,
+            0.5344004034996033,
+            0.8018142580986023
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            -0.872861385345459,
+            0.4365374743938446,
+            0.21805517375469208
+          ],
+          "residual": -9.313225746154785e-09,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.17500001192092896
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.17500001192092896
+        },
+        {
+          "distance": -9.313225746154785e-09
+        },
+        {
+          "distance": 0.17499998211860657
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.831815,
+      "derived_probe_count": 1335,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 7242069496324257935,
+      "instructions": 5,
+      "mode": "analytic-pruned",
+      "name": "nested-smooth-left",
+      "program_bytes": 336,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.114305,
+      "region_bytes": 4307952,
+      "region_fallback_cells": 0,
+      "region_far_cells": 256464,
+      "region_references": 28400,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -1.5832483768463135e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5234375
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": -1.5832483768463135e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5234375
+        },
+        {
+          "normal": [
+            0.26721546053886414,
+            0.5344309210777283,
+            0.8018600344657898
+          ],
+          "residual": -9.313225746154785e-10,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5234375
+        },
+        {
+          "normal": [
+            -0.8729427456855774,
+            0.4363645911216736,
+            0.21807549893856049
+          ],
+          "residual": -3.073364496231079e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5234375
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -9.313225746154785e-10,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.17656250298023224
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 158.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.17656251788139343
+        },
+        {
+          "distance": -9.313225746154785e-10
+        },
+        {
+          "distance": 0.17656248807907104
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 10.47479,
+      "derived_probe_count": 1335,
+      "derived_probe_max_error": 8.940696716308594e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 14741619498992944531,
+      "instructions": 5,
+      "mode": "analytic-pruned",
+      "name": "nested-smooth-right",
+      "program_bytes": 336,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.82553,
+      "region_bytes": 4306512,
+      "region_fallback_cells": 0,
+      "region_far_cells": 256536,
+      "region_references": 28040,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.521777331829071
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": -5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.521777331829071
+        },
+        {
+          "normal": [
+            0.26726123690605164,
+            0.5345224738121033,
+            0.8017836809158325
+          ],
+          "residual": -5.587935447692871e-09,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.521777331829071
+        },
+        {
+          "normal": [
+            -0.8729427456855774,
+            0.4363645911216736,
+            0.21807549893856049
+          ],
+          "residual": -3.5390257835388184e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.521777331829071
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -5.587935447692871e-09,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.17822265625
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 158.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.17822265625
+        },
+        {
+          "distance": -5.587935447692871e-09
+        },
+        {
+          "distance": 0.17822265625
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.559945,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 18433098111416046818,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "box-0-0",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.191918,
+      "region_bytes": 4221136,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255448,
+      "region_references": 6696,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 6.0,
+          "t": 0.2199999988079071
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.455645,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 13624621934565783641,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "box-0-0.00027901786",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.241477,
+      "region_bytes": 4221136,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255448,
+      "region_references": 6696,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -2.2351741790771484e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 6.0,
+          "t": 0.2199999988079071
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -2.2351741790771484e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -2.2351741790771484e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -2.2351741790771484e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.430932,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 17120774950339989335,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "box-23-0",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.843672,
+      "region_bytes": 4219392,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255884,
+      "region_references": 6260,
+      "results": [
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.9205422401428223,
+            0.0,
+            -0.39064309000968933
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 6.0,
+          "t": 0.2199999988079071
+        },
+        {
+          "normal": [
+            0.39075830578804016,
+            0.0,
+            0.9204932451248169
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": 7.450580596923828e-09,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.3907719850540161,
+            0.0,
+            0.9204874634742737
+          ],
+          "residual": 2.9802322387695313e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.537005,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 14482185363410610916,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "box-23-0.00027901786",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.212588,
+      "region_bytes": 4219404,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255881,
+      "region_references": 6263,
+      "results": [
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": -2.2351741790771484e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.9205422401428223,
+            0.0,
+            -0.39064309000968933
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 6.0,
+          "t": 0.2199999988079071
+        },
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": -2.2351741790771484e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.39081040024757385,
+            0.0,
+            0.92047119140625
+          ],
+          "residual": 1.4901161193847656e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.212162,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 8.940696716308594e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 3539669290421765636,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "box-45-0",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.004026,
+      "region_bytes": 4219296,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255908,
+      "region_references": 6236,
+      "results": [
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            0.7071067690849304
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "residual": 1.4901161193847656e-08,
+          "status": 1,
+          "steps": 6.0,
+          "t": 0.2200000137090683
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            0.7071067690849304
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            0.7071067690849304
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.7072135806083679,
+            0.0,
+            0.7070000171661377
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.348764,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 2382038922206536403,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "box-45-0.00027901786",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.035656,
+      "region_bytes": 4219212,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255929,
+      "region_references": 6215,
+      "results": [
+        {
+          "normal": [
+            0.7070533633232117,
+            0.0,
+            0.7071601748466492
+          ],
+          "residual": 2.2351741790771484e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 6.0,
+          "t": 0.2199999988079071
+        },
+        {
+          "normal": [
+            0.7070533633232117,
+            0.0,
+            0.7071601748466492
+          ],
+          "residual": 1.4901161193847656e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            0.7071067690849304
+          ],
+          "residual": 1.4901161193847656e-08,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.7072135806083679,
+            0.0,
+            0.7070000171661377
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 7.640528,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 16993683741795772102,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "thin-stick-0.5h",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.339241,
+      "region_bytes": 4195696,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261808,
+      "region_references": 336,
+      "results": [
+        {
+          "normal": [
+            0.39073118567466736,
+            0.0,
+            0.9205048084259033
+          ],
+          "residual": -1.1641532182693481e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.009860491380095482
+        },
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000894069672
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 7.84546,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 14398882239344281410,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "thin-stick-1.5h",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.660293,
+      "region_bytes": 4195696,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261808,
+      "region_references": 336,
+      "results": [
+        {
+          "normal": [
+            0.39073091745376587,
+            0.0,
+            0.9205049276351929
+          ],
+          "residual": -2.6193447411060333e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.009581473655998707
+        },
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000894069672
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 7.979641,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 11502953349875602922,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "thin-stick-4h",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.609453,
+      "region_bytes": 4195696,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261808,
+      "region_references": 336,
+      "results": [
+        {
+          "normal": [
+            0.39073002338409424,
+            0.0,
+            0.9205052852630615
+          ],
+          "residual": -1.1641532182693481e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.008883928880095482
+        },
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000894069672
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.365811,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 17043474452188786934,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "cut-owner-False",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.910123,
+      "region_bytes": 4265520,
+      "region_fallback_cells": 0,
+      "region_far_cells": 244352,
+      "region_references": 17792,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.10000000149011612
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.10000000894069672
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.506852,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 17043474452188786934,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "cut-owner-True",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.257545,
+      "region_bytes": 4265520,
+      "region_fallback_cells": 0,
+      "region_far_cells": 244352,
+      "region_references": 17792,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.10000000149011612
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.10000000894069672
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.271271,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 5470114744067985772,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "subgrid-cavity",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.927983,
+      "region_bytes": 4223440,
+      "region_fallback_cells": 0,
+      "region_far_cells": 254872,
+      "region_references": 7272,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -1.4551915228366852e-11,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.00019531250291038305
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.722134,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 11125286099401703813,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "uniform-group",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.822672,
+      "region_bytes": 4222816,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255028,
+      "region_references": 7116,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            1.0,
+            0.0,
+            0.0002136752154910937
+          ],
+          "residual": 1.4901161193847656e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            0.26741379499435425,
+            0.5344004034996033,
+            0.8018142580986023
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            -0.8728919625282288,
+            0.4364459812641144,
+            0.2181161791086197
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.5
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.20000000298023224
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 169.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.20000000298023224
+        },
+        {
+          "distance": 0.0
+        },
+        {
+          "distance": 0.20000000298023224
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.609146,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 6483958833716482848,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "capsule",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.289838,
+      "region_bytes": 4216240,
+      "region_fallback_cells": 0,
+      "region_far_cells": 256672,
+      "region_references": 5472,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "residual": 7.450580596923828e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "distance": 0.009999997913837433
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.618176,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 12095891924568177248,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "cylinder",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.394319,
+      "region_bytes": 4212848,
+      "region_fallback_cells": 0,
+      "region_far_cells": 257520,
+      "region_references": 4624,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5
+        },
+        {
+          "distance": 0.009999990463256836
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.483535,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 3425564247748751208,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "torus",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.968145,
+      "region_bytes": 4217200,
+      "region_fallback_cells": 0,
+      "region_far_cells": 256432,
+      "region_references": 5712,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "residual": 1.1175870895385742e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6499999761581421
+        },
+        {
+          "distance": 0.009999997913837433
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.848017,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 18077386633429916334,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "capped-cone",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.394869,
+      "region_bytes": 4214192,
+      "region_fallback_cells": 0,
+      "region_far_cells": 257184,
+      "region_references": 4960,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5
+        },
+        {
+          "distance": 0.009999990463256836
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.629386,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 8929632622576057614,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "round-cone",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.390239,
+      "region_bytes": 4218528,
+      "region_fallback_cells": 0,
+      "region_far_cells": 256100,
+      "region_references": 6044,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            1.0,
+            0.0
+          ],
+          "residual": 4.0978193283081055e-08,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.44999995827674866
+        },
+        {
+          "distance": 0.009999971836805344
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.164203,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 18108402278844718650,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "sphere-tangent",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.787844,
+      "region_bytes": 4223312,
+      "region_fallback_cells": 0,
+      "region_far_cells": 254904,
+      "region_references": 7240,
+      "results": [
+        {
+          "normal": [
+            0.9999123215675354,
+            0.0,
+            0.013243871740996838
+          ],
+          "residual": 1.7404556274414063e-05,
+          "status": 1,
+          "steps": 148.0,
+          "t": 0.6973617076873779
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 0.0,
+          "t": 0.0
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.906028,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 6718198945608235053,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-subtract-0.0001",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.639951,
+      "region_bytes": 4265520,
+      "region_fallback_cells": 0,
+      "region_far_cells": 244352,
+      "region_references": 17792,
+      "results": [
+        {
+          "distance": -0.09997500479221344
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 10.341408,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 4787802743146043542,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-subtract-0.01",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.83943,
+      "region_bytes": 4265520,
+      "region_fallback_cells": 0,
+      "region_far_cells": 244352,
+      "region_references": 17792,
+      "results": [
+        {
+          "distance": -0.09750000387430191
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 9.870845,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 5375889780056643732,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-subtract-0.1",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.583178,
+      "region_bytes": 4265520,
+      "region_fallback_cells": 0,
+      "region_far_cells": 244352,
+      "region_references": 17792,
+      "results": [
+        {
+          "distance": -0.07500000298023224
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 4.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.198662,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 9528710269108034239,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "workspace-clip",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.896125,
+      "region_bytes": 4200288,
+      "region_fallback_cells": 0,
+      "region_far_cells": 260660,
+      "region_references": 1484,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.20099997520446777
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.0010000169277191162
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "root-far",
+      "compile_upload_query_readback_ms": 8.727197,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 7239883950309317242,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "crossed-thin-sticks",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.964696,
+      "region_bytes": 4197584,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261512,
+      "region_references": 808,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 3.92901711165905e-10,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.009860490448772907
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 1.0,
+          "t": 0.0
+        }
+      ]
+    }
+  ],
+  "format": "cubey.sdf.tracing-results",
+  "prepared_cones": true,
+  "query_shader": "prepared_root_far_comparison_analytic_pruned.comp.spv",
+  "query_shader_sha256": "ebaf4c916e435a62c8f90baa76f8912569ba8ba83ba390ef7b1ffd40b1faba88",
+  "source_optimization": "combined",
+  "version": 1
+}

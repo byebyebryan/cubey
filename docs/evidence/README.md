@@ -30,3 +30,7 @@ packs; they are not golden-image tests.
 
 - [Selected SDF optimization investigation](sdf-optimization-investigation-2026-10/README.md):
   current-path controls, exact private shadow-probe captures and ranked next trials.
+
+- [SDF source-query optimization loop](sdf-source-query-optimization-2026-10/README.md):
+  automatic shadow qualification, prepared/combined studies, native publication
+  and history checks, full-HD timings and raw completed GPU samples.

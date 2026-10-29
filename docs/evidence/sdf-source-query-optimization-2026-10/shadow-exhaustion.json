@@ -1,0 +1,104 @@
+{
+  "cases": [
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 0,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 1,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 2,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 3,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 4,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 5,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": false,
+      "exhausted": 1,
+      "index": 6,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 0,
+      "index": 0,
+      "trace_calls": 0,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 1,
+      "index": 1,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 0,
+      "index": 2,
+      "trace_calls": 0,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 1,
+      "index": 3,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 0,
+      "index": 4,
+      "trace_calls": 0,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 1,
+      "index": 5,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    },
+    {
+      "candidate": true,
+      "exhausted": 1,
+      "index": 6,
+      "trace_calls": 1,
+      "wrong_origin": 0
+    }
+  ],
+  "passed": true,
+  "scope": "Controlled exhaustion fixture using actual surfaceRadiance and stub trace"
+}

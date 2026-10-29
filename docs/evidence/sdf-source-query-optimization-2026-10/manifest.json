@@ -1,0 +1,130 @@
+{
+  "README.md": {
+    "bytes": 4767,
+    "sha256": "6666b57fa6d77b842cc93d0752577424f2a7ad481f0ef2d3df77b47c7d061b2f"
+  },
+  "authored-history.json": {
+    "bytes": 49260,
+    "sha256": "94ee184ad7c596690075123dfa11fad7431894d67bc7a01d8f2e8bdc055d278f"
+  },
+  "automatic-qualification.json": {
+    "bytes": 236401,
+    "sha256": "baf95b066980e6eeac937bf732cdca44f62e8d7acf9baffcb0dbe0773d95cc64"
+  },
+  "baseline.json": {
+    "bytes": 36604,
+    "sha256": "28f4fa0f91a2f56162aee54c204a259a769c84aa1b7c257889c18631f4830635"
+  },
+  "combined-frozen-results.json": {
+    "bytes": 51653,
+    "sha256": "6cb14ec0730017f33d4b44722ebba161266d5d3145abe6c8d3c61fe1c3ff72a3"
+  },
+  "combined-qualification.json": {
+    "bytes": 42986,
+    "sha256": "3c79e688dc6e7357e560759a9b53763c3a7aafea2dda8f1c1f5bfc257ee2659d"
+  },
+  "cone-lighting.json": {
+    "bytes": 34621,
+    "sha256": "0a5e628175aa217761393bfebe4fb8beca7bbdbb522a99d612171fc21efdc258"
+  },
+  "earlier-shadow-appearance.json": {
+    "bytes": 20357,
+    "sha256": "8898d983623b5c66f8eab9cfd6bf3594701050af9c6a188929cc799ba1a3fc83"
+  },
+  "earlier-shadow-edge-cases.json": {
+    "bytes": 66624,
+    "sha256": "ccf0ff7a9ceeaccd424a04db8ff080727a78da568c1b3447bd0052292ac14e22"
+  },
+  "encoder-observations.json": {
+    "bytes": 2517,
+    "sha256": "05f7173ae9045e59d72531d99be727945aac73b4c0ca5a37de91af9be0fbcae6"
+  },
+  "focused-checks.json": {
+    "bytes": 559,
+    "sha256": "3cd976d13ecb2fefb41a3b01aed6a1b3759962e189c3a0af102961b92af0c49c"
+  },
+  "focused-checks.log": {
+    "bytes": 8610,
+    "sha256": "ecd466621fbac12b77870d2055bde2aa25768008e3f413e83df13bfd6dfbe6d0"
+  },
+  "four-way-timing.json": {
+    "bytes": 153522,
+    "sha256": "5334d50514319280cd0a5eba65a7d37d25b8e6b199a97a0bd3acc3865a71f20e"
+  },
+  "gpu-samples.json": {
+    "bytes": 1024683,
+    "sha256": "84d4f47e1a55dddb3d4befca23e4cc3ba2068d812f865e548f1410bdf3b90e48"
+  },
+  "guardian-publication.json": {
+    "bytes": 30107,
+    "sha256": "f0a9a114f0b1def37ba9aaddd47117dd5e0d9944ef5b6c7a17a77f8f13b3a2ac"
+  },
+  "images/guardian-preset-combined.png": {
+    "bytes": 476299,
+    "sha256": "3e14006f869badad8e3b536c5901cc94111f725b580566595674f08f066e4f9b"
+  },
+  "images/guardian-preset-reference.png": {
+    "bytes": 476521,
+    "sha256": "817906011d13ddf4b32e09912686aeda0ef267b05bddd66e354bdf01ea5683b6"
+  },
+  "images/guardian-rear-combined.png": {
+    "bytes": 413220,
+    "sha256": "8bdf600aa48edcd899cd9aad26a1fbddd1f0ee5f145dae56cee3ef2192890e6d"
+  },
+  "images/guardian-rear-reference.png": {
+    "bytes": 412815,
+    "sha256": "09a47c088ba2c8c30d54dfafd8bcfa719cdc22884d3a43f666130e009a49c372"
+  },
+  "images/guardian-side-combined.png": {
+    "bytes": 538669,
+    "sha256": "bcbcb122b2f884e838680775e61420be905a160cdedfacaffddb4479c6f3249c"
+  },
+  "images/guardian-side-reference.png": {
+    "bytes": 538504,
+    "sha256": "65765d68299036a3d67cdcabb89c29b70a1408937f8d54650ee480492491b9f2"
+  },
+  "images/native-source-window.png": {
+    "bytes": 117188,
+    "sha256": "6ed13871685407942d565458d7f1c190af3d959403f12046381030b8df93dc69"
+  },
+  "native-window.json": {
+    "bytes": 15419,
+    "sha256": "d4f2c792b7b457cb041d37264a0da4f5605eded04427dac0e4864c7c07493fe8"
+  },
+  "prepared-frozen-results.json": {
+    "bytes": 51667,
+    "sha256": "186f7f561a76d0a840789a5381fffd891f1f36e89d0f6351cf1c81795662d51f"
+  },
+  "prepared-only-timing.json": {
+    "bytes": 65254,
+    "sha256": "ac9ddb8de0029f9c7914ffa32f17edb067c404a72dc145e2c788c12af293119a"
+  },
+  "prepared-qualification.json": {
+    "bytes": 42735,
+    "sha256": "5ce2310963ba0390121d0f51a12b859d234cc62b5c9846199d1e8d174f12c809"
+  },
+  "primitive-numerics.json": {
+    "bytes": 1040,
+    "sha256": "ffa9a420bb4934ae47e6ae6af8d8f2134c423137a46df5dce8dcfc5b8ea6d18c"
+  },
+  "shadow-exhaustion.json": {
+    "bytes": 1897,
+    "sha256": "4cbd30c3a825b2842bab677dc22b34d20f469bc04f15d4a23357876a0748f290"
+  },
+  "shadow-only-timing.json": {
+    "bytes": 64775,
+    "sha256": "c1576e59d1b44a3cab8f16739456a1bb8457e82d7d5157ab3b3f246ef081340e"
+  },
+  "summary.json": {
+    "bytes": 37023,
+    "sha256": "50f8e29140cc16cb37d64eb13849735d24a6065a1a63cc6118824403aecafa6b"
+  },
+  "supplemental-contracts.json": {
+    "bytes": 13892,
+    "sha256": "44d94a30ae75e7cb8aaa1fbd7e52c5f48388a8cdc729fa6e792dbebb23647b93"
+  },
+  "supplemental-qualification.json": {
+    "bytes": 16179,
+    "sha256": "c25cbc17e301d07df65bd9ff0f6b4f7c768a4fd1df7b4d69293ceaec93936b91"
+  }
+}

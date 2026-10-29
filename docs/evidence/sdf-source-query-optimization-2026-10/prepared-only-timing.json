@@ -1,0 +1,2356 @@
+{
+  "binary_sha256": "fbc6d430ddb1a451960d3e4212b971a41e7ab0a536fd4fe1d56c206239843d99",
+  "runner_sha256": "469ac1c8cbcd62aacae632c81ee0564388d207783737024c1762e247899f26e6",
+  "source_head": "b5379091d3abe2007a930114cafa46ad42dc4a5f",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "frames": 180,
+  "warmup": 30,
+  "modes": [
+    "reference",
+    "prepared-cones"
+  ],
+  "runs": [
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "reference",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "0.4",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-preset-reference-r1"
+      ],
+      "gpu_before": "0 %, 0 %, 187 MHz, 810 MHz, 34, 22.95 W, 548 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 97.29 W, 543 MiB",
+      "wall_seconds": 4.139842930977466,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 37.005159,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.566912,
+          "p95_ms": 21.466376
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.01088,
+          "p95_ms": 0.0110256
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.577728,
+          "p95_ms": 21.477401599999997
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "prepared-cones",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "0.4",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-preset-prepared-cones-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 97.29 W, 543 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 98.51 W, 558 MiB",
+      "wall_seconds": 3.88726972497534,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 40.359545,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 19.13776,
+          "p95_ms": 20.1605696
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.1628927999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 19.193312,
+          "p95_ms": 20.1863792
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "reference",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "1.9707963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-side-reference-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 98.88 W, 558 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 89.17 W, 537 MiB",
+      "wall_seconds": 4.394879048981238,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.526488,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 22.052976,
+          "p95_ms": 22.7997264
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010928,
+          "p95_ms": 0.01172639999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 22.06648,
+          "p95_ms": 22.811121599999996
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "prepared-cones",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "1.9707963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-side-prepared-cones-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 43, 89.17 W, 537 MiB",
+      "gpu_after": "100 %, 0 %, 2895 MHz, 14001 MHz, 44, 89.90 W, 596 MiB",
+      "wall_seconds": 4.224798720999388,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 37.832612,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.928384,
+          "p95_ms": 22.0193584
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011136,
+          "p95_ms": 0.3399183999999991
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 21.052672,
+          "p95_ms": 22.0508592
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "reference",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "3.541592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-rear-reference-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2895 MHz, 14001 MHz, 44, 89.90 W, 596 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 83.64 W, 563 MiB",
+      "wall_seconds": 4.076793796994025,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.419371,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.403184,
+          "p95_ms": 21.017848
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.011852799999999985
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.425408,
+          "p95_ms": 21.0287952
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "prepared-cones",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "3.541592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-rear-prepared-cones-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 83.64 W, 563 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 44, 84.90 W, 540 MiB",
+      "wall_seconds": 3.8546930290176533,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 38.628246,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 19.04552,
+          "p95_ms": 19.421799999999998
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.15180639999999995
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 19.072288,
+          "p95_ms": 19.44992
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "reference",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "0.48",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-preset-reference-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 44, 84.90 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 48, 101.66 W, 540 MiB",
+      "wall_seconds": 1.1609080600028392,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 38.692086,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 4.826016,
+          "p95_ms": 5.079540799999999
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011104,
+          "p95_ms": 0.0114416
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 4.837104,
+          "p95_ms": 5.090942399999999
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "prepared-cones",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "0.48",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-preset-prepared-cones-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 48, 101.66 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 49, 115.94 W, 540 MiB",
+      "wall_seconds": 1.1442160220176447,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.137634,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 4.841583999999999,
+          "p95_ms": 5.1180096
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011104,
+          "p95_ms": 0.011456
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 4.852608,
+          "p95_ms": 5.1291904
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "reference",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "2.0507963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-side-reference-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 49, 115.94 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 117.18 W, 540 MiB",
+      "wall_seconds": 0.8530153369938489,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.773328,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.230976,
+          "p95_ms": 3.4009759999999996
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011168,
+          "p95_ms": 0.0114416
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.242176,
+          "p95_ms": 3.4121408
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "prepared-cones",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "2.0507963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-side-prepared-cones-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 117.18 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 50, 130.24 W, 540 MiB",
+      "wall_seconds": 0.8704593949951231,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.167384,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.2216,
+          "p95_ms": 3.4605568
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011184,
+          "p95_ms": 0.011488
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.232944,
+          "p95_ms": 3.4719295999999997
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "reference",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "3.621592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-rear-reference-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 50, 130.24 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 50, 130.81 W, 540 MiB",
+      "wall_seconds": 0.8982683600042947,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.983409,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.454992,
+          "p95_ms": 3.6142848
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.0112,
+          "p95_ms": 0.011456
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.466384,
+          "p95_ms": 3.6253424
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "prepared-cones",
+      "repeat": 1,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "3.621592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-rear-prepared-cones-r1"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 50, 130.81 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 51, 133.62 W, 540 MiB",
+      "wall_seconds": 0.9005474679870531,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 38.006113,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.459536,
+          "p95_ms": 3.5867679999999997
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011232,
+          "p95_ms": 0.0115056
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.4718720000000003,
+          "p95_ms": 3.6166064
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "prepared-cones",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "3.621592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-rear-prepared-cones-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 51, 133.62 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 52, 133.26 W, 540 MiB",
+      "wall_seconds": 0.9053231689904351,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.509951,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.452208,
+          "p95_ms": 3.6257216
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.0112,
+          "p95_ms": 0.012289599999999994
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.46608,
+          "p95_ms": 3.6531855999999996
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "reference",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "3.621592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-rear-reference-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 52, 133.26 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 52, 131.26 W, 540 MiB",
+      "wall_seconds": 0.8968773389933631,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.729602,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.442624,
+          "p95_ms": 3.620176
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.0112,
+          "p95_ms": 0.0114416
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.453552,
+          "p95_ms": 3.6314656
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "prepared-cones",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "2.0507963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-side-prepared-cones-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 52, 131.26 W, 540 MiB",
+      "gpu_after": "72 %, 0 %, 2880 MHz, 14001 MHz, 49, 131.06 W, 540 MiB",
+      "wall_seconds": 0.8679904269811232,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.23249,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.2432,
+          "p95_ms": 3.426976
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.0112,
+          "p95_ms": 0.01152
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.254128,
+          "p95_ms": 3.438104
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "reference",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "2.0507963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-side-reference-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 52, 131.06 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 51, 132.74 W, 540 MiB",
+      "wall_seconds": 0.8521162440010812,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.393115,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.218528,
+          "p95_ms": 3.4076096
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011136,
+          "p95_ms": 0.011409599999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.2296639999999996,
+          "p95_ms": 3.4187024
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "prepared-cones",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "0.48",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-preset-prepared-cones-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 51, 132.74 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 51, 118.56 W, 540 MiB",
+      "wall_seconds": 1.1422524870140478,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.697942,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 4.8116959999999995,
+          "p95_ms": 5.1513856
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011104,
+          "p95_ms": 0.011473599999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 4.822896,
+          "p95_ms": 5.16256
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "reference",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "0.48",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-preset-reference-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 51, 118.56 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 51, 117.26 W, 540 MiB",
+      "wall_seconds": 1.1524024120008107,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.959652,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 4.8281279999999995,
+          "p95_ms": 5.1268048
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011072,
+          "p95_ms": 0.011456
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 4.839104000000001,
+          "p95_ms": 5.137912
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "prepared-cones",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "3.541592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-rear-prepared-cones-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 51, 117.26 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 86.18 W, 540 MiB",
+      "wall_seconds": 3.8356982429977506,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.542221,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 19.040992,
+          "p95_ms": 19.4971216
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0112
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 19.052864,
+          "p95_ms": 19.5081152
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "reference",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "3.541592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-rear-reference-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 86.18 W, 540 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 85.14 W, 569 MiB",
+      "wall_seconds": 4.1034616400138475,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 37.215929,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.436816,
+          "p95_ms": 20.9156704
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011056,
+          "p95_ms": 0.2758384
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.499408,
+          "p95_ms": 21.0427952
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "prepared-cones",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "1.9707963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-side-prepared-cones-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 85.14 W, 569 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 91.06 W, 544 MiB",
+      "wall_seconds": 4.217595408001216,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 37.845961,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 21.051408000000002,
+          "p95_ms": 22.0029552
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.011345599999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 21.075264,
+          "p95_ms": 22.014020799999997
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "reference",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "1.9707963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-side-reference-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 91.06 W, 544 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 90.63 W, 553 MiB",
+      "wall_seconds": 4.423289636994014,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 37.512689,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 22.167008000000003,
+          "p95_ms": 23.0209184
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0111856
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 22.177999999999997,
+          "p95_ms": 23.0318768
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "prepared-cones",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "0.4",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-preset-prepared-cones-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 90.63 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 47, 100.97 W, 553 MiB",
+      "wall_seconds": 3.8755632730026264,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 38.852205,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 19.209760000000003,
+          "p95_ms": 20.0134816
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.011121599999999999
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 19.221536,
+          "p95_ms": 20.024457599999998
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "reference",
+      "repeat": 2,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "0.4",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-preset-reference-r2"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 47, 100.97 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 99.23 W, 553 MiB",
+      "wall_seconds": 4.104138366004918,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.381954,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.528496,
+          "p95_ms": 21.5770944
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.011136
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.5396,
+          "p95_ms": 21.588032
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "reference",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "0.4",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-preset-reference-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 99.23 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 99.05 W, 553 MiB",
+      "wall_seconds": 4.112526857992634,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.699786,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.564432,
+          "p95_ms": 21.694411199999998
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.0111856
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.575296,
+          "p95_ms": 21.705416
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "prepared-cones",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "0.4",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-preset-prepared-cones-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 99.05 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 100.71 W, 553 MiB",
+      "wall_seconds": 3.8552606299926993,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.813681,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 19.141312,
+          "p95_ms": 20.044328
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010912,
+          "p95_ms": 0.0111536
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 19.152160000000002,
+          "p95_ms": 20.0551024
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "reference",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "1.9707963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-side-reference-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 46, 100.71 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 44, 90.42 W, 563 MiB",
+      "wall_seconds": 4.411638987017795,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.820686,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 22.219535999999998,
+          "p95_ms": 22.9967984
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011072,
+          "p95_ms": 0.18990719999999994
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 22.28064,
+          "p95_ms": 23.0574832
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "prepared-cones",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "1.9707963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-side-prepared-cones-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 44, 90.42 W, 563 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 91.02 W, 556 MiB",
+      "wall_seconds": 4.186130279995268,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.421658,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.965056,
+          "p95_ms": 21.8587536
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.14539519999999997
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.983504,
+          "p95_ms": 21.8698192
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "reference",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "3.541592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-rear-reference-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 45, 91.02 W, 556 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 84.32 W, 553 MiB",
+      "wall_seconds": 4.084475381008815,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.007626,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 20.447952,
+          "p95_ms": 20.91704
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.0111536
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 20.458928,
+          "p95_ms": 20.9280016
+        }
+      }
+    },
+    {
+      "scene": "guardian",
+      "view": "rear",
+      "mode": "prepared-cones",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "3.541592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/guardian-rear-prepared-cones-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 84.32 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 85.33 W, 553 MiB",
+      "wall_seconds": 3.8370729440066498,
+      "selection": {
+        "route": 2.0,
+        "published_material_count": 1.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.462493,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 19.085583999999997,
+          "p95_ms": 19.490703999999997
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.010944,
+          "p95_ms": 0.011136
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 19.09648,
+          "p95_ms": 19.5016448
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "reference",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "0.48",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-preset-reference-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 43, 85.33 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 47, 100.79 W, 553 MiB",
+      "wall_seconds": 1.1486255459894892,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 34.910395,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 4.8232,
+          "p95_ms": 5.059587199999999
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011456,
+          "p95_ms": 0.0120176
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 4.839088,
+          "p95_ms": 5.089427199999999
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "prepared-cones",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "0.48",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-preset-prepared-cones-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 47, 100.79 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 48, 116.48 W, 553 MiB",
+      "wall_seconds": 1.145458850020077,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.457862,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 4.828688,
+          "p95_ms": 5.1125504
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011408,
+          "p95_ms": 0.011712
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 4.84,
+          "p95_ms": 5.1239216
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "reference",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "2.0507963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-side-reference-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2880 MHz, 14001 MHz, 48, 116.48 W, 553 MiB",
+      "gpu_after": "89 %, 0 %, 2895 MHz, 14001 MHz, 47, 116.47 W, 553 MiB",
+      "wall_seconds": 0.8614944540022407,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.392152,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.239408,
+          "p95_ms": 3.3968064
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011488,
+          "p95_ms": 0.011776
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.251136,
+          "p95_ms": 3.4084352
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "prepared-cones",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "2.0507963267948965",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-side-prepared-cones-r3"
+      ],
+      "gpu_before": "89 %, 0 %, 2880 MHz, 14001 MHz, 50, 129.49 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 130.83 W, 553 MiB",
+      "wall_seconds": 0.8798899850226007,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.983664,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.2359999999999998,
+          "p95_ms": 3.3862111999999995
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011552,
+          "p95_ms": 0.0119216
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.250624,
+          "p95_ms": 3.4227423999999997
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "reference",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "reference",
+        "--yaw",
+        "3.621592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-rear-reference-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 48, 130.83 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 130.94 W, 553 MiB",
+      "wall_seconds": 0.9044662230007816,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 35.655039,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.46416,
+          "p95_ms": 3.653936
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011616,
+          "p95_ms": 0.0118576
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.47568,
+          "p95_ms": 3.6655936
+        }
+      }
+    },
+    {
+      "scene": "robot",
+      "view": "rear",
+      "mode": "prepared-cones",
+      "repeat": 3,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--supersample",
+        "1",
+        "--config",
+        "projects/sdf/presets/survey-robot-fieldkit.json",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "prepared-cones",
+        "--yaw",
+        "3.621592653589793",
+        "--frames",
+        "180",
+        "--profile-warmup-frames",
+        "30",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/source-query-optimization-20261029/b-timing/robot-rear-prepared-cones-r3"
+      ],
+      "gpu_before": "100 %, 0 %, 2887 MHz, 14001 MHz, 49, 130.94 W, 553 MiB",
+      "gpu_after": "100 %, 0 %, 2880 MHz, 14001 MHz, 50, 133.01 W, 553 MiB",
+      "wall_seconds": 0.9094090530124959,
+      "selection": {
+        "route": 1.0,
+        "published_material_count": 4.0,
+        "pipeline_count": 3.0,
+        "pipeline_setup_ms": 36.241822,
+        "shadow_optimized": 0.0
+      },
+      "passes": {
+        "sdf.trace": {
+          "samples": 150,
+          "median_ms": 3.48864,
+          "p95_ms": 3.6661567999999995
+        },
+        "sdf.post": {
+          "samples": 150,
+          "median_ms": 0.011552,
+          "p95_ms": 0.011776
+        },
+        "sdf.whole_scene": {
+          "samples": 150,
+          "median_ms": 3.5002240000000002,
+          "p95_ms": 3.6777248
+        }
+      }
+    }
+  ],
+  "complete": true
+}

@@ -1,0 +1,34 @@
+{
+  "cache_identity_checks_passed": true,
+  "groups": {
+    "guardian": {
+      "changed": 2050,
+      "max_gpu_difference": 5.960464477539063e-08,
+      "max_normal_degrees": 0.18393705444333663,
+      "max_prepared_cpu_error": 2.384185791015625e-07,
+      "max_reference_cpu_error": 2.384185791015625e-07,
+      "nonfinite": 0,
+      "normal_failures": 0,
+      "point_failures": 0,
+      "points": 51792
+    },
+    "synthetic": {
+      "changed": 8043,
+      "max_gpu_difference": 5.960464477539063e-08,
+      "max_normal_degrees": 0.08461235089495878,
+      "max_prepared_cpu_error": 1.1920928955078125e-07,
+      "max_reference_cpu_error": 1.1920928955078125e-07,
+      "nonfinite": 0,
+      "normal_failures": 0,
+      "point_failures": 0,
+      "points": 30596
+    }
+  },
+  "guardian_program_count": 2021,
+  "numerical_gate_passed": true,
+  "queries": 82388,
+  "scope": "Independent primitive numerical gate; no scene publication or renderer adoption",
+  "synthetic_primitive_count": 632,
+  "table_bytes": 42448,
+  "witnesses": []
+}
