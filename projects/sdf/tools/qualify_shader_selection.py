@@ -87,12 +87,21 @@ class Study:
         self.output = args.output
         self.base = [str(args.binary), "--headless", "--require-validation", "--supersample", "1"]
         self.receipt = dict(metadata(args.binary), runner_sha256=digest(Path(__file__)), runs=[])
+        if args.resume:
+            previous=json.loads((args.output/"qualification.json").read_text())
+            if previous["binary_sha256"]!=digest(args.binary):raise RuntimeError("resume binary differs")
+            self.receipt=previous
+            self.receipt.setdefault("resume_runner_hashes",[]).append(digest(Path(__file__)))
 
     def run(self, name, flags, shader="automatic", frames=1, render_only=False):
         prefix = self.output/name
         command = self.base + flags + ["--source-shaders", shader, "--frames", str(frames),
                     "--profile-output", str(prefix), "--profile-warmup-frames", "0"]
         command += ["--headless-render-only"] if render_only else ["--output", str(prefix.with_suffix(".png"))]
+        if self.args.resume and "--comparison-actions" not in flags and not render_only:
+            old=next((r for r in self.receipt["runs"] if r["name"]==name),None)
+            if old and old["command"]==command and old.get("image_sha256")==digest(prefix.with_suffix(".png")):
+                return old
         wall = invoke(command, prefix, timeout=180)
         if "--comparison-actions" in flags:
             result_path=Path(flags[flags.index("--comparison-output")+1])
@@ -106,6 +115,7 @@ class Study:
         if "Validation Error" in log: raise RuntimeError("Vulkan validation failure")
         row = dict(name=name, command=command, shader_control=shader, wall_seconds=wall, selection=selection)
         if not render_only: row["image_sha256"] = digest(prefix.with_suffix(".png"))
+        self.receipt["runs"]=[r for r in self.receipt["runs"] if r["name"]!=name]
         self.receipt["runs"].append(row)
         save(self.output/"qualification.json", self.receipt)
         return row
@@ -176,7 +186,7 @@ def qualify(args):
             if control == "general":
                 for action in manifest: action["expect_shader"] = "general"
             path=args.output/(mode+"-"+control+"-actions.json")
-            save(path, dict(format="cubey.sdf.action-study",version=1,actions=manifest))
+            save(path, dict(format="cubey.sdf.action-study",version=1,actions=manifest,capture_frames=True))
             result=args.output/(mode+"-"+control+"-replay.json")
             study.run(mode+"-"+control+"-replay", small+flags[:8]+["--comparison-actions",str(path),
                       "--comparison-output",str(result)], control, len(actions), True)
@@ -291,9 +301,10 @@ def main():
     parser.add_argument("phase",choices=["qualify","appearance","timing"])
     parser.add_argument("--output",type=Path,required=True)
     parser.add_argument("--qualification",type=Path)
+    parser.add_argument("--resume",action="store_true",help="Reuse verified static capture receipts for the identical binary; rerun all action and oracle jobs")
     parser.add_argument("--binary",type=Path,default=ROOT/"build/release/projects/sdf/sdf")
     args=parser.parse_args();args.binary=args.binary.resolve();args.output=args.output.resolve()
-    args.output.mkdir(parents=True,exist_ok=False)
+    args.output.mkdir(parents=True,exist_ok=args.resume)
     {"qualify":qualify,"appearance":appearance,"timing":timing}[args.phase](args)
 
 
