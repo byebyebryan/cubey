@@ -1,0 +1,1729 @@
+{
+  "binary_sha256": "25e3d99544f369874d9696d9606405832907f70b3acc5fe2d0d7701b09a12ece",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "42ae900d420049adb3510cfb4241a8aa09994299",
+  "source_diff_sha256": "d4111eca812024c2e49d5ce9603e8a1f72b16d861e39915f6617145c09b613eb",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "runs": [
+    {
+      "route": "sampled",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled.json"
+      ],
+      "cases": [
+        {
+          "name": "subgrid-sphere-0.5-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-0.5-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-0.5-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-1-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-1-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-2-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-2-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-4-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-subgrid-sphere-4-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-0.5-0.png",
+          "sha256": "45e29e89375f78a12843616e38a733d6178719415a6acc7fc1aea294a5941eec"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-1-0.png",
+          "sha256": "45e29e89375f78a12843616e38a733d6178719415a6acc7fc1aea294a5941eec"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-1-0.5.png",
+          "sha256": "7392fb0aaad62aabaf552088c7e34de0a9f4d2fac856ec5f2595b02a2ea2fb07"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 192,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-2-0.png",
+          "sha256": "f95f7568f5bfc2cefe89f9302d1490d6f9efeb1a65e93c555753dd9734d4fb0b"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 256,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-2-0.5.png",
+          "sha256": "55ba61251969268671d207f0f71cfd031d6bc34134c84c58e4d31c743fcc960a"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 448,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-4-0.png",
+          "sha256": "50b4d1cfbf62be2a9ea3058bf238e0c5ba079e4ec590eb1e3a3f7c7e96cb2952"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 512,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/sampled-thin-stick-0.5h-4-0.5.png",
+          "sha256": "6d6f7dfec4bf91748d11b66835e31bf19ae76b8599647d0a0926a7d0ab5afe55"
+        }
+      ],
+      "result_sha256": "3b96a8a871e3becc6ee288be09e88b8ae34c888d6ba3e102ae61e070e7da94c9",
+      "query_shader_sha256": "3e672b4043ec24922c7d89dc2cb836ea0f0b519e5b961a1fc5d075d873a9b963"
+    },
+    {
+      "route": "refine03125",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "refine-0.03125",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125.json"
+      ],
+      "cases": [
+        {
+          "name": "subgrid-sphere-0.5-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-0.5-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-0.5-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-1-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-1-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-2-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-2-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-4-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-subgrid-sphere-4-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-0.5-0.png",
+          "sha256": "c92d80d28abd23896729b5c6aec52132a9a6352a02c4291fc1fc4c120118564d"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-1-0.png",
+          "sha256": "e5bde63422a1f6d30f0962e118d7b65ea97f29b5dcb624eac16b0adeecc3b6b1"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-1-0.5.png",
+          "sha256": "688ae6d72c101188fa7bde2bc8a1047f8416988cc7da31cd46a1352a22ca6010"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 192,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-2-0.png",
+          "sha256": "7c153fad7a031107c4f51156bd12052699cc7fe607f6566a1f94b4eabba54f2a"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-2-0.5.png",
+          "sha256": "3e7b0962e77c0218d6daded5fa65ab4a0b094c370fcf68488e00a8b9ef849c07"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 324,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-4-0.png",
+          "sha256": "181acce76f375e7a1c5b571101d0b7d37ee4e209971d12a52fccfd577eb92f62"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 256,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/refine03125-thin-stick-0.5h-4-0.5.png",
+          "sha256": "8cbdb93e4448d685e39b58f021cab39c13360704231e740990651eeb18713ca2"
+        }
+      ],
+      "result_sha256": "c4fa2ecdc9c3c1b56cebbaa3c7252e309db2e34ad90129f7b193b9d5768ec6e5",
+      "query_shader_sha256": "4e8925e8caf596d66c390e273e81874c3bfdf54302a58c0a5d17ddfad8f80eab"
+    },
+    {
+      "route": "normal",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "source-normal",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal.json"
+      ],
+      "cases": [
+        {
+          "name": "subgrid-sphere-0.5-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-0.5-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-0.5-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-1-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-1-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-2-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-2-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-4-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-subgrid-sphere-4-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-0.5-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-1-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-1-0.5.png",
+          "sha256": "eebe0363663a01ef28881618f8ac191ae8efc9a343b6602d0a513bd3ab474a7b"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 192,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-2-0.png",
+          "sha256": "244d30b756eed710b0497592db4105d71099761b9d9fb93e86d8778dcde8f6d3"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 256,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-2-0.5.png",
+          "sha256": "665751992e4de7b51958d4199b9711ddad6b70577b37c13d3d5cc8086b12d1d8"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 448,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-4-0.png",
+          "sha256": "434cab94ef58e46cd1eedb4fdf91b5e88fc96cabde410b16e9d3fe1bdc78f963"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 512,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/normal-thin-stick-0.5h-4-0.5.png",
+          "sha256": "d5d4ea0f192a08c21c60c458808059d636bd8c9b66f9b159da40d9c4dd8477f7"
+        }
+      ],
+      "result_sha256": "5504536aed9977049313f77aa5377889d6353a42e042a25ac70ec4036635b2ff",
+      "query_shader_sha256": "6ab90832f44fcf5ec546321b0a07a0b57ad7896dab8b757908d231618f8eb726"
+    },
+    {
+      "route": "combined",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "refine-normal",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined.json"
+      ],
+      "cases": [
+        {
+          "name": "subgrid-sphere-0.5-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-0.5-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-0.5-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-1-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-1-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-2-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-2-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-2-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-4-0.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-4-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-subgrid-sphere-4-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-0.5-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-1-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-1-0.5.png",
+          "sha256": "bf9a1f8ad76ea9fe221ef65f2de8eb0ce2150587677ccd945622f83527732ad1"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 192,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-2-0.png",
+          "sha256": "3b499dcdd52b3fa6eee6b5da15a917e637b9618136b3f8eceac079fd5b71a3b8"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-2-0.5.png",
+          "sha256": "eba8ac6b2ab6e9b0a39b5a71e911502e3593ec8bea8fb26ccc40ed0a86d7f91e"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 324,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-4-0.png",
+          "sha256": "fbfe80b31d601f0dc4d21a60938059f93f289db410290564c3595fecba22ccd5"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 256,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/combined-thin-stick-0.5h-4-0.5.png",
+          "sha256": "6a34e516595487e3fcc79b3632b6d06cc3e2e558d0b5045b44a11ebebb76abb8"
+        }
+      ],
+      "result_sha256": "502c5af59c2f12e87e7539616d42a6f46be696c5f5adc1b7a54dc0ad549b8ffd",
+      "query_shader_sha256": "f5888637c78d0f715c243a2176fd288f0b5296c5479bb1c61ba7f0be7d00bf2e"
+    },
+    {
+      "route": "source",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source.json"
+      ],
+      "cases": [
+        {
+          "name": "subgrid-sphere-0.5-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 1,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-0.5-0.png",
+          "sha256": "02ddf1b00c073f00383608809456e780a53c52f36b8121ff9c7d3859328040ac"
+        },
+        {
+          "name": "subgrid-sphere-0.5-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 1,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-1-0.png",
+          "sha256": "02ddf1b00c073f00383608809456e780a53c52f36b8121ff9c7d3859328040ac"
+        },
+        {
+          "name": "subgrid-sphere-1-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 4,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-1-0.5.png",
+          "sha256": "713f8533d082791d1e5740d0e779c1b55c77b600097b410ee230bfece21fa550"
+        },
+        {
+          "name": "subgrid-sphere-2-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 9,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-2-0.png",
+          "sha256": "7c2b9eceb2e2414f35b089967c587957d85790a5b286c16ad236173608384f1c"
+        },
+        {
+          "name": "subgrid-sphere-2-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 4,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-2-0.5.png",
+          "sha256": "77a00e5249f7e93df6c47a6bf5b23edffec8fb896acd95a365fb30bbe2d38949"
+        },
+        {
+          "name": "subgrid-sphere-4-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 29,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-4-0.png",
+          "sha256": "9688bc63a2a7990ad3b8c252185ff22fdb4d72262852598114981f2daf328e01"
+        },
+        {
+          "name": "subgrid-sphere-4-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 32,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-subgrid-sphere-4-0.5.png",
+          "sha256": "098738a1acbfb797b4c5b761169d4d51f372e6e807fa05373c21268bda17db06"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-0.5-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-1-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-1-0.5.png",
+          "sha256": "eebe0363663a01ef28881618f8ac191ae8efc9a343b6602d0a513bd3ab474a7b"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 192,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-2-0.png",
+          "sha256": "244d30b756eed710b0497592db4105d71099761b9d9fb93e86d8778dcde8f6d3"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-2-0.5.png",
+          "sha256": "ad2f99214347c53357c46dfac37870411e516c652a718ee5ee62807fbe74ad9b"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 320,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-4-0.png",
+          "sha256": "52c0d45c5ad36b753f7a52341ee7e04c7894ae48e907444883dc17ecb3177828"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 384,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/source-thin-stick-0.5h-4-0.5.png",
+          "sha256": "6db6ccd9921633e3ea2e24ef91c6a81ff7b0edeb3fe2f4c8aca7f49fed5d4a51"
+        }
+      ],
+      "result_sha256": "91e142e270ba43fc1dde2a2cc31851b5f47edd135639f1daf2dbaf4c9a184fcd",
+      "query_shader_sha256": "ebaf4c916e435a62c8f90baa76f8912569ba8ba83ba390ef7b1ffd40b1faba88"
+    },
+    {
+      "route": "hybrid",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "hybrid",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "unclamped",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid.json"
+      ],
+      "cases": [
+        {
+          "name": "subgrid-sphere-0.5-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 1,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-0.5-0.png",
+          "sha256": "02ddf1b00c073f00383608809456e780a53c52f36b8121ff9c7d3859328040ac"
+        },
+        {
+          "name": "subgrid-sphere-0.5-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "subgrid-sphere-1-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 1,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-1-0.png",
+          "sha256": "02ddf1b00c073f00383608809456e780a53c52f36b8121ff9c7d3859328040ac"
+        },
+        {
+          "name": "subgrid-sphere-1-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 4,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-1-0.5.png",
+          "sha256": "cc88ff4bedfd0a0a9810c44ed1b8ff4f779cb43a6f3e7eacbbdb479724a0b9da"
+        },
+        {
+          "name": "subgrid-sphere-2-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 9,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-2-0.png",
+          "sha256": "3076133449a96ef8e312fcdf024ca9c04cc75242269d546a17dfccf383a14f2f"
+        },
+        {
+          "name": "subgrid-sphere-2-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 4,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-2-0.5.png",
+          "sha256": "f69ef338ef9e12f789f2b1f3c19f152f50e798c8c812f02d494df18da23d145b"
+        },
+        {
+          "name": "subgrid-sphere-4-0",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 29,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-4-0.png",
+          "sha256": "5e77a8962dc8a76a9284d6b0b8942d533b65750b18c5011bad79f12fdb0f7985"
+        },
+        {
+          "name": "subgrid-sphere-4-0.5",
+          "fixture": "subgrid-sphere",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 32,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-subgrid-sphere-4-0.5.png",
+          "sha256": "e3145cad39cc72231504eebb3dabe14ba89afa06124f7dd613c3a5398546d96e"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-0.5-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-0.5-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 0.5,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.03571428571428571,
+          "hits": 0,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-0.5-0.5.png",
+          "sha256": "f572aa9c193dd2c840c26c335283eabcf3492e22fc55b9ef0dd9fa680d3d1e2a"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 64,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-1-0.png",
+          "sha256": "a2c39d8f019a4539ee8c4bc2776419f4ecf9edb6d3c03449519e90fbc7356d08"
+        },
+        {
+          "name": "thin-stick-0.5h-1-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 1,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.017857142857142856,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-1-0.5.png",
+          "sha256": "eebe0363663a01ef28881618f8ac191ae8efc9a343b6602d0a513bd3ab474a7b"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 192,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-2-0.png",
+          "sha256": "244d30b756eed710b0497592db4105d71099761b9d9fb93e86d8778dcde8f6d3"
+        },
+        {
+          "name": "thin-stick-0.5h-2-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 2,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.008928571428571428,
+          "hits": 128,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-2-0.5.png",
+          "sha256": "ad2f99214347c53357c46dfac37870411e516c652a718ee5ee62807fbe74ad9b"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 320,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-4-0.png",
+          "sha256": "52c0d45c5ad36b753f7a52341ee7e04c7894ae48e907444883dc17ecb3177828"
+        },
+        {
+          "name": "thin-stick-0.5h-4-0.5",
+          "fixture": "thin-stick-0.5h",
+          "nominal_width_pixels": 4,
+          "pixel_phase": 0.5,
+          "query_extent": [
+            64,
+            64
+          ],
+          "viewport_world": 0.004464285714285714,
+          "hits": 384,
+          "file": "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/roi/hybrid-thin-stick-0.5h-4-0.5.png",
+          "sha256": "6a087a88f952c3565885f76c4cf47a7590614c0965bd5c64ad96523b98eea1d7"
+        }
+      ],
+      "result_sha256": "20af448917d2e7d9cd56204557f1eb3d713033786cd1bd4e4586e0afea3f3d67",
+      "query_shader_sha256": "f988c5bcdbe54cf2cb80d73e8e6fef99a97f9fc7361fde5238f91ac5055cc546"
+    }
+  ],
+  "labels": [
+    {
+      "name": "subgrid-sphere-0.5-0",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 0.5,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.03571428571428571
+    },
+    {
+      "name": "subgrid-sphere-0.5-0.5",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 0.5,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.03571428571428571
+    },
+    {
+      "name": "subgrid-sphere-1-0",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 1,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.017857142857142856
+    },
+    {
+      "name": "subgrid-sphere-1-0.5",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 1,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.017857142857142856
+    },
+    {
+      "name": "subgrid-sphere-2-0",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 2,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.008928571428571428
+    },
+    {
+      "name": "subgrid-sphere-2-0.5",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 2,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.008928571428571428
+    },
+    {
+      "name": "subgrid-sphere-4-0",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 4,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.004464285714285714
+    },
+    {
+      "name": "subgrid-sphere-4-0.5",
+      "fixture": "subgrid-sphere",
+      "nominal_width_pixels": 4,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.004464285714285714
+    },
+    {
+      "name": "thin-stick-0.5h-0.5-0",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 0.5,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.03571428571428571
+    },
+    {
+      "name": "thin-stick-0.5h-0.5-0.5",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 0.5,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.03571428571428571
+    },
+    {
+      "name": "thin-stick-0.5h-1-0",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 1,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.017857142857142856
+    },
+    {
+      "name": "thin-stick-0.5h-1-0.5",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 1,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.017857142857142856
+    },
+    {
+      "name": "thin-stick-0.5h-2-0",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 2,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.008928571428571428
+    },
+    {
+      "name": "thin-stick-0.5h-2-0.5",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 2,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.008928571428571428
+    },
+    {
+      "name": "thin-stick-0.5h-4-0",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 4,
+      "pixel_phase": 0,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.004464285714285714
+    },
+    {
+      "name": "thin-stick-0.5h-4-0.5",
+      "fixture": "thin-stick-0.5h",
+      "nominal_width_pixels": 4,
+      "pixel_phase": 0.5,
+      "query_extent": [
+        64,
+        64
+      ],
+      "viewport_world": 0.004464285714285714
+    }
+  ],
+  "complete": true,
+  "scope": "Orthographic geometry-query ROI, not ordinary shaded native camera output; nominal size and pixel phase are explicit"
+}

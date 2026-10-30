@@ -1,0 +1,515 @@
+{
+  "binary_sha256": "25e3d99544f369874d9696d9606405832907f70b3acc5fe2d0d7701b09a12ece",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "42ae900d420049adb3510cfb4241a8aa09994299",
+  "source_diff_sha256": "d4111eca812024c2e49d5ce9603e8a1f72b16d861e39915f6617145c09b613eb",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "runs": [
+    {
+      "width": 320,
+      "height": 180,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--yaw",
+        "0.4",
+        "--distance",
+        "1.45",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--surface-trace",
+        "hybrid",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "unclamped",
+        "--headless-render-only",
+        "--frames",
+        "12",
+        "--profile-warmup-frames",
+        "2",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/hybrid-context/guardian-hybrid-320"
+      ],
+      "passes": {
+        "sdf.trace": {
+          "samples": 10,
+          "median_ms": 7.128096,
+          "p95_ms": 7.1450176,
+          "values_ms": [
+            7.135008,
+            7.116544,
+            7.145824,
+            7.108704,
+            7.138144,
+            7.119584,
+            7.144032,
+            7.118368,
+            7.138208,
+            7.121184
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "sdf.post": {
+          "samples": 10,
+          "median_ms": 0.00328,
+          "p95_ms": 0.007270399999999993,
+          "values_ms": [
+            0.010496,
+            0.003328,
+            0.003264,
+            0.003328,
+            0.003264,
+            0.003232,
+            0.003296,
+            0.003072,
+            0.003328,
+            0.003168
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "sdf.whole_scene": {
+          "samples": 10,
+          "median_ms": 7.132912,
+          "p95_ms": 7.1483456,
+          "values_ms": [
+            7.145568,
+            7.119904,
+            7.149152,
+            7.112064,
+            7.14144,
+            7.122848,
+            7.14736,
+            7.121472,
+            7.141568,
+            7.124384
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "metrics": {
+        "sdf.cached_quality": {
+          "mode": 0.0
+        },
+        "sdf.shader_selection": {
+          "route": 2.0,
+          "guarded_stepping": 0.0,
+          "published_material_count": 1.0,
+          "pipeline_count": 3.0,
+          "pipeline_setup_ms": 38.665505,
+          "shadow_optimized": 1.0,
+          "cones_optimized": 0.0
+        },
+        "sdf.prepared_cones": {
+          "builds": 0.0,
+          "payload_bytes": 0.0,
+          "allocation_bytes": 0.0,
+          "device_generations_peak_bytes": 0.0,
+          "preparations": 0.0,
+          "staging_payload_peak_bytes": 0.0,
+          "publication_prepare_ms": 0.0
+        },
+        "sdf.resources": {
+          "field_bytes": 912997552.0,
+          "region_bytes": 56775016.0,
+          "region_references": 13145166.0,
+          "region_far_cells": 0.0,
+          "region_fallback_cells": 0.0,
+          "region_cpu_scratch_peak_bytes": 71166696.0,
+          "region_build_upload_ms": 488.045904
+        }
+      },
+      "gpu_before": "0 %, 0 %, 180 MHz, 405 MHz, 31, 11.69 W, 343 MiB",
+      "gpu_after": "56 %, 0 %, 2835 MHz, 14001 MHz, 44, 206.62 W, 343 MiB",
+      "scope": "Short context pilot, not three-repeat final timing"
+    },
+    {
+      "width": 960,
+      "height": 540,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--yaw",
+        "0.4",
+        "--distance",
+        "1.45",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--surface-trace",
+        "hybrid",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "unclamped",
+        "--headless-render-only",
+        "--frames",
+        "12",
+        "--profile-warmup-frames",
+        "2",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/hybrid-context/guardian-hybrid-960"
+      ],
+      "passes": {
+        "sdf.trace": {
+          "samples": 10,
+          "median_ms": 12.736944,
+          "p95_ms": 13.433128,
+          "values_ms": [
+            12.396704,
+            12.909024,
+            13.112192,
+            12.335904,
+            12.899904,
+            11.966496,
+            13.043872,
+            12.56848,
+            12.573984,
+            13.695712
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "sdf.post": {
+          "samples": 10,
+          "median_ms": 0.0058720000000000005,
+          "p95_ms": 0.006112,
+          "values_ms": [
+            0.006112,
+            0.005952,
+            0.005824,
+            0.00592,
+            0.006112,
+            0.00576,
+            0.00576,
+            0.00592,
+            0.0056,
+            0.00576
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "sdf.whole_scene": {
+          "samples": 10,
+          "median_ms": 12.742832,
+          "p95_ms": 13.4389808,
+          "values_ms": [
+            12.402848,
+            12.915008,
+            13.11808,
+            12.341856,
+            12.906048,
+            11.972288,
+            13.049696,
+            12.574432,
+            12.579616,
+            13.701536
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "metrics": {
+        "sdf.cached_quality": {
+          "mode": 0.0
+        },
+        "sdf.shader_selection": {
+          "route": 2.0,
+          "guarded_stepping": 0.0,
+          "published_material_count": 1.0,
+          "pipeline_count": 3.0,
+          "pipeline_setup_ms": 38.337643,
+          "shadow_optimized": 1.0,
+          "cones_optimized": 0.0
+        },
+        "sdf.prepared_cones": {
+          "builds": 0.0,
+          "payload_bytes": 0.0,
+          "allocation_bytes": 0.0,
+          "device_generations_peak_bytes": 0.0,
+          "preparations": 0.0,
+          "staging_payload_peak_bytes": 0.0,
+          "publication_prepare_ms": 0.0
+        },
+        "sdf.resources": {
+          "field_bytes": 912997552.0,
+          "region_bytes": 56775016.0,
+          "region_references": 13145166.0,
+          "region_far_cells": 0.0,
+          "region_fallback_cells": 0.0,
+          "region_cpu_scratch_peak_bytes": 71166696.0,
+          "region_build_upload_ms": 470.734213
+        }
+      },
+      "gpu_before": "56 %, 0 %, 2835 MHz, 14001 MHz, 44, 206.62 W, 343 MiB",
+      "gpu_after": "100 %, 0 %, 2835 MHz, 14001 MHz, 55, 184.19 W, 343 MiB",
+      "scope": "Short context pilot, not three-repeat final timing"
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "1920",
+        "--height",
+        "1080",
+        "--yaw",
+        "0.4",
+        "--distance",
+        "1.45",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--surface-trace",
+        "hybrid",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "unclamped",
+        "--headless-render-only",
+        "--frames",
+        "12",
+        "--profile-warmup-frames",
+        "2",
+        "--profile-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/hybrid-context/guardian-hybrid-1920"
+      ],
+      "passes": {
+        "sdf.trace": {
+          "samples": 10,
+          "median_ms": 25.064976,
+          "p95_ms": 26.2045696,
+          "values_ms": [
+            24.907552,
+            26.620384,
+            24.401024,
+            23.93488,
+            24.66288,
+            25.696352,
+            25.664864,
+            24.361376,
+            25.2224,
+            25.65056
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "sdf.post": {
+          "samples": 10,
+          "median_ms": 0.011808,
+          "p95_ms": 0.012003199999999999,
+          "values_ms": [
+            0.012032,
+            0.011968,
+            0.011712,
+            0.011808,
+            0.011776,
+            0.01184,
+            0.011744,
+            0.01184,
+            0.011808,
+            0.011552
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        "sdf.whole_scene": {
+          "samples": 10,
+          "median_ms": 25.076928000000002,
+          "p95_ms": 26.216497599999997,
+          "values_ms": [
+            24.919616,
+            26.632384,
+            24.412768,
+            23.94672,
+            24.67472,
+            25.708192,
+            25.67664,
+            24.373248,
+            25.23424,
+            25.662144
+          ],
+          "frame_indices": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        }
+      },
+      "metrics": {
+        "sdf.cached_quality": {
+          "mode": 0.0
+        },
+        "sdf.shader_selection": {
+          "route": 2.0,
+          "guarded_stepping": 0.0,
+          "published_material_count": 1.0,
+          "pipeline_count": 3.0,
+          "pipeline_setup_ms": 38.416442,
+          "shadow_optimized": 1.0,
+          "cones_optimized": 0.0
+        },
+        "sdf.prepared_cones": {
+          "builds": 0.0,
+          "payload_bytes": 0.0,
+          "allocation_bytes": 0.0,
+          "device_generations_peak_bytes": 0.0,
+          "preparations": 0.0,
+          "staging_payload_peak_bytes": 0.0,
+          "publication_prepare_ms": 0.0
+        },
+        "sdf.resources": {
+          "field_bytes": 912997552.0,
+          "region_bytes": 56775016.0,
+          "region_references": 13145166.0,
+          "region_far_cells": 0.0,
+          "region_fallback_cells": 0.0,
+          "region_cpu_scratch_peak_bytes": 71166696.0,
+          "region_build_upload_ms": 472.16923
+        }
+      },
+      "gpu_before": "100 %, 0 %, 2835 MHz, 14001 MHz, 55, 184.19 W, 343 MiB",
+      "gpu_after": "100 %, 0 %, 2835 MHz, 14001 MHz, 57, 210.96 W, 343 MiB",
+      "scope": "Short context pilot, not three-repeat final timing"
+    }
+  ],
+  "skipped": [],
+  "complete": true
+}

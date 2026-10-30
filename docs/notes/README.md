@@ -78,6 +78,8 @@ the architecture and project guides remain current authority.
 - [SDF quality/speed research plan](sdf-quality-speed-research-plan.md): proposed
   matched cached/analytical endpoints, reconstruction versus representation
   diagnosis, quality/motion measurements and bounded approximation candidates.
+- [SDF quality/speed results](sdf-quality-speed-results.md): cached refinement and
+  source normals, measured preview tradeoffs and remaining geometry limits.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

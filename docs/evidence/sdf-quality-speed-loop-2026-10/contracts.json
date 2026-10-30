@@ -1,0 +1,930 @@
+{
+  "binary_sha256": "b22cac6cd7422aa8484a0be401296dca0c601c5fc5b4e3f79f5065f0744bdfe2",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "42ae900d420049adb3510cfb4241a8aa09994299",
+  "source_diff_sha256": "e121ed5f341cf97822aa391a7b480c17f0bed638c9eb86ed37dbd056d1ef7c7b",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "tool_sha256": "976e0d991a0d33bdbed76323c82b5e98d12af6b7f88f835bcbe1554bd638edeb",
+  "runs": [
+    {
+      "route": "sampled",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/sampled.json"
+      ],
+      "wall_seconds": 0.32532500696834177,
+      "source_geometry_score": {
+        "scope": "Approximation measured against source answers; frozen exact-source scorer does not score sampled modes",
+        "rays": 43,
+        "matched_hits": 31,
+        "missed_source_hits": [
+          [
+            "subgrid-sphere",
+            0
+          ],
+          [
+            "subgrid-sphere",
+            1
+          ],
+          [
+            "subgrid-sphere",
+            2
+          ],
+          [
+            "subgrid-sphere",
+            3
+          ],
+          [
+            "subgrid-sphere",
+            4
+          ]
+        ],
+        "false_source_hits": [],
+        "outside_source_depth_contract": [
+          [
+            "sphere-control",
+            0
+          ],
+          [
+            "sphere-control",
+            1
+          ],
+          [
+            "sphere-control",
+            2
+          ],
+          [
+            "sphere-control",
+            3
+          ],
+          [
+            "sphere-control",
+            4
+          ],
+          [
+            "aligned-small-sphere",
+            0
+          ],
+          [
+            "aligned-small-sphere",
+            1
+          ],
+          [
+            "aligned-small-sphere",
+            4
+          ],
+          [
+            "box-23-0.00027901786",
+            0
+          ],
+          [
+            "box-23-0.00027901786",
+            1
+          ],
+          [
+            "box-23-0.00027901786",
+            2
+          ],
+          [
+            "box-23-0.00027901786",
+            4
+          ],
+          [
+            "box-23-0.00027901786",
+            5
+          ],
+          [
+            "box-45-0.00027901786",
+            0
+          ],
+          [
+            "box-45-0.00027901786",
+            1
+          ],
+          [
+            "box-45-0.00027901786",
+            2
+          ],
+          [
+            "box-45-0.00027901786",
+            4
+          ],
+          [
+            "box-45-0.00027901786",
+            5
+          ],
+          [
+            "thin-stick-1.5h",
+            0
+          ],
+          [
+            "thin-stick-1.5h",
+            1
+          ],
+          [
+            "thin-stick-4h",
+            0
+          ],
+          [
+            "thin-stick-4h",
+            1
+          ],
+          [
+            "subgrid-cavity",
+            0
+          ],
+          [
+            "sphere-tangent",
+            0
+          ],
+          [
+            "workspace-clip",
+            0
+          ],
+          [
+            "workspace-clip",
+            1
+          ],
+          [
+            "crossed-thin-sticks",
+            0
+          ]
+        ],
+        "depth_errors_world": [
+          9.351968765253238e-05,
+          9.351968765253238e-05,
+          9.506940841685907e-05,
+          9.301304817194156e-05,
+          9.284615516663708e-05,
+          9.380382086549444e-05,
+          9.380382086549444e-05,
+          4.313034670685306e-06,
+          7.194546716536923e-06,
+          8.270535618066786e-05,
+          0.00010108470916747603,
+          9.299933910369984e-05,
+          0.00010680675506591353,
+          0.00010108470917047363,
+          9.327653170487782e-05,
+          9.411096572875532e-05,
+          9.343147277832142e-05,
+          9.42897796630815e-05,
+          9.411096573175293e-05,
+          8.171323061845204e-05,
+          3.825376608542104e-05,
+          3.760159015656073e-05,
+          9.39634868076869e-05,
+          9.34064388275202e-05,
+          9.265976824930806e-05,
+          9.34064388275202e-05,
+          0.19943198263645173,
+          0.006640863418579057,
+          9.32166576385618e-05,
+          9.27653852850199e-05,
+          9.4292376722609e-05
+        ],
+        "normal_errors_degrees": [
+          0.10467832346762979,
+          0.10467832346762979,
+          0.02211456363591188,
+          0.022199043335142818,
+          0.10467832346762979,
+          44.560525517898505,
+          44.560525517898505,
+          19.432460307525762,
+          24.48860057237866,
+          51.274501819632256,
+          0.017313922824127508,
+          0.0,
+          0.0256740153289434,
+          0.0,
+          0.0,
+          0.010600267736294924,
+          0.010600267736294924,
+          0.010600267701912329,
+          0.010600267736294924,
+          0.019725251914497217,
+          18.94289500005163,
+          47.87703847175794,
+          7.690232706516824,
+          20.21585959358959,
+          0.019622864509307603,
+          0.027976455118293345,
+          179.88985657019026,
+          0.0,
+          0.019782341029446364,
+          0.019782341029446364
+        ]
+      },
+      "result_sha256": "95ec012dd201182b65fc3c1d68cb74ce2e630cac24d1103b847733900fa7c07f",
+      "input_sha256": "ea043c0947e3a185d3a878415592c99ca326018ad7411f2b710268ea3898dcb7"
+    },
+    {
+      "route": "refine05",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "refine-0.05",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/refine05.json"
+      ],
+      "wall_seconds": 0.2607408000039868,
+      "source_geometry_score": {
+        "scope": "Approximation measured against source answers; frozen exact-source scorer does not score sampled modes",
+        "rays": 43,
+        "matched_hits": 31,
+        "missed_source_hits": [
+          [
+            "subgrid-sphere",
+            0
+          ],
+          [
+            "subgrid-sphere",
+            1
+          ],
+          [
+            "subgrid-sphere",
+            2
+          ],
+          [
+            "subgrid-sphere",
+            3
+          ],
+          [
+            "subgrid-sphere",
+            4
+          ]
+        ],
+        "false_source_hits": [],
+        "outside_source_depth_contract": [
+          [
+            "subgrid-cavity",
+            0
+          ],
+          [
+            "sphere-tangent",
+            0
+          ]
+        ],
+        "depth_errors_world": [
+          2.294778823797028e-06,
+          2.294778823797028e-06,
+          2.1159648896373895e-06,
+          2.1457672118585513e-06,
+          2.321600914012567e-06,
+          1.832431714449568e-05,
+          1.832431714449568e-05,
+          4.846920658435963e-05,
+          4.158161048379953e-05,
+          1.6337868873961254e-05,
+          2.021789550776809e-06,
+          2.430081367493786e-06,
+          1.072406768798384e-05,
+          2.0217895537744113e-06,
+          2.2006344880809436e-06,
+          2.0813941955521997e-06,
+          2.385377883912243e-06,
+          2.0813941955521997e-06,
+          2.081394198549802e-06,
+          2.2006344880809436e-06,
+          1.154963991471629e-05,
+          3.658384084700983e-05,
+          1.59828684159688e-05,
+          2.250671386719305e-05,
+          1.9554687397827647e-06,
+          2.308189868932553e-06,
+          0.1995226114988327,
+          0.006640863418579057,
+          2.975225448620389e-06,
+          2.766911871731302e-06,
+          1.841845789126058e-05
+        ],
+        "normal_errors_degrees": [
+          0.10467832346762979,
+          0.1083523598284494,
+          0.024364815061459988,
+          0.012296628756145726,
+          0.10467832346762979,
+          47.64940325192148,
+          47.64940325192148,
+          20.1966153703879,
+          25.42360442713,
+          48.950962115246476,
+          0.01098263159871916,
+          0.012130910377644482,
+          0.023646548322953306,
+          0.01653866120329914,
+          0.016230945627789067,
+          0.010600267736294924,
+          0.019725251914497217,
+          0.010600267736294924,
+          0.0,
+          0.0,
+          19.879287187782094,
+          55.36275197649208,
+          12.550850268587544,
+          25.885525628127958,
+          0.012004174957458844,
+          0.0,
+          179.89164764017156,
+          0.0,
+          0.019782341029446364,
+          0.019782341029446364
+        ]
+      },
+      "result_sha256": "677968b3ccd95915fc6265268cf3d8a98103c7c40f0e50638808584ea8f4b264",
+      "input_sha256": "ea043c0947e3a185d3a878415592c99ca326018ad7411f2b710268ea3898dcb7"
+    },
+    {
+      "route": "refine03125",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "refine-0.03125",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/refine03125.json"
+      ],
+      "wall_seconds": 0.26110837201122195,
+      "source_geometry_score": {
+        "scope": "Approximation measured against source answers; frozen exact-source scorer does not score sampled modes",
+        "rays": 43,
+        "matched_hits": 31,
+        "missed_source_hits": [
+          [
+            "subgrid-sphere",
+            0
+          ],
+          [
+            "subgrid-sphere",
+            1
+          ],
+          [
+            "subgrid-sphere",
+            2
+          ],
+          [
+            "subgrid-sphere",
+            3
+          ],
+          [
+            "subgrid-sphere",
+            4
+          ]
+        ],
+        "false_source_hits": [],
+        "outside_source_depth_contract": [
+          [
+            "subgrid-cavity",
+            0
+          ],
+          [
+            "sphere-tangent",
+            0
+          ]
+        ],
+        "depth_errors_world": [
+          2.294778823797028e-06,
+          2.294778823797028e-06,
+          2.1159648896373895e-06,
+          2.1457672118585513e-06,
+          2.321600914012567e-06,
+          8.854629205805493e-06,
+          8.854629205805493e-06,
+          6.059688915100239e-05,
+          5.403944690314348e-05,
+          1.6337868873961254e-05,
+          2.021789550776809e-06,
+          2.430081367493786e-06,
+          1.072406768798384e-05,
+          2.0217895537744113e-06,
+          2.2006344880809436e-06,
+          2.0813941955521997e-06,
+          2.385377883912243e-06,
+          2.0813941955521997e-06,
+          2.081394198549802e-06,
+          2.2006344880809436e-06,
+          1.154963991471629e-05,
+          4.731267690658014e-05,
+          1.59828684159688e-05,
+          6.763637065893002e-06,
+          1.9554687397827647e-06,
+          2.308189868932553e-06,
+          0.1995226114988327,
+          0.006640863418579057,
+          2.975225448620389e-06,
+          2.766911871731302e-06,
+          8.871470178877308e-06
+        ],
+        "normal_errors_degrees": [
+          0.10467832346762979,
+          0.1083523598284494,
+          0.024364815061459988,
+          0.012296628756145726,
+          0.10467832346762979,
+          48.009708163632524,
+          48.009708163632524,
+          20.366233108739223,
+          25.65489857823418,
+          48.950962115246476,
+          0.01098263159871916,
+          0.012130910377644482,
+          0.023646548322953306,
+          0.01653866120329914,
+          0.016230945627789067,
+          0.010600267736294924,
+          0.019725251914497217,
+          0.010600267736294924,
+          0.0,
+          0.0,
+          19.879287187782094,
+          56.41927488187587,
+          12.550850268587544,
+          27.375653077782538,
+          0.012004174957458844,
+          0.0,
+          179.89164764017156,
+          0.0,
+          0.019782341029446364,
+          0.027976455118293345
+        ]
+      },
+      "result_sha256": "44ce3247ceed2129bea3ace08e4548b38d1370e3b2fae02b00936b5ec8c63d1c",
+      "input_sha256": "ea043c0947e3a185d3a878415592c99ca326018ad7411f2b710268ea3898dcb7"
+    },
+    {
+      "route": "normal",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "source-normal",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/normal.json"
+      ],
+      "wall_seconds": 0.3679343149997294,
+      "source_geometry_score": {
+        "scope": "Approximation measured against source answers; frozen exact-source scorer does not score sampled modes",
+        "rays": 43,
+        "matched_hits": 31,
+        "missed_source_hits": [
+          [
+            "subgrid-sphere",
+            0
+          ],
+          [
+            "subgrid-sphere",
+            1
+          ],
+          [
+            "subgrid-sphere",
+            2
+          ],
+          [
+            "subgrid-sphere",
+            3
+          ],
+          [
+            "subgrid-sphere",
+            4
+          ]
+        ],
+        "false_source_hits": [],
+        "outside_source_depth_contract": [
+          [
+            "sphere-control",
+            0
+          ],
+          [
+            "sphere-control",
+            1
+          ],
+          [
+            "sphere-control",
+            2
+          ],
+          [
+            "sphere-control",
+            3
+          ],
+          [
+            "sphere-control",
+            4
+          ],
+          [
+            "aligned-small-sphere",
+            0
+          ],
+          [
+            "aligned-small-sphere",
+            1
+          ],
+          [
+            "aligned-small-sphere",
+            4
+          ],
+          [
+            "box-23-0.00027901786",
+            0
+          ],
+          [
+            "box-23-0.00027901786",
+            1
+          ],
+          [
+            "box-23-0.00027901786",
+            2
+          ],
+          [
+            "box-23-0.00027901786",
+            4
+          ],
+          [
+            "box-23-0.00027901786",
+            5
+          ],
+          [
+            "box-45-0.00027901786",
+            0
+          ],
+          [
+            "box-45-0.00027901786",
+            1
+          ],
+          [
+            "box-45-0.00027901786",
+            2
+          ],
+          [
+            "box-45-0.00027901786",
+            4
+          ],
+          [
+            "box-45-0.00027901786",
+            5
+          ],
+          [
+            "thin-stick-1.5h",
+            0
+          ],
+          [
+            "thin-stick-1.5h",
+            1
+          ],
+          [
+            "thin-stick-4h",
+            0
+          ],
+          [
+            "thin-stick-4h",
+            1
+          ],
+          [
+            "subgrid-cavity",
+            0
+          ],
+          [
+            "sphere-tangent",
+            0
+          ],
+          [
+            "workspace-clip",
+            0
+          ],
+          [
+            "workspace-clip",
+            1
+          ],
+          [
+            "crossed-thin-sticks",
+            0
+          ]
+        ],
+        "depth_errors_world": [
+          9.351968765253238e-05,
+          9.351968765253238e-05,
+          9.506940841685907e-05,
+          9.301304817194156e-05,
+          9.284615516663708e-05,
+          9.380382086549444e-05,
+          9.380382086549444e-05,
+          4.313034670685306e-06,
+          7.194546716536923e-06,
+          8.270535618066786e-05,
+          0.00010108470916747603,
+          9.299933910369984e-05,
+          0.00010680675506591353,
+          0.00010108470917047363,
+          9.327653170487782e-05,
+          9.411096572875532e-05,
+          9.343147277832142e-05,
+          9.42897796630815e-05,
+          9.411096573175293e-05,
+          8.171323061845204e-05,
+          3.825376608542104e-05,
+          3.760159015656073e-05,
+          9.39634868076869e-05,
+          9.34064388275202e-05,
+          9.265976824930806e-05,
+          9.34064388275202e-05,
+          0.19943198263645173,
+          0.006640863418579057,
+          9.32166576385618e-05,
+          9.27653852850199e-05,
+          9.4292376722609e-05
+        ],
+        "normal_errors_degrees": [
+          0.019782341029446364,
+          0.019782341029446364,
+          0.02211456363591188,
+          0.0,
+          0.019782341029446364,
+          0.0,
+          0.0,
+          0.1690312580051169,
+          0.21365120356126235,
+          0.0,
+          0.020896125404225214,
+          0.0,
+          0.0,
+          0.020896125404225214,
+          0.0,
+          0.010600267736294924,
+          0.0,
+          0.010600267736294924,
+          0.010600267736294924,
+          0.019725251914497217,
+          0.014208366234119673,
+          0.019782341029446364,
+          0.016370770703011933,
+          0.019782341029446364,
+          0.012086492654212128,
+          0.019782341029446364,
+          179.87966869570758,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "result_sha256": "adc2398ed5048c7e63e46d3e19fe4e4a512aa062112dba97a62a8c8ed700f775",
+      "input_sha256": "ea043c0947e3a185d3a878415592c99ca326018ad7411f2b710268ea3898dcb7"
+    },
+    {
+      "route": "combined",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--cached-quality",
+        "refine-normal",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/combined.json"
+      ],
+      "wall_seconds": 0.5861853180103935,
+      "source_geometry_score": {
+        "scope": "Approximation measured against source answers; frozen exact-source scorer does not score sampled modes",
+        "rays": 43,
+        "matched_hits": 31,
+        "missed_source_hits": [
+          [
+            "subgrid-sphere",
+            0
+          ],
+          [
+            "subgrid-sphere",
+            1
+          ],
+          [
+            "subgrid-sphere",
+            2
+          ],
+          [
+            "subgrid-sphere",
+            3
+          ],
+          [
+            "subgrid-sphere",
+            4
+          ]
+        ],
+        "false_source_hits": [],
+        "outside_source_depth_contract": [
+          [
+            "subgrid-cavity",
+            0
+          ],
+          [
+            "sphere-tangent",
+            0
+          ]
+        ],
+        "depth_errors_world": [
+          2.294778823797028e-06,
+          2.294778823797028e-06,
+          2.1159648896373895e-06,
+          2.1457672118585513e-06,
+          2.321600914012567e-06,
+          8.854629205805493e-06,
+          8.854629205805493e-06,
+          6.059688915100239e-05,
+          5.403944690314348e-05,
+          1.6337868873961254e-05,
+          2.021789550776809e-06,
+          2.430081367493786e-06,
+          1.072406768798384e-05,
+          2.0217895537744113e-06,
+          2.2006344880809436e-06,
+          2.0813941955521997e-06,
+          2.385377883912243e-06,
+          2.0813941955521997e-06,
+          2.081394198549802e-06,
+          2.2006344880809436e-06,
+          1.154963991471629e-05,
+          4.731267690658014e-05,
+          1.59828684159688e-05,
+          6.763637065893002e-06,
+          1.9554687397827647e-06,
+          2.308189868932553e-06,
+          0.1995226114988327,
+          0.006640863418579057,
+          2.975225448620389e-06,
+          2.766911871731302e-06,
+          8.871470178877308e-06
+        ],
+        "normal_errors_degrees": [
+          0.019782341029446364,
+          0.019782341029446364,
+          0.016729415735677884,
+          0.006667838155762297,
+          0.019782341029446364,
+          0.0,
+          0.0,
+          0.3608066485065424,
+          0.4295643278392515,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.010600267736294924,
+          0.010600267736294924,
+          0.010600267736294924,
+          0.010600267736294924,
+          0.0,
+          0.008426745593341533,
+          0.019782341029446364,
+          0.009646322023429306,
+          0.019782341029446364,
+          0.012086492654212128,
+          0.019782341029446364,
+          179.87966869570758,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "result_sha256": "07b61aacd357ab5ab2fa7cd470d3279b48db4428c79cf25e33d4c29990953c5c",
+      "input_sha256": "ea043c0947e3a185d3a878415592c99ca326018ad7411f2b710268ea3898dcb7"
+    },
+    {
+      "route": "source",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--comparison-input",
+        "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/quality-speed-loop-20261029/contracts-final/source.json"
+      ],
+      "wall_seconds": 0.47311016998719424,
+      "source_geometry_score": {
+        "passed": true,
+        "scored": 155,
+        "modes": [
+          "analytic-pruned"
+        ],
+        "maxima": {
+          "depth": 0.002638292312622026,
+          "point": 2.8163194656580237e-08,
+          "normal_degrees": 0.22949957087194034,
+          "residual": 1.7404556274414062e-05
+        },
+        "failures": []
+      },
+      "result_sha256": "b68e8cf4112802a3734ccbc44e4bee08f3c9b378b0d5c1fe25bb1e3c1c1140ac",
+      "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3"
+    }
+  ],
+  "complete": true
+}

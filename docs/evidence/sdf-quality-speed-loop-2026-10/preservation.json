@@ -1,0 +1,18 @@
+{
+  "original_sources": 874,
+  "original_spvs": 166,
+  "changed_original_sources": [
+    "projects/sdf/CMakeLists.txt",
+    "projects/sdf/sdf_app.cpp",
+    "projects/sdf/sdf_comparison.cpp",
+    "projects/sdf/sdf_config.h",
+    "projects/sdf/sdf_renderer.cpp",
+    "projects/sdf/sdf_renderer.h",
+    "projects/sdf/sdf_shader_selection.cpp",
+    "projects/sdf/sdf_shader_selection.h",
+    "projects/sdf/shaders/comparison_queries.glsl",
+    "projects/sdf/shaders/sdf_surface.glsl"
+  ],
+  "changed_original_spvs": [],
+  "binary_sha256": "1c71ec2622022f2f56cd85a9e19b80b7290bc35c5b9408ac193fd1cd55e1f587"
+}

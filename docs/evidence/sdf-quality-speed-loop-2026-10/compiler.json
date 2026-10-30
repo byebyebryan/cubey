@@ -1,0 +1,559 @@
+{
+  "device": "NVIDIA GeForce RTX 5070 Ti",
+  "driver_version_raw": 2559459584,
+  "local_memory_limitation": "Driver reports at least 4 GiB per-thread local memory for the trivial fullscreen vertex shader. Raw values retained but excluded from conclusions; no low-bit reinterpretation.",
+  "local_memory_statistic_usable": false,
+  "pipelines": [
+    {
+      "executables": [
+        {
+          "description": "Vertex Shader",
+          "name": "VS",
+          "representations": [],
+          "stages": 1,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 16,
+              "value": 16
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 768,
+              "value": 768
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719476736,
+              "value": 68719476736
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 1,
+              "value": 1
+            },
+            {
+              "description": "Number of scalar outputs used by this shader stage",
+              "format": 2,
+              "name": "Output Count",
+              "raw_union_u64": 0,
+              "value": 0
+            }
+          ],
+          "subgroup_size": 32
+        },
+        {
+          "description": "Fragment Shader",
+          "name": "FS",
+          "representations": [],
+          "stages": 16,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 96,
+              "value": 96
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 400512,
+              "value": 400512
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719482928,
+              "value": 68719482928
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 3,
+              "value": 3
+            },
+            {
+              "description": "Number of colors output by the fragment shader",
+              "format": 2,
+              "name": "Output Colors",
+              "raw_union_u64": 1,
+              "value": 1
+            }
+          ],
+          "subgroup_size": 32
+        }
+      ],
+      "pipeline_setup_ms": 1140.363197,
+      "request": "sdf_authored.frag.spv",
+      "shader": "sdf_authored.frag.spv",
+      "single_material": false
+    },
+    {
+      "executables": [
+        {
+          "description": "Vertex Shader",
+          "name": "VS",
+          "representations": [],
+          "stages": 1,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 16,
+              "value": 16
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 768,
+              "value": 768
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719476736,
+              "value": 68719476736
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 1,
+              "value": 1
+            },
+            {
+              "description": "Number of scalar outputs used by this shader stage",
+              "format": 2,
+              "name": "Output Count",
+              "raw_union_u64": 0,
+              "value": 0
+            }
+          ],
+          "subgroup_size": 32
+        },
+        {
+          "description": "Fragment Shader",
+          "name": "FS",
+          "representations": [],
+          "stages": 16,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 96,
+              "value": 96
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 419712,
+              "value": 419712
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719482928,
+              "value": 68719482928
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 3,
+              "value": 3
+            },
+            {
+              "description": "Number of colors output by the fragment shader",
+              "format": 2,
+              "name": "Output Colors",
+              "raw_union_u64": 1,
+              "value": 1
+            }
+          ],
+          "subgroup_size": 32
+        }
+      ],
+      "pipeline_setup_ms": 1254.870717,
+      "request": "cached03125_sdf_authored.frag.spv",
+      "shader": "cached03125_sdf_authored.frag.spv",
+      "single_material": false
+    },
+    {
+      "executables": [
+        {
+          "description": "Vertex Shader",
+          "name": "VS",
+          "representations": [],
+          "stages": 1,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 16,
+              "value": 16
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 768,
+              "value": 768
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719476736,
+              "value": 68719476736
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 1,
+              "value": 1
+            },
+            {
+              "description": "Number of scalar outputs used by this shader stage",
+              "format": 2,
+              "name": "Output Count",
+              "raw_union_u64": 0,
+              "value": 0
+            }
+          ],
+          "subgroup_size": 32
+        },
+        {
+          "description": "Fragment Shader",
+          "name": "FS",
+          "representations": [],
+          "stages": 16,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 128,
+              "value": 128
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 457600,
+              "value": 457600
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719483216,
+              "value": 68719483216
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 3,
+              "value": 3
+            },
+            {
+              "description": "Number of colors output by the fragment shader",
+              "format": 2,
+              "name": "Output Colors",
+              "raw_union_u64": 1,
+              "value": 1
+            }
+          ],
+          "subgroup_size": 32
+        }
+      ],
+      "pipeline_setup_ms": 1274.441527,
+      "request": "cachednormal_sdf_authored.frag.spv",
+      "shader": "cachednormal_sdf_authored.frag.spv",
+      "single_material": false
+    },
+    {
+      "executables": [
+        {
+          "description": "Vertex Shader",
+          "name": "VS",
+          "representations": [],
+          "stages": 1,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 16,
+              "value": 16
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 768,
+              "value": 768
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719476736,
+              "value": 68719476736
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 1,
+              "value": 1
+            },
+            {
+              "description": "Number of scalar outputs used by this shader stage",
+              "format": 2,
+              "name": "Output Count",
+              "raw_union_u64": 0,
+              "value": 0
+            }
+          ],
+          "subgroup_size": 32
+        },
+        {
+          "description": "Fragment Shader",
+          "name": "FS",
+          "representations": [],
+          "stages": 16,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 128,
+              "value": 128
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 476928,
+              "value": 476928
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719483216,
+              "value": 68719483216
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 3,
+              "value": 3
+            },
+            {
+              "description": "Number of colors output by the fragment shader",
+              "format": 2,
+              "name": "Output Colors",
+              "raw_union_u64": 1,
+              "value": 1
+            }
+          ],
+          "subgroup_size": 32
+        }
+      ],
+      "pipeline_setup_ms": 1308.754147,
+      "request": "cachedrefinenormal_sdf_authored.frag.spv",
+      "shader": "cachedrefinenormal_sdf_authored.frag.spv",
+      "single_material": false
+    },
+    {
+      "executables": [
+        {
+          "description": "Vertex Shader",
+          "name": "VS",
+          "representations": [],
+          "stages": 1,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 16,
+              "value": 16
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 768,
+              "value": 768
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719476736,
+              "value": 68719476736
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 1,
+              "value": 1
+            },
+            {
+              "description": "Number of scalar outputs used by this shader stage",
+              "format": 2,
+              "name": "Output Count",
+              "raw_union_u64": 0,
+              "value": 0
+            }
+          ],
+          "subgroup_size": 32
+        },
+        {
+          "description": "Fragment Shader",
+          "name": "FS",
+          "representations": [],
+          "stages": 16,
+          "statistics": [
+            {
+              "description": "Number of temporary registers used by this shader stage",
+              "format": 2,
+              "name": "Register Count",
+              "raw_union_u64": 80,
+              "value": 80
+            },
+            {
+              "description": "Size in bytes of the executable for this stage",
+              "format": 2,
+              "name": "Binary Size",
+              "raw_union_u64": 215552,
+              "value": 215552
+            },
+            {
+              "description": "Size in bytes required for the shader stack",
+              "format": 2,
+              "name": "Stack Size",
+              "raw_union_u64": 0,
+              "value": 0
+            },
+            {
+              "description": "Size in bytes required per-thread for local memory",
+              "format": 2,
+              "name": "Local Memory Size",
+              "raw_union_u64": 68719477088,
+              "value": 68719477088
+            },
+            {
+              "description": "Number of scalar inputs used by this shader stage",
+              "format": 2,
+              "name": "Input Count",
+              "raw_union_u64": 3,
+              "value": 3
+            },
+            {
+              "description": "Number of colors output by the fragment shader",
+              "format": 2,
+              "name": "Output Colors",
+              "raw_union_u64": 1,
+              "value": 1
+            }
+          ],
+          "subgroup_size": 32
+        }
+      ],
+      "pipeline_setup_ms": 14.299062,
+      "request": "combined_lit_root_far_sdf_analytic_pruned.frag.spv@single",
+      "shader": "combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "single_material": true
+    }
+  ],
+  "scope": "Separate compile-only Vulkan pipeline. Resource statistics do not measure live occupancy or execution time."
+}

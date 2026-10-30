@@ -1,0 +1,35 @@
+Test project /home/bryan/code/cubey/build/release
+      Start   8: documentation_hygiene
+ 1/12 Test   #8: documentation_hygiene ............   Passed    0.57 sec
+      Start   9: documentation_media
+ 2/12 Test   #9: documentation_media ..............   Passed    0.05 sec
+      Start  10: documentation_rules
+ 3/12 Test  #10: documentation_rules ..............   Passed    0.13 sec
+      Start  13: shader_build_rules
+ 4/12 Test  #13: shader_build_rules ...............   Passed    0.89 sec
+      Start 263: sdf_shader_selection_tests
+ 5/12 Test #263: sdf_shader_selection_tests .......   Passed    0.01 sec
+      Start 264: sdf_region_tests
+ 6/12 Test #264: sdf_region_tests .................   Passed    0.98 sec
+      Start 265: sdf_recipe_tests
+ 7/12 Test #265: sdf_recipe_tests .................   Passed    0.04 sec
+      Start 266: sdf_authored_tests
+ 8/12 Test #266: sdf_authored_tests ...............   Passed    0.30 sec
+      Start 267: sdf_material_tests
+ 9/12 Test #267: sdf_material_tests ...............   Passed    0.02 sec
+      Start 268: sdf_normal_projection_tests
+10/12 Test #268: sdf_normal_projection_tests ......   Passed    0.03 sec
+      Start 269: sdf_mirror_author_tests
+11/12 Test #269: sdf_mirror_author_tests ..........   Passed    0.04 sec
+      Start 270: sdf_workshop_tests
+12/12 Test #270: sdf_workshop_tests ...............   Passed    0.04 sec
+
+100% tests passed out of 12
+
+Label Time Summary:
+build     =   0.89 sec*proc (1 test)
+docs      =   0.74 sec*proc (3 tests)
+policy    =   1.64 sec*proc (4 tests)
+unit      =   1.64 sec*proc (4 tests)
+
+Total Test time (real) =   3.11 sec

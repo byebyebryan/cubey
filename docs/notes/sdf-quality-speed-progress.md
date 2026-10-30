@@ -15,11 +15,12 @@ Started 2026-10-29 from planning commit `42ae900d`. The
 
 ## Checkpoints
 
-1. Matched endpoint timing and capture: initial batch complete; final-binary rerun pending.
+1. Matched endpoint timing and capture: initial and final-binary batches complete.
 2. Native diagnostic qualification and quality-gap attribution: bounded native-validated domain complete for ten paired views.
 3. Candidate selection and bounded implementation: C/N and one combination implemented.
-4. Reconstruction/history/resource qualification complete; final matched timing pending.
-5. Decision receipt, preservation checks and local commits: pending.
+4. Reconstruction/history/resource qualification and final matched timing complete.
+5. Decision receipt and preservation checks complete; HTML report published,
+   HTTP bytes verified, local evidence committed with this record.
 
 ## Measured endpoint checkpoint
 
@@ -106,3 +107,35 @@ at 32 pixels and is excluded. Two failed descriptor/layout attempts are also
 retained and excluded. The final diagnostic retains one UV resource slot and
 drains the GPU per pose, below its 32 MiB logical payload cap. This capture
 mode cannot be used for multiframe profiling.
+
+## Final result
+
+The 174 final native runs (126 core, 48 close/distant) use the frozen binary,
+three serial interleaved repetitions, 180/30/150 frames and verified raw frame
+indices. All 348 final timing boundaries report zero encoder utilization;
+the host remains uncontrolled. Earlier publication evidence observes up to
+50% encoder load. No owned build/test/capture/encoding overlaps final timing.
+
+C and C+N meet the 16.7 ms GPU p95 screen in all ten tested views. Guardian
+preset C+N is 4.658–4.733 ms versus source 18.129–18.303 ms; the close view is
+8.885–8.923 versus 33.373–33.490 ms. Robot source remains competitive, including
+its faster side view. These are GPU measurements, not interactive FPS promises.
+
+Fifty fresh final-binary native/diagnostic captures and forty paired quality
+comparisons reproduce the quality results. Native per-pose geometry reveals
+a 10.05-pixel Robot dolly boundary tail. The thin-feature and wrong-first-hit
+failures reject a detail-preserving profile. Twelve shadow-off native images
+document the retained cached-shadow cost in quality.
+
+The bounded decision is to retain C and C+N as explicit private preview
+candidates, preserve sampled/full by default, and leave source-quality,
+runtime/window, visual acceptance, incremental rebuilding and automatic
+switching as separate boundaries. See the
+[results](sdf-quality-speed-results.md) and
+[archived receipts](../evidence/sdf-quality-speed-loop-2026-10/README.md).
+
+[Published HTML report](http://starship:8787/reports/932bc8269b0a1bfc66894eaa883396cab1397e84142f1aa2199e529de8c60503/).
+All 40 policy/view controls, 16 fixture selections, slider/crop handlers and
+four 24-frame clips pass local machine checks. No browser connection is
+available, so rendered-page acceptance remains unclaimed. Report delivery is
+separate from project-site deployment. No GitHub push was performed.

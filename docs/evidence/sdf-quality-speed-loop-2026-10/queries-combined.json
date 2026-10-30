@@ -1,0 +1,762 @@
+{
+  "cases": [
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 13.100731,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.66242,
+      "field_bytes": 912997552,
+      "geometry_hash": 18108402278844718650,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "sphere-control",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.193688,
+      "region_bytes": 4223312,
+      "region_fallback_cells": 0,
+      "region_far_cells": 254904,
+      "region_references": 7240,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 2.2798776626586914e-06,
+          "status": 1,
+          "steps": 22.0,
+          "t": 0.49999770522117615
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 2.2798776626586914e-06,
+          "status": 1,
+          "steps": 22.0,
+          "t": 0.49999770522117615
+        },
+        {
+          "normal": [
+            0.26701709628105164,
+            0.5344614386558533,
+            0.8019057512283325
+          ],
+          "residual": 2.115964889526367e-06,
+          "status": 1,
+          "steps": 21.0,
+          "t": 0.4999978840351105
+        },
+        {
+          "normal": [
+            -0.8729427456855774,
+            0.4363645911216736,
+            0.21807549893856049
+          ],
+          "residual": 2.115964889526367e-06,
+          "status": 1,
+          "steps": 24.0,
+          "t": 0.4999978542327881
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -2.3245811462402344e-06,
+          "status": 1,
+          "steps": 22.0,
+          "t": 0.199997678399086
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 612.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.20000000298023224
+        },
+        {
+          "distance": 0.0
+        },
+        {
+          "distance": 0.20000000298023224
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 6.723377,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.761234,
+      "field_bytes": 912997552,
+      "geometry_hash": 16498056370629926624,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "subgrid-sphere",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 3.889521,
+      "region_bytes": 4194480,
+      "region_fallback_cells": 0,
+      "region_far_cells": 262112,
+      "region_references": 32,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 43.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 43.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 36.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 51.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 28.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 51.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.00019531250291038305
+        },
+        {
+          "distance": -1.4551915228366852e-11
+        },
+        {
+          "distance": 0.00019531250291038305
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 6.993198,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.672984,
+      "field_bytes": 912997552,
+      "geometry_hash": 3163061551344856587,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "aligned-small-sphere",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.533334,
+      "region_bytes": 4194480,
+      "region_fallback_cells": 0,
+      "region_far_cells": 262112,
+      "region_references": 32,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 8.854825864546001e-06,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.004260118585079908
+        },
+        {
+          "normal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "residual": 8.854825864546001e-06,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.004260118585079908
+        },
+        {
+          "normal": [
+            0.2636878192424774,
+            0.5308226346969604,
+            0.8054167032241821
+          ],
+          "residual": -6.059696897864342e-05,
+          "status": 1,
+          "steps": 14.0,
+          "t": 0.0043295701034367085
+        },
+        {
+          "normal": [
+            -0.8764845132827759,
+            0.4309428930282593,
+            0.21462306380271912
+          ],
+          "residual": -5.403964314609766e-05,
+          "status": 1,
+          "steps": 14.0,
+          "t": 0.004323012661188841
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.6337871784344316e-05,
+          "status": 1,
+          "steps": 7.0,
+          "t": 0.00017897463112603873
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 51.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.00019531250291038305
+        },
+        {
+          "distance": 0.0
+        },
+        {
+          "distance": 0.00019531250291038305
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 9.809582,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.162167,
+      "field_bytes": 912997552,
+      "geometry_hash": 14482185363410610916,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "box-23-0.00027901786",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.830396,
+      "region_bytes": 4219404,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255881,
+      "region_references": 6263,
+      "results": [
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": 1.996755599975586e-06,
+          "status": 1,
+          "steps": 21.0,
+          "t": 0.6199979782104492
+        },
+        {
+          "normal": [
+            0.9205422401428223,
+            0.0,
+            -0.39064309000968933
+          ],
+          "residual": -2.4437904357910156e-06,
+          "status": 1,
+          "steps": 25.0,
+          "t": 0.2199975699186325
+        },
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": 1.0706484317779541e-05,
+          "status": 1,
+          "steps": 26.0,
+          "t": 0.619989275932312
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 11.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.3907199203968048,
+            0.0,
+            0.9205096364021301
+          ],
+          "residual": 2.0191073417663574e-06,
+          "status": 1,
+          "steps": 21.0,
+          "t": 0.6199979782104492
+        },
+        {
+          "normal": [
+            0.39086249470710754,
+            0.0,
+            0.9204491376876831
+          ],
+          "residual": 2.2202730178833008e-06,
+          "status": 1,
+          "steps": 24.0,
+          "t": 0.6199977993965149
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 10.442606,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.373948,
+      "field_bytes": 912997552,
+      "geometry_hash": 2382038922206536403,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "box-45-0.00027901786",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.099358,
+      "region_bytes": 4219212,
+      "region_fallback_cells": 0,
+      "region_far_cells": 255929,
+      "region_references": 6215,
+      "results": [
+        {
+          "normal": [
+            0.7070533633232117,
+            0.0,
+            0.7071601748466492
+          ],
+          "residual": 2.1010637283325195e-06,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.6199979186058044
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            -0.7071067690849304
+          ],
+          "residual": -2.3990869522094727e-06,
+          "status": 1,
+          "steps": 25.0,
+          "t": 0.2199976146221161
+        },
+        {
+          "normal": [
+            0.7071067690849304,
+            0.0,
+            0.7071067690849304
+          ],
+          "residual": 2.1010637283325195e-06,
+          "status": 1,
+          "steps": 27.0,
+          "t": 0.6199979186058044
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 11.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            0.7071601748466492,
+            0.0,
+            0.7070533633232117
+          ],
+          "residual": 2.1010637283325195e-06,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.6199979186058044
+        },
+        {
+          "normal": [
+            0.7072135806083679,
+            0.0,
+            0.7070000171661377
+          ],
+          "residual": 2.1830201148986816e-06,
+          "status": 1,
+          "steps": 26.0,
+          "t": 0.6199977993965149
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.156608,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.706324,
+      "field_bytes": 912997552,
+      "geometry_hash": 16993683741795772102,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "thin-stick-0.5h",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.652685,
+      "region_bytes": 4195696,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261808,
+      "region_references": 336,
+      "results": [
+        {
+          "normal": [
+            0.3907310664653778,
+            0.0,
+            0.9205048680305481
+          ],
+          "residual": -1.1549447663128376e-05,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.009872040711343288
+        },
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": -4.731118679046631e-05,
+          "status": 1,
+          "steps": 19.0,
+          "t": 0.10004731267690659
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 6.898957,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.671854,
+      "field_bytes": 912997552,
+      "geometry_hash": 14398882239344281410,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "thin-stick-1.5h",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.449254,
+      "region_bytes": 4195696,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261808,
+      "region_references": 336,
+      "results": [
+        {
+          "normal": [
+            0.39073091745376587,
+            0.0,
+            0.9205049276351929
+          ],
+          "residual": -1.5982688637450337e-05,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.009597456082701683
+        },
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": 6.780028343200684e-06,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.09999323636293411
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 6.975707,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.665414,
+      "field_bytes": 912997552,
+      "geometry_hash": 11502953349875602922,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "thin-stick-4h",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.573064,
+      "region_bytes": 4195696,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261808,
+      "region_references": 336,
+      "results": [
+        {
+          "normal": [
+            0.3907320201396942,
+            0.0,
+            0.9205044507980347
+          ],
+          "residual": 1.955544576048851e-06,
+          "status": 1,
+          "steps": 14.0,
+          "t": 0.00888197310268879
+        },
+        {
+          "normal": [
+            0.0,
+            0.9999999403953552,
+            0.0
+          ],
+          "residual": 2.3096799850463867e-06,
+          "status": 1,
+          "steps": 16.0,
+          "t": 0.09999769181013107
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 10.067184,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.451499,
+      "field_bytes": 912997552,
+      "geometry_hash": 5470114744067985772,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "subgrid-cavity",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.861476,
+      "region_bytes": 4223440,
+      "region_fallback_cells": 0,
+      "region_far_cells": 254872,
+      "region_references": 7272,
+      "results": [
+        {
+          "normal": [
+            0.001495084259659052,
+            0.001495084259659052,
+            0.9999977946281433
+          ],
+          "residual": -2.6673078536987305e-06,
+          "status": 1,
+          "steps": 45.0,
+          "t": 0.1997179239988327
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 10.465546,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.391779,
+      "field_bytes": 912997552,
+      "geometry_hash": 18108402278844718650,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "sphere-tangent",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.919156,
+      "region_bytes": 4223312,
+      "region_fallback_cells": 0,
+      "region_far_cells": 254904,
+      "region_references": 7240,
+      "results": [
+        {
+          "normal": [
+            0.9994446635246277,
+            0.0,
+            0.03332194313406944
+          ],
+          "residual": 0.00011022388935089111,
+          "status": 1,
+          "steps": 279.0,
+          "t": 0.6933591365814209
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 612.0,
+          "t": 0.0
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.39963,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 1.224647,
+      "field_bytes": 912997552,
+      "geometry_hash": 9528710269108034239,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "workspace-clip",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.446934,
+      "region_bytes": 4200288,
+      "region_fallback_cells": 0,
+      "region_far_cells": 260660,
+      "region_references": 1484,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 2.950429916381836e-06,
+          "status": 1,
+          "steps": 12.0,
+          "t": 0.2009970247745514
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -2.771615982055664e-06,
+          "status": 1,
+          "steps": 12.0,
+          "t": 0.0009972330881282687
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.071708,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.702343,
+      "field_bytes": 912997552,
+      "geometry_hash": 7239883950309317242,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "crossed-thin-sticks",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 4.693356,
+      "region_bytes": 4197584,
+      "region_fallback_cells": 0,
+      "region_far_cells": 261512,
+      "region_references": 808,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 8.871240424923599e-06,
+          "status": 1,
+          "steps": 16.0,
+          "t": 0.009851619601249695
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 6.0,
+          "t": 0.0
+        }
+      ]
+    }
+  ],
+  "format": "cubey.sdf.tracing-results",
+  "prepared_cones": false,
+  "query_shader": "cachedrefinenormal_comparison_sampled.comp.spv",
+  "query_shader_sha256": "f5888637c78d0f715c243a2176fd288f0b5296c5479bb1c61ba7f0be7d00bf2e",
+  "source_optimization": "automatic",
+  "version": 1
+}

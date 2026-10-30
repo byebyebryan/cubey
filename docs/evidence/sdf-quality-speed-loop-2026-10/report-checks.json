@@ -1,0 +1,53 @@
+{
+  "offline_js_passed": true,
+  "policy_views": 40,
+  "fixture_selections": 16,
+  "motion_sources": 4,
+  "slider_and_crop_handlers": true,
+  "browser_render_acceptance": false,
+  "clip_checks": [
+    {
+      "file": "guardian-arc.mp4",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "12/1",
+      "nb_read_frames": "24"
+    },
+    {
+      "file": "guardian-dolly.mp4",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "12/1",
+      "nb_read_frames": "24"
+    },
+    {
+      "file": "robot-arc.mp4",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "12/1",
+      "nb_read_frames": "24"
+    },
+    {
+      "file": "robot-dolly.mp4",
+      "codec_name": "h264",
+      "width": 1280,
+      "height": 720,
+      "r_frame_rate": "12/1",
+      "nb_read_frames": "24"
+    }
+  ],
+  "native_crop_visual_inspection": [
+    "guardian-shading-crop.png",
+    "robot-shading-crop.png",
+    "robot-missing-feature.png"
+  ],
+  "browser_unavailable": true,
+  "browser_note": "Runtime setup succeeded; browser selector reported no browser, discovery list empty. No alternate browser backend used.",
+  "qa_script_sha256": "0a2058fbed7bafb65db6cb45a66b1e234268437891b61dcdca2baf7fde4486f8",
+  "documentation_packet_ordering_issue": "First staged-document check referenced checks.log before the receipt was written; corrected by writing/staging the receipt, then rerunning focused checks.",
+  "focused_ctest_groups_passed": 12,
+  "native_final_log_validation_errors_or_warnings": 0
+}
