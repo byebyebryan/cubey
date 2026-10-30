@@ -40,3 +40,24 @@ source/content identities in
 `outputs/sdf/cached-commit-loop-20261030/baseline.json`.
 Initial RTX 5070 Ti / 610.57.04 observation: 18% GPU, 0% encoder, 797 MiB used.
 This is a boundary observation, not continuous GPU exclusivity.
+
+## Private implementation checkpoint
+
+The study uses a separate friend helper; ordinary Field methods and all 206
+original shader binaries remain unchanged. The first reuse shader evaluated
+canonical fallbacks in divergent groups and was too costly. Compacting new
+bricks and numerical fallback texels into a separate canonical pass removes
+that avoidable work. Group-local list compaction reduces contention. These
+development pilots are excluded from the final measurement set.
+
+The candidate resolves old logical cells through all ancestors, preserves
+workspace/raw-cutter composition and routes zero/subnormal values through the
+canonical evaluator. A bounded two-million-entry fallback list uses about 8 MiB;
+overflow selects a full canonical build rather than publishing partial samples.
+Raw R16 images are copied in 16 MiB chunks for complete logical-cell comparisons.
+
+Four current Guardian/Robot add/cut pilots match reachable topology and every
+active stored texel. Formal fixture/radius/chain qualification, matched cold and
+preallocated timings, native images and publication dispositions follow this
+checkpoint. Focused SDF/documentation/shader checks pass 13/13. No continuous
+input, persistent allocation or time-sliced updater is implemented.

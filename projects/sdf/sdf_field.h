@@ -56,6 +56,7 @@ class Field {
     const std::uint32_t capacity;
 
   private:
+    friend class CachedCommitStudy;
     void dispatch(bool bricks, std::uint32_t level, std::uint32_t count, std::uint32_t input,
                   std::uint32_t output);
     void update_descriptors(std::uint32_t input, std::uint32_t output);

@@ -1,0 +1,57 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+layout(local_size_x=8,local_size_y=8,local_size_z=8) in;
+layout(std430,set=0,binding=0) readonly buffer Original {uint original[];};
+layout(std430,set=0,binding=1) buffer Nodes {uint nodes[];};
+layout(std430,set=0,binding=5) readonly buffer Frontier {uint inputs[];};
+layout(set=0,binding=8) uniform sampler3D oldAtlas;
+layout(r16f,set=0,binding=9) writeonly uniform image3D atlas;
+layout(std430,set=0,binding=11) readonly buffer Tool {uvec4 toolHeader;SceneInstruction tool;};
+layout(std430,set=0,binding=18) buffer Counts {uint counts[];};
+layout(std430,set=0,binding=20) writeonly buffer Fallbacks {uint fallbacks[];};
+layout(std430,set=0,binding=21) writeonly buffer NewBricks {uint newBricks[];};
+layout(push_constant) uniform Params {uint depth;uint count;uint capacity;uint refCapacity;uint atlasAxis;} pc;
+shared uint oldHeader;
+shared uint localCount,globalStart;
+shared uint localFallbacks[512];
+uint oldLeaf(uint code) {
+    for(uint level=2u;level<=8u;level+=2u) {
+        uint h=original[LEVEL[level]+(code>>(3u*(8u-level)))];
+        if((h&SUBDIVIDED)==0u) return 0u;
+        if(level==8u) return h;
+    }
+    return 0u;
+}
+void main() {
+    uint index=gl_WorkGroupID.x+gl_WorkGroupID.y*1024u;
+    if(index>=pc.count) return;
+    uint ptr=inputs[index],code=ptr-LEVEL[pc.depth];
+    if(gl_LocalInvocationIndex==0u) {
+        oldHeader=oldLeaf(code);nodes[ptr]=SUBDIVIDED|index;
+        localCount=0u;globalStart=0u;
+        if(oldHeader==0u) newBricks[atomicAdd(counts[1],1u)]=index;
+        else atomicAdd(counts[0],1u);
+    }
+    barrier();
+    if(oldHeader==0u) return;
+    ivec3 cell=ivec3(gl_LocalInvocationID);
+    vec3 p=(vec3(unmorton(code))+vec3(cell)/7.0)/float(1u<<pc.depth)-0.5;
+    float a=texelFetch(oldAtlas,brickOrigin(oldHeader&POINTER,pc.atlasAxis)+cell,0).r;
+    float b=toolHeader.x==0u ? 0.0 : authoredPrimitive(p,tool);
+    if(toolHeader.y==0u) b=max(b,boxDistance(p,vec3(.499)));
+    float d=toolHeader.x==0u ? a : toolHeader.y==0u ? min(a,b) : max(a,-b);
+    if(abs(d)<0.00006103515625 || isnan(d) || isinf(d) || isnan(b) || isinf(b)) {
+        localFallbacks[atomicAdd(localCount,1u)]=index*512u+gl_LocalInvocationIndex;
+    } else imageStore(atlas,brickOrigin(index,pc.atlasAxis)+cell,vec4(d));
+    barrier();
+    if(gl_LocalInvocationIndex==0u && localCount>0u) {
+        globalStart=atomicAdd(counts[3],localCount);
+        if(globalStart+localCount>pc.refCapacity) atomicOr(counts[7],1u);
+    }
+    barrier();
+    if(gl_LocalInvocationIndex<localCount && globalStart+gl_LocalInvocationIndex<pc.refCapacity)
+        fallbacks[globalStart+gl_LocalInvocationIndex]=localFallbacks[gl_LocalInvocationIndex];
+}
