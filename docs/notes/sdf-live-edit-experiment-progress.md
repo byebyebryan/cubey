@@ -96,3 +96,20 @@ remaining stage-2 measurements characterize a private approximate prototype.
 Static native motion changes camera and pending geometry with exactly one base
 field and region build; it serializes upload/readback and proves no input-latency
 or concurrent-updater claim.
+
+The first 1080p timing attempt at `f39fb741` was stopped after four completed
+Robot runs: A was about 110-114 ms p95 and B 93-97 ms. Those are failed pilot
+receipts, not final matrix results. Whole-workspace traversal and zero-bound
+uniform cells caused avoidable full-source evaluation in empty space. The
+private controls now carry the combined edited source bounds; A expands them
+by `.002 + 3*base_guard`, covering the active-brick reconstruction envelope
+and rotated primitive sublevel enclosure. An active brick's center lies within
+its diagonal radius of zero, so its corners are bounded by twice that radius;
+the existing trilinear/half/guard envelope is below the chosen expansion.
+Hard and supported smooth operators do not amplify a scalar base error.
+Pending additions are included in the combined bounds; empty roots exit early.
+Uniform cells also intersect the existing signed region certificate with their
+cache interval, recovering a useful bound without treating it as a scalar.
+The bounded pilot is about 13.3 ms p95 for A at zero-tail Robot; all frozen
+source and pending geometry checks still pass. Final timing is rerun under a
+new committed identity rather than mixing the two shader versions.

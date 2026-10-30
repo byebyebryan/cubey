@@ -4,8 +4,10 @@
 // base-region references address its immutable prefix. No uniform-cell label is
 // interpreted as a signed distance value.
 layout(std430,set=0,binding=21) readonly buffer LiveEditControls {
-    uvec4 liveHeader; // base instructions, suffix instructions, 0 sampled / 1 source, reserved
+    uvec4 liveHeader; // base instructions, suffix instructions, 0 sampled / 1 source, empty edited root
     vec4 liveInfo;   // base arithmetic guard, reserved
+    vec4 liveLow;
+    vec4 liveHigh;
 };
 #define Hit LiveCachedHit
 #define trace liveUnusedCachedTrace
@@ -142,6 +144,17 @@ LiveBase liveBase(vec3 p,vec3 direction) {
         // clipped cache: max(raw,clip) >= raw, but its lower bound can be lost.
         if(interval.x<=boxDistance(p,vec3(.499))+guard)
             interval.x=-LIVE_INFINITY;
+        if(regionHeader.x!=0u) {
+            int dim=int(regionHeader.x);
+            ivec3 c=clamp(ivec3(floor((p+.5)*float(dim))),ivec3(0),ivec3(dim-1));
+            uvec4 certificate=regionCells[(c.z*dim+c.y)*dim+c.x];
+            if(certificate.z==1u) {
+                float bound=uintBitsToFloat(certificate.w);
+                if(bound<0.0)interval.y=min(interval.y,bound);
+                else if(bound>boxDistance(p,vec3(.499))+guard)
+                    interval.x=max(interval.x,bound);
+            }
+        }
         return LiveBase(interval,0.0,1.0,exitT,false,low,low+1.0/dim);
     }
     LIVE_COUNT(2);
@@ -164,7 +177,7 @@ LiveBase liveBase(vec3 p,vec3 direction) {
     if(interval.x<=boxDistance(p,vec3(.499))+guard)interval.x=-LIVE_INFINITY;
     return LiveBase(interval,g,1.0,LIVE_INFINITY,false,low,low+1.0/dim);
 }
-float liveCrossBoundary(vec3 origin,vec3 p,vec3 direction,float t,LiveBase base) {
+float liveCrossBoundary(vec3 origin,vec3 direction,float t,LiveBase base) {
     float best=LIVE_INFINITY;
     for(int axis=0;axis<3;++axis) {
         if(direction[axis]==0.0)continue;
@@ -191,7 +204,8 @@ float livePointDistance(vec3 p) {
 Hit trace(vec3 origin,vec3 direction,float limit) {
     Hit hit=Hit(0.0,0,0u,ivec3(0),0u);
     // Pending additions can occupy cells outside the frozen base's root bounds.
-    vec2 root=rayBox(origin,direction,vec3(-.5),vec3(.5));
+    if(liveHeader.w!=0u)return hit;
+    vec2 root=rayBox(origin,direction,liveLow.xyz,liveHigh.xyz);
     float t=max(root.x,0.0),end=min(root.y,limit);
     if(t>end)return hit;
     for(uint i=0u;i<4096u && t<=end;++i) {
@@ -217,7 +231,7 @@ Hit trace(vec3 origin,vec3 direction,float limit) {
         float next=t+step;
         // Cross only the selected classified region/voxel boundary.
         if(liveHeader.z==0u && step>=base.exitT)
-            next=liveCrossBoundary(origin,p,direction,t,base);
+            next=liveCrossBoundary(origin,direction,t,base);
         if(isnan(next) || isinf(next) || next<=t) {hit.status=2;hit.t=t;return hit;}
         t=next;
     }

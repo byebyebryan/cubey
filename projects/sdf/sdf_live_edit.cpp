@@ -64,6 +64,14 @@ LiveEditProgram prepare_live_edit(AuthoredScene base, AuthoredScene edited, bool
         static_cast<std::uint32_t>(edited.program.size() - base.program.size()),
         source_defined ? 1U : 0U, 0U};
     result.controls.info.x = authored_evaluation_guard(base);
+    const auto bounds = authored_model_bounds(edited);
+    result.controls.header[3] = bounds.empty ? 1U : 0U;
+    // A sampled base differs from source within active bricks. Expand the
+    // combined source bounds by a conservative near-brick error enclosure;
+    // pending additions are already included in the canonical edited bounds.
+    const float pad = source_defined ? 0.F : .002F + 3.F * result.controls.info.x;
+    result.controls.low = {glm::max(bounds.low - pad, math::Vec3{-.5F}), 0.F};
+    result.controls.high = {glm::min(bounds.high + pad, math::Vec3{.5F}), 0.F};
     result.base = std::move(base);
     result.edited = std::move(edited);
     return result;

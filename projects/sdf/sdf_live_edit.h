@@ -9,8 +9,9 @@ namespace cubey::projects::sdf {
 struct alignas(16) LiveEditControls {
     std::array<std::uint32_t, 4> header{};
     math::Vec4 info{};
+    math::Vec4 low{}, high{};
 };
-static_assert(sizeof(LiveEditControls) == 32);
+static_assert(sizeof(LiveEditControls) == 64);
 struct LiveEditProgram {
     AuthoredScene base, edited;
     LiveEditControls controls;
