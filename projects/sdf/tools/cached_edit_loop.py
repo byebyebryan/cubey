@@ -14,6 +14,13 @@ from investigate_guardian import ROOT, PRESETS, digest, invoke, metadata, camera
 from quality_speed_loop import profile
 from tracing_comparison import document, sphere, ray, H, unit, dot
 
+# Frozen from visible, non-pending Cached hits in the original placement replay
+# at 160x90: Guardian pixel (75,53), Robot (76,53), moved inward by .01 normal.
+CUT_CENTERS={
+    'guardian':[.00979279792920114,-.053725909893786866,.15428923866744446],
+    'robot':[.007054936181693949,-.05578828362564217,.09989852874040706],
+}
+
 
 def save(path,value):path.write_text(json.dumps(value,indent=2,allow_nan=False)+'\n')
 
@@ -98,6 +105,7 @@ def prepare(args):
         base=subject_scene(s);base_path=args.output/f'{s}-base-scene.json';save(base_path,base)
         for op in ('none','add','cut'):
             position=[.03,.075,.28] if s=='guardian' else [0,.1,.15]
+            if op=='cut':position=CUT_CENTERS[s]
             edited=base if op=='none' else edit_scene(base,sphere('pending-brush',.065,position),op=='cut')
             inp=args.output/f'{s}-{op}.json';save(inp,manifest([dict(name=s+'-'+op,base=base,scene=edited)]))
             scene=args.output/f'{s}-{op}-scene.json';save(scene,edited)
@@ -273,24 +281,28 @@ def replay(args):
             camera=dict(cfg)
             if view=='close':camera['distance']=.8
             data=json.loads(Path(row['input']).read_text());data['cases'][0]['queries']=camera_queries(camera,160,90)
+            control=copy.deepcopy(data['cases'][0]);control['name']+='-cached-control';control['scene']=copy.deepcopy(control['base']);data['cases'].append(control)
             prefix=args.output/f"{row['subject']}-{view}-{row['operation']}"
             inp=prefix.with_suffix('.input.json');save(inp,data)
             out=prefix.with_suffix('.json');flags=native(args,inp,out,extra=['--edit-queries']);invoke(flags,prefix,timeout=300)
-            results=json.loads(out.read_text())['queries']['cases'][0]['results']
+            output=json.loads(out.read_text())['queries']['cases'];results=output[0]['results'];control_results=output[1]['results']
             exhausted=sum(r['status']==2 for r in results)
             if exhausted:raise RuntimeError('camera replay exhausted')
+            changed=sum(a['status']!=b['status'] or (a['status']==1 and abs(a['t']-b['t'])>H) for a,b in zip(results,control_results))
+            if changed<10:raise RuntimeError(f"{row['subject']}/{view}/{row['operation']}: fewer than ten visibly changed Cached rays ({changed})")
             e=math.radians(cfg['sun-elevation']);a=math.radians(cfg['sun-azimuth'])
             light=[math.cos(e)*math.sin(a),math.sin(e),-math.cos(e)*math.cos(a)]
             shadows=[dict(kind='ray',origin=[q['origin'][i]+q['direction'][i]*r['t']+r['normal'][i]*2*H for i in range(3)],direction=light)
                      for q,r in zip(data['cases'][0]['queries'],results) if r['status']==1]
             data['cases'][0]['queries']=shadows
+            data['cases']=data['cases'][:1]
             shadow_input=Path(str(prefix)+'-shadow-input.json');save(shadow_input,data)
             shadow_output=Path(str(prefix)+'-shadow.json');shadow_flags=native(args,shadow_input,shadow_output,extra=['--edit-queries']);invoke(shadow_flags,Path(str(prefix)+'-shadow'),timeout=300)
             shadow_rows=json.loads(shadow_output.read_text())['queries']['cases'][0]['results']
             if any(r['status']==2 for r in shadow_rows):raise RuntimeError('shadow replay exhausted')
             receipt['runs'].append(dict(subject=row['subject'],view=view,operation=row['operation'],camera_rays=len(results),camera_exhausted=exhausted,
                 camera_hits=sum(r['status']==1 for r in results),pending_hits=sum(r['status']==1 and r['pending_surface'] for r in results),
-                shadow_rays=len(shadow_rows),shadow_exhausted=0,command=flags,shadow_command=shadow_flags))
+                changed_cached_rays=changed,visibility_gate_minimum=10,shadow_rays=len(shadow_rows),shadow_exhausted=0,command=flags,shadow_command=shadow_flags))
             save(args.output/'replay.json',receipt)
     receipt['complete']=True;save(args.output/'replay.json',receipt)
 

@@ -97,3 +97,12 @@ retain canonical source/history, retire pending state after a completed new
 Cached frame, and match independently rebuilt original-executable Cached images.
 The final sequence starts with no pending edit, activates one preview, and keeps
 that operation until replacement-frame completion.
+
+Final image review caught a workload error: the initial Guardian cut had zero
+visible tool hits and changed no pixels; Robot's cut barely affected its view.
+Those placement/timing receipts remain in `final/` as excluded coverage pilots.
+New cut centers are frozen from measured visible Cached ray hits, moved inward
+by .01 along their normal. Before timing, every subject/view/add-or-cut must
+change at least ten of 160x90 Cached control rays, by classification or more
+than one voxel in depth. This adds a visibility coverage gate without changing
+the geometry error allowances. The qualified dataset uses a separate raw root.
