@@ -98,6 +98,8 @@ the architecture and project guides remain current authority.
 - [SDF cache-commit research and proposed experiment](sdf-cache-commit-research-plan.md):
   hard-edit sample reuse, exact regional canonical sampling, source/precision
   boundaries and conditional local storage/time-budget experiments.
+- [Cached commit loop execution](sdf-cached-commit-loop-progress.md): private
+  sample-reuse/canonical-pruning qualification and measured commit checkpoints.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
