@@ -1,0 +1,931 @@
+{
+  "date": "2026-10-29",
+  "scope": "Read-only source audit for render mode/default promotion planning; no new native measurements",
+  "source_head": "5edaa76678c83222fccec451654370b4e12f7156",
+  "branch": "sdf-tracing-comparison",
+  "initial_worktree_clean": true,
+  "source_sha256": {
+    "projects/sdf/main.cpp": "388d9cc28c0f06ed9d1df6d01a8e7d4944cf24e8d7149a2769e2bffcb59e9a29",
+    "projects/sdf/sdf_config.h": "382ae43cbe6b74713b1b65fa13e023472f75c7004b02a82efd0b8244ef0ada02",
+    "projects/sdf/sdf_app.cpp": "37ec4defb32ca69062ff7b5257019f94b236925d6d4f909ecabe19ca7492300c",
+    "projects/sdf/sdf_renderer.cpp": "4273b2361552c4dda3a0a061ae63e9c77f27b71dac50a465cbb036d594d87e54",
+    "projects/sdf/sdf_shader_selection.cpp": "36a273b03fb7b5cfd57db4c0f812a87d31fdeee0acef94a019adb7d4a03bd8b2",
+    "projects/sdf/sdf_shader_selection_tests.cpp": "c68f3df97b54ad5bef5b629b6bcc368730cb8bbde897c646f72e18cf0152b050",
+    "projects/sdf/shaders/cached_quality.glsl": "d2630cf4fce7639448234312585980d72b97b2f442ec6ea2931dd17829080e4a",
+    "projects/sdf/shaders/cachedrefinenormal_sdf_authored.frag": "3fd691a9859d82527055f9b668ccd2df9820f6502ae6c32b012bc92c8e13ceb2",
+    "projects/sdf/shaders/lighting.glsl": "4cc999b0181b87d28674d05b7fe71fbd48f7db1751db860969f713069daa5e53",
+    "projects/sdf/tools/check_authored_window.py": "11d25a8e22e4fd97e71c33792d56ae2f285f9ff4cdcd2db8dc108fd2d464b94c",
+    "include/cubey/host/configured_app.h": "21793878800db619ea1109328ab79228a7fa462a93b9b76aee28ae29bf556c98",
+    "include/cubey/core/config_schema.h": "ae7ddc6c9bc1cb0474d17366fd30225819e672f81fe196614ce71e504bafd695",
+    "src/cubey/core/config_schema.cpp": "0a8f3aabdc3c6ed2fc3d47b4e0ad93e5af08a19665a5a54d6f9930582694ef8d",
+    "docs/notes/sdf-quality-speed-results.md": "1c02f5cd17a7bf7903e3f62407fce9a62b76c36c300fcdeb240e736949bda468"
+  },
+  "preset_inventory": [
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-bronze-clouds.json",
+      "sha256": "c9d134a7b879969f52c20c38416bad6c93725b82559b348ec5a48cca7d2e56c8",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-bronze-reference.json",
+      "sha256": "e99d3c7c4fb3e87904d212d68d178644fbb14fdad9507d133e2ffeaa1e99e5d6",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-bronze-sunset.json",
+      "sha256": "144ec785e6346dab35e5e10e364da80018ba3c65c0ab7a29b52ba5c28f6e742f",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-clay-clouds.json",
+      "sha256": "b6c424c8f891e9327d57c1fed5fc22106c05013ca5532da17f7dc63f93c6a929",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-clay-reference.json",
+      "sha256": "774c3a57e3118d3aa692cd671de8c8539b90257578325a910309bcc8f2799214",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-clay-sunset.json",
+      "sha256": "38d662a7069292c8b148efa18e05bd6c1375e6a2c91d9d04ada4c02d460b2cd3",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-glass-clouds.json",
+      "sha256": "6b0fdc7c825dc504b73ecb7a61dd6ed6889b89192df67f0c11341f86ca1ad9f8",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-glass-reference.json",
+      "sha256": "2c3c3036dbc956fac2a39c60900c5fcf81ec20f6578a630d22167d8dab481fac",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-glass-sunset.json",
+      "sha256": "8cfc26767a1b7dfdb13368cc2bd060966402f266e87d6ba3b6d352e16245142d",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-marble-clouds.json",
+      "sha256": "0a498f43e481f5c11b1a504e2aece73b717e3abc9bb6dd7fb4dee8221f5af2f3",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-marble-reference.json",
+      "sha256": "11c3f3661323dd2aae43d3354c98436d0bf0d5a1d572ff4fbdc56ad8500e9ba6",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-marble-sunset.json",
+      "sha256": "103039b86a0db789bce8dd1010a772037eaf2ac070f16791f564ada9bbbfe53a",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-plain-clouds.json",
+      "sha256": "7aa6bb2d75a23a73cb3f264ee82961bad727372098428b8a9f8b72a1489ffee1",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-plain-reference.json",
+      "sha256": "f8e633c17601182ff658485f7a5f3b77fcabc112faf1849e975f6fd136e13171",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/guardian-plain-sunset.json",
+      "sha256": "cd36ef04448590f1c5d8a1d5d1c169a72839a870f310b3897361d8ac5d7e0f88",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-bronze-clouds.json",
+      "sha256": "cad8b2ae863406fcfafdc8750b597a77176419364fdae995d82a93bba6d6f15a",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-bronze-reference.json",
+      "sha256": "b37e43430617bfa0b6d1ba85a92ff6734e9a5d48f3a09e5322e1abf6e5c62d61",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-bronze-sunset.json",
+      "sha256": "0e526b57febc03af111c867f9f6817b71bd0ddb1178096ce81b8bb8103d49658",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-clay-clouds.json",
+      "sha256": "1ee068461e40d506a4764733abdde8efce99790a497eb3c44e2caa16891a12ef",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-clay-reference.json",
+      "sha256": "b6758f394b4682dee17574ed031b934cf7e62c99d2bd1b1de9eb3c065c3ab15a",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-clay-sunset.json",
+      "sha256": "cbcc003e178a5ca6bc2a0a7aeb4c65ffeb850ba2c4d4cfd3716ce48afcc05d3f",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-glass-clouds.json",
+      "sha256": "4bf7b662ed19998479fa89a8e232d0a0b117b855c9fe3638b3e3edc91d59be1d",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-glass-reference.json",
+      "sha256": "692c20a9922bffab92d294fe6ca82fd55e08f7f973901d20d393d1b146d8f945",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-glass-sunset.json",
+      "sha256": "3083ea281f20555bd3a2dc57e119df8e26066fba2ae3b621f3a34da8ef22b427",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-marble-clouds.json",
+      "sha256": "d1587b7310e8dc18821a1ae60a16c96dcbdebabfee71f6a997c160db04105c3a",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-marble-reference.json",
+      "sha256": "a579647d58b1d9db4249db54ad622c82f46e0906022c5020120ec4b46e21ba25",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-marble-sunset.json",
+      "sha256": "e12b70328d596add7b554e8facbd268d84594a0d2e01adcd08265bdf528c3dd2",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-plain-clouds.json",
+      "sha256": "2f87baddcabb537d924a919086e60126bbf08a877b72c05d23b298d2bc733fcc",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-plain-reference.json",
+      "sha256": "d5325ff6f3c203910b4b3d7b6e61da32817f2b6b0b87e4860545fc14609b9741",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/environment-study/sphere-plain-sunset.json",
+      "sha256": "ac687933b0481081c5369de3a0078197805c40e3259330ac0c92c533b68f64f3",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-bronze.json",
+      "sha256": "1ef82133ca6d8956e5fd3c3c25c73b14f358b5e83af01b46f2b53284e2021a9d",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-ceramic.json",
+      "sha256": "b8c29078a147836952001cfc025f9996294ef37788ca73819419970752f23970",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-clay.json",
+      "sha256": "87830d206e3124b294c73b6cd0a0fa83fd11c3dcb6aa63d9e5773be7ccb43e73",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-glass.json",
+      "sha256": "b9bde7304f36fc1363090220abb93423633a2590268e4b0ae916a77945dc80c9",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-limestone.json",
+      "sha256": "e27091f5f6a0216e9d2d5c2c39f02ce74044af85facf19791a6972a5a9a70d6e",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-marble.json",
+      "sha256": "79d33ea00a6ca0b1ba612da2d2472275b25ae4fb9e6b5049f737754b0365174d",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/guardian-plain.json",
+      "sha256": "434441335b4d04a5a5b78c2ec66172b26e91ea36f2ace51ae18d1e69cb25c009",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-bronze.json",
+      "sha256": "4a42513617162f0fbea28ba0d051fb83a45ab24c7a468115ddc3d43a5e6fbcee",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-ceramic.json",
+      "sha256": "9acde11ebadadd249a86de6f0e3dfb7521b12efcc850c834a46e1bb35d3b3233",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-clay.json",
+      "sha256": "46801b80c8df997ca31fd8cc2af45bf61013c51ab060c6a7673df811cd233c22",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-glass.json",
+      "sha256": "82edc4635aca094ff28a819fd30c498c74a05ca3c5667a97d11ec8d17b785076",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-limestone.json",
+      "sha256": "2cde696efa517b4366e3d839d1d23b4b59c7256935cd1ff47c1d86c0f943dd46",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-marble.json",
+      "sha256": "c6a3115e211f81bcaa7e178f559834a9052a871afd01bd147ff4f980c5e2a211",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/material-study/sphere-plain.json",
+      "sha256": "ecf152418c94a95923ec0fdd3357eab55d672893e8ad3b9e32c0e30135e5c81f",
+      "authored": true,
+      "lighting": "material-study",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/negative-sphere-dense.json",
+      "sha256": "3d01433581589c7ddd2b27ccbfbfc685fc6da3e8bff411c0430042c4caeab931",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "carve",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/negative-sphere.json",
+      "sha256": "1e1da7706e239fd5e7b66d297c2743d134097ae1dca836844eba01853d1aaee0",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "carve",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/negative-stick-ball-balanced.json",
+      "sha256": "c701f882361eab181dd92a813c874d6be3d41464a174c6530554f14e0fb04dbb",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "carve",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/negative-stick-ball-dense.json",
+      "sha256": "9e2ba4c54a1cbb3a73a3b7ef11dc14c2d405415a6e3221579abe786a6179f183",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "carve",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/negative-stick-ball.json",
+      "sha256": "65b7d8a8c31570d4043a6e9fca466f1dff0f9f5b314fa414dd7b58a1e49628b8",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "carve",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/negative-sticks.json",
+      "sha256": "31bff590dd3e437645c7acb4d5196d317d615c5b47c2bc9936fe68039b1115ef",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "carve",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/presentation/cut-roster.json",
+      "sha256": "9abee9102c012706e3e9d029383a930310e2b406e9aba0b356869c49a22cd6cf",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 1,
+      "motion": "material-story",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/presentation/library-dawn.json",
+      "sha256": "3abfc10484362a236225a83a3a1b8c27ca7e827dd3b879f954f4dfe9a923d6ec",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 1,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/presentation/library-dusk.json",
+      "sha256": "8dda7f88252b46ca2a652339cd6a6734dbf1df73fd15441f05cb22f106adf0b2",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 1,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/presentation/wood-cut.json",
+      "sha256": "d3c64e99c21f3e32406445a93f6c8c7608853b62d0ff05faa55325acbaedbea3",
+      "authored": true,
+      "lighting": "material-atmosphere",
+      "supersample": 1,
+      "motion": "material-story",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/refinement-auditions/driftwood-form-a.json",
+      "sha256": "7d23546b7e8d25f13170582f491f7806bab2219a4ecf9350ee4170b167bb0856",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/refinement-auditions/driftwood-form-b.json",
+      "sha256": "fd3bdd6ac7b9c4300078182629f25463ad27a154d21cca62437793e357a98467",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/refinement-auditions/guardian-form-a.json",
+      "sha256": "c79bfefcd6557cbf55de43e73ecaf1dc4d394549cf2ba4869dfee9c05e55b799",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/refinement-auditions/guardian-form-b.json",
+      "sha256": "237185942b6503bb232674d6b72b61fe048db1a80ff1b0bec24e96877e2e1a63",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-arch-build.json",
+      "sha256": "89a87d424ae1336d79daadd31a8d33e268159cb830fab7965a436174ec56d27a",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-arch.json",
+      "sha256": "5f282b54183741f9506fa33be4371bcfa988557dfd817feec06c3dcdc63e48df",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/arch-a.json",
+      "sha256": "98d97c0abb8a97a74f3283aa6bfb8847d2c851da07ae7745d069a296e87a10c1",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/arch-b.json",
+      "sha256": "a22fa33d7da153a66d18228b6021a1802ab270ce0c4ca0cc8a13d034a3a293ec",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/driftwood-a.json",
+      "sha256": "65012bf3009c0af9d34b50d96069aef9304f53ab386cedfcdad40cf8d4a77d42",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/driftwood-b.json",
+      "sha256": "24e6b6aeed5631b5236761c6944cdd29f91de2ef05d95457f1b2546b50236ec5",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/guardian-a.json",
+      "sha256": "f96bd453cc7ecab45945a9b9eb27e7d3c1bdde444fd9234a1171dda8de0c673e",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/guardian-b.json",
+      "sha256": "2a2e4e53de663d05e2a47cbd0180cfdb0c2efc8639709e991debe927b7c880d0",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/vessel-a.json",
+      "sha256": "376cd567b1cfd905cab7d5fcb267bdd8ca57e83799ceb935c6a5a1df9f0a54c9",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-blockouts/vessel-b.json",
+      "sha256": "cc8331768c81b2f390913bc4fe215cb3b05c124137f13462dd75145b68b372c7",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-driftwood-build.json",
+      "sha256": "ab8cae2eee1547f913774e22d479b158ff4bba29b216d863680dd16ab779c781",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-driftwood-refined-build.json",
+      "sha256": "062da65d46122042cb6f7c18e823d49b24795826a8d63dc7697c268b446dd925",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-driftwood-refined.json",
+      "sha256": "71f65b6fa33b7eac6087a3f975770bc086104521025cfb729681d2a0d7331af2",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-driftwood.json",
+      "sha256": "19ec6bf542f002dbe177e57c5178b144f70d4c0eb8b62c0bfc057481c3656fb0",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-build.json",
+      "sha256": "80b81c90d0d7541d3258b6c31177240498aa8567dabc70d7171a35ac5d48fcf0",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-limestone-build.json",
+      "sha256": "3978074745585316b1c18f6172331ceebb09f39104c45332a034c19a4f72d7b9",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-limestone.json",
+      "sha256": "55e07578aaa17fda60c48dde20572d17e6cd16fd5bfc0abe5b81159208d80990",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-marble-build.json",
+      "sha256": "bb48c103e7e91a1217fed001758e955175f6f121021e43d8108ef0e60c71bca5",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-marble.json",
+      "sha256": "a14573288c26a0531dc34423abf1efc6dab10bea929286a45f57e33e25c8c428",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-mirrored-build.json",
+      "sha256": "fe2d445f1ce5483a3ade1a239291c6500deedb9c5f2bb32ed661449bd7d3eb43",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-mirrored.json",
+      "sha256": "03b912d34f6cc19defbdd71f3616e6215bce2b47e8d444f566187421edfa2998",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-organic-build.json",
+      "sha256": "0c239f3847312f920f0d9bd700f3e92173fafd2fcb1b4565fd7a7ab0ea63b5bd",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-organic-form-build.json",
+      "sha256": "c4f95b3221c3a99fe1fea2a1002b186b37087cc34b0ee234a30bf9ed54292b8d",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-organic-form.json",
+      "sha256": "7f1b9e2da16672b72ae6ba640d46fb85f4169fc380efbeca7e4bb952dceba23a",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-organic.json",
+      "sha256": "58bc569b7492970c5c0f681d9f23f4a2dac8be222a5f44fab340ba3e10870dc3",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-refined-build.json",
+      "sha256": "1f504c672f9095cb61b85274e78ab671d97f59bb31a6986910ca4beb027ec9cb",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian-refined.json",
+      "sha256": "ded355a2b190b37db4f0620ea3fb589da4b2b7393c147e5d7dd07ac4f1f4e200",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-guardian.json",
+      "sha256": "b0656d491cc472afd8364813f06e28eaf85df3fb592f83101ef70f8a3b2c6bfb",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-vessel-build.json",
+      "sha256": "8461d6f3602f95d0b09f3fd93f29b675d23d8023e481fed8c0ee812e42d9e330",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/sculpture-vessel.json",
+      "sha256": "8ed5404cdc3a6b388788e55155b20d0b743bfa7bf183a6ec9d0992db268ea935",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/stick-ball.json",
+      "sha256": "b4dd4cac87a11bc65bb1ba1d732f489ad422103992df64770a94992b93ca1f59",
+      "authored": false,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/survey-robot-build.json",
+      "sha256": "ca2bd927664fb34fa0a5afdf28471b6d605c3a15c5cb67bc92d8d07b54964e0b",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/survey-robot-detail-build.json",
+      "sha256": "e0f48b6df03b827aa5b4ce808106ed8dcc1a27728665bf3f28b887d382ddf583",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/survey-robot-detail.json",
+      "sha256": "ba2824389919f637661cb1f31c2e1aa80f600f36fce28cc3663a1da7a417be73",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/survey-robot-fieldkit-build.json",
+      "sha256": "091fa616f8002be51bb70bece915f5f45e27008a419df253e7b2aef1f267a7d1",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "presentation",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/survey-robot-fieldkit.json",
+      "sha256": "e612351b793ac1eec50d6e8a6efa3b0a78a5a6af5708fad80d16856c9f0a7cb7",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    },
+    {
+      "path": "projects/sdf/presets/survey-robot.json",
+      "sha256": "6d90f0a512ff767844ded0cad91cfbf1b202dcc9747eae0de29b43e3b11e44ec",
+      "authored": true,
+      "lighting": "atmosphere",
+      "supersample": 2,
+      "motion": "static",
+      "explicit_route_controls": {}
+    }
+  ],
+  "counts": {
+    "presets": 95,
+    "authored": 88,
+    "supersample": {
+      "2": 91,
+      "1": 4
+    },
+    "lighting": {
+      "material-atmosphere": 24,
+      "material-study": 24,
+      "atmosphere": 47
+    },
+    "motion": {
+      "static": 73,
+      "carve": 6,
+      "material-story": 2,
+      "presentation": 14
+    },
+    "explicit_route_presets": 0
+  },
+  "confirmed_findings": [
+    "Recent C+N timing is SS1; main Guardian/Robot presets and 91 of 95 saved presets request SS2.",
+    "C/N admission is static headless authored atmosphere SS1 with overlays/AO/ground/clouds excluded.",
+    "Renderer chooses pipelines and required field/region descriptors at creation; a config-only UI toggle is insufficient.",
+    "Field is allocated for every non-analytic tracing route; analytical-only may omit it.",
+    "Windowed controls support history seeking, material/specimen edits and authored reload; resize recreates renderer resources.",
+    "Window harness forces SS1 and source-contract checks assume analytic/hybrid.",
+    "Parser tracks assigned paths, not per-option origin layers; optional bindings already support null templates.",
+    "Seven presets and bare default sticks scene use recipe geometry without an authored source program."
+  ],
+  "proposed_not_implemented": {
+    "public_control": "render-mode",
+    "values": [
+      "auto",
+      "cached",
+      "cached-refined",
+      "balanced",
+      "analytic",
+      "hybrid"
+    ],
+    "default_candidate": "balanced (C+N), sample setting pending matched SS1/SS2 comparison",
+    "phase0_timing_configurations": 32,
+    "phase0_repetitions": 3,
+    "phase0_native_runs": 96
+  },
+  "unmeasured": [
+    "C+N SS2 GPU cost and output quality",
+    "Public C+N runtime/window, normal UI, lighting/optical scope",
+    "Mode-switch publication, failures and memory lifetime",
+    "New public default experience and actual analytical/hybrid runtime backend cost"
+  ]
+}
