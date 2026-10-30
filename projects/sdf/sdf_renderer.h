@@ -40,7 +40,8 @@ class Renderer {
     };
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent, VkFormat format,
                 std::uint32_t slots, const Field* field, const SdfConfig& config,
-                const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr);
+                const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr,
+                std::string_view preparation_fault = {});
     void destroy();
     void save_quality_snapshot(const std::filesystem::path& path);
     void update_field(vulkan::Device& device, const Field& field);

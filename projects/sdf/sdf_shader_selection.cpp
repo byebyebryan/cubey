@@ -1,4 +1,5 @@
 #include "sdf_shader_selection.h"
+#include "sdf_render_modes.h"
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
@@ -42,16 +43,16 @@ void validate_source_optimization(const SdfConfig& config) {
         16U + static_cast<std::uint64_t>(config.common.width) * config.common.height * 16U >
             32U * 1024U * 1024U)
         throw std::invalid_argument("quality output exceeds 32 MiB logical storage cap");
-    if (config.cached_quality != "ordinary" &&
+    if (config.cached_quality != "ordinary" && !uses_public_cached_quality(config) &&
         (!config.common.headless || config.timeline.motion != "static" ||
          config.surface_trace != "sampled" || config.csg_evaluation != "full" ||
          config.acceleration_variant != "off" || config.region_axis != 64 ||
          config.query_stepping != "ordinary" || config.source_shaders != "automatic" ||
          (config.source_optimization != "automatic" && config.source_optimization != "reference") ||
          config.lighting != "atmosphere" || config.debug != 0 ||
-         (config.supersample != 1 && config.supersample != 2) ||
-         config.frame_profile != "off" || config.comparison_stage != "off" || config.ao ||
-         config.clouds || config.ground || config.occluder))
+         (config.supersample != 1 && config.supersample != 2) || config.frame_profile != "off" ||
+         config.comparison_stage != "off" || config.ao || config.clouds || config.ground ||
+         config.occluder))
         throw std::invalid_argument("cached quality study requires static headless sampled/full "
                                     "A64 atmosphere SS1/SS2, no overlays/AO/ground/clouds");
     if (!config.quality_output.empty() &&

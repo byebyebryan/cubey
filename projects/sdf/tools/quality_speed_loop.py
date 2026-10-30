@@ -270,7 +270,7 @@ def history(args):
         if any(r['camera']!=rows[0]['camera'] for r in rows):raise RuntimeError('failed camera edit was not restored')
         expected=[1,1,1,1,1,1,0,0,1]
         normal=route in ('normal','normal-zero','combined')
-        if [r['region_builds'] for r in rows]!=(expected if normal or route=='source' else [0]*9):
+        if [r['region_builds'] for r in rows]!=(expected if normal or route in ('source','hybrid') else [0]*9):
             raise RuntimeError('region generations did not follow geometry')
         if [r['field_builds'] for r in rows]!=(expected if route!='source' else [0]*9):
             raise RuntimeError('field generations did not follow geometry')

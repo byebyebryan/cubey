@@ -3,6 +3,7 @@
 #include "sdf_field.h"
 #include "sdf_history.h"
 #include "sdf_material.h"
+#include "sdf_render_modes.h"
 #include "sdf_renderer.h"
 #include "sdf_validation.h"
 #include "sdf_workshop.h"
@@ -43,6 +44,8 @@ class App {
               : config_.authored_path.empty()
                   ? std::nullopt
                   : std::optional<AuthoredScene>{load_authored_scene(config_.authored_path)}) {
+        resolve_render_mode(config_, authored_.has_value());
+        validate_source_optimization(config_);
         if (!config_.comparison_actions.empty()) {
             std::ifstream input(config_.comparison_actions);
             study_actions_ = nlohmann::json::parse(input);
@@ -213,10 +216,10 @@ class App {
                                          const host::HeadlessRenderTarget& target) {
                 auto view = config_;
                 view.debug = timeline_.debug;
-                renderer_.record(ctx.device(), command, target, frame.frame_slot, false, view,
-                                 config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
-                                 orbit_.distance(), ctx.profile_recorder(), frame.index,
-                                 current_cutter(), timeline_.cutter_opacity, preview_cutters());
+                renderer_->record(ctx.device(), command, target, frame.frame_slot, false, view,
+                                  config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
+                                  orbit_.distance(), ctx.profile_recorder(), frame.index,
+                                  current_cutter(), timeline_.cutter_opacity, preview_cutters());
                 if (!study_actions_.is_null() && study_actions_.value("capture_frames", false)) {
                     vulkan::transition_image_layout(
                         command,
@@ -275,10 +278,22 @@ class App {
                        ctx.frame_slot_count());
         };
         callbacks.destroy_swapchain_resources = [&](host::WindowedAppContext&) {
-            renderer_.destroy();
+            renderer_->destroy();
         };
         callbacks.update = [&](host::WindowedAppContext& ctx, const FrameTiming& timing) {
             orbit_.update_from_input(ctx.filtered_input(), timing.delta_seconds);
+            if (!requested_render_mode_.empty() || requested_supersample_) {
+                try {
+                    change_render_mode(ctx.device(), ctx.gpu(), requested_render_mode_, {},
+                                       requested_supersample_);
+                    error_.clear();
+                } catch (const std::exception& error) {
+                    error_ = error.what();
+                    std::cout << "sdf: mode change rejected: " << error.what() << '\n';
+                }
+                requested_render_mode_.clear();
+                requested_supersample_.reset();
+            }
             if (ctx.filtered_input().key_pressed(input::Key::R)) {
                 playback_seconds_ = 0;
                 orbit_.set_pitch(config_.pitch);
@@ -295,6 +310,7 @@ class App {
                     static_cast<void>(authored_appearance_hash(next));
                     validate_authored_motion(next);
                     const auto before = field_ ? field_->stats().build_count : 0;
+                    const auto regions_before = region_builds_;
                     auto previous = *authored_;
                     authored_ = std::move(next);
                     try {
@@ -308,7 +324,8 @@ class App {
                               << authored_geometry_hash(*authored_)
                               << " appearance=" << authored_appearance_hash(*authored_) << std::dec
                               << " field_rebuilt="
-                              << (field_ && field_->stats().build_count != before) << '\n';
+                              << (field_ && field_->stats().build_count != before)
+                              << " region_rebuilt=" << (region_builds_ != regions_before) << '\n';
                 } catch (const std::exception& error) {
                     error_ = error.what();
                     std::cout << "sdf: authored update rejected: " << error.what() << '\n';
@@ -355,7 +372,7 @@ class App {
                     active_prefix_ = timeline_.prefix;
                 }
                 if (field_)
-                    renderer_.update_field(ctx.device(), *field_);
+                    renderer_->update_field(ctx.device(), *field_);
             }
         };
         callbacks.draw_ui = [&](host::WindowedAppContext&) { draw_ui(); };
@@ -365,11 +382,11 @@ class App {
             recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
             auto view = config_;
             view.debug = timeline_.debug;
-            renderer_.record(ctx.device(), frame.command_buffer, frame.color_target,
-                             frame.frame_slot, true, view,
-                             config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
-                             orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index,
-                             current_cutter(), timeline_.cutter_opacity, preview_cutters());
+            renderer_->record(ctx.device(), frame.command_buffer, frame.color_target,
+                              frame.frame_slot, true, view,
+                              config_.yaw + orbit_.yaw() + timeline_.yaw, orbit_.pitch(),
+                              orbit_.distance(), ctx.profile_recorder(), frame.timing.frame_index,
+                              current_cutter(), timeline_.cutter_opacity, preview_cutters());
             recorder.end("sdf frame");
         };
         callbacks.shutdown = [&](host::WindowedAppContext&) { shutdown(); };
@@ -412,7 +429,7 @@ class App {
             config_.sun_azimuth = sample.sun_azimuth;
             config_.exposure = sample.exposure;
             config_.cloud_time = sample.cloud_seconds;
-            renderer_.set_environment_elapsed_seconds(sample.elapsed_seconds);
+            renderer_->set_environment_elapsed_seconds(sample.elapsed_seconds);
         }
         history_cutters_ = {};
         if (authored_build()) {
@@ -438,6 +455,10 @@ class App {
     }
     void initialize(vulkan::Device& device, vulkan::GpuRuntime& gpu,
                     const render::ColorTargetView& target, std::uint32_t slots) {
+        gpu_ = &gpu;
+        target_extent_ = target.extent;
+        target_format_ = target.format;
+        frame_slots_ = slots;
         runtime_.attach_gpu_if_needed(gpu);
         if (!geometry_initialized_) {
             if (config_.surface_trace != "analytic")
@@ -546,11 +567,108 @@ class App {
                 std::cout << "sdf: recipe hash=" << std::hex << recipe_hash(recipe_) << std::dec
                           << '\n';
             geometry_initialized_ = true;
+            field_generation_ += field_ ? field_->stats().build_count : 0;
             std::cout << "sdf: trace=" << config_.surface_trace
                       << " field_bytes=" << (field_ ? field_->stats().allocation_bytes : 0) << '\n';
         }
-        renderer_.create(device, gpu, target.extent, target.format, slots, field_.get(), config_,
-                         displayed_authored_ ? &*displayed_authored_ : nullptr, regions_.get());
+        renderer_->create(device, gpu, target.extent, target.format, slots, field_.get(), config_,
+                          displayed_authored_ ? &*displayed_authored_ : nullptr, regions_.get());
+        log_render_mode();
+    }
+    void log_render_mode() const {
+        std::cout << "sdf: render-mode requested=" << config_.render_mode
+                  << " effective=" << config_.effective_render_mode
+                  << " trace=" << config_.surface_trace << " cached=" << config_.cached_quality
+                  << " axis=" << config_.region_axis << " ss=" << config_.supersample
+                  << " generation=" << mode_generation_ << " field_generation=" << field_generation_
+                  << " field_bytes=" << (field_ ? field_->stats().allocation_bytes : 0)
+                  << " region_bytes=" << (regions_ ? regions_->allocation_bytes : 0) << '\n';
+    }
+    void change_render_mode(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::string_view mode,
+                            std::string_view fault = {},
+                            std::optional<std::uint32_t> supersample = {}) {
+        if (!config_.quality_output.empty())
+            throw std::invalid_argument("quality probes cannot change rendering mode");
+        auto next_config =
+            mode.empty() ? config_ : config_for_render_mode(config_, mode, authored_.has_value());
+        if (supersample)
+            next_config.supersample = *supersample;
+        validate_source_optimization(next_config);
+        if (next_config.surface_trace != "sampled" && next_config.debug == 4)
+            throw std::invalid_argument("brick debug requires a cached rendering mode");
+        if ((mode.empty() || config_.named_render_mode) &&
+            next_config.effective_render_mode == config_.effective_render_mode &&
+            next_config.supersample == config_.supersample) {
+            config_ = std::move(next_config);
+            log_render_mode();
+            return;
+        }
+        const auto start = std::chrono::steady_clock::now();
+        std::unique_ptr<Field> next_field;
+        std::unique_ptr<GpuRegionPrograms> next_regions;
+        std::unique_ptr<Renderer> next_renderer;
+        const bool needs_field = next_config.surface_trace != "analytic";
+        const bool needs_regions =
+            next_config.csg_evaluation == "pruned" || cached_source_normals(next_config);
+        const auto region_variant = [](const SdfConfig& c) {
+            return cached_source_normals(c) ? std::string("root-far") : c.acceleration_variant;
+        };
+        try {
+            if (needs_field && !field_) {
+                next_field =
+                    std::make_unique<Field>(device, runtime_.gpu(), next_config.atlas_axis);
+                next_field->build(*displayed_authored_);
+                if (fault == "mode-field")
+                    throw CapacityExceeded("injected mode field preparation failure");
+            }
+            if (needs_regions && (!regions_ || regions_->axis != next_config.region_axis ||
+                                  region_variant(config_) != region_variant(next_config))) {
+                next_regions = std::make_unique<GpuRegionPrograms>(
+                    device, *displayed_authored_, next_config.region_axis, region_reference_limit,
+                    false, cached_source_normals(next_config) ? &runtime_.gpu() : nullptr,
+                    region_variant(next_config));
+                if (fault == "mode-region")
+                    throw CapacityExceeded("injected mode region preparation failure");
+            }
+            next_renderer = std::make_unique<Renderer>();
+            next_renderer->create(
+                device, gpu, target_extent_, target_format_, frame_slots_,
+                needs_field ? (next_field ? next_field.get() : field_.get()) : nullptr, next_config,
+                displayed_authored_ ? &*displayed_authored_ : nullptr,
+                needs_regions ? (next_regions ? next_regions.get() : regions_.get()) : nullptr,
+                fault);
+            runtime_.gpu().wait_queue_idle("sdf rendering mode activation");
+            if (fault == "mode-activate")
+                throw CapacityExceeded("injected mode activation failure");
+        } catch (...) {
+            if (next_renderer) {
+                runtime_.gpu().wait_queue_idle("sdf discarded rendering mode");
+                next_renderer->destroy();
+            }
+            throw;
+        }
+        // All preparation is complete; preceding use is retired before release.
+        renderer_->destroy();
+        renderer_ = std::move(next_renderer);
+        if (next_field) {
+            field_generation_ += next_field->stats().build_count;
+            field_ = std::move(next_field);
+        }
+        if (!needs_field)
+            field_.reset();
+        if (next_regions) {
+            regions_ = std::move(next_regions);
+            ++region_builds_;
+        }
+        if (!needs_regions)
+            regions_.reset();
+        config_ = std::move(next_config);
+        ++mode_generation_;
+        mode_switch_ms_ =
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start)
+                .count();
+        log_render_mode();
+        std::cout << "sdf: mode switch_ms=" << mode_switch_ms_ << '\n';
     }
     void prepare_time(vulkan::Device& device, double time, bool force = false) {
         sample_time(time);
@@ -572,7 +690,7 @@ class App {
                         ? &runtime_.gpu()
                         : nullptr,
                     cached_source_normals(config_) ? "root-far" : config_.acceleration_variant);
-            auto next_program = renderer_.prepare_authored(
+            auto next_program = renderer_->prepare_authored(
                 device, &next, next_regions ? next_regions.get() : regions_.get(), study_fault_);
             if (study_fault_ == "region" || study_fault_ == "field")
                 throw CapacityExceeded("injected study failure before " + study_fault_ +
@@ -580,17 +698,19 @@ class App {
             runtime_.gpu().wait_queue_idle("sdf authored publication");
             if (study_fault_ == "activate")
                 throw CapacityExceeded("injected failure before authored activation");
+            const auto previous_field_builds = field_ ? field_->stats().build_count : 0;
             if (field_)
                 field_->build(next);
+            field_generation_ += field_ ? field_->stats().build_count - previous_field_builds : 0;
             displayed_authored_ = std::move(next);
             if (next_regions) {
                 regions_ = std::move(next_regions);
                 ++region_builds_;
             }
             if (field_)
-                renderer_.update_field(device, *field_);
-            renderer_.update_authored(device, &*displayed_authored_, regions_.get(),
-                                      std::move(next_program));
+                renderer_->update_field(device, *field_);
+            renderer_->update_authored(device, &*displayed_authored_, regions_.get(),
+                                       std::move(next_program));
             active_prefix_ = timeline_.prefix;
             error_.clear();
             if (authored_build())
@@ -604,8 +724,10 @@ class App {
         if (timeline_.prefix == active_prefix_)
             return;
         runtime_.gpu().wait_queue_idle("sdf prefix publication");
+        const auto previous_field_builds = field_->stats().build_count;
         field_->build(std::span<const BoxEdit>(recipe_.edits).first(timeline_.prefix));
-        renderer_.update_field(device, *field_);
+        field_generation_ += field_->stats().build_count - previous_field_builds;
+        renderer_->update_field(device, *field_);
         active_prefix_ = timeline_.prefix;
         error_.clear();
     }
@@ -618,7 +740,7 @@ class App {
             auto path = config_.quality_output;
             path.replace_extension("frame-" + std::to_string(row.at("frame").get<unsigned>()) +
                                    ".bin");
-            renderer_.save_quality_snapshot(path);
+            renderer_->save_quality_snapshot(path);
             row["quality_file"] = path.string();
         }
         row["request_to_waited_gpu_completion_ms"] =
@@ -644,7 +766,7 @@ class App {
         }
     }
     void apply_study_action(vulkan::Device& device, std::uint64_t frame) {
-        const auto cones_before = renderer_.cone_builds();
+        const auto cones_before = renderer_->cone_builds();
         const auto& action = study_actions_.at("actions").at(frame);
         const auto oracle_start = std::chrono::steady_clock::now();
         auto expected = parse_authored_scene(action.at("visible_scene").dump());
@@ -657,7 +779,8 @@ class App {
                                    std::chrono::steady_clock::now() - oracle_start)
                                    .count();
         const auto start = std::chrono::steady_clock::now();
-        const auto field_before = field_ ? field_->stats().build_count : 0;
+        const auto field_before = field_generation_;
+        const auto mode_before = mode_generation_;
         const auto region_before = region_builds_;
         auto previous = *authored_;
         const auto previous_debug = config_.debug;
@@ -694,9 +817,19 @@ class App {
             if (action.contains("history_prefix"))
                 next = authored_history_scene(next, action.at("history_prefix").get<std::size_t>());
             validate_authored_motion(next);
-            authored_ = std::move(next);
             study_fault_ = action.value("fault", std::string{});
-            prepare_time(device, 0, true);
+            if (action.contains("render_mode")) {
+                if (authored_geometry_hash(next) != authored_geometry_hash(*displayed_authored_) ||
+                    authored_appearance_hash(next) !=
+                        authored_appearance_hash(*displayed_authored_))
+                    throw std::invalid_argument(
+                        "mode study actions must retain the published scene");
+                change_render_mode(device, *gpu_, action.at("render_mode").get<std::string>(),
+                                   study_fault_);
+            } else {
+                authored_ = std::move(next);
+                prepare_time(device, 0, true);
+            }
         } catch (const CapacityExceeded&) {
             authored_ = std::move(previous);
             config_.debug = previous_debug;
@@ -717,20 +850,23 @@ class App {
         if (authored_geometry_hash(*displayed_authored_) != expected_geometry ||
             authored_appearance_hash(*displayed_authored_) != expected_appearance)
             throw std::runtime_error("study published mixed geometry/appearance revision");
-        const auto field_delta = (field_ ? field_->stats().build_count : 0) - field_before;
+        const auto field_delta = field_generation_ - field_before;
         const auto region_delta = region_builds_ - region_before;
-        if (action.value("geometry_unchanged", false) && (field_delta || region_delta))
+        if (action.value("geometry_unchanged", false) && !action.contains("render_mode") &&
+            (field_delta || region_delta))
             throw std::runtime_error(
                 "appearance or failed action rebuilt a published geometry cache");
-        const auto cone_delta = renderer_.cone_builds() - cones_before;
-        if (renderer_.cone_hash() && renderer_.cone_hash() != expected_geometry)
+        const auto cone_delta = mode_generation_ == mode_before
+                                    ? renderer_->cone_builds() - cones_before
+                                    : renderer_->cone_builds();
+        if (renderer_->cone_hash() && renderer_->cone_hash() != expected_geometry)
             throw std::runtime_error("study published a stale prepared cone generation");
         if (action.value("geometry_unchanged", false) && cone_delta)
             throw std::runtime_error("appearance or failed action replaced the prepared cache");
-        const auto shader = source_shader_route_name(renderer_.shader_route(config_));
+        const auto shader = source_shader_route_name(renderer_->shader_route(config_));
         if (action.contains("expect_shader") && action.at("expect_shader") != shader)
             throw std::runtime_error("study selected unexpected published shader route");
-        const auto optimization = renderer_.source_optimization(config_);
+        const auto optimization = renderer_->source_optimization(config_);
         if (action.contains("expect_optimization") &&
             action.at("expect_optimization") != optimization)
             throw std::runtime_error("study selected unexpected published optimization");
@@ -738,12 +874,17 @@ class App {
             {{"label", action.at("label")},
              {"frame", frame},
              {"failed", failed},
+             {"render_mode_requested", config_.render_mode},
+             {"render_mode", config_.effective_render_mode},
+             {"mode_generation", mode_generation_},
+             {"mode_switch_ms", mode_generation_ == mode_before ? 0 : mode_switch_ms_},
+             {"field_generation", field_generation_},
              {"shader_route", shader},
              {"source_optimization", optimization},
-             {"cone_builds", renderer_.cone_builds()},
+             {"cone_builds", renderer_->cone_builds()},
              {"cone_build_delta", cone_delta},
-             {"cone_geometry_hash", renderer_.cone_hash()},
-             {"shader_pipeline_count", renderer_.shader_pipeline_count()},
+             {"cone_geometry_hash", renderer_->cone_hash()},
+             {"shader_pipeline_count", renderer_->shader_pipeline_count()},
              {"published_material_count", displayed_authored_->materials.size()},
              {"debug", config_.debug},
              {"material_fast_path", config_.material_fast_path},
@@ -774,6 +915,28 @@ class App {
         ImGui::SetNextWindowSize(config_.workshop.empty() ? ImVec2{340, 0} : ImVec2{420, 640},
                                  ImGuiCond_FirstUseEver);
         if (ImGui::Begin("SDF study")) {
+            const auto active_label = config_.named_render_mode
+                                          ? render_mode_label(config_.effective_render_mode)
+                                          : render_mode_label("custom");
+            if (ImGui::BeginCombo("Rendering", std::string(active_label).c_str())) {
+                for (const auto mode : render_modes) {
+                    const auto reason =
+                        render_mode_unavailable(config_, mode, authored_.has_value());
+                    ImGui::BeginDisabled(!reason.empty());
+                    if (ImGui::Selectable(std::string(render_mode_label(mode)).c_str(),
+                                          config_.named_render_mode && config_.render_mode == mode))
+                        requested_render_mode_ = mode;
+                    ImGui::EndDisabled();
+                    if (!reason.empty() &&
+                        ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                        ImGui::SetTooltip("%s", reason.c_str());
+                }
+                ImGui::EndCombo();
+            }
+            const char* sample_choices[]{"1x", "2x"};
+            int sample_index = static_cast<int>(config_.supersample) - 1;
+            if (ImGui::Combo("Supersampling", &sample_index, sample_choices, 2))
+                requested_supersample_ = static_cast<std::uint32_t>(sample_index + 1);
             if (!config_.workshop.empty()) {
                 const char* specimens[]{"sphere", "block", "csg", "swatch", "cut-block"};
                 int shape = config_.workshop == "sphere"      ? 0
@@ -949,8 +1112,18 @@ class App {
                                          [](const auto& o) { return o.settings.y > 0; });
             const int view_count =
                 config_.lighting != "atmosphere" ? (glass ? 10 : 13) : (authored_ ? 9 : 5);
-            if (ImGui::Combo("View", &view, views, view_count))
-                config_.debug = static_cast<std::uint32_t>(view);
+            if (ImGui::BeginCombo("View", views[view])) {
+                for (int i = 0; i < view_count; ++i) {
+                    const bool unavailable = i == 4 && config_.surface_trace != "sampled";
+                    ImGui::BeginDisabled(unavailable);
+                    if (ImGui::Selectable(views[i], view == i))
+                        config_.debug = static_cast<std::uint32_t>(i);
+                    ImGui::EndDisabled();
+                    if (unavailable && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                        ImGui::SetTooltip("Brick debug requires a cached rendering mode");
+                }
+                ImGui::EndCombo();
+            }
             if (glass) {
                 int budget =
                     config_.glass_crossings == 4 ? 0 : (config_.glass_crossings == 8 ? 1 : 2);
@@ -1224,7 +1397,7 @@ class App {
                        .dump(2)
                 << '\n';
         }
-        renderer_.destroy();
+        renderer_->destroy();
         field_.reset();
         regions_.reset();
         runtime_.detach_gpu_if_attached();
@@ -1244,7 +1417,15 @@ class App {
     std::string study_fault_;
     std::optional<std::chrono::steady_clock::time_point> pending_study_action_;
     bool geometry_initialized_ = false;
-    Renderer renderer_;
+    std::unique_ptr<Renderer> renderer_ = std::make_unique<Renderer>();
+    vulkan::GpuRuntime* gpu_ = nullptr;
+    VkExtent2D target_extent_{};
+    VkFormat target_format_ = VK_FORMAT_UNDEFINED;
+    std::uint32_t frame_slots_ = 0;
+    std::uint64_t mode_generation_ = 0, field_generation_ = 0;
+    double mode_switch_ms_ = 0;
+    std::string requested_render_mode_;
+    std::optional<std::uint32_t> requested_supersample_;
     TimelineSample timeline_;
     std::size_t active_prefix_ = std::numeric_limits<std::size_t>::max();
     double playback_seconds_ = 0;
@@ -1258,13 +1439,16 @@ class App {
 };
 } // namespace
 int run_sdf(const SdfConfig& config) {
-    validate_source_optimization(config);
+    if (!config.named_render_mode)
+        validate_source_optimization(config);
     if ((!config.comparison_input.empty() && !config.comparison_actions.empty()) ||
         (config.comparison_donor && config.comparison_input.empty()) ||
         (!config.comparison_output.empty() && config.comparison_input.empty() &&
          config.comparison_actions.empty()))
         throw std::invalid_argument(
             "select exactly one tracing query or action study for its receipt");
+    if (!config.comparison_input.empty() && config.named_render_mode)
+        throw std::invalid_argument("tracing fixtures require explicit low-level tracing controls");
     if (!config.comparison_input.empty())
         return run_tracing_comparison(config);
     if (!config.workshop.empty() && (!config.authored_path.empty() || !config.recipe_path.empty()))

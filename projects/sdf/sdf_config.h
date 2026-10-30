@@ -5,9 +5,16 @@
 #include <cubey/engine/environment_transition.h>
 #include <cubey/host/configured_app.h>
 #include <limits>
+#include <optional>
 #include <string_view>
 
 namespace cubey::projects::sdf {
+struct SdfRouteOverrides {
+    std::optional<std::string> surface_trace, csg_evaluation, cached_quality;
+    std::optional<std::string> acceleration_variant, source_shaders, source_optimization;
+    std::optional<std::string> query_stepping, frame_profile;
+    std::optional<std::uint32_t> region_axis;
+};
 struct SdfConfig {
     host::CommonRunConfig common;
     TimelineConfig timeline;
@@ -27,6 +34,9 @@ struct SdfConfig {
     std::string source_optimization = "automatic";
     std::string query_stepping = "ordinary";
     std::string cached_quality = "ordinary";
+    SdfRouteOverrides route_overrides;
+    std::string render_mode = "auto", effective_render_mode = "custom";
+    bool named_render_mode = false;
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -80,6 +90,9 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto surface_trace =
         option("surface-trace", "Authored surface tracer (study)", config::ValueType::Enum);
     surface_trace.enum_values = {"sampled", "hybrid", "analytic"};
+    auto render_mode = option("render-mode", "Rendering mode", config::ValueType::Enum);
+    render_mode.enum_values = {"auto",     "cached",   "cached-refined",
+                               "balanced", "analytic", "hybrid"};
     auto csg =
         option("csg-evaluation", "Authored geometry evaluation (study)", config::ValueType::Enum);
     csg.enum_values = {"full", "pruned"};
@@ -199,16 +212,17 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     workshop_blend.negative_cli_name = "--no-workshop-blend-materials";
     return config::Schema::builder()
         .compose(host::common_run_config_schema(c.common))
-        .bind(surface_trace, c.surface_trace)
-        .bind(csg, c.csg_evaluation)
+        .bind(render_mode, c.render_mode)
+        .bind(surface_trace, c.route_overrides.surface_trace)
+        .bind(csg, c.route_overrides.csg_evaluation)
         .bind(stage, c.comparison_stage)
         .bind(residency, c.comparison_residency)
-        .bind(acceleration, c.acceleration_variant)
-        .bind(frame_profile, c.frame_profile)
-        .bind(source_shaders, c.source_shaders)
-        .bind(source_optimization, c.source_optimization)
-        .bind(query_stepping, c.query_stepping)
-        .bind(cached_quality, c.cached_quality)
+        .bind(acceleration, c.route_overrides.acceleration_variant)
+        .bind(frame_profile, c.route_overrides.frame_profile)
+        .bind(source_shaders, c.route_overrides.source_shaders)
+        .bind(source_optimization, c.route_overrides.source_optimization)
+        .bind(query_stepping, c.route_overrides.query_stepping)
+        .bind(cached_quality, c.route_overrides.cached_quality)
         .bind(option("query-workload-output", "Private selected-query replay payload",
                      config::ValueType::Path),
               c.query_workload_output)
@@ -219,7 +233,7 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
                      config::ValueType::Bool),
               c.comparison_tight_root)
         .bind(option("region-axis", "Exact region grid (4, 16 or 64)", config::ValueType::UInt32),
-              c.region_axis)
+              c.route_overrides.region_axis)
         .bind(option("comparison-donor", "Qualify pinned donor compute core",
                      config::ValueType::Bool),
               c.comparison_donor)
@@ -354,10 +368,12 @@ inline EnvironmentTransitionSample material_lighting_cycle(std::string_view cycl
                                           .cloud_time_scale = 30},
                                          seconds);
 }
+void normalize_render_request(SdfConfig& config, bool mode_explicit);
 inline SdfConfig parse_sdf_config(int argc, char** argv, config::ParseResult* result = nullptr) {
     config::ParseResult local;
     auto& parsed = result ? *result : local;
     auto config = host::parse_configured_app<SdfConfig>(argc, argv, sdf_config_schema, &parsed);
+    normalize_render_request(config, parsed.path_was_assigned("render-mode"));
     if (!config.workshop.empty()) {
         if (!parsed.path_was_assigned("lighting"))
             config.lighting = "material-study";

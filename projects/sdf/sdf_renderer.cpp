@@ -1,4 +1,5 @@
 #include "sdf_renderer.h"
+#include "sdf_render_modes.h"
 
 #include <cubey/asset/hdr_image.h>
 #include <cubey/render/pass.h>
@@ -25,7 +26,7 @@ constexpr auto hdr_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent,
                       VkFormat format, std::uint32_t slots, const Field* field,
                       const SdfConfig& config, const AuthoredScene* scene,
-                      const GpuRegionPrograms* regions) {
+                      const GpuRegionPrograms* regions, std::string_view preparation_fault) {
     field_ = field;
     source_tracing_ = config.surface_trace != "sampled";
     shadow_candidate_ = source_shadow_pipeline_enabled(config);
@@ -174,6 +175,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         cone_descriptor_bindings_ = bindings;
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device, vulkan::DescriptorSetInfo(bindings, slots));
+    if (preparation_fault == "mode-descriptors")
+        throw CapacityExceeded("injected rendering-mode descriptor preparation failure");
     if (field)
         update_field(device, *field);
     for (std::uint32_t i = 0; i < slots; ++i) {
@@ -266,6 +269,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                                                            .descriptor_set_layouts = layouts,
                                                            .material_pass = pass});
     shader_pipeline_count_ = 1;
+    if (preparation_fault == "mode-pipeline")
+        throw CapacityExceeded("injected rendering-mode pipeline preparation failure");
     if (source_shader_variants_enabled(config)) {
         const std::array lit_files{render::vertex_shader_file(path / "sdf.vert.spv"),
                                    render::fragment_shader_file(path / ("lit_" + fragment))};
@@ -696,6 +701,13 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         : route == SourceShaderRoute::LitGeneral      ? &*lit_general_pipeline_
                                                       : &*pipeline_;
     if (profile) {
+        const auto mode =
+            std::find(render_modes.begin(), render_modes.end(), config.effective_render_mode);
+        profile->record_metric(frame_index, "sdf.render_mode", "effective",
+                               static_cast<double>(mode - render_modes.begin()));
+        profile->record_metric(frame_index, "sdf.render_mode", "named",
+                               config.named_render_mode ? 1 : 0);
+        profile->record_metric(frame_index, "sdf.render_mode", "supersample", config.supersample);
         profile->record_metric(frame_index, "sdf.cached_quality", "mode",
                                config.cached_quality == "ordinary"         ? 0
                                : config.cached_quality == "refine-0.05"    ? 5

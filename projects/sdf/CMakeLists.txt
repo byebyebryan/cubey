@@ -7,8 +7,10 @@ cubey_add_app_target(
     SHADER_DEFINE CUBEY_SDF_SHADER_DIR
     WINDOWED_SMOKE_TEST sdf_reaches_glfw
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
-    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp
+    SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp
     SHADERS
+        shaders/cached03125_material_study.frag
+        shaders/cachedrefinenormal_material_study.frag
         shaders/cachedrefinenormal_sdf_authored.frag
         shaders/quality_cachedrefinenormal_sdf_authored.frag
         shaders/cachedrefinenormal_quality_workload_sampled.comp
@@ -178,7 +180,10 @@ if (BUILD_TESTING)
     target_link_libraries(cubey_project_sdf_shadow_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_prepared_cone_probe tools/prepared_cone_probe.cpp sdf_prepared_cones.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
     target_link_libraries(cubey_project_sdf_prepared_cone_probe PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
-    add_executable(cubey_project_sdf_shader_selection_tests sdf_shader_selection.cpp sdf_shader_selection_tests.cpp)
+    add_executable(cubey_project_sdf_render_mode_tests sdf_render_modes.cpp sdf_render_mode_tests.cpp sdf_timeline.cpp sdf_recipe.cpp)
+    target_link_libraries(cubey_project_sdf_render_mode_tests PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
+    add_test(NAME sdf_render_mode_tests COMMAND cubey_project_sdf_render_mode_tests)
+    add_executable(cubey_project_sdf_shader_selection_tests sdf_shader_selection.cpp sdf_shader_selection_tests.cpp sdf_render_modes.cpp)
     target_link_libraries(cubey_project_sdf_shader_selection_tests PRIVATE cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME sdf_shader_selection_tests COMMAND cubey_project_sdf_shader_selection_tests)
     add_executable(cubey_project_sdf_shader_stats tools/profile_shader_stats.cpp)

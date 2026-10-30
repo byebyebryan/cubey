@@ -11,6 +11,10 @@ parser.add_argument("--config",type=Path,help="scene preset; interactions use st
 parser.add_argument("--height",type=int,default=1000)
 parser.add_argument("--material-y-offset",type=int,default=0,
                     help="Inspected material-row offset for the fixed study-environment label")
+parser.add_argument("--panel-y-offset",type=int,default=60,
+                    help="Inspected header offset for rendering and supersampling controls")
+parser.add_argument("--supersample",type=int,choices=[1,2],
+                    help="Optional explicit sample override; otherwise honor the preset")
 parser.add_argument("--readonly-material",action="store_true",
                     help="Verify the bounded glass material controls remain disabled")
 parser.add_argument("--environment-controls",action="store_true",
@@ -52,7 +56,8 @@ root=x.XDefaultRootWindow(d)
 log=out/"logs/windowed-interaction.log"
 with log.open("w") as stream:
     command=["stdbuf","-oL",args.binary]
-    if args.config:command += ["--config",str(args.config),"--motion","construction" if args.history_controls else "static","--supersample","1"]
+    if args.config:command += ["--config",str(args.config),"--motion","construction" if args.history_controls else "static"]
+    if args.supersample:command += ["--supersample",str(args.supersample)]
     command += ["--width","900","--height",str(args.height),"--require-validation"]
     proc=subprocess.Popen(command,stdout=stream,stderr=subprocess.STDOUT)
     try:
@@ -93,6 +98,7 @@ with log.open("w") as stream:
             t.XTestFakeKeyEvent(d,code,1,0);t.XTestFakeKeyEvent(d,code,0,0);x.XSync(d,0)
         key("space");key("r");time.sleep(.3);capture("window-reset.png")
         def click(cx,cy):
+            cy+=args.panel_y_offset
             t.XTestFakeMotionEvent(d,-1,cx+20,cy+20,0)
             t.XTestFakeButtonEvent(d,1,1,0);x.XSync(d,0);time.sleep(.07)
             t.XTestFakeButtonEvent(d,1,0,0);x.XSync(d,0);time.sleep(.35)
@@ -100,7 +106,8 @@ with log.open("w") as stream:
             preset=json.loads(args.config.read_text())
             owned_scene=Path(preset['authored-scene']).resolve()
             assert owned_scene.is_relative_to(args.config.resolve().parent), 'Requires an owned scene beside the test config'
-            assert preset.get('surface-trace') in ('analytic','hybrid') and not args.history_controls
+            assert (preset.get('surface-trace') in ('analytic','hybrid') or
+                    preset.get('render-mode') in ('balanced','cached-refined','analytic','hybrid')) and not args.history_controls
             def source_pixels(name):
                 return subprocess.check_output(['ffmpeg','-v','error','-i',str(out/'captures'/name),
                     '-vf','crop=450:700:440:150','-f','rawvideo','-pix_fmt','rgb24','-'])
@@ -289,6 +296,8 @@ else:
         receipt['readonly_material']=True
         receipt['actions']=['resize twice','orbit','zoom','pause/reset',
             'attempt disabled glass material edit','unchanged model pixels','Escape']
+    if args.source_contract:
+        receipt['reload_contract']=True
     if args.environment_controls:
         assert 'sdf: environment refresh geometry_rebuilt=0' in text
         finishes=re.findall(r'environment finish sky_generation=(\d+) cloud_generation=(\d+)',text)
@@ -330,4 +339,4 @@ receipt["shader_sha256"]={p.name:hashlib.sha256(p.read_bytes()).hexdigest()
     for p in sorted((Path(args.binary).parent/"shaders").glob("*.spv"))}
 receipt["source_commit"]=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
 (out/"windowed-interaction.json").write_text(json.dumps(receipt,indent=2)+"\n")
-print(json.dumps(receipt))
+print(json.dumps({k:v for k,v in receipt.items() if k!='shader_sha256'}))
