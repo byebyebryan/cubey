@@ -4,7 +4,7 @@
 namespace cubey::projects::sdf {
 namespace {
 // Sample settings remain independent; box recipes retain their Cached route.
-constexpr std::string_view authored_default = "balanced";
+constexpr std::string_view authored_default = "cached";
 template <typename T> void apply(const std::optional<T>& request, T& value) {
     if (request)
         value = *request;

@@ -57,6 +57,10 @@ sub-grid loss, material ownership and shadows. Compare preview and fresh bake
 with the unmodified Cached policy rather than widening analytical tolerances.
 Direct composition of Cached occupied intervals and the convex tool supplies
 the query expectation; source known answers remain separately labeled.
+For regular closed-form sphere/box controls, freeze a half-voxel depth allowance
+(`0.5/(256*7)`) and two-degree normal allowance away from seams. This is a
+separate cached-quality test, not a modification of the previous source gate.
+Tangencies and sub-grid preview/bake differences are explicitly diagnostic.
 
 Native sequence: base -> preview -> commit -> settled. Also inject one failure
 after candidate construction and before publication, verify unchanged old
@@ -69,5 +73,27 @@ source-capacity increase or XR qualification is authorized by this bounded loop.
 
 ## Progress
 
-Planning checkpoint. Runtime implementation and native results follow in later
-sections; prior general-tracer measurements are historical comparison only.
+Planning checkpoint: `70ea8c5b`. Implementation adds a separate one-edit target,
+four private shader entrypoints and an optional renderer attachment. The public
+default changes to Cached; the original 202 shader binaries and 567 protected
+source/content files remain byte unchanged.
+
+The regular query pilot passes 29 rays at the frozen cached-quality limits;
+sub-grid and tangent diagnostics remain separately reported. The first pilot
+caught a clipped-cutter error that left the old cache's hit band at the workspace
+front visible. Hard subtraction now composes the clipped base with the raw
+cutter, as required by max associativity. Tangent roundoff receives a bounded
+float projection allowance without changing the regular acceptance limits.
+
+The initial active shader had multiple call sites for the nested cached walk.
+Its 1080p pilot cost about 5.4 ms on Guardian and 19 ms on Robot preset views.
+Reusing one call site and only resuming after an actually hidden base boundary
+retains the query results and yields short-run pilots around 1.9-2.0 ms and
+4.0 ms respectively. These short pilots are excluded from final timing; no
+register/spill attribution is claimed without a hardware breakdown.
+
+Pilot native commit and failed-candidate/retry sequences preserve the preview,
+retain canonical source/history, retire pending state after a completed new
+Cached frame, and match independently rebuilt original-executable Cached images.
+The final sequence starts with no pending edit, activates one preview, and keeps
+that operation until replacement-frame completion.

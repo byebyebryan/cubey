@@ -16,7 +16,7 @@ p.add_argument('--binary',type=Path,default=Path('build/release/projects/sdf/sdf
 p.add_argument('--output',type=Path,required=True)
 p.add_argument('--config',type=Path,required=True)
 p.add_argument('--inspect',action='store_true')
-p.add_argument('--initial-mode',choices=['auto','cached','balanced'],default='balanced')
+p.add_argument('--initial-mode',choices=['auto','cached','balanced'],default='cached')
 p.add_argument('--workshop-check',action='store_true')
 args=p.parse_args();args.binary=args.binary.resolve();out=args.output.resolve()
 out.mkdir(parents=True,exist_ok=False)
@@ -91,7 +91,8 @@ with log.open('w') as stream:
             capture('recipe-selected')
             count=len(updates());click(180,166);click(180,216)
             wait_for(lambda:len(updates())>count,'workshop specimen selection')
-            if updates()[-1][2:]!=('1','1'):raise RuntimeError('Specimen did not publish matching field/regions')
+            expected=('1','0') if modes()[-1]['effective']=='cached' else ('1','1')
+            if updates()[-1][2:]!=expected:raise RuntimeError('Specimen did not publish matching field/regions')
             capture('specimen-selected')
         else:
             click(410,90)
@@ -99,6 +100,9 @@ with log.open('w') as stream:
             for mode,row_y in [('cached',156),('cached-refined',176),('balanced',196),
                                ('analytic',216),('hybrid',236),('cached',156),('balanced',196)]:
                 before=modes()[-1];count=len(modes())
+                if before['requested']==mode and before['effective']==mode:
+                    capture('mode-'+mode)
+                    continue
                 click(180,106);click(180,row_y)
                 wait_for(lambda:len(modes())>count and modes()[-1]['effective']==mode,'mode '+mode)
                 current=modes()[-1]

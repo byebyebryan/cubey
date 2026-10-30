@@ -35,10 +35,15 @@ int main() {
     require(c.effective_render_mode == "cached");
     c = parse({"--authored-scene", "example.json"});
     resolve_render_mode(c, true);
-    require(c.effective_render_mode == "balanced" && c.supersample == 1);
+    require(c.effective_render_mode == "cached" && c.surface_trace == "sampled" &&
+            c.cached_quality == "ordinary" && c.acceleration_variant == "off" &&
+            c.supersample == 1);
     c = parse({"--authored-scene", "example.json", "--supersample", "2"});
     resolve_render_mode(c, true);
-    require(c.effective_render_mode == "balanced" && c.supersample == 2);
+    require(c.effective_render_mode == "cached" && c.supersample == 2);
+    c = parse({"--workshop", "sphere"});
+    resolve_render_mode(c, true);
+    require(c.effective_render_mode == "cached" && c.lighting == "material-study");
     for (const auto mode : render_modes) {
         auto selected = parse({"--render-mode", std::string(mode)});
         resolve_render_mode(selected, true);

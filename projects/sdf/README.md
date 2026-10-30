@@ -27,15 +27,15 @@ continuous freehand sculpting.
 
 ## Rendering modes
 
-Saved authored scenes and the material workshop default to **Balanced**:
-refine the cached primary hit and evaluate source CSG normals there, while
-keeping cached visibility and shadows. Box recipes keep their original Cached
-route. The native **Rendering** selector and `--render-mode` expose every
+Saved authored scenes, the material workshop and box recipes default to
+**Cached**, using the existing cached primary rays, normals and shadows.
+Balanced remains available for refined cached hits and source CSG normals.
+The native **Rendering** selector and `--render-mode` expose every
 supported alternative:
 
 | Mode | Use |
 | --- | --- |
-| `auto` | Balanced for authored scenes/workshops, Cached for box recipes |
+| `auto` | Cached for authored scenes, workshops and box recipes |
 | `cached` | Original cached rendering, maximum speed |
 | `cached-refined` | Improve cached hit positions with little extra work |
 | `balanced` | Refined cached hits plus source normals |

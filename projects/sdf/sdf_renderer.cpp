@@ -27,12 +27,21 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                       VkFormat format, std::uint32_t slots, const Field* field,
                       const SdfConfig& config, const AuthoredScene* scene,
                       const GpuRegionPrograms* regions, std::string_view preparation_fault,
-                      const vulkan::Buffer* live_edit_controls) {
+                      const vulkan::Buffer* live_edit_controls,
+                      const vulkan::Buffer* cached_edit_controls) {
     live_edit_controls_ = live_edit_controls;
+    cached_edit_controls_ = cached_edit_controls;
     field_ = field;
     source_tracing_ = config.surface_trace != "sampled";
     shadow_candidate_ = source_shadow_pipeline_enabled(config);
     prepared_candidate_ = source_prepared_cones_enabled(config);
+    if (cached_edit_controls_ &&
+        (live_edit_controls_ || !field || !scene || regions ||
+         config.surface_trace != "sampled" || config.csg_evaluation != "full" ||
+         config.acceleration_variant != "off" || config.cached_quality != "ordinary" ||
+         config.lighting != "atmosphere" || config.debug || config.ao || config.clouds ||
+         config.ground || config.occluder || !config.query_workload_output.empty()))
+        throw std::invalid_argument("private cached edit renderer requires Cached opaque atmosphere and a frozen field");
     if (live_edit_controls_ &&
         (!field || !regions || !scene || config.lighting != "atmosphere" ||
          config.surface_trace != "analytic" || config.acceleration_variant != "root-far" ||
@@ -145,7 +154,7 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         bindings.push_back({16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         bindings.push_back({17, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
     }
-    if (live_edit_controls_)
+    if (live_edit_controls_ || cached_edit_controls_)
         bindings.push_back({21, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
     if (prepared_candidate_) {
         bindings.push_back({19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
@@ -199,6 +208,9 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         if (live_edit_controls_)
             writes.storage_buffer(descriptors_->set(i), 21, live_edit_controls_->handle(),
                                   live_edit_controls_->size());
+        if (cached_edit_controls_)
+            writes.storage_buffer(descriptors_->set(i), 21, cached_edit_controls_->handle(),
+                                  cached_edit_controls_->size());
         writes.storage_buffer(descriptors_->set(i), 4, scene_materials_->handle(),
                               scene_materials_->size());
         writes.storage_buffer(descriptors_->set(i), 5, preview_buffers_[i]->handle(),
@@ -266,6 +278,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         fragment = "profile_" + config.frame_profile + ".frag.spv";
     if (live_edit_controls_)
         fragment = "live_edit_sdf.frag.spv";
+    if (cached_edit_controls_)
+        fragment = "cached_edit_sdf.frag.spv";
     const std::array stages{
         render::vertex_shader_file(path / "sdf.vert.spv"),
         render::fragment_shader_file(path / (quality_capture_ ? "quality_" + fragment : fragment))};
@@ -356,7 +370,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             device,
             render::ComputePipelineResourceConfig{
                 .shader_stage = render::compute_shader_file(
-                    path / (live_edit_controls_ ? "live_edit_quality_workload.comp.spv"
+                    path / (cached_edit_controls_ ? "cached_edit_quality_workload.comp.spv"
+                            : live_edit_controls_ ? "live_edit_quality_workload.comp.spv"
                             : prefix + (quality_capture_ ? "quality_workload_" : "query_workload_") +
                                   variant + ".comp.spv")),
                 .descriptor_set_layouts = layouts,
@@ -483,6 +498,7 @@ void Renderer::destroy() {
     scene_libraries_.reset();
     scene_program_.reset();
     live_edit_controls_ = nullptr;
+    cached_edit_controls_ = nullptr;
     scene_cones_.reset();
     cone_data_.reset();
     cone_descriptor_bindings_.clear();
@@ -941,6 +957,9 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
     if (live_edit_controls_)
         live_controls = builder.import_buffer({"sdf.live-controls", live_edit_controls_->size()},
                                                live_edit_controls_->handle());
+    if (cached_edit_controls_)
+        live_controls = builder.import_buffer({"sdf.cached-edit-controls", cached_edit_controls_->size()},
+                                               cached_edit_controls_->handle());
     if (regions_) {
         region_cells = builder.import_buffer({"sdf.regions", regions_->cells->size()},
                                              regions_->cells->handle());

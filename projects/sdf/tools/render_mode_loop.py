@@ -325,12 +325,12 @@ def defaults(args):
     for scene in ('guardian','robot'):
         for ss in (1,2):
             prefix=args.output/f'{scene}-ss{ss}'
-            flags=public_command(args,scene,'preset','balanced',ss,width=1920,height=1080)[:-2]+[
+            flags=public_command(args,scene,'preset','cached',ss,width=1920,height=1080)[:-2]+[
                 '--frames','1','--output',str(prefix.with_suffix('.png'))]
             invoke(flags,prefix,timeout=180)
-            reference=args.input/f'{scene}-preset-balanced-ss{ss}.png'
-            if digest(prefix.with_suffix('.png'))!=digest(reference):raise RuntimeError('Default differs from Balanced')
-            receipt['runs'].append(dict(scene=scene,ss=ss,command=flags,default_matches_balanced=True))
+            reference=args.input/f'{scene}-preset-cached-ss{ss}.png'
+            if digest(prefix.with_suffix('.png'))!=digest(reference):raise RuntimeError('Default differs from Cached')
+            receipt['runs'].append(dict(scene=scene,ss=ss,command=flags,default_matches_cached=True))
     images=[]
     for mode in (None,'cached'):
         prefix=args.output/('recipe-default' if mode is None else 'recipe-cached')
@@ -340,7 +340,7 @@ def defaults(args):
         invoke(flags,prefix,timeout=180);images.append(digest(prefix.with_suffix('.png')))
     if images[0]!=images[1]:raise RuntimeError('Bare recipe default changed')
     receipt.update(complete=True,bare_recipe_matches_cached=True);save(args.output/'defaults.json',receipt)
-    print('Four authored defaults match Balanced; bare recipe matches Cached',flush=True)
+    print('Four authored defaults and bare recipe match Cached',flush=True)
 
 
 def main():
