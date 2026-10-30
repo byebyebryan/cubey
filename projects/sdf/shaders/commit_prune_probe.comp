@@ -7,6 +7,7 @@
 layout(local_size_x=64) in;
 layout(std430,set=0,binding=0) readonly buffer Queries {uvec2 queries[];};
 layout(std430,set=0,binding=1) writeonly buffer Results {uvec4 results[];};
+layout(r16f,set=0,binding=2) writeonly uniform image3D encoded;
 layout(push_constant) uniform Params {uint count;} pc;
 void main() {
     uint i=gl_GlobalInvocationID.x;if(i>=pc.count) return;
@@ -15,4 +16,6 @@ void main() {
     vec3 p=(vec3(unmorton(code))+vec3(cell)/7.0)/256.0-0.5;
     float a=authoredDistance(p),b=regionDistance(p);
     results[i]=uvec4(floatBitsToUint(a),floatBitsToUint(b),packHalf2x16(vec2(a,b)),0u);
+    imageStore(encoded,ivec3(i%8u,i/8u,0),vec4(a));
+    imageStore(encoded,ivec3(i%8u,i/8u,1),vec4(b));
 }
