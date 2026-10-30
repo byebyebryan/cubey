@@ -1,0 +1,53 @@
+{
+  "source_head": "72a1a4889176e2e8d8d731cf4fd1abd5831e4063",
+  "focused_checks": {
+    "command": "ctest --test-dir build/release --output-on-failure -R '^(sdf_.*tests|documentation_(hygiene|media|rules)|shader_build_rules)$'",
+    "passed": true,
+    "tests": 13,
+    "subsequent_documentation_checks": 3
+  },
+  "native": {
+    "source_geometry_checks": 213,
+    "source_geometry_passed": true,
+    "pending_sampled_geometry_checks": 58,
+    "pending_sampled_geometry_passed": true,
+    "sampled_zero_tail_source_gate_passed": false,
+    "automatic_sampled_handoff_gate_passed": false,
+    "timing_runs": 108,
+    "measured_frames": 16200,
+    "private_sampled_native_unqualified_pixels": 4,
+    "private_source_native_unqualified_pixels": 0,
+    "maximum_tail_camera_shadow_exhaustion": 0,
+    "serial_motion_frames": 64,
+    "base_field_builds_per_motion_sequence": 1,
+    "base_region_builds_per_motion_sequence": 1
+  },
+  "preservation": {
+    "original_spirv_files_unchanged": 194,
+    "protected_source_content_files_unchanged": 567
+  },
+  "static_report": {
+    "command": "node docs/evidence/sdf-live-edit-2026-10/check_report.mjs outputs/sdf/live-edit-loop-20261030/report",
+    "passed": true,
+    "ids": 31,
+    "image_assets": 94,
+    "timing_filter_states": 6,
+    "image_selection_states": 30,
+    "paired_motion_states": 32,
+    "reset_and_play_controls": true,
+    "rendered_browser_acceptance": false,
+    "browser_discovery": "No connected browser"
+  },
+  "delivery": {
+    "passed": true,
+    "published_assets_verified": 105,
+    "details": "delivery-checks.json"
+  },
+  "boundaries": {
+    "updater_implemented": false,
+    "continuous_input_qualified": false,
+    "physical_xr_qualified": false,
+    "public_mode_defaults_changed": false,
+    "pushed": false
+  }
+}

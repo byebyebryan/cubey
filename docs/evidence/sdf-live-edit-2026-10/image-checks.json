@@ -1,0 +1,6 @@
+{
+  "passed": true,
+  "lossless_native_image_exports": 94,
+  "ordinary_exhaustion_color_pixels": 0,
+  "scope": "Native PNG versus exported WebP byte-channel equality; no browser rendering"
+}

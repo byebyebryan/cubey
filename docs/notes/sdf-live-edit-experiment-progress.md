@@ -113,3 +113,28 @@ cache interval, recovering a useful bound without treating it as a scalar.
 The bounded pilot is about 13.3 ms p95 for A at zero-tail Robot; all frozen
 source and pending geometry checks still pass. Final timing is rerun under a
 new committed identity rather than mixing the two shader versions.
+
+## Completed bounded study
+
+Qualified native source: `72a1a4889176e2e8d8d731cf4fd1abd5831e4063`.
+Final raw phases are under `outputs/sdf/live-edit-loop-20261030/qualified/`;
+post-timing full-image and maximum-tail checks are in
+`outputs/sdf/live-edit-loop-20261030/postqualification-final/`. The evidence
+packet retains all 108 timing runs and 16,200 measured frames, with exact source,
+binary, shader, input and artifact hashes. All original/protected hashes match.
+
+The [results and next decision](sdf-live-edit-results.md) conclude this loop.
+Composition is supported by the bounded native tests, while production
+promotion and automatic sampled retirement fail their gates. No background
+updater or continuous editor is implemented. B passes 213 frozen geometry checks;
+A passes 58 pending controls, retains sampled source losses, and has four
+unqualified native pixels. All native camera/shadow/max-tail replays complete.
+The source geometry payload control is explicitly combined and separately
+labeled from public Analytical, whose existing diagnostic guard remains intact.
+
+Three interleaved timing repeats show substantial zero-tail and tail cost.
+At eight pending leaves, Robot A/B are 24.18/27.36 ms p95; Guardian A/B are
+33.74/43.48 ms. Matched freshly baked Balanced is 4.58/4.76 ms. One Robot
+pending leaf meets the 16.67 ms finite-run deadline but fails 11.11 ms; no 90 Hz
+candidate cap is qualified. Tail specialization/filtering and the display
+contract precede an updater selection.

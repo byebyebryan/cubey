@@ -1,0 +1,856 @@
+{
+  "cases": [
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 14.836063,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 6667548872931073813,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-identical-0.0001",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 12.277659,
+      "region_bytes": 5242896,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 786432,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            0.26723071932792664,
+            0.5346750020980835,
+            0.8016921281814575
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749779701233
+        },
+        {
+          "normal": [
+            -0.8729427456855774,
+            0.4363645911216736,
+            0.21807549893856049
+          ],
+          "residual": 3.395143721718341e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5499749183654785
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 4.149114829488099e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.15002501010894775
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 146.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.15002501010894775
+        },
+        {
+          "distance": -1.0752046364359558e-08
+        },
+        {
+          "distance": 0.15002498030662537
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 14.31956,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 45948244489578638,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-identical-0.01",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 12.136938,
+      "region_bytes": 5242896,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 786432,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -3.213062882423401e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5475000143051147
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": -3.213062882423401e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5475000143051147
+        },
+        {
+          "normal": [
+            0.26726123690605164,
+            0.5345224738121033,
+            0.8017836809158325
+          ],
+          "residual": 2.7474015951156616e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.54749995470047
+        },
+        {
+          "normal": [
+            -0.8728919625282288,
+            0.4364459812641144,
+            0.2181161791086197
+          ],
+          "residual": 7.217749953269958e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5474998950958252
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": -2.3283064365386963e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.1525000035762787
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 148.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.1525000035762787
+        },
+        {
+          "distance": -2.3283064365386963e-09
+        },
+        {
+          "distance": 0.1525000035762787
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 13.973339,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 13736211298417678956,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-identical-0.1",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 11.773996,
+      "region_bytes": 5242896,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 786432,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            0.9999999403953552,
+            0.0,
+            0.0
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            0.26741379499435425,
+            0.5344004034996033,
+            0.8018142580986023
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5249999761581421
+        },
+        {
+          "normal": [
+            -0.8729427456855774,
+            0.4363645911216736,
+            0.21807549893856049
+          ],
+          "residual": 3.5390257835388184e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.5249999165534973
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.9999999403953552
+          ],
+          "residual": 5.587935447692871e-09,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.17500001192092896
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 158.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.17500001192092896
+        },
+        {
+          "distance": -9.313225746154785e-09
+        },
+        {
+          "distance": 0.17499998211860657
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.651103,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 17043474452188786934,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "cut-owner-False",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.952143,
+      "region_bytes": 3175184,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 269504,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.667013,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 17043474452188786934,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "cut-owner-True",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.889753,
+      "region_bytes": 3175184,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 269504,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.446662,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 5470114744067985772,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "subgrid-cavity",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.682552,
+      "region_bytes": 3153224,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 264014,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -1.4551915228366852e-11,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.00019531250291038305
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.610153,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 6718198945608235053,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-subtract-0.0001",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.866123,
+      "region_bytes": 3175184,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 269504,
+      "results": [
+        {
+          "distance": -0.09997500479221344
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.611403,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 4787802743146043542,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-subtract-0.01",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.898854,
+      "region_bytes": 3184400,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 271808,
+      "results": [
+        {
+          "distance": -0.09750000387430191
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.884984,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 5375889780056643732,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "smooth-subtract-0.1",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.158515,
+      "region_bytes": 3282960,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 296448,
+      "results": [
+        {
+          "distance": -0.07500000298023224
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.3999999761581421
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 8.057036,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 18394944322382909322,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "outside-old-bounds",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.378335,
+      "region_bytes": 3251536,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 288592,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": 0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.07999999821186066
+        },
+        {
+          "distance": -0.07999999821186066
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 8.435248,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 16312540770838313998,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "uniform-solid-cavity",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.604627,
+      "region_bytes": 3156624,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 264864,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.05999999865889549
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 3.0,
+          "t": 0.05999999865889549
+        },
+        {
+          "distance": 0.05999999865889549
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 8.161696,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 7884192152136496162,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "through-hole",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.425357,
+      "region_bytes": 3163408,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 266560,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 10.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "residual": -0.0,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.05999999865889549
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 7.438892,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 11353933744235089827,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "clip-before-smooth-cut",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 5.712412,
+      "region_bytes": 3151344,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 263544,
+      "results": [
+        {
+          "distance": -0.0010000169277191162
+        },
+        {
+          "normal": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "residual": -1.1175870895385742e-08,
+          "status": 1,
+          "steps": 5.0,
+          "t": 0.007999997586011887
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 9.168672,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 15366909959145840010,
+      "instructions": 3,
+      "mode": "analytic-pruned",
+      "name": "group-frozen-prefix",
+      "program_bytes": 208,
+      "region_axis": 64,
+      "region_build_upload_ms": 7.278411,
+      "region_bytes": 3260912,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 290936,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -1.4901161193847656e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6200000047683716
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 8.110036,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 16439186744481241111,
+      "instructions": 1,
+      "mode": "analytic-pruned",
+      "name": "empty-base-addition",
+      "program_bytes": 80,
+      "region_axis": 64,
+      "region_build_upload_ms": 6.275275,
+      "region_bytes": 3145744,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 262144,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "residual": -3.725290298461914e-08,
+          "status": 1,
+          "steps": 2.0,
+          "t": 0.6000000238418579
+        },
+        {
+          "distance": -0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 1.58409,
+      "derived_probe_count": 1314,
+      "derived_probe_max_error": 0.0,
+      "field_build_ms": 0.0,
+      "field_bytes": 0,
+      "geometry_hash": 14695981039346656037,
+      "instructions": 0,
+      "mode": "analytic-pruned",
+      "name": "empty-base-stays-empty",
+      "program_bytes": 16,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.186611,
+      "region_bytes": 28,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 1.0,
+          "t": 0.0
+        }
+      ]
+    }
+  ],
+  "format": "cubey.sdf.tracing-results",
+  "prepared_cones": false,
+  "query_shader": "comparison_analytic_pruned.comp.spv",
+  "query_shader_sha256": "a6ef22930872de54700d3162e558e2d9705f4ee470586da86de812715d946a0e",
+  "source_optimization": "automatic",
+  "version": 1
+}

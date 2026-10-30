@@ -91,6 +91,8 @@ the architecture and project guides remain current authority.
 - [SDF frozen-base live-edit execution](sdf-live-edit-experiment-progress.md):
   private native candidates, source and cache contracts, tail admission and
   pending-edit handoff evidence.
+- [SDF frozen-base live-edit results](sdf-live-edit-results.md): native geometry,
+  full shaded tail costs, failed sampled handoff and the next bounded decision.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

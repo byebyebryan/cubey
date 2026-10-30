@@ -1,0 +1,396 @@
+{
+  "binary_sha256": "cb51acf8d782ad63af5419af8525593d305b58419b770d4e65485d25a781abf3",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "72a1a4889176e2e8d8d731cf4fd1abd5831e4063",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "tool_sha256": "22f5a084970253cd195bf2dc1a7160f34e742dd94b4cec9bf675c3979161204e",
+  "public_binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+  "private_shader_sha256": {
+    "lit_live_edit_sdf.frag.spv": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e",
+    "live_edit_quality_workload.comp.spv": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c",
+    "live_edit_queries.comp.spv": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023",
+    "live_edit_sdf.frag.spv": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b",
+    "quality_lit_live_edit_sdf.frag.spv": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c",
+    "quality_live_edit_sdf.frag.spv": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08",
+    "quality_shadow_lit_live_edit_sdf.frag.spv": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113",
+    "shadow_lit_live_edit_sdf.frag.spv": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+  },
+  "admitted": [
+    {
+      "name": "robot",
+      "count": 0,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-0.json",
+      "sha256": "f33211aaba21de3cf79e8ba2b5fac81ba938f075a6e5f1b88e448148add89f4d",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 15329115976364195548,
+        "edited_instructions": 163,
+        "edited_leaves": 82,
+        "pending_leaves": 0,
+        "suffix_instructions": 0
+      }
+    },
+    {
+      "name": "robot",
+      "count": 1,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-1.json",
+      "sha256": "bfb62f24857f6dc383b419bb02c44de084eff7a61b60baea3489c0ccdff1616b",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 17394336389704793032,
+        "edited_instructions": 165,
+        "edited_leaves": 83,
+        "pending_leaves": 1,
+        "suffix_instructions": 2
+      }
+    },
+    {
+      "name": "robot",
+      "count": 4,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-4.json",
+      "sha256": "d73fd0df30f24981b679ed01f1d4d161e5e8e1e980943c8e5af5dc2f5407a3c8",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 11820369759493223831,
+        "edited_instructions": 171,
+        "edited_leaves": 86,
+        "pending_leaves": 4,
+        "suffix_instructions": 8
+      }
+    },
+    {
+      "name": "robot",
+      "count": 8,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-8.json",
+      "sha256": "bc86f58efaf628a0cef257b69eca4d6d606975db54d54e6aa481cbeabbbf21d3",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 3099767593193888820,
+        "edited_instructions": 179,
+        "edited_leaves": 90,
+        "pending_leaves": 8,
+        "suffix_instructions": 16
+      }
+    },
+    {
+      "name": "robot",
+      "count": 16,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-16.json",
+      "sha256": "9ce64f48b0e6f8e09b7f3f258f63147c538d644e16aa73c786032f6738272e90",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 6581010765766114601,
+        "edited_instructions": 195,
+        "edited_leaves": 98,
+        "pending_leaves": 16,
+        "suffix_instructions": 32
+      }
+    },
+    {
+      "name": "robot",
+      "count": 32,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-32.json",
+      "sha256": "89ff77116c860d2cdd4a63ad0754eaec66d8d4f54b938a3c8aef14ce888bc0ae",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 7016328948306087992,
+        "edited_instructions": 227,
+        "edited_leaves": 114,
+        "pending_leaves": 32,
+        "suffix_instructions": 64
+      }
+    },
+    {
+      "name": "robot",
+      "count": 64,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-64.json",
+      "sha256": "70c234b578c0e6c916042aa10f739e94bf0fbf0e1099c4ba022a196aa13804bb",
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 2019977709269932843,
+        "edited_instructions": 291,
+        "edited_leaves": 146,
+        "pending_leaves": 64,
+        "suffix_instructions": 128
+      }
+    },
+    {
+      "name": "guardian",
+      "count": 0,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-0.json",
+      "sha256": "819c310c2b94779b9169cb30323d3e8d08671ddf3030a4a8f9e52945b57f28b0",
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 15419350890978506480,
+        "edited_instructions": 2021,
+        "edited_leaves": 1011,
+        "pending_leaves": 0,
+        "suffix_instructions": 0
+      }
+    },
+    {
+      "name": "guardian",
+      "count": 1,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-1.json",
+      "sha256": "39790ab0a149a62ee24047f9c6b1adaa4d4dc178168a76596ddc465b5945bf91",
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 1260546769739921284,
+        "edited_instructions": 2023,
+        "edited_leaves": 1012,
+        "pending_leaves": 1,
+        "suffix_instructions": 2
+      }
+    },
+    {
+      "name": "guardian",
+      "count": 4,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-4.json",
+      "sha256": "e2efda8cb190e6f50b518fa999619dcc424a3a45765aca98df7ae2ef02bbfb92",
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 502286817290137091,
+        "edited_instructions": 2029,
+        "edited_leaves": 1015,
+        "pending_leaves": 4,
+        "suffix_instructions": 8
+      }
+    },
+    {
+      "name": "guardian",
+      "count": 8,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-8.json",
+      "sha256": "c1c811f13d4c3d2331d8f03a45ff22034f149c9a69be1d7c9110e631a31e8efa",
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 6578594696717616072,
+        "edited_instructions": 2037,
+        "edited_leaves": 1019,
+        "pending_leaves": 8,
+        "suffix_instructions": 16
+      }
+    },
+    {
+      "name": "guardian",
+      "count": 13,
+      "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-13.json",
+      "sha256": "74bf522271cc6007ca498d6f30f382572b0abf2ac41f186548d02feee8a4622c",
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 15816184379205692772,
+        "edited_instructions": 2047,
+        "edited_leaves": 1024,
+        "pending_leaves": 13,
+        "suffix_instructions": 26
+      }
+    }
+  ],
+  "rejected": [
+    {
+      "name": "tail-limit",
+      "returncode": 1,
+      "reason": "live study: live edit requires at most 64 pending leaves / 128 suffix instructions",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/tail-limit.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/tail-limit-rejected.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-validate-only"
+      ]
+    },
+    {
+      "name": "source-capacity",
+      "returncode": 1,
+      "reason": "live study: authored SDF scene exceeds 1024 primitive leaves",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/source-capacity.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/source-capacity-rejected.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-validate-only"
+      ]
+    }
+  ],
+  "negative": [
+    {
+      "name": "prefix",
+      "returncode": 1,
+      "reason": "live study: live edit changed the frozen source prefix",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-prefix.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-prefix-output.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-validate-only",
+        "--live-queries"
+      ]
+    },
+    {
+      "name": "palette",
+      "returncode": 1,
+      "reason": "live study: live edit requires an unchanged predeclared material palette",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-palette.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-palette-output.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-validate-only",
+        "--live-queries"
+      ]
+    },
+    {
+      "name": "non-unit-ray",
+      "returncode": 1,
+      "reason": "live study: live rays require unit directions",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-non-unit-ray.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-non-unit-ray-output.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-validate-only",
+        "--live-queries"
+      ]
+    },
+    {
+      "name": "bad-query",
+      "returncode": 1,
+      "reason": "live study: unknown live query kind",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-bad-query.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-bad-query-output.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-validate-only",
+        "--live-queries"
+      ]
+    }
+  ],
+  "complete": true
+}

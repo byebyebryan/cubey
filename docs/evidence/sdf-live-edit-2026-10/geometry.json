@@ -1,0 +1,597 @@
+{
+  "binary_sha256": "cb51acf8d782ad63af5419af8525593d305b58419b770d4e65485d25a781abf3",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "72a1a4889176e2e8d8d731cf4fd1abd5831e4063",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "tool_sha256": "22f5a084970253cd195bf2dc1a7160f34e742dd94b4cec9bf675c3979161204e",
+  "public_binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+  "private_shader_sha256": {
+    "lit_live_edit_sdf.frag.spv": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e",
+    "live_edit_quality_workload.comp.spv": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c",
+    "live_edit_queries.comp.spv": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023",
+    "live_edit_sdf.frag.spv": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b",
+    "quality_lit_live_edit_sdf.frag.spv": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c",
+    "quality_live_edit_sdf.frag.spv": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08",
+    "quality_shadow_lit_live_edit_sdf.frag.spv": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113",
+    "shadow_lit_live_edit_sdf.frag.spv": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+  },
+  "runs": [
+    {
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/zero-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/zero-source.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-queries"
+      ],
+      "wall_seconds": 1.1467283080564812,
+      "output": "zero-source.json",
+      "sha256": "63eef0555342af46f2851ffa1de8a4fd02b45d0ebdca9fac3c8a34c16d1c846c"
+    },
+    {
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/zero-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/zero-cached.json",
+        "--live-policy",
+        "cached",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-queries"
+      ],
+      "wall_seconds": 0.5685391800361685,
+      "output": "zero-cached.json",
+      "sha256": "cbc94724d49fe57a46c4aa9b5e30ac7aa2b5e03c3dc8ee10e3f2e4d3d5a8f07c"
+    },
+    {
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/pending-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/pending-source.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-queries"
+      ],
+      "wall_seconds": 0.36459264799486846,
+      "output": "pending-source.json",
+      "sha256": "3f6502dfb1b48842daf71ebec7b929b82c4f1e47d69a3ca1aa6a657a1e22db50"
+    },
+    {
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/pending-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/pending-cached.json",
+        "--live-policy",
+        "cached",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--live-queries"
+      ],
+      "wall_seconds": 0.3594334280351177,
+      "output": "pending-cached.json",
+      "sha256": "3091068d98092856638c4bd41a1a042ebe262218d90d5cbc63b1c5cd8ed40874"
+    },
+    {
+      "command": [
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/baseline-sdf",
+        "--headless",
+        "--require-validation",
+        "--headless-render-only",
+        "--frames",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/fresh-input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/fresh-analytic.json"
+      ],
+      "wall_seconds": 0.3515615339856595,
+      "output": "fresh-analytic.json",
+      "sha256": "1b68119c1f663af6b098c2a55518637cee76de0f5a9ce20bb6d02d3e64b6a195"
+    },
+    {
+      "command": [
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/baseline-sdf",
+        "--headless",
+        "--require-validation",
+        "--headless-render-only",
+        "--frames",
+        "1",
+        "--width",
+        "16",
+        "--height",
+        "16",
+        "--surface-trace",
+        "sampled",
+        "--csg-evaluation",
+        "full",
+        "--region-axis",
+        "64",
+        "--comparison-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/fresh-input.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/geometry/fresh-sampled.json"
+      ],
+      "wall_seconds": 0.2981701120152138,
+      "output": "fresh-sampled.json",
+      "sha256": "d63ea12a616527952e717b77275fe61c49e4c32547228e0fde220219995bb9d5"
+    }
+  ],
+  "checks": {
+    "zero-source": {
+      "passed": true,
+      "scored": 155,
+      "modes": [
+        "live-source"
+      ],
+      "maxima": {
+        "depth": 0.002628397941589311,
+        "point": 2.8163194656580237e-08,
+        "normal_degrees": 0.22949957087194034,
+        "residual": 1.7270445823669434e-05
+      },
+      "failures": [],
+      "cpu_provider_point_max": 1.4901161193847656e-08,
+      "cpu_provider_hit_residual_max": 1.7270445823669434e-05,
+      "exhausted": 0
+    },
+    "zero-cached": {
+      "passed": false,
+      "scored": 155,
+      "modes": [
+        "live-cached"
+      ],
+      "maxima": {
+        "depth": 0.19952487647533418,
+        "point": 0.0004830837249755859,
+        "normal_degrees": 179.89091249766298,
+        "residual": 1.729316863929853e-05
+      },
+      "failures": [
+        [
+          "live-cached/subgrid-sphere/0",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/1",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/2",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/3",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/4",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/6",
+          "point",
+          0.0004830837249755859
+        ],
+        [
+          "live-cached/subgrid-sphere/7",
+          "point",
+          0.00028777122497558594
+        ],
+        [
+          "live-cached/subgrid-sphere/8",
+          "point",
+          0.0001809241541195661
+        ],
+        [
+          "live-cached/aligned-small-sphere/2",
+          "normal",
+          20.387117801393707
+        ],
+        [
+          "live-cached/aligned-small-sphere/3",
+          "normal",
+          23.100294218688152
+        ],
+        [
+          "live-cached/thin-stick-0.5h/0",
+          "normal",
+          20.03611920406268
+        ],
+        [
+          "live-cached/thin-stick-1.5h/0",
+          "normal",
+          13.622223966209944
+        ],
+        [
+          "live-cached/subgrid-cavity/0",
+          "depth/residual",
+          0.19952487647533418,
+          -5.3439180192071944e-08
+        ],
+        [
+          "live-cached/subgrid-cavity/0",
+          "normal",
+          179.89091249766298
+        ]
+      ],
+      "cpu_provider_point_max": 1.4901161193847656e-08,
+      "cpu_provider_hit_residual_max": 1.729316500131972e-05,
+      "exhausted": 0
+    },
+    "pending-source": {
+      "passed": true,
+      "scored": 58,
+      "modes": [
+        "live-source"
+      ],
+      "maxima": {
+        "depth": 4.52995300159742e-08,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 0.011330705455284017,
+        "residual": 3.213062882423401e-08
+      },
+      "failures": [],
+      "cpu_provider_point_max": 0.0,
+      "cpu_provider_hit_residual_max": 3.213062882423401e-08,
+      "exhausted": 0
+    },
+    "pending-cached": {
+      "passed": true,
+      "scored": 58,
+      "modes": [
+        "live-cached"
+      ],
+      "maxima": {
+        "depth": 2.0718574524902778e-06,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 0.03920877592006053,
+        "residual": 1.9348240130057093e-06
+      },
+      "failures": [],
+      "cpu_provider_point_max": 7.238654120556021e-14,
+      "cpu_provider_hit_residual_max": 1.9273720681667328e-06,
+      "exhausted": 0
+    },
+    "fresh-analytic": {
+      "passed": true,
+      "scored": 58,
+      "modes": [
+        "fresh-analytic"
+      ],
+      "maxima": {
+        "depth": 1.0490417479136482e-07,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 0.011330705455284017,
+        "residual": 7.217749953269958e-08
+      },
+      "failures": []
+    },
+    "fresh-sampled": {
+      "passed": false,
+      "scored": 58,
+      "modes": [
+        "fresh-sampled"
+      ],
+      "maxima": {
+        "depth": 0.19943198263645173,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 179.8894715910177,
+        "residual": 0.00011021457612514496
+      },
+      "failures": [
+        [
+          "fresh-sampled/smooth-identical-0.0001/0",
+          "depth/residual",
+          9.407815933226704e-05,
+          9.406027675140649e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/1",
+          "depth/residual",
+          9.407815933226704e-05,
+          9.406027675140649e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/2",
+          "depth/residual",
+          9.276685714731947e-05,
+          9.27489745663479e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/3",
+          "depth/residual",
+          9.312448501586079e-05,
+          9.307680011261255e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/4",
+          "depth/residual",
+          9.324135780333642e-05,
+          -9.324731945525855e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/0",
+          "depth/residual",
+          9.290933609007457e-05,
+          9.289151057600975e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/1",
+          "depth/residual",
+          9.290933609007457e-05,
+          9.289151057600975e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/2",
+          "depth/residual",
+          9.273052215585942e-05,
+          9.271269664168358e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/3",
+          "depth/residual",
+          9.439945220945933e-05,
+          9.435182437300682e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/4",
+          "depth/residual",
+          9.94467735290494e-05,
+          -9.94526781141758e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/0",
+          "depth/residual",
+          9.294748306265532e-05,
+          9.292922914028168e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/1",
+          "depth/residual",
+          9.294748306265532e-05,
+          9.292922914028168e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/2",
+          "depth/residual",
+          0.00011023283004774065,
+          0.00011021457612514496
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/3",
+          "depth/residual",
+          9.419918060293853e-05,
+          9.415112435817719e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/4",
+          "depth/residual",
+          9.341835975645862e-05,
+          -9.342469274997711e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-False/0",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-False/1",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-False/2",
+          "depth/residual",
+          9.342133998871405e-05,
+          -9.34302806854248e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-True/0",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-True/1",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-True/2",
+          "depth/residual",
+          9.342133998871405e-05,
+          -9.34302806854248e-05
+        ],
+        [
+          "fresh-sampled/subgrid-cavity/0",
+          "depth/residual",
+          0.19943198263645173,
+          -9.328126907348633e-05
+        ],
+        [
+          "fresh-sampled/subgrid-cavity/0",
+          "normal",
+          179.8894715910177
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.0001/1",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.0001/2",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.01/1",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.01/2",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.1/1",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.1/2",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/outside-old-bounds/0",
+          "depth/residual",
+          9.458780288695845e-05,
+          9.457767009735107e-05
+        ],
+        [
+          "fresh-sampled/outside-old-bounds/1",
+          "depth/residual",
+          9.273171424865889e-05,
+          -9.272992610931396e-05
+        ],
+        [
+          "fresh-sampled/uniform-solid-cavity/0",
+          "depth/residual",
+          9.318947792053e-05,
+          9.318813681602478e-05
+        ],
+        [
+          "fresh-sampled/uniform-solid-cavity/1",
+          "depth/residual",
+          9.402766823768394e-05,
+          -9.402632713317871e-05
+        ],
+        [
+          "fresh-sampled/through-hole/1",
+          "depth/residual",
+          9.318947792053e-05,
+          9.318813681602478e-05
+        ],
+        [
+          "fresh-sampled/clip-before-smooth-cut/1",
+          "depth/residual",
+          9.43425968289377e-05,
+          -9.433552622795105e-05
+        ],
+        [
+          "fresh-sampled/clip-before-smooth-cut/1",
+          "normal",
+          1.1278874211377958
+        ],
+        [
+          "fresh-sampled/group-frozen-prefix/0",
+          "depth/residual",
+          9.268045425414595e-05,
+          9.267032146453857e-05
+        ],
+        [
+          "fresh-sampled/group-frozen-prefix/1",
+          "depth/residual",
+          9.458780288695845e-05,
+          9.457767009735107e-05
+        ],
+        [
+          "fresh-sampled/empty-base-addition/0",
+          "depth/residual",
+          9.313821792600319e-05,
+          9.312480688095093e-05
+        ]
+      ]
+    }
+  },
+  "complete": true,
+  "source_gate": true,
+  "automatic_sampled_handoff_gate": false
+}

@@ -1,0 +1,5165 @@
+{
+  "format": "cubey.sdf.live-edit-results",
+  "policy": "source",
+  "programs": [
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18108402278844718650,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 16498056370629926624,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 16498056370629926624,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 3163061551344856587,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 3163061551344856587,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 6667548872931073813,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 6667548872931073813,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 45948244489578638,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 45948244489578638,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 13736211298417678956,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 13736211298417678956,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 7242069496324257935,
+      "base_instructions": 5,
+      "base_leaves": 3,
+      "edited_geometry_hash": 7242069496324257935,
+      "edited_instructions": 5,
+      "edited_leaves": 3,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 14741619498992944531,
+      "base_instructions": 5,
+      "base_leaves": 3,
+      "edited_geometry_hash": 14741619498992944531,
+      "edited_instructions": 5,
+      "edited_leaves": 3,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 18433098111416046818,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18433098111416046818,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 13624621934565783641,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 13624621934565783641,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 17120774950339989335,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 17120774950339989335,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 14482185363410610916,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 14482185363410610916,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 3539669290421765636,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 3539669290421765636,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 2382038922206536403,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 2382038922206536403,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 16993683741795772102,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 16993683741795772102,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 14398882239344281410,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 14398882239344281410,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 11502953349875602922,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 11502953349875602922,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 17043474452188786934,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 17043474452188786934,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 17043474452188786934,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 17043474452188786934,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 5470114744067985772,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 5470114744067985772,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 11125286099401703813,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 11125286099401703813,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 6483958833716482848,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 6483958833716482848,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 12095891924568177248,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 12095891924568177248,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 3425564247748751208,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 3425564247748751208,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 18077386633429916334,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18077386633429916334,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 8929632622576057614,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 8929632622576057614,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18108402278844718650,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 6718198945608235053,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 6718198945608235053,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 4787802743146043542,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 4787802743146043542,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 5375889780056643732,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 5375889780056643732,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 9528710269108034239,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 9528710269108034239,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    },
+    {
+      "base_geometry_hash": 7239883950309317242,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 7239883950309317242,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_leaves": 0,
+      "suffix_instructions": 0
+    }
+  ],
+  "queries": {
+    "cases": [
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 18108402278844718650,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.51818,
+        "field_builds": 1,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "sphere-control",
+        "pending_leaves": 0,
+        "region_bytes": 4223312,
+        "region_ms": 7.07104,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              14,
+              9,
+              9,
+              5
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26723071932792664,
+              0.5346750020980835,
+              0.8016921281814575
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 6.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              32,
+              9,
+              9,
+              23
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8729427456855774,
+              0.4363645911216736,
+              0.21807549893856049
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 24.0,
+            "t": 0.4999999701976776
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.20000000298023224
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.20000000298023224,
+            "cpu_point_error": 0.0,
+            "distance": -0.20000000298023224,
+            "gpu_base_raw": -0.20000000298023224,
+            "gpu_full_source": -0.20000000298023224,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.49900001287460327,
+              -0.09172622114419937
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": 0.0,
+            "cpu_point_error": 0.0,
+            "distance": 0.0,
+            "gpu_base_raw": 0.0,
+            "gpu_full_source": 0.0,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005121919675730169,
+              0.0005121681024320424
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.20000000298023224,
+            "cpu_point_error": 0.0,
+            "distance": 0.20000000298023224,
+            "gpu_base_raw": 0.20000000298023224,
+            "gpu_full_source": 0.20000000298023224,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.15449956059455872,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 16498056370629926624,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 16498056370629926624,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 0.630543,
+        "field_builds": 2,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "subgrid-sphere",
+        "pending_leaves": 0,
+        "region_bytes": 4194480,
+        "region_ms": 3.746671,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.3096723705530167e-10,
+            "gpu_source_residual": 1.3096723705530167e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 1.3096723705530167e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973134458065
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.3096723705530167e-10,
+            "gpu_source_residual": 1.3096723705530167e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "residual": 1.3096723705530167e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973134458065
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.1641532182693481e-10,
+            "gpu_source_residual": 1.1641532182693481e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26549580693244934,
+              0.5327267050743103,
+              0.8035634756088257
+            ],
+            "residual": 1.1641532182693481e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973134458065
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -8.731149137020111e-11,
+            "gpu_source_residual": 1.4551915228366852e-11,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8748083114624023,
+              0.43350932002067566,
+              0.2162868231534958
+            ],
+            "residual": 1.4551915228366852e-11,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973134458065
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.4551915228366852e-11,
+            "gpu_source_residual": 1.4551915228366852e-11,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 1.4551915228366852e-11,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.00019531250291038305
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -0.00019531250291038305,
+            "cpu_point_error": 0.0,
+            "distance": -0.00019531250291038305,
+            "gpu_base_raw": -0.00019531250291038305,
+            "gpu_full_source": -0.00019531250291038305,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.00022297905525192618,
+              0.0007985215052030981
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -1.4551915228366852e-11,
+            "cpu_point_error": 0.0,
+            "distance": -1.4551915228366852e-11,
+            "gpu_base_raw": -1.4551915228366852e-11,
+            "gpu_full_source": -1.4551915228366852e-11,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.00022297905525192618,
+              0.0007985215052030981
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": 0.00019531250291038305,
+            "cpu_point_error": 0.0,
+            "distance": 0.00019531250291038305,
+            "gpu_base_raw": 0.00019531250291038305,
+            "gpu_full_source": 0.00019531250291038305,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.00013460000627674162,
+              0.0008870733436197042
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 3163061551344856587,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 3163061551344856587,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 0.625103,
+        "field_builds": 3,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "aligned-small-sphere",
+        "pending_leaves": 0,
+        "region_bytes": 4194480,
+        "region_ms": 2.863626,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.8917489796876907e-10,
+            "gpu_source_residual": -1.8917489796876907e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -1.8917489796876907e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973600119352
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.8917489796876907e-10,
+            "gpu_source_residual": -1.8917489796876907e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "residual": -1.8917489796876907e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973600119352
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.4551915228366852e-11,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.2654961049556732,
+              0.5327267050743103,
+              0.8035633563995361
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973134458065
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.8917489796876907e-10,
+            "gpu_source_residual": -1.1641532182693481e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8748080730438232,
+              0.43350982666015625,
+              0.21628686785697937
+            ],
+            "residual": -1.1641532182693481e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.004268973134458065
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.00019531250291038305
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -0.00019531250291038305,
+            "cpu_point_error": 0.0,
+            "distance": -0.00019531250291038305,
+            "gpu_base_raw": -0.00019531250291038305,
+            "gpu_full_source": -0.00019531250291038305,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0007059206254780293,
+              0.0003153909929096699
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": 0.0,
+            "cpu_point_error": 0.0,
+            "distance": 0.0,
+            "gpu_base_raw": 0.0,
+            "gpu_full_source": 0.0,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005104531883262098,
+              0.0005104770534671843
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": 0.00019531250291038305,
+            "cpu_point_error": 0.0,
+            "distance": 0.00019531250291038305,
+            "gpu_base_raw": 0.00019531250291038305,
+            "gpu_full_source": 0.00019531250291038305,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0003153672150801867,
+              0.0007059444906190038
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 6667548872931073813,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 6667548872931073813,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 2.116582,
+        "field_builds": 4,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "smooth-identical-0.0001",
+        "pending_leaves": 0,
+        "region_bytes": 4242352,
+        "region_ms": 3.762891,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 4.149114829488099e-09,
+            "gpu_source_residual": 4.149114829488099e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 4.149114829488099e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5499749779701233
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 4.149114829488099e-09,
+            "gpu_source_residual": 4.149114829488099e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": 4.149114829488099e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5499749779701233
+          },
+          {
+            "counts": [
+              22,
+              9,
+              9,
+              13
+            ],
+            "cpu_live_residual": 4.149114829488099e-09,
+            "gpu_source_residual": 4.149114829488099e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26723071932792664,
+              0.5346750020980835,
+              0.8016921281814575
+            ],
+            "residual": 4.149114829488099e-09,
+            "status": 1,
+            "steps": 14.0,
+            "t": 0.5499749779701233
+          },
+          {
+            "counts": [
+              15,
+              9,
+              9,
+              6
+            ],
+            "cpu_live_residual": -2.5653207558207214e-08,
+            "gpu_source_residual": -1.0752046364359558e-08,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8728512525558472,
+              0.4364256262779236,
+              0.2183196097612381
+            ],
+            "residual": -1.0752046364359558e-08,
+            "status": 1,
+            "steps": 7.0,
+            "t": 0.5499749779701233
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 4.149114829488099e-09,
+            "gpu_source_residual": 4.149114829488099e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 4.149114829488099e-09,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.15002501010894775
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.15002501010894775,
+            "cpu_point_error": 0.0,
+            "distance": -0.15002501010894775,
+            "gpu_base_raw": -0.15002501010894775,
+            "gpu_full_source": -0.15002501010894775,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.49900001287460327,
+              -0.12293758988380432
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -1.0752046364359558e-08,
+            "cpu_point_error": 0.0,
+            "distance": -1.0752046364359558e-08,
+            "gpu_base_raw": -1.0752046364359558e-08,
+            "gpu_full_source": -1.0752046364359558e-08,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005139242275618017,
+              0.0005139650893397629
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.15002498030662537,
+            "cpu_point_error": 0.0,
+            "distance": 0.15002498030662537,
+            "gpu_base_raw": 0.15002498030662537,
+            "gpu_full_source": 0.15002498030662537,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.08052531629800797,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 45948244489578638,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 45948244489578638,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 2.170493,
+        "field_builds": 5,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "smooth-identical-0.01",
+        "pending_leaves": 0,
+        "region_bytes": 4243504,
+        "region_ms": 3.490139,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 2.7474015951156616e-08,
+            "gpu_source_residual": 2.7474015951156616e-08,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 2.7474015951156616e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.54749995470047
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 2.7474015951156616e-08,
+            "gpu_source_residual": 2.7474015951156616e-08,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": 2.7474015951156616e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.54749995470047
+          },
+          {
+            "counts": [
+              14,
+              9,
+              9,
+              5
+            ],
+            "cpu_live_residual": 4.237517714500427e-08,
+            "gpu_source_residual": 2.7474015951156616e-08,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26726123690605164,
+              0.5345224738121033,
+              0.8017836809158325
+            ],
+            "residual": 2.7474015951156616e-08,
+            "status": 1,
+            "steps": 6.0,
+            "t": 0.54749995470047
+          },
+          {
+            "counts": [
+              16,
+              9,
+              9,
+              7
+            ],
+            "cpu_live_residual": 2.7474015951156616e-08,
+            "gpu_source_residual": 1.257285475730896e-08,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8729020357131958,
+              0.4363442361354828,
+              0.2182789146900177
+            ],
+            "residual": 1.257285475730896e-08,
+            "status": 1,
+            "steps": 8.0,
+            "t": 0.54749995470047
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": -2.3283064365386963e-09,
+            "gpu_source_residual": -2.3283064365386963e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -2.3283064365386963e-09,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.1525000035762787
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.1525000035762787,
+            "cpu_point_error": 0.0,
+            "distance": -0.1525000035762787,
+            "gpu_base_raw": -0.1525000035762787,
+            "gpu_full_source": -0.1525000035762787,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.49900001287460327,
+              -0.12541252374649048
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -2.3283064365386963e-09,
+            "cpu_point_error": 0.0,
+            "distance": -2.3283064365386963e-09,
+            "gpu_base_raw": -2.3283064365386963e-09,
+            "gpu_full_source": -2.3283064365386963e-09,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005138895940035582,
+              0.0005140517605468631
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.1525000035762787,
+            "cpu_point_error": 0.0,
+            "distance": 0.1525000035762787,
+            "gpu_base_raw": 0.1525000035762787,
+            "gpu_full_source": 0.1525000035762787,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.07805026322603226,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 13736211298417678956,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 13736211298417678956,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 2.726615,
+        "field_builds": 6,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "smooth-identical-0.1",
+        "pending_leaves": 0,
+        "region_bytes": 4261072,
+        "region_ms": 3.761282,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 5.587935447692871e-09,
+            "gpu_source_residual": 5.587935447692871e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 5.587935447692871e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5249999761581421
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 5.587935447692871e-09,
+            "gpu_source_residual": 5.587935447692871e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": 5.587935447692871e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5249999761581421
+          },
+          {
+            "counts": [
+              13,
+              9,
+              9,
+              4
+            ],
+            "cpu_live_residual": 5.587935447692871e-09,
+            "gpu_source_residual": 5.587935447692871e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26741379499435425,
+              0.5344004034996033,
+              0.8018142580986023
+            ],
+            "residual": 5.587935447692871e-09,
+            "status": 1,
+            "steps": 5.0,
+            "t": 0.5249999761581421
+          },
+          {
+            "counts": [
+              21,
+              9,
+              9,
+              12
+            ],
+            "cpu_live_residual": -9.313225746154785e-09,
+            "gpu_source_residual": -9.313225746154785e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.872861385345459,
+              0.4365374743938446,
+              0.21805517375469208
+            ],
+            "residual": -9.313225746154785e-09,
+            "status": 1,
+            "steps": 13.0,
+            "t": 0.5249999761581421
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 5.587935447692871e-09,
+            "gpu_source_residual": 5.587935447692871e-09,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 5.587935447692871e-09,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.17500001192092896
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.17500001192092896,
+            "cpu_point_error": 0.0,
+            "distance": -0.17500001192092896,
+            "gpu_base_raw": -0.17500001192092896,
+            "gpu_full_source": -0.17500001192092896,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.49900001287460327,
+              -0.06672216206789017
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -9.313225746154785e-09,
+            "cpu_point_error": 0.0,
+            "distance": -9.313225746154785e-09,
+            "gpu_base_raw": -9.313225746154785e-09,
+            "gpu_full_source": -9.313225746154785e-09,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005141946603544056,
+              0.0005142185254953802
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.17499998211860657,
+            "cpu_point_error": 0.0,
+            "distance": 0.17499998211860657,
+            "gpu_base_raw": 0.17499998211860657,
+            "gpu_full_source": 0.17499998211860657,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.1174279972910881,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 7242069496324257935,
+        "base_instructions": 5,
+        "base_leaves": 3,
+        "cpu_point_max_error": 1.4901161193847656e-08,
+        "edited_geometry_hash": 7242069496324257935,
+        "edited_instructions": 5,
+        "edited_leaves": 3,
+        "field_build_ms": 2.716906,
+        "field_builds": 7,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "nested-smooth-left",
+        "pending_leaves": 0,
+        "region_bytes": 4307952,
+        "region_ms": 4.493895,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              9,
+              1
+            ],
+            "cpu_live_residual": -1.7695128917694092e-08,
+            "gpu_source_residual": -1.5832483768463135e-08,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -1.5832483768463135e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5234375
+          },
+          {
+            "counts": [
+              10,
+              9,
+              9,
+              1
+            ],
+            "cpu_live_residual": -1.7695128917694092e-08,
+            "gpu_source_residual": -1.5832483768463135e-08,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": -1.5832483768463135e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5234375
+          },
+          {
+            "counts": [
+              24,
+              9,
+              9,
+              15
+            ],
+            "cpu_live_residual": -2.7939677238464355e-09,
+            "gpu_source_residual": -9.313225746154785e-10,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26721546053886414,
+              0.5344309210777283,
+              0.8018600344657898
+            ],
+            "residual": -9.313225746154785e-10,
+            "status": 1,
+            "steps": 16.0,
+            "t": 0.5234375
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -3.259629011154175e-08,
+            "gpu_source_residual": -3.073364496231079e-08,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8729427456855774,
+              0.4363645911216736,
+              0.21807549893856049
+            ],
+            "residual": -3.073364496231079e-08,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.5234375
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -2.7939677238464355e-09,
+            "gpu_source_residual": -9.313225746154785e-10,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -9.313225746154785e-10,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.17656250298023224
+          },
+          {
+            "counts": [
+              226,
+              123,
+              200,
+              25
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              615,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 225.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.17656250298023224,
+            "cpu_point_error": 1.4901161193847656e-08,
+            "distance": -0.17656251788139343,
+            "gpu_base_raw": -0.17656251788139343,
+            "gpu_full_source": -0.17656251788139343,
+            "instructions": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.49900001287460327,
+              -0.06827955693006516
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -2.7939677238464355e-09,
+            "cpu_point_error": 1.862645149230957e-09,
+            "distance": -9.313225746154785e-10,
+            "gpu_base_raw": -9.313225746154785e-10,
+            "gpu_full_source": -9.313225746154785e-10,
+            "instructions": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005167695926502347,
+              0.0005167457275092602
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.17656248807907104,
+            "cpu_point_error": 0.0,
+            "distance": 0.17656248807907104,
+            "gpu_base_raw": 0.17656248807907104,
+            "gpu_full_source": 0.17656248807907104,
+            "instructions": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.11586038023233414,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 14741619498992944531,
+        "base_instructions": 5,
+        "base_leaves": 3,
+        "cpu_point_max_error": 1.862645149230957e-09,
+        "edited_geometry_hash": 14741619498992944531,
+        "edited_instructions": 5,
+        "edited_leaves": 3,
+        "field_build_ms": 2.750926,
+        "field_builds": 8,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "nested-smooth-right",
+        "pending_leaves": 0,
+        "region_bytes": 4306512,
+        "region_ms": 4.600086,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              9,
+              1
+            ],
+            "cpu_live_residual": -3.725290298461914e-09,
+            "gpu_source_residual": -5.587935447692871e-09,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -5.587935447692871e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.521777331829071
+          },
+          {
+            "counts": [
+              10,
+              9,
+              9,
+              1
+            ],
+            "cpu_live_residual": -3.725290298461914e-09,
+            "gpu_source_residual": -5.587935447692871e-09,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": -5.587935447692871e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.521777331829071
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": 1.1175870895385742e-08,
+            "gpu_source_residual": -5.587935447692871e-09,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26726123690605164,
+              0.5345224738121033,
+              0.8017836809158325
+            ],
+            "residual": -5.587935447692871e-09,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.521777331829071
+          },
+          {
+            "counts": [
+              15,
+              9,
+              9,
+              6
+            ],
+            "cpu_live_residual": 5.587935447692871e-08,
+            "gpu_source_residual": 3.91155481338501e-08,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8729427456855774,
+              0.4363645911216736,
+              0.21807549893856049
+            ],
+            "residual": 3.91155481338501e-08,
+            "status": 1,
+            "steps": 7.0,
+            "t": 0.5217772722244263
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -3.725290298461914e-09,
+            "gpu_source_residual": -5.587935447692871e-09,
+            "instructions": [
+              45,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -5.587935447692871e-09,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.17822265625
+          },
+          {
+            "counts": [
+              235,
+              115,
+              217,
+              17
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              575,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 234.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.17822265625,
+            "cpu_point_error": 0.0,
+            "distance": -0.17822265625,
+            "gpu_base_raw": -0.17822265625,
+            "gpu_full_source": -0.17822265625,
+            "instructions": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.49900001287460327,
+              -0.06993971019983292
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": -3.725290298461914e-09,
+            "cpu_point_error": 1.862645149230957e-09,
+            "distance": -5.587935447692871e-09,
+            "gpu_base_raw": -5.587935447692871e-09,
+            "gpu_full_source": -5.587935447692871e-09,
+            "instructions": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005168024217709899,
+              0.0005167130148038268
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.17822265625,
+            "cpu_point_error": 0.0,
+            "distance": 0.17822265625,
+            "gpu_base_raw": 0.17822265625,
+            "gpu_full_source": 0.17822265625,
+            "instructions": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.11420024186372757,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 18433098111416046818,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 18433098111416046818,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.692825,
+        "field_builds": 9,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "box-0-0",
+        "pending_leaves": 0,
+        "region_bytes": 4221136,
+        "region_ms": 3.651341,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              14,
+              9,
+              9,
+              5
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 6.0,
+            "t": 0.2199999988079071
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 13624621934565783641,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 13624621934565783641,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.561454,
+        "field_builds": 10,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "box-0-0.00027901786",
+        "pending_leaves": 0,
+        "region_bytes": 4221136,
+        "region_ms": 3.578071,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -2.2351741790771484e-08,
+            "gpu_source_residual": -2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -2.2351741790771484e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              26,
+              9,
+              9,
+              17
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999999403953552,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 18.0,
+            "t": 0.2199999988079071
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -2.2351741790771484e-08,
+            "gpu_source_residual": -2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -2.2351741790771484e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -2.2351741790771484e-08,
+            "gpu_source_residual": -2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -2.2351741790771484e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -2.2351741790771484e-08,
+            "gpu_source_residual": -2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": -2.2351741790771484e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6200000047683716
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 17120774950339989335,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 17120774950339989335,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.096278,
+        "field_builds": 11,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "box-23-0",
+        "pending_leaves": 0,
+        "region_bytes": 4219392,
+        "region_ms": 3.866062,
+        "results": [
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": -3.725290298461914e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.3907199203968048,
+              0.0,
+              0.9205096364021301
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              14,
+              9,
+              9,
+              5
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9205422401428223,
+              0.0,
+              -0.39064309000968933
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 6.0,
+            "t": 0.2199999988079071
+          },
+          {
+            "counts": [
+              13,
+              9,
+              9,
+              4
+            ],
+            "cpu_live_residual": -2.9802322387695313e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.39075830578804016,
+              0.0,
+              0.9204932451248169
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 5.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": 7.450580596923828e-09,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.3907199203968048,
+              0.0,
+              0.9205096364021301
+            ],
+            "residual": 7.450580596923828e-09,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 2.9802322387695313e-08,
+            "gpu_source_residual": 2.9802322387695313e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.3907719850540161,
+              0.0,
+              0.9204874634742737
+            ],
+            "residual": 2.9802322387695313e-08,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.6200000047683716
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 14482185363410610916,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 14482185363410610916,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.133558,
+        "field_builds": 12,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "box-23-0.00027901786",
+        "pending_leaves": 0,
+        "region_bytes": 4219404,
+        "region_ms": 3.651221,
+        "results": [
+          {
+            "counts": [
+              28,
+              9,
+              9,
+              19
+            ],
+            "cpu_live_residual": -4.470348358154297e-08,
+            "gpu_source_residual": -2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.3907199203968048,
+              0.0,
+              0.9205096364021301
+            ],
+            "residual": -2.2351741790771484e-08,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              30,
+              9,
+              9,
+              21
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9205422401428223,
+              0.0,
+              -0.39064309000968933
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 22.0,
+            "t": 0.2199999988079071
+          },
+          {
+            "counts": [
+              13,
+              9,
+              9,
+              4
+            ],
+            "cpu_live_residual": -4.470348358154297e-08,
+            "gpu_source_residual": -2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.3907199203968048,
+              0.0,
+              0.9205096364021301
+            ],
+            "residual": -2.2351741790771484e-08,
+            "status": 1,
+            "steps": 5.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              28,
+              9,
+              9,
+              19
+            ],
+            "cpu_live_residual": -2.2351741790771484e-08,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.3907199203968048,
+              0.0,
+              0.9205096364021301
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              51,
+              9,
+              9,
+              42
+            ],
+            "cpu_live_residual": 1.4901161193847656e-08,
+            "gpu_source_residual": 1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.39081040024757385,
+              0.0,
+              0.92047119140625
+            ],
+            "residual": 1.4901161193847656e-08,
+            "status": 1,
+            "steps": 43.0,
+            "t": 0.6200000047683716
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 3539669290421765636,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 3539669290421765636,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.311779,
+        "field_builds": 13,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "box-45-0",
+        "pending_leaves": 0,
+        "region_bytes": 4219296,
+        "region_ms": 3.774881,
+        "results": [
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7071067690849304,
+              0.0,
+              0.7071067690849304
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              14,
+              9,
+              9,
+              5
+            ],
+            "cpu_live_residual": 2.9802322387695313e-08,
+            "gpu_source_residual": 1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7071067690849304,
+              0.0,
+              -0.7071067690849304
+            ],
+            "residual": 1.4901161193847656e-08,
+            "status": 1,
+            "steps": 6.0,
+            "t": 0.2200000137090683
+          },
+          {
+            "counts": [
+              19,
+              9,
+              9,
+              10
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7071067690849304,
+              0.0,
+              0.7071067690849304
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 11.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7071067690849304,
+              0.0,
+              0.7071067690849304
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": -7.450580596923828e-09,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7072135806083679,
+              0.0,
+              0.7070000171661377
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.6200000047683716
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 2382038922206536403,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 2382038922206536403,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.330549,
+        "field_builds": 14,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "box-45-0.00027901786",
+        "pending_leaves": 0,
+        "region_bytes": 4219212,
+        "region_ms": 4.139694,
+        "results": [
+          {
+            "counts": [
+              50,
+              9,
+              9,
+              41
+            ],
+            "cpu_live_residual": 2.2351741790771484e-08,
+            "gpu_source_residual": 2.2351741790771484e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7070533633232117,
+              0.0,
+              0.7071601748466492
+            ],
+            "residual": 2.2351741790771484e-08,
+            "status": 1,
+            "steps": 42.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              27,
+              9,
+              9,
+              18
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7071067690849304,
+              0.0,
+              -0.7071067690849304
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 19.0,
+            "t": 0.2199999988079071
+          },
+          {
+            "counts": [
+              19,
+              9,
+              9,
+              10
+            ],
+            "cpu_live_residual": 1.4901161193847656e-08,
+            "gpu_source_residual": 1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7070533633232117,
+              0.0,
+              0.7071601748466492
+            ],
+            "residual": 1.4901161193847656e-08,
+            "status": 1,
+            "steps": 11.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              50,
+              9,
+              9,
+              41
+            ],
+            "cpu_live_residual": 1.4901161193847656e-08,
+            "gpu_source_residual": 1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7071067690849304,
+              0.0,
+              0.7071067690849304
+            ],
+            "residual": 1.4901161193847656e-08,
+            "status": 1,
+            "steps": 42.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "counts": [
+              15,
+              9,
+              9,
+              6
+            ],
+            "cpu_live_residual": -2.9802322387695313e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.7072135806083679,
+              0.0,
+              0.7070000171661377
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 7.0,
+            "t": 0.6200000047683716
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 16993683741795772102,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 16993683741795772102,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 0.631364,
+        "field_builds": 15,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "thin-stick-0.5h",
+        "pending_leaves": 0,
+        "region_bytes": 4195696,
+        "region_ms": 3.302598,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -4.802132025361061e-10,
+            "gpu_source_residual": -1.1641532182693481e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.39073118567466736,
+              0.0,
+              0.9205048084259033
+            ],
+            "residual": -1.1641532182693481e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.009860491380095482
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.9999999403953552,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.10000000894069672
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 14398882239344281410,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 14398882239344281410,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 0.638973,
+        "field_builds": 16,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "thin-stick-1.5h",
+        "pending_leaves": 0,
+        "region_bytes": 4195696,
+        "region_ms": 2.960347,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -4.656612873077393e-10,
+            "gpu_source_residual": -2.6193447411060333e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.39073091745376587,
+              0.0,
+              0.9205049276351929
+            ],
+            "residual": -2.6193447411060333e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.009581473655998707
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.9999999403953552,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.10000000894069672
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 11502953349875602922,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 11502953349875602922,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 0.634604,
+        "field_builds": 17,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "thin-stick-4h",
+        "pending_leaves": 0,
+        "region_bytes": 4195696,
+        "region_ms": 2.900646,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.1641532182693481e-10,
+            "gpu_source_residual": -1.1641532182693481e-10,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.39073002338409424,
+              0.0,
+              0.9205052852630615
+            ],
+            "residual": -1.1641532182693481e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.008883928880095482
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.9999999403953552,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.10000000894069672
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 17043474452188786934,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 17043474452188786934,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 7.425532,
+        "field_builds": 18,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "cut-owner-False",
+        "pending_leaves": 0,
+        "region_bytes": 4265520,
+        "region_ms": 4.400195,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -0.0,
+            "gpu_source_residual": -0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "residual": -0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.10000000149011612
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.10000000894069672
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 17043474452188786934,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 17043474452188786934,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 7.425532,
+        "field_builds": 18,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "cut-owner-True",
+        "pending_leaves": 0,
+        "region_bytes": 4265520,
+        "region_ms": 4.118434,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": -0.0,
+            "gpu_source_residual": -0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "residual": -0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.10000000149011612
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.10000000894069672
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 5470114744067985772,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 5470114744067985772,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 3.404149,
+        "field_builds": 19,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "subgrid-cavity",
+        "pending_leaves": 0,
+        "region_bytes": 4223440,
+        "region_ms": 3.877732,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4551915228366852e-11,
+            "gpu_source_residual": -1.4551915228366852e-11,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "residual": -1.4551915228366852e-11,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.00019531250291038305
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 11125286099401703813,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 11125286099401703813,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.768351,
+        "field_builds": 20,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "uniform-group",
+        "pending_leaves": 0,
+        "region_bytes": 4222816,
+        "region_ms": 4.082564,
+        "results": [
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": -2.9802322387695313e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": 1.4901161193847656e-08,
+            "gpu_source_residual": 1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              1.0,
+              0.0,
+              0.0002136752154910937
+            ],
+            "residual": 1.4901161193847656e-08,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              18,
+              9,
+              9,
+              9
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.26741379499435425,
+              0.5344004034996033,
+              0.8018142580986023
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 10.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              20,
+              9,
+              9,
+              11
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              -0.8728919625282288,
+              0.4364459812641144,
+              0.2181161791086197
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 12.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.9999999403953552
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.20000000298023224
+          },
+          {
+            "counts": [
+              250,
+              121,
+              230,
+              19
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              121,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 249.0,
+            "t": 0.0
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.20000000298023224,
+            "cpu_point_error": 0.0,
+            "distance": -0.20000000298023224,
+            "gpu_base_raw": -0.20000000298023224,
+            "gpu_full_source": -0.20000000298023224,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.39900001883506775,
+              -0.10121715813875198
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              3,
+              0
+            ],
+            "cpu_live_distance": 0.0,
+            "cpu_point_error": 0.0,
+            "distance": 0.0,
+            "gpu_base_raw": 0.0,
+            "gpu_full_source": 0.0,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.0005129550117999315,
+              0.0005131219513714314
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.20000000298023224,
+            "cpu_point_error": 0.0,
+            "distance": 0.20000000298023224,
+            "gpu_base_raw": 0.20000000298023224,
+            "gpu_full_source": 0.20000000298023224,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              0.11723995953798294,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 6483958833716482848,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 6483958833716482848,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.602755,
+        "field_builds": 21,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "capsule",
+        "pending_leaves": 0,
+        "region_bytes": 4216240,
+        "region_ms": 3.725661,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 7.450580596923828e-09,
+            "gpu_source_residual": 7.450580596923828e-09,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "residual": 7.450580596923828e-09,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.009999997913837433,
+            "cpu_point_error": 0.0,
+            "distance": 0.009999997913837433,
+            "gpu_base_raw": 0.009999997913837433,
+            "gpu_full_source": 0.009999997913837433,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -1.2502301615313627e-05,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 12095891924568177248,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 12095891924568177248,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.278883,
+        "field_builds": 22,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "cylinder",
+        "pending_leaves": 0,
+        "region_bytes": 4212848,
+        "region_ms": 3.091957,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.9999999403953552,
+              0.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.009999990463256836,
+            "cpu_point_error": 0.0,
+            "distance": 0.009999990463256836,
+            "gpu_base_raw": 0.009999990463256836,
+            "gpu_full_source": 0.009999990463256836,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -1.2502301615313627e-05,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 3425564247748751208,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 3425564247748751208,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.764915,
+        "field_builds": 23,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "torus",
+        "pending_leaves": 0,
+        "region_bytes": 4217200,
+        "region_ms": 3.267429,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 1.1175870895385742e-08,
+            "gpu_source_residual": 1.1175870895385742e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "residual": 1.1175870895385742e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.6499999761581421
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.009999997913837433,
+            "cpu_point_error": 0.0,
+            "distance": 0.009999997913837433,
+            "gpu_base_raw": 0.009999997913837433,
+            "gpu_full_source": 0.009999997913837433,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -1.2352514204394538e-05,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 18077386633429916334,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 18077386633429916334,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.454734,
+        "field_builds": 24,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "capped-cone",
+        "pending_leaves": 0,
+        "region_bytes": 4214192,
+        "region_ms": 3.986262,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": -1.4901161193847656e-08,
+            "gpu_source_residual": -1.4901161193847656e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.9999999403953552,
+              0.0
+            ],
+            "residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.5
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.009999990463256836,
+            "cpu_point_error": 0.0,
+            "distance": 0.009999990463256836,
+            "gpu_base_raw": 0.009999990463256836,
+            "gpu_full_source": 0.009999990463256836,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -1.277133105759276e-05,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 8929632622576057614,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 8929632622576057614,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 2.951176,
+        "field_builds": 25,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "round-cone",
+        "pending_leaves": 0,
+        "region_bytes": 4218528,
+        "region_ms": 3.386799,
+        "results": [
+          {
+            "counts": [
+              11,
+              9,
+              9,
+              2
+            ],
+            "cpu_live_residual": 4.0978193283081055e-08,
+            "gpu_source_residual": 4.0978193283081055e-08,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "residual": 4.0978193283081055e-08,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.44999995827674866
+          },
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": 0.009999971836805344,
+            "cpu_point_error": 0.0,
+            "distance": 0.009999971836805344,
+            "gpu_base_raw": 0.009999971836805344,
+            "gpu_full_source": 0.009999971836805344,
+            "instructions": [
+              2,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -1.277133105759276e-05,
+              1.0000000200408773e+20
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 18108402278844718650,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 3.353939,
+        "field_builds": 26,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "sphere-tangent",
+        "pending_leaves": 0,
+        "region_bytes": 4223312,
+        "region_ms": 3.68174,
+        "results": [
+          {
+            "counts": [
+              194,
+              139,
+              183,
+              11
+            ],
+            "cpu_live_residual": 1.7270445823669434e-05,
+            "gpu_source_residual": 1.7270445823669434e-05,
+            "instructions": [
+              139,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.9999151229858398,
+              0.0,
+              0.013030297122895718
+            ],
+            "residual": 1.7270445823669434e-05,
+            "status": 1,
+            "steps": 186.0,
+            "t": 0.6973716020584106
+          },
+          {
+            "counts": [
+              1,
+              0,
+              0,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 6718198945608235053,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 6718198945608235053,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 8.258666,
+        "field_builds": 27,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "smooth-subtract-0.0001",
+        "pending_leaves": 0,
+        "region_bytes": 4265520,
+        "region_ms": 5.082599,
+        "results": [
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.09997500479221344,
+            "cpu_point_error": 0.0,
+            "distance": -0.09997500479221344,
+            "gpu_base_raw": -0.09997500479221344,
+            "gpu_full_source": -0.09997500479221344,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.2990000247955322,
+              -0.08206582069396973
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "residual": -0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.10000000149011612
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 4787802743146043542,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 4787802743146043542,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 7.482522,
+        "field_builds": 28,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "smooth-subtract-0.01",
+        "pending_leaves": 0,
+        "region_bytes": 4265520,
+        "region_ms": 4.590805,
+        "results": [
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.09750000387430191,
+            "cpu_point_error": 0.0,
+            "distance": -0.09750000387430191,
+            "gpu_base_raw": -0.09750000387430191,
+            "gpu_full_source": -0.09750000387430191,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.2990000247955322,
+              -0.08202674239873886
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "residual": -0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.10000000149011612
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 5375889780056643732,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 5375889780056643732,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 7.401482,
+        "field_builds": 29,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "smooth-subtract-0.1",
+        "pending_leaves": 0,
+        "region_bytes": 4265520,
+        "region_ms": 4.514815,
+        "results": [
+          {
+            "counts": [
+              3,
+              2,
+              0,
+              3
+            ],
+            "cpu_live_distance": -0.07500000298023224,
+            "cpu_point_error": 0.0,
+            "distance": -0.07500000298023224,
+            "gpu_base_raw": -0.07500000298023224,
+            "gpu_full_source": -0.07500000298023224,
+            "instructions": [
+              6,
+              0,
+              0,
+              0
+            ],
+            "interval": [
+              -0.2990000247955322,
+              -0.06124912574887276
+            ],
+            "stored_corners": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "stored_sample": false
+          },
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "counts": [
+              12,
+              9,
+              9,
+              3
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "residual": -0.0,
+            "status": 1,
+            "steps": 4.0,
+            "t": 0.10000000149011612
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 9528710269108034239,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 9528710269108034239,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "field_build_ms": 1.249307,
+        "field_builds": 30,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "workspace-clip",
+        "pending_leaves": 0,
+        "region_bytes": 4200288,
+        "region_ms": 3.046857,
+        "results": [
+          {
+            "counts": [
+              10,
+              8,
+              10,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              8,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.20099997520446777
+          },
+          {
+            "counts": [
+              11,
+              9,
+              11,
+              0
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              9,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 0.0,
+            "status": 1,
+            "steps": 3.0,
+            "t": 0.0010000313632190228
+          }
+        ],
+        "suffix_instructions": 0
+      },
+      {
+        "base_geometry_hash": 7239883950309317242,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "cpu_point_max_error": 0.0,
+        "edited_geometry_hash": 7239883950309317242,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "field_build_ms": 0.720964,
+        "field_builds": 31,
+        "field_bytes": 912997552,
+        "mode": "live-source",
+        "name": "crossed-thin-sticks",
+        "pending_leaves": 0,
+        "region_bytes": 4197584,
+        "region_ms": 3.183059,
+        "results": [
+          {
+            "counts": [
+              10,
+              9,
+              10,
+              0
+            ],
+            "cpu_live_residual": 3.92901711165905e-10,
+            "gpu_source_residual": 3.92901711165905e-10,
+            "instructions": [
+              27,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "residual": 3.92901711165905e-10,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.009860490448772907
+          },
+          {
+            "counts": [
+              2,
+              0,
+              0,
+              2
+            ],
+            "cpu_live_residual": 0.0,
+            "gpu_source_residual": 0.0,
+            "instructions": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 1.0,
+            "t": 0.0
+          }
+        ],
+        "suffix_instructions": 0
+      }
+    ],
+    "format": "cubey.sdf.live-query-results",
+    "query_shader_sha256": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023",
+    "version": 1
+  },
+  "scope": "Private frozen-base study; no background baking, continuous input or VR",
+  "version": 1
+}

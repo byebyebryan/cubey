@@ -1,0 +1,3470 @@
+{
+  "identity": {
+    "source_head": "72a1a4889176e2e8d8d731cf4fd1abd5831e4063",
+    "binary_sha256": "cb51acf8d782ad63af5419af8525593d305b58419b770d4e65485d25a781abf3",
+    "public_binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+    "private_shader_sha256": {
+      "lit_live_edit_sdf.frag.spv": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e",
+      "live_edit_quality_workload.comp.spv": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c",
+      "live_edit_queries.comp.spv": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023",
+      "live_edit_sdf.frag.spv": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b",
+      "quality_lit_live_edit_sdf.frag.spv": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c",
+      "quality_live_edit_sdf.frag.spv": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08",
+      "quality_shadow_lit_live_edit_sdf.frag.spv": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113",
+      "shadow_lit_live_edit_sdf.frag.spv": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+    },
+    "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04"
+  },
+  "guards": {
+    "original_shaders_unchanged": 194,
+    "protected_files_unchanged": 567,
+    "source_gate": true,
+    "automatic_sampled_handoff_gate": false
+  },
+  "timing": [
+    {
+      "subject": "robot",
+      "count": 0,
+      "policy": "cached",
+      "p50_ms": 10.588128,
+      "p95_ms": 11.136896,
+      "p95_range": [
+        10.992992,
+        11.1385056
+      ],
+      "p99_ms": 11.415399039999999,
+      "max_ms": 11.675008,
+      "over_11_11": 23,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 0,
+      "policy": "source",
+      "p50_ms": 11.616336,
+      "p95_ms": 12.424199999999999,
+      "p95_range": [
+        12.356024,
+        12.5128528
+      ],
+      "p99_ms": 12.802551359999999,
+      "max_ms": 13.171136,
+      "over_11_11": 413,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 1,
+      "policy": "cached",
+      "p50_ms": 12.477456,
+      "p95_ms": 13.143121599999999,
+      "p95_range": [
+        12.8934272,
+        13.144697599999999
+      ],
+      "p99_ms": 13.480304,
+      "max_ms": 13.827104,
+      "over_11_11": 450,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 1,
+      "policy": "source",
+      "p50_ms": 13.724624,
+      "p95_ms": 14.725657599999998,
+      "p95_range": [
+        14.601463999999998,
+        14.783387199999998
+      ],
+      "p99_ms": 15.191834879999998,
+      "max_ms": 15.601632,
+      "over_11_11": 450,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 4,
+      "policy": "cached",
+      "p50_ms": 17.091568000000002,
+      "p95_ms": 17.8941392,
+      "p95_range": [
+        17.6511888,
+        18.0619312
+      ],
+      "p99_ms": 18.411195199999998,
+      "max_ms": 18.607744,
+      "over_11_11": 450,
+      "over_16_67": 367,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 4,
+      "policy": "source",
+      "p50_ms": 18.933695999999998,
+      "p95_ms": 19.967048,
+      "p95_range": [
+        19.8540272,
+        19.998657599999998
+      ],
+      "p99_ms": 20.653127359999996,
+      "max_ms": 20.946752,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 8,
+      "policy": "cached",
+      "p50_ms": 23.116736000000003,
+      "p95_ms": 24.177871999999997,
+      "p95_range": [
+        24.1614784,
+        24.2293648
+      ],
+      "p99_ms": 24.52172384,
+      "max_ms": 25.633728,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 8,
+      "policy": "source",
+      "p50_ms": 26.197983999999998,
+      "p95_ms": 27.35736,
+      "p95_range": [
+        27.284224000000002,
+        27.4514608
+      ],
+      "p99_ms": 27.8294496,
+      "max_ms": 29.23568,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 16,
+      "policy": "cached",
+      "p50_ms": 35.536448,
+      "p95_ms": 37.030319999999996,
+      "p95_range": [
+        36.627112,
+        37.240216
+      ],
+      "p99_ms": 37.78147072,
+      "max_ms": 38.657568,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 16,
+      "policy": "source",
+      "p50_ms": 41.258528,
+      "p95_ms": 43.1061664,
+      "p95_range": [
+        42.7735584,
+        43.2760528
+      ],
+      "p99_ms": 43.837962559999994,
+      "max_ms": 44.914688,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 32,
+      "policy": "cached",
+      "p50_ms": 60.34832,
+      "p95_ms": 63.066838399999995,
+      "p95_range": [
+        63.019631999999994,
+        63.1619504
+      ],
+      "p99_ms": 64.40488255999999,
+      "max_ms": 65.689056,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 32,
+      "policy": "source",
+      "p50_ms": 71.334048,
+      "p95_ms": 75.22172959999999,
+      "p95_range": [
+        75.2014688,
+        75.32659360000001
+      ],
+      "p99_ms": 77.31238528,
+      "max_ms": 79.471136,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 64,
+      "policy": "cached",
+      "p50_ms": 110.115152,
+      "p95_ms": 115.4827856,
+      "p95_range": [
+        114.12057759999999,
+        116.10275680000001
+      ],
+      "p99_ms": 118.20588351999999,
+      "max_ms": 122.572256,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 64,
+      "policy": "source",
+      "p50_ms": 132.128336,
+      "p95_ms": 137.6465472,
+      "p95_range": [
+        136.2800784,
+        138.0949824
+      ],
+      "p99_ms": 139.34554848,
+      "max_ms": 141.164384,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 0,
+      "policy": "cached",
+      "p50_ms": 25.557248,
+      "p95_ms": 26.732667199999998,
+      "p95_range": [
+        26.477184,
+        26.873776
+      ],
+      "p99_ms": 27.379484159999997,
+      "max_ms": 27.90912,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 0,
+      "policy": "source",
+      "p50_ms": 33.768671999999995,
+      "p95_ms": 35.4911104,
+      "p95_range": [
+        35.2564816,
+        35.6007456
+      ],
+      "p99_ms": 36.937570879999996,
+      "max_ms": 37.380032,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 1,
+      "policy": "cached",
+      "p50_ms": 26.384512,
+      "p95_ms": 27.5996784,
+      "p95_range": [
+        27.504872,
+        27.689752
+      ],
+      "p99_ms": 28.59276736,
+      "max_ms": 28.914272,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 1,
+      "policy": "source",
+      "p50_ms": 34.901455999999996,
+      "p95_ms": 36.936912,
+      "p95_range": [
+        36.371542399999996,
+        37.241848
+      ],
+      "p99_ms": 38.42821056,
+      "max_ms": 38.559392,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 4,
+      "policy": "cached",
+      "p50_ms": 28.997328000000003,
+      "p95_ms": 30.100620799999998,
+      "p95_range": [
+        30.000926399999997,
+        30.1640528
+      ],
+      "p99_ms": 30.7779584,
+      "max_ms": 31.153344,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 4,
+      "policy": "source",
+      "p50_ms": 37.407728,
+      "p95_ms": 39.8066752,
+      "p95_range": [
+        39.151464,
+        40.110462399999996
+      ],
+      "p99_ms": 41.17318752,
+      "max_ms": 41.545696,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 8,
+      "policy": "cached",
+      "p50_ms": 32.654384,
+      "p95_ms": 33.7444352,
+      "p95_range": [
+        33.7434048,
+        33.821792
+      ],
+      "p99_ms": 34.71590592,
+      "max_ms": 35.288448,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 8,
+      "policy": "source",
+      "p50_ms": 40.660448,
+      "p95_ms": 43.4833376,
+      "p95_range": [
+        43.081655999999995,
+        43.58248
+      ],
+      "p99_ms": 44.89183264,
+      "max_ms": 46.177728,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 13,
+      "policy": "cached",
+      "p50_ms": 37.186256,
+      "p95_ms": 38.8506944,
+      "p95_range": [
+        38.6879456,
+        38.885820800000005
+      ],
+      "p99_ms": 39.72500992,
+      "max_ms": 40.79296,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 13,
+      "policy": "source",
+      "p50_ms": 45.072912,
+      "p95_ms": 48.8462112,
+      "p95_range": [
+        48.561596800000004,
+        48.944326399999994
+      ],
+      "p99_ms": 50.0734208,
+      "max_ms": 50.322784,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 0,
+      "policy": "fresh-cached",
+      "p50_ms": 4.092752,
+      "p95_ms": 4.2356992,
+      "p95_range": [
+        4.2353568,
+        4.2407632
+      ],
+      "p99_ms": 4.29969888,
+      "max_ms": 4.319904,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 0,
+      "policy": "fresh-balanced",
+      "p50_ms": 4.16968,
+      "p95_ms": 4.3492239999999995,
+      "p95_range": [
+        4.319368,
+        4.3639216
+      ],
+      "p99_ms": 4.44514912,
+      "max_ms": 4.533632,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 0,
+      "policy": "fresh-analytic",
+      "p50_ms": 4.837232,
+      "p95_ms": 5.1029072,
+      "p95_range": [
+        5.0952736,
+        5.167632
+      ],
+      "p99_ms": 5.275349119999999,
+      "max_ms": 5.395808,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 8,
+      "policy": "fresh-cached",
+      "p50_ms": 4.38816,
+      "p95_ms": 4.544608,
+      "p95_range": [
+        4.5077664,
+        4.559424
+      ],
+      "p99_ms": 4.59586336,
+      "max_ms": 4.666144,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 8,
+      "policy": "fresh-balanced",
+      "p50_ms": 4.406816,
+      "p95_ms": 4.5791056,
+      "p95_range": [
+        4.5489216,
+        4.600575999999999
+      ],
+      "p99_ms": 4.698095679999999,
+      "max_ms": 4.840064,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "robot",
+      "count": 8,
+      "policy": "fresh-analytic",
+      "p50_ms": 5.017344,
+      "p95_ms": 5.2890688,
+      "p95_range": [
+        5.2409968000000005,
+        5.345139199999999
+      ],
+      "p99_ms": 5.55191552,
+      "max_ms": 5.590496,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 0,
+      "policy": "fresh-cached",
+      "p50_ms": 1.851728,
+      "p95_ms": 1.9128063999999998,
+      "p95_range": [
+        1.9116832000000001,
+        1.9231311999999998
+      ],
+      "p99_ms": 1.94697984,
+      "max_ms": 1.979616,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 0,
+      "policy": "fresh-balanced",
+      "p50_ms": 4.438256,
+      "p95_ms": 4.6615744,
+      "p95_range": [
+        4.6601552,
+        4.670864
+      ],
+      "p99_ms": 4.878726079999999,
+      "max_ms": 4.900864,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 0,
+      "policy": "fresh-analytic",
+      "p50_ms": 18.529967999999997,
+      "p95_ms": 19.3785632,
+      "p95_range": [
+        19.3526704,
+        19.516057599999996
+      ],
+      "p99_ms": 19.72432032,
+      "max_ms": 19.858176,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 8,
+      "policy": "fresh-cached",
+      "p50_ms": 1.9274719999999999,
+      "p95_ms": 1.9923359999999999,
+      "p95_range": [
+        1.9922735999999999,
+        1.9993296
+      ],
+      "p99_ms": 2.0295312,
+      "max_ms": 2.133344,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 8,
+      "policy": "fresh-balanced",
+      "p50_ms": 4.528992,
+      "p95_ms": 4.76048,
+      "p95_range": [
+        4.7206719999999995,
+        4.8371648
+      ],
+      "p99_ms": 4.9224912,
+      "max_ms": 5.059296,
+      "over_11_11": 0,
+      "over_16_67": 0,
+      "samples": 450
+    },
+    {
+      "subject": "guardian",
+      "count": 8,
+      "policy": "fresh-analytic",
+      "p50_ms": 18.564624000000002,
+      "p95_ms": 19.559924799999997,
+      "p95_range": [
+        19.4388304,
+        19.6911696
+      ],
+      "p99_ms": 19.89288288,
+      "max_ms": 20.136032,
+      "over_11_11": 450,
+      "over_16_67": 450,
+      "samples": 450
+    }
+  ],
+  "geometry": {
+    "zero-source": {
+      "passed": true,
+      "scored": 155,
+      "modes": [
+        "live-source"
+      ],
+      "maxima": {
+        "depth": 0.002628397941589311,
+        "point": 2.8163194656580237e-08,
+        "normal_degrees": 0.22949957087194034,
+        "residual": 1.7270445823669434e-05
+      },
+      "failures": [],
+      "cpu_provider_point_max": 1.4901161193847656e-08,
+      "cpu_provider_hit_residual_max": 1.7270445823669434e-05,
+      "exhausted": 0
+    },
+    "zero-cached": {
+      "passed": false,
+      "scored": 155,
+      "modes": [
+        "live-cached"
+      ],
+      "maxima": {
+        "depth": 0.19952487647533418,
+        "point": 0.0004830837249755859,
+        "normal_degrees": 179.89091249766298,
+        "residual": 1.729316863929853e-05
+      },
+      "failures": [
+        [
+          "live-cached/subgrid-sphere/0",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/1",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/2",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/3",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/4",
+          "status",
+          0
+        ],
+        [
+          "live-cached/subgrid-sphere/6",
+          "point",
+          0.0004830837249755859
+        ],
+        [
+          "live-cached/subgrid-sphere/7",
+          "point",
+          0.00028777122497558594
+        ],
+        [
+          "live-cached/subgrid-sphere/8",
+          "point",
+          0.0001809241541195661
+        ],
+        [
+          "live-cached/aligned-small-sphere/2",
+          "normal",
+          20.387117801393707
+        ],
+        [
+          "live-cached/aligned-small-sphere/3",
+          "normal",
+          23.100294218688152
+        ],
+        [
+          "live-cached/thin-stick-0.5h/0",
+          "normal",
+          20.03611920406268
+        ],
+        [
+          "live-cached/thin-stick-1.5h/0",
+          "normal",
+          13.622223966209944
+        ],
+        [
+          "live-cached/subgrid-cavity/0",
+          "depth/residual",
+          0.19952487647533418,
+          -5.3439180192071944e-08
+        ],
+        [
+          "live-cached/subgrid-cavity/0",
+          "normal",
+          179.89091249766298
+        ]
+      ],
+      "cpu_provider_point_max": 1.4901161193847656e-08,
+      "cpu_provider_hit_residual_max": 1.729316500131972e-05,
+      "exhausted": 0
+    },
+    "pending-source": {
+      "passed": true,
+      "scored": 58,
+      "modes": [
+        "live-source"
+      ],
+      "maxima": {
+        "depth": 4.52995300159742e-08,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 0.011330705455284017,
+        "residual": 3.213062882423401e-08
+      },
+      "failures": [],
+      "cpu_provider_point_max": 0.0,
+      "cpu_provider_hit_residual_max": 3.213062882423401e-08,
+      "exhausted": 0
+    },
+    "pending-cached": {
+      "passed": true,
+      "scored": 58,
+      "modes": [
+        "live-cached"
+      ],
+      "maxima": {
+        "depth": 2.0718574524902778e-06,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 0.03920877592006053,
+        "residual": 1.9348240130057093e-06
+      },
+      "failures": [],
+      "cpu_provider_point_max": 7.238654120556021e-14,
+      "cpu_provider_hit_residual_max": 1.9273720681667328e-06,
+      "exhausted": 0
+    },
+    "fresh-analytic": {
+      "passed": true,
+      "scored": 58,
+      "modes": [
+        "fresh-analytic"
+      ],
+      "maxima": {
+        "depth": 1.0490417479136482e-07,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 0.011330705455284017,
+        "residual": 7.217749953269958e-08
+      },
+      "failures": []
+    },
+    "fresh-sampled": {
+      "passed": false,
+      "scored": 58,
+      "modes": [
+        "fresh-sampled"
+      ],
+      "maxima": {
+        "depth": 0.19943198263645173,
+        "point": 1.9693374625484594e-08,
+        "normal_degrees": 179.8894715910177,
+        "residual": 0.00011021457612514496
+      },
+      "failures": [
+        [
+          "fresh-sampled/smooth-identical-0.0001/0",
+          "depth/residual",
+          9.407815933226704e-05,
+          9.406027675140649e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/1",
+          "depth/residual",
+          9.407815933226704e-05,
+          9.406027675140649e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/2",
+          "depth/residual",
+          9.276685714731947e-05,
+          9.27489745663479e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/3",
+          "depth/residual",
+          9.312448501586079e-05,
+          9.307680011261255e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.0001/4",
+          "depth/residual",
+          9.324135780333642e-05,
+          -9.324731945525855e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/0",
+          "depth/residual",
+          9.290933609007457e-05,
+          9.289151057600975e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/1",
+          "depth/residual",
+          9.290933609007457e-05,
+          9.289151057600975e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/2",
+          "depth/residual",
+          9.273052215585942e-05,
+          9.271269664168358e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/3",
+          "depth/residual",
+          9.439945220945933e-05,
+          9.435182437300682e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.01/4",
+          "depth/residual",
+          9.94467735290494e-05,
+          -9.94526781141758e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/0",
+          "depth/residual",
+          9.294748306265532e-05,
+          9.292922914028168e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/1",
+          "depth/residual",
+          9.294748306265532e-05,
+          9.292922914028168e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/2",
+          "depth/residual",
+          0.00011023283004774065,
+          0.00011021457612514496
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/3",
+          "depth/residual",
+          9.419918060293853e-05,
+          9.415112435817719e-05
+        ],
+        [
+          "fresh-sampled/smooth-identical-0.1/4",
+          "depth/residual",
+          9.341835975645862e-05,
+          -9.342469274997711e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-False/0",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-False/1",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-False/2",
+          "depth/residual",
+          9.342133998871405e-05,
+          -9.34302806854248e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-True/0",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-True/1",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/cut-owner-True/2",
+          "depth/residual",
+          9.342133998871405e-05,
+          -9.34302806854248e-05
+        ],
+        [
+          "fresh-sampled/subgrid-cavity/0",
+          "depth/residual",
+          0.19943198263645173,
+          -9.328126907348633e-05
+        ],
+        [
+          "fresh-sampled/subgrid-cavity/0",
+          "normal",
+          179.8894715910177
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.0001/1",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.0001/2",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.01/1",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.01/2",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.1/1",
+          "depth/residual",
+          9.294748306276635e-05,
+          9.292364120483398e-05
+        ],
+        [
+          "fresh-sampled/smooth-subtract-0.1/2",
+          "depth/residual",
+          9.418129920960028e-05,
+          9.418278932571411e-05
+        ],
+        [
+          "fresh-sampled/outside-old-bounds/0",
+          "depth/residual",
+          9.458780288695845e-05,
+          9.457767009735107e-05
+        ],
+        [
+          "fresh-sampled/outside-old-bounds/1",
+          "depth/residual",
+          9.273171424865889e-05,
+          -9.272992610931396e-05
+        ],
+        [
+          "fresh-sampled/uniform-solid-cavity/0",
+          "depth/residual",
+          9.318947792053e-05,
+          9.318813681602478e-05
+        ],
+        [
+          "fresh-sampled/uniform-solid-cavity/1",
+          "depth/residual",
+          9.402766823768394e-05,
+          -9.402632713317871e-05
+        ],
+        [
+          "fresh-sampled/through-hole/1",
+          "depth/residual",
+          9.318947792053e-05,
+          9.318813681602478e-05
+        ],
+        [
+          "fresh-sampled/clip-before-smooth-cut/1",
+          "depth/residual",
+          9.43425968289377e-05,
+          -9.433552622795105e-05
+        ],
+        [
+          "fresh-sampled/clip-before-smooth-cut/1",
+          "normal",
+          1.1278874211377958
+        ],
+        [
+          "fresh-sampled/group-frozen-prefix/0",
+          "depth/residual",
+          9.268045425414595e-05,
+          9.267032146453857e-05
+        ],
+        [
+          "fresh-sampled/group-frozen-prefix/1",
+          "depth/residual",
+          9.458780288695845e-05,
+          9.457767009735107e-05
+        ],
+        [
+          "fresh-sampled/empty-base-addition/0",
+          "depth/residual",
+          9.313821792600319e-05,
+          9.312480688095093e-05
+        ]
+      ]
+    }
+  },
+  "construction": [
+    {
+      "subject": "robot",
+      "field_build_median_ms": 91.4991265,
+      "field_build_range_ms": [
+        91.267426,
+        91.838911
+      ],
+      "region_build_median_ms": 24.055511000000003,
+      "field_bytes": 912997552,
+      "region_bytes": 4422660
+    },
+    {
+      "subject": "guardian",
+      "field_build_median_ms": 920.3660130000001,
+      "field_build_range_ms": [
+        919.839511,
+        921.091358
+      ],
+      "region_build_median_ms": 143.5359745,
+      "field_bytes": 912997552,
+      "region_bytes": 6443520
+    }
+  ],
+  "qualification": [
+    {
+      "subject": "guardian",
+      "policy": "cached",
+      "camera": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.666681252012495,
+        "output": "guardian-camera-cached.json",
+        "sha256": "b3022f15cd1f4bdd7c92cd13fcf69ce3afba7da5571e7b2d689a299a92250a2f"
+      },
+      "shadow": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-shadow-cached-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-shadow-cached-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.3443078589625657,
+        "output": "guardian-shadow-cached-cached.json",
+        "sha256": "a1b50b371ccbc5a89cb2ed74d7ea2ec47e95a0ef1f00e7c725a7e61c647fd696"
+      },
+      "camera_rays": 14400,
+      "camera_hits": 1253,
+      "points": 509,
+      "cpu_point_max_error": 1.7881393432617188e-07,
+      "interval_failures": null,
+      "exhausted": 0,
+      "shadow_rays": 1253,
+      "shadow_exhausted": 0,
+      "native_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native.json",
+        "--live-policy",
+        "cached",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native.png"
+      ],
+      "probe_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native.json",
+        "--live-policy",
+        "cached",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native.validated.png",
+        "--quality-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native.bin"
+      ],
+      "image": "guardian-cached-native.png",
+      "validated_image": "guardian-cached-native.validated.png",
+      "geometry": "guardian-cached-native.bin"
+    },
+    {
+      "subject": "guardian",
+      "policy": "source",
+      "camera": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.477974024019204,
+        "output": "guardian-camera-source.json",
+        "sha256": "65c858e44d93f134ca4c00e187cf338f4603e2eba64a73f4cf0a7eccbee1fc1c"
+      },
+      "shadow": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-shadow-source-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-shadow-source-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.330792794993613,
+        "output": "guardian-shadow-source-source.json",
+        "sha256": "a16594ec1e48550a6f983a20bc44a6ab76dc96e1cd8195a0d05baf3470197723"
+      },
+      "camera_rays": 14400,
+      "camera_hits": 1254,
+      "points": 509,
+      "cpu_point_max_error": 1.7881393432617188e-07,
+      "interval_failures": 0,
+      "exhausted": 0,
+      "shadow_rays": 1254,
+      "shadow_exhausted": 0,
+      "native_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native.png"
+      ],
+      "probe_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native.validated.png",
+        "--quality-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native.bin"
+      ],
+      "image": "guardian-source-native.png",
+      "validated_image": "guardian-source-native.validated.png",
+      "geometry": "guardian-source-native.bin"
+    },
+    {
+      "subject": "robot",
+      "policy": "cached",
+      "camera": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.4878478900063783,
+        "output": "robot-camera-cached.json",
+        "sha256": "c5a23b80a4ffe4ecac6b54e439b19db78610164eaaacf6af1088ca5ce14946fb"
+      },
+      "shadow": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-shadow-cached-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-shadow-cached-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.34803861001273617,
+        "output": "robot-shadow-cached-cached.json",
+        "sha256": "829b7468bbf896077c5b6c2d33a13bb9af0e6bf9ec0a09870d07d6acac9e446d"
+      },
+      "camera_rays": 14400,
+      "camera_hits": 1426,
+      "points": 509,
+      "cpu_point_max_error": 5.960464477539063e-08,
+      "interval_failures": null,
+      "exhausted": 0,
+      "shadow_rays": 1426,
+      "shadow_exhausted": 0,
+      "native_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native.json",
+        "--live-policy",
+        "cached",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native.png"
+      ],
+      "probe_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native.json",
+        "--live-policy",
+        "cached",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native.validated.png",
+        "--quality-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native.bin"
+      ],
+      "image": "robot-cached-native.png",
+      "validated_image": "robot-cached-native.validated.png",
+      "geometry": "robot-cached-native.bin"
+    },
+    {
+      "subject": "robot",
+      "policy": "source",
+      "camera": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.4787762360065244,
+        "output": "robot-camera-source.json",
+        "sha256": "9e3f4d7cad69635d22db6324f2919c7fcad4222ad556840bdb122b5c2f44c0cd"
+      },
+      "shadow": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-shadow-source-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-shadow-source-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.34127267997246236,
+        "output": "robot-shadow-source-source.json",
+        "sha256": "26287d0f7486f440213e169fa167ee26d23f79e29653ebf73235829f8351ffe3"
+      },
+      "camera_rays": 14400,
+      "camera_hits": 1426,
+      "points": 509,
+      "cpu_point_max_error": 5.960464477539063e-08,
+      "interval_failures": 0,
+      "exhausted": 0,
+      "shadow_rays": 1426,
+      "shadow_exhausted": 0,
+      "native_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native.png"
+      ],
+      "probe_command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--live-input",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-camera-input.json",
+        "--live-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native.json",
+        "--live-policy",
+        "source",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native.validated.png",
+        "--quality-output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native.bin"
+      ],
+      "image": "robot-source-native.png",
+      "validated_image": "robot-source-native.validated.png",
+      "geometry": "robot-source-native.bin"
+    }
+  ],
+  "native_validation": [
+    {
+      "subject": "guardian",
+      "mode": "live-cached",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": [
+        {
+          "x": 187,
+          "y": 119,
+          "ordinary": [
+            171,
+            209,
+            229
+          ],
+          "validation": [
+            255,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "guardian",
+      "mode": "live-source",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "guardian",
+      "mode": "fresh-cached",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": [
+        {
+          "x": 137,
+          "y": 121,
+          "ordinary": [
+            135,
+            129,
+            124
+          ],
+          "validation": [
+            0,
+            255,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "guardian",
+      "mode": "fresh-balanced",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "guardian",
+      "mode": "fresh-source-control",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "mode": "live-cached",
+      "pixels": 57600,
+      "unscored_pixels": 3,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": [
+        {
+          "x": 185,
+          "y": 60,
+          "ordinary": [
+            80,
+            92,
+            107
+          ],
+          "validation": [
+            0,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 133,
+          "y": 123,
+          "ordinary": [
+            196,
+            191,
+            178
+          ],
+          "validation": [
+            0,
+            255,
+            255
+          ]
+        },
+        {
+          "x": 167,
+          "y": 153,
+          "ordinary": [
+            217,
+            212,
+            200
+          ],
+          "validation": [
+            0,
+            255,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "robot",
+      "mode": "live-source",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "mode": "fresh-cached",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "mode": "fresh-balanced",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "mode": "fresh-source-control",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "ordinary_exhaustion_pixels": 0,
+      "flags": []
+    }
+  ],
+  "handoff": [
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-cached",
+      "pixels": 57600,
+      "reference_hits": 4995,
+      "candidate_hits": 5008,
+      "unscored_pixels": 2,
+      "false_foreground": 13,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 737,
+        "mean": 0.09149908048609857,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 3.4459727739575636,
+        "max": 5.0
+      },
+      "silhouette_over_1px": 16,
+      "depth_world": {
+        "count": 4993,
+        "mean": 0.0005755763268098235,
+        "p50": 0.00011682510375976562,
+        "p95": 0.00034034252166748047,
+        "p99": 0.0010191154479980468,
+        "max": 0.2544121742248535
+      },
+      "depth_in_pixel_footprints": {
+        "count": 4993,
+        "mean": 0.08560621895923069,
+        "p50": 0.01852713819362965,
+        "p95": 0.05235135120179886,
+        "p99": 0.15489834857193102,
+        "max": 32.99491108786751
+      },
+      "compatible_normal_degrees": {
+        "count": 4948,
+        "mean": 0.4067393369193885,
+        "p50": 0.16569959118312771,
+        "p95": 1.6080271951276883,
+        "p99": 4.23265122231763,
+        "max": 21.019844896822086
+      },
+      "incompatible_hit_pairs": 45,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1894,
+        "over_8": 64,
+        "over_32": 36,
+        "max_channel": 197,
+        "mean_abs_channel": 0.0915798611111111
+      },
+      "subject": "guardian",
+      "live": "cached",
+      "fresh": "cached"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-balanced",
+      "pixels": 57600,
+      "reference_hits": 4995,
+      "candidate_hits": 5008,
+      "unscored_pixels": 1,
+      "false_foreground": 13,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 745,
+        "mean": 0.09051654002450288,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 3.4105108847338967,
+        "max": 5.0
+      },
+      "silhouette_over_1px": 16,
+      "depth_world": {
+        "count": 4994,
+        "mean": 0.0004293336533010006,
+        "p50": 4.0531158447265625e-06,
+        "p95": 1.3631582260131771e-05,
+        "p99": 1.897096633911126e-05,
+        "max": 0.2542799711227417
+      },
+      "depth_in_pixel_footprints": {
+        "count": 4994,
+        "mean": 0.06250300924712136,
+        "p50": 0.0006488700607792271,
+        "p95": 0.0021551016248971514,
+        "p99": 0.003231929401421811,
+        "max": 32.97776556559441
+      },
+      "compatible_normal_degrees": {
+        "count": 4963,
+        "mean": 0.3558053500207892,
+        "p50": 0.11537763716909007,
+        "p95": 1.5695993536525705,
+        "p99": 4.5205728335760105,
+        "max": 27.461213203672585
+      },
+      "incompatible_hit_pairs": 31,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1534,
+        "over_8": 55,
+        "over_32": 37,
+        "max_channel": 197,
+        "mean_abs_channel": 0.08340277777777778
+      },
+      "subject": "guardian",
+      "live": "cached",
+      "fresh": "balanced"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-cached-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-analytic",
+      "pixels": 57600,
+      "reference_hits": 4995,
+      "candidate_hits": 5002,
+      "unscored_pixels": 1,
+      "false_foreground": 7,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 746,
+        "mean": 0.07296893072152098,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 3.406078148580945,
+        "max": 5.0
+      },
+      "silhouette_over_1px": 16,
+      "depth_world": {
+        "count": 4994,
+        "mean": 0.0003613350272644311,
+        "p50": 5.364418029785156e-06,
+        "p95": 1.633167266845703e-05,
+        "p99": 3.9721727371215716e-05,
+        "max": 0.25428473949432373
+      },
+      "depth_in_pixel_footprints": {
+        "count": 4994,
+        "mean": 0.05183397271528347,
+        "p50": 0.0008509525825391624,
+        "p95": 0.002589011832405339,
+        "p99": 0.0061931036862847,
+        "max": 32.978383979382436
+      },
+      "compatible_normal_degrees": {
+        "count": 4969,
+        "mean": 0.35433969562312273,
+        "p50": 0.11489667846563893,
+        "p95": 1.5088561037851558,
+        "p99": 4.483359323510744,
+        "max": 25.22259652359304
+      },
+      "incompatible_hit_pairs": 25,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1526,
+        "over_8": 42,
+        "over_32": 26,
+        "max_channel": 178,
+        "mean_abs_channel": 0.06842592592592593
+      },
+      "subject": "guardian",
+      "live": "cached",
+      "fresh": "source-control"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-cached",
+      "pixels": 57600,
+      "reference_hits": 5002,
+      "candidate_hits": 5008,
+      "unscored_pixels": 1,
+      "false_foreground": 6,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 725,
+        "mean": 0.01793103448275862,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 1.0,
+        "max": 1.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5001,
+        "mean": 0.000220646194065921,
+        "p50": 0.00011610984802246094,
+        "p95": 0.0003273487091064453,
+        "p99": 0.0007166862487792969,
+        "max": 0.1858741044998169
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5001,
+        "mean": 0.034787787166138145,
+        "p50": 0.01844121821334403,
+        "p95": 0.050426262369476,
+        "p99": 0.11034101238701859,
+        "max": 28.751459926791927
+      },
+      "compatible_normal_degrees": {
+        "count": 4981,
+        "mean": 0.33556308897019116,
+        "p50": 0.11794944012020636,
+        "p95": 1.2648151495249076,
+        "p99": 3.770206168943369,
+        "max": 28.137116841101804
+      },
+      "incompatible_hit_pairs": 20,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1636,
+        "over_8": 30,
+        "over_32": 12,
+        "max_channel": 197,
+        "mean_abs_channel": 0.04335069444444444
+      },
+      "subject": "guardian",
+      "live": "source",
+      "fresh": "cached"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-balanced",
+      "pixels": 57600,
+      "reference_hits": 5002,
+      "candidate_hits": 5008,
+      "unscored_pixels": 0,
+      "false_foreground": 6,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 733,
+        "mean": 0.017735334242837655,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 1.0,
+        "max": 1.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5002,
+        "mean": 7.582306716358289e-05,
+        "p50": 4.708766937255859e-06,
+        "p95": 1.609325408935547e-05,
+        "p99": 3.075242042541496e-05,
+        "max": 0.1858741044998169
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5002,
+        "mean": 0.0119023375620378,
+        "p50": 0.0007482962264915839,
+        "p95": 0.0025425686300912876,
+        "p99": 0.004792857906194472,
+        "max": 28.751459926791927
+      },
+      "compatible_normal_degrees": {
+        "count": 4996,
+        "mean": 0.02339019005338107,
+        "p50": 0.006707333898045144,
+        "p95": 0.060054969570222265,
+        "p99": 0.32716606081085287,
+        "max": 6.065474218430147
+      },
+      "incompatible_hit_pairs": 6,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 200,
+        "over_8": 14,
+        "over_32": 10,
+        "max_channel": 197,
+        "mean_abs_channel": 0.01704861111111111
+      },
+      "subject": "guardian",
+      "live": "source",
+      "fresh": "balanced"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/guardian-source-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-analytic",
+      "pixels": 57600,
+      "reference_hits": 5002,
+      "candidate_hits": 5002,
+      "unscored_pixels": 0,
+      "false_foreground": 0,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 734,
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5002,
+        "mean": 5.490109742822824e-06,
+        "p50": 4.649162292480469e-06,
+        "p95": 1.3589859008789062e-05,
+        "p99": 1.5974044799804688e-05,
+        "max": 1.728534698486328e-05
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5002,
+        "mean": 0.0008696729753635433,
+        "p50": 0.0007335142830472119,
+        "p95": 0.002173197759059243,
+        "p99": 0.0025505311261167854,
+        "max": 0.0028917210495113654
+      },
+      "compatible_normal_degrees": {
+        "count": 5002,
+        "mean": 0.011935026037226572,
+        "p50": 0.006707507794026051,
+        "p95": 0.032037292354769854,
+        "p99": 0.12283871579694149,
+        "max": 1.1156566172808142
+      },
+      "incompatible_hit_pairs": 0,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 142,
+        "over_8": 0,
+        "over_32": 0,
+        "max_channel": 1,
+        "mean_abs_channel": 0.0008796296296296296
+      },
+      "subject": "guardian",
+      "live": "source",
+      "fresh": "source-control"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-cached",
+      "pixels": 57600,
+      "reference_hits": 5667,
+      "candidate_hits": 5683,
+      "unscored_pixels": 3,
+      "false_foreground": 16,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 1049,
+        "mean": 0.032248262273351945,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 1.0,
+        "max": 1.4142135623730951
+      },
+      "silhouette_over_1px": 2,
+      "depth_world": {
+        "count": 5664,
+        "mean": 0.0006291417521424592,
+        "p50": 0.00011301040649414062,
+        "p95": 0.0003775298595428462,
+        "p99": 0.0014873838424682593,
+        "max": 0.28405725955963135
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5664,
+        "mean": 0.09350439298974002,
+        "p50": 0.018149249833598422,
+        "p95": 0.05971434934291825,
+        "p99": 0.22839802946982463,
+        "max": 39.554295266830245
+      },
+      "compatible_normal_degrees": {
+        "count": 5602,
+        "mean": 0.4204854736528761,
+        "p50": 0.07792496090602272,
+        "p95": 1.4222011195306172,
+        "p99": 5.341614226375166,
+        "max": 63.92688952623106
+      },
+      "incompatible_hit_pairs": 62,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1464,
+        "over_8": 94,
+        "over_32": 59,
+        "max_channel": 238,
+        "mean_abs_channel": 0.13532407407407407
+      },
+      "subject": "robot",
+      "live": "cached",
+      "fresh": "cached"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-balanced",
+      "pixels": 57600,
+      "reference_hits": 5667,
+      "candidate_hits": 5680,
+      "unscored_pixels": 3,
+      "false_foreground": 13,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 1051,
+        "mean": 0.02457509716912102,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 1.0,
+        "max": 1.4142135623730951
+      },
+      "silhouette_over_1px": 2,
+      "depth_world": {
+        "count": 5664,
+        "mean": 0.0004670694761443883,
+        "p50": 4.291534423828125e-06,
+        "p95": 1.2755393981933594e-05,
+        "p99": 1.6570091247558594e-05,
+        "max": 0.28405725955963135
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5664,
+        "mean": 0.06788192097524838,
+        "p50": 0.0006887244088172434,
+        "p95": 0.0020409679279062795,
+        "p99": 0.0027370857883500517,
+        "max": 39.554295266830245
+      },
+      "compatible_normal_degrees": {
+        "count": 5626,
+        "mean": 0.4171674396967622,
+        "p50": 0.032986179785429615,
+        "p95": 1.028764229297576,
+        "p99": 5.125405382266127,
+        "max": 133.3394211678002
+      },
+      "incompatible_hit_pairs": 38,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1157,
+        "over_8": 86,
+        "over_32": 51,
+        "max_channel": 238,
+        "mean_abs_channel": 0.11293402777777778
+      },
+      "subject": "robot",
+      "live": "cached",
+      "fresh": "balanced"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-cached-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-analytic",
+      "pixels": 57600,
+      "reference_hits": 5667,
+      "candidate_hits": 5669,
+      "unscored_pixels": 3,
+      "false_foreground": 2,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 1050,
+        "mean": 0.0045985020235678,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 1.4142135623730951
+      },
+      "silhouette_over_1px": 2,
+      "depth_world": {
+        "count": 5664,
+        "mean": 0.00036880391417071223,
+        "p50": 5.0067901611328125e-06,
+        "p95": 1.6671419143676693e-05,
+        "p99": 6.112337112426755e-05,
+        "max": 0.2527318000793457
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5664,
+        "mean": 0.053411210276135,
+        "p50": 0.0007886059033475439,
+        "p95": 0.0026548402464216725,
+        "p99": 0.009571231455879277,
+        "max": 34.94793639845986
+      },
+      "compatible_normal_degrees": {
+        "count": 5633,
+        "mean": 0.39732812653008454,
+        "p50": 0.034254592321401246,
+        "p95": 1.0165462378035501,
+        "p99": 5.3570176629431545,
+        "max": 103.83621118179381
+      },
+      "incompatible_hit_pairs": 31,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1128,
+        "over_8": 70,
+        "over_32": 38,
+        "max_channel": 230,
+        "mean_abs_channel": 0.09350694444444445
+      },
+      "subject": "robot",
+      "live": "cached",
+      "fresh": "source-control"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-cached",
+      "pixels": 57600,
+      "reference_hits": 5669,
+      "candidate_hits": 5683,
+      "unscored_pixels": 0,
+      "false_foreground": 14,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 1053,
+        "mean": 0.027540360873694207,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 1.0,
+        "max": 1.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5669,
+        "mean": 0.0002660140162333846,
+        "p50": 0.00011146068572998047,
+        "p95": 0.0003479957580566405,
+        "p99": 0.0007892704010009763,
+        "max": 0.28405022621154785
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5669,
+        "mean": 0.040999489826176905,
+        "p50": 0.01798173735307288,
+        "p95": 0.055192141314278506,
+        "p99": 0.12479035752091762,
+        "max": 39.55349417560832
+      },
+      "compatible_normal_degrees": {
+        "count": 5637,
+        "mean": 0.44686806148668934,
+        "p50": 0.04743606538748723,
+        "p95": 1.0903235676583924,
+        "p99": 7.818149340692488,
+        "max": 122.85931234799372
+      },
+      "incompatible_hit_pairs": 32,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 1263,
+        "over_8": 68,
+        "over_32": 29,
+        "max_channel": 238,
+        "mean_abs_channel": 0.07802662037037036
+      },
+      "subject": "robot",
+      "live": "source",
+      "fresh": "cached"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-balanced",
+      "pixels": 57600,
+      "reference_hits": 5669,
+      "candidate_hits": 5680,
+      "unscored_pixels": 0,
+      "false_foreground": 12,
+      "false_background": 1,
+      "silhouette_boundary_pixels": {
+        "count": 1055,
+        "mean": 0.023696682464454975,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 1.0,
+        "max": 1.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5668,
+        "mean": 0.00011333844304317608,
+        "p50": 5.125999450683594e-06,
+        "p95": 1.4901161193847656e-05,
+        "p99": 4.021048545837396e-05,
+        "max": 0.28405022621154785
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5668,
+        "mean": 0.016874925743048518,
+        "p50": 0.0008063002876692112,
+        "p95": 0.002341046276161222,
+        "p99": 0.006322407112231911,
+        "max": 39.55349417560832
+      },
+      "compatible_normal_degrees": {
+        "count": 5656,
+        "mean": 0.07615413342827085,
+        "p50": 0.0025203286628885492,
+        "p95": 0.03565746920754189,
+        "p99": 0.19094742981098697,
+        "max": 113.0869265642266
+      },
+      "incompatible_hit_pairs": 12,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 150,
+        "over_8": 30,
+        "over_32": 25,
+        "max_channel": 238,
+        "mean_abs_channel": 0.056018518518518516
+      },
+      "subject": "robot",
+      "live": "source",
+      "fresh": "balanced"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/qualify/robot-source-native",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-analytic",
+      "pixels": 57600,
+      "reference_hits": 5669,
+      "candidate_hits": 5669,
+      "unscored_pixels": 0,
+      "false_foreground": 0,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 1054,
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5669,
+        "mean": 6.087202109483769e-06,
+        "p50": 4.172325134277344e-06,
+        "p95": 1.3232231140136719e-05,
+        "p99": 1.52587890625e-05,
+        "max": 0.00587308406829834
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5669,
+        "mean": 0.0009654283958961658,
+        "p50": 0.0006680903749920345,
+        "p95": 0.0020694417365435683,
+        "p99": 0.0024157777602501567,
+        "max": 0.9596010672868625
+      },
+      "compatible_normal_degrees": {
+        "count": 5668,
+        "mean": 0.008180836872811598,
+        "p50": 1.2074182697257333e-06,
+        "p95": 0.02383775541524468,
+        "p99": 0.07161602172599538,
+        "max": 7.244616859148708
+      },
+      "incompatible_hit_pairs": 1,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 75,
+        "over_8": 1,
+        "over_32": 1,
+        "max_channel": 183,
+        "mean_abs_channel": 0.0025405092592592593
+      },
+      "subject": "robot",
+      "live": "source",
+      "fresh": "source-control"
+    }
+  ],
+  "admission": {
+    "binary_sha256": "cb51acf8d782ad63af5419af8525593d305b58419b770d4e65485d25a781abf3",
+    "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+    "source_head": "72a1a4889176e2e8d8d731cf4fd1abd5831e4063",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+    "tool_sha256": "22f5a084970253cd195bf2dc1a7160f34e742dd94b4cec9bf675c3979161204e",
+    "public_binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+    "private_shader_sha256": {
+      "lit_live_edit_sdf.frag.spv": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e",
+      "live_edit_quality_workload.comp.spv": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c",
+      "live_edit_queries.comp.spv": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023",
+      "live_edit_sdf.frag.spv": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b",
+      "quality_lit_live_edit_sdf.frag.spv": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c",
+      "quality_live_edit_sdf.frag.spv": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08",
+      "quality_shadow_lit_live_edit_sdf.frag.spv": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113",
+      "shadow_lit_live_edit_sdf.frag.spv": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+    },
+    "admitted": [
+      {
+        "name": "robot",
+        "count": 0,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-0.json",
+        "sha256": "f33211aaba21de3cf79e8ba2b5fac81ba938f075a6e5f1b88e448148add89f4d",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 15329115976364195548,
+          "edited_instructions": 163,
+          "edited_leaves": 82,
+          "pending_leaves": 0,
+          "suffix_instructions": 0
+        }
+      },
+      {
+        "name": "robot",
+        "count": 1,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-1.json",
+        "sha256": "bfb62f24857f6dc383b419bb02c44de084eff7a61b60baea3489c0ccdff1616b",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 17394336389704793032,
+          "edited_instructions": 165,
+          "edited_leaves": 83,
+          "pending_leaves": 1,
+          "suffix_instructions": 2
+        }
+      },
+      {
+        "name": "robot",
+        "count": 4,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-4.json",
+        "sha256": "d73fd0df30f24981b679ed01f1d4d161e5e8e1e980943c8e5af5dc2f5407a3c8",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 11820369759493223831,
+          "edited_instructions": 171,
+          "edited_leaves": 86,
+          "pending_leaves": 4,
+          "suffix_instructions": 8
+        }
+      },
+      {
+        "name": "robot",
+        "count": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-8.json",
+        "sha256": "bc86f58efaf628a0cef257b69eca4d6d606975db54d54e6aa481cbeabbbf21d3",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 3099767593193888820,
+          "edited_instructions": 179,
+          "edited_leaves": 90,
+          "pending_leaves": 8,
+          "suffix_instructions": 16
+        }
+      },
+      {
+        "name": "robot",
+        "count": 16,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-16.json",
+        "sha256": "9ce64f48b0e6f8e09b7f3f258f63147c538d644e16aa73c786032f6738272e90",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 6581010765766114601,
+          "edited_instructions": 195,
+          "edited_leaves": 98,
+          "pending_leaves": 16,
+          "suffix_instructions": 32
+        }
+      },
+      {
+        "name": "robot",
+        "count": 32,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-32.json",
+        "sha256": "89ff77116c860d2cdd4a63ad0754eaec66d8d4f54b938a3c8aef14ce888bc0ae",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 7016328948306087992,
+          "edited_instructions": 227,
+          "edited_leaves": 114,
+          "pending_leaves": 32,
+          "suffix_instructions": 64
+        }
+      },
+      {
+        "name": "robot",
+        "count": 64,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/robot-64.json",
+        "sha256": "70c234b578c0e6c916042aa10f739e94bf0fbf0e1099c4ba022a196aa13804bb",
+        "identity": {
+          "base_geometry_hash": 15329115976364195548,
+          "base_instructions": 163,
+          "base_leaves": 82,
+          "edited_geometry_hash": 2019977709269932843,
+          "edited_instructions": 291,
+          "edited_leaves": 146,
+          "pending_leaves": 64,
+          "suffix_instructions": 128
+        }
+      },
+      {
+        "name": "guardian",
+        "count": 0,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-0.json",
+        "sha256": "819c310c2b94779b9169cb30323d3e8d08671ddf3030a4a8f9e52945b57f28b0",
+        "identity": {
+          "base_geometry_hash": 15419350890978506480,
+          "base_instructions": 2021,
+          "base_leaves": 1011,
+          "edited_geometry_hash": 15419350890978506480,
+          "edited_instructions": 2021,
+          "edited_leaves": 1011,
+          "pending_leaves": 0,
+          "suffix_instructions": 0
+        }
+      },
+      {
+        "name": "guardian",
+        "count": 1,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-1.json",
+        "sha256": "39790ab0a149a62ee24047f9c6b1adaa4d4dc178168a76596ddc465b5945bf91",
+        "identity": {
+          "base_geometry_hash": 15419350890978506480,
+          "base_instructions": 2021,
+          "base_leaves": 1011,
+          "edited_geometry_hash": 1260546769739921284,
+          "edited_instructions": 2023,
+          "edited_leaves": 1012,
+          "pending_leaves": 1,
+          "suffix_instructions": 2
+        }
+      },
+      {
+        "name": "guardian",
+        "count": 4,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-4.json",
+        "sha256": "e2efda8cb190e6f50b518fa999619dcc424a3a45765aca98df7ae2ef02bbfb92",
+        "identity": {
+          "base_geometry_hash": 15419350890978506480,
+          "base_instructions": 2021,
+          "base_leaves": 1011,
+          "edited_geometry_hash": 502286817290137091,
+          "edited_instructions": 2029,
+          "edited_leaves": 1015,
+          "pending_leaves": 4,
+          "suffix_instructions": 8
+        }
+      },
+      {
+        "name": "guardian",
+        "count": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-8.json",
+        "sha256": "c1c811f13d4c3d2331d8f03a45ff22034f149c9a69be1d7c9110e631a31e8efa",
+        "identity": {
+          "base_geometry_hash": 15419350890978506480,
+          "base_instructions": 2021,
+          "base_leaves": 1011,
+          "edited_geometry_hash": 6578594696717616072,
+          "edited_instructions": 2037,
+          "edited_leaves": 1019,
+          "pending_leaves": 8,
+          "suffix_instructions": 16
+        }
+      },
+      {
+        "name": "guardian",
+        "count": 13,
+        "input": "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/guardian-13.json",
+        "sha256": "74bf522271cc6007ca498d6f30f382572b0abf2ac41f186548d02feee8a4622c",
+        "identity": {
+          "base_geometry_hash": 15419350890978506480,
+          "base_instructions": 2021,
+          "base_leaves": 1011,
+          "edited_geometry_hash": 15816184379205692772,
+          "edited_instructions": 2047,
+          "edited_leaves": 1024,
+          "pending_leaves": 13,
+          "suffix_instructions": 26
+        }
+      }
+    ],
+    "rejected": [
+      {
+        "name": "tail-limit",
+        "returncode": 1,
+        "reason": "live study: live edit requires at most 64 pending leaves / 128 suffix instructions",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/tail-limit.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/tail-limit-rejected.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-validate-only"
+        ]
+      },
+      {
+        "name": "source-capacity",
+        "returncode": 1,
+        "reason": "live study: authored SDF scene exceeds 1024 primitive leaves",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/source-capacity.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/source-capacity-rejected.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-validate-only"
+        ]
+      }
+    ],
+    "negative": [
+      {
+        "name": "prefix",
+        "returncode": 1,
+        "reason": "live study: live edit changed the frozen source prefix",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-prefix.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-prefix-output.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-validate-only",
+          "--live-queries"
+        ]
+      },
+      {
+        "name": "palette",
+        "returncode": 1,
+        "reason": "live study: live edit requires an unchanged predeclared material palette",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-palette.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-palette-output.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-validate-only",
+          "--live-queries"
+        ]
+      },
+      {
+        "name": "non-unit-ray",
+        "returncode": 1,
+        "reason": "live study: live rays require unit directions",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-non-unit-ray.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-non-unit-ray-output.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-validate-only",
+          "--live-queries"
+        ]
+      },
+      {
+        "name": "bad-query",
+        "returncode": 1,
+        "reason": "live study: unknown live query kind",
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-bad-query.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/prepare/negative-bad-query-output.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-validate-only",
+          "--live-queries"
+        ]
+      }
+    ],
+    "complete": true
+  },
+  "images": {
+    "subgrid-cavity": {
+      "live-cached": "images/subgrid-cavity-live-cached.webp",
+      "live-source": "images/subgrid-cavity-live-source.webp",
+      "fresh-cached": "images/subgrid-cavity-fresh-cached.webp",
+      "fresh-analytic": "images/subgrid-cavity-fresh-analytic.webp",
+      "fresh-balanced": "images/subgrid-cavity-fresh-balanced.webp"
+    },
+    "uniform-solid-cavity": {
+      "live-cached": "images/uniform-solid-cavity-live-cached.webp",
+      "live-source": "images/uniform-solid-cavity-live-source.webp",
+      "fresh-cached": "images/uniform-solid-cavity-fresh-cached.webp",
+      "fresh-analytic": "images/uniform-solid-cavity-fresh-analytic.webp",
+      "fresh-balanced": "images/uniform-solid-cavity-fresh-balanced.webp"
+    },
+    "through-hole": {
+      "live-cached": "images/through-hole-live-cached.webp",
+      "live-source": "images/through-hole-live-source.webp",
+      "fresh-cached": "images/through-hole-fresh-cached.webp",
+      "fresh-analytic": "images/through-hole-fresh-analytic.webp",
+      "fresh-balanced": "images/through-hole-fresh-balanced.webp"
+    },
+    "clip-before-smooth-cut": {
+      "live-cached": "images/clip-before-smooth-cut-live-cached.webp",
+      "live-source": "images/clip-before-smooth-cut-live-source.webp",
+      "fresh-cached": "images/clip-before-smooth-cut-fresh-cached.webp",
+      "fresh-analytic": "images/clip-before-smooth-cut-fresh-analytic.webp",
+      "fresh-balanced": "images/clip-before-smooth-cut-fresh-balanced.webp"
+    },
+    "guardian-8": {
+      "live-cached": "images/guardian-8-live-cached.webp",
+      "live-source": "images/guardian-8-live-source.webp",
+      "fresh-cached": "images/guardian-8-fresh-cached.webp",
+      "fresh-analytic": "images/guardian-8-fresh-analytic.webp",
+      "fresh-balanced": "images/guardian-8-fresh-balanced.webp"
+    },
+    "robot-8": {
+      "live-cached": "images/robot-8-live-cached.webp",
+      "live-source": "images/robot-8-live-source.webp",
+      "fresh-cached": "images/robot-8-fresh-cached.webp",
+      "fresh-analytic": "images/robot-8-fresh-analytic.webp",
+      "fresh-balanced": "images/robot-8-fresh-balanced.webp"
+    }
+  },
+  "motion": {
+    "guardian": {
+      "cached": [
+        "images/guardian-motion-cached-0.webp",
+        "images/guardian-motion-cached-1.webp",
+        "images/guardian-motion-cached-2.webp",
+        "images/guardian-motion-cached-3.webp",
+        "images/guardian-motion-cached-4.webp",
+        "images/guardian-motion-cached-5.webp",
+        "images/guardian-motion-cached-6.webp",
+        "images/guardian-motion-cached-7.webp",
+        "images/guardian-motion-cached-8.webp",
+        "images/guardian-motion-cached-9.webp",
+        "images/guardian-motion-cached-10.webp",
+        "images/guardian-motion-cached-11.webp",
+        "images/guardian-motion-cached-12.webp",
+        "images/guardian-motion-cached-13.webp",
+        "images/guardian-motion-cached-14.webp",
+        "images/guardian-motion-cached-15.webp"
+      ],
+      "source": [
+        "images/guardian-motion-source-0.webp",
+        "images/guardian-motion-source-1.webp",
+        "images/guardian-motion-source-2.webp",
+        "images/guardian-motion-source-3.webp",
+        "images/guardian-motion-source-4.webp",
+        "images/guardian-motion-source-5.webp",
+        "images/guardian-motion-source-6.webp",
+        "images/guardian-motion-source-7.webp",
+        "images/guardian-motion-source-8.webp",
+        "images/guardian-motion-source-9.webp",
+        "images/guardian-motion-source-10.webp",
+        "images/guardian-motion-source-11.webp",
+        "images/guardian-motion-source-12.webp",
+        "images/guardian-motion-source-13.webp",
+        "images/guardian-motion-source-14.webp",
+        "images/guardian-motion-source-15.webp"
+      ]
+    },
+    "robot": {
+      "cached": [
+        "images/robot-motion-cached-0.webp",
+        "images/robot-motion-cached-1.webp",
+        "images/robot-motion-cached-2.webp",
+        "images/robot-motion-cached-3.webp",
+        "images/robot-motion-cached-4.webp",
+        "images/robot-motion-cached-5.webp",
+        "images/robot-motion-cached-6.webp",
+        "images/robot-motion-cached-7.webp",
+        "images/robot-motion-cached-8.webp",
+        "images/robot-motion-cached-9.webp",
+        "images/robot-motion-cached-10.webp",
+        "images/robot-motion-cached-11.webp",
+        "images/robot-motion-cached-12.webp",
+        "images/robot-motion-cached-13.webp",
+        "images/robot-motion-cached-14.webp",
+        "images/robot-motion-cached-15.webp"
+      ],
+      "source": [
+        "images/robot-motion-source-0.webp",
+        "images/robot-motion-source-1.webp",
+        "images/robot-motion-source-2.webp",
+        "images/robot-motion-source-3.webp",
+        "images/robot-motion-source-4.webp",
+        "images/robot-motion-source-5.webp",
+        "images/robot-motion-source-6.webp",
+        "images/robot-motion-source-7.webp",
+        "images/robot-motion-source-8.webp",
+        "images/robot-motion-source-9.webp",
+        "images/robot-motion-source-10.webp",
+        "images/robot-motion-source-11.webp",
+        "images/robot-motion-source-12.webp",
+        "images/robot-motion-source-13.webp",
+        "images/robot-motion-source-14.webp",
+        "images/robot-motion-source-15.webp"
+      ]
+    }
+  },
+  "image_stats": [
+    {
+      "name": "subgrid-cavity",
+      "mode": "live-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "subgrid-cavity",
+      "mode": "live-source",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "subgrid-cavity",
+      "mode": "fresh-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "subgrid-cavity",
+      "mode": "fresh-analytic",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "subgrid-cavity",
+      "mode": "fresh-balanced",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "uniform-solid-cavity",
+      "mode": "live-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "uniform-solid-cavity",
+      "mode": "live-source",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "uniform-solid-cavity",
+      "mode": "fresh-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "uniform-solid-cavity",
+      "mode": "fresh-analytic",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "uniform-solid-cavity",
+      "mode": "fresh-balanced",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "through-hole",
+      "mode": "live-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "through-hole",
+      "mode": "live-source",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "through-hole",
+      "mode": "fresh-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "through-hole",
+      "mode": "fresh-analytic",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "through-hole",
+      "mode": "fresh-balanced",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "clip-before-smooth-cut",
+      "mode": "live-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "clip-before-smooth-cut",
+      "mode": "live-source",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "clip-before-smooth-cut",
+      "mode": "fresh-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "clip-before-smooth-cut",
+      "mode": "fresh-analytic",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "clip-before-smooth-cut",
+      "mode": "fresh-balanced",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "guardian-8",
+      "mode": "live-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "guardian-8",
+      "mode": "live-source",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "guardian-8",
+      "mode": "fresh-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "guardian-8",
+      "mode": "fresh-analytic",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "guardian-8",
+      "mode": "fresh-balanced",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "robot-8",
+      "mode": "live-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "robot-8",
+      "mode": "live-source",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "robot-8",
+      "mode": "fresh-cached",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "robot-8",
+      "mode": "fresh-analytic",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "name": "robot-8",
+      "mode": "fresh-balanced",
+      "exhaustion_color_pixels": 0
+    }
+  ],
+  "max_tail_replay": [
+    {
+      "subject": "guardian",
+      "count": 13,
+      "policy": "cached",
+      "rays": 14400,
+      "hits": 1263,
+      "exhausted": 0,
+      "cpu_hit_residual_max": 1.7477126675657928e-05,
+      "run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-tail-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-tail-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.6566014070413075,
+        "output": "guardian-max-tail-cached.json",
+        "sha256": "e3cf829d4e7341f22b351594e76ac548a12489346a2aff32eb18ad2af9d53cd1"
+      },
+      "shadow_rays": 1263,
+      "shadow_exhausted": 0,
+      "shadow_run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-shadow-cached-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-shadow-cached-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.354612666007597,
+        "output": "guardian-max-shadow-cached-cached.json",
+        "sha256": "14d88d5813d3c6475b552e80b01a8319bf3eb352aee20509cf1c88a9dcc2db0c"
+      }
+    },
+    {
+      "subject": "guardian",
+      "count": 13,
+      "policy": "source",
+      "rays": 14400,
+      "hits": 1264,
+      "exhausted": 0,
+      "cpu_hit_residual_max": 1.7432495951652527e-05,
+      "run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-tail-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-tail-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.462696035974659,
+        "output": "guardian-max-tail-source.json",
+        "sha256": "eacc633f6878ae8119d74874847b8ac36ecc2ef57722ba64c93ca1b6effe681c"
+      },
+      "shadow_rays": 1264,
+      "shadow_exhausted": 0,
+      "shadow_run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-shadow-source-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-max-shadow-source-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 1.348847919027321,
+        "output": "guardian-max-shadow-source-source.json",
+        "sha256": "d319c66d22641198ad3aabe462dcf6a0512873b0dae6b59fc357ac6dfbc6cf1e"
+      }
+    },
+    {
+      "subject": "robot",
+      "count": 64,
+      "policy": "cached",
+      "rays": 14400,
+      "hits": 1445,
+      "exhausted": 0,
+      "cpu_hit_residual_max": 1.747932401485741e-05,
+      "run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-tail-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-tail-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.5061277690110728,
+        "output": "robot-max-tail-cached.json",
+        "sha256": "4144bf755a1d2200bf278da4e211d9579bbfc96b8eb681cb3db29d8973af1dd6"
+      },
+      "shadow_rays": 1445,
+      "shadow_exhausted": 0,
+      "shadow_run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-shadow-cached-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-shadow-cached-cached.json",
+          "--live-policy",
+          "cached",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.3512528789578937,
+        "output": "robot-max-shadow-cached-cached.json",
+        "sha256": "ffe748882955ea47033cec6a37cb401d4c4e8f6bc33d71d4f194e75f7aa34781"
+      }
+    },
+    {
+      "subject": "robot",
+      "count": 64,
+      "policy": "source",
+      "rays": 14400,
+      "hits": 1445,
+      "exhausted": 0,
+      "cpu_hit_residual_max": 1.742132008075714e-05,
+      "run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-tail-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-tail-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.4894341779872775,
+        "output": "robot-max-tail-source.json",
+        "sha256": "c0e721e73bf22e5e35d9e0f884fc39bc61b40148e2d7721922fe1c225c2e5366"
+      },
+      "shadow_rays": 1445,
+      "shadow_exhausted": 0,
+      "shadow_run": {
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_live_edit_study",
+          "--live-input",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-shadow-source-input.json",
+          "--live-output",
+          "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-max-shadow-source-source.json",
+          "--live-policy",
+          "source",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--live-queries"
+        ],
+        "wall_seconds": 0.3521750629879534,
+        "output": "robot-max-shadow-source-source.json",
+        "sha256": "04e344b15d5856c00f45864f85b138e51255f0482d7ec4289f6a287aa30003ff"
+      }
+    }
+  ],
+  "source_diagnostic_relation": [
+    {
+      "subject": "guardian",
+      "byte_identical_png": false,
+      "pixel_identical": false,
+      "different_pixels": 1,
+      "max_channel_difference": 1,
+      "public_command": [
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/baseline-sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--authored-scene",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/captures/guardian-8-scene.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--render-mode",
+        "analytic",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-analytic.public.png"
+      ],
+      "diagnostic_command": [
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/baseline-sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--authored-scene",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/captures/guardian-8-scene.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/guardian-fresh-analytic.png"
+      ],
+      "scope": "Explicit combined source diagnostic control; no claimed public Analytical equivalence where pixels differ"
+    },
+    {
+      "subject": "robot",
+      "byte_identical_png": true,
+      "pixel_identical": true,
+      "different_pixels": 0,
+      "max_channel_difference": 0,
+      "public_command": [
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/baseline-sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--authored-scene",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/captures/robot-8-scene.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--render-mode",
+        "analytic",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-analytic.public.png"
+      ],
+      "diagnostic_command": [
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/baseline-sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--authored-scene",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/qualified/captures/robot-8-scene.json",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "320",
+        "--height",
+        "180",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--frames",
+        "1",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--source-optimization",
+        "combined",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/live-edit-loop-20261030/postqualification-final/robot-fresh-analytic.png"
+      ],
+      "scope": "Explicit combined source diagnostic control; no claimed public Analytical equivalence where pixels differ"
+    }
+  ]
+}

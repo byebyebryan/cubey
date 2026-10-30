@@ -1,0 +1,856 @@
+{
+  "cases": [
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 4.395075,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 2.368424,
+      "field_bytes": 912997552,
+      "geometry_hash": 6667548872931073813,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "smooth-identical-0.0001",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0018267004052177072,
+            0.0018267004052177072,
+            0.9999966025352478
+          ],
+          "residual": 9.406027675140649e-05,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.5498809218406677
+        },
+        {
+          "normal": [
+            0.9999966025352478,
+            0.001826674328185618,
+            0.001826674328185618
+          ],
+          "residual": 9.406027675140649e-05,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.5498809218406677
+        },
+        {
+          "normal": [
+            0.26726123690605164,
+            0.5345134735107422,
+            0.8017896413803101
+          ],
+          "residual": 9.27489745663479e-05,
+          "status": 1,
+          "steps": 25.0,
+          "t": 0.5498822331428528
+        },
+        {
+          "normal": [
+            -0.8728742003440857,
+            0.43643561005592346,
+            0.21820753812789917
+          ],
+          "residual": 9.307680011261255e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.5498818755149841
+        },
+        {
+          "normal": [
+            0.0019193292828276753,
+            0.0019193292828276753,
+            0.9999962449073792
+          ],
+          "residual": -9.324731945525855e-05,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.14993175864219666
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 525.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.15002501010894775
+        },
+        {
+          "distance": -1.0752046364359558e-08
+        },
+        {
+          "distance": 0.15002498030662537
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 3.804371,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 2.204282,
+      "field_bytes": 912997552,
+      "geometry_hash": 45948244489578638,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "smooth-identical-0.01",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.001709392643533647,
+            0.001709392643533647,
+            0.9999970197677612
+          ],
+          "residual": 9.289151057600975e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.5474070906639099
+        },
+        {
+          "normal": [
+            0.9999970197677612,
+            0.001709392643533647,
+            0.001709392643533647
+          ],
+          "residual": 9.289151057600975e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.5474070906639099
+        },
+        {
+          "normal": [
+            0.26729393005371094,
+            0.5345525145530701,
+            0.8017526865005493
+          ],
+          "residual": 9.271269664168358e-05,
+          "status": 1,
+          "steps": 24.0,
+          "t": 0.5474072694778442
+        },
+        {
+          "normal": [
+            -0.8726752400398254,
+            0.436853289604187,
+            0.21816736459732056
+          ],
+          "residual": 9.435182437300682e-05,
+          "status": 1,
+          "steps": 16.0,
+          "t": 0.5474056005477905
+        },
+        {
+          "normal": [
+            0.0017094203503802419,
+            0.0017094203503802419,
+            0.999997079372406
+          ],
+          "residual": -9.94526781141758e-05,
+          "status": 1,
+          "steps": 19.0,
+          "t": 0.15240055322647095
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 524.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.1525000035762787
+        },
+        {
+          "distance": -2.3283064365386963e-09
+        },
+        {
+          "distance": 0.1525000035762787
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 4.317065,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 2.701565,
+      "field_bytes": 912997552,
+      "geometry_hash": 13736211298417678956,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "smooth-identical-0.1",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0017094879876822233,
+            0.0017094879876822233,
+            0.9999971389770508
+          ],
+          "residual": 9.292922914028168e-05,
+          "status": 1,
+          "steps": 19.0,
+          "t": 0.5249070525169373
+        },
+        {
+          "normal": [
+            0.9999971389770508,
+            0.0017094358336180449,
+            0.0017094358336180449
+          ],
+          "residual": 9.292922914028168e-05,
+          "status": 1,
+          "steps": 19.0,
+          "t": 0.5249070525169373
+        },
+        {
+          "normal": [
+            0.2663230895996094,
+            0.5343963503837585,
+            0.8021799325942993
+          ],
+          "residual": 0.00011021457612514496,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.5248897671699524
+        },
+        {
+          "normal": [
+            -0.8728147745132446,
+            0.4364563822746277,
+            0.21840369701385498
+          ],
+          "residual": 9.415112435817719e-05,
+          "status": 1,
+          "steps": 14.0,
+          "t": 0.524905800819397
+        },
+        {
+          "normal": [
+            0.0017093054484575987,
+            0.0017093054484575987,
+            0.9999970197677612
+          ],
+          "residual": -9.342469274997711e-05,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.17490658164024353
+        },
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 572.0,
+          "t": 0.0
+        },
+        {
+          "distance": -0.17500001192092896
+        },
+        {
+          "distance": -9.313225746154785e-09
+        },
+        {
+          "distance": 0.17499998211860657
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 9.029551,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 7.438962,
+      "field_bytes": 912997552,
+      "geometry_hash": 17043474452188786934,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "cut-owner-False",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": 9.292364120483398e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.39990705251693726
+        },
+        {
+          "normal": [
+            -0.0027707789558917284,
+            -0.0027707789558917284,
+            -0.999992311000824
+          ],
+          "residual": 9.418278932571411e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.0999058187007904
+        },
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": -9.34302806854248e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.09990657866001129
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 1.410398,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 7.438962,
+      "field_bytes": 912997552,
+      "geometry_hash": 17043474452188786934,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "cut-owner-True",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": 9.292364120483398e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.39990705251693726
+        },
+        {
+          "normal": [
+            -0.0027707789558917284,
+            -0.0027707789558917284,
+            -0.999992311000824
+          ],
+          "residual": 9.418278932571411e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.0999058187007904
+        },
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": -9.34302806854248e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.09990657866001129
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 4.776807,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.378529,
+      "field_bytes": 912997552,
+      "geometry_hash": 5470114744067985772,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "subgrid-cavity",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.001364068011753261,
+            0.001364068011753261,
+            0.999998152256012
+          ],
+          "residual": -9.328126907348633e-05,
+          "status": 1,
+          "steps": 43.0,
+          "t": 0.19962729513645172
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 9.124301,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 7.412412,
+      "field_bytes": 912997552,
+      "geometry_hash": 6718198945608235053,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "smooth-subtract-0.0001",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "distance": -0.09997500479221344
+        },
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": 9.292364120483398e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.39990705251693726
+        },
+        {
+          "normal": [
+            -0.0027707789558917284,
+            -0.0027707789558917284,
+            -0.999992311000824
+          ],
+          "residual": 9.418278932571411e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.0999058187007904
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 9.089721,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 7.460383,
+      "field_bytes": 912997552,
+      "geometry_hash": 4787802743146043542,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "smooth-subtract-0.01",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "distance": -0.09750000387430191
+        },
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": 9.292364120483398e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.39990705251693726
+        },
+        {
+          "normal": [
+            -0.0027707789558917284,
+            -0.0027707789558917284,
+            -0.999992311000824
+          ],
+          "residual": 9.418278932571411e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.0999058187007904
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 9.353043,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 7.468112,
+      "field_bytes": 912997552,
+      "geometry_hash": 5375889780056643732,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "smooth-subtract-0.1",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "distance": -0.07500000298023224
+        },
+        {
+          "normal": [
+            0.0008547002216801047,
+            0.0008547002216801047,
+            0.9999992847442627
+          ],
+          "residual": 9.292364120483398e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.39990705251693726
+        },
+        {
+          "normal": [
+            -0.0027707789558917284,
+            -0.0027707789558917284,
+            -0.999992311000824
+          ],
+          "residual": 9.418278932571411e-05,
+          "status": 1,
+          "steps": 20.0,
+          "t": 0.0999058187007904
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 2.981707,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 1.530229,
+      "field_bytes": 912997552,
+      "geometry_hash": 18394944322382909322,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "outside-old-bounds",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0037463894113898277,
+            0.00374627485871315,
+            0.999985933303833
+          ],
+          "residual": 9.457767009735107e-05,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.619905412197113
+        },
+        {
+          "normal": [
+            0.003674347884953022,
+            0.0036742358934134245,
+            0.999986469745636
+          ],
+          "residual": -9.272992610931396e-05,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.07990726828575134
+        },
+        {
+          "distance": -0.07999999821186066
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 4.023042,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 2.584364,
+      "field_bytes": 912997552,
+      "geometry_hash": 16312540770838313998,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "uniform-solid-cavity",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            -0.0044254641979932785,
+            -0.0044254641979932785,
+            -0.9999803304672241
+          ],
+          "residual": 9.318813681602478e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.05990681052207947
+        },
+        {
+          "normal": [
+            -0.004568350035697222,
+            -0.004568350035697222,
+            -0.9999791383743286
+          ],
+          "residual": -9.402632713317871e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.059905972331762314
+        },
+        {
+          "distance": 0.05999999865889549
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 4.468666,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 3.005807,
+      "field_bytes": 912997552,
+      "geometry_hash": 7884192152136496162,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "through-hole",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 28.0,
+          "t": 0.0
+        },
+        {
+          "normal": [
+            -0.9999901056289673,
+            -0.00442545535042882,
+            0.0
+          ],
+          "residual": 9.318813681602478e-05,
+          "status": 1,
+          "steps": 17.0,
+          "t": 0.05990681052207947
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 2.656005,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 1.1920928955078125e-07,
+      "field_build_ms": 1.239997,
+      "field_bytes": 912997552,
+      "geometry_hash": 11353933744235089827,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "clip-before-smooth-cut",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "distance": -0.0010000169277191162
+        },
+        {
+          "normal": [
+            -0.99980628490448,
+            -0.013918745331466198,
+            -0.013918745331466198
+          ],
+          "residual": -9.433552622795105e-05,
+          "status": 1,
+          "steps": 15.0,
+          "t": 0.007905657403171062
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 2.921617,
+      "derived_probe_count": 1328,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 1.492909,
+      "field_bytes": 912997552,
+      "geometry_hash": 15366909959145840010,
+      "instructions": 3,
+      "mode": "sampled",
+      "name": "group-frozen-prefix",
+      "program_bytes": 208,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.00013271093484945595,
+            0.0034596414770931005,
+            0.9999940395355225
+          ],
+          "residual": 9.267032146453857e-05,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.6199073195457458
+        },
+        {
+          "normal": [
+            0.0037463894113898277,
+            0.00374627485871315,
+            0.999985933303833
+          ],
+          "residual": 9.457767009735107e-05,
+          "status": 1,
+          "steps": 18.0,
+          "t": 0.619905412197113
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 2.745535,
+      "derived_probe_count": 1321,
+      "derived_probe_max_error": 5.960464477539063e-08,
+      "field_build_ms": 1.289547,
+      "field_bytes": 912997552,
+      "geometry_hash": 16439186744481241111,
+      "instructions": 1,
+      "mode": "sampled",
+      "name": "empty-base-addition",
+      "program_bytes": 80,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0026993711944669485,
+            0.0026993711944669485,
+            0.9999927282333374
+          ],
+          "residual": 9.312480688095093e-05,
+          "status": 1,
+          "steps": 16.0,
+          "t": 0.599906861782074
+        },
+        {
+          "distance": -0.10000000149011612
+        }
+      ]
+    },
+    {
+      "acceleration_variant": "off",
+      "compile_upload_query_readback_ms": 1.529599,
+      "derived_probe_count": 1314,
+      "derived_probe_max_error": 0.0,
+      "field_build_ms": 0.264262,
+      "field_bytes": 912997552,
+      "geometry_hash": 14695981039346656037,
+      "instructions": 0,
+      "mode": "sampled",
+      "name": "empty-base-stays-empty",
+      "program_bytes": 16,
+      "region_axis": 0,
+      "region_build_upload_ms": 0.0,
+      "region_bytes": 0,
+      "region_fallback_cells": 0,
+      "region_far_cells": 0,
+      "region_references": 0,
+      "results": [
+        {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "residual": 0.0,
+          "status": 0,
+          "steps": 4.0,
+          "t": 0.0
+        }
+      ]
+    }
+  ],
+  "format": "cubey.sdf.tracing-results",
+  "prepared_cones": false,
+  "query_shader": "comparison_sampled.comp.spv",
+  "query_shader_sha256": "3e672b4043ec24922c7d89dc2cb836ea0f0b519e5b961a1fc5d075d873a9b963",
+  "source_optimization": "automatic",
+  "version": 1
+}

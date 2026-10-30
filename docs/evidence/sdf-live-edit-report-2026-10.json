@@ -1,0 +1,28 @@
+{
+  "report_id": "41999c42e4ba06abdfad59d6ef6b005ca14d98c5c63a9a377123eaa00cc60e51",
+  "title": "Cubey SDF — Frozen base, live edits: native results",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-10-30T08:03:35.742322+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "published",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/41999c42e4ba06abdfad59d6ef6b005ca14d98c5c63a9a377123eaa00cc60e51",
+  "file_count": 105,
+  "byte_count": 6187239,
+  "url": "http://starship:8787/reports/41999c42e4ba06abdfad59d6ef6b005ca14d98c5c63a9a377123eaa00cc60e51/",
+  "catalog": {
+    "state": "unchecked"
+  },
+  "delivery": {
+    "checked_at": "2026-10-30T08:04:00.416133+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 95568,
+    "verified_url": "http://starship:8787/reports/41999c42e4ba06abdfad59d6ef6b005ca14d98c5c63a9a377123eaa00cc60e51/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey"
+}
