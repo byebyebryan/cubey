@@ -88,6 +88,9 @@ the architecture and project guides remain current authority.
 - [SDF continuous-editing research and proposed validation plan](sdf-continuous-editing-research-plan.md):
   projectR carryover, primary research, live/cached geometry contracts, bake
   handoff, stroke capacity, deadline/throughput gates and staged native trials.
+- [SDF frozen-base live-edit execution](sdf-live-edit-experiment-progress.md):
+  private native candidates, source and cache contracts, tail admission and
+  pending-edit handoff evidence.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

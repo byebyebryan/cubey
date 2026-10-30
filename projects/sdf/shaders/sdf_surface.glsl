@@ -23,7 +23,10 @@ layout(push_constant) uniform Camera {
     vec4 forward;
 } camera;
 #define atlasAxis uint(camera.eye.w)
-#if defined(SDF_ANALYTIC) || defined(SDF_HYBRID)
+#ifdef SDF_LIVE_EDIT
+#include "authored.glsl"
+#include "live_edit_trace.glsl"
+#elif defined(SDF_ANALYTIC) || defined(SDF_HYBRID)
 #include "authored.glsl"
 #include "selected_trace.glsl"
 #else

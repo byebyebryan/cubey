@@ -63,6 +63,36 @@ Candidate tails are 1/4/8/16/32/64 when canonically valid; full Guardian is
 
 ## Progress
 
-Planning checkpoint being captured. Native candidate implementation has not
-started at this checkpoint. Later sections will record actual gates and source
-identities rather than relabeling older receipts as current measurements.
+Planning checkpoint: `800b4692`. Implementation adds a private executable,
+eight private shader entrypoints and an optional renderer attachment. Existing
+194 shader binaries and 567 protected source/content files remain unchanged.
+
+Pre-timing pilots pass all 155 existing source checks and 58 pending checks for
+B; A passes the 58 pending checks and has the expected sub-grid/thin-normal
+source-fidelity failures with zero pending leaves. No tolerances were widened.
+The CPU sampled oracle now interpolates the actual eight stored R16 corners;
+recreating half conversion on the CPU differed from the GPU cache at one Robot
+point. Source known-answer contracts remain independent of those corners.
+
+An initial oversized box fixture exceeded the existing 262,144-brick frontier
+capacity. The smaller box preserves the cavity/through-hole question; the
+clipping case uses a small sphere crossing the workspace boundary. Failed pilot
+receipts remain in raw output directories. A negative admission pilot also
+accidentally shared Python objects between base and edited inputs; independent
+copies correct that harness bug.
+
+Native pilot images exposed shadow exhaustion in A. Legacy lookup's spatial
+bias was incompatible with this walk's boundary advancement, especially at
+small shadow-ray parameters. Private lookup now chooses the forward cell at an
+exact boundary and solves the crossing from the original ray using one
+representable grid coordinate. It has no arbitrary forced minimum march step.
+Camera/shadow replay now completes for both subjects/policies without exhaustion.
+
+Native compute-to-fragment quality validation at 320x180 has zero flagged pixels
+for B on both subjects. A flags one Guardian classification pixel and three
+Robot depth/normal pixels; those pixels are unqualified, not a full-image pass.
+This and the sampled bake handoff failures block production promotion. The
+remaining stage-2 measurements characterize a private approximate prototype.
+Static native motion changes camera and pending geometry with exactly one base
+field and region build; it serializes upload/readback and proves no input-latency
+or concurrent-updater claim.

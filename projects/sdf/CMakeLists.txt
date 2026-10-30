@@ -9,6 +9,9 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp
     SHADERS
+        shaders/live_edit_sdf.frag shaders/lit_live_edit_sdf.frag shaders/shadow_lit_live_edit_sdf.frag
+        shaders/quality_live_edit_sdf.frag shaders/quality_lit_live_edit_sdf.frag shaders/quality_shadow_lit_live_edit_sdf.frag
+        shaders/live_edit_quality_workload.comp shaders/live_edit_queries.comp
         shaders/cached03125_material_study.frag
         shaders/cachedrefinenormal_material_study.frag
         shaders/cachedrefinenormal_sdf_authored.frag
@@ -170,6 +173,10 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_live_edit_study tools/live_edit_study.cpp sdf_live_edit.cpp sdf_renderer.cpp sdf_environment.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp)
+    target_link_libraries(cubey_project_sdf_live_edit_study PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
+    target_compile_definitions(cubey_project_sdf_live_edit_study PRIVATE CUBEY_SDF_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders")
+    add_dependencies(cubey_project_sdf_live_edit_study cubey_project_sdf)
     add_executable(cubey_project_sdf_cached_cell_contract tools/cached_cell_contract.cpp)
     target_link_libraries(cubey_project_sdf_cached_cell_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_guarded_contract tools/guarded_contract.cpp)

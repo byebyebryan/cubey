@@ -41,7 +41,8 @@ class Renderer {
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent, VkFormat format,
                 std::uint32_t slots, const Field* field, const SdfConfig& config,
                 const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr,
-                std::string_view preparation_fault = {});
+                std::string_view preparation_fault = {},
+                const vulkan::Buffer* live_edit_controls = nullptr);
     void destroy();
     void save_quality_snapshot(const std::filesystem::path& path);
     void update_field(vulkan::Device& device, const Field& field);
@@ -133,6 +134,7 @@ class Renderer {
     std::vector<std::optional<std::uint64_t>> recorded_frames_;
     const Field* field_ = nullptr;
     const GpuRegionPrograms* regions_ = nullptr;
+    const vulkan::Buffer* live_edit_controls_ = nullptr;
     profiling::ProfileRecorder* profile_ = nullptr;
     bool source_tracing_ = false;
     bool shadow_candidate_ = false;

@@ -26,11 +26,20 @@ constexpr auto hdr_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2D extent,
                       VkFormat format, std::uint32_t slots, const Field* field,
                       const SdfConfig& config, const AuthoredScene* scene,
-                      const GpuRegionPrograms* regions, std::string_view preparation_fault) {
+                      const GpuRegionPrograms* regions, std::string_view preparation_fault,
+                      const vulkan::Buffer* live_edit_controls) {
+    live_edit_controls_ = live_edit_controls;
     field_ = field;
     source_tracing_ = config.surface_trace != "sampled";
     shadow_candidate_ = source_shadow_pipeline_enabled(config);
     prepared_candidate_ = source_prepared_cones_enabled(config);
+    if (live_edit_controls_ &&
+        (!field || !regions || !scene || config.lighting != "atmosphere" ||
+         config.surface_trace != "analytic" || config.acceleration_variant != "root-far" ||
+         config.debug || config.ao || config.clouds || config.ground || config.occluder ||
+         config.cached_quality != "ordinary" || config.query_stepping != "ordinary" ||
+         prepared_candidate_))
+        throw std::invalid_argument("private live renderer requires a frozen field/regions and opaque analytic atmosphere");
     acceleration_uploads_ = config.acceleration_variant != "off" ? &gpu : nullptr;
     scene_extent_ = {extent.width * config.supersample, extent.height * config.supersample};
     executor_.resize(slots);
@@ -136,6 +145,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         bindings.push_back({16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
         bindings.push_back({17, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
     }
+    if (live_edit_controls_)
+        bindings.push_back({21, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
     if (prepared_candidate_) {
         bindings.push_back({19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT});
     }
@@ -185,6 +196,9 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
                               sizeof(LightingUniforms));
         writes.storage_buffer(descriptors_->set(i), 3, scene_program_->handle(),
                               scene_program_->size());
+        if (live_edit_controls_)
+            writes.storage_buffer(descriptors_->set(i), 21, live_edit_controls_->handle(),
+                                  live_edit_controls_->size());
         writes.storage_buffer(descriptors_->set(i), 4, scene_materials_->handle(),
                               scene_materials_->size());
         writes.storage_buffer(descriptors_->set(i), 5, preview_buffers_[i]->handle(),
@@ -250,6 +264,8 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
         fragment = "profile_fixed_" + config.comparison_stage + ".frag.spv";
     else if (config.frame_profile != "off" && config.frame_profile != "runtime")
         fragment = "profile_" + config.frame_profile + ".frag.spv";
+    if (live_edit_controls_)
+        fragment = "live_edit_sdf.frag.spv";
     const std::array stages{
         render::vertex_shader_file(path / "sdf.vert.spv"),
         render::fragment_shader_file(path / (quality_capture_ ? "quality_" + fragment : fragment))};
@@ -340,8 +356,9 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             device,
             render::ComputePipelineResourceConfig{
                 .shader_stage = render::compute_shader_file(
-                    path / (prefix + (quality_capture_ ? "quality_workload_" : "query_workload_") +
-                            variant + ".comp.spv")),
+                    path / (live_edit_controls_ ? "live_edit_quality_workload.comp.spv"
+                            : prefix + (quality_capture_ ? "quality_workload_" : "query_workload_") +
+                                  variant + ".comp.spv")),
                 .descriptor_set_layouts = layouts,
                 .push_constants = push});
         const std::array uv_stages{render::vertex_shader_file(path / "sdf.vert.spv"),
@@ -465,6 +482,7 @@ void Renderer::destroy() {
     scene_domains_.reset();
     scene_libraries_.reset();
     scene_program_.reset();
+    live_edit_controls_ = nullptr;
     scene_cones_.reset();
     cone_data_.reset();
     cone_descriptor_bindings_.clear();
@@ -919,6 +937,10 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         builder.import_buffer({"sdf.previews", preview_buffers_.at(slot.index)->size()},
                               preview_buffers_.at(slot.index)->handle());
     std::optional<render::RenderGraphBufferHandle> query_buffer, region_cells, region_refs;
+    std::optional<render::RenderGraphBufferHandle> live_controls;
+    if (live_edit_controls_)
+        live_controls = builder.import_buffer({"sdf.live-controls", live_edit_controls_->size()},
+                                               live_edit_controls_->handle());
     if (regions_) {
         region_cells = builder.import_buffer({"sdf.regions", regions_->cells->size()},
                                              regions_->cells->handle());
@@ -954,6 +976,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
             .read_uniform_buffer(lighting, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         for (auto resource : {program, materials, patterns, domains, libraries})
             replay.read_storage_buffer(resource, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        if (live_controls)
+            replay.read_storage_buffer(*live_controls, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         if (region_cells)
             replay.read_storage_buffer(*region_cells, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
         if (region_refs)
@@ -984,6 +1008,8 @@ void Renderer::record(vulkan::Device& device, VkCommandBuffer command,
         });
     }
     auto trace_pass = builder.add_pass("sdf.trace", render::RenderGraphQueueDomain::Graphics);
+    if (live_controls)
+        trace_pass.read_storage_buffer(*live_controls, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     if (query_buffer)
         trace_pass.read_storage_buffer(*query_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
     if (atlas)
