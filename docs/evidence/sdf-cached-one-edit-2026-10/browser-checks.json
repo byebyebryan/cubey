@@ -1,0 +1,73 @@
+{
+  "passed": true,
+  "checked_at": "2026-10-30T22:22:45.385Z",
+  "url": "http://starship:8787/reports/7052366b02e5c143cbc8634222fd59a5fb67d3970dbf4a8cf15d2d1edd78775e/",
+  "surface": "Connected Chrome browser",
+  "tested": [
+    "Robot close timing selection",
+    "Through-cut preview/committed image selection",
+    "Robot cut failure then retry slider",
+    "Reset timing selection",
+    "Loaded native images",
+    "Desktop overflow",
+    "Quality tail values visible"
+  ],
+  "failure": {
+    "cost": "Candidate rejected after 102.8 ms. Old cache and pending preview retained.",
+    "left": "through-cut-control-cut · one pending operation",
+    "right": "through-cut-control-cut · freshly committed Cached",
+    "route": "Original Cached9.039.20 [8.75–9.35]9.429.450/4500/450Zero pending · Cached8.788.95 [8.85–9.21]9.239.320/4500/450Add · one preview7.797.96 [7.88–8.00]8.058.080/4500/450Add · fresh Cached9.159.29 [9.02–9.50]9.589.600/4500/450Cut · one preview7.627.87 [7.80–7.87]7.988.030/4500/450Cut · fresh Cached8.959.10 [8.93–9.22]9.259.260/4500/450",
+    "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetirement after completed frame: 3"
+  },
+  "retry": {
+    "cost": "Replacement ready in 102.0 ms; completed frame in 108.4 ms.",
+    "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetirement after completed frame: 3"
+  },
+  "dom": {
+    "documentWidth": 1585,
+    "images": [
+      {
+        "complete": true,
+        "height": 540,
+        "id": "left-image",
+        "src": "images/through-cut-preview.webp",
+        "width": 960
+      },
+      {
+        "complete": true,
+        "height": 540,
+        "id": "right-image",
+        "src": "images/through-cut-committed.webp",
+        "width": 960
+      },
+      {
+        "complete": true,
+        "height": 540,
+        "id": "sequence-image",
+        "src": "images/robot-cut-failure-retry-3.webp",
+        "width": 960
+      },
+      {
+        "complete": true,
+        "height": 1000,
+        "id": "window-robot",
+        "src": "images/window-robot.webp",
+        "width": 900
+      },
+      {
+        "complete": true,
+        "height": 1000,
+        "id": "window-workshop",
+        "src": "images/window-workshop.webp",
+        "width": 900
+      }
+    ],
+    "qualityTail": true,
+    "reset": {
+      "subject": "guardian",
+      "view": "preset"
+    },
+    "width": 1600
+  },
+  "scope": "Report browser rendering and controls; native renderer acceptance recorded separately"
+}

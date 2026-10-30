@@ -1,0 +1,70 @@
+{
+  "checked_at": "2026-10-30T22:23:48.328159+00:00",
+  "scope": "Bounded Cached default and private one-operation study; no continuous editing or analytical-equivalence qualification",
+  "source_head": "1a498e7c99d358e718154c6290987dc4a2d64c2f",
+  "native_measurements": {
+    "timing_runs": 72,
+    "measured_frames": 10800,
+    "total_frames_per_run": 180,
+    "warmup_per_run": 30,
+    "measured_per_run": 150,
+    "matched_groups": 24,
+    "regular_independent_rays": 29,
+    "regular_geometry_passed": true,
+    "zero_edit_groups": 4,
+    "zero_edit_output_and_cost_passed": true,
+    "visible_replay_runs": 8,
+    "min_changed_rays": 64,
+    "commit_sequences": 8,
+    "sequence_frames": 36,
+    "commit_and_failure_retry_passed": true,
+    "settled_original_cached_identity_passed": true
+  },
+  "preservation": {
+    "original_shaders": 202,
+    "protected_files": 567
+  },
+  "tests": {
+    "focused_suite": {
+      "command": "ctest --test-dir build/release --output-on-failure -R '^(sdf_.*tests|documentation_(hygiene|media|rules)|shader_build_rules)$'",
+      "passed": 13,
+      "phase": "After affected targets rebuilt; before native timing/report export"
+    },
+    "final_documentation": {
+      "command": "ctest --test-dir build/release --output-on-failure -R '^documentation_(hygiene|media|rules)$'",
+      "passed": 3,
+      "phase": "After final results and report links"
+    }
+  },
+  "static_report": {
+    "passed": true,
+    "scope": "Static HTML, links/assets and mock DOM interaction; separate from browser rendering",
+    "ids": 33,
+    "cost_states": 4,
+    "image_states": 22,
+    "sequence_states": 36,
+    "reset": true
+  },
+  "native_windows": {
+    "robot": "window-robot.json",
+    "workshop": "window-workshop.json",
+    "scope": "Owned Xvfb, defaults and mode/sample/workshop transitions; no physical display acceptance"
+  },
+  "browser": "browser-checks.json",
+  "delivery": "delivery-checks.json",
+  "quality_limits": {
+    "strict_preview_bake_equivalence": false,
+    "guardian_unscored_pixels": 1,
+    "robot_unscored_pixels": 0,
+    "grazing_add_pairs_over_two_voxels": {
+      "guardian": 4,
+      "robot": 5
+    },
+    "subgrid_cavity_loss": true,
+    "cut_normal_max_degrees": {
+      "guardian": 9.41250842602244,
+      "robot": 22.421296453395613
+    },
+    "notes": "Regular cached-profile geometry controls pass. Grazing layer switches, cut edges and sub-grid loss remain explicitly diagnostic; unscored native pixels are not certified. Commit stalls are excluded from warm GPU rendering times."
+  }
+}

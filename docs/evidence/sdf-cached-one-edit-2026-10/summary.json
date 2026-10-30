@@ -1,0 +1,2440 @@
+{
+  "source_head": "1a498e7c99d358e718154c6290987dc4a2d64c2f",
+  "binary_sha256": "aedb9d513352ba874e165aef5f32abb9bd821538bdc7959d13b62ae66038686e",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "shaders": {
+    "cached_edit_quality_workload.comp.spv": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1",
+    "cached_edit_queries.comp.spv": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f",
+    "cached_edit_sdf.frag.spv": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6",
+    "quality_cached_edit_sdf.frag.spv": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+  },
+  "default": "Cached",
+  "timing": [
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "operation": "none",
+      "phase": "original",
+      "p50_ms": 1.86168,
+      "p95_ms": 2.029296,
+      "p95_range": [
+        2.001368,
+        2.0370895999999994
+      ],
+      "p99_ms": 2.09731392,
+      "max_ms": 2.115936,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "operation": "none",
+      "phase": "zero",
+      "p50_ms": 1.8631039999999999,
+      "p95_ms": 2.0421632,
+      "p95_range": [
+        2.031352,
+        2.0647536
+      ],
+      "p99_ms": 2.10861632,
+      "max_ms": 2.174944,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "operation": "add",
+      "phase": "preview",
+      "p50_ms": 1.8567040000000001,
+      "p95_ms": 2.020352,
+      "p95_range": [
+        2.0196272,
+        2.0721712
+      ],
+      "p99_ms": 2.1085648,
+      "max_ms": 2.115424,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "operation": "add",
+      "phase": "committed",
+      "p50_ms": 1.965152,
+      "p95_ms": 2.1381472,
+      "p95_range": [
+        2.1126944,
+        2.2183712
+      ],
+      "p99_ms": 2.2991689599999994,
+      "max_ms": 2.364576,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "operation": "cut",
+      "phase": "preview",
+      "p50_ms": 1.8838080000000001,
+      "p95_ms": 2.043,
+      "p95_range": [
+        2.02764,
+        2.0660879999999997
+      ],
+      "p99_ms": 2.1225091199999997,
+      "max_ms": 2.164832,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "operation": "cut",
+      "phase": "committed",
+      "p50_ms": 1.869904,
+      "p95_ms": 2.0265472,
+      "p95_range": [
+        2.0050608,
+        2.0597184
+      ],
+      "p99_ms": 2.09707232,
+      "max_ms": 2.146976,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "operation": "none",
+      "phase": "original",
+      "p50_ms": 2.589632,
+      "p95_ms": 2.7587135999999997,
+      "p95_range": [
+        2.7497439999999997,
+        2.9077471999999998
+      ],
+      "p99_ms": 2.9493868799999996,
+      "max_ms": 3.040832,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "operation": "none",
+      "phase": "zero",
+      "p50_ms": 2.598,
+      "p95_ms": 2.7657984,
+      "p95_range": [
+        2.757192,
+        2.8532064
+      ],
+      "p99_ms": 2.9132422399999998,
+      "max_ms": 2.9376,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "operation": "add",
+      "phase": "preview",
+      "p50_ms": 2.515424,
+      "p95_ms": 2.6769888,
+      "p95_range": [
+        2.6761328,
+        2.7116544
+      ],
+      "p99_ms": 2.792862079999999,
+      "max_ms": 2.869184,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "operation": "add",
+      "phase": "committed",
+      "p50_ms": 2.8390880000000003,
+      "p95_ms": 3.0212063999999996,
+      "p95_range": [
+        3.0195856,
+        3.0813456
+      ],
+      "p99_ms": 3.1250496,
+      "max_ms": 3.17552,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "operation": "cut",
+      "phase": "preview",
+      "p50_ms": 2.647008,
+      "p95_ms": 2.8575711999999998,
+      "p95_range": [
+        2.7859792,
+        2.8935999999999997
+      ],
+      "p99_ms": 2.9833932799999996,
+      "max_ms": 3.147072,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "operation": "cut",
+      "phase": "committed",
+      "p50_ms": 2.6040479999999997,
+      "p95_ms": 2.7790688,
+      "p95_range": [
+        2.7559536,
+        2.8573535999999993
+      ],
+      "p99_ms": 2.95633856,
+      "max_ms": 3.074016,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "operation": "none",
+      "phase": "original",
+      "p50_ms": 4.099904,
+      "p95_ms": 4.3150416,
+      "p95_range": [
+        4.2308656,
+        4.3388208
+      ],
+      "p99_ms": 4.42354592,
+      "max_ms": 4.479264,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "operation": "none",
+      "phase": "zero",
+      "p50_ms": 4.11576,
+      "p95_ms": 4.3379696,
+      "p95_range": [
+        4.2392128,
+        4.3918336
+      ],
+      "p99_ms": 4.491698879999999,
+      "max_ms": 4.577408,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "operation": "add",
+      "phase": "preview",
+      "p50_ms": 3.841264,
+      "p95_ms": 4.03272,
+      "p95_range": [
+        4.017089599999999,
+        4.24956
+      ],
+      "p99_ms": 4.337031039999999,
+      "max_ms": 4.460704,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "operation": "add",
+      "phase": "committed",
+      "p50_ms": 4.055168,
+      "p95_ms": 4.259462399999999,
+      "p95_range": [
+        4.2142448,
+        4.500031999999999
+      ],
+      "p99_ms": 4.538264,
+      "max_ms": 4.586208,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "operation": "cut",
+      "phase": "preview",
+      "p50_ms": 3.869072,
+      "p95_ms": 4.0734672,
+      "p95_range": [
+        4.064888,
+        4.1968736
+      ],
+      "p99_ms": 4.23545408,
+      "max_ms": 4.244128,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "operation": "cut",
+      "phase": "committed",
+      "p50_ms": 4.0781600000000005,
+      "p95_ms": 4.3003536,
+      "p95_range": [
+        4.2269136,
+        4.520023999999999
+      ],
+      "p99_ms": 4.55718496,
+      "max_ms": 4.669632,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "operation": "none",
+      "phase": "original",
+      "p50_ms": 9.027504,
+      "p95_ms": 9.2039856,
+      "p95_range": [
+        8.7531824,
+        9.346808
+      ],
+      "p99_ms": 9.42437824,
+      "max_ms": 9.44608,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "operation": "none",
+      "phase": "zero",
+      "p50_ms": 8.78304,
+      "p95_ms": 8.9495776,
+      "p95_range": [
+        8.849024,
+        9.2115648
+      ],
+      "p99_ms": 9.23311712,
+      "max_ms": 9.320832,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "operation": "add",
+      "phase": "preview",
+      "p50_ms": 7.794672,
+      "p95_ms": 7.9610176,
+      "p95_range": [
+        7.8807376,
+        8.001108799999999
+      ],
+      "p99_ms": 8.05395136,
+      "max_ms": 8.082688,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "operation": "add",
+      "phase": "committed",
+      "p50_ms": 9.14744,
+      "p95_ms": 9.2886448,
+      "p95_range": [
+        9.0197424,
+        9.4961664
+      ],
+      "p99_ms": 9.57924128,
+      "max_ms": 9.601728,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "operation": "cut",
+      "phase": "preview",
+      "p50_ms": 7.616768,
+      "p95_ms": 7.867832,
+      "p95_range": [
+        7.804672,
+        7.8708496
+      ],
+      "p99_ms": 7.9762272,
+      "max_ms": 8.03408,
+      "over_11_11": 0,
+      "over_16_67": 0
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "operation": "cut",
+      "phase": "committed",
+      "p50_ms": 8.947408,
+      "p95_ms": 9.095009600000001,
+      "p95_range": [
+        8.9250656,
+        9.220608
+      ],
+      "p99_ms": 9.246008,
+      "max_ms": 9.2616,
+      "over_11_11": 0,
+      "over_16_67": 0
+    }
+  ],
+  "zero_checks": [
+    {
+      "subject": "guardian",
+      "view": "preset",
+      "original_p95_ms": 2.029296,
+      "zero_p95_ms": 2.0421632,
+      "delta_ms": 0.012867200000000079,
+      "allowance_ms": 0.2,
+      "passed": true
+    },
+    {
+      "subject": "guardian",
+      "view": "close",
+      "original_p95_ms": 2.7587135999999997,
+      "zero_p95_ms": 2.7657984,
+      "delta_ms": 0.007084800000000335,
+      "allowance_ms": 0.2,
+      "passed": true
+    },
+    {
+      "subject": "robot",
+      "view": "preset",
+      "original_p95_ms": 4.3150416,
+      "zero_p95_ms": 4.3379696,
+      "delta_ms": 0.02292800000000028,
+      "allowance_ms": 0.21575208,
+      "passed": true
+    },
+    {
+      "subject": "robot",
+      "view": "close",
+      "original_p95_ms": 9.2039856,
+      "zero_p95_ms": 8.9495776,
+      "delta_ms": -0.25440799999999975,
+      "allowance_ms": 0.46019928,
+      "passed": true
+    }
+  ],
+  "images": {
+    "guardian-preset-add": {
+      "base": "images/guardian-preset-add-base.webp",
+      "preview": "images/guardian-preset-add-preview.webp",
+      "committed": "images/guardian-preset-add-committed.webp"
+    },
+    "guardian-close-add": {
+      "base": "images/guardian-close-add-base.webp",
+      "preview": "images/guardian-close-add-preview.webp",
+      "committed": "images/guardian-close-add-committed.webp"
+    },
+    "guardian-preset-cut": {
+      "base": "images/guardian-preset-cut-base.webp",
+      "preview": "images/guardian-preset-cut-preview.webp",
+      "committed": "images/guardian-preset-cut-committed.webp"
+    },
+    "guardian-close-cut": {
+      "base": "images/guardian-close-cut-base.webp",
+      "preview": "images/guardian-close-cut-preview.webp",
+      "committed": "images/guardian-close-cut-committed.webp"
+    },
+    "robot-preset-add": {
+      "base": "images/robot-preset-add-base.webp",
+      "preview": "images/robot-preset-add-preview.webp",
+      "committed": "images/robot-preset-add-committed.webp"
+    },
+    "robot-close-add": {
+      "base": "images/robot-close-add-base.webp",
+      "preview": "images/robot-close-add-preview.webp",
+      "committed": "images/robot-close-add-committed.webp"
+    },
+    "robot-preset-cut": {
+      "base": "images/robot-preset-cut-base.webp",
+      "preview": "images/robot-preset-cut-preview.webp",
+      "committed": "images/robot-preset-cut-committed.webp"
+    },
+    "robot-close-cut": {
+      "base": "images/robot-close-cut-base.webp",
+      "preview": "images/robot-close-cut-preview.webp",
+      "committed": "images/robot-close-cut-committed.webp"
+    },
+    "through-cut-control-cut": {
+      "base": "images/through-cut-base.webp",
+      "preview": "images/through-cut-preview.webp",
+      "committed": "images/through-cut-committed.webp"
+    },
+    "recessed-front-control-cut": {
+      "base": "images/recessed-front-base.webp",
+      "preview": "images/recessed-front-preview.webp",
+      "committed": "images/recessed-front-committed.webp"
+    },
+    "workspace-cut-control-cut": {
+      "base": "images/workspace-cut-base.webp",
+      "preview": "images/workspace-cut-preview.webp",
+      "committed": "images/workspace-cut-committed.webp"
+    }
+  },
+  "sequences": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "fault": false,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/guardian-add-commit-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/guardian-add-commit-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 2,
+          "image": "images/guardian-add-commit-2.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/guardian-add-commit-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 7.926179,
+          "brick_gpu_ms": 1125.8022079999998,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 1148.810883,
+          "field_build_ms": 1140.787824,
+          "filter_gpu_ms": 13.867231999999998,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.0549199999998109,
+          "published": true,
+          "published_geometry_hash": 15942407689268967484,
+          "ready_to_render_ms": 1148.865923,
+          "to_completed_replacement_frame_ms": 1154.941505
+        }
+      ],
+      "retired_after_frame": 2,
+      "prewarm_ms": 3.176211,
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 15942407689268967484,
+        "edited_instructions": 2023,
+        "edited_leaves": 1012,
+        "pending_operations": 1,
+        "retained_history_steps": 66,
+        "subtract": false
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "fault": true,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/guardian-add-failure-retry-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/guardian-add-failure-retry-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "preview",
+          "frame": 2,
+          "image": "images/guardian-add-failure-retry-2.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/guardian-add-failure-retry-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 4,
+          "image": "images/guardian-add-failure-retry-4.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.1101,
+          "brick_gpu_ms": 1229.350528,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 1251.498619,
+          "failure": "injected after construction before publication",
+          "field_build_ms": 1243.294079,
+          "filter_gpu_ms": 12.90608,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_after": 1,
+          "pending_before": 1,
+          "published": false,
+          "retained_base_geometry_hash": 15419350890978506480
+        },
+        {
+          "allocation_ms": 8.15104,
+          "brick_gpu_ms": 1083.39408,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 1107.205683,
+          "field_build_ms": 1098.958273,
+          "filter_gpu_ms": 14.327936,
+          "frame": 3,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.04692000000000007,
+          "published": true,
+          "published_geometry_hash": 15942407689268967484,
+          "ready_to_render_ms": 1107.252673,
+          "to_completed_replacement_frame_ms": 1113.239155
+        }
+      ],
+      "retired_after_frame": 3,
+      "prewarm_ms": 3.177792,
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 15942407689268967484,
+        "edited_instructions": 2023,
+        "edited_leaves": 1012,
+        "pending_operations": 1,
+        "retained_history_steps": 66,
+        "subtract": false
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "fault": false,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/guardian-cut-commit-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/guardian-cut-commit-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 2,
+          "image": "images/guardian-cut-commit-2.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/guardian-cut-commit-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.358411,
+          "brick_gpu_ms": 1107.622688,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 1130.83094,
+          "field_build_ms": 1122.361749,
+          "filter_gpu_ms": 13.75152,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.04373999999984335,
+          "published": true,
+          "published_geometry_hash": 13647441476530789317,
+          "ready_to_render_ms": 1130.87477,
+          "to_completed_replacement_frame_ms": 1136.810181
+        }
+      ],
+      "retired_after_frame": 2,
+      "prewarm_ms": 3.368932,
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 13647441476530789317,
+        "edited_instructions": 2023,
+        "edited_leaves": 1012,
+        "pending_operations": 1,
+        "retained_history_steps": 66,
+        "subtract": true
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "fault": true,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/guardian-cut-failure-retry-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/guardian-cut-failure-retry-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "preview",
+          "frame": 2,
+          "image": "images/guardian-cut-failure-retry-2.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/guardian-cut-failure-retry-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 4,
+          "image": "images/guardian-cut-failure-retry-4.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.624602,
+          "brick_gpu_ms": 1108.72352,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 1132.945719,
+          "failure": "injected after construction before publication",
+          "field_build_ms": 1124.217706,
+          "filter_gpu_ms": 14.372703999999999,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_after": 1,
+          "pending_before": 1,
+          "published": false,
+          "retained_base_geometry_hash": 15419350890978506480
+        },
+        {
+          "allocation_ms": 8.470001,
+          "brick_gpu_ms": 1038.700768,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 1062.13698,
+          "field_build_ms": 1053.563138,
+          "filter_gpu_ms": 13.48128,
+          "frame": 3,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.04177000000004227,
+          "published": true,
+          "published_geometry_hash": 13647441476530789317,
+          "ready_to_render_ms": 1062.17882,
+          "to_completed_replacement_frame_ms": 1068.017191
+        }
+      ],
+      "retired_after_frame": 3,
+      "prewarm_ms": 3.462303,
+      "identity": {
+        "base_geometry_hash": 15419350890978506480,
+        "base_instructions": 2021,
+        "base_leaves": 1011,
+        "edited_geometry_hash": 13647441476530789317,
+        "edited_instructions": 2023,
+        "edited_leaves": 1012,
+        "pending_operations": 1,
+        "retained_history_steps": 66,
+        "subtract": true
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "fault": false,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/robot-add-commit-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/robot-add-commit-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 2,
+          "image": "images/robot-add-commit-2.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/robot-add-commit-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.14509,
+          "brick_gpu_ms": 96.691744,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 106.890861,
+          "field_build_ms": 98.727881,
+          "filter_gpu_ms": 1.1637119999999999,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.030190000000004602,
+          "published": true,
+          "published_geometry_hash": 6379054994993219611,
+          "ready_to_render_ms": 106.921151,
+          "to_completed_replacement_frame_ms": 113.476855
+        }
+      ],
+      "retired_after_frame": 2,
+      "prewarm_ms": 3.569833,
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 6379054994993219611,
+        "edited_instructions": 165,
+        "edited_leaves": 83,
+        "pending_operations": 1,
+        "retained_history_steps": 83,
+        "subtract": false
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "fault": true,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/robot-add-failure-retry-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/robot-add-failure-retry-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "preview",
+          "frame": 2,
+          "image": "images/robot-add-failure-retry-2.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/robot-add-failure-retry-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 4,
+          "image": "images/robot-add-failure-retry-4.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.21366,
+          "brick_gpu_ms": 96.40201599999999,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 106.74124,
+          "failure": "injected after construction before publication",
+          "field_build_ms": 98.51207,
+          "filter_gpu_ms": 1.1654719999999998,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_after": 1,
+          "pending_before": 1,
+          "published": false,
+          "retained_base_geometry_hash": 15329115976364195548
+        },
+        {
+          "allocation_ms": 7.890678,
+          "brick_gpu_ms": 96.620576,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 106.524339,
+          "field_build_ms": 98.618331,
+          "filter_gpu_ms": 1.16672,
+          "frame": 3,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.023130000000008977,
+          "published": true,
+          "published_geometry_hash": 6379054994993219611,
+          "ready_to_render_ms": 106.547549,
+          "to_completed_replacement_frame_ms": 112.933602
+        }
+      ],
+      "retired_after_frame": 3,
+      "prewarm_ms": 3.154741,
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 6379054994993219611,
+        "edited_instructions": 165,
+        "edited_leaves": 83,
+        "pending_operations": 1,
+        "retained_history_steps": 83,
+        "subtract": false
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "fault": false,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/robot-cut-commit-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/robot-cut-commit-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 2,
+          "image": "images/robot-cut-commit-2.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/robot-cut-commit-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.064029,
+          "brick_gpu_ms": 92.08137599999999,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 102.110563,
+          "field_build_ms": 94.029624,
+          "filter_gpu_ms": 1.139808,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.026679999999998927,
+          "published": true,
+          "published_geometry_hash": 2164569866644847086,
+          "ready_to_render_ms": 102.137333,
+          "to_completed_replacement_frame_ms": 108.585597
+        }
+      ],
+      "retired_after_frame": 2,
+      "prewarm_ms": 3.227461,
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 2164569866644847086,
+        "edited_instructions": 165,
+        "edited_leaves": 83,
+        "pending_operations": 1,
+        "retained_history_steps": 83,
+        "subtract": true
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "fault": true,
+      "frames": [
+        {
+          "display": "base",
+          "frame": 0,
+          "image": "images/robot-cut-failure-retry-0.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "preview",
+          "frame": 1,
+          "image": "images/robot-cut-failure-retry-1.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "preview",
+          "frame": 2,
+          "image": "images/robot-cut-failure-retry-2.webp",
+          "pending_after_completed_frame": 1,
+          "pending_before_frame": 1,
+          "render_pending_operations": 1
+        },
+        {
+          "display": "committed",
+          "frame": 3,
+          "image": "images/robot-cut-failure-retry-3.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 1,
+          "render_pending_operations": 0
+        },
+        {
+          "display": "committed",
+          "frame": 4,
+          "image": "images/robot-cut-failure-retry-4.webp",
+          "pending_after_completed_frame": 0,
+          "pending_before_frame": 0,
+          "render_pending_operations": 0
+        }
+      ],
+      "commits": [
+        {
+          "allocation_ms": 8.29838,
+          "brick_gpu_ms": 92.62691199999999,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 102.787886,
+          "failure": "injected after construction before publication",
+          "field_build_ms": 94.474276,
+          "filter_gpu_ms": 1.14112,
+          "frame": 2,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_after": 1,
+          "pending_before": 1,
+          "published": false,
+          "retained_base_geometry_hash": 15329115976364195548
+        },
+        {
+          "allocation_ms": 7.870549,
+          "brick_gpu_ms": 92.270592,
+          "candidate_bytes": 912997552,
+          "candidate_ready_ms": 102.019363,
+          "field_build_ms": 94.133204,
+          "filter_gpu_ms": 1.140416,
+          "frame": 3,
+          "peak_field_payload_bytes": 1825995104,
+          "pending_before": 1,
+          "pending_retained_until_frame_completion": 1,
+          "publication_prepare_ms": 0.023499999999998522,
+          "published": true,
+          "published_geometry_hash": 2164569866644847086,
+          "ready_to_render_ms": 102.042963,
+          "to_completed_replacement_frame_ms": 108.355056
+        }
+      ],
+      "retired_after_frame": 3,
+      "prewarm_ms": 3.142461,
+      "identity": {
+        "base_geometry_hash": 15329115976364195548,
+        "base_instructions": 163,
+        "base_leaves": 82,
+        "edited_geometry_hash": 2164569866644847086,
+        "edited_instructions": 165,
+        "edited_leaves": 83,
+        "pending_operations": 1,
+        "retained_history_steps": 83,
+        "subtract": true
+      }
+    }
+  ],
+  "windows": [
+    {
+      "subject": "robot",
+      "receipt": {
+        "command": [
+          "stdbuf",
+          "-oL",
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--config",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/window-robot/config.json",
+          "--width",
+          "900",
+          "--height",
+          "1000",
+          "--require-validation"
+        ],
+        "inspect_only": false,
+        "mode_rows": [
+          {
+            "requested": "auto",
+            "effective": "cached",
+            "ss": 2,
+            "generation": 0,
+            "field_generation": 1,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "cached",
+            "effective": "cached",
+            "ss": 2,
+            "generation": 0,
+            "field_generation": 1,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "cached-refined",
+            "effective": "cached-refined",
+            "ss": 2,
+            "generation": 1,
+            "field_generation": 1,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "balanced",
+            "effective": "balanced",
+            "ss": 2,
+            "generation": 2,
+            "field_generation": 1,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "analytic",
+            "effective": "analytic",
+            "ss": 2,
+            "generation": 3,
+            "field_generation": 1,
+            "field_bytes": 0
+          },
+          {
+            "requested": "hybrid",
+            "effective": "hybrid",
+            "ss": 2,
+            "generation": 4,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "cached",
+            "effective": "cached",
+            "ss": 2,
+            "generation": 5,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "balanced",
+            "effective": "balanced",
+            "ss": 2,
+            "generation": 6,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "balanced",
+            "effective": "balanced",
+            "ss": 1,
+            "generation": 7,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "balanced",
+            "effective": "balanced",
+            "ss": 2,
+            "generation": 8,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "balanced",
+            "effective": "balanced",
+            "ss": 2,
+            "generation": 8,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          },
+          {
+            "requested": "balanced",
+            "effective": "balanced",
+            "ss": 2,
+            "generation": 8,
+            "field_generation": 2,
+            "field_bytes": 912997552
+          }
+        ],
+        "passed": true,
+        "binary_sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+        "scope": "Owned virtual X11 window; not physical desktop acceptance"
+      },
+      "image": "images/window-robot.webp"
+    },
+    {
+      "subject": "workshop",
+      "receipt": {
+        "command": [
+          "stdbuf",
+          "-oL",
+          "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+          "--config",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/window-workshop/config.json",
+          "--width",
+          "900",
+          "--height",
+          "1000",
+          "--require-validation"
+        ],
+        "inspect_only": false,
+        "mode_rows": [
+          {
+            "requested": "auto",
+            "effective": "cached",
+            "ss": 1,
+            "generation": 0,
+            "field_generation": 1,
+            "field_bytes": 912997552
+          }
+        ],
+        "passed": true,
+        "binary_sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+        "scope": "Owned virtual X11 window; not physical desktop acceptance"
+      },
+      "image": "images/window-workshop.webp"
+    }
+  ],
+  "commits": [
+    {
+      "subject": "guardian",
+      "samples": 4,
+      "ready_median_ms": 1119.0637215,
+      "completed_median_ms": 1125.024668,
+      "ready_range_ms": [
+        1062.17882,
+        1148.865923
+      ],
+      "allocation_median_ms": 8.2547255,
+      "field_build_median_ms": 1110.660011,
+      "peak_field_payload_bytes": 1825995104
+    },
+    {
+      "subject": "robot",
+      "samples": 4,
+      "ready_median_ms": 104.34244100000001,
+      "completed_median_ms": 110.75959950000001,
+      "ready_range_ms": [
+        102.042963,
+        106.921151
+      ],
+      "allocation_median_ms": 7.9773534999999995,
+      "field_build_median_ms": 96.3757675,
+      "peak_field_payload_bytes": 1825995104
+    }
+  ],
+  "native_validation": [
+    {
+      "subject": "guardian",
+      "operation": "none",
+      "phase": "preview-probe",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "exhaustion_color_pixels": 0,
+      "flags": [
+        {
+          "x": 137,
+          "y": 121,
+          "rgb": [
+            0,
+            255,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "phase": "preview-probe",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "exhaustion_color_pixels": 0,
+      "flags": [
+        {
+          "x": 137,
+          "y": 121,
+          "rgb": [
+            0,
+            255,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "phase": "committed-probe",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "exhaustion_color_pixels": 0,
+      "flags": [
+        {
+          "x": 137,
+          "y": 121,
+          "rgb": [
+            0,
+            255,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "phase": "preview-probe",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "exhaustion_color_pixels": 0,
+      "flags": [
+        {
+          "x": 137,
+          "y": 121,
+          "rgb": [
+            0,
+            255,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "phase": "committed-probe",
+      "pixels": 57600,
+      "unscored_pixels": 1,
+      "exhaustion_color_pixels": 0,
+      "flags": [
+        {
+          "x": 137,
+          "y": 121,
+          "rgb": [
+            0,
+            255,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "subject": "robot",
+      "operation": "none",
+      "phase": "preview-probe",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "exhaustion_color_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "phase": "preview-probe",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "exhaustion_color_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "phase": "committed-probe",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "exhaustion_color_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "phase": "preview-probe",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "exhaustion_color_pixels": 0,
+      "flags": []
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "phase": "committed-probe",
+      "pixels": 57600,
+      "unscored_pixels": 0,
+      "exhaustion_color_pixels": 0,
+      "flags": []
+    }
+  ],
+  "handoff": [
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-add-preview-probe",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-add-committed-probe",
+      "pixels": 57600,
+      "reference_hits": 4930,
+      "candidate_hits": 4930,
+      "unscored_pixels": 1,
+      "false_foreground": 0,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 694,
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 4929,
+        "mean": 8.499257091898471e-05,
+        "p50": 0.0,
+        "p95": 0.00012435913085937487,
+        "p99": 0.000325875282287598,
+        "max": 0.23616838455200195
+      },
+      "depth_in_pixel_footprints": {
+        "count": 4929,
+        "mean": 0.014055773041646333,
+        "p50": 0.0,
+        "p95": 0.024056637527643827,
+        "p99": 0.06132288553081306,
+        "max": 36.427510417475105
+      },
+      "compatible_normal_degrees": {
+        "count": 4925,
+        "mean": 0.012675287635494062,
+        "p50": 0.0,
+        "p95": 0.08861033753812383,
+        "p99": 0.2770130151671288,
+        "max": 0.9155914450596465
+      },
+      "incompatible_hit_pairs": 4,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 150,
+        "over_8": 3,
+        "over_32": 2,
+        "max_channel": 130,
+        "mean_abs_channel": 0.004699074074074074
+      },
+      "subject": "guardian",
+      "operation": "add"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-cut-preview-probe",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-cut-committed-probe",
+      "pixels": 57600,
+      "reference_hits": 4930,
+      "candidate_hits": 4930,
+      "unscored_pixels": 1,
+      "false_foreground": 0,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 694,
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 4929,
+        "mean": 7.757068487990182e-06,
+        "p50": 0.0,
+        "p95": 7.386207580566367e-05,
+        "p99": 0.00018915176391601641,
+        "max": 0.0005104541778564453
+      },
+      "depth_in_pixel_footprints": {
+        "count": 4929,
+        "mean": 0.00123230724714128,
+        "p50": 0.0,
+        "p95": 0.011569918762406496,
+        "p99": 0.030143786953067794,
+        "max": 0.08276325084468503
+      },
+      "compatible_normal_degrees": {
+        "count": 4929,
+        "mean": 0.014535516202951734,
+        "p50": 0.0,
+        "p95": 0.02383065173740334,
+        "p99": 0.1871736275628539,
+        "max": 9.41250842602244
+      },
+      "incompatible_hit_pairs": 0,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 39,
+        "over_8": 4,
+        "over_32": 1,
+        "max_channel": 117,
+        "mean_abs_channel": 0.002806712962962963
+      },
+      "subject": "guardian",
+      "operation": "cut"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-add-preview-probe",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-add-committed-probe",
+      "pixels": 57600,
+      "reference_hits": 5598,
+      "candidate_hits": 5598,
+      "unscored_pixels": 0,
+      "false_foreground": 0,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 974,
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5598,
+        "mean": 1.884060475276783e-05,
+        "p50": 0.0,
+        "p95": 0.00010074973106384273,
+        "p99": 0.0002551579475402828,
+        "max": 0.03680241107940674
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5598,
+        "mean": 0.003154956027912494,
+        "p50": 0.0,
+        "p95": 0.017464915255834903,
+        "p99": 0.04319311453586501,
+        "max": 5.962492811580889
+      },
+      "compatible_normal_degrees": {
+        "count": 5593,
+        "mean": 0.008207063242790092,
+        "p50": 0.0,
+        "p95": 0.051042228510568985,
+        "p99": 0.21630405977148964,
+        "max": 0.8892509214706592
+      },
+      "incompatible_hit_pairs": 5,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 109,
+        "over_8": 0,
+        "over_32": 0,
+        "max_channel": 5,
+        "mean_abs_channel": 0.001238425925925926
+      },
+      "subject": "robot",
+      "operation": "add"
+    },
+    {
+      "reference": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-cut-preview-probe",
+      "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-cut-committed-probe",
+      "pixels": 57600,
+      "reference_hits": 5556,
+      "candidate_hits": 5556,
+      "unscored_pixels": 0,
+      "false_foreground": 0,
+      "false_background": 0,
+      "silhouette_boundary_pixels": {
+        "count": 1018,
+        "mean": 0.0,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0,
+        "max": 0.0
+      },
+      "silhouette_over_1px": 0,
+      "depth_world": {
+        "count": 5556,
+        "mean": 6.202015811140882e-06,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.00015872120857238767,
+        "max": 0.0005335807800292969
+      },
+      "depth_in_pixel_footprints": {
+        "count": 5556,
+        "mean": 0.0009464216148565031,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.024294683781821164,
+        "max": 0.08331244185224576
+      },
+      "compatible_normal_degrees": {
+        "count": 5556,
+        "mean": 0.024520773478053908,
+        "p50": 0.0,
+        "p95": 1.4787793334710982e-06,
+        "p99": 0.14302449753749003,
+        "max": 22.421296453395613
+      },
+      "incompatible_hit_pairs": 0,
+      "normal_compatibility_world_limit": 0.0011160714285714285,
+      "image": {
+        "changed_pixels": 81,
+        "over_8": 7,
+        "over_32": 4,
+        "max_channel": 184,
+        "mean_abs_channel": 0.01001736111111111
+      },
+      "subject": "robot",
+      "operation": "cut"
+    }
+  ],
+  "geometry": {
+    "binary_sha256": "aedb9d513352ba874e165aef5f32abb9bd821538bdc7959d13b62ae66038686e",
+    "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+    "source_head": "1a498e7c99d358e718154c6290987dc4a2d64c2f",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+    "tool_sha256": "699e0fa605e8828e2ef6b1cfad1ef1c2d4d3fa999be7c8566df18f1055445381",
+    "public_binary_sha256": "0d72a76fdbab71afc21f4457c1324320b16c6bb753d4e3368cca5f06b7c9772e",
+    "current_public_sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+    "shaders": {
+      "cached_edit_quality_workload.comp.spv": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1",
+      "cached_edit_queries.comp.spv": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f",
+      "cached_edit_sdf.frag.spv": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6",
+      "quality_cached_edit_sdf.frag.spv": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+    },
+    "preview": {
+      "passed": true,
+      "regular_rays": 29,
+      "max_regular_depth": 9.945869445804334e-05,
+      "max_regular_normal_degrees": 0.3808974316451651,
+      "failures": [],
+      "diagnostics": [
+        {
+          "case": "subgrid-cavity",
+          "query": 0,
+          "expected_t": 0.00019531249999999998,
+          "result": {
+            "normal": [
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4551915228366852e-11,
+            "status": 1,
+            "steps": 21.0,
+            "t": 0.00019531250291038305
+          },
+          "differences": []
+        },
+        {
+          "case": "tool-tangent",
+          "query": 0,
+          "expected_t": 0.7,
+          "result": {
+            "normal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 1.0,
+            "t": 0.699999988079071
+          },
+          "differences": []
+        },
+        {
+          "case": "tool-tangent",
+          "query": 1,
+          "expected_t": null,
+          "result": {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          },
+          "differences": []
+        }
+      ]
+    },
+    "fresh_cached": {
+      "passed": true,
+      "regular_rays": 29,
+      "max_regular_depth": 9.945869445804334e-05,
+      "max_regular_normal_degrees": 0.3808974316451651,
+      "failures": [],
+      "diagnostics": [
+        {
+          "case": "subgrid-cavity",
+          "query": 0,
+          "expected_t": 0.00019531249999999998,
+          "result": {
+            "normal": [
+              0.001364068011753261,
+              0.001364068011753261,
+              0.999998152256012
+            ],
+            "residual": -9.328126907348633e-05,
+            "status": 1,
+            "steps": 43.0,
+            "t": 0.19962729513645172
+          },
+          "differences": [
+            [
+              "depth",
+              0.19943198263645173
+            ],
+            [
+              "normal",
+              179.8894715910177
+            ]
+          ]
+        },
+        {
+          "case": "tool-tangent",
+          "query": 0,
+          "expected_t": 0.7,
+          "result": {
+            "normal": [
+              0.9989044666290283,
+              0.002734608016908169,
+              0.04671690985560417
+            ],
+            "residual": 0.00010979175567626953,
+            "status": 1,
+            "steps": 152.0,
+            "t": 0.6953127384185791
+          },
+          "differences": [
+            [
+              "depth",
+              0.004687261581420854
+            ]
+          ]
+        },
+        {
+          "case": "tool-tangent",
+          "query": 1,
+          "expected_t": null,
+          "result": {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "residual": 0.0,
+            "status": 0,
+            "steps": 102.0,
+            "t": 0.0
+          },
+          "differences": []
+        }
+      ]
+    },
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+      "--edit-input",
+      "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/geometry/fixtures.json",
+      "--edit-output",
+      "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/geometry/preview.json",
+      "--edit-phase",
+      "preview",
+      "--headless",
+      "--require-validation",
+      "--motion",
+      "static",
+      "--supersample",
+      "1",
+      "--width",
+      "16",
+      "--height",
+      "16",
+      "--shadows",
+      "1",
+      "--no-ao",
+      "--no-ground",
+      "--no-clouds",
+      "--no-occluder",
+      "--edit-queries"
+    ],
+    "fresh_command": [
+      "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/baseline-sdf",
+      "--headless",
+      "--headless-render-only",
+      "--require-validation",
+      "--frames",
+      "1",
+      "--width",
+      "16",
+      "--height",
+      "16",
+      "--surface-trace",
+      "sampled",
+      "--csg-evaluation",
+      "full",
+      "--comparison-input",
+      "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/geometry/fresh-input.json",
+      "--comparison-output",
+      "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/geometry/fresh-cached.json"
+    ],
+    "complete": true
+  },
+  "replay": {
+    "binary_sha256": "aedb9d513352ba874e165aef5f32abb9bd821538bdc7959d13b62ae66038686e",
+    "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+    "source_head": "1a498e7c99d358e718154c6290987dc4a2d64c2f",
+    "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+    "tool_sha256": "699e0fa605e8828e2ef6b1cfad1ef1c2d4d3fa999be7c8566df18f1055445381",
+    "public_binary_sha256": "0d72a76fdbab71afc21f4457c1324320b16c6bb753d4e3368cca5f06b7c9772e",
+    "current_public_sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+    "shaders": {
+      "cached_edit_quality_workload.comp.spv": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1",
+      "cached_edit_queries.comp.spv": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f",
+      "cached_edit_sdf.frag.spv": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6",
+      "quality_cached_edit_sdf.frag.spv": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+    },
+    "runs": [
+      {
+        "subject": "guardian",
+        "view": "preset",
+        "operation": "add",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 1235,
+        "pending_hits": 112,
+        "changed_cached_rays": 112,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 1235,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-add.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-add.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-add-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-add-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "guardian",
+        "view": "close",
+        "operation": "add",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 4041,
+        "pending_hits": 590,
+        "changed_cached_rays": 590,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 4041,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-add.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-add.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-add-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-add-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "guardian",
+        "view": "preset",
+        "operation": "cut",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 1235,
+        "pending_hits": 64,
+        "changed_cached_rays": 64,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 1235,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-cut.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-cut.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-cut-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-preset-cut-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "guardian",
+        "view": "close",
+        "operation": "cut",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 3965,
+        "pending_hits": 244,
+        "changed_cached_rays": 244,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 3965,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-cut.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-cut.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-cut-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/guardian-close-cut-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "robot",
+        "view": "preset",
+        "operation": "add",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 1408,
+        "pending_hits": 94,
+        "changed_cached_rays": 94,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 1408,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-add.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-add.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-add-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-add-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "robot",
+        "view": "close",
+        "operation": "add",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 4239,
+        "pending_hits": 368,
+        "changed_cached_rays": 368,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 4239,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-add.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-add.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-add-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-add-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "robot",
+        "view": "preset",
+        "operation": "cut",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 1398,
+        "pending_hits": 69,
+        "changed_cached_rays": 68,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 1398,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-cut.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-cut.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-cut-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-preset-cut-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      },
+      {
+        "subject": "robot",
+        "view": "close",
+        "operation": "cut",
+        "camera_rays": 14400,
+        "camera_exhausted": 0,
+        "camera_hits": 4172,
+        "pending_hits": 224,
+        "changed_cached_rays": 229,
+        "visibility_gate_minimum": 10,
+        "shadow_rays": 4172,
+        "shadow_exhausted": 0,
+        "command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-cut.input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-cut.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ],
+        "shadow_command": [
+          "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+          "--edit-input",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-cut-shadow-input.json",
+          "--edit-output",
+          "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/replay/robot-close-cut-shadow.json",
+          "--edit-phase",
+          "preview",
+          "--headless",
+          "--require-validation",
+          "--motion",
+          "static",
+          "--supersample",
+          "1",
+          "--width",
+          "16",
+          "--height",
+          "16",
+          "--shadows",
+          "1",
+          "--no-ao",
+          "--no-ground",
+          "--no-clouds",
+          "--no-occluder",
+          "--edit-queries"
+        ]
+      }
+    ],
+    "complete": true
+  },
+  "preservation": {
+    "original_shaders": 202,
+    "protected_files": 567
+  }
+}

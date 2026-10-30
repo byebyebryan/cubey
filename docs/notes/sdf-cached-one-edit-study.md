@@ -106,3 +106,104 @@ by .01 along their normal. Before timing, every subject/view/add-or-cut must
 change at least ten of 160x90 Cached control rays, by classification or more
 than one voxel in depth. This adds a visibility coverage gate without changing
 the geometry error allowances. The qualified dataset uses a separate raw root.
+
+## Qualified results and decision
+
+The narrowed rendering hypothesis passes in this bounded trial. Cached is the
+public default for authored scenes and workshops, with all five explicit modes
+available and existing preset sample settings preserved. One pending hard
+sphere/box union or subtraction is a private study path. Zero pending edits use
+the original Cached shader and descriptors, with byte-identical images against
+the preserved original executable's explicit Cached mode.
+
+Runtime source: `e5bc3628`; visible-workload harness: `1a498e7c`. The final raw
+dataset is `outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/`.
+The [evidence packet](../evidence/sdf-cached-one-edit-2026-10/README.md) retains
+all commands, inputs, hashes, failures and complete per-frame measurements.
+
+Native 1080p SS1 GPU p95 milliseconds, median of three interleaved runs. Each
+run contains 30 warmup plus 150 measured frames; each table cell has 450 measured
+frames. Lights/materials/camera match, with hard shadows and no AO/ground/clouds.
+
+| Subject / view | Original Cached | Zero pending | Add preview | Cut preview | Fresh add | Fresh cut |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Guardian preset | 2.03 | 2.04 | 2.02 | 2.04 | 2.14 | 2.03 |
+| Guardian close | 2.76 | 2.77 | 2.68 | 2.86 | 3.02 | 2.78 |
+| Robot preset | 4.32 | 4.34 | 4.03 | 4.07 | 4.26 | 4.30 |
+| Robot close | 9.20 | 8.95 | 7.96 | 7.87 | 9.29 | 9.10 |
+
+All four zero-edit timing comparisons pass the frozen max(5%, 0.2 ms)
+allowance. Every measured warm rendering frame is below 11.11 and 16.67 ms in
+this finite mono SS1 run. Those samples exclude commit stalls and establish no
+continuous-input, stereo or physical VR acceptance. A brush changes geometry
+and shading work, so lower preview times are not a general speedup claim.
+
+The visible cut coverage is 64/244 changed Guardian rays at preset/close, and
+68/229 changed Robot rays. Additions change 112/590 and 94/368 respectively.
+Every changed-ray count uses 160x90 matched Cached control rays and exceeds the
+pre-timing ten-ray visibility gate. No camera/shadow replay exhausts. The 29
+regular independent controls pass; sub-grid and tangent diagnostics are separate.
+
+## Commit remains the bottleneck
+
+Eight serialized sequences cover both subjects/operations, ordinary success and
+an injected failure after candidate construction before publication, followed by
+explicit retry. All settled images match fresh original-executable Cached
+renders byte for byte. Failed candidates retain the exact old preview image and
+pending operation. Retained canonical source/history includes the new operation;
+pending rendering state is cleared only after a replacement frame completes.
+
+Across four successful attempts per subject, median ready-to-render commit time
+is **1,119 ms Guardian** and **104 ms Robot**; median replacement-frame completion
+is 1,125/111 ms. Field construction accounts for about 1,111/96 ms, with roughly
+8 ms allocation. These 960x540 SS1 sequences use the same 3D cache resolution.
+Replacement completion includes readback synchronization but excludes PNG
+encoding. Renderer preparation is prewarmed and separately recorded.
+
+Two fields request 1,825,995,104 bytes of geometry payload (about 1.70 GiB), before
+renderer/staging costs; this is not a residency measurement. The old cache stays
+alive until publication. No background builder or continuously accepted stream
+is implemented, so the current commit pauses feedback. Retaining only one
+pending render operation does not remove the canonical source capacity limit.
+
+## Preview/bake differences remain explicit
+
+At the 320x180 payload resolution, regular visible add/cut comparisons have no
+scored foreground/background changes. Guardian retains one unqualified native
+depth pixel at (137,121), present in zero-edit Cached, preview and fresh Cached;
+Robot has no flagged pixels. Excluded pixels are not certified as passed.
+
+Depth p99 for additions is about 0.000326 Guardian and 0.000255 Robot, but four
+Guardian and five Robot matched-hit pixels change depth by more than two voxels.
+The largest changes are 0.236/0.0368 world units: foreground brush versus body
+layers on grazing rays. Independent ray/sphere clearance is positive but below
+ordinary Cached's hit epsilon for the largest cases, supporting a hit-band
+interpretation. This is not a strict preview/bake equivalence pass. The packet
+retains those tail diagnostics rather than relying only on small p95 values.
+Cut normal maxima at edges are about 9.4/22.4 degrees despite low p95 values.
+
+The pending primitive is analytical, so the known radius-0.35h cavity still
+appears during preview and disappears in a fresh sampled bake. This trial
+accepts the selected cached-quality contract and records the change; consistent
+preview tolerance/resolution or a minimum-feature policy is still a separate
+decision. Earlier analytical-source tolerances are unchanged.
+
+## Validation and next boundary
+
+[Interactive results and native images](http://starship:8787/reports/7052366b02e5c143cbc8634222fd59a5fb67d3970dbf4a8cf15d2d1edd78775e/).
+The reproducible packet is in
+[`docs/evidence/sdf-cached-one-edit-2026-10/`](../evidence/sdf-cached-one-edit-2026-10/README.md).
+
+The focused 13 SDF/documentation/shader checks pass; all affected mode/selection
+test targets were rebuilt. Owned native Xvfb checks show Default -> Cached at
+Robot's retained SS2 and the workshop's SS1, exercise all explicit modes and
+sampling/resize controls, and check workshop material/specimen publication.
+Original 202 SPIR-V files and 567 protected source/content files are byte
+unchanged. Source/history formats, canonical scenes/presets and builders remain
+unchanged. Commits are local; no push or project-site deployment.
+
+Next, compare cheaper canonical cache construction against the full-field
+control, including work-unit time, preparation, rendering interference, memory
+and publication. The renderer now supports a useful small pending state for
+that experiment. Continuous input, longer editing sessions/source capacity,
+undo UI and XR remain separate gates.

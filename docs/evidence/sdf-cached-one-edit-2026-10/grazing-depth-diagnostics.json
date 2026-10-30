@@ -1,0 +1,125 @@
+{
+  "scope": "Independent ray/sphere clearance for largest matched-hit add depth changes; supports tolerance-band interpretation, not a hardware timing attribution",
+  "cases": [
+    {
+      "subject": "guardian",
+      "pixel": [
+        137,
+        80
+      ],
+      "preview_t": 1.408673882484436,
+      "committed_t": 1.172505497932434,
+      "depth_change": 0.23616838455200195,
+      "sphere_ray_clearance": 6.697286248555367e-05,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "guardian",
+      "pixel": [
+        153,
+        98
+      ],
+      "preview_t": 1.2704945802688599,
+      "committed_t": 1.1711561679840088,
+      "depth_change": 0.09933841228485107,
+      "sphere_ray_clearance": 7.276544968515264e-06,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "guardian",
+      "pixel": [
+        141,
+        78
+      ],
+      "preview_t": 1.1715643405914307,
+      "committed_t": 1.169871211051941,
+      "depth_change": 0.001693129539489746,
+      "sphere_ray_clearance": -8.2214200804967e-05,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "guardian",
+      "pixel": [
+        135,
+        82
+      ],
+      "preview_t": 1.171089768409729,
+      "committed_t": 1.1695492267608643,
+      "depth_change": 0.001540541648864746,
+      "sphere_ray_clearance": -0.00011626446062801277,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "guardian",
+      "pixel": [
+        148,
+        101
+      ],
+      "preview_t": 1.1691462993621826,
+      "committed_t": 1.1680387258529663,
+      "depth_change": 0.0011075735092163086,
+      "sphere_ray_clearance": -0.0002533613601098522,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "robot",
+      "pixel": [
+        155,
+        74
+      ],
+      "preview_t": 1.3411167860031128,
+      "committed_t": 1.304314374923706,
+      "depth_change": 0.03680241107940674,
+      "sphere_ray_clearance": 5.0361851295713245e-05,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "robot",
+      "pixel": [
+        149,
+        93
+      ],
+      "preview_t": 1.3042738437652588,
+      "committed_t": 1.3023638725280762,
+      "depth_change": 0.0019099712371826172,
+      "sphere_ray_clearance": -6.03241117244635e-05,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "robot",
+      "pixel": [
+        156,
+        75
+      ],
+      "preview_t": 1.304322600364685,
+      "committed_t": 1.3024204969406128,
+      "depth_change": 0.0019021034240722656,
+      "sphere_ray_clearance": -5.360071711880965e-05,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "robot",
+      "pixel": [
+        147,
+        93
+      ],
+      "preview_t": 1.3035423755645752,
+      "committed_t": 1.3019205331802368,
+      "depth_change": 0.001621842384338379,
+      "sphere_ray_clearance": -9.608161920734992e-05,
+      "cached_hit_epsilon": 0.00011160714285714285
+    },
+    {
+      "subject": "robot",
+      "pixel": [
+        138,
+        78
+      ],
+      "preview_t": 1.3016760349273682,
+      "committed_t": 1.3005179166793823,
+      "depth_change": 0.0011581182479858398,
+      "sphere_ray_clearance": -0.0002253094318024479,
+      "cached_hit_epsilon": 0.00011160714285714285
+    }
+  ]
+}

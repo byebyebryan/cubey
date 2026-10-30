@@ -1,0 +1,1055 @@
+{
+  "binary_sha256": "aedb9d513352ba874e165aef5f32abb9bd821538bdc7959d13b62ae66038686e",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "1a498e7c99d358e718154c6290987dc4a2d64c2f",
+  "source_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "tool_sha256": "699e0fa605e8828e2ef6b1cfad1ef1c2d4d3fa999be7c8566df18f1055445381",
+  "public_binary_sha256": "0d72a76fdbab71afc21f4457c1324320b16c6bb753d4e3368cca5f06b7c9772e",
+  "current_public_sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+  "shaders": {
+    "cached_edit_quality_workload.comp.spv": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1",
+    "cached_edit_queries.comp.spv": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f",
+    "cached_edit_sdf.frag.spv": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6",
+    "quality_cached_edit_sdf.frag.spv": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+  },
+  "runs": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "fault": false,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "4"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.176211,
+        "commits": [
+          {
+            "allocation_ms": 7.926179,
+            "brick_gpu_ms": 1125.8022079999998,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 1148.810883,
+            "field_build_ms": 1140.787824,
+            "filter_gpu_ms": 13.867231999999998,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.0549199999998109,
+            "published": true,
+            "published_geometry_hash": 15942407689268967484,
+            "ready_to_render_ms": 1148.865923,
+            "to_completed_replacement_frame_ms": 1154.941505
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-2.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 1021.227904,
+          "build_ms": 1036.642714,
+          "bytes": 912997552,
+          "filter_gpu_ms": 14.284832
+        },
+        "pending_retired_after_completed_frame": 2,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15419350890978506480,
+            "base_instructions": 2021,
+            "base_leaves": 1011,
+            "edited_geometry_hash": 15942407689268967484,
+            "edited_instructions": 2023,
+            "edited_leaves": 1012,
+            "pending_operations": 1,
+            "retained_history_steps": 66,
+            "subtract": false
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "fault": true,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "5"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.177792,
+        "commits": [
+          {
+            "allocation_ms": 8.1101,
+            "brick_gpu_ms": 1229.350528,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 1251.498619,
+            "failure": "injected after construction before publication",
+            "field_build_ms": 1243.294079,
+            "filter_gpu_ms": 12.90608,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_after": 1,
+            "pending_before": 1,
+            "published": false,
+            "retained_base_geometry_hash": 15419350890978506480
+          },
+          {
+            "allocation_ms": 8.15104,
+            "brick_gpu_ms": 1083.39408,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 1107.205683,
+            "field_build_ms": 1098.958273,
+            "filter_gpu_ms": 14.327936,
+            "frame": 3,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.04692000000000007,
+            "published": true,
+            "published_geometry_hash": 15942407689268967484,
+            "ready_to_render_ms": 1107.252673,
+            "to_completed_replacement_frame_ms": 1113.239155
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "preview",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-2.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 4,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-4.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 1171.2304,
+          "build_ms": 1184.654935,
+          "bytes": 912997552,
+          "filter_gpu_ms": 12.355968
+        },
+        "pending_retired_after_completed_frame": 3,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15419350890978506480,
+            "base_instructions": 2021,
+            "base_leaves": 1011,
+            "edited_geometry_hash": 15942407689268967484,
+            "edited_instructions": 2023,
+            "edited_leaves": 1012,
+            "pending_operations": 1,
+            "retained_history_steps": 66,
+            "subtract": false
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "fault": false,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "4"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.368932,
+        "commits": [
+          {
+            "allocation_ms": 8.358411,
+            "brick_gpu_ms": 1107.622688,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 1130.83094,
+            "field_build_ms": 1122.361749,
+            "filter_gpu_ms": 13.75152,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.04373999999984335,
+            "published": true,
+            "published_geometry_hash": 13647441476530789317,
+            "ready_to_render_ms": 1130.87477,
+            "to_completed_replacement_frame_ms": 1136.810181
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-2.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 1014.412192,
+          "build_ms": 1030.934175,
+          "bytes": 912997552,
+          "filter_gpu_ms": 15.36848
+        },
+        "pending_retired_after_completed_frame": 2,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15419350890978506480,
+            "base_instructions": 2021,
+            "base_leaves": 1011,
+            "edited_geometry_hash": 13647441476530789317,
+            "edited_instructions": 2023,
+            "edited_leaves": 1012,
+            "pending_operations": 1,
+            "retained_history_steps": 66,
+            "subtract": true
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "fault": true,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "5"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.462303,
+        "commits": [
+          {
+            "allocation_ms": 8.624602,
+            "brick_gpu_ms": 1108.72352,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 1132.945719,
+            "failure": "injected after construction before publication",
+            "field_build_ms": 1124.217706,
+            "filter_gpu_ms": 14.372703999999999,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_after": 1,
+            "pending_before": 1,
+            "published": false,
+            "retained_base_geometry_hash": 15419350890978506480
+          },
+          {
+            "allocation_ms": 8.470001,
+            "brick_gpu_ms": 1038.700768,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 1062.13698,
+            "field_build_ms": 1053.563138,
+            "filter_gpu_ms": 13.48128,
+            "frame": 3,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.04177000000004227,
+            "published": true,
+            "published_geometry_hash": 13647441476530789317,
+            "ready_to_render_ms": 1062.17882,
+            "to_completed_replacement_frame_ms": 1068.017191
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "preview",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-2.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 4,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-4.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 1083.3186879999998,
+          "build_ms": 1097.220277,
+          "bytes": 912997552,
+          "filter_gpu_ms": 12.612991999999998
+        },
+        "pending_retired_after_completed_frame": 3,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15419350890978506480,
+            "base_instructions": 2021,
+            "base_leaves": 1011,
+            "edited_geometry_hash": 13647441476530789317,
+            "edited_instructions": 2023,
+            "edited_leaves": 1012,
+            "pending_operations": 1,
+            "retained_history_steps": 66,
+            "subtract": true
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "fault": false,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "4"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.569833,
+        "commits": [
+          {
+            "allocation_ms": 8.14509,
+            "brick_gpu_ms": 96.691744,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 106.890861,
+            "field_build_ms": 98.727881,
+            "filter_gpu_ms": 1.1637119999999999,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.030190000000004602,
+            "published": true,
+            "published_geometry_hash": 6379054994993219611,
+            "ready_to_render_ms": 106.921151,
+            "to_completed_replacement_frame_ms": 113.476855
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-2.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 94.935552,
+          "build_ms": 97.054635,
+          "bytes": 912997552,
+          "filter_gpu_ms": 1.125824
+        },
+        "pending_retired_after_completed_frame": 2,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15329115976364195548,
+            "base_instructions": 163,
+            "base_leaves": 82,
+            "edited_geometry_hash": 6379054994993219611,
+            "edited_instructions": 165,
+            "edited_leaves": 83,
+            "pending_operations": 1,
+            "retained_history_steps": 83,
+            "subtract": false
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "fault": true,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "5"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.154741,
+        "commits": [
+          {
+            "allocation_ms": 8.21366,
+            "brick_gpu_ms": 96.40201599999999,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 106.74124,
+            "failure": "injected after construction before publication",
+            "field_build_ms": 98.51207,
+            "filter_gpu_ms": 1.1654719999999998,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_after": 1,
+            "pending_before": 1,
+            "published": false,
+            "retained_base_geometry_hash": 15329115976364195548
+          },
+          {
+            "allocation_ms": 7.890678,
+            "brick_gpu_ms": 96.620576,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 106.524339,
+            "field_build_ms": 98.618331,
+            "filter_gpu_ms": 1.16672,
+            "frame": 3,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.023130000000008977,
+            "published": true,
+            "published_geometry_hash": 6379054994993219611,
+            "ready_to_render_ms": 106.547549,
+            "to_completed_replacement_frame_ms": 112.933602
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "preview",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-2.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 4,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-4.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 91.13750399999999,
+          "build_ms": 93.233991,
+          "bytes": 912997552,
+          "filter_gpu_ms": 1.123392
+        },
+        "pending_retired_after_completed_frame": 3,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15329115976364195548,
+            "base_instructions": 163,
+            "base_leaves": 82,
+            "edited_geometry_hash": 6379054994993219611,
+            "edited_instructions": 165,
+            "edited_leaves": 83,
+            "pending_operations": 1,
+            "retained_history_steps": 83,
+            "subtract": false
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "fault": false,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "4"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.227461,
+        "commits": [
+          {
+            "allocation_ms": 8.064029,
+            "brick_gpu_ms": 92.08137599999999,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 102.110563,
+            "field_build_ms": 94.029624,
+            "filter_gpu_ms": 1.139808,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.026679999999998927,
+            "published": true,
+            "published_geometry_hash": 2164569866644847086,
+            "ready_to_render_ms": 102.137333,
+            "to_completed_replacement_frame_ms": 108.585597
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-2.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 91.089856,
+          "build_ms": 93.14013,
+          "bytes": 912997552,
+          "filter_gpu_ms": 1.12528
+        },
+        "pending_retired_after_completed_frame": 2,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15329115976364195548,
+            "base_instructions": 163,
+            "base_leaves": 82,
+            "edited_geometry_hash": 2164569866644847086,
+            "edited_instructions": 165,
+            "edited_leaves": 83,
+            "pending_operations": 1,
+            "retained_history_steps": 83,
+            "subtract": true
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "fault": true,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_edit_study",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/survey-robot-fieldkit.json",
+        "--edit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry-input.json",
+        "--edit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.json",
+        "--edit-phase",
+        "sequence",
+        "--headless",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--supersample",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--shadows",
+        "1",
+        "--no-ao",
+        "--no-ground",
+        "--no-clouds",
+        "--no-occluder",
+        "--headless-render-only",
+        "--frames",
+        "5"
+      ],
+      "native": {
+        "candidate_renderer_prewarm_ms": 3.142461,
+        "commits": [
+          {
+            "allocation_ms": 8.29838,
+            "brick_gpu_ms": 92.62691199999999,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 102.787886,
+            "failure": "injected after construction before publication",
+            "field_build_ms": 94.474276,
+            "filter_gpu_ms": 1.14112,
+            "frame": 2,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_after": 1,
+            "pending_before": 1,
+            "published": false,
+            "retained_base_geometry_hash": 15329115976364195548
+          },
+          {
+            "allocation_ms": 7.870549,
+            "brick_gpu_ms": 92.270592,
+            "candidate_bytes": 912997552,
+            "candidate_ready_ms": 102.019363,
+            "field_build_ms": 94.133204,
+            "filter_gpu_ms": 1.140416,
+            "frame": 3,
+            "peak_field_payload_bytes": 1825995104,
+            "pending_before": 1,
+            "pending_retained_until_frame_completion": 1,
+            "publication_prepare_ms": 0.023499999999998522,
+            "published": true,
+            "published_geometry_hash": 2164569866644847086,
+            "ready_to_render_ms": 102.042963,
+            "to_completed_replacement_frame_ms": 108.355056
+          }
+        ],
+        "format": "cubey.sdf.cached-edit-results",
+        "frames": [
+          {
+            "display": "base",
+            "frame": 0,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-0.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "preview",
+            "frame": 1,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-1.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "preview",
+            "frame": 2,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-2.png",
+            "pending_after_completed_frame": 1,
+            "pending_before_frame": 1,
+            "render_pending_operations": 1
+          },
+          {
+            "display": "committed",
+            "frame": 3,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-3.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 1,
+            "render_pending_operations": 0
+          },
+          {
+            "display": "committed",
+            "frame": 4,
+            "image": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-4.png",
+            "pending_after_completed_frame": 0,
+            "pending_before_frame": 0,
+            "render_pending_operations": 0
+          }
+        ],
+        "initial_field": {
+          "brick_gpu_ms": 91.019104,
+          "build_ms": 93.095831,
+          "bytes": 912997552,
+          "filter_gpu_ms": 1.124128
+        },
+        "pending_retired_after_completed_frame": 3,
+        "phase": "sequence",
+        "programs": [
+          {
+            "base_geometry_hash": 15329115976364195548,
+            "base_instructions": 163,
+            "base_leaves": 82,
+            "edited_geometry_hash": 2164569866644847086,
+            "edited_instructions": 165,
+            "edited_leaves": 83,
+            "pending_operations": 1,
+            "retained_history_steps": 83,
+            "subtract": true
+          }
+        ],
+        "render_path": "existing Cached pipeline",
+        "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.retained-source.json",
+        "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+        "version": 1
+      },
+      "settled_byte_identical": true
+    }
+  ],
+  "complete": true
+}

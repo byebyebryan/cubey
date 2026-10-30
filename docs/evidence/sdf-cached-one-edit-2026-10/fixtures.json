@@ -1,0 +1,2188 @@
+{
+  "format": "cubey.sdf.cached-edit-study",
+  "version": 1,
+  "cases": [
+    {
+      "name": "add-outside-base",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "union",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.08,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.25,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.62,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0.25,
+            0,
+            0.08
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "union-inside-exits",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "union",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.08,
+              "position": [
+                0.25,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.12,
+            0,
+            0
+          ],
+          "direction": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.21,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "origin": [
+            0.25,
+            0,
+            0
+          ],
+          "direction": [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.45,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            -1,
+            0,
+            0
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "cavity",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.06,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.06,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            -1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0.12
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.06,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            -1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "through-cut",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "box",
+          "half_extent": [
+            0.15,
+            0.15,
+            0.15
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "box",
+              "half_extent": [
+                0.15,
+                0.15,
+                0.15
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "box",
+              "half_extent": [
+                0.04,
+                0.04,
+                0.3
+              ]
+            }
+          ],
+          "cut_material": "blue"
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": null,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.04,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            -1,
+            0,
+            0
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "recessed-front",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "box",
+          "half_extent": [
+            0.15,
+            0.15,
+            0.15
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "box",
+              "half_extent": [
+                0.15,
+                0.15,
+                0.15
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "box",
+              "half_extent": [
+                0.06,
+                0.06,
+                0.1
+              ],
+              "position": [
+                0,
+                0,
+                0.12
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.68,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "cut-covers-body",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.3,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": null,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": null,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "union-covers-body",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "union",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.3,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.4,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.3,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "invisible-inner-add",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "union",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.04,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "outside-cut",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.04,
+              "position": [
+                0.35,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0.35,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": null,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "rotated-box",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.06,
+          "position": [
+            -0.2,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "union",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.06,
+              "position": [
+                -0.2,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "box",
+              "half_extent": [
+                0.08,
+                0.03,
+                0.05
+              ],
+              "position": [
+                0.25,
+                0.04,
+                0
+              ],
+              "rotation_xyzw": [
+                0,
+                0.19866933079506122,
+                0,
+                0.9800665778412416
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.5225928396160553,
+            0.04,
+            0.6447426958020195
+          ],
+          "direction": [
+            -0.3894183423086505,
+            0.0,
+            -0.9210609940028851
+          ],
+          "kind": "ray",
+          "expected_t": 0.65,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0.3894183423086505,
+            0,
+            0.9210609940028851
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "workspace-add",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.05,
+          "position": [
+            -0.2,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "union",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.05,
+              "position": [
+                -0.2,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.06,
+              "position": [
+                0,
+                0,
+                0.48
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.201,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0.498
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.001,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "workspace-cut",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.1,
+          "position": [
+            0,
+            0,
+            0.45
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0.45
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.08,
+              "position": [
+                0,
+                0,
+                0.48
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.3,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0.498
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": null,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "resume-to-second-body",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "two",
+          "type": "union",
+          "children": [
+            {
+              "name": "front",
+              "type": "sphere",
+              "radius": 0.06,
+              "position": [
+                0,
+                0,
+                0.15
+              ]
+            },
+            {
+              "name": "rear",
+              "type": "sphere",
+              "radius": 0.06,
+              "position": [
+                0,
+                0,
+                -0.15
+              ]
+            }
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "two",
+              "type": "union",
+              "children": [
+                {
+                  "name": "front",
+                  "type": "sphere",
+                  "radius": 0.06,
+                  "position": [
+                    0,
+                    0,
+                    0.15
+                  ]
+                },
+                {
+                  "name": "rear",
+                  "type": "sphere",
+                  "radius": 0.06,
+                  "position": [
+                    0,
+                    0,
+                    -0.15
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.1,
+              "position": [
+                0,
+                0,
+                0.15
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.79,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "empty-base-add",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": null
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "pending",
+          "type": "sphere",
+          "radius": 0.1,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.6,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.1,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "zero-edit",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.5,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.2,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            1
+          ]
+        }
+      ],
+      "diagnostic": false
+    },
+    {
+      "name": "subgrid-cavity",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "body",
+          "type": "sphere",
+          "radius": 0.2,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "single-pending-operation",
+          "type": "subtract",
+          "children": [
+            {
+              "name": "body",
+              "type": "sphere",
+              "radius": 0.2,
+              "position": [
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "pending",
+              "type": "sphere",
+              "radius": 0.00019531249999999998,
+              "position": [
+                0.00027901785714285713,
+                0.00027901785714285713,
+                0.00027901785714285713
+              ]
+            }
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.00027901785714285713,
+            0.00027901785714285713,
+            0.00027901785714285713
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.00019531249999999998,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular",
+          "expected_normal": [
+            0,
+            0,
+            -1
+          ]
+        }
+      ],
+      "diagnostic": true
+    },
+    {
+      "name": "tool-tangent",
+      "base": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": null
+      },
+      "scene": {
+        "format": "cubey.sdf.scene",
+        "version": 2,
+        "name": "tracing comparison",
+        "materials": [
+          {
+            "name": "red",
+            "base_color": [
+              1,
+              0,
+              0
+            ],
+            "roughness": 0.5
+          },
+          {
+            "name": "blue",
+            "base_color": [
+              0,
+              0,
+              1
+            ],
+            "roughness": 0.7
+          }
+        ],
+        "root": {
+          "name": "pending",
+          "type": "sphere",
+          "radius": 0.1,
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "queries": [
+        {
+          "origin": [
+            0.1,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": 0.7,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        },
+        {
+          "origin": [
+            0.10089285714285715,
+            0,
+            0.7
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "kind": "ray",
+          "expected_t": null,
+          "depth_tolerance": 6.975446428571428e-05,
+          "classification": "regular"
+        }
+      ],
+      "diagnostic": true
+    }
+  ],
+  "contracts": {
+    "regular_depth": 0.00027901785714285713,
+    "regular_normal_degrees": 2,
+    "profile": "existing Cached quality; source differences remain separate"
+  }
+}

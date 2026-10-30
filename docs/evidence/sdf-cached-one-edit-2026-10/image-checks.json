@@ -1,0 +1,361 @@
+{
+  "passed": true,
+  "images": 71,
+  "checks": [
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-preset-add-base.png",
+      "export": "images/guardian-preset-add-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-preset-add-preview.png",
+      "export": "images/guardian-preset-add-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-preset-add-committed.png",
+      "export": "images/guardian-preset-add-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-close-add-base.png",
+      "export": "images/guardian-close-add-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-close-add-preview.png",
+      "export": "images/guardian-close-add-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-close-add-committed.png",
+      "export": "images/guardian-close-add-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-preset-cut-base.png",
+      "export": "images/guardian-preset-cut-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-preset-cut-preview.png",
+      "export": "images/guardian-preset-cut-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-preset-cut-committed.png",
+      "export": "images/guardian-preset-cut-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-close-cut-base.png",
+      "export": "images/guardian-close-cut-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-close-cut-preview.png",
+      "export": "images/guardian-close-cut-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/guardian-close-cut-committed.png",
+      "export": "images/guardian-close-cut-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-preset-add-base.png",
+      "export": "images/robot-preset-add-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-preset-add-preview.png",
+      "export": "images/robot-preset-add-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-preset-add-committed.png",
+      "export": "images/robot-preset-add-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-close-add-base.png",
+      "export": "images/robot-close-add-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-close-add-preview.png",
+      "export": "images/robot-close-add-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-close-add-committed.png",
+      "export": "images/robot-close-add-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-preset-cut-base.png",
+      "export": "images/robot-preset-cut-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-preset-cut-preview.png",
+      "export": "images/robot-preset-cut-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-preset-cut-committed.png",
+      "export": "images/robot-preset-cut-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-close-cut-base.png",
+      "export": "images/robot-close-cut-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-close-cut-preview.png",
+      "export": "images/robot-close-cut-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/robot-close-cut-committed.png",
+      "export": "images/robot-close-cut-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/through-cut-base.png",
+      "export": "images/through-cut-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/through-cut-preview.png",
+      "export": "images/through-cut-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/through-cut-committed.png",
+      "export": "images/through-cut-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/recessed-front-base.png",
+      "export": "images/recessed-front-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/recessed-front-preview.png",
+      "export": "images/recessed-front-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/recessed-front-committed.png",
+      "export": "images/recessed-front-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/workspace-cut-base.png",
+      "export": "images/workspace-cut-base.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/workspace-cut-preview.png",
+      "export": "images/workspace-cut-preview.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/captures/workspace-cut-committed.png",
+      "export": "images/workspace-cut-committed.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-0.png",
+      "export": "images/guardian-add-commit-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-1.png",
+      "export": "images/guardian-add-commit-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-2.png",
+      "export": "images/guardian-add-commit-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-commit.frame-3.png",
+      "export": "images/guardian-add-commit-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-0.png",
+      "export": "images/guardian-add-failure-retry-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-1.png",
+      "export": "images/guardian-add-failure-retry-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-2.png",
+      "export": "images/guardian-add-failure-retry-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-3.png",
+      "export": "images/guardian-add-failure-retry-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-add-failure-retry.frame-4.png",
+      "export": "images/guardian-add-failure-retry-4.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-0.png",
+      "export": "images/guardian-cut-commit-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-1.png",
+      "export": "images/guardian-cut-commit-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-2.png",
+      "export": "images/guardian-cut-commit-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-commit.frame-3.png",
+      "export": "images/guardian-cut-commit-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-0.png",
+      "export": "images/guardian-cut-failure-retry-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-1.png",
+      "export": "images/guardian-cut-failure-retry-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-2.png",
+      "export": "images/guardian-cut-failure-retry-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-3.png",
+      "export": "images/guardian-cut-failure-retry-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/guardian-cut-failure-retry.frame-4.png",
+      "export": "images/guardian-cut-failure-retry-4.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-0.png",
+      "export": "images/robot-add-commit-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-1.png",
+      "export": "images/robot-add-commit-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-2.png",
+      "export": "images/robot-add-commit-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-commit.frame-3.png",
+      "export": "images/robot-add-commit-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-0.png",
+      "export": "images/robot-add-failure-retry-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-1.png",
+      "export": "images/robot-add-failure-retry-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-2.png",
+      "export": "images/robot-add-failure-retry-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-3.png",
+      "export": "images/robot-add-failure-retry-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-add-failure-retry.frame-4.png",
+      "export": "images/robot-add-failure-retry-4.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-0.png",
+      "export": "images/robot-cut-commit-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-1.png",
+      "export": "images/robot-cut-commit-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-2.png",
+      "export": "images/robot-cut-commit-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-commit.frame-3.png",
+      "export": "images/robot-cut-commit-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-0.png",
+      "export": "images/robot-cut-failure-retry-0.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-1.png",
+      "export": "images/robot-cut-failure-retry-1.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-2.png",
+      "export": "images/robot-cut-failure-retry-2.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-3.png",
+      "export": "images/robot-cut-failure-retry-3.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/sequences/robot-cut-failure-retry.frame-4.png",
+      "export": "images/robot-cut-failure-retry-4.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/window-robot/initial.png",
+      "export": "images/window-robot.webp",
+      "exhaustion_color_pixels": 0
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/window-workshop/initial.png",
+      "export": "images/window-workshop.webp",
+      "exhaustion_color_pixels": 0
+    }
+  ]
+}

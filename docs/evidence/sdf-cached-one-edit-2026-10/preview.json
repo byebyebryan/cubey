@@ -1,0 +1,825 @@
+{
+  "commits": [],
+  "format": "cubey.sdf.cached-edit-results",
+  "frames": [],
+  "phase": "preview",
+  "programs": [
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 6881074465200632532,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 6881074465200632532,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 345864672403842498,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 8207449685619564942,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 9470320173363195474,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 8207449685619564942,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 17468350046058042709,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18160140233868612311,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 13303006607403960551,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 2092947763437958306,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 7628013126670134945,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 3753243443036512725,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 9775245779302481726,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 7653545218569773480,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18080757779593155586,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 9528710269108034239,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 12419047416383916153,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 4722571129496212202,
+      "base_instructions": 3,
+      "base_leaves": 2,
+      "edited_geometry_hash": 15891383288828275049,
+      "edited_instructions": 5,
+      "edited_leaves": 3,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 14695981039346656037,
+      "base_instructions": 0,
+      "base_leaves": 0,
+      "edited_geometry_hash": 16439186744481241111,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 18108402278844718650,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_operations": 0,
+      "retained_history_steps": 0,
+      "subtract": false
+    },
+    {
+      "base_geometry_hash": 18108402278844718650,
+      "base_instructions": 1,
+      "base_leaves": 1,
+      "edited_geometry_hash": 5470114744067985772,
+      "edited_instructions": 3,
+      "edited_leaves": 2,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": true
+    },
+    {
+      "base_geometry_hash": 14695981039346656037,
+      "base_instructions": 0,
+      "base_leaves": 0,
+      "edited_geometry_hash": 16439186744481241111,
+      "edited_instructions": 1,
+      "edited_leaves": 1,
+      "pending_operations": 1,
+      "retained_history_steps": 0,
+      "subtract": false
+    }
+  ],
+  "queries": {
+    "cases": [
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 6881074465200632532,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "add-outside-base",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 11.0,
+            "t": 0.6200000047683716
+          },
+          {
+            "normal": [
+              0.0012820652918890119,
+              0.0012820652918890119,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": 9.350478649139404e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.4999064803123474
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 8.0,
+            "t": -0.0
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 6881074465200632532,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "union-inside-exits",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.20999999344348907
+          },
+          {
+            "normal": [
+              -0.9999979734420776,
+              0.0014458770165219903,
+              0.0014458770165219903
+            ],
+            "pending_surface": false,
+            "source_residual": -9.293854236602783e-05,
+            "status": 1,
+            "steps": 42.0,
+            "t": 0.4499070644378662
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 345864672403842498,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "cavity",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -0.0,
+            "status": 1,
+            "steps": 21.0,
+            "t": 0.05999999865889549
+          },
+          {
+            "normal": [
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -0.0,
+            "status": 1,
+            "steps": 23.0,
+            "t": 0.05999999865889549
+          },
+          {
+            "normal": [
+              0.0012820652918890119,
+              0.0012820652918890119,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": 9.350478649139404e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.4999064803123474
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 8207449685619564942,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 9470320173363195474,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "through-cut",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 17.0,
+            "t": 0.0
+          },
+          {
+            "normal": [
+              -1.0,
+              -0.0,
+              -0.0
+            ],
+            "pending_surface": true,
+            "source_residual": -0.0,
+            "status": 1,
+            "steps": 16.0,
+            "t": 0.03999999910593033
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 8207449685619564942,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 17468350046058042709,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "recessed-front",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 16.0,
+            "t": 0.6800000071525574
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 18160140233868612311,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "cut-covers-body",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 25.0,
+            "t": 0.0
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 25.0,
+            "t": 0.0
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 13303006607403960551,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "union-covers-body",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 21.0,
+            "t": 0.3999999761581421
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 21.0,
+            "t": 0.30000001192092896
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 2092947763437958306,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "invisible-inner-add",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0012820652918890119,
+              0.0012820652918890119,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": 9.350478649139404e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.4999064803123474
+          },
+          {
+            "normal": [
+              0.001281928620301187,
+              0.001281928620301187,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": -9.284913539886475e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.19990715384483337
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 7628013126670134945,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "outside-cut",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0012820652918890119,
+              0.0012820652918890119,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": 9.350478649139404e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.4999064803123474
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 10.0,
+            "t": 0.0
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 3753243443036512725,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 9775245779302481726,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "rotated-box",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.3894115388393402,
+              0.0,
+              0.9210638999938965
+            ],
+            "pending_surface": true,
+            "source_residual": 7.450580596923828e-09,
+            "status": 1,
+            "steps": 5.0,
+            "t": 0.6499999761581421
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 7653545218569773480,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 18080757779593155586,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "workspace-add",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 5.0,
+            "t": 0.20099997520446777
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 2.0,
+            "t": 0.0010000169277191162
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 9528710269108034239,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 12419047416383916153,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "workspace-cut",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              -0.0,
+              -0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4901161193847656e-08,
+            "status": 1,
+            "steps": 11.0,
+            "t": 0.30000001192092896
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 11.0,
+            "t": 0.0
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 4722571129496212202,
+        "base_instructions": 3,
+        "base_leaves": 2,
+        "edited_geometry_hash": 15891383288828275049,
+        "edited_instructions": 5,
+        "edited_leaves": 3,
+        "name": "resume-to-second-body",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.004700750578194857,
+              0.004700750578194857,
+              0.9999778866767883
+            ],
+            "pending_surface": false,
+            "source_residual": 9.945407509803772e-05,
+            "status": 1,
+            "steps": 33.0,
+            "t": 0.789900541305542
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 14695981039346656037,
+        "base_instructions": 0,
+        "base_leaves": 0,
+        "edited_geometry_hash": 16439186744481241111,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "name": "empty-base-add",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 2.2351741790771484e-08,
+            "status": 1,
+            "steps": 1.0,
+            "t": 0.5999999642372131
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 1.0,
+            "t": 0.10000000149011612
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 18108402278844718650,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "name": "zero-edit",
+        "pending_operations": 0,
+        "results": [
+          {
+            "normal": [
+              0.0012820652918890119,
+              0.0012820652918890119,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": 9.350478649139404e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.4999064803123474
+          },
+          {
+            "normal": [
+              0.001281928620301187,
+              0.001281928620301187,
+              0.9999983310699463
+            ],
+            "pending_surface": false,
+            "source_residual": -9.284913539886475e-05,
+            "status": 1,
+            "steps": 20.0,
+            "t": 0.19990715384483337
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      },
+      {
+        "base_geometry_hash": 18108402278844718650,
+        "base_instructions": 1,
+        "base_leaves": 1,
+        "edited_geometry_hash": 5470114744067985772,
+        "edited_instructions": 3,
+        "edited_leaves": 2,
+        "name": "subgrid-cavity",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4551915228366852e-11,
+            "status": 1,
+            "steps": 21.0,
+            "t": 0.00019531250291038305
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": true
+      },
+      {
+        "base_geometry_hash": 14695981039346656037,
+        "base_instructions": 0,
+        "base_leaves": 0,
+        "edited_geometry_hash": 16439186744481241111,
+        "edited_instructions": 1,
+        "edited_leaves": 1,
+        "name": "tool-tangent",
+        "pending_operations": 1,
+        "results": [
+          {
+            "normal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 1.0,
+            "t": 0.699999988079071
+          },
+          {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 0.0,
+            "t": 0.0
+          }
+        ],
+        "retained_history_steps": 0,
+        "subtract": false
+      }
+    ],
+    "shader_sha256": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f"
+  },
+  "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/cached-one-edit-loop-20261030/qualified-visible/geometry/preview.retained-source.json",
+  "scope": "Private one-operation Cached preview; serialized commit, no continuous input/updater/VR",
+  "version": 1
+}
