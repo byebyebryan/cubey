@@ -234,9 +234,9 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         bindings.push_back({18, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
     if (prepared_cones)
         bindings.push_back({19, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
-    const bool pruned = config.csg_evaluation == "pruned";
+    const bool pruned = config.csg_evaluation == "pruned" || cached_source_normals(config);
     if (pruned) {
-        if (config.surface_trace == "sampled")
+        if (config.surface_trace == "sampled" && !cached_source_normals(config))
             throw std::invalid_argument("sampled/pruned is not a comparison route");
         bindings.push_back({16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
         bindings.push_back({17, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
@@ -270,6 +270,8 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         shader.insert(0, "prepared_");
     if (config.query_stepping != "ordinary")
         shader.insert(0, query_step_prefix(config));
+    if (config.cached_quality != "ordinary")
+        shader.insert(0, cached_quality_prefix(config));
     const auto query_shader_bytes =
         read_binary_file(std::filesystem::path(CUBEY_SDF_SHADER_DIR) / shader);
     receipt["query_shader"] = shader;
@@ -289,7 +291,9 @@ void execute(vulkan::Device& device, ProjectGpuServices& gpu, const SdfConfig& c
         if (pruned)
             regions = std::make_unique<GpuRegionPrograms>(
                 device, scene, config.region_axis, region_reference_limit, false,
-                config.acceleration_variant != "off" ? &gpu : nullptr, config.acceleration_variant);
+                config.acceleration_variant != "off" || cached_source_normals(config) ? &gpu
+                                                                                      : nullptr,
+                cached_source_normals(config) ? "root-far" : config.acceleration_variant);
         if (field)
             field->build(scene);
         std::vector<Query> queries;

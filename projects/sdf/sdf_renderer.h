@@ -42,6 +42,7 @@ class Renderer {
                 std::uint32_t slots, const Field* field, const SdfConfig& config,
                 const AuthoredScene* scene = nullptr, const GpuRegionPrograms* regions = nullptr);
     void destroy();
+    void save_quality_snapshot(const std::filesystem::path& path);
     void update_field(vulkan::Device& device, const Field& field);
     [[nodiscard]] std::unique_ptr<vulkan::Buffer> prepare_program(const AuthoredScene* scene);
     [[nodiscard]] PreparedAuthored prepare_authored(vulkan::Device& device,
@@ -102,6 +103,7 @@ class Renderer {
     std::unique_ptr<vulkan::Buffer> scene_optics_;
     std::optional<render::FrameUniformBuffer<LightingUniforms>> lighting_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
+    std::unique_ptr<vulkan::DescriptorSetArray> quality_pipeline_descriptors_;
     std::unique_ptr<vulkan::Buffer> scene_program_, scene_materials_, scene_patterns_,
         scene_domains_, scene_libraries_;
     std::unique_ptr<vulkan::Buffer> scene_cones_;
@@ -118,6 +120,8 @@ class Renderer {
     std::optional<render::GraphicsPipelineResource> query_camera_pipeline_;
     std::optional<vulkan::Sampler> query_camera_sampler_;
     std::filesystem::path query_workload_path_;
+    bool quality_capture_ = false;
+    bool quality_snapshot_saved_ = false;
     std::size_t published_material_count_ = 0;
     unsigned shader_pipeline_count_ = 0;
     double shader_pipeline_setup_ms_ = 0;

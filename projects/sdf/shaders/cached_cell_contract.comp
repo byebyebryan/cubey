@@ -1,0 +1,69 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+layout(local_size_x=1) in;
+#include "cached_cell_math.glsl"
+const float VOXEL=1.0/(256.0*7.0),EPSILON=VOXEL*.2;
+const uint SUBDIVIDED=0x80000000u,FILLED=0x40000000u,POINTER=0x3fffffffu;
+const int atlas=0;
+const uint atlasAxis=64u;
+uint testIndex=0u,kind=0u;
+float testEpsilon=.05;
+ivec3 testCell=ivec3(128);
+struct Hit {float t;int status;uint steps;ivec3 cell;uint pointer;};
+vec2 rayBox(vec3 o,vec3 d,vec3 low,vec3 high) {
+    vec3 inv=1.0/mix(d,vec3(1e-20),lessThan(abs(d),vec3(1e-20)));
+    vec3 a=(low-o)*inv,b=(high-o)*inv;
+    return vec2(max(min(a,b).x,max(min(a,b).y,min(a,b).z)),min(max(a,b).x,min(max(a,b).y,max(a,b).z)));
+}
+float fieldValue(vec3 p) {
+    if(kind==0u)return .75*VOXEL-p.x;
+    if(kind==1u)return (.75*VOXEL-p.x)*.8+(p.y-.3*VOXEL)*.3+(p.z-.4*VOXEL)*.5;
+    if(kind==2u)return -(p.x-.3*VOXEL)*(p.y-.6*VOXEL)*(p.z-.85*VOXEL)/(VOXEL*VOXEL);
+    if(kind==3u)return (p.x-.6*VOXEL)*(p.y-.6*VOXEL)/VOXEL;
+    if(kind==4u)return p.x-.8*VOXEL;
+    if(kind==5u)return 2.0*testEpsilon*VOXEL;
+    if(kind==6u)return .9*VOXEL-p.x;
+    if(kind==9u)return uintBitsToFloat(0x7fc00000u);
+    if(kind==10u)return .40013*VOXEL-p.x;
+    return .75*VOXEL-p.x;
+}
+float stored(vec3 p) {return unpackHalf2x16(packHalf2x16(vec2(fieldValue(p),0))).x;}
+uint lookup(vec3 p,vec3 direction,out ivec3 cell,out uint level) {
+    cell=clamp(ivec3(floor((p+.5+sign(direction)*1e-6)*256.0)),ivec3(0),ivec3(255));
+    testCell=cell;level=8u;
+    return kind==7u ? 0u : kind==8u ? FILLED : SUBDIVIDED;
+}
+ivec3 brickOrigin(uint pointer,uint axis) {return ivec3(0);}
+vec4 mockFetch(int unusedAtlas,ivec3 coord,int lod) {
+    return vec4(stored(vec3(testCell)/256.0-.5+vec3(coord)*VOXEL));
+}
+float sampleBrick(vec3 p,ivec3 cell,uint pointer) {return fieldValue(p);}
+#define texelFetch mockFetch
+#define SDF_CACHED_REFINE
+#define SDF_CACHED_EPSILON testEpsilon
+#include "cached_quality.glsl"
+#undef texelFetch
+struct Output {vec4 hit;vec4 origin;vec4 direction;vec4 corners0;vec4 corners1;vec4 settings;};
+layout(std430,set=0,binding=0) writeonly buffer Results {Output results[];};
+void main() {
+    testIndex=gl_GlobalInvocationID.x;kind=testIndex/2u;testEpsilon=(testIndex&1u)==0u ? .05 : .03125;
+    vec3 o=vec3(-.7,.3*VOXEL,.4*VOXEL),d=vec3(1,0,0);
+    float start=.7+.6*VOXEL,limit=3.0;
+    if(kind==2u || kind==3u) {o=vec3(-.7);d=normalize(vec3(1));start=(.7+(kind==2u ? .1 : .4)*VOXEL)*sqrt(3.0);}
+    if(kind==4u) {o=vec3(.1*VOXEL,.3*VOXEL,.4*VOXEL);start=.6*VOXEL;}
+    if(kind==6u) {start=.7+.75*VOXEL;limit=.7+.8*VOXEL;}
+    if(kind==7u)limit=start+.001;
+    if(kind==10u)start=.7+.25*VOXEL;
+    Hit h=refineCached(o,d,limit,Hit(start,1,0u,ivec3(128),0u));
+    Output row;row.hit=vec4(h.t,float(h.status),float(h.steps),0);
+    row.origin=vec4(o,0);row.direction=vec4(d,0);
+    float originalValues[8];
+    for(int k=0;k<8;++k) {
+        float v=stored(vec3(k&1,(k>>1)&1,(k>>2)&1)*VOXEL);
+        originalValues[k]=v;
+        if(k<4)row.corners0[k]=v;else row.corners1[k-4]=v;
+    }
+    row.hit.w=cachedCellLipschitz(originalValues,VOXEL);
+    row.settings=vec4(start,limit,float(kind),testEpsilon);
+    results[testIndex]=row;
+}

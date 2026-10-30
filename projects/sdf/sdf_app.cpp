@@ -55,6 +55,15 @@ class App {
                 throw std::invalid_argument("action study requires authored static headless frames "
                                             "matching its bounded manifest and a receipt path");
             study_receipt_ = nlohmann::json::array();
+            if (!config_.quality_output.empty() &&
+                (!study_actions_.value("capture_frames", false) ||
+                 std::any_of(study_actions_.at("actions").begin(),
+                             study_actions_.at("actions").end(), [](const auto& action) {
+                                 return !action.value("geometry_unchanged", false) ||
+                                        action.contains("fault");
+                             })))
+                throw std::invalid_argument("quality pose studies require captured "
+                                            "unchanged-geometry actions without faults");
             if ((!config_.common.headless_render_only &&
                  config_.common.capture_mode != CaptureMode::Video && config_.common.frames != 1) ||
                 (study_actions_.value("capture_frames", false) &&
@@ -67,6 +76,8 @@ class App {
                 std::filesystem::path(CUBEY_MATERIAL_RECIPE_DIR) / "catalog.json");
         if (authored_)
             validate_authored_motion(*authored_);
+        if ((!config_.quality_output.empty() || config_.cached_quality != "ordinary") && !authored_)
+            throw std::invalid_argument("quality output requires an authored scene");
         if ((config_.acceleration_variant == "unclamped" && config_.surface_trace != "hybrid") ||
             (config_.acceleration_variant != "off" && config_.acceleration_variant != "control" &&
              config_.acceleration_variant != "unclamped" && config_.surface_trace != "analytic"))
@@ -444,13 +455,15 @@ class App {
                 displayed_authored_ = authored_build()
                                           ? authored_history_scene(*authored_, timeline_.prefix)
                                           : *authored_;
-                if (config_.csg_evaluation == "pruned") {
+                if (config_.csg_evaluation == "pruned" || cached_source_normals(config_)) {
                     regions_ = std::make_unique<GpuRegionPrograms>(
                         device, *displayed_authored_, config_.region_axis, region_reference_limit,
                         config_.comparison_residency == "regions" ||
                             config_.comparison_residency == "all",
-                        config_.acceleration_variant != "off" ? &runtime_.gpu() : nullptr,
-                        config_.acceleration_variant);
+                        config_.acceleration_variant != "off" || cached_source_normals(config_)
+                            ? &runtime_.gpu()
+                            : nullptr,
+                        cached_source_normals(config_) ? "root-far" : config_.acceleration_variant);
                     ++region_builds_;
                 }
                 if (field_)
@@ -549,16 +562,18 @@ class App {
             // Build all fallible candidate resources before publishing either the
             // field or the program. Queue-idle retires the preceding snapshot.
             std::unique_ptr<GpuRegionPrograms> next_regions;
-            if (config_.csg_evaluation == "pruned" &&
+            if ((config_.csg_evaluation == "pruned" || cached_source_normals(config_)) &&
                 (!regions_ || regions_->geometry_hash != authored_geometry_hash(next)))
                 next_regions = std::make_unique<GpuRegionPrograms>(
                     device, next, config_.region_axis, region_reference_limit,
                     config_.comparison_residency == "regions" ||
                         config_.comparison_residency == "all",
-                    config_.acceleration_variant != "off" ? &runtime_.gpu() : nullptr,
-                    config_.acceleration_variant);
-            auto next_program = renderer_.prepare_authored(device, &next,
-                next_regions ? next_regions.get() : regions_.get(), study_fault_);
+                    config_.acceleration_variant != "off" || cached_source_normals(config_)
+                        ? &runtime_.gpu()
+                        : nullptr,
+                    cached_source_normals(config_) ? "root-far" : config_.acceleration_variant);
+            auto next_program = renderer_.prepare_authored(
+                device, &next, next_regions ? next_regions.get() : regions_.get(), study_fault_);
             if (study_fault_ == "region" || study_fault_ == "field")
                 throw CapacityExceeded("injected study failure before " + study_fault_ +
                                        " publication");
@@ -599,6 +614,13 @@ class App {
             return;
         runtime_.gpu().wait_queue_idle("study first completed GPU frame");
         auto& row = study_receipt_.back();
+        if (!config_.quality_output.empty()) {
+            auto path = config_.quality_output;
+            path.replace_extension("frame-" + std::to_string(row.at("frame").get<unsigned>()) +
+                                   ".bin");
+            renderer_.save_quality_snapshot(path);
+            row["quality_file"] = path.string();
+        }
         row["request_to_waited_gpu_completion_ms"] =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() -
                                                       *pending_study_action_)
@@ -640,6 +662,14 @@ class App {
         auto previous = *authored_;
         const auto previous_debug = config_.debug;
         const auto previous_fast_path = config_.material_fast_path;
+        const std::array previous_camera{config_.yaw, config_.pitch, config_.distance};
+        const auto restore_camera = [&] {
+            config_.yaw = previous_camera[0];
+            config_.pitch = previous_camera[1];
+            config_.distance = previous_camera[2];
+            orbit_.set_pitch(config_.pitch);
+            orbit_.set_distance(config_.distance);
+        };
         bool failed = false;
         try {
             if (action.contains("render")) {
@@ -647,6 +677,15 @@ class App {
                 config_.debug = render.value("debug", config_.debug);
                 config_.material_fast_path =
                     render.value("material_fast_path", config_.material_fast_path);
+                config_.yaw = render.value("yaw", config_.yaw);
+                config_.pitch = render.value("pitch", config_.pitch);
+                config_.distance = render.value("distance", config_.distance);
+                if (!std::isfinite(config_.yaw) || !std::isfinite(config_.pitch) ||
+                    !std::isfinite(config_.distance) || config_.distance < .6F ||
+                    config_.distance > 5.F || std::abs(config_.pitch) > 1.5F)
+                    throw std::invalid_argument("invalid study camera pose");
+                orbit_.set_pitch(config_.pitch);
+                orbit_.set_distance(config_.distance);
                 if (config_.debug > 12 ||
                     (config_.surface_trace != "sampled" && config_.debug == 4))
                     throw std::invalid_argument("unsupported study debug view");
@@ -662,11 +701,13 @@ class App {
             authored_ = std::move(previous);
             config_.debug = previous_debug;
             config_.material_fast_path = previous_fast_path;
+            restore_camera();
             failed = true;
         } catch (...) {
             authored_ = std::move(previous);
             config_.debug = previous_debug;
             config_.material_fast_path = previous_fast_path;
+            restore_camera();
             study_fault_.clear();
             throw;
         }
@@ -690,7 +731,8 @@ class App {
         if (action.contains("expect_shader") && action.at("expect_shader") != shader)
             throw std::runtime_error("study selected unexpected published shader route");
         const auto optimization = renderer_.source_optimization(config_);
-        if (action.contains("expect_optimization") && action.at("expect_optimization") != optimization)
+        if (action.contains("expect_optimization") &&
+            action.at("expect_optimization") != optimization)
             throw std::runtime_error("study selected unexpected published optimization");
         study_receipt_.push_back(
             {{"label", action.at("label")},
@@ -705,6 +747,11 @@ class App {
              {"published_material_count", displayed_authored_->materials.size()},
              {"debug", config_.debug},
              {"material_fast_path", config_.material_fast_path},
+             {"camera",
+              {{"yaw", config_.yaw},
+               {"pitch", orbit_.pitch()},
+               {"distance", orbit_.distance()},
+               {"target_y", config_.target_y}}},
              {"expected_oracle_before_request_ms", oracle_ms},
              {"geometry_hash", authored_geometry_hash(*displayed_authored_)},
              {"appearance_hash", authored_appearance_hash(*displayed_authored_)},

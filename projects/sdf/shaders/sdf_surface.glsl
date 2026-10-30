@@ -12,6 +12,9 @@
 #include "field.glsl"
 layout(location=0) in vec2 uv;
 layout(location=0) out vec4 color;
+#ifdef SDF_QUALITY_VALIDATE
+vec4 qualityNative=vec4(-3,0,0,0);
+#endif
 layout(push_constant) uniform Camera {
     mat4 inverseVP;
     vec4 eye;
@@ -29,6 +32,9 @@ layout(push_constant) uniform Camera {
 #ifdef SDF_AUTHORED
 #include "authored.glsl"
 #include "authored_material.glsl"
+#endif
+#ifdef SDF_CACHED_QUALITY
+#include "cached_quality.glsl"
 #endif
 #ifdef SDF_QUERY_VALIDATE
 vec4 queryNativeHit=vec4(0),queryNativeNormal=vec4(0);
@@ -107,6 +113,12 @@ void main() {
         (lighting.quality.w-camera.eye.y)/direction.y : 1e6;
     if (groundT<0.0) groundT=1e6;
     Hit hit=trace(camera.eye.xyz,direction,groundT);
+#ifdef SDF_CACHED_REFINE
+    hit=refineCached(camera.eye.xyz,direction,groundT,hit);
+#endif
+#ifdef SDF_QUALITY_VALIDATE
+    qualityNative.x=hit.status==1 ? hit.t : (hit.status==2 ? -2.0 : -1.0);
+#endif
 #ifdef SDF_GUARDED_STEPS
     guardedPrimary=false;
 #endif
@@ -131,6 +143,12 @@ void main() {
     if (t<1e5) {
         vec3 p=camera.eye.xyz+direction*t;
         vec3 normal=object ? hitNormal(p,hit) : vec3(0,1,0);
+#ifdef SDF_CACHED_NORMAL
+        if(object && camera.options.w>.5) normal=cachedSourceNormal(p);
+#endif
+#ifdef SDF_QUALITY_VALIDATE
+        qualityNative.yzw=normal;
+#endif
 #ifdef SDF_QUERY_VALIDATE
         queryNativeNormal=vec4(normal,0);
 #endif

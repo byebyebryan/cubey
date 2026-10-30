@@ -7,6 +7,9 @@ layout(push_constant) uniform Params {uint count;uint atlas_axis;} pc;
 #else
 #include "selected_trace.glsl"
 #endif
+#ifdef SDF_CACHED_QUALITY
+#include "cached_quality.glsl"
+#endif
 layout(local_size_x=64) in;
 struct Query {vec4 origin;vec4 direction;};
 struct Result {vec4 hit;vec4 normal;};
@@ -24,7 +27,19 @@ void main() {
         results[i]=Result(vec4(d,0,0,0),vec4(0));return;
     }
     Hit h=trace(q.origin.xyz,q.direction.xyz,3.0);
+#ifdef SDF_CACHED_REFINE
+    h=refineCached(q.origin.xyz,q.direction.xyz,3.0,h);
+#endif
     vec3 p=q.origin.xyz+h.t*q.direction.xyz;
+#ifdef SDF_CACHED_QUALITY
+    vec3 n=h.status==1 ? hitNormal(p,h) : vec3(0);
+#ifdef SDF_CACHED_NORMAL
+    if(h.status==1)n=cachedSourceNormal(p);
+#endif
+    results[i]=Result(vec4(h.t,h.status,h.steps,h.status==1 ? authoredDistance(p) : 0),
+                      vec4(n,0));
+#else
     results[i]=Result(vec4(h.t,h.status,h.steps,h.status==1 ? authoredDistance(p) : 0),
                       vec4(h.status==1 ? hitNormal(p,h) : vec3(0),0));
+#endif
 }

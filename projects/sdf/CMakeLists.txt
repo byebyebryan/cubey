@@ -9,6 +9,32 @@ cubey_add_app_target(
     WINDOWED_SMOKE_PATTERN "sdf: .*rendering sparse SDF bricks"
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp
     SHADERS
+        shaders/cachedrefinenormal_sdf_authored.frag
+        shaders/quality_cachedrefinenormal_sdf_authored.frag
+        shaders/cachedrefinenormal_quality_workload_sampled.comp
+        shaders/cachedrefinenormal_comparison_sampled.comp
+        shaders/cached_cell_contract.comp
+        shaders/cached05_sdf_authored.frag
+        shaders/quality_cached05_sdf_authored.frag
+        shaders/cached05_quality_workload_sampled.comp
+        shaders/cached05_comparison_sampled.comp
+        shaders/cached03125_sdf_authored.frag
+        shaders/quality_cached03125_sdf_authored.frag
+        shaders/cached03125_quality_workload_sampled.comp
+        shaders/cached03125_comparison_sampled.comp
+        shaders/cachednormal_sdf_authored.frag
+        shaders/quality_cachednormal_sdf_authored.frag
+        shaders/cachednormal_quality_workload_sampled.comp
+        shaders/cachednormal_comparison_sampled.comp
+        shaders/quality_sdf_authored.frag
+        shaders/quality_root_far_sdf_analytic_pruned.frag
+        shaders/quality_lit_root_far_sdf_analytic_pruned.frag
+        shaders/quality_combined_lit_root_far_sdf_analytic_pruned.frag
+        shaders/quality_adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag
+        shaders/quality_workload_reference.comp
+        shaders/quality_workload_combined.comp
+        shaders/adaptive50_quality_workload_combined.comp
+        shaders/quality_workload_sampled.comp
         shaders/relaxed12_guarded_contract.comp shaders/relaxed15_guarded_contract.comp shaders/adaptive50_guarded_contract.comp
         shaders/adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag
         shaders/adaptive50_prepared_root_far_comparison_analytic_pruned.comp
@@ -142,6 +168,8 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_cached_cell_contract tools/cached_cell_contract.cpp)
+    target_link_libraries(cubey_project_sdf_cached_cell_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_guarded_contract tools/guarded_contract.cpp)
     target_link_libraries(cubey_project_sdf_guarded_contract PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     add_executable(cubey_project_sdf_query_pruning_pilot tools/query_pruning_pilot.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)

@@ -17,6 +17,7 @@ struct SdfConfig {
     std::filesystem::path comparison_input, comparison_output;
     std::filesystem::path comparison_actions;
     std::filesystem::path query_workload_output;
+    std::filesystem::path quality_output;
     std::string comparison_stage = "off";
     bool comparison_tight_root = false;
     std::string comparison_residency = "host";
@@ -25,6 +26,7 @@ struct SdfConfig {
     std::string source_shaders = "automatic";
     std::string source_optimization = "automatic";
     std::string query_stepping = "ordinary";
+    std::string cached_quality = "ordinary";
     std::string surface_trace = "sampled";
     std::string csg_evaluation = "full";
     std::uint32_t region_axis = 16;
@@ -117,6 +119,10 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
     auto query_stepping =
         option("query-stepping", "Private guarded primary-step study", config::ValueType::Enum);
     query_stepping.enum_values = {"ordinary", "relaxed-1.2", "relaxed-1.5", "adaptive-0.5"};
+    auto cached_quality =
+        option("cached-quality", "Private cached rendering quality study", config::ValueType::Enum);
+    cached_quality.enum_values = {"ordinary",      "refine-0.05",        "refine-0.03125",
+                                  "source-normal", "source-normal-zero", "refine-normal"};
     scene.enum_values = {"box",
                          "rotated",
                          "cut",
@@ -202,9 +208,13 @@ inline config::Schema sdf_config_schema(SdfConfig& c) {
         .bind(source_shaders, c.source_shaders)
         .bind(source_optimization, c.source_optimization)
         .bind(query_stepping, c.query_stepping)
+        .bind(cached_quality, c.cached_quality)
         .bind(option("query-workload-output", "Private selected-query replay payload",
                      config::ValueType::Path),
               c.query_workload_output)
+        .bind(option("quality-output", "Private native-validated full-frame geometry payload",
+                     config::ValueType::Path),
+              c.quality_output)
         .bind(option("comparison-tight-root", "Private inner-clip entry ablation",
                      config::ValueType::Bool),
               c.comparison_tight_root)
