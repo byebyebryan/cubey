@@ -25,6 +25,54 @@ a project preset. Authored construction presets replay saved edits, and the
 material workshop uses the same SDF renderer. The executable does not provide
 continuous freehand sculpting.
 
+## Rendering modes
+
+Saved authored scenes and the material workshop default to **Balanced**:
+refine the cached primary hit and evaluate source CSG normals there, while
+keeping cached visibility and shadows. Box recipes keep their original Cached
+route. The native **Rendering** selector and `--render-mode` expose every
+supported alternative:
+
+| Mode | Use |
+| --- | --- |
+| `auto` | Balanced for authored scenes/workshops, Cached for box recipes |
+| `cached` | Original cached rendering, maximum speed |
+| `cached-refined` | Improve cached hit positions with little extra work |
+| `balanced` | Refined cached hits plus source normals |
+| `analytic` | Source-evaluated geometry, normals and secondary rays |
+| `hybrid` | Existing cached-bound traversal with source evaluation near surfaces |
+
+Balanced improves represented surfaces; it cannot recover thin geometry absent
+from the cache. Analytical and hybrid remain available for source detail.
+Analytical atmosphere rendering uses A64 root-far acceleration. Material/optical
+analytical rendering and hybrid retain ordinary A16 pruning. Prepared-cone and
+adaptive stepping studies retain their separate admission rules.
+
+**Supersampling is independent.** The native selector and `--supersample 1|2`
+change sampling without changing mode or rebuilding geometry. Existing presets
+retain their sample settings, including SS2 on Guardian and Robot. SS2 has a
+substantial cost; use SS1 for a lower frame budget. Mode changes preserve
+camera, playback position and material edits. Cached-to-cached mode changes
+reuse the field. Analytical-only releases it; returning to cached rendering
+can incur a full rebuild.
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-limestone.json --render-mode balanced --supersample 1
+build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode analytic
+build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode cached
+```
+
+Existing explicit low-level tracing flags retain their original behavior when
+no named mode was requested. Contradictory named-mode/low-level settings reject
+with an option-specific error. Unsupported modes are disabled with a reason
+for recipe scenes or incompatible diagnostic views. Numerical ablations remain
+available through their existing advanced study flags.
+
+The [promotion plan](../../docs/notes/sdf-render-mode-promotion-plan.md) and
+[execution record](../../docs/notes/sdf-render-mode-promotion-progress.md) retain
+the qualification scope. GPU measurements are separate from physical display
+latency and human visual acceptance.
+
 ## Material presentation
 
 The public [material page](https://dev.byebyebryan.com/cubey/demos/materials/)
@@ -133,7 +181,7 @@ presentation of committed edits, not an interactive brush editor.
 
 ## Limits and deferred work
 
-Geometry edits rebuild the complete distance field synchronously. Material
+Cached-mode geometry edits rebuild the complete distance field synchronously. Material
 edits reuse the geometry cache, but this does not make geometry editing
 incremental. The accepted Guardian field allocation is about 871 MiB, and its
 authored limits are 1,024 leaves, 2,048 instructions and sixteen materials;
@@ -157,7 +205,7 @@ retains the full procedural CSG, capture and qualification command catalog.
 
 An opt-in [tracing/cache comparison](../../docs/notes/sdf-tracing-comparison-results.md)
 adds authored `--surface-trace analytic|hybrid` and `--csg-evaluation pruned`
-with `--region-axis 4|16|64`. The default remains `sampled` / `full`; these study
+with `--region-axis 4|16|64`. The original study retained `sampled` / `full`; these study
 routes have measured quality/memory benefits and content-dependent performance
 limits. [Commands and receipts](../../docs/evidence/sdf-tracing-comparison-2026-10/README.md)
 include the bounded query, undo and native inspection tools.
@@ -166,8 +214,8 @@ The opt-in source paths now use [automatic shader selection](../../docs/notes/sd
 prebuilt lit/debug and eligible one-material pipelines follow published material
 state and current view settings. `--source-shaders general` selects the original
 source shader for comparison. Guardian improves substantially but remains above
-the 1080p GPU target; startup compilation can be expensive. Sampled/full stays
-the default.
+the 1080p GPU target; startup compilation can be expensive. Current defaults
+and explicit rendering choices are listed above.
 
 Source-query controls are documented in the
 [optimization loop](../../docs/notes/sdf-source-query-optimization-progress.md).
@@ -176,8 +224,9 @@ eligible opaque one-material lit source path. `reference` retains the previous
 automatic shader, while `--source-shaders general` keeps the original complete
 shader. `prepared-cones` and `combined` are explicit static headless
 analytic/pruned A64 root-far studies; they preserve the source/history format
-and existing geometry tolerances. They do not enable windowed root-far or
-change the sampled/full default.
+and existing geometry tolerances. These advanced studies retain their private
+admission. The public Analytical atmosphere mode separately qualifies ordinary
+root-far rendering; explicit legacy tracing semantics remain unchanged.
 
 The [guarded-step investigation](../../docs/notes/sdf-query-acceleration-progress.md)
 retains further explicit headless query studies. Their numerical qualification,

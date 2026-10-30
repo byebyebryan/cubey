@@ -85,7 +85,7 @@ class App {
             (config_.acceleration_variant != "off" && config_.acceleration_variant != "control" &&
              config_.acceleration_variant != "unclamped" && config_.surface_trace != "analytic"))
             throw std::invalid_argument("acceleration variant does not match its source mode");
-        if (config_.acceleration_variant != "off" &&
+        if (config_.acceleration_variant != "off" && !uses_public_source_acceleration(config_) &&
             (!config_.common.headless || !authored_ || config_.timeline.motion != "static" ||
              config_.csg_evaluation != "pruned" || config_.surface_trace == "sampled" ||
              config_.region_axis != 64 ||
@@ -625,7 +625,10 @@ class App {
                                   region_variant(config_) != region_variant(next_config))) {
                 next_regions = std::make_unique<GpuRegionPrograms>(
                     device, *displayed_authored_, next_config.region_axis, region_reference_limit,
-                    false, cached_source_normals(next_config) ? &runtime_.gpu() : nullptr,
+                    false,
+                    cached_source_normals(next_config) || next_config.acceleration_variant != "off"
+                        ? &runtime_.gpu()
+                        : nullptr,
                     region_variant(next_config));
                 if (fault == "mode-region")
                     throw CapacityExceeded("injected mode region preparation failure");

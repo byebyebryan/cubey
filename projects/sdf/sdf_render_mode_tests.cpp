@@ -33,6 +33,12 @@ int main() {
     require(c.named_render_mode && c.render_mode == "auto");
     resolve_render_mode(c, false);
     require(c.effective_render_mode == "cached");
+    c = parse({"--authored-scene", "example.json"});
+    resolve_render_mode(c, true);
+    require(c.effective_render_mode == "balanced" && c.supersample == 1);
+    c = parse({"--authored-scene", "example.json", "--supersample", "2"});
+    resolve_render_mode(c, true);
+    require(c.effective_render_mode == "balanced" && c.supersample == 2);
     for (const auto mode : render_modes) {
         auto selected = parse({"--render-mode", std::string(mode)});
         resolve_render_mode(selected, true);
@@ -53,7 +59,11 @@ int main() {
     require(!c.named_render_mode && c.region_axis == 64 && c.acceleration_variant == "root-far");
     c = parse({"--render-mode", "analytic", "--surface-trace", "analytic"});
     resolve_render_mode(c, true);
-    require(c.effective_render_mode == "analytic");
+    require(c.effective_render_mode == "analytic" && uses_public_source_acceleration(c));
+    c = parse({"--render-mode", "analytic", "--workshop", "sphere"});
+    resolve_render_mode(c, true);
+    require(c.lighting == "material-study" && c.region_axis == 16 &&
+            !uses_public_source_acceleration(c));
     rejects([] {
         auto x = parse({"--render-mode", "balanced", "--surface-trace", "analytic"});
         resolve_render_mode(x, true);

@@ -14,4 +14,5 @@ void resolve_render_mode(SdfConfig& config, bool authored);
 [[nodiscard]] SdfConfig config_for_render_mode(const SdfConfig& current, std::string_view mode,
                                                bool authored);
 [[nodiscard]] bool uses_public_cached_quality(const SdfConfig& config);
+[[nodiscard]] bool uses_public_source_acceleration(const SdfConfig& config);
 } // namespace cubey::projects::sdf

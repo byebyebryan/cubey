@@ -3,8 +3,8 @@
 
 namespace cubey::projects::sdf {
 namespace {
-// Kept Cached during runtime qualification; promotion is a separate checkpoint.
-constexpr std::string_view authored_default = "cached";
+// Sample settings remain independent; box recipes retain their Cached route.
+constexpr std::string_view authored_default = "balanced";
 template <typename T> void apply(const std::optional<T>& request, T& value) {
     if (request)
         value = *request;
@@ -92,6 +92,10 @@ void resolve_render_mode(SdfConfig& c, bool authored) {
                resolved.effective_render_mode == "hybrid") {
         resolved.surface_trace = resolved.effective_render_mode;
         resolved.csg_evaluation = "pruned";
+        if (resolved.effective_render_mode == "analytic" && resolved.lighting == "atmosphere") {
+            resolved.region_axis = 64;
+            resolved.acceleration_variant = "root-far";
+        }
     }
     const auto& r = c.route_overrides;
     agrees(r.surface_trace, resolved.surface_trace, "surface-trace");
@@ -116,5 +120,11 @@ SdfConfig config_for_render_mode(const SdfConfig& current, std::string_view mode
 bool uses_public_cached_quality(const SdfConfig& c) {
     return c.named_render_mode &&
            (c.effective_render_mode == "cached-refined" || c.effective_render_mode == "balanced");
+}
+bool uses_public_source_acceleration(const SdfConfig& c) {
+    return c.named_render_mode && c.effective_render_mode == "analytic" &&
+           c.surface_trace == "analytic" && c.csg_evaluation == "pruned" && c.region_axis == 64 &&
+           c.acceleration_variant == "root-far" && c.source_optimization == "automatic" &&
+           c.query_stepping == "ordinary" && c.lighting == "atmosphere";
 }
 } // namespace cubey::projects::sdf
