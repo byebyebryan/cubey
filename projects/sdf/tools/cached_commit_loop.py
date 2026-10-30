@@ -283,9 +283,33 @@ def prune_probe(args):
     receipt['complete']=True;save(args.output/'prune-probe.json',receipt)
 
 
+def retention(args):
+    source=json.loads(args.inputs.read_text())
+    receipt=dict(identity(args),runs=[],complete=False)
+    for row in source['runs']:
+        original=json.loads(Path(row['case']['input']).read_text())['cases'][0]['scene']
+        retained=json.loads(Path(row['native']['retained_source_file']).read_text())
+        if original['root']!=retained['root'] or original.get('history')!=retained.get('history'):
+            raise RuntimeError('source tree or history changed while retaining the edit')
+        if retained['geometry_hash']!=row['native']['programs'][0]['edited_geometry_hash']:
+            raise RuntimeError('retained geometry identity changed')
+        if row['failure']!='none':continue
+        image=args.output/(row['case']['name']+'-retained.png')
+        cmd=edit.public_command(args.public_binary,row['case']['subject'],
+            row['native']['retained_source_file'],image)
+        record=run(cmd,image.with_suffix('.control.json'))
+        if not filecmp.cmp(row['native']['frames'][-1]['image'],image,shallow=False):
+            raise RuntimeError('retained source replay changed the canonical result')
+        receipt['runs'].append(dict(case=row['case'],**record,byte_identical=True,
+            image=str(image),retained_source=row['native']['retained_source_file']))
+    if len(receipt['runs'])!=4:raise RuntimeError('missing retained-source consumers')
+    receipt['all_sequence_source_trees_and_histories_equal']=True
+    receipt['complete']=True;save(args.output/'retention.json',receipt)
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase',choices=['prepare','qualify','timing','sequences','faults','prune-probe'])
+    p.add_argument('phase',choices=['prepare','qualify','timing','sequences','faults','prune-probe','retention'])
     p.add_argument('--output',type=Path,required=True);p.add_argument('--inputs',type=Path)
     p.add_argument('--mode',choices=['full','reuse','pruned'],default='reuse');p.add_argument('--regions',type=int,choices=[4,16],default=4)
     p.add_argument('--chains',action='store_true');p.add_argument('--dump',action='store_true')
