@@ -1,0 +1,60 @@
+{
+  "retrieved_utc_date": "2026-10-30",
+  "scope": "Primary papers, author implementation records and official API documentation; no donor runtime was ported or benchmarked",
+  "sources": [
+    {
+      "title": "Lipschitz Pruning: Hierarchical Simplification of Primitive-Based SDFs",
+      "url": "https://onlinelibrary.wiley.com/doi/10.1111/cgf.70057",
+      "author_page": "https://wbrbr.org/publications/LipschitzPruning/",
+      "inspected": "Published article method and section 6.1; author low-resolution PDF",
+      "takeaway": "Supported hard/smooth expression pruning and separate far-field bounds. Partial updates of the pruning structure remain future work."
+    },
+    {
+      "title": "GPU-based clay simulation and ray-tracing tech in Claybook",
+      "url": "https://media.gdcvault.com/gdc2018/presentations/Aaltonen_Sebastian_GPU_Based_Clay.pdf",
+      "inspected": "Original GDC 2018 slides, especially PDF pages 8 and 20-21; sparse level/mip construction and synchronization sections",
+      "takeaway": "Limited-range distance bands enable local modification; temporary storage/tile copies and mip propagation are explicit parts of the design."
+    },
+    {
+      "title": "GPU-Driven Signed Distance Field Construction",
+      "url": "https://jamiebuttenshaw.com/projects/signed-distance-fields/",
+      "paper": "https://jamiebuttenshaw.com/resources/Dissertation.pdf",
+      "inspected": "Author implementation description; dissertation section 3.3 and compact-storage discussion, PDF pages 20 and 24",
+      "takeaway": "GPU-driven hierarchical edit culling is a useful full-builder comparison; the implemented compact structure is rebuilt for each modification. Reported timings are not Cubey predictions."
+    },
+    {
+      "title": "FidelityFX Brixelizer 1.0 manual",
+      "url": "https://gpuopen.com/manuals/fidelityfx_sdk/techniques/brixelizer/",
+      "inspected": "Low-level cascade operations, invalidation jobs, static/dynamic geometry and brick counters",
+      "takeaway": "Concrete invalidation, storage and merge precedent for triangle-derived distance data; not a CSG sculpting drop-in."
+    },
+    {
+      "title": "Massively Parallel Rendering of Complex Closed-Form Implicit Surfaces",
+      "url": "https://www.mattkeeter.com/research/mpr/",
+      "inspected": "Author paper page and method summary",
+      "takeaway": "Interval-based expression reduction provides an alternative for broader continuous functions and domain warps."
+    },
+    {
+      "title": "Interactive Modeling of Implicit Surfaces using a Direct Visualization Approach with Signed Distance Functions",
+      "url": "https://cg.ivd.kit.edu/publications/p2011/IntModelingSDF/IntModelingSDF.pdf",
+      "inspected": "Original author preprint, scene graph/property updates and section 4.2 stepping limitations",
+      "takeaway": "Direct function manipulation is a live-rendering precedent; heuristic handling of extreme gradients is not a general safety guarantee."
+    },
+    {
+      "title": "Khronos Vulkan synchronization guide",
+      "url": "https://docs.vulkan.org/guide/latest/synchronization.html",
+      "inspected": "Official synchronization overview and barrier/dependency roles",
+      "takeaway": "Resource dependencies and reader lifetime remain explicit requirements of concurrent publication."
+    }
+  ],
+  "access_limits": [
+    {
+      "url": "https://advances.realtimerendering.com/s2015/AlexEvans_SIGGRAPH-2015-sml.pdf",
+      "result": "Web reader rejected 34,736,433-byte PDF; not used as technical evidence"
+    },
+    {
+      "url": "https://ubm-twvideo01.s3.amazonaws.com/o1/vault/gdc2018/presentations/Aaltonen_Sebastian_GPU_Based_Clay.pdf",
+      "result": "403; original slides successfully read through media.gdcvault.com instead"
+    }
+  ]
+}

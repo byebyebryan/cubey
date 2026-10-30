@@ -1,0 +1,145 @@
+{
+  "scope": "Read-only source accounting and independent Python scalar/cell probes; no native renderer/editor/timing run",
+  "seed": 20261029,
+  "cubey_head": "b9568b85b90f298b4f28f897e77294b081386294",
+  "projectr_head": "e2b80796d8f2f9478965a552342bf66fab0e4114",
+  "cases": {
+    "brush_aabb_is_not_exact_distance_influence": {
+      "add": {
+        "point": [
+          0.2,
+          0,
+          0
+        ],
+        "base": 0.1,
+        "edited": 0.049999999999999975,
+        "brush_x_bounds": [
+          0.25,
+          0.35
+        ]
+      },
+      "cut": {
+        "point": [
+          0.1,
+          0,
+          0
+        ],
+        "base": -0.19999999999999998,
+        "edited": -0.05,
+        "brush_x_bounds": [
+          -0.05,
+          0.05
+        ]
+      },
+      "meaning": "Exact scalar-value invalidation needs more than primitive solid bounds. A bounded-band cache needs its own contract."
+    },
+    "live_to_baked_subgrid_cavity": {
+      "units": "sample spacing h = 1; independent local cell, not native Cubey pixels",
+      "cutter_radius_h": 0.35,
+      "analytic_center_value_h": 0.35,
+      "eight_corner_values_h": [
+        -0.5160254037844386,
+        -0.5160254037844386,
+        -0.5160254037844386,
+        -0.5160254037844386,
+        -0.5160254037844386,
+        -0.5160254037844386,
+        -0.5160254037844386,
+        -0.5160254037844386
+      ],
+      "r16_trilinear_center_value_h": -0.51611328125,
+      "meaning": "A true pending cut can disappear when even a fresh canonical bake has no sampled sign change. Retiring the tail can change visible topology."
+    },
+    "smooth_grouping": {
+      "left": -0.0265625,
+      "right": -0.02822265625,
+      "difference": 0.0016601562499999993
+    },
+    "repeated_quantization": {
+      "chains": 2000,
+      "operations_per_chain": 16,
+      "hard_fixed_knot_differences": 0,
+      "smooth_fixed_knot_differences": 364,
+      "smooth_max_abs_difference": 0.0001220703125,
+      "meaning": "Fixed-grid hard selection is a non-drifting control here. Smooth evaluation with intermediate quantization is not identical to one canonical quantization. No resampling or native GPU arithmetic is tested."
+    },
+    "bounded_base_error_scalar_control": {
+      "chains": 20000,
+      "tail_length": 8,
+      "initial_error_limit": 0.001,
+      "maximum_final_error": 0.0009620835950821145,
+      "meaning": "A useful pointwise bound, not proof of safe tracing: sampling/lookup certificates, zero topology, ray grazing, material ownership and rounding still matter."
+    },
+    "prefix_publication": {
+      "base": 10,
+      "candidate": 12,
+      "latest": 14,
+      "pending_before": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "pending_after_valid_publication": [
+        13,
+        14
+      ],
+      "clear_entire_tail_would_lose": [
+        13,
+        14
+      ],
+      "stale_branch_candidate_must_publish": false,
+      "meaning": "An illustrative sequence model only. The native ticket/lifetime/branch protocol remains to implement and test."
+    },
+    "queue_conservation": {
+      "scope": "Illustrative rates; no native service-rate prediction",
+      "arrivals_per_second": 120,
+      "service_per_second": 80,
+      "seconds": 5,
+      "backlog": 200,
+      "tail_cap": 64,
+      "meaning": "A bounded renderer must reject or slow admission explicitly when durable edits arrive faster than cache service; dropping completed stroke segments is not coalescing."
+    }
+  },
+  "capacities": {
+    "max_leaves": 1024,
+    "max_instructions": 2048,
+    "content": {
+      "sculpture-guardian-limestone": {
+        "leaves": 1011,
+        "instructions": 2021,
+        "history_operations": 65,
+        "root_append_leaf_room": 13,
+        "proposed_private_prefix": {
+          "history_prefix": 32,
+          "leaves": 389,
+          "label": "Carve the muzzle crease [Mirror X]"
+        }
+      },
+      "survey-robot-fieldkit": {
+        "leaves": 82,
+        "instructions": 163,
+        "history_operations": 82,
+        "root_append_leaf_room": 942
+      }
+    }
+  },
+  "sources": {
+    "projects/sdf/sdf_authored.h": "ed2f9e7323e9c01ceb231172345da54c7de0fa012bd2c7b992411063df02d8c9",
+    "projects/sdf/sdf_field.cpp": "ccf0e987a0c52ea2cca7c84348b5ee3ed37d99d7dcfe0bcb68435a22fe2df2c2",
+    "projects/sdf/sdf_app.cpp": "9d15751d6d132124579353d77b8bcfaac4c356f3d98b8e457143d1cbd2002406",
+    "projects/sdf/shaders/selected_trace.glsl": "3270f737f304ed08e433147219570158602c9c33927b0683c340ac438b3b6fb2",
+    "projects/sdf/shaders/source_trace.glsl": "33b5637684a8ee9e905fb417110d277b87ba851ec9f104e89a66f229ddb13c8b",
+    "projects/sdf/shaders/trace.glsl": "3a641b9db15e43cf81277db19b36b2dead518d270fa075581b6bd4130468f79e",
+    "include/cubey/vulkan/gpu_runtime.h": "07a121b86ac4ace1f5527586d72c61954eb8183f266090bacedb95bd10f01d0f"
+  },
+  "projectr_sources": {
+    "Archive/MarchingCubes/Scripts/ModificationJobSet_CommandQueue.cs": "9bb98c5e2e437c97ade9adc5ed1a8a36f236b92ebe1c7df1f02c391a94df7f72",
+    "Archive/MarchingCubes/Scripts/Workspace/Workspace_ModificationManagement.cs": "6c347757669d70fafa656cc42d06a7f19625f3b38fdd1dad3a9b8edf2c3657c7",
+    "Archive/MarchingCubes/Scripts/ModificationJobSet.cs": "1d35d2b87b9ef6c11e278123d10396a4a0a7abc995a0aa7e2d4d13d1b27e1b84",
+    "Assets/Scripts/BrickEngine/MainController.cs": "11825e9dbbe764b10610743ec766e85445f3d0952d16e5baa3de201364386c08",
+    "Assets/Scripts/BrickEngine/Workspace.cs": "1290ae431552bac49484c4cb4755e30466ca3bd578fe3ac4f83939af9aa00ae1"
+  },
+  "probe_sha256": "80124b8f191596407213ee660ea5e293ccbbe2914915fcb399b4336db09a5258",
+  "passed": true
+}

@@ -1,0 +1,30 @@
+{
+  "scope": "Research artifacts and independent examples only; no new native runtime/editor qualification",
+  "independent_probe": {
+    "passed": true,
+    "cases": 7,
+    "scalar_error_chains": 20000,
+    "quantization_control_chains_per_policy": 2000
+  },
+  "static_report": {
+    "passed": true,
+    "method": "HTML/relative-link checks and mock DOM/canvas controls",
+    "independent_python_center_match": true,
+    "slice_optimization_equivalence_samples": 496,
+    "controls": ["radius", "grid phase", "reset", "arrival rate", "service rate"]
+  },
+  "documentation": {
+    "passed": true,
+    "tests": ["documentation_hygiene", "documentation_media", "documentation_rules"]
+  },
+  "tracked_whitespace_check": "passed",
+  "new_artifact_trailing_whitespace_check": "passed",
+  "browser": {
+    "connected_browsers": [],
+    "render_acceptance": "unavailable"
+  },
+  "native_gpu_or_unity_runs": 0,
+  "runtime_implementation_changes": false,
+  "default_changes": false,
+  "push_or_project_site_deployment": false
+}

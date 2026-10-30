@@ -1,0 +1,70 @@
+{
+  "checked_at": "2026-10-30T05:41:47.662553+00:00",
+  "report_id": "0738ac47582410f1eb1387c0a5868b599675d18c170d7b06b78a59dfad1316eb",
+  "url": "http://starship:8787/reports/0738ac47582410f1eb1387c0a5868b599675d18c170d7b06b78a59dfad1316eb/",
+  "verified_files": 10,
+  "all_bytes_match": true,
+  "files": [
+    {
+      "path": "checks.json",
+      "http_status": 200,
+      "bytes": 1019,
+      "sha256": "5dbd26fc5f52656c523c7dc6ecca60a5d37869dbbd5cace4d560f9da3a35bb29"
+    },
+    {
+      "path": "index.html",
+      "http_status": 200,
+      "bytes": 43653,
+      "sha256": "92ece8914c1f4dc5ec2fd987a4d9e04ac8379a47e9a449220d278e3ef8489404"
+    },
+    {
+      "path": "plan.md",
+      "http_status": 200,
+      "bytes": 24718,
+      "sha256": "52f5af3147ca3d0c3eb3215862fa00ee1b248be72a4ac2f914cebdaa3e4dcb2d"
+    },
+    {
+      "path": "probe.json",
+      "http_status": 200,
+      "bytes": 5650,
+      "sha256": "b468c0b81d10086ade85f092cef1d18409649c1f5884d5401639ae4861fff836"
+    },
+    {
+      "path": "probe.py",
+      "http_status": 200,
+      "bytes": 10765,
+      "sha256": "80124b8f191596407213ee660ea5e293ccbbe2914915fcb399b4336db09a5258"
+    },
+    {
+      "path": "records/README.md",
+      "http_status": 200,
+      "bytes": 1444,
+      "sha256": "96c390a4cd7ae5d243b32ee96603079639fd1c8663b3fedaa226a7b7831929ac"
+    },
+    {
+      "path": "records/probe.py",
+      "http_status": 200,
+      "bytes": 10765,
+      "sha256": "80124b8f191596407213ee660ea5e293ccbbe2914915fcb399b4336db09a5258"
+    },
+    {
+      "path": "records/sdf-render-mode-promotion-results.md",
+      "http_status": 200,
+      "bytes": 8803,
+      "sha256": "8685160d785f79774c3d0e72009e19b2bf4aab9dc3517db1ebaa3c5f1ec6fdf1"
+    },
+    {
+      "path": "records/sdf-representation-design-review.md",
+      "http_status": 200,
+      "bytes": 23722,
+      "sha256": "9d3c4bac13de5a85439b3d194b97fb06e7bda1e512cc9e6411c5e7892e2075e3"
+    },
+    {
+      "path": "references.json",
+      "http_status": 200,
+      "bytes": 3786,
+      "sha256": "f23d784580d5db5154a59e74ad461de91199dba9fb083757256e9674f9fa639a"
+    }
+  ],
+  "scope": "HTTP bytes; not browser rendering"
+}

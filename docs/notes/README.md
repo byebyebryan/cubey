@@ -85,6 +85,9 @@ the architecture and project guides remain current authority.
 - [SDF render-mode promotion results](sdf-render-mode-promotion-results.md):
   native mode/sample controls, Balanced default, accelerated Analytical and
   measured frame/edit/setup costs.
+- [SDF continuous-editing research and proposed validation plan](sdf-continuous-editing-research-plan.md):
+  projectR carryover, primary research, live/cached geometry contracts, bake
+  handoff, stroke capacity, deadline/throughput gates and staged native trials.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
