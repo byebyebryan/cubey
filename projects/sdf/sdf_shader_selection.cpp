@@ -48,11 +48,12 @@ void validate_source_optimization(const SdfConfig& config) {
          config.acceleration_variant != "off" || config.region_axis != 64 ||
          config.query_stepping != "ordinary" || config.source_shaders != "automatic" ||
          (config.source_optimization != "automatic" && config.source_optimization != "reference") ||
-         config.lighting != "atmosphere" || config.debug != 0 || config.supersample != 1 ||
+         config.lighting != "atmosphere" || config.debug != 0 ||
+         (config.supersample != 1 && config.supersample != 2) ||
          config.frame_profile != "off" || config.comparison_stage != "off" || config.ao ||
          config.clouds || config.ground || config.occluder))
         throw std::invalid_argument("cached quality study requires static headless sampled/full "
-                                    "A64 atmosphere SS1, no overlays/AO/ground/clouds");
+                                    "A64 atmosphere SS1/SS2, no overlays/AO/ground/clouds");
     if (!config.quality_output.empty() &&
         (!config.common.headless || config.common.frames == 0 ||
          (config.common.frames != 1 && config.comparison_actions.empty()) ||
