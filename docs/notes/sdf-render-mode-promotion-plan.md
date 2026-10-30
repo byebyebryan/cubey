@@ -1,7 +1,11 @@
 # SDF selectable render modes and default promotion
 
 Date: 2026-10-29. Planning baseline: local `5edaa766`,
-`sdf-tracing-comparison`. Status: plan only; no renderer/default change.
+`sdf-tracing-comparison`. Status: executed; see
+[results](sdf-render-mode-promotion-results.md) and
+[execution](sdf-render-mode-promotion-progress.md). The contract below records
+the original plan; the results explain promotion of root-far Analytical after
+the tentative ordinary backend proved too costly.
 
 ## Product direction
 

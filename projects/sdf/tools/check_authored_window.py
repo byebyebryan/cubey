@@ -254,8 +254,13 @@ text=log.read_text()
 assert "validation error" not in text.lower(),text
 import re
 builds=sum(line.startswith("sdf: authored instructions=") for line in text.splitlines())
+source_config=json.loads(args.config.read_text())
+trace=source_config.get('surface-trace','sampled')
+requested_mode=source_config.get('render-mode','auto')
+source_tracing=trace!='sampled' or requested_mode in ('analytic','hybrid')
+field_required=trace!='analytic' and requested_mode!='analytic'
 if args.history_controls:
-    assert builds>10,builds
+    assert (builds>10 if field_required else builds==0),builds
     visits=[int(s) for s in re.findall(r'history (?:initial )?step=(\d+)/',text)]
     receipt={"passed":True,"command":command,"field_builds":builds,"history_visits":visits,
         "paired_undo_redo_steps":args.paired_step,
@@ -263,9 +268,7 @@ if args.history_controls:
                    "previous to 4 and next to 5","scrub to final and enter numeric midpoint","stable paused field",
                    "restart empty","resume and pause playback","Escape"]}
 else:
-    source_config=json.loads(args.config.read_text())
-    source_tracing=source_config.get('surface-trace','sampled')!='sampled'
-    assert builds==(0 if source_tracing else 1),builds
+    assert builds==(1 if field_required else 0),builds
     updates=re.findall(r"authored update geometry=(\w+) appearance=(\w+) field_rebuilt=(\d)",text)
     assert (updates or args.readonly_material) and all(row[2]=="0" for row in updates),text
     initial=re.search(r"sdf: authored geometry=(\w+) appearance=(\w+)",text)

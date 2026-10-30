@@ -13,7 +13,7 @@ RAW={
     'cached':['--surface-trace','sampled','--csg-evaluation','full'],
     'cached-refined':['--surface-trace','sampled','--csg-evaluation','full','--region-axis','64','--cached-quality','refine-0.03125'],
     'balanced':['--surface-trace','sampled','--csg-evaluation','full','--region-axis','64','--cached-quality','refine-normal'],
-    'analytic':['--surface-trace','analytic','--csg-evaluation','pruned','--region-axis','16'],
+    'analytic':['--surface-trace','analytic','--csg-evaluation','pruned','--region-axis','64','--acceleration-variant','root-far'],
     'hybrid':['--surface-trace','hybrid','--csg-evaluation','pruned','--region-axis','16'],
 }
 
@@ -180,11 +180,175 @@ def features(args):
     receipt['complete']=True;save(args.output/'features.json',receipt)
 
 
+def runtime_timing(args):
+    receipt=dict(metadata(args.binary),runs=[],complete=False)
+    cases=[(scene,view,mode,ss) for scene in ('guardian','robot') for view in ('preset','side','close')
+           for mode in ('cached','balanced','analytic') for ss in (1,2)]
+    for repeat in (1,2,3):
+        for scene,view,mode,ss in cases if repeat%2 else reversed(cases):
+            prefix=args.output/f'{scene}-{view}-{mode}-ss{ss}-r{repeat}'
+            flags=public_command(args,scene,view,mode,ss,width=1920,height=1080)+[
+                '--headless-render-only','--frames','180','--profile-warmup-frames','30','--profile-output',str(prefix)]
+            before=gpu_state();wall=invoke(flags,prefix,timeout=300);after=gpu_state()
+            passes,metrics=profile(prefix,180,30)
+            selected=metrics['sdf.render_mode']
+            expected={'cached':1,'balanced':3,'analytic':4}[mode]
+            if selected['effective']!=expected or selected['named']!=1 or selected['supersample']!=ss:
+                raise RuntimeError('runtime selected wrong mode/sample setting')
+            receipt['runs'].append(dict(scene=scene,view=view,mode=mode,supersample=ss,repeat=repeat,
+                command=flags,wall_seconds=wall,gpu_before=before,gpu_after=after,passes=passes,metrics=metrics))
+            save(args.output/'timing.json',receipt)
+            print(prefix.name,round(passes['sdf.whole_scene']['p95_ms'],3),flush=True)
+    receipt['complete']=True;save(args.output/'timing.json',receipt)
+
+
+def publication(args):
+    import quality_speed_loop as previous
+    for route,mode in {'sampled':'cached','combined':'balanced'}.items():previous.ROUTES[route]=['--render-mode',mode]
+    args.routes=['sampled','combined'];args.scenes=['guardian','robot']
+    previous.publication(args)
+
+
+def captures(args):
+    receipt=dict(metadata(args.binary),runs=[],complete=False)
+    for scene in ('guardian','robot'):
+        for view in ('preset','close'):
+            for mode in MODES:
+                for ss in (1,2):
+                    prefix=args.output/f'{scene}-{view}-{mode}-ss{ss}'
+                    flags=public_command(args,scene,view,mode,ss,width=1920,height=1080)+[
+                        '--frames','1','--output',str(prefix.with_suffix('.png'))]
+                    invoke(flags,prefix,timeout=180)
+                    receipt['runs'].append(dict(scene=scene,view=view,mode=mode,supersample=ss,command=flags,
+                        image=str(prefix.with_suffix('.png')),image_sha256=digest(prefix.with_suffix('.png'))))
+                    save(args.output/'captures.json',receipt)
+            print(scene,view,'all public modes/samples captured',flush=True)
+    receipt['complete']=True;save(args.output/'captures.json',receipt)
+
+
+def motion(args):
+    import math
+    from investigate_guardian import ROOT, PRESETS
+    receipt=dict(metadata(args.binary),runs=[],complete=False)
+    for scene in ('guardian','robot'):
+        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        document=json.loads((ROOT/config['authored-scene']).read_text())
+        for mode,ss in [('cached',2),('balanced',1),('balanced',2)]:
+            actions=[dict(label=f'arc-{i}',scene=document,visible_scene=document,geometry_unchanged=True,
+                render=dict(yaw=config['yaw']+.012*math.sin(2*math.pi*i/16))) for i in range(16)]
+            name=f'{scene}-{mode}-ss{ss}';path=args.output/(name+'-actions.json')
+            save(path,dict(format='cubey.sdf.action-study',version=1,capture_frames=True,actions=actions))
+            prefix=args.output/name
+            flags=public_command(args,scene,'preset',mode,ss,width=1920,height=1080)+[
+                '--headless-render-only','--frames','16','--comparison-actions',str(path),
+                '--comparison-output',str(prefix.with_suffix('.json'))]
+            invoke(flags,prefix,timeout=180)
+            rows=json.loads(prefix.with_suffix('.json').read_text())['actions']
+            if any(r['field_builds'] or r['region_builds'] for r in rows):raise RuntimeError('Motion rebuilt geometry')
+            for row in rows:row['image_sha256']=digest(Path(row['frame_png']))
+            receipt['runs'].append(dict(scene=scene,mode=mode,supersample=ss,command=flags,frames=rows))
+            save(args.output/'motion.json',receipt);print(name,'16 native poses; no rebuild',flush=True)
+    receipt['complete']=True;save(args.output/'motion.json',receipt)
+
+
+def large_transitions(args):
+    from investigate_guardian import ROOT,PRESETS
+    receipt=dict(metadata(args.binary),runs=[],complete=False)
+    for scene in ('guardian','robot'):
+        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        document=json.loads((ROOT/config['authored-scene']).read_text())
+        modes=['cached','cached-refined','balanced','analytic','hybrid','cached','balanced']
+        actions=[dict(label=f'{i}-{mode}',scene=document,visible_scene=document,geometry_unchanged=True,
+            render_mode=mode) for i,mode in enumerate(modes)]
+        result=action_run(args,scene,document,actions,scene=scene)
+        rows=result['actions']
+        if rows[0]['image_sha256']!=rows[5]['image_sha256'] or rows[2]['image_sha256']!=rows[6]['image_sha256']:
+            raise RuntimeError('large scene round trip changed pixels')
+        if any(rows[i]['field_builds'] for i in (1,2,3,5,6)) or rows[4]['field_builds']!=1:
+            raise RuntimeError('large scene cache reuse/recreation incorrect')
+        receipt['runs'].append(dict(scene=scene,**result));save(args.output/'large-transitions.json',receipt)
+        print(scene,'cache/source/cache round trip passes',flush=True)
+    receipt['complete']=True;save(args.output/'large-transitions.json',receipt)
+
+
+def contracts(args):
+    import quality_speed_loop as previous
+    previous.ROUTES['source']=RAW['analytic'];args.routes=['source']
+    previous.contracts(args)
+
+
+def negative(args):
+    import subprocess
+    base=[str(args.binary),'--headless','--headless-render-only','--frames','1','--width','32','--height','32',
+          '--motion','static','--supersample','1','--authored-scene','projects/sdf/comparison/initial.json']
+    cases=[('recipe',['--headless','--frames','1','--render-mode','balanced']),
+        ('trace-conflict',base[1:]+['--render-mode','balanced','--surface-trace','analytic']),
+        ('axis-conflict',base[1:]+['--render-mode','balanced','--region-axis','16']),
+        ('brick-source',base[1:]+['--render-mode','analytic','--debug','4']),
+        ('prepared-named',base[1:]+['--render-mode','analytic','--source-optimization','combined']),
+        ('probe-ss2',base[1:]+['--render-mode','balanced','--supersample','2','--quality-output',str(args.output/'bad.bin')]),
+        ('probe-cap',base[1:]+['--render-mode','balanced','--width','4096','--height','4096','--quality-output',str(args.output/'bad.bin')]),
+        ('named-fixture',base[1:]+['--render-mode','analytic','--comparison-input','projects/sdf/comparison/fixtures.json']),
+        ('private-cache-window',['--frames','1',*RAW['balanced'],'--authored-scene','projects/sdf/comparison/initial.json']),
+        ('private-rootfar-window',['--frames','1',*RAW['analytic'],'--authored-scene','projects/sdf/comparison/initial.json']),
+        ('private-prepared-window',['--frames','1',*RAW['analytic'],'--source-optimization','combined','--authored-scene','projects/sdf/comparison/initial.json'])]
+    receipt=dict(metadata(args.binary),runs=[],complete=False)
+    for label,flags in cases:
+        command=[str(args.binary),*flags];r=subprocess.run(command,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,timeout=20)
+        if not r.returncode:raise RuntimeError('Invalid mode admitted: '+label)
+        (args.output/(label+'.log')).write_text(r.stdout)
+        receipt['runs'].append(dict(case=label,command=command,exit_code=r.returncode,output=r.stdout))
+    receipt['complete']=True;save(args.output/'negative.json',receipt)
+    print(len(cases),'actual named-mode/private-admission rejections pass',flush=True)
+
+
+def working_material(args):
+    import copy
+    document=json.loads(Path('projects/sdf/comparison/initial.json').read_text())
+    edited=copy.deepcopy(document);edited['materials'][0]['base_color']=[.2,.7,.3]
+    edited['materials'][0]['roughness']=.83
+    actions=[dict(label='live-material',scene=edited,visible_scene=edited,geometry_unchanged=True)]
+    for mode in ('balanced','analytic','hybrid','cached-refined','cached','balanced'):
+        actions.append(dict(label='retain-'+mode,scene=edited,visible_scene=edited,geometry_unchanged=True,render_mode=mode))
+    result=action_run(args,'working-material',document,actions,initial='balanced')
+    rows=result['actions']
+    if rows[0]['image_sha256']!=rows[-1]['image_sha256']:raise RuntimeError('Working material changed across mode round trip')
+    if rows[0]['field_builds'] or rows[0]['region_builds']:raise RuntimeError('Live material rebuilt geometry')
+    if len({r['appearance_hash'] for r in rows})!=1:raise RuntimeError('Unsaved appearance changed')
+    save(args.output/'working-material.json',dict(metadata(args.binary),result=result,passed=True,
+        scope='Runtime publication of an edited working material followed by mode switches; canonical scene file untouched'))
+    print('Edited working material retained across every rendering mode',flush=True)
+
+
+def defaults(args):
+    receipt=dict(metadata(args.binary),runs=[],complete=False)
+    for scene in ('guardian','robot'):
+        for ss in (1,2):
+            prefix=args.output/f'{scene}-ss{ss}'
+            flags=public_command(args,scene,'preset','balanced',ss,width=1920,height=1080)[:-2]+[
+                '--frames','1','--output',str(prefix.with_suffix('.png'))]
+            invoke(flags,prefix,timeout=180)
+            reference=args.input/f'{scene}-preset-balanced-ss{ss}.png'
+            if digest(prefix.with_suffix('.png'))!=digest(reference):raise RuntimeError('Default differs from Balanced')
+            receipt['runs'].append(dict(scene=scene,ss=ss,command=flags,default_matches_balanced=True))
+    images=[]
+    for mode in (None,'cached'):
+        prefix=args.output/('recipe-default' if mode is None else 'recipe-cached')
+        flags=[str(args.binary),'--headless','--require-validation','--frames','1','--width','160','--height','90',
+            '--output',str(prefix.with_suffix('.png'))]
+        if mode:flags+=['--render-mode',mode]
+        invoke(flags,prefix,timeout=180);images.append(digest(prefix.with_suffix('.png')))
+    if images[0]!=images[1]:raise RuntimeError('Bare recipe default changed')
+    receipt.update(complete=True,bare_recipe_matches_cached=True);save(args.output/'defaults.json',receipt)
+    print('Four authored defaults match Balanced; bare recipe matches Cached',flush=True)
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase',choices=['sampling','aliases','transitions','history','features'])
+    p.add_argument('phase',choices=['sampling','aliases','transitions','history','features','runtime_timing','publication','captures','motion','large_transitions','contracts','negative','working_material','defaults'])
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--binary',type=Path,default=Path('build/release/projects/sdf/sdf'))
+    p.add_argument('--input',type=Path)
     args=p.parse_args();args.shadows=1;args.binary=args.binary.resolve();args.output=args.output.resolve()
     args.output.mkdir(parents=True,exist_ok=False)
     globals()[args.phase](args)

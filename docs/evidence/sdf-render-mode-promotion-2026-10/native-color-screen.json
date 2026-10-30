@@ -1,0 +1,5 @@
+{
+  "images": 40,
+  "diagnostic_color_pixels": 0,
+  "scope": "RGB diagnostic-color screen, not internal float instrumentation"
+}

@@ -1,0 +1,57 @@
+{
+  "binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+  "runner_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+  "source_head": "fcd08e9c1579dce547643ba7670cdc1a31de1745",
+  "source_diff_sha256": "7a534b3f283bc4ced6d29775f6630069921d9fd166757a7e88c2abba4262ba54",
+  "device": "NVIDIA GeForce RTX 5070 Ti, 610.57.04",
+  "tool_sha256": "3b6bc48695572e32d1e6b223f95abca129be4fb18d99a06e848260e3bf729e74",
+  "runs": [
+    {
+      "route": "source",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--headless",
+        "--headless-render-only",
+        "--require-validation",
+        "--motion",
+        "static",
+        "--frames",
+        "1",
+        "--width",
+        "32",
+        "--height",
+        "32",
+        "--surface-trace",
+        "analytic",
+        "--csg-evaluation",
+        "pruned",
+        "--region-axis",
+        "64",
+        "--acceleration-variant",
+        "root-far",
+        "--comparison-input",
+        "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json",
+        "--comparison-output",
+        "/home/bryan/code/cubey/outputs/sdf/render-mode-loop-20261029/contracts/source.json"
+      ],
+      "wall_seconds": 0.5047441409551539,
+      "source_geometry_score": {
+        "passed": true,
+        "scored": 155,
+        "modes": [
+          "analytic-pruned"
+        ],
+        "maxima": {
+          "depth": 0.002638292312622026,
+          "point": 2.8163194656580237e-08,
+          "normal_degrees": 0.22949957087194034,
+          "residual": 1.7404556274414062e-05
+        },
+        "failures": []
+      },
+      "result_sha256": "3703cafc970356d05eebd6c03f234775faade398ef30412fe23a73955a84fd60",
+      "input_sha256": "d7089102beeb51a1edcf1176fb7d09dabfd12c2892832483f1ca05280e48e9d3"
+    }
+  ],
+  "complete": true
+}

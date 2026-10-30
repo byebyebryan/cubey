@@ -1,0 +1,28 @@
+{
+  "command": [
+    "stdbuf",
+    "-oL",
+    "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+    "--config",
+    "/home/bryan/code/cubey/outputs/sdf/render-mode-loop-20261029/window-workshop/config.json",
+    "--width",
+    "900",
+    "--height",
+    "1000",
+    "--require-validation"
+  ],
+  "inspect_only": false,
+  "mode_rows": [
+    {
+      "requested": "auto",
+      "effective": "balanced",
+      "ss": 2,
+      "generation": 0,
+      "field_generation": 1,
+      "field_bytes": 912997552
+    }
+  ],
+  "passed": true,
+  "binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+  "scope": "Owned virtual X11 window; not physical desktop acceptance"
+}

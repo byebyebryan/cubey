@@ -54,6 +54,53 @@ captures. An initial inspection tried Escape to close a popup; the app's
 ordinary Escape-to-exit behavior closed the window, so inspection uses a panel
 background click instead. That attempt is not a passed interaction receipt.
 
-Final public-route timing/publication, default promotion and delivery remain
-pending. The 192 preexisting SPVs remain byte-identical; two new wrappers add
+The 192 preexisting SPVs remain byte-identical; two new wrappers add
 the same cached policy to material lighting without changing transport code.
+
+## Final qualification and promotion
+
+The first public Analytical mapping exposed excessive A16 cost: completed
+Guardian samples reached 135–492 ms. Its batch was stopped using only the
+owned runner/native child and is retained as incomplete investigation data,
+excluded from acceptance. The existing root-far accelerator is now promoted
+for named Analytical atmosphere rendering. Prepared/adaptive controls and
+accelerated hybrid retain their private admission; material/optical Analytical
+retains its existing A16 backend. No tracing helper or old SPV changed.
+
+The resulting 108-run public timing matrix is complete. Balanced SS1 is below
+16.7 ms in all six final views. SS2 normal views are about 10–12 ms; its close
+views remain about 26–30 ms. Guardian preset Analytical is now 19.246–19.357 ms
+at SS1, versus Balanced 4.605–4.669 ms. Existing sample defaults remain intact.
+
+Root-far aliases, all twenty directed transitions, five failure/retry stages,
+all five history replays, native-window selector/resize/reload/material/history
+checks and 155 frozen source contracts pass. Actual workshop recipe changes
+reuse geometry; specimen changes replace both caches. An edited working material
+survives mode changes. Four authored defaults equal explicit Balanced pixels;
+bare recipe startup equals Cached. Eleven actual invalid/private requests reject.
+
+The full-scene publication batch passes the proposed stop rule: Guardian
+Cached/Balanced geometry-action p95 is 938.94 / 1076.62 ms, Robot
+98.74 / 120.94 ms. Source→cache recreation is about 1007 / 142 ms in the
+recorded round trips. First observed material-pipeline creation took 11.45 s;
+the repeat took 8.30 ms. These setup costs remain explicit limits.
+
+The default resolver now selects Balanced for authored/workshop scenes and
+Cached for legacy recipes. Final binary:
+`a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e`.
+Ninety-six native motion poses and forty final public captures are retained.
+See [results](sdf-render-mode-promotion-results.md) and
+[evidence](../evidence/sdf-render-mode-promotion-2026-10/README.md).
+Final documentation/report checks and local delivery receipts accompany the
+completion commit. No push, site deployment or golden update.
+
+## Delivery
+
+Balanced/default and analytical atmosphere promotion are committed as
+`193a16ca`. Thirteen current focused checks pass. The
+[HTML report](http://starship:8787/reports/b37a56f83a63404aba37029a521824414e0e5c5cecb50423d7b2a60f706fb184/)
+is published; all 82 served files match the intended bytes. Forty report
+mode/view/sample selections, comparison controls, local asset links and both
+sixteen-frame clips pass machine checks. No browser connection is available,
+so rendered-report acceptance remains unclaimed. Native application UI images
+and interactions were inspected and exercised in the owned Xvfb window.

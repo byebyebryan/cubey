@@ -16,6 +16,8 @@ p.add_argument('--binary',type=Path,default=Path('build/release/projects/sdf/sdf
 p.add_argument('--output',type=Path,required=True)
 p.add_argument('--config',type=Path,required=True)
 p.add_argument('--inspect',action='store_true')
+p.add_argument('--initial-mode',choices=['auto','cached','balanced'],default='balanced')
+p.add_argument('--workshop-check',action='store_true')
 args=p.parse_args();args.binary=args.binary.resolve();out=args.output.resolve()
 out.mkdir(parents=True,exist_ok=False)
 if os.environ.get('CUBEY_SDF_PRIVATE_XVFB')!='1':raise SystemExit('Requires owned xvfb-run display')
@@ -32,10 +34,12 @@ bind(t,'XTestFakeKeyEvent',[D,U,I,W]);bind(t,'XTestFakeButtonEvent',[D,U,I,W]);b
 display=x.XOpenDisplay(None)
 if not display:raise RuntimeError('Owned Xvfb display unavailable')
 root=x.XDefaultRootWindow(display);log=out/'native.log'
-config=json.loads(args.config.read_text());source=Path(config['authored-scene'])
-if not source.is_absolute():source=Path.cwd()/source
-scene=out/'scene.json';scene.write_text(source.read_text());config['authored-scene']=str(scene)
-config.update({'render-mode':'balanced','motion':'static'})
+config=json.loads(args.config.read_text())
+if 'authored-scene' in config:
+    source=Path(config['authored-scene'])
+    if not source.is_absolute():source=Path.cwd()/source
+    scene=out/'scene.json';scene.write_text(source.read_text());config['authored-scene']=str(scene)
+config.update({'render-mode':args.initial_mode,'motion':'static'})
 profile=out/'config.json';profile.write_text(json.dumps(config,indent=2)+'\n')
 command=['stdbuf','-oL',str(args.binary),'--config',str(profile),'--width','900','--height','1000','--require-validation']
 def wait_for(predicate,description):
@@ -78,6 +82,17 @@ with log.open('w') as stream:
         capture('initial');click(180,106);capture('mode-menu')
         if args.inspect:
             click(410,90);click(180,136);capture('samples-menu');click(410,90);capture('menu-closed')
+        elif args.workshop_check:
+            click(410,90)
+            def updates():return re.findall(r'authored update geometry=(\w+) appearance=(\w+) field_rebuilt=(\d) region_rebuilt=(\d)',log.read_text())
+            count=len(updates());click(180,226);click(180,256)
+            wait_for(lambda:len(updates())>count,'workshop recipe selection')
+            if updates()[-1][2:]!=('0','0'):raise RuntimeError('Recipe edit rebuilt geometry')
+            capture('recipe-selected')
+            count=len(updates());click(180,166);click(180,216)
+            wait_for(lambda:len(updates())>count,'workshop specimen selection')
+            if updates()[-1][2:]!=('1','1'):raise RuntimeError('Specimen did not publish matching field/regions')
+            capture('specimen-selected')
         else:
             click(410,90)
             baseline=modes()[-1]

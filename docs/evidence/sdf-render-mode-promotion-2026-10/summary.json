@@ -1,0 +1,970 @@
+{
+  "date": "2026-10-29",
+  "default": "Balanced for authored scenes/workshops; Cached for box recipes",
+  "supersample_defaults_changed": false,
+  "binary_sha256": "a00dfa2527febd2e81984a56980b929be86b19abe4a5d21b9336f63dd28ba98e",
+  "timings": [
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "cached",
+      "ss": 1,
+      "low": 1.8959136,
+      "high": 1.9360368,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        1.8959136,
+        1.9360368,
+        1.9321503999999998
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "cached",
+      "ss": 2,
+      "low": 4.8799584,
+      "high": 4.9080032000000005,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        4.8799584,
+        4.9054576,
+        4.9080032000000005
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "balanced",
+      "ss": 1,
+      "low": 4.6050048,
+      "high": 4.6687072,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 144.971159
+      },
+      "repeats": [
+        4.6687072,
+        4.6642112,
+        4.6050048
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "balanced",
+      "ss": 2,
+      "low": 12.0517312,
+      "high": 12.1999344,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 143.968425
+      },
+      "repeats": [
+        12.0517312,
+        12.1999344,
+        12.149830399999999
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "analytic",
+      "ss": 1,
+      "low": 19.2459744,
+      "high": 19.3570976,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 145.794822
+      },
+      "repeats": [
+        19.3570976,
+        19.2964048,
+        19.2459744
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "preset",
+      "mode": "analytic",
+      "ss": 2,
+      "low": 44.449584,
+      "high": 44.685464,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 147.291358
+      },
+      "repeats": [
+        44.449584,
+        44.685464,
+        44.64897919999999
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "cached",
+      "ss": 1,
+      "low": 2.1987776,
+      "high": 2.2415696,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        2.1987776,
+        2.2415696,
+        2.2218383999999998
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "cached",
+      "ss": 2,
+      "low": 5.41568,
+      "high": 5.4256736,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        5.41568,
+        5.4256736,
+        5.4250784
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "balanced",
+      "ss": 1,
+      "low": 3.997272,
+      "high": 4.0330496,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 127.675679
+      },
+      "repeats": [
+        4.0186928,
+        3.997272,
+        4.0330496
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "balanced",
+      "ss": 2,
+      "low": 9.7843824,
+      "high": 9.9144336,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 143.15295
+      },
+      "repeats": [
+        9.7843824,
+        9.9144336,
+        9.840688
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "analytic",
+      "ss": 1,
+      "low": 21.6805952,
+      "high": 21.833588799999998,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 145.468089
+      },
+      "repeats": [
+        21.6805952,
+        21.833588799999998,
+        21.7095728
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "side",
+      "mode": "analytic",
+      "ss": 2,
+      "low": 44.1411376,
+      "high": 44.6050768,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 149.388875
+      },
+      "repeats": [
+        44.1411376,
+        44.6050768,
+        44.284860800000004
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "close",
+      "mode": "cached",
+      "ss": 1,
+      "low": 2.6422703999999997,
+      "high": 2.6577328,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        2.6422703999999997,
+        2.6577328,
+        2.6535328
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "close",
+      "mode": "cached",
+      "ss": 2,
+      "low": 7.2083488000000004,
+      "high": 7.2261184,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        7.2083488000000004,
+        7.2261184,
+        7.2095199999999995
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "close",
+      "mode": "balanced",
+      "ss": 1,
+      "low": 8.8238576,
+      "high": 8.9435056,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 140.476518
+      },
+      "repeats": [
+        8.8238576,
+        8.9435056,
+        8.8886768
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "close",
+      "mode": "balanced",
+      "ss": 2,
+      "low": 25.838369599999996,
+      "high": 26.1395184,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 142.806688
+      },
+      "repeats": [
+        25.838369599999996,
+        26.124224,
+        26.1395184
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "close",
+      "mode": "analytic",
+      "ss": 1,
+      "low": 35.611209599999995,
+      "high": 35.903976,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 144.950165
+      },
+      "repeats": [
+        35.903976,
+        35.611209599999995,
+        35.7283136
+      ]
+    },
+    {
+      "scene": "guardian",
+      "view": "close",
+      "mode": "analytic",
+      "ss": 2,
+      "low": 77.92646239999999,
+      "high": 77.983608,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 6443520.0,
+        "region_references": 562292.0,
+        "region_far_cells": 249086.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 8197080.0,
+        "region_build_upload_ms": 145.588518
+      },
+      "repeats": [
+        77.9759104,
+        77.983608,
+        77.92646239999999
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "cached",
+      "ss": 1,
+      "low": 4.2222272,
+      "high": 4.253576,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        4.2222272,
+        4.253576,
+        4.2302767999999995
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "cached",
+      "ss": 2,
+      "low": 13.8270464,
+      "high": 13.873638399999999,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        13.8585312,
+        13.873638399999999,
+        13.8270464
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "balanced",
+      "ss": 1,
+      "low": 4.3121376,
+      "high": 4.397617599999999,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.924799
+      },
+      "repeats": [
+        4.397617599999999,
+        4.3121376,
+        4.3538448
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "balanced",
+      "ss": 2,
+      "low": 12.2224576,
+      "high": 12.2251168,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.139025
+      },
+      "repeats": [
+        12.2224576,
+        12.2251168,
+        12.2232736
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "analytic",
+      "ss": 1,
+      "low": 5.111606399999999,
+      "high": 5.125712,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 26.264634
+      },
+      "repeats": [
+        5.125712,
+        5.113303999999999,
+        5.111606399999999
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "preset",
+      "mode": "analytic",
+      "ss": 2,
+      "low": 13.1734512,
+      "high": 13.330648,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.838048
+      },
+      "repeats": [
+        13.1944416,
+        13.330648,
+        13.1734512
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "cached",
+      "ss": 1,
+      "low": 3.6151855999999998,
+      "high": 3.6527232,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        3.6425872,
+        3.6527232,
+        3.6151855999999998
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "cached",
+      "ss": 2,
+      "low": 12.0795408,
+      "high": 12.09684,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        12.0795408,
+        12.09684,
+        12.087744
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "balanced",
+      "ss": 1,
+      "low": 3.7887167999999996,
+      "high": 3.8128512,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 23.871444
+      },
+      "repeats": [
+        3.7902896,
+        3.8128512,
+        3.7887167999999996
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "balanced",
+      "ss": 2,
+      "low": 10.7096736,
+      "high": 10.7191856,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 22.92982
+      },
+      "repeats": [
+        10.7191856,
+        10.7163488,
+        10.7096736
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "analytic",
+      "ss": 1,
+      "low": 3.4357104,
+      "high": 3.4601216,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 25.39646
+      },
+      "repeats": [
+        3.4449296,
+        3.4601216,
+        3.4357104
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "side",
+      "mode": "analytic",
+      "ss": 2,
+      "low": 10.427064,
+      "high": 10.458435199999998,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.491247
+      },
+      "repeats": [
+        10.458435199999998,
+        10.453752,
+        10.427064
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "close",
+      "mode": "cached",
+      "ss": 1,
+      "low": 9.1610944,
+      "high": 9.1931344,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        9.177712,
+        9.1931344,
+        9.1610944
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "close",
+      "mode": "cached",
+      "ss": 2,
+      "low": 35.7596512,
+      "high": 35.780032,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 0.0,
+        "region_references": 0.0,
+        "region_far_cells": 0.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 0.0,
+        "region_build_upload_ms": 0.0
+      },
+      "repeats": [
+        35.7596512,
+        35.780032,
+        35.7698496
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "close",
+      "mode": "balanced",
+      "ss": 1,
+      "low": 7.6744096,
+      "high": 7.7053136,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.564577
+      },
+      "repeats": [
+        7.695393599999999,
+        7.7053136,
+        7.6744096
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "close",
+      "mode": "balanced",
+      "ss": 2,
+      "low": 30.0433072,
+      "high": 30.0724944,
+      "resources": {
+        "field_bytes": 912997552.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 23.780694
+      },
+      "repeats": [
+        30.0433072,
+        30.053207999999998,
+        30.0724944
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "close",
+      "mode": "analytic",
+      "ss": 1,
+      "low": 8.8080512,
+      "high": 8.8590944,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.470037
+      },
+      "repeats": [
+        8.8590944,
+        8.8080512,
+        8.822384
+      ]
+    },
+    {
+      "scene": "robot",
+      "view": "close",
+      "mode": "analytic",
+      "ss": 2,
+      "low": 30.3150736,
+      "high": 30.441776,
+      "resources": {
+        "field_bytes": 0.0,
+        "region_bytes": 4422660.0,
+        "region_references": 57077.0,
+        "region_far_cells": 246775.0,
+        "region_fallback_cells": 0.0,
+        "region_cpu_scratch_peak_bytes": 4805816.0,
+        "region_build_upload_ms": 24.399386
+      },
+      "repeats": [
+        30.3150736,
+        30.441776,
+        30.3378208
+      ]
+    }
+  ],
+  "publication": [
+    {
+      "scene": "guardian",
+      "mode": "cached",
+      "geometry_p95_ms": 938.94119145,
+      "edit_ms": [
+        931.791656,
+        928.316459,
+        927.194623
+      ]
+    },
+    {
+      "scene": "guardian",
+      "mode": "balanced",
+      "geometry_p95_ms": 1076.61797895,
+      "edit_ms": [
+        1074.145495,
+        1072.956039,
+        1069.16166
+      ]
+    },
+    {
+      "scene": "robot",
+      "mode": "cached",
+      "geometry_p95_ms": 98.74408145,
+      "edit_ms": [
+        98.34523,
+        98.58761,
+        98.303941
+      ]
+    },
+    {
+      "scene": "robot",
+      "mode": "balanced",
+      "geometry_p95_ms": 120.9449479,
+      "edit_ms": [
+        120.564706,
+        119.267151,
+        121.409688
+      ]
+    }
+  ],
+  "publication_stops": [
+    {
+      "scene": "guardian",
+      "increase_ms": 137.67678749999993,
+      "increase_fraction": 0.14662983023184517,
+      "stop": false
+    },
+    {
+      "scene": "robot",
+      "increase_ms": 22.200866450000007,
+      "increase_fraction": 0.22483237601680073,
+      "stop": false
+    }
+  ],
+  "public_analytic_backend": "A64 root-far + automatic shadow specialization in atmosphere; ordinary A16 in material/optical lighting",
+  "sampling_runs": 96,
+  "final_timing_runs": 108,
+  "aliases": 20,
+  "directed_transitions": 20,
+  "failure_stages": 5,
+  "history_frames": 45,
+  "feature_captures": 40,
+  "native_motion_frames": 96,
+  "original_spvs_preserved": 192,
+  "budgets": {
+    "balanced_ss1_all_six_views_below_16_7": true,
+    "balanced_ss2_close_below_20": false
+  },
+  "limits": [
+    "Cached primary visibility and shadows still lose source detail; the earlier detail-preserving profile remains failed.",
+    "SS2 close views exceed 20 ms GPU p95; sample settings are independent and preserved.",
+    "Geometry edits rebuild synchronously; source-to-cache selection can incur that full rebuild.",
+    "Native Xvfb acceptance is separate from physical desktop and human visual acceptance.",
+    "Feature RGB diagnostic-color screening is not complete internal floating-point instrumentation.",
+    "Prepared-cone/adaptive studies and accelerated hybrid remain under their original private admission."
+  ],
+  "switches": [
+    {
+      "scene": "guardian",
+      "mode": "cached-refined",
+      "switch_ms": 6.991777,
+      "field_builds": 0,
+      "region_builds": 0
+    },
+    {
+      "scene": "guardian",
+      "mode": "balanced",
+      "switch_ms": 150.325715,
+      "field_builds": 0,
+      "region_builds": 1
+    },
+    {
+      "scene": "guardian",
+      "mode": "analytic",
+      "switch_ms": 44.185129,
+      "field_builds": 0,
+      "region_builds": 0
+    },
+    {
+      "scene": "guardian",
+      "mode": "hybrid",
+      "switch_ms": 1006.84867,
+      "field_builds": 1,
+      "region_builds": 1
+    },
+    {
+      "scene": "guardian",
+      "mode": "cached",
+      "switch_ms": 6.610945,
+      "field_builds": 0,
+      "region_builds": 0
+    },
+    {
+      "scene": "guardian",
+      "mode": "balanced",
+      "switch_ms": 145.083034,
+      "field_builds": 0,
+      "region_builds": 1
+    },
+    {
+      "scene": "robot",
+      "mode": "cached-refined",
+      "switch_ms": 6.618535,
+      "field_builds": 0,
+      "region_builds": 0
+    },
+    {
+      "scene": "robot",
+      "mode": "balanced",
+      "switch_ms": 28.023358,
+      "field_builds": 0,
+      "region_builds": 1
+    },
+    {
+      "scene": "robot",
+      "mode": "analytic",
+      "switch_ms": 39.07989,
+      "field_builds": 0,
+      "region_builds": 0
+    },
+    {
+      "scene": "robot",
+      "mode": "hybrid",
+      "switch_ms": 142.473485,
+      "field_builds": 1,
+      "region_builds": 1
+    },
+    {
+      "scene": "robot",
+      "mode": "cached",
+      "switch_ms": 5.3014,
+      "field_builds": 0,
+      "region_builds": 0
+    },
+    {
+      "scene": "robot",
+      "mode": "balanced",
+      "switch_ms": 24.955266,
+      "field_builds": 0,
+      "region_builds": 1
+    }
+  ],
+  "material_setup_observations": {
+    "first_observed_pipeline_ms": 11449.9,
+    "repeated_pipeline_ms": 8.30474,
+    "scope": "Same material-workshop/window configuration; observed first and repeated process setup, not a deliberately cleared cold driver cache"
+  },
+  "promotion_commit": "193a16cabaaec7cc68e45e4e87adc0b0b6c728ea"
+}

@@ -82,6 +82,9 @@ the architecture and project guides remain current authority.
   source normals, measured preview tradeoffs and remaining geometry limits.
 - [SDF render-mode promotion plan](sdf-render-mode-promotion-plan.md): selectable
   modes, real SS1/SS2 defaults, runtime transitions and Balanced qualification.
+- [SDF render-mode promotion results](sdf-render-mode-promotion-results.md):
+  native mode/sample controls, Balanced default, accelerated Analytical and
+  measured frame/edit/setup costs.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

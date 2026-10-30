@@ -1,0 +1,29 @@
+{
+  "offline_js_passed": true,
+  "mode_scene_view_sample_selections": 40,
+  "slider_passed": true,
+  "local_assets_present": true,
+  "browser_render_acceptance": false,
+  "clips": [
+    {
+      "file": "guardian.mp4",
+      "codec_name": "h264",
+      "width": 1920,
+      "height": 360,
+      "r_frame_rate": "12/1",
+      "nb_read_frames": "16"
+    },
+    {
+      "file": "robot.mp4",
+      "codec_name": "h264",
+      "width": 1920,
+      "height": 360,
+      "r_frame_rate": "12/1",
+      "nb_read_frames": "16"
+    }
+  ],
+  "browser_unavailable": true,
+  "native_ui_visual_inspection": true,
+  "physical_desktop_acceptance": false,
+  "focused_ctest_groups_passed": 13
+}
