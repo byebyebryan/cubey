@@ -66,7 +66,7 @@ def prepare(args):
         edit.case('smooth-base-hard-cut',smooth,sphere('pending',.06),[],True),
         edit.case('scaled-tool',box,dict(name='pending',type='box',half_extent=[.04,.03,.06],
             scale=1.25,position=[.15,0,0],rotation_xyzw=[0,.1986693308,0,.9800665778]),[]),
-        edit.case('thin-base',document(dict(name='body',type='box',half_extent=[2**-20,.125,.125])),
+        edit.case('thin-base',document(dict(name='body',type='box',half_extent=[.00001,.125,.125])),
             sphere('pending',.04,[0,.1,0]),[]),
     ]
     for c in cases:
@@ -98,6 +98,11 @@ def prepare(args):
             chain.pop()
         if not chain:raise RuntimeError('no admitted chain')
         receipt['chains'].append(dict(name=subject+'-chain',subject=subject,length=len(chain),input=str(inp)))
+    all_cases=[json.loads(Path(r['input']).read_text())['cases'][0]
+               for r in receipt['fixtures']+receipt['subjects']]
+    all_input=args.output/'all-admission-input.json';save(all_input,edit.manifest(all_cases))
+    all_output=args.output/'all-admission.json'
+    receipt['all_admission']=run(native(args,all_input,all_output)+['--commit-validate-only'],all_output)
     receipt['complete']=True;save(args.output/'prepare.json',receipt)
     print(json.dumps(dict(fixtures=len(receipt['fixtures']),subjects=len(receipt['subjects']),
         chains=[(r['subject'],r['length']) for r in receipt['chains']])),flush=True)
@@ -117,7 +122,26 @@ def qualify(args):
     inputs=json.loads(args.inputs.read_text())
     receipt=dict(identity(args),mode=args.mode,regions=args.regions,runs=[],complete=False,passed=True)
     rows=inputs['chains'] if args.chains else inputs['fixtures']+inputs['subjects']
+    inherited={}
+    if args.resume:
+        old=json.loads(args.resume.read_text())
+        for key in ('binary_sha256','edit_binary_sha256','shaders'):
+            if old[key]!=receipt[key]:raise RuntimeError('resume runtime identity changed')
+        if old['mode']!=args.mode or old['regions']!=args.regions:raise RuntimeError('resume mode changed')
+        inherited={r['case']['name']:r for r in old['runs']}
+        receipt['inherited_from']=dict(path=str(args.resume.resolve()),sha256=digest(args.resume),
+            source_head=old['source_head'],harness_sha256=old['harness_sha256'])
     for i,row in enumerate(rows):
+        if row['name'] in inherited:
+            previous=inherited[row['name']]
+            if digest(Path(previous['case']['input']))!=digest(Path(row['input'])):
+                raise RuntimeError('resume input changed')
+            if previous['exit_code'] or not previous['native']['all_comparisons_passed']:
+                raise RuntimeError('cannot inherit failed qualification')
+            if args.dump and not all(previous['independent_files']):raise RuntimeError('resume lacks raw dumps')
+            receipt['runs'].append(dict(previous,inherited=True))
+            print(f"{i+1}/{len(rows)} {row['name']}: inherited exact-runtime PASS",flush=True)
+            continue
         out=args.output/(row['name']+'.json')
         cmd=native(args,row['input'],out)+['--commit-qualify']
         if args.chains:cmd+=['--commit-chain']
@@ -201,6 +225,7 @@ def main():
     p.add_argument('--output',type=Path,required=True);p.add_argument('--inputs',type=Path)
     p.add_argument('--mode',choices=['full','reuse','pruned'],default='reuse');p.add_argument('--regions',type=int,choices=[4,16],default=4)
     p.add_argument('--chains',action='store_true');p.add_argument('--dump',action='store_true')
+    p.add_argument('--resume',type=Path)
     p.add_argument('--binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_commit_study')
     p.add_argument('--edit-binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_edit_study')
     p.add_argument('--baseline',type=Path,default=ROOT/'outputs/sdf/cached-commit-loop-20261030/baseline.json')
