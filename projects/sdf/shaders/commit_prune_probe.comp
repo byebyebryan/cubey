@@ -1,0 +1,18 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+#include "regions.glsl"
+layout(local_size_x=64) in;
+layout(std430,set=0,binding=0) readonly buffer Queries {uvec2 queries[];};
+layout(std430,set=0,binding=1) writeonly buffer Results {uvec4 results[];};
+layout(push_constant) uniform Params {uint count;} pc;
+void main() {
+    uint i=gl_GlobalInvocationID.x;if(i>=pc.count) return;
+    uint code=queries[i].x,local=queries[i].y;
+    ivec3 cell=ivec3(local%8u,(local/8u)%8u,local/64u);
+    vec3 p=(vec3(unmorton(code))+vec3(cell)/7.0)/256.0-0.5;
+    float a=authoredDistance(p),b=regionDistance(p);
+    results[i]=uvec4(floatBitsToUint(a),floatBitsToUint(b),packHalf2x16(vec2(a,b)),0u);
+}

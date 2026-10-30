@@ -161,24 +161,28 @@ def qualify(args):
 def timing(args):
     inputs=json.loads(args.inputs.read_text())
     rows=[r for r in inputs['subjects'] if r['radius']==.065]
-    modes=[('full',4),('reuse',4),('pruned',4),('pruned',16)]
-    receipt=dict(identity(args),runs=[],complete=False,warmup=3,measured_per_run=10,repeats=3)
+    modes=[('pruned',4),('pruned',16)] if args.diagnostic_pruning else [('full',4),('reuse',4)]
+    repeats,warmup,trials=(1,1,3) if args.diagnostic_pruning else (3,3,10)
+    cold_options=(False,) if args.diagnostic_pruning else (False,True)
+    total=repeats*len(cold_options)*len(rows)*len(modes)
+    receipt=dict(identity(args),runs=[],complete=False,warmup=warmup,measured_per_run=trials,repeats=repeats,
+        diagnostic_unqualified_pruning=args.diagnostic_pruning)
     # Cold and preallocated results remain separate. Interleave order by repeat.
-    for repeat in range(3):
+    for repeat in range(repeats):
         order=modes[repeat%len(modes):]+modes[:repeat%len(modes)]
-        for cold in (False,True):
+        for cold in cold_options:
             for row in rows:
                 for mode,axis in order:
                     out=args.output/f"{row['name']}-{mode}-{axis}-{'cold' if cold else 'warm'}-{repeat}.json"
                     cmd=[args.binary,'--commit-input',row['input'],'--commit-output',out,'--commit-mode',mode,
-                        '--commit-regions',str(axis),'--commit-warmup','3','--commit-trials','10']
+                        '--commit-regions',str(axis),'--commit-warmup',str(warmup),'--commit-trials',str(trials)]
                     if cold:cmd+=['--commit-cold']
                     record=run(cmd,out)
-                    trials=record['native']['runs'][0]['trials']
-                    if sum(not t['warmup'] for t in trials)!=10:raise RuntimeError('missing timed commits')
+                    samples=record['native']['runs'][0]['trials']
+                    if sum(not t['warmup'] for t in samples)!=receipt['measured_per_run']:raise RuntimeError('missing timed commits')
                     receipt['runs'].append(dict(case=row,repeat=repeat,cold=cold,mode=mode,regions=axis,**record))
                     save(args.output/'timing.json',receipt)
-                    print(f"{len(receipt['runs'])}/96 {out.stem}",flush=True)
+                    print(f"{len(receipt['runs'])}/{total} {out.stem}",flush=True)
     receipt['complete']=True;save(args.output/'timing.json',receipt)
 
 
@@ -186,7 +190,7 @@ def sequences(args):
     inputs=json.loads(args.inputs.read_text())
     receipt=dict(identity(args),runs=[],complete=False)
     for row in (r for r in inputs['subjects'] if r['radius']==.065):
-        failures=['none']+(['allocation','cancel-before-submit','stale','discard-after-submit'] if row['operation']=='cut' else [])
+        failures=['none']+(['allocation','cancel-before-submit','stale','discard-after-submit','build-capacity'] if row['operation']=='cut' else [])
         original=json.loads(Path(row['input']).read_text())
         for failure in failures:
             inp=args.output/f"{row['name']}-{failure}-input.json"
@@ -219,20 +223,81 @@ def sequences(args):
     receipt['complete']=True;save(args.output/'sequences.json',receipt)
 
 
+def faults(args):
+    inputs=json.loads(args.inputs.read_text())
+    receipt=dict(identity(args),overflow=[],negative=[],complete=False)
+    for name in ('lattice-box-cut','guardian-cut-0.065'):
+        row=next(r for r in inputs['fixtures']+inputs['subjects'] if r['name']==name)
+        out=args.output/(name+'-overflow.json')
+        record=run(native(args,row['input'],out,'reuse')+['--commit-qualify','--commit-dump','--commit-fallback-limit','1'],out)
+        r=record['native']['runs'][0]
+        if not r['comparison']['passed'] or not r['trials'][0]['full_fallback'] or r['trials'][0]['work_counts'][7]!=1:
+            raise RuntimeError('overflow did not produce a canonical result')
+        receipt['overflow'].append(dict(**record,independent_files=independent_files(r)))
+    base=document(sphere('body',.15));single=edit.edit_scene(base,sphere('pending',.05))
+    changed_prefix=copy.deepcopy(single);changed_prefix['root']['children'][0]['radius']=.16
+    changed_palette=copy.deepcopy(single);changed_palette['materials'][0]['roughness']=.9
+    negatives={
+        'multiple-pending':edit.edit_scene(single,sphere('second',.02)),
+        'smoothing':dict(single,root=dict(single['root'],type='smooth-union',radius=.01)),
+        'unsupported-capsule':edit.edit_scene(base,dict(name='pending',type='capsule',radius=.03,half_length=.04)),
+        'rounded-tool':edit.edit_scene(base,dict(name='pending',type='box',half_extent=[.03]*3,rounding=.01)),
+        'changed-prefix':changed_prefix,'changed-palette':changed_palette,
+        'below-source-size-limit':dict(single,root=dict(name='tiny',type='box',half_extent=[2**-20,.125,.125])),
+    }
+    for name,scene in negatives.items():
+        inp=args.output/(name+'-input.json');save(inp,edit.manifest([dict(name=name,base=base,scene=scene)]))
+        out=args.output/(name+'-result.json')
+        record=run(native(args,inp,out)+['--commit-validate-only'],out,allow_failure=True)
+        if record['exit_code']==0 or record['native'] is not None:raise RuntimeError('invalid request admitted')
+        receipt['negative'].append(dict(name=name,**record))
+    chain=json.loads(Path(inputs['chains'][1]['input']).read_text())
+    chain['cases']=chain['cases'][:2]
+    chain['cases'][1]=edit.case('wrong-base',base,sphere('pending',.02),[])
+    inp=args.output/'wrong-base-input.json';save(inp,chain);out=args.output/'wrong-base-result.json'
+    record=run(native(args,inp,out)+['--commit-qualify','--commit-chain'],out,allow_failure=True)
+    if record['exit_code']==0 or 'matching canonical fields' not in out.with_suffix('.log').read_text():
+        raise RuntimeError('stale base identity was not rejected')
+    receipt['negative'].append(dict(name='wrong-retained-base',**record))
+    receipt['complete']=True;save(args.output/'faults.json',receipt)
+
+
+def prune_probe(args):
+    inputs=json.loads(args.inputs.read_text())
+    root=args.inputs.parent.parent
+    a4=json.loads((root/'pruned4/qualification.json').read_text())
+    a16=json.loads((root/'pruned16/qualification.json').read_text())
+    receipt=dict(identity(args),runs=[],complete=False)
+    binary=args.binary.parent/'cubey_project_sdf_cached_commit_probe'
+    receipt['probe_binary_sha256']=digest(binary)
+    for name,reference in [('guardian-add-0.065',a4),('robot-cut-0.065',a16)]:
+        row=next(r for r in reference['runs'] if r['case']['name']==name)
+        source=json.loads(Path(row['case']['input']).read_text())['cases'][0]['scene']
+        samples=row['native']['runs'][0]['comparison']['examples']
+        if not samples:raise RuntimeError('missing diagnostic sample locations')
+        inp=args.output/(name+'-input.json');save(inp,dict(scene=source,samples=samples))
+        for axis in (4,16):
+            out=args.output/f'{name}-A{axis}.json'
+            record=run([binary,inp,out,str(axis)],out)
+            receipt['runs'].append(dict(name=name,axis=axis,reference_axis=reference['regions'],**record))
+    receipt['complete']=True;save(args.output/'prune-probe.json',receipt)
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase',choices=['prepare','qualify','timing','sequences'])
+    p.add_argument('phase',choices=['prepare','qualify','timing','sequences','faults','prune-probe'])
     p.add_argument('--output',type=Path,required=True);p.add_argument('--inputs',type=Path)
     p.add_argument('--mode',choices=['full','reuse','pruned'],default='reuse');p.add_argument('--regions',type=int,choices=[4,16],default=4)
     p.add_argument('--chains',action='store_true');p.add_argument('--dump',action='store_true')
     p.add_argument('--resume',type=Path)
+    p.add_argument('--diagnostic-pruning',action='store_true')
     p.add_argument('--binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_commit_study')
     p.add_argument('--edit-binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_edit_study')
     p.add_argument('--baseline',type=Path,default=ROOT/'outputs/sdf/cached-commit-loop-20261030/baseline.json')
     p.add_argument('--public-binary',type=Path,default=ROOT/'outputs/sdf/cached-commit-loop-20261030/baseline-sdf')
     args=p.parse_args();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=False)
     if args.phase!='prepare' and not args.inputs:p.error('--inputs is required')
-    globals()[args.phase](args)
+    globals()[args.phase.replace('-','_')](args)
 
 
 if __name__=='__main__':main()

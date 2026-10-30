@@ -236,7 +236,8 @@ int main(int argc, char** argv) {
         const auto failure_kind =
             input.value("candidate_failure", std::string("discard-after-submit"));
         if (failure_kind != "allocation" && failure_kind != "cancel-before-submit" &&
-            failure_kind != "stale" && failure_kind != "discard-after-submit")
+            failure_kind != "stale" && failure_kind != "discard-after-submit" &&
+            failure_kind != "build-capacity")
             throw std::invalid_argument("invalid candidate failure disposition");
         const unsigned sequence_frames = fault ? 5U : 4U;
         if (sequence &&
@@ -372,55 +373,80 @@ int main(int argc, char** argv) {
                                     {"pending_after", pending ? 1 : 0}});
                     receipt["commits"].push_back(std::move(attempt));
                 } else {
-                    candidate_field = std::make_unique<Field>(ctx.device(), runtime.gpu());
+                    candidate_field = std::make_unique<Field>(
+                        ctx.device(), runtime.gpu(), 64, 128,
+                        injected && failure_kind == "build-capacity" ? 1U : 0U);
                     const auto allocated = elapsed(*commit_started);
-                    if (committer) {
-                        const auto stats = committer->build(*candidate_field, *base_field,
-                                                            programs[0], builder_mode);
-                        attempt.update({{"admission_ms", stats.admission_ms},
-                                        {"reuse_gpu_ms", stats.reuse_gpu_ms},
-                                        {"fallback_gpu_ms", stats.fallback_gpu_ms},
-                                        {"work_counts", stats.work},
-                                        {"full_fallback", stats.full_fallback},
-                                        {"builder_working_bytes", committer->working_bytes()}});
-                    } else
-                        candidate_field->build(programs[0].edited);
-                    const auto built = elapsed(*commit_started);
-                    attempt.update({{"allocation_ms", allocated},
-                                    {"field_build_ms", candidate_field->stats().build_ms},
-                                    {"filter_gpu_ms", candidate_field->stats().filter_gpu_ms},
-                                    {"brick_gpu_ms", candidate_field->stats().brick_gpu_ms},
-                                    {"candidate_ready_ms", built},
-                                    {"candidate_bytes", candidate_field->stats().allocation_bytes},
-                                    {"peak_field_payload_bytes",
-                                     base_field->stats().allocation_bytes +
-                                         candidate_field->stats().allocation_bytes +
-                                         (committer ? committer->working_bytes() : 0)}});
-                    // Serialized identity injection tests the publication decision,
-                    // not cancellation of a running GPU dispatch or live input.
-                    const unsigned requested_branch = 1,
-                                   candidate_branch = injected && failure_kind == "stale" ? 0U : 1U;
-                    attempt.update({{"requested_branch", requested_branch},
-                                    {"candidate_branch", candidate_branch},
-                                    {"submitted_gpu_work", true}});
-                    if ((injected && failure_kind == "discard-after-submit") ||
-                        candidate_branch != requested_branch) {
+                    bool build_failed = false;
+                    try {
+                        if (committer) {
+                            const auto stats = committer->build(*candidate_field, *base_field,
+                                                                programs[0], builder_mode);
+                            attempt.update({{"admission_ms", stats.admission_ms},
+                                            {"reuse_gpu_ms", stats.reuse_gpu_ms},
+                                            {"fallback_gpu_ms", stats.fallback_gpu_ms},
+                                            {"work_counts", stats.work},
+                                            {"full_fallback", stats.full_fallback},
+                                            {"builder_working_bytes", committer->working_bytes()}});
+                        } else
+                            candidate_field->build(programs[0].edited);
+                    } catch (const CapacityExceeded& e) {
+                        if (!injected || failure_kind != "build-capacity")
+                            throw;
                         attempt.update({{"published", false},
                                         {"failure", failure_kind},
-                                        {"retained_base_geometry_hash",
-                                         authored_geometry_hash(programs[0].base)},
+                                        {"reason", e.what()},
+                                        {"submitted_gpu_work", true},
+                                        {"allocation_ms", allocated},
+                                        {"candidate_ready_ms", elapsed(*commit_started)},
+                                        {"peak_field_payload_bytes",
+                                         base_field->stats().allocation_bytes +
+                                             candidate_field->stats().allocation_bytes +
+                                             (committer ? committer->working_bytes() : 0)},
                                         {"pending_after", pending ? 1 : 0}});
                         candidate_field.reset();
-                    } else {
-                        candidate_renderer.update_field(ctx.device(), *candidate_field);
-                        published = true;
+                        build_failed = true;
+                    }
+                    if (!build_failed) {
+                        const auto built = elapsed(*commit_started);
                         attempt.update(
-                            {{"published", true},
-                             {"publication_prepare_ms", elapsed(*commit_started) - built},
-                             {"ready_to_render_ms", elapsed(*commit_started)},
-                             {"published_geometry_hash",
-                              authored_geometry_hash(programs[0].edited)},
-                             {"pending_retained_until_frame_completion", pending ? 1 : 0}});
+                            {{"allocation_ms", allocated},
+                             {"field_build_ms", candidate_field->stats().build_ms},
+                             {"filter_gpu_ms", candidate_field->stats().filter_gpu_ms},
+                             {"brick_gpu_ms", candidate_field->stats().brick_gpu_ms},
+                             {"candidate_ready_ms", built},
+                             {"candidate_bytes", candidate_field->stats().allocation_bytes},
+                             {"peak_field_payload_bytes",
+                              base_field->stats().allocation_bytes +
+                                  candidate_field->stats().allocation_bytes +
+                                  (committer ? committer->working_bytes() : 0)}});
+                        // Serialized identity injection tests the publication decision,
+                        // not cancellation of a running GPU dispatch or live input.
+                        const unsigned requested_branch = 1,
+                                       candidate_branch =
+                                           injected && failure_kind == "stale" ? 0U : 1U;
+                        attempt.update({{"requested_branch", requested_branch},
+                                        {"candidate_branch", candidate_branch},
+                                        {"submitted_gpu_work", true}});
+                        if ((injected && failure_kind == "discard-after-submit") ||
+                            candidate_branch != requested_branch) {
+                            attempt.update({{"published", false},
+                                            {"failure", failure_kind},
+                                            {"retained_base_geometry_hash",
+                                             authored_geometry_hash(programs[0].base)},
+                                            {"pending_after", pending ? 1 : 0}});
+                            candidate_field.reset();
+                        } else {
+                            candidate_renderer.update_field(ctx.device(), *candidate_field);
+                            published = true;
+                            attempt.update(
+                                {{"published", true},
+                                 {"publication_prepare_ms", elapsed(*commit_started) - built},
+                                 {"ready_to_render_ms", elapsed(*commit_started)},
+                                 {"published_geometry_hash",
+                                  authored_geometry_hash(programs[0].edited)},
+                                 {"pending_retained_until_frame_completion", pending ? 1 : 0}});
+                        }
                     }
                     receipt["commits"].push_back(std::move(attempt));
                 }

@@ -61,3 +61,32 @@ active stored texel. Formal fixture/radius/chain qualification, matched cold and
 preallocated timings, native images and publication dispositions follow this
 checkpoint. Focused SDF/documentation/shader checks pass 13/13. No continuous
 input, persistent allocation or time-sliced updater is implemented.
+
+## Qualification checkpoints
+
+Runtime field code `207d2517` passes 35 fixture/radius cases and an eight-edit
+Guardian / sixteen-edit Robot chain. Every reachable logical topology entry and
+active raw R16 texel matches a fresh canonical build at every step. Independent
+dump comparisons are retained. The first 22 cases were inherited only after
+matching binary, shader and input hashes when a below-limit thin fixture was
+corrected; the original failed input remains an admission diagnostic.
+
+Exact regional programs do not yet pass this loop's bit-identity contract.
+A4 passes the 23 small fixtures and six Robot radius cases, but all six Guardian
+cases have 172,382 R16 bit differences (including two signed-zero differences)
+with matching topology. A16 passes the 23 fixtures, but its four current subject
+cases differ; Guardian also has different active leaf sets. Existing point-level
+region qualification is not equivalent to full cache bit identity. No numerical
+gate is widened. A same-kernel float probe investigates the distinction.
+
+The main repeated timing series consequently compares only full canonical and
+qualified reuse, cold/preallocated, three interleaved repeats of ten commits.
+The rejected pruning routes receive a separate short descriptive cost series;
+they are not eligible for promotion. This applies the plan's correctness stop
+condition before spending the full measurement matrix on a rejected route.
+
+Publication checks include a real frontier-capacity exception during a candidate
+GPU build, then retry. The pilot retains the exact preview/pending state and
+publishes the retry only after a completed replacement frame. Allocation and
+pre-submit cancellation dispositions, stale branch and post-submit discard are
+serialized injections; they do not establish general concurrent recovery.
