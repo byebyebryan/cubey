@@ -93,6 +93,8 @@ the architecture and project guides remain current authority.
   pending-edit handoff evidence.
 - [SDF frozen-base live-edit results](sdf-live-edit-results.md): native geometry,
   full shaded tail costs, failed sampled handoff and the next bounded decision.
+- [Cached plus one pending edit study](sdf-cached-one-edit-study.md): Cached default,
+  unchanged zero-edit path, one convex add/cut preview and serialized cache commit.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
