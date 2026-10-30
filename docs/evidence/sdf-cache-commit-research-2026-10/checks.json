@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "checked_at": "2026-10-30T22:47:20.925249+00:00",
+  "scope": "Research only: independent CPU models, saved native receipt analysis, source preservation and documentation checks. No builder or performance qualification.",
+  "intake_head": "e042beafb4454a74daa70e19735d54f91cf9372c",
+  "cpu_models": {
+    "cases": 6,
+    "hard_pair_evaluations": 200288,
+    "hard_chain_operations": 128000,
+    "workspace_compositions": 40000,
+    "numeric_mismatches": 0,
+    "signed_zero_bit_mismatches": 2,
+    "meaning": "Mathematical proposal and counterexamples; native arithmetic/encoding qualification remains open"
+  },
+  "native_timings": "No new GPU runs; saved commit receipts and older pruning setup are explicitly dated",
+  "preservation": {
+    "current_runtime_contract_files": 273,
+    "older_protected_source_content_files": 567,
+    "original_spirv_files": 202,
+    "all_unchanged": true
+  },
+  "documentation": {
+    "command": "ctest --test-dir build/release --output-on-failure -R '^documentation_(hygiene|media|rules)$'",
+    "passed": 3
+  },
+  "diff_check": true,
+  "source_copied": false,
+  "implementation": false
+}

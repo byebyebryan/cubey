@@ -1,0 +1,52 @@
+{
+  "retrieved_utc_date": "2026-10-30",
+  "scope": "Primary-reference reading; no donor implementation, reproduced timing or runtime acceptance",
+  "references": [
+    {
+      "title": "Lipschitz Pruning: Hierarchical Simplification of Primitive-Based SDFs",
+      "url": "https://onlinelibrary.wiley.com/doi/10.1111/cgf.70057",
+      "author_page": "https://wbrbr.org/publications/LipschitzPruning/",
+      "read": "Author page, paper sections 3.3/3.4 and 6.1, publisher partial-update limitation",
+      "contribution": "Equivalent regional expressions for supported hard/smooth CSG; relevant to discretization",
+      "limit": "Partial pruning updates are future work. Far-field bounds do not supply exact samples. No Cubey speed prediction."
+    },
+    {
+      "title": "GPU-Driven Signed Distance Field Construction",
+      "url": "https://jamiebuttenshaw.com/projects/signed-distance-fields/",
+      "dissertation": "https://jamiebuttenshaw.com/resources/Dissertation.pdf#page=24",
+      "read": "Construction/culling discussion; dissertation section 3.3, PDF pages 24-32",
+      "contribution": "Hierarchical edit dependencies, compact bricks, reduced evaluation work",
+      "limit": "Reconstructs compact structure each modification; bounded field and D3D12/DXR implementation differ from Cubey. Published timings not adopted."
+    },
+    {
+      "title": "GPU-based clay simulation and ray-tracing tech in Claybook",
+      "url": "https://media.gdcvault.com/gdc2018/presentations/Aaltonen_Sebastian_GPU_Based_Clay.pdf#page=20",
+      "read": "World SDF representation and modification slides, PDF pages 8 and 20-22",
+      "contribution": "Limited distance band permits local tile modifications using previous samples and temporary output",
+      "limit": "Its distance-band/mip contract differs from unclamped Cubey R16F bricks; primitive bounds alone do not establish equivalent updates."
+    },
+    {
+      "title": "FidelityFX Brixelizer 1.0 manual",
+      "url": "https://gpuopen.com/manuals/fidelityfx_sdk/techniques/brixelizer/",
+      "read": "Low-level cascades, invalidation and updating from mesh geometry",
+      "contribution": "Static storage reuse, explicit invalidation, brick lifecycle and traversal rebuild",
+      "limit": "Triangle-input implementation is not an editable CSG donor."
+    },
+    {
+      "title": "Vulkan specification: Fundamentals and Images",
+      "url": "https://docs.vulkan.org/spec/latest/chapters/fundamentals.html",
+      "image_writes": "https://docs.vulkan.org/spec/latest/chapters/images.html",
+      "read": "Floating-Point Format Conversions; Image Writes / Texel Encode",
+      "contribution": "Encoding/decoding and format conversion belong in native cache-equivalence checks",
+      "limit": "Generic conversion rounding is not fixed to Python round-to-nearest-even. CPU probe is not a device-format qualification."
+    },
+    {
+      "title": "Vulkan synchronization guide",
+      "url": "https://docs.vulkan.org/guide/latest/synchronization.html",
+      "read": "Synchronization responsibilities, validation and pipeline barriers",
+      "contribution": "Explicit dependencies and reader lifetime are needed for coherent publication",
+      "limit": "Queue/thread separation does not bound compute duration or rendering interference."
+    }
+  ],
+  "license_scope": "No donor source copied. Prior repository audit retains a pinned LipschitzPruning license review. A fresh raw GitHub license URL returned a cache miss; this pass makes no fresh donor-license verification claim. Recheck exact files before future code reuse."
+}

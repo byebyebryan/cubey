@@ -95,6 +95,9 @@ the architecture and project guides remain current authority.
   full shaded tail costs, failed sampled handoff and the next bounded decision.
 - [Cached plus one pending edit study](sdf-cached-one-edit-study.md): Cached default,
   unchanged zero-edit path, one convex add/cut preview and serialized cache commit.
+- [SDF cache-commit research and proposed experiment](sdf-cache-commit-research-plan.md):
+  hard-edit sample reuse, exact regional canonical sampling, source/precision
+  boundaries and conditional local storage/time-budget experiments.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
