@@ -291,7 +291,7 @@ def retention(args):
         retained=json.loads(Path(row['native']['retained_source_file']).read_text())
         if original['root']!=retained['root'] or original.get('history')!=retained.get('history'):
             raise RuntimeError('source tree or history changed while retaining the edit')
-        if retained['geometry_hash']!=row['native']['programs'][0]['edited_geometry_hash']:
+        if int(retained['geometry_hash'],16)!=row['native']['programs'][0]['edited_geometry_hash']:
             raise RuntimeError('retained geometry identity changed')
         if row['failure']!='none':continue
         image=args.output/(row['case']['name']+'-retained.png')
