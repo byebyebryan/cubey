@@ -1,0 +1,39 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+#include "local_controls.glsl"
+layout(local_size_x=8,local_size_y=8,local_size_z=8) in;
+layout(set=0,binding=8) uniform sampler3D oldAtlas;
+layout(r16f,set=0,binding=9) writeonly uniform image3D atlas;
+layout(std430,set=0,binding=18) buffer Counts {uint counts[];};
+layout(std430,set=0,binding=20) writeonly buffer Fallbacks {uint fallbacks[];};
+layout(std430,set=0,binding=21) writeonly buffer NewBricks {uint newBricks[];};
+layout(std430,set=0,binding=22) readonly buffer Entries {uvec2 entries[];};
+layout(push_constant) uniform Params {uint depth;uint count;uint capacity;uint refCapacity;uint atlasAxis;} pc;
+shared uint localCount,globalStart;shared uint localFallbacks[512];
+void main() {
+    uint index=gl_WorkGroupID.x+gl_WorkGroupID.y*1024u;if(index>=pc.count)return;
+    uvec2 entry=entries[index];uint slot=entry.y&POINTER;
+    if((entry.y&NEW_EDIT)!=0u) {
+        if(gl_LocalInvocationIndex==0u)newBricks[atomicAdd(counts[11],1u)]=index;
+        return;
+    }
+    if(gl_LocalInvocationIndex==0u){localCount=0u;globalStart=0u;}barrier();
+    ivec3 cell=ivec3(gl_LocalInvocationID);
+    vec3 p=(vec3(unmorton(entry.x-LEVEL[8]))+vec3(cell)/7.0)/256.0-.5;
+    float a=texelFetch(oldAtlas,brickOrigin(slot,pc.atlasAxis)+cell,0).r;
+    float d=localApply(p,a);
+    if(abs(d)<.00006103515625||isnan(d)||isinf(d))
+        localFallbacks[atomicAdd(localCount,1u)]=index*512u+gl_LocalInvocationIndex;
+    else imageStore(atlas,brickOrigin(slot,pc.atlasAxis)+cell,vec4(d));
+    barrier();
+    if(gl_LocalInvocationIndex==0u&&localCount>0u) {
+        globalStart=atomicAdd(counts[10],localCount);
+        if(globalStart+localCount>pc.refCapacity)atomicOr(counts[2],1u);
+    }
+    barrier();
+    if(gl_LocalInvocationIndex<localCount&&globalStart+gl_LocalInvocationIndex<pc.refCapacity)
+        fallbacks[globalStart+gl_LocalInvocationIndex]=localFallbacks[gl_LocalInvocationIndex];
+}

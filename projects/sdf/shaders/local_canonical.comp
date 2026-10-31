@@ -1,0 +1,19 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+layout(local_size_x=64) in;
+layout(r16f,set=0,binding=9) writeonly uniform image3D atlas;
+layout(std430,set=0,binding=20) readonly buffer Fallbacks {uint fallbacks[];};
+layout(std430,set=0,binding=21) readonly buffer NewBricks {uint newBricks[];};
+layout(std430,set=0,binding=22) readonly buffer Entries {uvec2 entries[];};
+layout(push_constant) uniform Params {uint depth;uint count;uint newTexels;uint refCapacity;uint atlasAxis;} pc;
+void main() {
+    uint id=(gl_WorkGroupID.x+gl_WorkGroupID.y*65535u)*64u+gl_LocalInvocationIndex;if(id>=pc.count)return;
+    uint packed=id<pc.newTexels?newBricks[id/512u]*512u+(id%512u):fallbacks[id-pc.newTexels];
+    uvec2 entry=entries[packed/512u];uint local=packed%512u;
+    ivec3 cell=ivec3(local%8u,(local/8u)%8u,local/64u);
+    vec3 p=(vec3(unmorton(entry.x-LEVEL[8]))+vec3(cell)/7.0)/256.0-.5;
+    imageStore(atlas,brickOrigin(entry.y&POINTER,pc.atlasAxis)+cell,vec4(authoredDistance(p)));
+}

@@ -1,11 +1,13 @@
 #include "sdf_cached_commit.h"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <filesystem>
 #include <functional>
+#include <limits>
 
 namespace cubey::projects::sdf {
 namespace {
@@ -32,7 +34,7 @@ CachedCommitStudy::CachedCommitStudy(vulkan::Device& device, ProjectGpuServices&
     if (fallback_limit < 1 || fallback_limit > 2U * 1024U * 1024U)
         throw std::invalid_argument("invalid cached commit fallback capacity");
     std::vector<vulkan::DescriptorSetBindingConfig> bindings;
-    for (unsigned i : {0U, 1U, 5U, 6U, 7U, 10U, 11U, 16U, 17U, 18U, 20U, 21U})
+    for (unsigned i : {0U, 1U, 5U, 6U, 7U, 10U, 11U, 16U, 17U, 18U, 20U, 21U, 22U})
         bindings.push_back({i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_COMPUTE_BIT});
     bindings.push_back({8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_COMPUTE_BIT});
     bindings.push_back({9, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT});
@@ -81,6 +83,26 @@ double CachedCommitStudy::prepare(CommitBuilder mode) {
         create(pruned_filter_, "commit_pruned_filter.comp.spv");
         create(pruned_bricks_, "commit_pruned_bricks.comp.spv");
     }
+    if (mode == CommitBuilder::Local) {
+        if (!local_entries_) {
+            const auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            local_entries_ = std::make_unique<vulkan::Buffer>(
+                device_, vulkan::device_local_buffer_config(64ULL * 64 * 64 * 8, usage));
+            auto host = [&](std::size_t bytes) {
+                return std::make_unique<vulkan::Buffer>(
+                    device_, vulkan::BufferConfig{.size = bytes,
+                                                  .usage = usage,
+                                                  .memory_properties =
+                                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
+            };
+            local_controls_ = host(544);
+            local_counts_ = host(64);
+        }
+        create(local_filter_, "local_filter.comp.spv");
+        create(local_samples_, "local_samples.comp.spv");
+        create(local_canonical_, "local_canonical.comp.spv");
+    }
     return elapsed(start);
 }
 
@@ -97,6 +119,14 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base, const C
     CommitBuildStats result;
     result.admission_ms = elapsed(start);
     result.pipeline_prepare_ms = prepare(mode);
+    if (mode == CommitBuilder::Local) {
+        auto local = build_local(dst, base, p);
+        local.admission_ms = result.admission_ms;
+        local.pipeline_prepare_ms = result.pipeline_prepare_ms;
+        local.wall_ms = elapsed(start);
+        dst.stats_.build_ms = local.wall_ms;
+        return local;
+    }
     if (mode == CommitBuilder::Full) {
         const auto old_hash = dst.authored_hash_;
         dst.authored_hash_.reset(); // The benchmark requests a real control build each time.
@@ -327,6 +357,7 @@ CommitSnapshot CachedCommitStudy::snapshot(vulkan::Device& device, ProjectGpuSer
         visit(visit, 2, code);
     if (pointers.size() != field.stats().brick_count)
         throw std::runtime_error("snapshot leaf count mismatch");
+    result.slots = pointers;
     headers.clear();
     headers.shrink_to_fit();
     result.samples.resize(pointers.size() * 512ULL);

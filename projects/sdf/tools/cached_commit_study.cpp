@@ -40,12 +40,15 @@ Json describe(const CommitSnapshot& s, const std::filesystem::path& prefix, bool
                 {"topology_sha256", digest(s.topology)},
                 {"cells_sha256", digest(s.cells)},
                 {"raw_r16_sha256", digest(s.samples)}};
+    result["physical_slots_sha256"] = digest(s.slots);
     if (dump) {
         for (const auto& suffix : {".topology.bin", ".cells.bin", ".r16.bin"})
             result["files"].push_back(prefix.string() + suffix);
         binary(prefix.string() + ".topology.bin", s.topology);
         binary(prefix.string() + ".cells.bin", s.cells);
         binary(prefix.string() + ".r16.bin", s.samples);
+        result["slots_file"] = prefix.string() + ".slots.bin";
+        binary(prefix.string() + ".slots.bin", s.slots);
     }
     return result;
 }
@@ -80,7 +83,9 @@ int main(int argc, char** argv) {
         std::filesystem::path input_path, output_path;
         std::string mode_name = "reuse";
         unsigned trials = 1, axis = 4, warmup = 0, fallback_limit = 2U * 1024U * 1024U;
-        bool qualify = false, cold = false, chain = false, dump = false, validate = false;
+        bool qualify = false, cold = false, chain = false, dump = false, validate = false,
+             copy_only = false;
+        unsigned copy_slab = 0;
         for (int i = 1; i < argc; ++i) {
             const std::string_view flag = argv[i];
             if (flag == "--commit-qualify")
@@ -93,6 +98,8 @@ int main(int argc, char** argv) {
                 chain = true;
             else if (flag == "--commit-dump")
                 dump = true;
+            else if (flag == "--commit-copy-only")
+                copy_only = true;
             else {
                 if (++i >= argc)
                     throw std::invalid_argument("missing commit argument");
@@ -110,6 +117,8 @@ int main(int argc, char** argv) {
                     warmup = static_cast<unsigned>(std::stoul(argv[i]));
                 else if (flag == "--commit-fallback-limit")
                     fallback_limit = static_cast<unsigned>(std::stoul(argv[i]));
+                else if (flag == "--commit-copy-slab-mib")
+                    copy_slab = static_cast<unsigned>(std::stoul(argv[i])) * 1024U * 1024U;
                 else
                     throw std::invalid_argument("unknown commit argument");
             }
@@ -118,10 +127,12 @@ int main(int argc, char** argv) {
             warmup > 10 || (qualify && (trials != 1 || warmup)) || (chain && (!qualify || cold)) ||
             (dump && !qualify) || (axis != 4 && axis != 16))
             throw std::invalid_argument("invalid commit study configuration");
-        const auto mode = mode_name == "reuse"  ? CommitBuilder::Reuse
-                          : mode_name == "full" ? CommitBuilder::Full
-                                                : CommitBuilder::Pruned;
-        if (mode_name != "reuse" && mode_name != "full" && mode_name != "pruned")
+        const auto mode = mode_name == "reuse"   ? CommitBuilder::Reuse
+                          : mode_name == "full"  ? CommitBuilder::Full
+                          : mode_name == "local" ? CommitBuilder::Local
+                                                 : CommitBuilder::Pruned;
+        if (mode_name != "reuse" && mode_name != "full" && mode_name != "pruned" &&
+            mode_name != "local")
             throw std::invalid_argument("invalid commit builder mode");
         const auto input = Json::parse(std::ifstream(input_path));
         if (input.at("format") != "cubey.sdf.cached-edit-study" || input.at("version") != 1 ||
@@ -158,6 +169,8 @@ int main(int argc, char** argv) {
                      {"chain", chain},
                      {"warmup", warmup},
                      {"fallback_limit", fallback_limit},
+                     {"copy_only", copy_only},
+                     {"copy_slab_bytes", copy_slab},
                      {"scope", "Private serialized builder; qualification readbacks/encoding "
                                "excluded from commit timing"},
                      {"runs", Json::array()}};
@@ -183,12 +196,22 @@ int main(int argc, char** argv) {
                          {"retained_history_steps", p.edited.history.size()},
                          {"base_from_previous_candidate", chain && n > 0},
                          {"trials", Json::array()}};
+                std::optional<CommitSnapshot> old_snapshot;
+                if (qualify && mode == CommitBuilder::Local)
+                    old_snapshot = CachedCommitStudy::snapshot(ctx.device(), runtime.gpu(), *base);
                 for (unsigned trial = 0; trial < trials + warmup; ++trial) {
                     const auto t = Clock::now();
                     if (cold)
                         work = std::make_unique<Field>(ctx.device(), runtime.gpu());
                     const auto allocation = elapsed(t);
-                    const auto stats = builder.build(*work, *base, p, mode, axis);
+                    const auto stats = [&] {
+                        if (!copy_only)
+                            return builder.build(*work, *base, p, mode, axis);
+                        CommitBuildStats result;
+                        result.copy = builder.clone(*work, *base, copy_slab, true);
+                        result.wall_ms = result.copy.wall_ms;
+                        return result;
+                    }();
                     const auto ready = elapsed(t);
                     const auto& f = work->stats();
                     row["trials"].push_back({{"trial", trial},
@@ -198,6 +221,14 @@ int main(int argc, char** argv) {
                                              {"reuse_gpu_ms", stats.reuse_gpu_ms},
                                              {"fallback_gpu_ms", stats.fallback_gpu_ms},
                                              {"full_fallback", stats.full_fallback},
+                                             {"copy_wall_ms", stats.copy.wall_ms},
+                                             {"copy_gpu_ms", stats.copy.gpu_ms},
+                                             {"copy_max_chunk_gpu_ms", stats.copy.max_chunk_gpu_ms},
+                                             {"copy_chunks", stats.copy.chunks},
+                                             {"copy_bytes", stats.copy.bytes},
+                                             {"locality_bound", stats.locality_bound},
+                                             {"locality_guard", stats.locality_guard},
+                                             {"local_work", stats.local_work},
                                              {"pipeline_prepare_ms", stats.pipeline_prepare_ms},
                                              {"region_prepare_ms", stats.region_prepare_ms},
                                              {"region_bytes", stats.region_bytes},
@@ -219,7 +250,27 @@ int main(int argc, char** argv) {
                 if (qualify) {
                     auto candidate =
                         CachedCommitStudy::snapshot(ctx.device(), runtime.gpu(), *work);
-                    base->build(p.edited);
+                    if (old_snapshot) {
+                        std::size_t a = 0, b = 0, retained = 0, moved = 0;
+                        while (a < old_snapshot->cells.size() && b < candidate.cells.size()) {
+                            if (old_snapshot->cells[a] < candidate.cells[b])
+                                ++a;
+                            else if (candidate.cells[b] < old_snapshot->cells[a])
+                                ++b;
+                            else {
+                                ++retained;
+                                moved += old_snapshot->slots[a] != candidate.slots[b];
+                                ++a;
+                                ++b;
+                            }
+                        }
+                        row["retained_logical_bricks"] = retained;
+                        row["retained_slots_moved"] = moved;
+                        if (moved)
+                            throw std::runtime_error("local candidate moved a retained slot");
+                    }
+                    if (!copy_only)
+                        base->build(p.edited);
                     auto canonical =
                         CachedCommitStudy::snapshot(ctx.device(), runtime.gpu(), *base);
                     row["comparison"] = compare(candidate, canonical);
