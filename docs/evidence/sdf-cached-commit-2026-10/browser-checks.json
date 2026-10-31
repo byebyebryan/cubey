@@ -1,0 +1,839 @@
+{
+  "url": "http://starship:8787/reports/3659235195747d263ebf8734145db49ba6c1bed67c875e6f62f63274e68d300f/",
+  "costs": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "allocation": "pooled",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t1062.15\t1140.32\t1143.68\t1144.23\t0/30\t0/30\nSample reuse\t116.04\t123.97\t128.46\t129.61\t0/30\t0/30"
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "allocation": "new",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t1078.72\t1153.52\t1170.10\t1175.16\t0/30\t0/30\nSample reuse\t123.70\t133.50\t135.04\t135.34\t0/30\t0/30"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "allocation": "pooled",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t1030.37\t1095.22\t1135.37\t1150.34\t0/30\t0/30\nSample reuse\t87.74\t89.53\t108.44\t116.16\t0/30\t0/30"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "allocation": "new",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t1046.12\t1155.87\t1215.62\t1235.37\t0/30\t0/30\nSample reuse\t96.19\t101.45\t102.70\t103.14\t0/30\t0/30"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "allocation": "pooled",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t100.62\t101.24\t101.31\t101.34\t0/30\t0/30\nSample reuse\t27.31\t29.00\t30.62\t31.16\t0/30\t0/30"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "allocation": "new",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t108.57\t112.28\t116.74\t118.24\t0/30\t0/30\nSample reuse\t34.73\t36.08\t36.72\t36.93\t0/30\t0/30"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "allocation": "pooled",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t97.17\t101.42\t101.52\t101.53\t0/30\t0/30\nSample reuse\t24.59\t25.31\t25.50\t25.55\t0/30\t0/30"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "allocation": "new",
+      "overflow": false,
+      "rows": 2,
+      "table": "Full canonical\t104.85\t107.69\t108.17\t108.30\t0/30\t0/30\nSample reuse\t32.22\t33.00\t33.67\t33.88\t0/30\t0/30"
+    }
+  ],
+  "images": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "compare": "before",
+      "captions": [
+        "Guardian / add · Cached base",
+        "Guardian / add · one pending operation"
+      ],
+      "left": "images/native-c7f3e33e38022c38a1.webp",
+      "loaded": true,
+      "right": "images/native-94cc54ed4924735168.webp"
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "compare": "handoff",
+      "captions": [
+        "Guardian / add · one pending operation",
+        "Guardian / add · committed Cached"
+      ],
+      "left": "images/native-94cc54ed4924735168.webp",
+      "loaded": true,
+      "right": "images/native-30c33de7582f2058b7.webp"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "compare": "before",
+      "captions": [
+        "Guardian / cut · Cached base",
+        "Guardian / cut · one pending operation"
+      ],
+      "left": "images/native-c7f3e33e38022c38a1.webp",
+      "loaded": true,
+      "right": "images/native-27307f395d1bd5023b.webp"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "compare": "handoff",
+      "captions": [
+        "Guardian / cut · one pending operation",
+        "Guardian / cut · committed Cached"
+      ],
+      "left": "images/native-27307f395d1bd5023b.webp",
+      "loaded": true,
+      "right": "images/native-4b9d17445e989a18f0.webp"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "compare": "before",
+      "captions": [
+        "Robot / add · Cached base",
+        "Robot / add · one pending operation"
+      ],
+      "left": "images/native-38ea8676c8bca603cb.webp",
+      "loaded": true,
+      "right": "images/native-3b490019e400ed8ef0.webp"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "compare": "handoff",
+      "captions": [
+        "Robot / add · one pending operation",
+        "Robot / add · committed Cached"
+      ],
+      "left": "images/native-3b490019e400ed8ef0.webp",
+      "loaded": true,
+      "right": "images/native-6e961e823720d855a5.webp"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "compare": "before",
+      "captions": [
+        "Robot / cut · Cached base",
+        "Robot / cut · one pending operation"
+      ],
+      "left": "images/native-38ea8676c8bca603cb.webp",
+      "loaded": true,
+      "right": "images/native-19a03102a6d2e89408.webp"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "compare": "handoff",
+      "captions": [
+        "Robot / cut · one pending operation",
+        "Robot / cut · committed Cached"
+      ],
+      "left": "images/native-19a03102a6d2e89408.webp",
+      "loaded": true,
+      "right": "images/native-70eb1ef6e042ce5c93.webp"
+    }
+  ],
+  "sequences": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "failure": "none",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/4: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "failure": "none",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-94cc54ed4924735168.webp",
+      "state": "Frame 2/4: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 3",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "failure": "none",
+      "frame": 2,
+      "cost": "Replacement ready in 126.1 ms; completed frame in 134.9 ms.",
+      "image": "images/native-30c33de7582f2058b7.webp",
+      "state": "Frame 3/4: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "failure": "none",
+      "frame": 3,
+      "cost": "Replacement ready in 126.1 ms; completed frame in 134.9 ms.",
+      "image": "images/native-30c33de7582f2058b7.webp",
+      "state": "Frame 4/4: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/4: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 2/4: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 3",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 2,
+      "cost": "Replacement ready in 101.5 ms; completed frame in 110.3 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 3/4: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 3,
+      "cost": "Replacement ready in 101.5 ms; completed frame in 110.3 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 4/4: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 2,
+      "cost": "Candidate rejected: allocation.  Old preview and pending operation retained.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 3,
+      "cost": "Replacement ready in 95.3 ms; completed frame in 104.4 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 4,
+      "cost": "Replacement ready in 95.3 ms; completed frame in 104.4 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 2,
+      "cost": "Candidate rejected: cancel-before-submit.  Old preview and pending operation retained.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 3,
+      "cost": "Replacement ready in 96.3 ms; completed frame in 102.3 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 4,
+      "cost": "Replacement ready in 96.3 ms; completed frame in 102.3 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 2,
+      "cost": "Candidate rejected: stale.  Old preview and pending operation retained.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 3,
+      "cost": "Replacement ready in 100.2 ms; completed frame in 109.0 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 4,
+      "cost": "Replacement ready in 100.2 ms; completed frame in 109.0 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 2,
+      "cost": "Candidate rejected: discard-after-submit.  Old preview and pending operation retained.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 3,
+      "cost": "Replacement ready in 93.3 ms; completed frame in 98.9 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 4,
+      "cost": "Replacement ready in 93.3 ms; completed frame in 98.9 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-c7f3e33e38022c38a1.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 2,
+      "cost": "Candidate rejected: build-capacity. cached commit frontier overflow Old preview and pending operation retained.",
+      "image": "images/native-27307f395d1bd5023b.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 3,
+      "cost": "Replacement ready in 96.1 ms; completed frame in 105.0 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 4,
+      "cost": "Replacement ready in 96.1 ms; completed frame in 105.0 ms.",
+      "image": "images/native-4b9d17445e989a18f0.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "failure": "none",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/4: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "failure": "none",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-3b490019e400ed8ef0.webp",
+      "state": "Frame 2/4: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 3",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "failure": "none",
+      "frame": 2,
+      "cost": "Replacement ready in 34.8 ms; completed frame in 43.6 ms.",
+      "image": "images/native-6e961e823720d855a5.webp",
+      "state": "Frame 3/4: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "failure": "none",
+      "frame": 3,
+      "cost": "Replacement ready in 34.8 ms; completed frame in 43.6 ms.",
+      "image": "images/native-6e961e823720d855a5.webp",
+      "state": "Frame 4/4: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/4: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 2/4: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 3",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 2,
+      "cost": "Replacement ready in 32.8 ms; completed frame in 42.3 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 3/4: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "none",
+      "frame": 3,
+      "cost": "Replacement ready in 32.8 ms; completed frame in 42.3 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 4/4: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 3",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 2,
+      "cost": "Candidate rejected: allocation.  Old preview and pending operation retained.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 3,
+      "cost": "Replacement ready in 32.9 ms; completed frame in 41.9 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "allocation",
+      "frame": 4,
+      "cost": "Replacement ready in 32.9 ms; completed frame in 41.9 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 2,
+      "cost": "Candidate rejected: cancel-before-submit.  Old preview and pending operation retained.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 3,
+      "cost": "Replacement ready in 32.8 ms; completed frame in 42.0 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "cancel-before-submit",
+      "frame": 4,
+      "cost": "Replacement ready in 32.8 ms; completed frame in 42.0 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 2,
+      "cost": "Candidate rejected: stale.  Old preview and pending operation retained.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 3,
+      "cost": "Replacement ready in 32.2 ms; completed frame in 41.3 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "stale",
+      "frame": 4,
+      "cost": "Replacement ready in 32.2 ms; completed frame in 41.3 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 2,
+      "cost": "Candidate rejected: discard-after-submit.  Old preview and pending operation retained.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 3,
+      "cost": "Replacement ready in 32.2 ms; completed frame in 41.5 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "discard-after-submit",
+      "frame": 4,
+      "cost": "Replacement ready in 32.2 ms; completed frame in 41.5 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 0,
+      "cost": "The old cache is still available.",
+      "image": "images/native-38ea8676c8bca603cb.webp",
+      "state": "Frame 1/5: base\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "0"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 1,
+      "cost": "The old cache is still available.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 2/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "1"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 2,
+      "cost": "Candidate rejected: build-capacity. cached commit frontier overflow Old preview and pending operation retained.",
+      "image": "images/native-19a03102a6d2e89408.webp",
+      "state": "Frame 3/5: preview\nPending before frame: 1\nPending rendered: 1\nPending after completion: 1\nRetired after completed frame: 4",
+      "value": "2"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 3,
+      "cost": "Replacement ready in 33.9 ms; completed frame in 43.4 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 4/5: committed\nPending before frame: 1\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "3"
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "failure": "build-capacity",
+      "frame": 4,
+      "cost": "Replacement ready in 33.9 ms; completed frame in 43.4 ms.",
+      "image": "images/native-70eb1ef6e042ce5c93.webp",
+      "state": "Frame 5/5: committed\nPending before frame: 0\nPending rendered: 0\nPending after completion: 0\nRetired after completed frame: 4",
+      "value": "4"
+    }
+  ],
+  "reset": {
+    "allocation": "pooled",
+    "compare": "before",
+    "failure": "build-capacity",
+    "frame": "0",
+    "operation": "cut",
+    "subject": "guardian"
+  },
+  "passed": true,
+  "scope": "Rendered cost tables and loaded image comparisons; all sequence controls/state/source paths; individual image decode completion is checked in the comparison views, not rapid sequence scrubbing."
+}

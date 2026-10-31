@@ -1,0 +1,2165 @@
+{
+  "source_head": "22cc86b999f048ccd8b576734ee4e56888da3a73",
+  "source_status": "",
+  "binary_sha256": "c7e6bd52b00339f48e2bb4f1fce0cacc65cb52318319ffcdbd2277f0992bac86",
+  "edit_binary_sha256": "da59942b3c184cd88cb3b2e4ab88442b7a08864e86a46091194cdc0aba3750c6",
+  "harness_sha256": "60061541fe9fefc190f273ea466285e215654f7e45f984fd496fbe572df0d3dc",
+  "shaders": {
+    "commit_canonical_fallback.comp.spv": "6086287eef48a5fbef5140ffebe6e2f1a821b9b6c54397400bbaf875dae73f2b",
+    "commit_prune_probe.comp.spv": "ce2432e519b92830fcbcabd66d92bd9f3ca8bf461ca32afb4a64f3f77041e37a",
+    "commit_pruned_bricks.comp.spv": "bc22aa5962ee905ad096d9274e8440b9b4c4ba3011b4578b6ca2a9ad52a7296c",
+    "commit_pruned_filter.comp.spv": "26f79b8d6f1ee8e83d73f5d31b6a2a9582d4b35645a38d2a8f78ac2a937888f3",
+    "commit_reuse_bricks.comp.spv": "d64fb0c80293faf97f6f03330c0780f692469b244e92d8146446ebb0c7729a48"
+  },
+  "original_shader_count": 206,
+  "protected_unchanged": 940,
+  "mutable_existing": [
+    "projects/sdf/CMakeLists.txt",
+    "projects/sdf/sdf_field.h",
+    "projects/sdf/tools/cached_edit_study.cpp"
+  ],
+  "runs": [
+    {
+      "name": "guardian-add-0.065",
+      "axis": 4,
+      "reference_axis": 4,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_probe",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/guardian-add-0.065-input.json",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/guardian-add-0.065-A4.json",
+        "4"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3692665529670194,
+      "gpu_before": "6 %, 0 %, 637 MHz, 405 MHz, 35, 21.00 W, 917 MiB",
+      "gpu_after": "3 %, 0 %, 637 MHz, 405 MHz, 35, 26.58 W, 917 MiB",
+      "log_sha256": "d7c3ed826fd1237b14b4e8506a8c37f0d1ec9021596d255985b9e74033b1b991",
+      "native": {
+        "axis": 4,
+        "geometry_hash": 15942407689268967484,
+        "samples": [
+          {
+            "full": 0.00409698486328125,
+            "full_bits": 998653952,
+            "full_packed_half": 7218,
+            "full_raw_half": 7218,
+            "pruned": 0.004096955060958862,
+            "pruned_bits": 998653888,
+            "pruned_packed_half": 7218,
+            "pruned_raw_half": 7217,
+            "query": {
+              "candidate_bits": 7217,
+              "canonical_bits": 7218,
+              "morton": 1400191,
+              "sample": 90
+            }
+          },
+          {
+            "full": -3.063678741455078e-05,
+            "full_bits": 3087040512,
+            "full_packed_half": 33282,
+            "full_raw_half": 33282,
+            "pruned": -3.0606985092163086e-05,
+            "pruned_bits": 3087032320,
+            "pruned_packed_half": 33282,
+            "pruned_raw_half": 33281,
+            "query": {
+              "candidate_bits": 33281,
+              "canonical_bits": 33282,
+              "morton": 1400191,
+              "sample": 447
+            }
+          },
+          {
+            "full": 0.0029201507568359375,
+            "full_bits": 994009088,
+            "full_packed_half": 6651,
+            "full_raw_half": 6651,
+            "pruned": 0.00292012095451355,
+            "pruned_bits": 994008960,
+            "pruned_packed_half": 6651,
+            "pruned_raw_half": 6650,
+            "query": {
+              "candidate_bits": 6650,
+              "canonical_bits": 6651,
+              "morton": 1400191,
+              "sample": 482
+            }
+          },
+          {
+            "full": 0.0025272369384765625,
+            "full_bits": 992321536,
+            "full_packed_half": 6445,
+            "full_raw_half": 6445,
+            "pruned": 0.002527207136154175,
+            "pruned_bits": 992321408,
+            "pruned_packed_half": 6445,
+            "pruned_raw_half": 6444,
+            "query": {
+              "candidate_bits": 6444,
+              "canonical_bits": 6445,
+              "morton": 1400191,
+              "sample": 490
+            }
+          },
+          {
+            "full": 0.00021958351135253906,
+            "full_bits": 963002368,
+            "full_packed_half": 2866,
+            "full_raw_half": 2866,
+            "pruned": 0.00021955370903015137,
+            "pruned_bits": 963000320,
+            "pruned_packed_half": 2866,
+            "pruned_raw_half": 2865,
+            "query": {
+              "candidate_bits": 2865,
+              "canonical_bits": 2866,
+              "morton": 1400191,
+              "sample": 510
+            }
+          },
+          {
+            "full": 0.00013124942779541016,
+            "full_bits": 956932096,
+            "full_packed_half": 2125,
+            "full_raw_half": 2125,
+            "pruned": 0.00013121962547302246,
+            "pruned_bits": 956930048,
+            "pruned_packed_half": 2125,
+            "pruned_raw_half": 2124,
+            "query": {
+              "candidate_bits": 2124,
+              "canonical_bits": 2125,
+              "morton": 1400271,
+              "sample": 127
+            }
+          },
+          {
+            "full": 0.0023822784423828125,
+            "full_bits": 991698944,
+            "full_packed_half": 6369,
+            "full_raw_half": 6369,
+            "pruned": 0.002382248640060425,
+            "pruned_bits": 991698816,
+            "pruned_packed_half": 6369,
+            "pruned_raw_half": 6368,
+            "query": {
+              "candidate_bits": 6368,
+              "canonical_bits": 6369,
+              "morton": 1400271,
+              "sample": 196
+            }
+          },
+          {
+            "full": -0.00019681453704833984,
+            "full_bits": 3108921344,
+            "full_packed_half": 35443,
+            "full_raw_half": 35443,
+            "pruned": -0.00019678473472595215,
+            "pruned_bits": 3108919296,
+            "pruned_packed_half": 35443,
+            "pruned_raw_half": 35442,
+            "query": {
+              "candidate_bits": 35442,
+              "canonical_bits": 35443,
+              "morton": 1400271,
+              "sample": 254
+            }
+          },
+          {
+            "full": 0.0018911361694335938,
+            "full_bits": 989323264,
+            "full_packed_half": 6079,
+            "full_raw_half": 6079,
+            "pruned": 0.001891106367111206,
+            "pruned_bits": 989323008,
+            "pruned_packed_half": 6079,
+            "pruned_raw_half": 6078,
+            "query": {
+              "candidate_bits": 6078,
+              "canonical_bits": 6079,
+              "morton": 1400271,
+              "sample": 275
+            }
+          },
+          {
+            "full": 0.00209808349609375,
+            "full_bits": 990478336,
+            "full_packed_half": 6220,
+            "full_raw_half": 6220,
+            "pruned": 0.0020980536937713623,
+            "pruned_bits": 990478208,
+            "pruned_packed_half": 6220,
+            "pruned_raw_half": 6219,
+            "query": {
+              "candidate_bits": 6219,
+              "canonical_bits": 6220,
+              "morton": 1400271,
+              "sample": 304
+            }
+          },
+          {
+            "full": 2.396106719970703e-05,
+            "full_bits": 935919616,
+            "full_packed_half": 402,
+            "full_raw_half": 402,
+            "pruned": 2.3931264877319336e-05,
+            "pruned_bits": 935903232,
+            "pruned_packed_half": 402,
+            "pruned_raw_half": 401,
+            "query": {
+              "candidate_bits": 401,
+              "canonical_bits": 402,
+              "morton": 1400271,
+              "sample": 365
+            }
+          },
+          {
+            "full": 8.887052536010742e-05,
+            "full_bits": 951738368,
+            "full_packed_half": 1491,
+            "full_raw_half": 1491,
+            "pruned": 8.884072303771973e-05,
+            "pruned_bits": 951734272,
+            "pruned_packed_half": 1490,
+            "pruned_raw_half": 1490,
+            "query": {
+              "candidate_bits": 1490,
+              "canonical_bits": 1491,
+              "morton": 1400271,
+              "sample": 399
+            }
+          },
+          {
+            "full": -0.00021064281463623047,
+            "full_bits": 3109871616,
+            "full_packed_half": 35559,
+            "full_raw_half": 35559,
+            "pruned": -0.00021061301231384277,
+            "pruned_bits": 3109869568,
+            "pruned_packed_half": 35559,
+            "pruned_raw_half": 35558,
+            "query": {
+              "candidate_bits": 35558,
+              "canonical_bits": 35559,
+              "morton": 1400271,
+              "sample": 407
+            }
+          },
+          {
+            "full": 0.00026917457580566406,
+            "full_bits": 965550080,
+            "full_packed_half": 3177,
+            "full_raw_half": 3177,
+            "pruned": 0.00026914477348327637,
+            "pruned_bits": 965549056,
+            "pruned_packed_half": 3177,
+            "pruned_raw_half": 3176,
+            "query": {
+              "candidate_bits": 3176,
+              "canonical_bits": 3177,
+              "morton": 1400271,
+              "sample": 435
+            }
+          },
+          {
+            "full": -0.0001361370086669922,
+            "full_bits": 3104751616,
+            "full_packed_half": 34934,
+            "full_raw_half": 34934,
+            "pruned": -0.0001361072063446045,
+            "pruned_bits": 3104749568,
+            "pruned_packed_half": 34934,
+            "pruned_raw_half": 34933,
+            "query": {
+              "candidate_bits": 34933,
+              "canonical_bits": 34934,
+              "morton": 1400271,
+              "sample": 436
+            }
+          },
+          {
+            "full": 0.0004489421844482422,
+            "full_bits": 971726848,
+            "full_packed_half": 3931,
+            "full_raw_half": 3931,
+            "pruned": 0.0004489123821258545,
+            "pruned_bits": 971725824,
+            "pruned_packed_half": 3931,
+            "pruned_raw_half": 3930,
+            "query": {
+              "candidate_bits": 3930,
+              "canonical_bits": 3931,
+              "morton": 1400271,
+              "sample": 442
+            }
+          },
+          {
+            "full": 0.00142669677734375,
+            "full_bits": 985333760,
+            "full_packed_half": 5592,
+            "full_raw_half": 5592,
+            "pruned": 0.0014266669750213623,
+            "pruned_bits": 985333504,
+            "pruned_packed_half": 5592,
+            "pruned_raw_half": 5591,
+            "query": {
+              "candidate_bits": 5591,
+              "canonical_bits": 5592,
+              "morton": 1400271,
+              "sample": 466
+            }
+          },
+          {
+            "full": 0.0003535747528076172,
+            "full_bits": 968450048,
+            "full_packed_half": 3531,
+            "full_raw_half": 3531,
+            "pruned": 0.0003535449504852295,
+            "pruned_bits": 968449024,
+            "pruned_packed_half": 3531,
+            "pruned_raw_half": 3530,
+            "query": {
+              "candidate_bits": 3530,
+              "canonical_bits": 3531,
+              "morton": 1400271,
+              "sample": 476
+            }
+          },
+          {
+            "full": 0.0004773139953613281,
+            "full_bits": 972701696,
+            "full_packed_half": 4050,
+            "full_raw_half": 4050,
+            "pruned": 0.00047728419303894043,
+            "pruned_bits": 972700672,
+            "pruned_packed_half": 4050,
+            "pruned_raw_half": 4049,
+            "query": {
+              "candidate_bits": 4049,
+              "canonical_bits": 4050,
+              "morton": 1400281,
+              "sample": 374
+            }
+          },
+          {
+            "full": 0.000438690185546875,
+            "full_bits": 971374592,
+            "full_packed_half": 3888,
+            "full_raw_half": 3888,
+            "pruned": 0.0004386603832244873,
+            "pruned_bits": 971373568,
+            "pruned_packed_half": 3888,
+            "pruned_raw_half": 3887,
+            "query": {
+              "candidate_bits": 3887,
+              "canonical_bits": 3888,
+              "morton": 1400281,
+              "sample": 407
+            }
+          },
+          {
+            "full": -0.0001175999641418457,
+            "full_bits": 3103170560,
+            "full_packed_half": 34741,
+            "full_raw_half": 34741,
+            "pruned": -0.00011757016181945801,
+            "pruned_bits": 3103166464,
+            "pruned_packed_half": 34740,
+            "pruned_raw_half": 34740,
+            "query": {
+              "candidate_bits": 34740,
+              "canonical_bits": 34741,
+              "morton": 1400281,
+              "sample": 431
+            }
+          },
+          {
+            "full": -0.0003247261047363281,
+            "full_bits": 3114942464,
+            "full_packed_half": 36178,
+            "full_raw_half": 36178,
+            "pruned": -0.00032469630241394043,
+            "pruned_bits": 3114941440,
+            "pruned_packed_half": 36178,
+            "pruned_raw_half": 36177,
+            "query": {
+              "candidate_bits": 36177,
+              "canonical_bits": 36178,
+              "morton": 1400281,
+              "sample": 487
+            }
+          },
+          {
+            "full": 0.0035610198974609375,
+            "full_bits": 996761600,
+            "full_packed_half": 6987,
+            "full_raw_half": 6987,
+            "pruned": 0.00356099009513855,
+            "pruned_bits": 996761472,
+            "pruned_packed_half": 6987,
+            "pruned_raw_half": 6986,
+            "query": {
+              "candidate_bits": 6986,
+              "canonical_bits": 6987,
+              "morton": 1400283,
+              "sample": 57
+            }
+          },
+          {
+            "full": 0.0035457611083984375,
+            "full_bits": 996696064,
+            "full_packed_half": 6979,
+            "full_raw_half": 6979,
+            "pruned": 0.00354573130607605,
+            "pruned_bits": 996695936,
+            "pruned_packed_half": 6979,
+            "pruned_raw_half": 6978,
+            "query": {
+              "candidate_bits": 6978,
+              "canonical_bits": 6979,
+              "morton": 1400283,
+              "sample": 144
+            }
+          },
+          {
+            "full": 0.0021114349365234375,
+            "full_bits": 990535680,
+            "full_packed_half": 6227,
+            "full_raw_half": 6227,
+            "pruned": 0.00211140513420105,
+            "pruned_bits": 990535552,
+            "pruned_packed_half": 6227,
+            "pruned_raw_half": 6226,
+            "query": {
+              "candidate_bits": 6226,
+              "canonical_bits": 6227,
+              "morton": 1400283,
+              "sample": 266
+            }
+          },
+          {
+            "full": 0.0002301931381225586,
+            "full_bits": 963731456,
+            "full_packed_half": 2955,
+            "full_raw_half": 2955,
+            "pruned": 0.0002301633358001709,
+            "pruned_bits": 963729408,
+            "pruned_packed_half": 2955,
+            "pruned_raw_half": 2954,
+            "query": {
+              "candidate_bits": 2954,
+              "canonical_bits": 2955,
+              "morton": 1400283,
+              "sample": 271
+            }
+          },
+          {
+            "full": 0.0014066696166992188,
+            "full_bits": 985161728,
+            "full_packed_half": 5571,
+            "full_raw_half": 5571,
+            "pruned": 0.001406639814376831,
+            "pruned_bits": 985161472,
+            "pruned_packed_half": 5571,
+            "pruned_raw_half": 5570,
+            "query": {
+              "candidate_bits": 5570,
+              "canonical_bits": 5571,
+              "morton": 1400283,
+              "sample": 291
+            }
+          },
+          {
+            "full": 0.0004489421844482422,
+            "full_bits": 971726848,
+            "full_packed_half": 3931,
+            "full_raw_half": 3931,
+            "pruned": 0.0004489123821258545,
+            "pruned_bits": 971725824,
+            "pruned_packed_half": 3931,
+            "pruned_raw_half": 3930,
+            "query": {
+              "candidate_bits": 3930,
+              "canonical_bits": 3931,
+              "morton": 1400283,
+              "sample": 341
+            }
+          },
+          {
+            "full": 7.146596908569336e-05,
+            "full_bits": 949346304,
+            "full_packed_half": 1199,
+            "full_raw_half": 1199,
+            "pruned": 7.143616676330566e-05,
+            "pruned_bits": 949342208,
+            "pruned_packed_half": 1198,
+            "pruned_raw_half": 1198,
+            "query": {
+              "candidate_bits": 1198,
+              "canonical_bits": 1199,
+              "morton": 1400283,
+              "sample": 342
+            }
+          },
+          {
+            "full": -0.0004127025604248047,
+            "full_bits": 3117965312,
+            "full_packed_half": 36547,
+            "full_raw_half": 36547,
+            "pruned": -0.000412672758102417,
+            "pruned_bits": 3117964288,
+            "pruned_packed_half": 36547,
+            "pruned_raw_half": 36546,
+            "query": {
+              "candidate_bits": 36546,
+              "canonical_bits": 36547,
+              "morton": 1400283,
+              "sample": 351
+            }
+          },
+          {
+            "full": 1.823902130126953e-05,
+            "full_bits": 932773888,
+            "full_packed_half": 306,
+            "full_raw_half": 306,
+            "pruned": 1.8209218978881836e-05,
+            "pruned_bits": 932757504,
+            "pruned_packed_half": 306,
+            "pruned_raw_half": 305,
+            "query": {
+              "candidate_bits": 305,
+              "canonical_bits": 306,
+              "morton": 1400283,
+              "sample": 381
+            }
+          },
+          {
+            "full": 0.0021839141845703125,
+            "full_bits": 990846976,
+            "full_packed_half": 6265,
+            "full_raw_half": 6265,
+            "pruned": 0.002183884382247925,
+            "pruned_bits": 990846848,
+            "pruned_packed_half": 6265,
+            "pruned_raw_half": 6264,
+            "query": {
+              "candidate_bits": 6264,
+              "canonical_bits": 6265,
+              "morton": 1400283,
+              "sample": 392
+            }
+          }
+        ],
+        "scope": "Same-kernel float, packed-half and raw R16 image encoding diagnostic"
+      }
+    },
+    {
+      "name": "guardian-add-0.065",
+      "axis": 16,
+      "reference_axis": 4,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_probe",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/guardian-add-0.065-input.json",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/guardian-add-0.065-A16.json",
+        "16"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.2663179220398888,
+      "gpu_before": "3 %, 0 %, 637 MHz, 405 MHz, 35, 26.58 W, 917 MiB",
+      "gpu_after": "3 %, 0 %, 637 MHz, 405 MHz, 35, 34.24 W, 916 MiB",
+      "log_sha256": "fc63e3cab115f5ad80a99a4b0d72ec31fb9404b791ce219ac6f207ac21ff3b6a",
+      "native": {
+        "axis": 16,
+        "geometry_hash": 15942407689268967484,
+        "samples": [
+          {
+            "full": 0.00409698486328125,
+            "full_bits": 998653952,
+            "full_packed_half": 7218,
+            "full_raw_half": 7218,
+            "pruned": 0.004096969962120056,
+            "pruned_bits": 998653920,
+            "pruned_packed_half": 7218,
+            "pruned_raw_half": 7217,
+            "query": {
+              "candidate_bits": 7217,
+              "canonical_bits": 7218,
+              "morton": 1400191,
+              "sample": 90
+            }
+          },
+          {
+            "full": -3.063678741455078e-05,
+            "full_bits": 3087040512,
+            "full_packed_half": 33282,
+            "full_raw_half": 33282,
+            "pruned": -3.0621886253356934e-05,
+            "pruned_bits": 3087036416,
+            "pruned_packed_half": 33282,
+            "pruned_raw_half": 33281,
+            "query": {
+              "candidate_bits": 33281,
+              "canonical_bits": 33282,
+              "morton": 1400191,
+              "sample": 447
+            }
+          },
+          {
+            "full": 0.0029201507568359375,
+            "full_bits": 994009088,
+            "full_packed_half": 6651,
+            "full_raw_half": 6651,
+            "pruned": 0.00292012095451355,
+            "pruned_bits": 994008960,
+            "pruned_packed_half": 6651,
+            "pruned_raw_half": 6650,
+            "query": {
+              "candidate_bits": 6650,
+              "canonical_bits": 6651,
+              "morton": 1400191,
+              "sample": 482
+            }
+          },
+          {
+            "full": 0.0025272369384765625,
+            "full_bits": 992321536,
+            "full_packed_half": 6445,
+            "full_raw_half": 6445,
+            "pruned": 0.002527207136154175,
+            "pruned_bits": 992321408,
+            "pruned_packed_half": 6445,
+            "pruned_raw_half": 6444,
+            "query": {
+              "candidate_bits": 6444,
+              "canonical_bits": 6445,
+              "morton": 1400191,
+              "sample": 490
+            }
+          },
+          {
+            "full": 0.00021958351135253906,
+            "full_bits": 963002368,
+            "full_packed_half": 2866,
+            "full_raw_half": 2866,
+            "pruned": 0.00021955370903015137,
+            "pruned_bits": 963000320,
+            "pruned_packed_half": 2866,
+            "pruned_raw_half": 2865,
+            "query": {
+              "candidate_bits": 2865,
+              "canonical_bits": 2866,
+              "morton": 1400191,
+              "sample": 510
+            }
+          },
+          {
+            "full": 0.00013124942779541016,
+            "full_bits": 956932096,
+            "full_packed_half": 2125,
+            "full_raw_half": 2125,
+            "pruned": 0.00013122707605361938,
+            "pruned_bits": 956930560,
+            "pruned_packed_half": 2125,
+            "pruned_raw_half": 2124,
+            "query": {
+              "candidate_bits": 2124,
+              "canonical_bits": 2125,
+              "morton": 1400271,
+              "sample": 127
+            }
+          },
+          {
+            "full": 0.0023822784423828125,
+            "full_bits": 991698944,
+            "full_packed_half": 6369,
+            "full_raw_half": 6369,
+            "pruned": 0.002382248640060425,
+            "pruned_bits": 991698816,
+            "pruned_packed_half": 6369,
+            "pruned_raw_half": 6368,
+            "query": {
+              "candidate_bits": 6368,
+              "canonical_bits": 6369,
+              "morton": 1400271,
+              "sample": 196
+            }
+          },
+          {
+            "full": -0.00019681453704833984,
+            "full_bits": 3108921344,
+            "full_packed_half": 35443,
+            "full_raw_half": 35443,
+            "pruned": -0.00019679218530654907,
+            "pruned_bits": 3108919808,
+            "pruned_packed_half": 35443,
+            "pruned_raw_half": 35442,
+            "query": {
+              "candidate_bits": 35442,
+              "canonical_bits": 35443,
+              "morton": 1400271,
+              "sample": 254
+            }
+          },
+          {
+            "full": 0.0018911361694335938,
+            "full_bits": 989323264,
+            "full_packed_half": 6079,
+            "full_raw_half": 6079,
+            "pruned": 0.001891106367111206,
+            "pruned_bits": 989323008,
+            "pruned_packed_half": 6079,
+            "pruned_raw_half": 6078,
+            "query": {
+              "candidate_bits": 6078,
+              "canonical_bits": 6079,
+              "morton": 1400271,
+              "sample": 275
+            }
+          },
+          {
+            "full": 0.00209808349609375,
+            "full_bits": 990478336,
+            "full_packed_half": 6220,
+            "full_raw_half": 6220,
+            "pruned": 0.0020980536937713623,
+            "pruned_bits": 990478208,
+            "pruned_packed_half": 6220,
+            "pruned_raw_half": 6219,
+            "query": {
+              "candidate_bits": 6219,
+              "canonical_bits": 6220,
+              "morton": 1400271,
+              "sample": 304
+            }
+          },
+          {
+            "full": 2.396106719970703e-05,
+            "full_bits": 935919616,
+            "full_packed_half": 402,
+            "full_raw_half": 402,
+            "pruned": 2.3931264877319336e-05,
+            "pruned_bits": 935903232,
+            "pruned_packed_half": 402,
+            "pruned_raw_half": 401,
+            "query": {
+              "candidate_bits": 401,
+              "canonical_bits": 402,
+              "morton": 1400271,
+              "sample": 365
+            }
+          },
+          {
+            "full": 8.887052536010742e-05,
+            "full_bits": 951738368,
+            "full_packed_half": 1491,
+            "full_raw_half": 1491,
+            "pruned": 8.88332724571228e-05,
+            "pruned_bits": 951733248,
+            "pruned_packed_half": 1490,
+            "pruned_raw_half": 1490,
+            "query": {
+              "candidate_bits": 1490,
+              "canonical_bits": 1491,
+              "morton": 1400271,
+              "sample": 399
+            }
+          },
+          {
+            "full": -0.00021064281463623047,
+            "full_bits": 3109871616,
+            "full_packed_half": 35559,
+            "full_raw_half": 35559,
+            "pruned": -0.00021060556173324585,
+            "pruned_bits": 3109869056,
+            "pruned_packed_half": 35559,
+            "pruned_raw_half": 35558,
+            "query": {
+              "candidate_bits": 35558,
+              "canonical_bits": 35559,
+              "morton": 1400271,
+              "sample": 407
+            }
+          },
+          {
+            "full": 0.00026917457580566406,
+            "full_bits": 965550080,
+            "full_packed_half": 3177,
+            "full_raw_half": 3177,
+            "pruned": 0.0002691298723220825,
+            "pruned_bits": 965548544,
+            "pruned_packed_half": 3177,
+            "pruned_raw_half": 3176,
+            "query": {
+              "candidate_bits": 3176,
+              "canonical_bits": 3177,
+              "morton": 1400271,
+              "sample": 435
+            }
+          },
+          {
+            "full": -0.0001361370086669922,
+            "full_bits": 3104751616,
+            "full_packed_half": 34934,
+            "full_raw_half": 34934,
+            "pruned": -0.00013609975576400757,
+            "pruned_bits": 3104749056,
+            "pruned_packed_half": 34934,
+            "pruned_raw_half": 34933,
+            "query": {
+              "candidate_bits": 34933,
+              "canonical_bits": 34934,
+              "morton": 1400271,
+              "sample": 436
+            }
+          },
+          {
+            "full": 0.0004489421844482422,
+            "full_bits": 971726848,
+            "full_packed_half": 3931,
+            "full_raw_half": 3931,
+            "pruned": 0.0004489198327064514,
+            "pruned_bits": 971726080,
+            "pruned_packed_half": 3931,
+            "pruned_raw_half": 3930,
+            "query": {
+              "candidate_bits": 3930,
+              "canonical_bits": 3931,
+              "morton": 1400271,
+              "sample": 442
+            }
+          },
+          {
+            "full": 0.00142669677734375,
+            "full_bits": 985333760,
+            "full_packed_half": 5592,
+            "full_raw_half": 5592,
+            "pruned": 0.0014266669750213623,
+            "pruned_bits": 985333504,
+            "pruned_packed_half": 5592,
+            "pruned_raw_half": 5591,
+            "query": {
+              "candidate_bits": 5591,
+              "canonical_bits": 5592,
+              "morton": 1400271,
+              "sample": 466
+            }
+          },
+          {
+            "full": 0.0003535747528076172,
+            "full_bits": 968450048,
+            "full_packed_half": 3531,
+            "full_raw_half": 3531,
+            "pruned": 0.00035353749990463257,
+            "pruned_bits": 968448768,
+            "pruned_packed_half": 3531,
+            "pruned_raw_half": 3530,
+            "query": {
+              "candidate_bits": 3530,
+              "canonical_bits": 3531,
+              "morton": 1400271,
+              "sample": 476
+            }
+          },
+          {
+            "full": 0.0004773139953613281,
+            "full_bits": 972701696,
+            "full_packed_half": 4050,
+            "full_raw_half": 4050,
+            "pruned": 0.00047729164361953735,
+            "pruned_bits": 972700928,
+            "pruned_packed_half": 4050,
+            "pruned_raw_half": 4049,
+            "query": {
+              "candidate_bits": 4049,
+              "canonical_bits": 4050,
+              "morton": 1400281,
+              "sample": 374
+            }
+          },
+          {
+            "full": 0.000438690185546875,
+            "full_bits": 971374592,
+            "full_packed_half": 3888,
+            "full_raw_half": 3888,
+            "pruned": 0.00043864548206329346,
+            "pruned_bits": 971373056,
+            "pruned_packed_half": 3888,
+            "pruned_raw_half": 3887,
+            "query": {
+              "candidate_bits": 3887,
+              "canonical_bits": 3888,
+              "morton": 1400281,
+              "sample": 407
+            }
+          },
+          {
+            "full": -0.0001175999641418457,
+            "full_bits": 3103170560,
+            "full_packed_half": 34741,
+            "full_raw_half": 34741,
+            "pruned": -0.00011756271123886108,
+            "pruned_bits": 3103165440,
+            "pruned_packed_half": 34740,
+            "pruned_raw_half": 34740,
+            "query": {
+              "candidate_bits": 34740,
+              "canonical_bits": 34741,
+              "morton": 1400281,
+              "sample": 431
+            }
+          },
+          {
+            "full": -0.0003247261047363281,
+            "full_bits": 3114942464,
+            "full_packed_half": 36178,
+            "full_raw_half": 36178,
+            "pruned": -0.0003246814012527466,
+            "pruned_bits": 3114940928,
+            "pruned_packed_half": 36178,
+            "pruned_raw_half": 36177,
+            "query": {
+              "candidate_bits": 36177,
+              "canonical_bits": 36178,
+              "morton": 1400281,
+              "sample": 487
+            }
+          },
+          {
+            "full": 0.0035610198974609375,
+            "full_bits": 996761600,
+            "full_packed_half": 6987,
+            "full_raw_half": 6987,
+            "pruned": 0.00356099009513855,
+            "pruned_bits": 996761472,
+            "pruned_packed_half": 6987,
+            "pruned_raw_half": 6986,
+            "query": {
+              "candidate_bits": 6986,
+              "canonical_bits": 6987,
+              "morton": 1400283,
+              "sample": 57
+            }
+          },
+          {
+            "full": 0.0035457611083984375,
+            "full_bits": 996696064,
+            "full_packed_half": 6979,
+            "full_raw_half": 6979,
+            "pruned": 0.00354573130607605,
+            "pruned_bits": 996695936,
+            "pruned_packed_half": 6979,
+            "pruned_raw_half": 6978,
+            "query": {
+              "candidate_bits": 6978,
+              "canonical_bits": 6979,
+              "morton": 1400283,
+              "sample": 144
+            }
+          },
+          {
+            "full": 0.0021114349365234375,
+            "full_bits": 990535680,
+            "full_packed_half": 6227,
+            "full_raw_half": 6227,
+            "pruned": 0.002111397683620453,
+            "pruned_bits": 990535520,
+            "pruned_packed_half": 6227,
+            "pruned_raw_half": 6226,
+            "query": {
+              "candidate_bits": 6226,
+              "canonical_bits": 6227,
+              "morton": 1400283,
+              "sample": 266
+            }
+          },
+          {
+            "full": 0.0002301931381225586,
+            "full_bits": 963731456,
+            "full_packed_half": 2955,
+            "full_raw_half": 2955,
+            "pruned": 0.00023017823696136475,
+            "pruned_bits": 963730432,
+            "pruned_packed_half": 2955,
+            "pruned_raw_half": 2954,
+            "query": {
+              "candidate_bits": 2954,
+              "canonical_bits": 2955,
+              "morton": 1400283,
+              "sample": 271
+            }
+          },
+          {
+            "full": 0.0014066696166992188,
+            "full_bits": 985161728,
+            "full_packed_half": 5571,
+            "full_raw_half": 5571,
+            "pruned": 0.0014066323637962341,
+            "pruned_bits": 985161408,
+            "pruned_packed_half": 5571,
+            "pruned_raw_half": 5570,
+            "query": {
+              "candidate_bits": 5570,
+              "canonical_bits": 5571,
+              "morton": 1400283,
+              "sample": 291
+            }
+          },
+          {
+            "full": 0.0004489421844482422,
+            "full_bits": 971726848,
+            "full_packed_half": 3931,
+            "full_raw_half": 3931,
+            "pruned": 0.0004489123821258545,
+            "pruned_bits": 971725824,
+            "pruned_packed_half": 3931,
+            "pruned_raw_half": 3930,
+            "query": {
+              "candidate_bits": 3930,
+              "canonical_bits": 3931,
+              "morton": 1400283,
+              "sample": 341
+            }
+          },
+          {
+            "full": 7.146596908569336e-05,
+            "full_bits": 949346304,
+            "full_packed_half": 1199,
+            "full_raw_half": 1199,
+            "pruned": 7.144361734390259e-05,
+            "pruned_bits": 949343232,
+            "pruned_packed_half": 1199,
+            "pruned_raw_half": 1198,
+            "query": {
+              "candidate_bits": 1198,
+              "canonical_bits": 1199,
+              "morton": 1400283,
+              "sample": 342
+            }
+          },
+          {
+            "full": -0.0004127025604248047,
+            "full_bits": 3117965312,
+            "full_packed_half": 36547,
+            "full_raw_half": 36547,
+            "pruned": -0.0004126802086830139,
+            "pruned_bits": 3117964544,
+            "pruned_packed_half": 36547,
+            "pruned_raw_half": 36546,
+            "query": {
+              "candidate_bits": 36546,
+              "canonical_bits": 36547,
+              "morton": 1400283,
+              "sample": 351
+            }
+          },
+          {
+            "full": 1.823902130126953e-05,
+            "full_bits": 932773888,
+            "full_packed_half": 306,
+            "full_raw_half": 306,
+            "pruned": 1.821666955947876e-05,
+            "pruned_bits": 932761600,
+            "pruned_packed_half": 306,
+            "pruned_raw_half": 305,
+            "query": {
+              "candidate_bits": 305,
+              "canonical_bits": 306,
+              "morton": 1400283,
+              "sample": 381
+            }
+          },
+          {
+            "full": 0.0021839141845703125,
+            "full_bits": 990846976,
+            "full_packed_half": 6265,
+            "full_raw_half": 6265,
+            "pruned": 0.0021838918328285217,
+            "pruned_bits": 990846880,
+            "pruned_packed_half": 6265,
+            "pruned_raw_half": 6264,
+            "query": {
+              "candidate_bits": 6264,
+              "canonical_bits": 6265,
+              "morton": 1400283,
+              "sample": 392
+            }
+          }
+        ],
+        "scope": "Same-kernel float, packed-half and raw R16 image encoding diagnostic"
+      }
+    },
+    {
+      "name": "robot-cut-0.065",
+      "axis": 4,
+      "reference_axis": 16,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_probe",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/robot-cut-0.065-input.json",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/robot-cut-0.065-A4.json",
+        "4"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.21088575100293383,
+      "gpu_before": "3 %, 0 %, 637 MHz, 405 MHz, 36, 34.24 W, 916 MiB",
+      "gpu_after": "3 %, 0 %, 637 MHz, 405 MHz, 36, 39.28 W, 916 MiB",
+      "log_sha256": "e403d78f6c56872edbd2625041d42d83db24ce6cde3b085adefc2a5ce26012c4",
+      "native": {
+        "axis": 4,
+        "geometry_hash": 2164569866644847086,
+        "samples": [
+          {
+            "full": 0.0013189315795898438,
+            "full_bits": 984408064,
+            "full_packed_half": 5479,
+            "full_raw_half": 5479,
+            "pruned": 0.0013189315795898438,
+            "pruned_bits": 984408064,
+            "pruned_packed_half": 5479,
+            "pruned_raw_half": 5479,
+            "query": {
+              "candidate_bits": 5478,
+              "canonical_bits": 5479,
+              "morton": 1981407,
+              "sample": 173
+            }
+          },
+          {
+            "full": 0.0002894401550292969,
+            "full_bits": 966246400,
+            "full_packed_half": 3262,
+            "full_raw_half": 3262,
+            "pruned": 0.0002894401550292969,
+            "pruned_bits": 966246400,
+            "pruned_packed_half": 3262,
+            "pruned_raw_half": 3262,
+            "query": {
+              "candidate_bits": 3261,
+              "canonical_bits": 3262,
+              "morton": 1981407,
+              "sample": 231
+            }
+          },
+          {
+            "full": -4.190206527709961e-05,
+            "full_bits": 3090137088,
+            "full_packed_half": 33471,
+            "full_raw_half": 33471,
+            "pruned": -4.190206527709961e-05,
+            "pruned_bits": 3090137088,
+            "pruned_packed_half": 33471,
+            "pruned_raw_half": 33471,
+            "query": {
+              "candidate_bits": 33470,
+              "canonical_bits": 33471,
+              "morton": 1981407,
+              "sample": 446
+            }
+          },
+          {
+            "full": 0.00270843505859375,
+            "full_bits": 993099776,
+            "full_packed_half": 6540,
+            "full_raw_half": 6540,
+            "pruned": 0.00270843505859375,
+            "pruned_bits": 993099776,
+            "pruned_packed_half": 6540,
+            "pruned_raw_half": 6540,
+            "query": {
+              "candidate_bits": 6539,
+              "canonical_bits": 6540,
+              "morton": 1981433,
+              "sample": 156
+            }
+          },
+          {
+            "full": -4.4226646423339844e-05,
+            "full_bits": 3090776064,
+            "full_packed_half": 33510,
+            "full_raw_half": 33510,
+            "pruned": -4.4226646423339844e-05,
+            "pruned_bits": 3090776064,
+            "pruned_packed_half": 33510,
+            "pruned_raw_half": 33510,
+            "query": {
+              "candidate_bits": 33509,
+              "canonical_bits": 33510,
+              "morton": 1981435,
+              "sample": 271
+            }
+          },
+          {
+            "full": -0.0002238750457763672,
+            "full_bits": 3110780928,
+            "full_packed_half": 35670,
+            "full_raw_half": 35670,
+            "pruned": -0.0002238750457763672,
+            "pruned_bits": 3110780928,
+            "pruned_packed_half": 35670,
+            "pruned_raw_half": 35670,
+            "query": {
+              "candidate_bits": 35669,
+              "canonical_bits": 35670,
+              "morton": 1981435,
+              "sample": 302
+            }
+          },
+          {
+            "full": 0.0005745887756347656,
+            "full_bits": 974561280,
+            "full_packed_half": 4277,
+            "full_raw_half": 4277,
+            "pruned": 0.0005745887756347656,
+            "pruned_bits": 974561280,
+            "pruned_packed_half": 4277,
+            "pruned_raw_half": 4277,
+            "query": {
+              "candidate_bits": 4276,
+              "canonical_bits": 4277,
+              "morton": 1981435,
+              "sample": 349
+            }
+          },
+          {
+            "full": 0.0008955001831054688,
+            "full_bits": 980074496,
+            "full_packed_half": 4950,
+            "full_raw_half": 4950,
+            "pruned": 0.0008955001831054688,
+            "pruned_bits": 980074496,
+            "pruned_packed_half": 4950,
+            "pruned_raw_half": 4950,
+            "query": {
+              "candidate_bits": 4949,
+              "canonical_bits": 4950,
+              "morton": 1981435,
+              "sample": 420
+            }
+          },
+          {
+            "full": -7.474422454833984e-05,
+            "full_bits": 3097280512,
+            "full_packed_half": 34022,
+            "full_raw_half": 34022,
+            "pruned": -7.474422454833984e-05,
+            "pruned_bits": 3097280512,
+            "pruned_packed_half": 34022,
+            "pruned_raw_half": 34022,
+            "query": {
+              "candidate_bits": 34021,
+              "canonical_bits": 34022,
+              "morton": 1981435,
+              "sample": 445
+            }
+          },
+          {
+            "full": 0.00019919872283935547,
+            "full_bits": 961601536,
+            "full_packed_half": 2695,
+            "full_raw_half": 2695,
+            "pruned": 0.00019919872283935547,
+            "pruned_bits": 961601536,
+            "pruned_packed_half": 2695,
+            "pruned_raw_half": 2695,
+            "query": {
+              "candidate_bits": 2694,
+              "canonical_bits": 2695,
+              "morton": 1981437,
+              "sample": 311
+            }
+          },
+          {
+            "full": 0.00019919872283935547,
+            "full_bits": 961601536,
+            "full_packed_half": 2695,
+            "full_raw_half": 2695,
+            "pruned": 0.00019919872283935547,
+            "pruned_bits": 961601536,
+            "pruned_packed_half": 2695,
+            "pruned_raw_half": 2695,
+            "query": {
+              "candidate_bits": 2694,
+              "canonical_bits": 2695,
+              "morton": 1981437,
+              "sample": 375
+            }
+          },
+          {
+            "full": 0.00012302398681640625,
+            "full_bits": 956366848,
+            "full_packed_half": 2056,
+            "full_raw_half": 2056,
+            "pruned": 0.00012302398681640625,
+            "pruned_bits": 956366848,
+            "pruned_packed_half": 2056,
+            "pruned_raw_half": 2056,
+            "query": {
+              "candidate_bits": 2055,
+              "canonical_bits": 2056,
+              "morton": 1981439,
+              "sample": 86
+            }
+          },
+          {
+            "full": -0.0004000663757324219,
+            "full_bits": 3117531136,
+            "full_packed_half": 36494,
+            "full_raw_half": 36494,
+            "pruned": -0.0004000663757324219,
+            "pruned_bits": 3117531136,
+            "pruned_packed_half": 36494,
+            "pruned_raw_half": 36494,
+            "query": {
+              "candidate_bits": 36493,
+              "canonical_bits": 36494,
+              "morton": 1981439,
+              "sample": 174
+            }
+          },
+          {
+            "full": -0.0005507469177246094,
+            "full_bits": 3121635328,
+            "full_packed_half": 36995,
+            "full_raw_half": 36995,
+            "pruned": -0.0005507469177246094,
+            "pruned_bits": 3121635328,
+            "pruned_packed_half": 36995,
+            "pruned_raw_half": 36995,
+            "query": {
+              "candidate_bits": 36994,
+              "canonical_bits": 36995,
+              "morton": 1981439,
+              "sample": 246
+            }
+          },
+          {
+            "full": -0.0005507469177246094,
+            "full_bits": 3121635328,
+            "full_packed_half": 36995,
+            "full_raw_half": 36995,
+            "pruned": -0.0005507469177246094,
+            "pruned_bits": 3121635328,
+            "pruned_packed_half": 36995,
+            "pruned_raw_half": 36995,
+            "query": {
+              "candidate_bits": 36994,
+              "canonical_bits": 36995,
+              "morton": 1981439,
+              "sample": 438
+            }
+          },
+          {
+            "full": 0.0001533031463623047,
+            "full_bits": 958447616,
+            "full_packed_half": 2310,
+            "full_raw_half": 2310,
+            "pruned": 0.0001533031463623047,
+            "pruned_bits": 958447616,
+            "pruned_packed_half": 2310,
+            "pruned_raw_half": 2310,
+            "query": {
+              "candidate_bits": 2309,
+              "canonical_bits": 2310,
+              "morton": 1982281,
+              "sample": 383
+            }
+          },
+          {
+            "full": 1.1920928955078125e-07,
+            "full_bits": 872415232,
+            "full_packed_half": 2,
+            "full_raw_half": 2,
+            "pruned": 1.1920928955078125e-07,
+            "pruned_bits": 872415232,
+            "pruned_packed_half": 2,
+            "pruned_raw_half": 2,
+            "query": {
+              "candidate_bits": 1,
+              "canonical_bits": 2,
+              "morton": 1982281,
+              "sample": 439
+            }
+          },
+          {
+            "full": 0.0007905960083007812,
+            "full_bits": 978272256,
+            "full_packed_half": 4730,
+            "full_raw_half": 4730,
+            "pruned": 0.0007905960083007812,
+            "pruned_bits": 978272256,
+            "pruned_packed_half": 4730,
+            "pruned_raw_half": 4730,
+            "query": {
+              "candidate_bits": 4729,
+              "canonical_bits": 4730,
+              "morton": 1982283,
+              "sample": 286
+            }
+          },
+          {
+            "full": 0.0001533031463623047,
+            "full_bits": 958447616,
+            "full_packed_half": 2310,
+            "full_raw_half": 2310,
+            "pruned": 0.0001533031463623047,
+            "pruned_bits": 958447616,
+            "pruned_packed_half": 2310,
+            "pruned_raw_half": 2310,
+            "query": {
+              "candidate_bits": 2309,
+              "canonical_bits": 2310,
+              "morton": 1982283,
+              "sample": 327
+            }
+          },
+          {
+            "full": 7.981061935424805e-05,
+            "full_bits": 950493184,
+            "full_packed_half": 1339,
+            "full_raw_half": 1339,
+            "pruned": 7.981061935424805e-05,
+            "pruned_bits": 950493184,
+            "pruned_packed_half": 1339,
+            "pruned_raw_half": 1339,
+            "query": {
+              "candidate_bits": 1338,
+              "canonical_bits": 1339,
+              "morton": 1982283,
+              "sample": 343
+            }
+          },
+          {
+            "full": -0.0009365081787109375,
+            "full_bits": 3128262656,
+            "full_packed_half": 37804,
+            "full_raw_half": 37804,
+            "pruned": -0.0009365081787109375,
+            "pruned_bits": 3128262656,
+            "pruned_packed_half": 37804,
+            "pruned_raw_half": 37804,
+            "query": {
+              "candidate_bits": 37803,
+              "canonical_bits": 37804,
+              "morton": 1982285,
+              "sample": 319
+            }
+          },
+          {
+            "full": -4.190206527709961e-05,
+            "full_bits": 3090137088,
+            "full_packed_half": 33471,
+            "full_raw_half": 33471,
+            "pruned": -4.190206527709961e-05,
+            "pruned_bits": 3090137088,
+            "pruned_packed_half": 33471,
+            "pruned_raw_half": 33471,
+            "query": {
+              "candidate_bits": 33470,
+              "canonical_bits": 33471,
+              "morton": 1982285,
+              "sample": 390
+            }
+          },
+          {
+            "full": -0.0009365081787109375,
+            "full_bits": 3128262656,
+            "full_packed_half": 37804,
+            "full_raw_half": 37804,
+            "pruned": -0.0009365081787109375,
+            "pruned_bits": 3128262656,
+            "pruned_packed_half": 37804,
+            "pruned_raw_half": 37804,
+            "query": {
+              "candidate_bits": 37803,
+              "canonical_bits": 37804,
+              "morton": 1982287,
+              "sample": 263
+            }
+          },
+          {
+            "full": -0.0003514289855957031,
+            "full_bits": 3115859968,
+            "full_packed_half": 36290,
+            "full_raw_half": 36290,
+            "pruned": -0.0003514289855957031,
+            "pruned_bits": 3115859968,
+            "pruned_packed_half": 36290,
+            "pruned_raw_half": 36290,
+            "query": {
+              "candidate_bits": 36289,
+              "canonical_bits": 36290,
+              "morton": 1982313,
+              "sample": 125
+            }
+          },
+          {
+            "full": -7.474422454833984e-05,
+            "full_bits": 3097280512,
+            "full_packed_half": 34022,
+            "full_raw_half": 34022,
+            "pruned": -7.474422454833984e-05,
+            "pruned_bits": 3097280512,
+            "pruned_packed_half": 34022,
+            "pruned_raw_half": 34022,
+            "query": {
+              "candidate_bits": 34021,
+              "canonical_bits": 34022,
+              "morton": 1982313,
+              "sample": 389
+            }
+          },
+          {
+            "full": 0.00206756591796875,
+            "full_bits": 990347264,
+            "full_packed_half": 6204,
+            "full_raw_half": 6204,
+            "pruned": 0.00206756591796875,
+            "pruned_bits": 990347264,
+            "pruned_packed_half": 6204,
+            "pruned_raw_half": 6204,
+            "query": {
+              "candidate_bits": 6203,
+              "canonical_bits": 6204,
+              "morton": 1982313,
+              "sample": 440
+            }
+          },
+          {
+            "full": -0.0003514289855957031,
+            "full_bits": 3115859968,
+            "full_packed_half": 36290,
+            "full_raw_half": 36290,
+            "pruned": -0.0003514289855957031,
+            "pruned_bits": 3115859968,
+            "pruned_packed_half": 36290,
+            "pruned_raw_half": 36290,
+            "query": {
+              "candidate_bits": 36289,
+              "canonical_bits": 36290,
+              "morton": 1982315,
+              "sample": 69
+            }
+          },
+          {
+            "full": 0.00206756591796875,
+            "full_bits": 990347264,
+            "full_packed_half": 6204,
+            "full_raw_half": 6204,
+            "pruned": 0.00206756591796875,
+            "pruned_bits": 990347264,
+            "pruned_packed_half": 6204,
+            "pruned_raw_half": 6204,
+            "query": {
+              "candidate_bits": 6203,
+              "canonical_bits": 6204,
+              "morton": 1982315,
+              "sample": 384
+            }
+          },
+          {
+            "full": 0.00171661376953125,
+            "full_bits": 987824128,
+            "full_packed_half": 5896,
+            "full_raw_half": 5896,
+            "pruned": 0.00171661376953125,
+            "pruned_bits": 987824128,
+            "pruned_packed_half": 5896,
+            "pruned_raw_half": 5896,
+            "query": {
+              "candidate_bits": 5895,
+              "canonical_bits": 5896,
+              "morton": 1982317,
+              "sample": 153
+            }
+          },
+          {
+            "full": 0.0008206367492675781,
+            "full_bits": 978788352,
+            "full_packed_half": 4793,
+            "full_raw_half": 4793,
+            "pruned": 0.0008206367492675781,
+            "pruned_bits": 978788352,
+            "pruned_packed_half": 4793,
+            "pruned_raw_half": 4793,
+            "query": {
+              "candidate_bits": 4792,
+              "canonical_bits": 4793,
+              "morton": 1982317,
+              "sample": 203
+            }
+          },
+          {
+            "full": 0.000274658203125,
+            "full_bits": 965738496,
+            "full_packed_half": 3200,
+            "full_raw_half": 3200,
+            "pruned": 0.000274658203125,
+            "pruned_bits": 965738496,
+            "pruned_packed_half": 3200,
+            "pruned_raw_half": 3200,
+            "query": {
+              "candidate_bits": 3199,
+              "canonical_bits": 3200,
+              "morton": 1982317,
+              "sample": 204
+            }
+          },
+          {
+            "full": 0.000274658203125,
+            "full_bits": 965738496,
+            "full_packed_half": 3200,
+            "full_raw_half": 3200,
+            "pruned": 0.000274658203125,
+            "pruned_bits": 965738496,
+            "pruned_packed_half": 3200,
+            "pruned_raw_half": 3200,
+            "query": {
+              "candidate_bits": 3199,
+              "canonical_bits": 3200,
+              "morton": 1982317,
+              "sample": 268
+            }
+          }
+        ],
+        "scope": "Same-kernel float, packed-half and raw R16 image encoding diagnostic"
+      }
+    },
+    {
+      "name": "robot-cut-0.065",
+      "axis": 16,
+      "reference_axis": 16,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_probe",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/robot-cut-0.065-input.json",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prune-probe-raw/robot-cut-0.065-A16.json",
+        "16"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.22156258299946785,
+      "gpu_before": "3 %, 0 %, 637 MHz, 405 MHz, 36, 39.28 W, 916 MiB",
+      "gpu_after": "3 %, 0 %, 637 MHz, 405 MHz, 36, 48.42 W, 916 MiB",
+      "log_sha256": "28174c04b79211e9ee76122693dd625836d730fae684e70d40dfb9ddd9c742db",
+      "native": {
+        "axis": 16,
+        "geometry_hash": 2164569866644847086,
+        "samples": [
+          {
+            "full": 0.0013189315795898438,
+            "full_bits": 984408064,
+            "full_packed_half": 5479,
+            "full_raw_half": 5479,
+            "pruned": 0.0013189241290092468,
+            "pruned_bits": 984408000,
+            "pruned_packed_half": 5479,
+            "pruned_raw_half": 5478,
+            "query": {
+              "candidate_bits": 5478,
+              "canonical_bits": 5479,
+              "morton": 1981407,
+              "sample": 173
+            }
+          },
+          {
+            "full": 0.0002894401550292969,
+            "full_bits": 966246400,
+            "full_packed_half": 3262,
+            "full_raw_half": 3262,
+            "pruned": 0.00028943270444869995,
+            "pruned_bits": 966246144,
+            "pruned_packed_half": 3262,
+            "pruned_raw_half": 3261,
+            "query": {
+              "candidate_bits": 3261,
+              "canonical_bits": 3262,
+              "morton": 1981407,
+              "sample": 231
+            }
+          },
+          {
+            "full": -4.190206527709961e-05,
+            "full_bits": 3090137088,
+            "full_packed_half": 33471,
+            "full_raw_half": 33471,
+            "pruned": -4.1894614696502686e-05,
+            "pruned_bits": 3090135040,
+            "pruned_packed_half": 33471,
+            "pruned_raw_half": 33470,
+            "query": {
+              "candidate_bits": 33470,
+              "canonical_bits": 33471,
+              "morton": 1981407,
+              "sample": 446
+            }
+          },
+          {
+            "full": 0.00270843505859375,
+            "full_bits": 993099776,
+            "full_packed_half": 6540,
+            "full_raw_half": 6540,
+            "pruned": 0.002708427608013153,
+            "pruned_bits": 993099744,
+            "pruned_packed_half": 6540,
+            "pruned_raw_half": 6539,
+            "query": {
+              "candidate_bits": 6539,
+              "canonical_bits": 6540,
+              "morton": 1981433,
+              "sample": 156
+            }
+          },
+          {
+            "full": -4.4226646423339844e-05,
+            "full_bits": 3090776064,
+            "full_packed_half": 33510,
+            "full_raw_half": 33510,
+            "pruned": -4.421919584274292e-05,
+            "pruned_bits": 3090774016,
+            "pruned_packed_half": 33510,
+            "pruned_raw_half": 33509,
+            "query": {
+              "candidate_bits": 33509,
+              "canonical_bits": 33510,
+              "morton": 1981435,
+              "sample": 271
+            }
+          },
+          {
+            "full": -0.0002238750457763672,
+            "full_bits": 3110780928,
+            "full_packed_half": 35670,
+            "full_raw_half": 35670,
+            "pruned": -0.00022386759519577026,
+            "pruned_bits": 3110780416,
+            "pruned_packed_half": 35670,
+            "pruned_raw_half": 35669,
+            "query": {
+              "candidate_bits": 35669,
+              "canonical_bits": 35670,
+              "morton": 1981435,
+              "sample": 302
+            }
+          },
+          {
+            "full": 0.0005745887756347656,
+            "full_bits": 974561280,
+            "full_packed_half": 4277,
+            "full_raw_half": 4277,
+            "pruned": 0.0005745813250541687,
+            "pruned_bits": 974561152,
+            "pruned_packed_half": 4277,
+            "pruned_raw_half": 4276,
+            "query": {
+              "candidate_bits": 4276,
+              "canonical_bits": 4277,
+              "morton": 1981435,
+              "sample": 349
+            }
+          },
+          {
+            "full": 0.0008955001831054688,
+            "full_bits": 980074496,
+            "full_packed_half": 4950,
+            "full_raw_half": 4950,
+            "pruned": 0.0008954927325248718,
+            "pruned_bits": 980074368,
+            "pruned_packed_half": 4950,
+            "pruned_raw_half": 4949,
+            "query": {
+              "candidate_bits": 4949,
+              "canonical_bits": 4950,
+              "morton": 1981435,
+              "sample": 420
+            }
+          },
+          {
+            "full": -7.474422454833984e-05,
+            "full_bits": 3097280512,
+            "full_packed_half": 34022,
+            "full_raw_half": 34022,
+            "pruned": -7.473677396774292e-05,
+            "pruned_bits": 3097279488,
+            "pruned_packed_half": 34022,
+            "pruned_raw_half": 34021,
+            "query": {
+              "candidate_bits": 34021,
+              "canonical_bits": 34022,
+              "morton": 1981435,
+              "sample": 445
+            }
+          },
+          {
+            "full": 0.00019919872283935547,
+            "full_bits": 961601536,
+            "full_packed_half": 2695,
+            "full_raw_half": 2695,
+            "pruned": 0.00019919127225875854,
+            "pruned_bits": 961601024,
+            "pruned_packed_half": 2695,
+            "pruned_raw_half": 2694,
+            "query": {
+              "candidate_bits": 2694,
+              "canonical_bits": 2695,
+              "morton": 1981437,
+              "sample": 311
+            }
+          },
+          {
+            "full": 0.00019919872283935547,
+            "full_bits": 961601536,
+            "full_packed_half": 2695,
+            "full_raw_half": 2695,
+            "pruned": 0.00019919127225875854,
+            "pruned_bits": 961601024,
+            "pruned_packed_half": 2695,
+            "pruned_raw_half": 2694,
+            "query": {
+              "candidate_bits": 2694,
+              "canonical_bits": 2695,
+              "morton": 1981437,
+              "sample": 375
+            }
+          },
+          {
+            "full": 0.00012302398681640625,
+            "full_bits": 956366848,
+            "full_packed_half": 2056,
+            "full_raw_half": 2056,
+            "pruned": 0.00012301653623580933,
+            "pruned_bits": 956366336,
+            "pruned_packed_half": 2056,
+            "pruned_raw_half": 2055,
+            "query": {
+              "candidate_bits": 2055,
+              "canonical_bits": 2056,
+              "morton": 1981439,
+              "sample": 86
+            }
+          },
+          {
+            "full": -0.0004000663757324219,
+            "full_bits": 3117531136,
+            "full_packed_half": 36494,
+            "full_raw_half": 36494,
+            "pruned": -0.00040005892515182495,
+            "pruned_bits": 3117530880,
+            "pruned_packed_half": 36494,
+            "pruned_raw_half": 36493,
+            "query": {
+              "candidate_bits": 36493,
+              "canonical_bits": 36494,
+              "morton": 1981439,
+              "sample": 174
+            }
+          },
+          {
+            "full": -0.0005507469177246094,
+            "full_bits": 3121635328,
+            "full_packed_half": 36995,
+            "full_raw_half": 36995,
+            "pruned": -0.0005507394671440125,
+            "pruned_bits": 3121635200,
+            "pruned_packed_half": 36995,
+            "pruned_raw_half": 36994,
+            "query": {
+              "candidate_bits": 36994,
+              "canonical_bits": 36995,
+              "morton": 1981439,
+              "sample": 246
+            }
+          },
+          {
+            "full": -0.0005507469177246094,
+            "full_bits": 3121635328,
+            "full_packed_half": 36995,
+            "full_raw_half": 36995,
+            "pruned": -0.0005507394671440125,
+            "pruned_bits": 3121635200,
+            "pruned_packed_half": 36995,
+            "pruned_raw_half": 36994,
+            "query": {
+              "candidate_bits": 36994,
+              "canonical_bits": 36995,
+              "morton": 1981439,
+              "sample": 438
+            }
+          },
+          {
+            "full": 0.0001533031463623047,
+            "full_bits": 958447616,
+            "full_packed_half": 2310,
+            "full_raw_half": 2310,
+            "pruned": 0.00015329569578170776,
+            "pruned_bits": 958447104,
+            "pruned_packed_half": 2310,
+            "pruned_raw_half": 2309,
+            "query": {
+              "candidate_bits": 2309,
+              "canonical_bits": 2310,
+              "morton": 1982281,
+              "sample": 383
+            }
+          },
+          {
+            "full": 1.1920928955078125e-07,
+            "full_bits": 872415232,
+            "full_packed_half": 2,
+            "full_raw_half": 2,
+            "pruned": 1.1175870895385742e-07,
+            "pruned_bits": 871366656,
+            "pruned_packed_half": 2,
+            "pruned_raw_half": 1,
+            "query": {
+              "candidate_bits": 1,
+              "canonical_bits": 2,
+              "morton": 1982281,
+              "sample": 439
+            }
+          },
+          {
+            "full": 0.0007905960083007812,
+            "full_bits": 978272256,
+            "full_packed_half": 4730,
+            "full_raw_half": 4730,
+            "pruned": 0.0007905885577201843,
+            "pruned_bits": 978272128,
+            "pruned_packed_half": 4730,
+            "pruned_raw_half": 4729,
+            "query": {
+              "candidate_bits": 4729,
+              "canonical_bits": 4730,
+              "morton": 1982283,
+              "sample": 286
+            }
+          },
+          {
+            "full": 0.0001533031463623047,
+            "full_bits": 958447616,
+            "full_packed_half": 2310,
+            "full_raw_half": 2310,
+            "pruned": 0.00015329569578170776,
+            "pruned_bits": 958447104,
+            "pruned_packed_half": 2310,
+            "pruned_raw_half": 2309,
+            "query": {
+              "candidate_bits": 2309,
+              "canonical_bits": 2310,
+              "morton": 1982283,
+              "sample": 327
+            }
+          },
+          {
+            "full": 7.981061935424805e-05,
+            "full_bits": 950493184,
+            "full_packed_half": 1339,
+            "full_raw_half": 1339,
+            "pruned": 7.980316877365112e-05,
+            "pruned_bits": 950492160,
+            "pruned_packed_half": 1339,
+            "pruned_raw_half": 1338,
+            "query": {
+              "candidate_bits": 1338,
+              "canonical_bits": 1339,
+              "morton": 1982283,
+              "sample": 343
+            }
+          },
+          {
+            "full": -0.0009365081787109375,
+            "full_bits": 3128262656,
+            "full_packed_half": 37804,
+            "full_raw_half": 37804,
+            "pruned": -0.0009365007281303406,
+            "pruned_bits": 3128262528,
+            "pruned_packed_half": 37804,
+            "pruned_raw_half": 37803,
+            "query": {
+              "candidate_bits": 37803,
+              "canonical_bits": 37804,
+              "morton": 1982285,
+              "sample": 319
+            }
+          },
+          {
+            "full": -4.190206527709961e-05,
+            "full_bits": 3090137088,
+            "full_packed_half": 33471,
+            "full_raw_half": 33471,
+            "pruned": -4.1894614696502686e-05,
+            "pruned_bits": 3090135040,
+            "pruned_packed_half": 33471,
+            "pruned_raw_half": 33470,
+            "query": {
+              "candidate_bits": 33470,
+              "canonical_bits": 33471,
+              "morton": 1982285,
+              "sample": 390
+            }
+          },
+          {
+            "full": -0.0009365081787109375,
+            "full_bits": 3128262656,
+            "full_packed_half": 37804,
+            "full_raw_half": 37804,
+            "pruned": -0.0009365007281303406,
+            "pruned_bits": 3128262528,
+            "pruned_packed_half": 37804,
+            "pruned_raw_half": 37803,
+            "query": {
+              "candidate_bits": 37803,
+              "canonical_bits": 37804,
+              "morton": 1982287,
+              "sample": 263
+            }
+          },
+          {
+            "full": -0.0003514289855957031,
+            "full_bits": 3115859968,
+            "full_packed_half": 36290,
+            "full_raw_half": 36290,
+            "pruned": -0.0003514215350151062,
+            "pruned_bits": 3115859712,
+            "pruned_packed_half": 36290,
+            "pruned_raw_half": 36289,
+            "query": {
+              "candidate_bits": 36289,
+              "canonical_bits": 36290,
+              "morton": 1982313,
+              "sample": 125
+            }
+          },
+          {
+            "full": -7.474422454833984e-05,
+            "full_bits": 3097280512,
+            "full_packed_half": 34022,
+            "full_raw_half": 34022,
+            "pruned": -7.473677396774292e-05,
+            "pruned_bits": 3097279488,
+            "pruned_packed_half": 34022,
+            "pruned_raw_half": 34021,
+            "query": {
+              "candidate_bits": 34021,
+              "canonical_bits": 34022,
+              "morton": 1982313,
+              "sample": 389
+            }
+          },
+          {
+            "full": 0.00206756591796875,
+            "full_bits": 990347264,
+            "full_packed_half": 6204,
+            "full_raw_half": 6204,
+            "pruned": 0.002067558467388153,
+            "pruned_bits": 990347232,
+            "pruned_packed_half": 6204,
+            "pruned_raw_half": 6203,
+            "query": {
+              "candidate_bits": 6203,
+              "canonical_bits": 6204,
+              "morton": 1982313,
+              "sample": 440
+            }
+          },
+          {
+            "full": -0.0003514289855957031,
+            "full_bits": 3115859968,
+            "full_packed_half": 36290,
+            "full_raw_half": 36290,
+            "pruned": -0.0003514215350151062,
+            "pruned_bits": 3115859712,
+            "pruned_packed_half": 36290,
+            "pruned_raw_half": 36289,
+            "query": {
+              "candidate_bits": 36289,
+              "canonical_bits": 36290,
+              "morton": 1982315,
+              "sample": 69
+            }
+          },
+          {
+            "full": 0.00206756591796875,
+            "full_bits": 990347264,
+            "full_packed_half": 6204,
+            "full_raw_half": 6204,
+            "pruned": 0.002067558467388153,
+            "pruned_bits": 990347232,
+            "pruned_packed_half": 6204,
+            "pruned_raw_half": 6203,
+            "query": {
+              "candidate_bits": 6203,
+              "canonical_bits": 6204,
+              "morton": 1982315,
+              "sample": 384
+            }
+          },
+          {
+            "full": 0.00171661376953125,
+            "full_bits": 987824128,
+            "full_packed_half": 5896,
+            "full_raw_half": 5896,
+            "pruned": 0.001716606318950653,
+            "pruned_bits": 987824064,
+            "pruned_packed_half": 5896,
+            "pruned_raw_half": 5895,
+            "query": {
+              "candidate_bits": 5895,
+              "canonical_bits": 5896,
+              "morton": 1982317,
+              "sample": 153
+            }
+          },
+          {
+            "full": 0.0008206367492675781,
+            "full_bits": 978788352,
+            "full_packed_half": 4793,
+            "full_raw_half": 4793,
+            "pruned": 0.0008206292986869812,
+            "pruned_bits": 978788224,
+            "pruned_packed_half": 4793,
+            "pruned_raw_half": 4792,
+            "query": {
+              "candidate_bits": 4792,
+              "canonical_bits": 4793,
+              "morton": 1982317,
+              "sample": 203
+            }
+          },
+          {
+            "full": 0.000274658203125,
+            "full_bits": 965738496,
+            "full_packed_half": 3200,
+            "full_raw_half": 3200,
+            "pruned": 0.0002746507525444031,
+            "pruned_bits": 965738240,
+            "pruned_packed_half": 3200,
+            "pruned_raw_half": 3199,
+            "query": {
+              "candidate_bits": 3199,
+              "canonical_bits": 3200,
+              "morton": 1982317,
+              "sample": 204
+            }
+          },
+          {
+            "full": 0.000274658203125,
+            "full_bits": 965738496,
+            "full_packed_half": 3200,
+            "full_raw_half": 3200,
+            "pruned": 0.0002746507525444031,
+            "pruned_bits": 965738240,
+            "pruned_packed_half": 3200,
+            "pruned_raw_half": 3199,
+            "query": {
+              "candidate_bits": 3199,
+              "canonical_bits": 3200,
+              "morton": 1982317,
+              "sample": 268
+            }
+          }
+        ],
+        "scope": "Same-kernel float, packed-half and raw R16 image encoding diagnostic"
+      }
+    }
+  ],
+  "complete": true,
+  "probe_binary_sha256": "0be1d99cd63e04c97c032f71186c33b45ef02903be30dcaf8b9859f950e344c1"
+}

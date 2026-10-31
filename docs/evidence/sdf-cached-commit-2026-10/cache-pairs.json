@@ -1,0 +1,1832 @@
+[
+  {
+    "phase": "qualification",
+    "case": "add-outside-base",
+    "candidate": {
+      "bricks": 64420,
+      "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+      "texels": 32983040,
+      "topology_entries": 281664,
+      "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+    },
+    "canonical": {
+      "bricks": 64420,
+      "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+      "texels": 32983040,
+      "topology_entries": 281664,
+      "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "union-inside-exits",
+    "candidate": {
+      "bricks": 64420,
+      "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-inside-exits.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-inside-exits.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-inside-exits.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+      "texels": 32983040,
+      "topology_entries": 281664,
+      "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+    },
+    "canonical": {
+      "bricks": 64420,
+      "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-inside-exits.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-inside-exits.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-inside-exits.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+      "texels": 32983040,
+      "topology_entries": 281664,
+      "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "cavity",
+    "candidate": {
+      "bricks": 62680,
+      "cells_sha256": "3ffe40a1eef60df15ababdbc324aaa68ce989ae3c475635cc13abec76fc9a4b1",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "85911ebe43bdfa72ecc9d6238a7a81afe7d4371a5cda1a04c20d89a42a13c872",
+      "texels": 32092160,
+      "topology_entries": 272960,
+      "topology_sha256": "38e4c7beb344c54f1013f90addcd61390c17df62c76c8567caa7bf095a862165"
+    },
+    "canonical": {
+      "bricks": 62680,
+      "cells_sha256": "3ffe40a1eef60df15ababdbc324aaa68ce989ae3c475635cc13abec76fc9a4b1",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "85911ebe43bdfa72ecc9d6238a7a81afe7d4371a5cda1a04c20d89a42a13c872",
+      "texels": 32092160,
+      "topology_entries": 272960,
+      "topology_sha256": "38e4c7beb344c54f1013f90addcd61390c17df62c76c8567caa7bf095a862165"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "through-cut",
+    "candidate": {
+      "bricks": 47088,
+      "cells_sha256": "ddb5db685f3bc95862864451ddad7b41961419b1683040483e609b60b307e6d5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "c7167c8ce42d9d0cedfd330af3a9f39104d51c5db2f7c786c56de51af4db8e5d",
+      "texels": 24109056,
+      "topology_entries": 173120,
+      "topology_sha256": "852fe3afd427001153cb595cd10a72c9cc88e013eab29b780447dd7e72197104"
+    },
+    "canonical": {
+      "bricks": 47088,
+      "cells_sha256": "ddb5db685f3bc95862864451ddad7b41961419b1683040483e609b60b307e6d5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "c7167c8ce42d9d0cedfd330af3a9f39104d51c5db2f7c786c56de51af4db8e5d",
+      "texels": 24109056,
+      "topology_entries": 173120,
+      "topology_sha256": "852fe3afd427001153cb595cd10a72c9cc88e013eab29b780447dd7e72197104"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "recessed-front",
+    "candidate": {
+      "bricks": 44520,
+      "cells_sha256": "50ec1e0cfdb2183505b20f8cbef1d6d986c474bcdaa4520d458f649356f50e9c",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "42f4b4369ce36b55b505dd10ba304f6d1ec2dfa161e18912d408d5a76a2550b1",
+      "texels": 22794240,
+      "topology_entries": 186176,
+      "topology_sha256": "c27f525d12ce8748eba62729c69a1a78c26d7395729bb94b23fd5faa62b68a28"
+    },
+    "canonical": {
+      "bricks": 44520,
+      "cells_sha256": "50ec1e0cfdb2183505b20f8cbef1d6d986c474bcdaa4520d458f649356f50e9c",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "42f4b4369ce36b55b505dd10ba304f6d1ec2dfa161e18912d408d5a76a2550b1",
+      "texels": 22794240,
+      "topology_entries": 186176,
+      "topology_sha256": "c27f525d12ce8748eba62729c69a1a78c26d7395729bb94b23fd5faa62b68a28"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "cut-covers-body",
+    "candidate": {
+      "bricks": 0,
+      "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "texels": 0,
+      "topology_entries": 2112,
+      "topology_sha256": "6a627e5339eea1235c8781ea2b8cf902088f2a940daa7c52bb30b16faa1dde0d"
+    },
+    "canonical": {
+      "bricks": 0,
+      "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "texels": 0,
+      "topology_entries": 2112,
+      "topology_sha256": "6a627e5339eea1235c8781ea2b8cf902088f2a940daa7c52bb30b16faa1dde0d"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "union-covers-body",
+    "candidate": {
+      "bricks": 127784,
+      "cells_sha256": "544d19b1e19900b75ebb3ddb41759eb84bb6711319223aa2fb0b62705c3b0517",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "5fd25f1950f751454eefc478b3ca3c0615da6957725e9dc367647af394b0822a",
+      "texels": 65425408,
+      "topology_entries": 537664,
+      "topology_sha256": "be57fff040cec6e4a343836da62f9a6bea495aca131d2815a11ffaf29b125fde"
+    },
+    "canonical": {
+      "bricks": 127784,
+      "cells_sha256": "544d19b1e19900b75ebb3ddb41759eb84bb6711319223aa2fb0b62705c3b0517",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "5fd25f1950f751454eefc478b3ca3c0615da6957725e9dc367647af394b0822a",
+      "texels": 65425408,
+      "topology_entries": 537664,
+      "topology_sha256": "be57fff040cec6e4a343836da62f9a6bea495aca131d2815a11ffaf29b125fde"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "invisible-inner-add",
+    "candidate": {
+      "bricks": 57488,
+      "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "texels": 29433856,
+      "topology_entries": 251968,
+      "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+    },
+    "canonical": {
+      "bricks": 57488,
+      "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "texels": 29433856,
+      "topology_entries": 251968,
+      "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "outside-cut",
+    "candidate": {
+      "bricks": 57488,
+      "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/outside-cut.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/outside-cut.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/outside-cut.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "texels": 29433856,
+      "topology_entries": 251968,
+      "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+    },
+    "canonical": {
+      "bricks": 57488,
+      "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/outside-cut.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/outside-cut.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/outside-cut.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "texels": 29433856,
+      "topology_entries": 251968,
+      "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "rotated-box",
+    "candidate": {
+      "bricks": 11810,
+      "cells_sha256": "6e0749ab3a2bb0c438ca1280af7efc088c9c481826f798d788afdf01fd7619d6",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "5929a1742ed75deeae4ceb1c270ccdbb82d35bdeffc088beadd426f606df90fa",
+      "texels": 6046720,
+      "topology_entries": 51648,
+      "topology_sha256": "e468b4b7815badca0be1b1a3c7f5599b534617d9416fa479c7e7d92222165a0f"
+    },
+    "canonical": {
+      "bricks": 11810,
+      "cells_sha256": "6e0749ab3a2bb0c438ca1280af7efc088c9c481826f798d788afdf01fd7619d6",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "5929a1742ed75deeae4ceb1c270ccdbb82d35bdeffc088beadd426f606df90fa",
+      "texels": 6046720,
+      "topology_entries": 51648,
+      "topology_sha256": "e468b4b7815badca0be1b1a3c7f5599b534617d9416fa479c7e7d92222165a0f"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "workspace-add",
+    "candidate": {
+      "bricks": 7604,
+      "cells_sha256": "a66f604d94d533a663cba6f41dd3f8c4dce0ec3b865f146d588317d9fb6b8820",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "fd0772eee48ac87da034e3f413d77a0b737afc647d027d11e073755cd2e2c824",
+      "texels": 3893248,
+      "topology_entries": 33088,
+      "topology_sha256": "c91591498a828a6bd3520664b4aa66760a4a0d7693b16c009d6036351dd3eaaf"
+    },
+    "canonical": {
+      "bricks": 7604,
+      "cells_sha256": "a66f604d94d533a663cba6f41dd3f8c4dce0ec3b865f146d588317d9fb6b8820",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "fd0772eee48ac87da034e3f413d77a0b737afc647d027d11e073755cd2e2c824",
+      "texels": 3893248,
+      "topology_entries": 33088,
+      "topology_sha256": "c91591498a828a6bd3520664b4aa66760a4a0d7693b16c009d6036351dd3eaaf"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "workspace-cut",
+    "candidate": {
+      "bricks": 16520,
+      "cells_sha256": "1e0cb0e4c374b7ad8b4c0f5032ae81382c77639b7b4f7c2bbc4a2a8930f18761",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "d1a00d8f305d0dc980d11f7b8f7a7a80687f20e5af1828f5b36afb1191f4a3ab",
+      "texels": 8458240,
+      "topology_entries": 65344,
+      "topology_sha256": "5a6537e7ef8a6a93f7f3d1ffcea26e1cfada3c25ebd9b8c42787e242843cbdc6"
+    },
+    "canonical": {
+      "bricks": 16520,
+      "cells_sha256": "1e0cb0e4c374b7ad8b4c0f5032ae81382c77639b7b4f7c2bbc4a2a8930f18761",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "d1a00d8f305d0dc980d11f7b8f7a7a80687f20e5af1828f5b36afb1191f4a3ab",
+      "texels": 8458240,
+      "topology_entries": 65344,
+      "topology_sha256": "5a6537e7ef8a6a93f7f3d1ffcea26e1cfada3c25ebd9b8c42787e242843cbdc6"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "resume-to-second-body",
+    "candidate": {
+      "bricks": 5188,
+      "cells_sha256": "4e25390d69b8c11d5bb0f26b9797af13fe26d7bb39ea843f6d8763e07c0d8783",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "22a907e209dffd2fee648dfc7d5c11475d0eec231d91ed4975512e9a4aa1379a",
+      "texels": 2656256,
+      "topology_entries": 25408,
+      "topology_sha256": "fa27b81a28a396026620881d4726506f9c08282a27c37292907766dcb34f8c9d"
+    },
+    "canonical": {
+      "bricks": 5188,
+      "cells_sha256": "4e25390d69b8c11d5bb0f26b9797af13fe26d7bb39ea843f6d8763e07c0d8783",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "22a907e209dffd2fee648dfc7d5c11475d0eec231d91ed4975512e9a4aa1379a",
+      "texels": 2656256,
+      "topology_entries": 25408,
+      "topology_sha256": "fa27b81a28a396026620881d4726506f9c08282a27c37292907766dcb34f8c9d"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "empty-base-add",
+    "candidate": {
+      "bricks": 14120,
+      "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+      "texels": 7229440,
+      "topology_entries": 66112,
+      "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+    },
+    "canonical": {
+      "bricks": 14120,
+      "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+      "texels": 7229440,
+      "topology_entries": 66112,
+      "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "zero-edit",
+    "candidate": {
+      "bricks": 57488,
+      "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/zero-edit.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/zero-edit.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/zero-edit.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "texels": 29433856,
+      "topology_entries": 251968,
+      "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+    },
+    "canonical": {
+      "bricks": 57488,
+      "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/zero-edit.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/zero-edit.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/zero-edit.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "texels": 29433856,
+      "topology_entries": 251968,
+      "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "subgrid-cavity",
+    "candidate": {
+      "bricks": 57495,
+      "cells_sha256": "920107cc0d8d5530531d34e490da19be3b955e98053e28fb982d1138cc591616",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "b8db7133f590fc1db4493582d616da8597fe3b7fb727afeff27ba1b7873a842f",
+      "texels": 29437440,
+      "topology_entries": 252864,
+      "topology_sha256": "8e857cf6a0a523ed95a86d296261d6088ce10c6a8e0903be6b0413967980d2d0"
+    },
+    "canonical": {
+      "bricks": 57495,
+      "cells_sha256": "920107cc0d8d5530531d34e490da19be3b955e98053e28fb982d1138cc591616",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "b8db7133f590fc1db4493582d616da8597fe3b7fb727afeff27ba1b7873a842f",
+      "texels": 29437440,
+      "topology_entries": 252864,
+      "topology_sha256": "8e857cf6a0a523ed95a86d296261d6088ce10c6a8e0903be6b0413967980d2d0"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "tool-tangent",
+    "candidate": {
+      "bricks": 14120,
+      "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/tool-tangent.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/tool-tangent.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/tool-tangent.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+      "texels": 7229440,
+      "topology_entries": 66112,
+      "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+    },
+    "canonical": {
+      "bricks": 14120,
+      "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/tool-tangent.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/tool-tangent.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/tool-tangent.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+      "texels": 7229440,
+      "topology_entries": 66112,
+      "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "lattice-box-add",
+    "candidate": {
+      "bricks": 54356,
+      "cells_sha256": "f0c9bf4450c61758ab0c706058d085d224af248c27b2b6ef7567f819f06e8aff",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "846e3b9bd3a91d42c5c52ba7ba7a45f74c9d4a4f9a16a1f83f81c4467cccb453",
+      "texels": 27830272,
+      "topology_entries": 232000,
+      "topology_sha256": "205f85119fec988fe6a1bbf6450e359cd9697b749023dc566e56989f997eee90"
+    },
+    "canonical": {
+      "bricks": 54356,
+      "cells_sha256": "f0c9bf4450c61758ab0c706058d085d224af248c27b2b6ef7567f819f06e8aff",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "846e3b9bd3a91d42c5c52ba7ba7a45f74c9d4a4f9a16a1f83f81c4467cccb453",
+      "texels": 27830272,
+      "topology_entries": 232000,
+      "topology_sha256": "205f85119fec988fe6a1bbf6450e359cd9697b749023dc566e56989f997eee90"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "lattice-box-cut",
+    "candidate": {
+      "bricks": 61440,
+      "cells_sha256": "a035cca238dbc941509b2aff486b02496930b01f79226d23275be3358adf3129",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+      "texels": 31457280,
+      "topology_entries": 260160,
+      "topology_sha256": "29692c191b1657f00f72c23a566166a2c6047593101bd5c62145d618d9460829"
+    },
+    "canonical": {
+      "bricks": 61440,
+      "cells_sha256": "a035cca238dbc941509b2aff486b02496930b01f79226d23275be3358adf3129",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+      "texels": 31457280,
+      "topology_entries": 260160,
+      "topology_sha256": "29692c191b1657f00f72c23a566166a2c6047593101bd5c62145d618d9460829"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "smooth-base-hard-add",
+    "candidate": {
+      "bricks": 44700,
+      "cells_sha256": "a034e8157096c2a8dd6da8012d4788d8f673936ea3cb934f2cd3d34d5381cdb9",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "ff9f4ce2e625a1ec5f6cbc1e2357ef5722f728e37dec3d868f9cba4aa1e6a3d7",
+      "texels": 22886400,
+      "topology_entries": 193344,
+      "topology_sha256": "9d4aa7be844f8cab6176813583712faff9d0ed3a72d2443780cf2922ad32f65c"
+    },
+    "canonical": {
+      "bricks": 44700,
+      "cells_sha256": "a034e8157096c2a8dd6da8012d4788d8f673936ea3cb934f2cd3d34d5381cdb9",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "ff9f4ce2e625a1ec5f6cbc1e2357ef5722f728e37dec3d868f9cba4aa1e6a3d7",
+      "texels": 22886400,
+      "topology_entries": 193344,
+      "topology_sha256": "9d4aa7be844f8cab6176813583712faff9d0ed3a72d2443780cf2922ad32f65c"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "smooth-base-hard-cut",
+    "candidate": {
+      "bricks": 47136,
+      "cells_sha256": "5711299c6c88cbd3630d17c8a8b133fa1266b68b70343c5ea70036e78379955a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "24be56fb01c5688be2259b89cf0c7f539f2fcf0b4ef29cc9bae036848464299c",
+      "texels": 24133632,
+      "topology_entries": 202304,
+      "topology_sha256": "8747e92e72b89c71c057b96c07a1bebefa485711cc01e0135ff1b6f044036416"
+    },
+    "canonical": {
+      "bricks": 47136,
+      "cells_sha256": "5711299c6c88cbd3630d17c8a8b133fa1266b68b70343c5ea70036e78379955a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "24be56fb01c5688be2259b89cf0c7f539f2fcf0b4ef29cc9bae036848464299c",
+      "texels": 24133632,
+      "topology_entries": 202304,
+      "topology_sha256": "8747e92e72b89c71c057b96c07a1bebefa485711cc01e0135ff1b6f044036416"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "scaled-tool",
+    "candidate": {
+      "bricks": 51996,
+      "cells_sha256": "3a8696b4546b644a6447c3ec1f67fbde8db25bd72cfa5f00a64499cb11d9f5ff",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "1f53c295a34a5082f0eb3b81b93a791a6a1641634a7098f17f34a86b6b371c42",
+      "texels": 26621952,
+      "topology_entries": 224320,
+      "topology_sha256": "6266acfcad601afe6192e74e7aac0a9431bf91c044b2604caa7c6302661c468f"
+    },
+    "canonical": {
+      "bricks": 51996,
+      "cells_sha256": "3a8696b4546b644a6447c3ec1f67fbde8db25bd72cfa5f00a64499cb11d9f5ff",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "1f53c295a34a5082f0eb3b81b93a791a6a1641634a7098f17f34a86b6b371c42",
+      "texels": 26621952,
+      "topology_entries": 224320,
+      "topology_sha256": "6266acfcad601afe6192e74e7aac0a9431bf91c044b2604caa7c6302661c468f"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "thin-base",
+    "candidate": {
+      "bricks": 10320,
+      "cells_sha256": "2052bb51883b53612690a2d0dfdde5e4defbce9b8a6174ebf825a5bb2f7846b5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "4524cec236594631564f8ee8725805ce69df60bb40f34394f5c5fbd6b9930568",
+      "texels": 5283840,
+      "topology_entries": 51264,
+      "topology_sha256": "499627018a0d0457e910c20bfa955ad7f767086e430424b80ca1eaec528f967b"
+    },
+    "canonical": {
+      "bricks": 10320,
+      "cells_sha256": "2052bb51883b53612690a2d0dfdde5e4defbce9b8a6174ebf825a5bb2f7846b5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "4524cec236594631564f8ee8725805ce69df60bb40f34394f5c5fbd6b9930568",
+      "texels": 5283840,
+      "topology_entries": 51264,
+      "topology_sha256": "499627018a0d0457e910c20bfa955ad7f767086e430424b80ca1eaec528f967b"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "guardian-add-0.02",
+    "candidate": {
+      "bricks": 107863,
+      "cells_sha256": "57fba29a8320c8b0d407324e9300002c7c59ee884a7270129eddcd3889a9e5ab",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "dfdf0c1e2a6b5cd631f77a99c292a9572a571e882e7f8db575c85c5a0485b232",
+      "texels": 55225856,
+      "topology_entries": 436416,
+      "topology_sha256": "e00baa3259f44a015f4611c8ad8f9a44597831df5584918d2da6702f39b92a1b"
+    },
+    "canonical": {
+      "bricks": 107863,
+      "cells_sha256": "57fba29a8320c8b0d407324e9300002c7c59ee884a7270129eddcd3889a9e5ab",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "dfdf0c1e2a6b5cd631f77a99c292a9572a571e882e7f8db575c85c5a0485b232",
+      "texels": 55225856,
+      "topology_entries": 436416,
+      "topology_sha256": "e00baa3259f44a015f4611c8ad8f9a44597831df5584918d2da6702f39b92a1b"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "guardian-add-0.065",
+    "candidate": {
+      "bricks": 113349,
+      "cells_sha256": "e2cd793aef912e849568ec20b03c80083613fa4e1aa69387c1470db2d1ff6fc2",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "6649ac0d869705bbb01304e73fd352a5f73ea62c33b8bb462afc1c50595e3581",
+      "texels": 58034688,
+      "topology_entries": 459584,
+      "topology_sha256": "0e8663d7d8269b8aeefafa23701121db6629b3e1fc2139dc766dfa4693d4d490"
+    },
+    "canonical": {
+      "bricks": 113349,
+      "cells_sha256": "e2cd793aef912e849568ec20b03c80083613fa4e1aa69387c1470db2d1ff6fc2",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "6649ac0d869705bbb01304e73fd352a5f73ea62c33b8bb462afc1c50595e3581",
+      "texels": 58034688,
+      "topology_entries": 459584,
+      "topology_sha256": "0e8663d7d8269b8aeefafa23701121db6629b3e1fc2139dc766dfa4693d4d490"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "guardian-add-0.15",
+    "candidate": {
+      "bricks": 135679,
+      "cells_sha256": "3f8a640316c2617d51ce104886216b1e1d24c2e11edc08b5da0017122015029a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "0c2e3dd5c9d50da3515aeb117fa6005a5eb1f42b43dd63d45bfa01c48ce940d2",
+      "texels": 69467648,
+      "topology_entries": 553792,
+      "topology_sha256": "3174add43bc9e96ee2f99be70f6bed6ac975047e6d505b70f0ee94bad6172fce"
+    },
+    "canonical": {
+      "bricks": 135679,
+      "cells_sha256": "3f8a640316c2617d51ce104886216b1e1d24c2e11edc08b5da0017122015029a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "0c2e3dd5c9d50da3515aeb117fa6005a5eb1f42b43dd63d45bfa01c48ce940d2",
+      "texels": 69467648,
+      "topology_entries": 553792,
+      "topology_sha256": "3174add43bc9e96ee2f99be70f6bed6ac975047e6d505b70f0ee94bad6172fce"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "guardian-cut-0.02",
+    "candidate": {
+      "bricks": 107537,
+      "cells_sha256": "6d4ad469df977c10fcbae59511e85415763c9d20b1457f38e5a1a579e0a0a739",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "17f41c3e77d53fffab9fbdb6af57481c85c0976114676858a32b856c3296f472",
+      "texels": 55058944,
+      "topology_entries": 433856,
+      "topology_sha256": "d78df37a3b8f8b42c434812b3efe0596a0d74082361bac60cf5658887ab02383"
+    },
+    "canonical": {
+      "bricks": 107537,
+      "cells_sha256": "6d4ad469df977c10fcbae59511e85415763c9d20b1457f38e5a1a579e0a0a739",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "17f41c3e77d53fffab9fbdb6af57481c85c0976114676858a32b856c3296f472",
+      "texels": 55058944,
+      "topology_entries": 433856,
+      "topology_sha256": "d78df37a3b8f8b42c434812b3efe0596a0d74082361bac60cf5658887ab02383"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "guardian-cut-0.065",
+    "candidate": {
+      "bricks": 108266,
+      "cells_sha256": "5ebb4eeaf07be19f5564a8439dc0e4c54d91ff59887b170f9f0fefbb1c034d0b",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "efb300aa9d1b50149924cf2d6a12cca685afcccb97475182d7ae2a49ada3033d",
+      "texels": 55432192,
+      "topology_entries": 435968,
+      "topology_sha256": "876f75bd1c8e900cbb45a423da2b02946ef7125b0269716ce8ab3e18289fbfa8"
+    },
+    "canonical": {
+      "bricks": 108266,
+      "cells_sha256": "5ebb4eeaf07be19f5564a8439dc0e4c54d91ff59887b170f9f0fefbb1c034d0b",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "efb300aa9d1b50149924cf2d6a12cca685afcccb97475182d7ae2a49ada3033d",
+      "texels": 55432192,
+      "topology_entries": 435968,
+      "topology_sha256": "876f75bd1c8e900cbb45a423da2b02946ef7125b0269716ce8ab3e18289fbfa8"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "guardian-cut-0.15",
+    "candidate": {
+      "bricks": 102185,
+      "cells_sha256": "f9f2384d837d1c4d797a0e0511d1d8618f55b35ceaa2a3df7aa5fa4c14a0bf36",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "19b082f8db11d2c5010fe24fe07b25b1fa1ea097e7a1c7b14c5650f7b13a9a5d",
+      "texels": 52318720,
+      "topology_entries": 413312,
+      "topology_sha256": "de6593a5c3d15c61c998c427f8d129a89e3e2e327677154e7b22904006a67533"
+    },
+    "canonical": {
+      "bricks": 102185,
+      "cells_sha256": "f9f2384d837d1c4d797a0e0511d1d8618f55b35ceaa2a3df7aa5fa4c14a0bf36",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "19b082f8db11d2c5010fe24fe07b25b1fa1ea097e7a1c7b14c5650f7b13a9a5d",
+      "texels": 52318720,
+      "topology_entries": 413312,
+      "topology_sha256": "de6593a5c3d15c61c998c427f8d129a89e3e2e327677154e7b22904006a67533"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "robot-add-0.02",
+    "candidate": {
+      "bricks": 139000,
+      "cells_sha256": "05c120673ef7f1a78431de5615e8f171bba6d216969f6ed065d39aa34ebfacba",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "a3fc4b24948127777467a4e62d3b3ba33f0f79614b1ee8288a5d9d2db100b62f",
+      "texels": 71168000,
+      "topology_entries": 560000,
+      "topology_sha256": "59dd1bf60b2a1530fa6ee6140cb75c3fa33925c096a7f333421f3b3a53087245"
+    },
+    "canonical": {
+      "bricks": 139000,
+      "cells_sha256": "05c120673ef7f1a78431de5615e8f171bba6d216969f6ed065d39aa34ebfacba",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "a3fc4b24948127777467a4e62d3b3ba33f0f79614b1ee8288a5d9d2db100b62f",
+      "texels": 71168000,
+      "topology_entries": 560000,
+      "topology_sha256": "59dd1bf60b2a1530fa6ee6140cb75c3fa33925c096a7f333421f3b3a53087245"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "robot-add-0.065",
+    "candidate": {
+      "bricks": 144286,
+      "cells_sha256": "8024769d2dce39048a296dbce342618d75beaab4cce033c868be017f7ad3f8fd",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "1faba4e41241183884608416b9b2cdd03b928bfa9fc14238452d4826397ff1d1",
+      "texels": 73874432,
+      "topology_entries": 578432,
+      "topology_sha256": "5e1adf320602f7ee1f255a2e4eaf0a24f4eff436e1719051872b7dae921c9825"
+    },
+    "canonical": {
+      "bricks": 144286,
+      "cells_sha256": "8024769d2dce39048a296dbce342618d75beaab4cce033c868be017f7ad3f8fd",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "1faba4e41241183884608416b9b2cdd03b928bfa9fc14238452d4826397ff1d1",
+      "texels": 73874432,
+      "topology_entries": 578432,
+      "topology_sha256": "5e1adf320602f7ee1f255a2e4eaf0a24f4eff436e1719051872b7dae921c9825"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "robot-add-0.15",
+    "candidate": {
+      "bricks": 146689,
+      "cells_sha256": "82d8934afdf2671f0e280704e917c9a9ae446a492c1d355cb5103ad5870041bc",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "a379a6dbe571fec04d462c8e69814d04c2d96bfe01c8e234295a70ce0ff0833d",
+      "texels": 75104768,
+      "topology_entries": 601216,
+      "topology_sha256": "b778e56bfd2705e0acc528560076fba138d1dd0e8d832748ddbd5d67afdb8943"
+    },
+    "canonical": {
+      "bricks": 146689,
+      "cells_sha256": "82d8934afdf2671f0e280704e917c9a9ae446a492c1d355cb5103ad5870041bc",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "a379a6dbe571fec04d462c8e69814d04c2d96bfe01c8e234295a70ce0ff0833d",
+      "texels": 75104768,
+      "topology_entries": 601216,
+      "topology_sha256": "b778e56bfd2705e0acc528560076fba138d1dd0e8d832748ddbd5d67afdb8943"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "robot-cut-0.02",
+    "candidate": {
+      "bricks": 138548,
+      "cells_sha256": "1af1de11f915c9f68217e50e166509c1aafcdfaacb783932a38702a9fe69c5f2",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "566281176011f88581f866b58aefc57ea2e1e961a0b927f49f9ce5586700579e",
+      "texels": 70936576,
+      "topology_entries": 557568,
+      "topology_sha256": "1ba5277f2232ffeb15c19ed8844e75756b0a39eaf9c8028ba8d6787aad7b9d39"
+    },
+    "canonical": {
+      "bricks": 138548,
+      "cells_sha256": "1af1de11f915c9f68217e50e166509c1aafcdfaacb783932a38702a9fe69c5f2",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "566281176011f88581f866b58aefc57ea2e1e961a0b927f49f9ce5586700579e",
+      "texels": 70936576,
+      "topology_entries": 557568,
+      "topology_sha256": "1ba5277f2232ffeb15c19ed8844e75756b0a39eaf9c8028ba8d6787aad7b9d39"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "robot-cut-0.065",
+    "candidate": {
+      "bricks": 138662,
+      "cells_sha256": "ec25fda8df1c824bbaeb30e17a8701517fdb9354a5ccc1750a3893b8374f1a25",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "ac632711fb46ce9147c1b14c55ceec24c1765ba60c334b5a8a8b0853ee2c079d",
+      "texels": 70994944,
+      "topology_entries": 559424,
+      "topology_sha256": "bce9ffbd2a106d50f3cf7b32748eb64d86ef05dfc12c96a31e1f0cb47d3e39a6"
+    },
+    "canonical": {
+      "bricks": 138662,
+      "cells_sha256": "ec25fda8df1c824bbaeb30e17a8701517fdb9354a5ccc1750a3893b8374f1a25",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "ac632711fb46ce9147c1b14c55ceec24c1765ba60c334b5a8a8b0853ee2c079d",
+      "texels": 70994944,
+      "topology_entries": 559424,
+      "topology_sha256": "bce9ffbd2a106d50f3cf7b32748eb64d86ef05dfc12c96a31e1f0cb47d3e39a6"
+    }
+  },
+  {
+    "phase": "qualification",
+    "case": "robot-cut-0.15",
+    "candidate": {
+      "bricks": 138459,
+      "cells_sha256": "ec280b72362f137f15d5962ba13dd0f00e936a1b41d5cb203a85b60726c497c4",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "33da82ff996a46752ad995f67e70ca9ba264e88871f991e043b8454788fcbf2d",
+      "texels": 70891008,
+      "topology_entries": 549440,
+      "topology_sha256": "703152aa159df95e8ea9977c70528633c3204208eca3ecf56a09773cbd0121df"
+    },
+    "canonical": {
+      "bricks": 138459,
+      "cells_sha256": "ec280b72362f137f15d5962ba13dd0f00e936a1b41d5cb203a85b60726c497c4",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "33da82ff996a46752ad995f67e70ca9ba264e88871f991e043b8454788fcbf2d",
+      "texels": 70891008,
+      "topology_entries": 549440,
+      "topology_sha256": "703152aa159df95e8ea9977c70528633c3204208eca3ecf56a09773cbd0121df"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-0",
+    "candidate": {
+      "bricks": 107230,
+      "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+      "texels": 54901760,
+      "topology_entries": 433024,
+      "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+    },
+    "canonical": {
+      "bricks": 107230,
+      "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+      "texels": 54901760,
+      "topology_entries": 433024,
+      "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-1",
+    "candidate": {
+      "bricks": 107803,
+      "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+      "texels": 55195136,
+      "topology_entries": 434240,
+      "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+    },
+    "canonical": {
+      "bricks": 107803,
+      "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+      "texels": 55195136,
+      "topology_entries": 434240,
+      "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-2",
+    "candidate": {
+      "bricks": 107862,
+      "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+      "texels": 55225344,
+      "topology_entries": 434304,
+      "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+    },
+    "canonical": {
+      "bricks": 107862,
+      "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+      "texels": 55225344,
+      "topology_entries": 434304,
+      "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-3",
+    "candidate": {
+      "bricks": 108059,
+      "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+      "texels": 55326208,
+      "topology_entries": 434304,
+      "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+    },
+    "canonical": {
+      "bricks": 108059,
+      "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+      "texels": 55326208,
+      "topology_entries": 434304,
+      "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-4",
+    "candidate": {
+      "bricks": 108133,
+      "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+      "texels": 55364096,
+      "topology_entries": 434368,
+      "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+    },
+    "canonical": {
+      "bricks": 108133,
+      "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+      "texels": 55364096,
+      "topology_entries": 434368,
+      "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-5",
+    "candidate": {
+      "bricks": 108315,
+      "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+      "texels": 55457280,
+      "topology_entries": 434624,
+      "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+    },
+    "canonical": {
+      "bricks": 108315,
+      "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+      "texels": 55457280,
+      "topology_entries": 434624,
+      "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-6",
+    "candidate": {
+      "bricks": 108403,
+      "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+      "texels": 55502336,
+      "topology_entries": 434688,
+      "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+    },
+    "canonical": {
+      "bricks": 108403,
+      "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+      "texels": 55502336,
+      "topology_entries": 434688,
+      "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "guardian-chain-7",
+    "candidate": {
+      "bricks": 108553,
+      "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+      "texels": 55579136,
+      "topology_entries": 434688,
+      "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+    },
+    "canonical": {
+      "bricks": 108553,
+      "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+      "texels": 55579136,
+      "topology_entries": 434688,
+      "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-0",
+    "candidate": {
+      "bricks": 138463,
+      "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+      "texels": 70893056,
+      "topology_entries": 557696,
+      "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+    },
+    "canonical": {
+      "bricks": 138463,
+      "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+      "texels": 70893056,
+      "topology_entries": 557696,
+      "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-1",
+    "candidate": {
+      "bricks": 138828,
+      "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+      "texels": 71079936,
+      "topology_entries": 558336,
+      "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+    },
+    "canonical": {
+      "bricks": 138828,
+      "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+      "texels": 71079936,
+      "topology_entries": 558336,
+      "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-2",
+    "candidate": {
+      "bricks": 138944,
+      "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+      "texels": 71139328,
+      "topology_entries": 558400,
+      "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+    },
+    "canonical": {
+      "bricks": 138944,
+      "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+      "texels": 71139328,
+      "topology_entries": 558400,
+      "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-3",
+    "candidate": {
+      "bricks": 139074,
+      "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+      "texels": 71205888,
+      "topology_entries": 558464,
+      "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+    },
+    "canonical": {
+      "bricks": 139074,
+      "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+      "texels": 71205888,
+      "topology_entries": 558464,
+      "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-4",
+    "candidate": {
+      "bricks": 139196,
+      "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+      "texels": 71268352,
+      "topology_entries": 558592,
+      "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+    },
+    "canonical": {
+      "bricks": 139196,
+      "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+      "texels": 71268352,
+      "topology_entries": 558592,
+      "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-5",
+    "candidate": {
+      "bricks": 139331,
+      "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+      "texels": 71337472,
+      "topology_entries": 558784,
+      "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+    },
+    "canonical": {
+      "bricks": 139331,
+      "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+      "texels": 71337472,
+      "topology_entries": 558784,
+      "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-6",
+    "candidate": {
+      "bricks": 139432,
+      "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+      "texels": 71389184,
+      "topology_entries": 558848,
+      "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+    },
+    "canonical": {
+      "bricks": 139432,
+      "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+      "texels": 71389184,
+      "topology_entries": 558848,
+      "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-7",
+    "candidate": {
+      "bricks": 139601,
+      "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+      "texels": 71475712,
+      "topology_entries": 559040,
+      "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+    },
+    "canonical": {
+      "bricks": 139601,
+      "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+      "texels": 71475712,
+      "topology_entries": 559040,
+      "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-8",
+    "candidate": {
+      "bricks": 139675,
+      "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+      "texels": 71513600,
+      "topology_entries": 559104,
+      "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+    },
+    "canonical": {
+      "bricks": 139675,
+      "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+      "texels": 71513600,
+      "topology_entries": 559104,
+      "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-9",
+    "candidate": {
+      "bricks": 139870,
+      "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+      "texels": 71613440,
+      "topology_entries": 559168,
+      "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+    },
+    "canonical": {
+      "bricks": 139870,
+      "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+      "texels": 71613440,
+      "topology_entries": 559168,
+      "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-10",
+    "candidate": {
+      "bricks": 139943,
+      "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+      "texels": 71650816,
+      "topology_entries": 559296,
+      "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+    },
+    "canonical": {
+      "bricks": 139943,
+      "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+      "texels": 71650816,
+      "topology_entries": 559296,
+      "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-11",
+    "candidate": {
+      "bricks": 140119,
+      "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+      "texels": 71740928,
+      "topology_entries": 559488,
+      "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+    },
+    "canonical": {
+      "bricks": 140119,
+      "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+      "texels": 71740928,
+      "topology_entries": 559488,
+      "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-12",
+    "candidate": {
+      "bricks": 140238,
+      "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+      "texels": 71801856,
+      "topology_entries": 559744,
+      "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+    },
+    "canonical": {
+      "bricks": 140238,
+      "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+      "texels": 71801856,
+      "topology_entries": 559744,
+      "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-13",
+    "candidate": {
+      "bricks": 140358,
+      "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+      "texels": 71863296,
+      "topology_entries": 559744,
+      "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+    },
+    "canonical": {
+      "bricks": 140358,
+      "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+      "texels": 71863296,
+      "topology_entries": 559744,
+      "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-14",
+    "candidate": {
+      "bricks": 140537,
+      "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+      "texels": 71954944,
+      "topology_entries": 559936,
+      "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+    },
+    "canonical": {
+      "bricks": 140537,
+      "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+      "texels": 71954944,
+      "topology_entries": 559936,
+      "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+    }
+  },
+  {
+    "phase": "chains",
+    "case": "robot-chain-15",
+    "candidate": {
+      "bricks": 140642,
+      "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+      "texels": 72008704,
+      "topology_entries": 560128,
+      "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+    },
+    "canonical": {
+      "bricks": 140642,
+      "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+      "texels": 72008704,
+      "topology_entries": 560128,
+      "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+    }
+  },
+  {
+    "phase": "overflow",
+    "case": "lattice-box-cut",
+    "candidate": {
+      "bricks": 61440,
+      "cells_sha256": "a035cca238dbc941509b2aff486b02496930b01f79226d23275be3358adf3129",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/lattice-box-cut-overflow.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/lattice-box-cut-overflow.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/lattice-box-cut-overflow.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+      "texels": 31457280,
+      "topology_entries": 260160,
+      "topology_sha256": "29692c191b1657f00f72c23a566166a2c6047593101bd5c62145d618d9460829"
+    },
+    "canonical": {
+      "bricks": 61440,
+      "cells_sha256": "a035cca238dbc941509b2aff486b02496930b01f79226d23275be3358adf3129",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/lattice-box-cut-overflow.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/lattice-box-cut-overflow.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/lattice-box-cut-overflow.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+      "texels": 31457280,
+      "topology_entries": 260160,
+      "topology_sha256": "29692c191b1657f00f72c23a566166a2c6047593101bd5c62145d618d9460829"
+    }
+  },
+  {
+    "phase": "overflow",
+    "case": "guardian-cut-0.065",
+    "candidate": {
+      "bricks": 108266,
+      "cells_sha256": "5ebb4eeaf07be19f5564a8439dc0e4c54d91ff59887b170f9f0fefbb1c034d0b",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/guardian-cut-0.065-overflow.case-0-candidate.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/guardian-cut-0.065-overflow.case-0-candidate.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/guardian-cut-0.065-overflow.case-0-candidate.r16.bin"
+      ],
+      "raw_r16_sha256": "efb300aa9d1b50149924cf2d6a12cca685afcccb97475182d7ae2a49ada3033d",
+      "texels": 55432192,
+      "topology_entries": 435968,
+      "topology_sha256": "876f75bd1c8e900cbb45a423da2b02946ef7125b0269716ce8ab3e18289fbfa8"
+    },
+    "canonical": {
+      "bricks": 108266,
+      "cells_sha256": "5ebb4eeaf07be19f5564a8439dc0e4c54d91ff59887b170f9f0fefbb1c034d0b",
+      "files": [
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/guardian-cut-0.065-overflow.case-0-canonical.topology.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/guardian-cut-0.065-overflow.case-0-canonical.cells.bin",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/faults/guardian-cut-0.065-overflow.case-0-canonical.r16.bin"
+      ],
+      "raw_r16_sha256": "efb300aa9d1b50149924cf2d6a12cca685afcccb97475182d7ae2a49ada3033d",
+      "texels": 55432192,
+      "topology_entries": 435968,
+      "topology_sha256": "876f75bd1c8e900cbb45a423da2b02946ef7125b0269716ce8ab3e18289fbfa8"
+    }
+  }
+]

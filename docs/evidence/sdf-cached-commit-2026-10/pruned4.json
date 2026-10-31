@@ -1,0 +1,5023 @@
+{
+  "source_head": "665e719ffc4a18a395fedb0c04c8392c75ec6c0a",
+  "source_status": "",
+  "binary_sha256": "c7e6bd52b00339f48e2bb4f1fce0cacc65cb52318319ffcdbd2277f0992bac86",
+  "edit_binary_sha256": "c205d686ae361d2257deddcba09b3cb2270923feb8fab0cc130c5b0af7502964",
+  "harness_sha256": "0b587347efb2956d36ec92f41b3dbb0dc413a80d2d4dd40f254fca3a2c0ff826",
+  "shaders": {
+    "commit_canonical_fallback.comp.spv": "6086287eef48a5fbef5140ffebe6e2f1a821b9b6c54397400bbaf875dae73f2b",
+    "commit_pruned_bricks.comp.spv": "bc22aa5962ee905ad096d9274e8440b9b4c4ba3011b4578b6ca2a9ad52a7296c",
+    "commit_pruned_filter.comp.spv": "26f79b8d6f1ee8e83d73f5d31b6a2a9582d4b35645a38d2a8f78ac2a937888f3",
+    "commit_reuse_bricks.comp.spv": "d64fb0c80293faf97f6f03330c0780f692469b244e92d8146446ebb0c7729a48"
+  },
+  "original_shader_count": 206,
+  "protected_unchanged": 940,
+  "mutable_existing": [
+    "projects/sdf/CMakeLists.txt",
+    "projects/sdf/sdf_field.h",
+    "projects/sdf/tools/cached_edit_study.cpp"
+  ],
+  "mode": "pruned",
+  "regions": 4,
+  "runs": [
+    {
+      "case": {
+        "name": "add-outside-base",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/add-outside-base.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/add-outside-base.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/add-outside-base.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.923538686998654,
+      "gpu_before": "2 %, 0 %, 435 MHz, 405 MHz, 31, 20.10 W, 925 MiB",
+      "gpu_after": "2 %, 0 %, 2520 MHz, 14001 MHz, 33, 44.40 W, 932 MiB",
+      "log_sha256": "e904e7c4e852dbb4fdacb69b46646308515c6837a20328acebd0989f4142260d",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 148.351217,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 64420,
+              "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+              "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+              "texels": 32983040,
+              "topology_entries": 281664,
+              "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+            },
+            "canonical": {
+              "bricks": 64420,
+              "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+              "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+              "texels": 32983040,
+              "topology_entries": 281664,
+              "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6881074465200632532,
+            "name": "add-outside-base",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.13957,
+            "trials": [
+              {
+                "admission_ms": 0.069801,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 10.996927999999999,
+                "bricks": 64420,
+                "builder_wall_ms": 12.399433,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.399413,
+                "filter_gpu_ms": 0.24048,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 12.713214,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.309741,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  64420,
+                  0,
+                  0,
+                  32983040,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "union-inside-exits",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/union-inside-exits.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/union-inside-exits.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/union-inside-exits.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.7095670179696754,
+      "gpu_before": "2 %, 0 %, 2520 MHz, 14001 MHz, 33, 44.40 W, 932 MiB",
+      "gpu_after": "4 %, 0 %, 2595 MHz, 14001 MHz, 33, 46.12 W, 942 MiB",
+      "log_sha256": "a002ac63e14bb0f7fc1936d5b1f2b544daa6140ea59c61a7fa966c006c253f1e",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.623167,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 64420,
+              "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+              "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+              "texels": 32983040,
+              "topology_entries": 281664,
+              "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+            },
+            "canonical": {
+              "bricks": 64420,
+              "cells_sha256": "882479b9cfa1767c7d4e28cc44047abeaf3fcd96e0f5da9d3a6f1e45f16aa3ae",
+              "raw_r16_sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+              "texels": 32983040,
+              "topology_entries": 281664,
+              "topology_sha256": "39503b3fe16a6fa867e75f7389960a1e424cb57e174326ce5019e6ad8e14a6f6"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6881074465200632532,
+            "name": "union-inside-exits",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.109831,
+            "trials": [
+              {
+                "admission_ms": 0.07557,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 11.472864,
+                "bricks": 64420,
+                "builder_wall_ms": 12.920185,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.920165,
+                "filter_gpu_ms": 0.24345599999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 7e-05,
+                "ready_to_render_ms": 13.157036,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.257821,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  64420,
+                  0,
+                  0,
+                  32983040,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "cavity",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/cavity.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/cavity.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/cavity.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.337626993015874,
+      "gpu_before": "4 %, 0 %, 2595 MHz, 14001 MHz, 33, 46.12 W, 942 MiB",
+      "gpu_after": "3 %, 0 %, 2520 MHz, 14001 MHz, 33, 43.00 W, 940 MiB",
+      "log_sha256": "480452cdc1332443c810d385ab10440c143bc9c7376ae9d295e04fcf95836a67",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.414236,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 62680,
+              "cells_sha256": "3ffe40a1eef60df15ababdbc324aaa68ce989ae3c475635cc13abec76fc9a4b1",
+              "raw_r16_sha256": "85911ebe43bdfa72ecc9d6238a7a81afe7d4371a5cda1a04c20d89a42a13c872",
+              "texels": 32092160,
+              "topology_entries": 272960,
+              "topology_sha256": "38e4c7beb344c54f1013f90addcd61390c17df62c76c8567caa7bf095a862165"
+            },
+            "canonical": {
+              "bricks": 62680,
+              "cells_sha256": "3ffe40a1eef60df15ababdbc324aaa68ce989ae3c475635cc13abec76fc9a4b1",
+              "raw_r16_sha256": "85911ebe43bdfa72ecc9d6238a7a81afe7d4371a5cda1a04c20d89a42a13c872",
+              "texels": 32092160,
+              "topology_entries": 272960,
+              "topology_sha256": "38e4c7beb344c54f1013f90addcd61390c17df62c76c8567caa7bf095a862165"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 345864672403842498,
+            "name": "cavity",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.10697,
+            "trials": [
+              {
+                "admission_ms": 0.073731,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 10.701471999999999,
+                "bricks": 62680,
+                "builder_wall_ms": 12.257782,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.257762,
+                "filter_gpu_ms": 0.23305599999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433268,
+                "pipeline_prepare_ms": 0.00013,
+                "ready_to_render_ms": 12.467883,
+                "region_bytes": 848,
+                "region_prepare_ms": 0.327251,
+                "region_references": 80,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  62680,
+                  0,
+                  0,
+                  32092160,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "through-cut",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/through-cut.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/through-cut.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/through-cut.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.66777280298993,
+      "gpu_before": "3 %, 0 %, 2520 MHz, 14001 MHz, 33, 43.00 W, 940 MiB",
+      "gpu_after": "1 %, 0 %, 2572 MHz, 14001 MHz, 33, 43.94 W, 919 MiB",
+      "log_sha256": "7c172a067cc70362bb1888ebc0d431f19ab24625056c4bcc31d0006f8ceef71c",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.404596,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 8207449685619564942,
+            "candidate": {
+              "bricks": 47088,
+              "cells_sha256": "ddb5db685f3bc95862864451ddad7b41961419b1683040483e609b60b307e6d5",
+              "raw_r16_sha256": "c7167c8ce42d9d0cedfd330af3a9f39104d51c5db2f7c786c56de51af4db8e5d",
+              "texels": 24109056,
+              "topology_entries": 173120,
+              "topology_sha256": "852fe3afd427001153cb595cd10a72c9cc88e013eab29b780447dd7e72197104"
+            },
+            "canonical": {
+              "bricks": 47088,
+              "cells_sha256": "ddb5db685f3bc95862864451ddad7b41961419b1683040483e609b60b307e6d5",
+              "raw_r16_sha256": "c7167c8ce42d9d0cedfd330af3a9f39104d51c5db2f7c786c56de51af4db8e5d",
+              "texels": 24109056,
+              "topology_entries": 173120,
+              "topology_sha256": "852fe3afd427001153cb595cd10a72c9cc88e013eab29b780447dd7e72197104"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 9470320173363195474,
+            "name": "through-cut",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.115661,
+            "trials": [
+              {
+                "admission_ms": 0.0494,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 7.999104,
+                "bricks": 47088,
+                "builder_wall_ms": 9.367079,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 9.367059,
+                "filter_gpu_ms": 0.174208,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433332,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 9.63374,
+                "region_bytes": 912,
+                "region_prepare_ms": 0.252391,
+                "region_references": 96,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  47088,
+                  0,
+                  0,
+                  24109056,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "recessed-front",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/recessed-front.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/recessed-front.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/recessed-front.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.627897920028772,
+      "gpu_before": "1 %, 0 %, 2572 MHz, 14001 MHz, 33, 43.94 W, 919 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 33, 43.48 W, 906 MiB",
+      "log_sha256": "8de48251f456e02c72104cf7fb0729f3751b685369d053e8b7e669535dc5f99a",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.409736,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 8207449685619564942,
+            "candidate": {
+              "bricks": 44520,
+              "cells_sha256": "50ec1e0cfdb2183505b20f8cbef1d6d986c474bcdaa4520d458f649356f50e9c",
+              "raw_r16_sha256": "42f4b4369ce36b55b505dd10ba304f6d1ec2dfa161e18912d408d5a76a2550b1",
+              "texels": 22794240,
+              "topology_entries": 186176,
+              "topology_sha256": "c27f525d12ce8748eba62729c69a1a78c26d7395729bb94b23fd5faa62b68a28"
+            },
+            "canonical": {
+              "bricks": 44520,
+              "cells_sha256": "50ec1e0cfdb2183505b20f8cbef1d6d986c474bcdaa4520d458f649356f50e9c",
+              "raw_r16_sha256": "42f4b4369ce36b55b505dd10ba304f6d1ec2dfa161e18912d408d5a76a2550b1",
+              "texels": 22794240,
+              "topology_entries": 186176,
+              "topology_sha256": "c27f525d12ce8748eba62729c69a1a78c26d7395729bb94b23fd5faa62b68a28"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 17468350046058042709,
+            "name": "recessed-front",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.10902,
+            "trials": [
+              {
+                "admission_ms": 0.05057,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 7.59232,
+                "bricks": 44520,
+                "builder_wall_ms": 8.916017,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 8.915977,
+                "filter_gpu_ms": 0.16124799999999997,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433300,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 9.188288,
+                "region_bytes": 880,
+                "region_prepare_ms": 0.214801,
+                "region_references": 88,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  44520,
+                  0,
+                  0,
+                  22794240,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "cut-covers-body",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/cut-covers-body.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/cut-covers-body.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/cut-covers-body.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.588893851963803,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 33, 43.48 W, 906 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 34, 43.09 W, 912 MiB",
+      "log_sha256": "3b7832258ed7ac53e6def2275811cdb560c79e7bade446f623c4579ec1fc625d",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.391246,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "texels": 0,
+              "topology_entries": 2112,
+              "topology_sha256": "6a627e5339eea1235c8781ea2b8cf902088f2a940daa7c52bb30b16faa1dde0d"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "texels": 0,
+              "topology_entries": 2112,
+              "topology_sha256": "6a627e5339eea1235c8781ea2b8cf902088f2a940daa7c52bb30b16faa1dde0d"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18160140233868612311,
+            "name": "cut-covers-body",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.10885,
+            "trials": [
+              {
+                "admission_ms": 0.074881,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 0.860464,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 0.860444,
+                "filter_gpu_ms": 0.017055999999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433460,
+                "pipeline_prepare_ms": 7e-05,
+                "ready_to_render_ms": 1.041245,
+                "region_bytes": 1040,
+                "region_prepare_ms": 0.337001,
+                "region_references": 128,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "union-covers-body",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/union-covers-body.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/union-covers-body.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/union-covers-body.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.8231539460248314,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 34, 43.09 W, 912 MiB",
+      "gpu_after": "2 %, 0 %, 2505 MHz, 14001 MHz, 34, 43.10 W, 908 MiB",
+      "log_sha256": "d542c8b5d16fd6f069f869e9e57331eaaec721ac68651aa85c1e93307e895f24",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.421476,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 127784,
+              "cells_sha256": "544d19b1e19900b75ebb3ddb41759eb84bb6711319223aa2fb0b62705c3b0517",
+              "raw_r16_sha256": "5fd25f1950f751454eefc478b3ca3c0615da6957725e9dc367647af394b0822a",
+              "texels": 65425408,
+              "topology_entries": 537664,
+              "topology_sha256": "be57fff040cec6e4a343836da62f9a6bea495aca131d2815a11ffaf29b125fde"
+            },
+            "canonical": {
+              "bricks": 127784,
+              "cells_sha256": "544d19b1e19900b75ebb3ddb41759eb84bb6711319223aa2fb0b62705c3b0517",
+              "raw_r16_sha256": "5fd25f1950f751454eefc478b3ca3c0615da6957725e9dc367647af394b0822a",
+              "texels": 65425408,
+              "topology_entries": 537664,
+              "topology_sha256": "be57fff040cec6e4a343836da62f9a6bea495aca131d2815a11ffaf29b125fde"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13303006607403960551,
+            "name": "union-covers-body",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.110381,
+            "trials": [
+              {
+                "admission_ms": 0.049441,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 22.006624,
+                "bricks": 127784,
+                "builder_wall_ms": 23.875621,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 23.875581,
+                "filter_gpu_ms": 0.508896,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 3e-05,
+                "ready_to_render_ms": 24.203332,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.230381,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  127784,
+                  0,
+                  0,
+                  65425408,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "invisible-inner-add",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/invisible-inner-add.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/invisible-inner-add.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/invisible-inner-add.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.285756286000833,
+      "gpu_before": "2 %, 0 %, 2505 MHz, 14001 MHz, 34, 43.10 W, 908 MiB",
+      "gpu_after": "4 %, 0 %, 2520 MHz, 14001 MHz, 34, 43.54 W, 897 MiB",
+      "log_sha256": "ef89edb0f96958bef20db8f9f063b8c88145f3ec216c1190625cac0cd412fdfd",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.398426,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 57488,
+              "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+              "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+              "texels": 29433856,
+              "topology_entries": 251968,
+              "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+            },
+            "canonical": {
+              "bricks": 57488,
+              "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+              "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+              "texels": 29433856,
+              "topology_entries": 251968,
+              "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2092947763437958306,
+            "name": "invisible-inner-add",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.116741,
+            "trials": [
+              {
+                "admission_ms": 0.066901,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 9.842944,
+                "bricks": 57488,
+                "builder_wall_ms": 11.283418,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.283388,
+                "filter_gpu_ms": 0.211776,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 6e-05,
+                "ready_to_render_ms": 11.531259,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.313311,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  57488,
+                  0,
+                  0,
+                  29433856,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "outside-cut",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/outside-cut.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/outside-cut.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/outside-cut.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.691220771986991,
+      "gpu_before": "4 %, 0 %, 2520 MHz, 14001 MHz, 34, 43.54 W, 897 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 34, 42.84 W, 888 MiB",
+      "log_sha256": "166bc54d5a6260c96d8c803bd6fb1946f08b965b66e90793f0f7d28528343839",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.414906,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 57488,
+              "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+              "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+              "texels": 29433856,
+              "topology_entries": 251968,
+              "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+            },
+            "canonical": {
+              "bricks": 57488,
+              "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+              "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+              "texels": 29433856,
+              "topology_entries": 251968,
+              "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 7628013126670134945,
+            "name": "outside-cut",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.114281,
+            "trials": [
+              {
+                "admission_ms": 0.05182,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 10.413056,
+                "bricks": 57488,
+                "builder_wall_ms": 12.149891,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.149861,
+                "filter_gpu_ms": 0.252608,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433268,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 12.484572,
+                "region_bytes": 848,
+                "region_prepare_ms": 0.231851,
+                "region_references": 80,
+                "region_scratch_bytes": 1604,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  57488,
+                  0,
+                  0,
+                  29433856,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "rotated-box",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/rotated-box.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/rotated-box.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/rotated-box.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.5733623820124194,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 34, 42.84 W, 888 MiB",
+      "gpu_after": "2 %, 0 %, 2520 MHz, 14001 MHz, 34, 43.15 W, 880 MiB",
+      "log_sha256": "501000a625197b3739a0931f67ea57b12b0f4d084059b8478d2b7d820c82fcd0",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.408986,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 3753243443036512725,
+            "candidate": {
+              "bricks": 11810,
+              "cells_sha256": "6e0749ab3a2bb0c438ca1280af7efc088c9c481826f798d788afdf01fd7619d6",
+              "raw_r16_sha256": "5929a1742ed75deeae4ceb1c270ccdbb82d35bdeffc088beadd426f606df90fa",
+              "texels": 6046720,
+              "topology_entries": 51648,
+              "topology_sha256": "e468b4b7815badca0be1b1a3c7f5599b534617d9416fa479c7e7d92222165a0f"
+            },
+            "canonical": {
+              "bricks": 11810,
+              "cells_sha256": "6e0749ab3a2bb0c438ca1280af7efc088c9c481826f798d788afdf01fd7619d6",
+              "raw_r16_sha256": "5929a1742ed75deeae4ceb1c270ccdbb82d35bdeffc088beadd426f606df90fa",
+              "texels": 6046720,
+              "topology_entries": 51648,
+              "topology_sha256": "e468b4b7815badca0be1b1a3c7f5599b534617d9416fa479c7e7d92222165a0f"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 9775245779302481726,
+            "name": "rotated-box",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.12532,
+            "trials": [
+              {
+                "admission_ms": 0.06369,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1.964704,
+                "bricks": 11810,
+                "builder_wall_ms": 3.536155,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 3.536115,
+                "filter_gpu_ms": 0.03472,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433708,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 3.802696,
+                "region_bytes": 1288,
+                "region_prepare_ms": 0.295452,
+                "region_references": 190,
+                "region_scratch_bytes": 2620,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  11810,
+                  0,
+                  0,
+                  6046720,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "workspace-add",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/workspace-add.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/workspace-add.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/workspace-add.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.5838927919976413,
+      "gpu_before": "2 %, 0 %, 2520 MHz, 14001 MHz, 34, 43.15 W, 880 MiB",
+      "gpu_after": "2 %, 0 %, 2520 MHz, 14001 MHz, 34, 43.17 W, 944 MiB",
+      "log_sha256": "44027049213cf9c1073de39bb3a94f3998b1cd0ba58a9b295035131d1e5a3444",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.404466,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 7653545218569773480,
+            "candidate": {
+              "bricks": 7604,
+              "cells_sha256": "a66f604d94d533a663cba6f41dd3f8c4dce0ec3b865f146d588317d9fb6b8820",
+              "raw_r16_sha256": "fd0772eee48ac87da034e3f413d77a0b737afc647d027d11e073755cd2e2c824",
+              "texels": 3893248,
+              "topology_entries": 33088,
+              "topology_sha256": "c91591498a828a6bd3520664b4aa66760a4a0d7693b16c009d6036351dd3eaaf"
+            },
+            "canonical": {
+              "bricks": 7604,
+              "cells_sha256": "a66f604d94d533a663cba6f41dd3f8c4dce0ec3b865f146d588317d9fb6b8820",
+              "raw_r16_sha256": "fd0772eee48ac87da034e3f413d77a0b737afc647d027d11e073755cd2e2c824",
+              "texels": 3893248,
+              "topology_entries": 33088,
+              "topology_sha256": "c91591498a828a6bd3520664b4aa66760a4a0d7693b16c009d6036351dd3eaaf"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18080757779593155586,
+            "name": "workspace-add",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.112961,
+            "trials": [
+              {
+                "admission_ms": 0.04779,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1.253152,
+                "bricks": 7604,
+                "builder_wall_ms": 2.306359,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 2.306339,
+                "filter_gpu_ms": 0.031584,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433652,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 2.50799,
+                "region_bytes": 1232,
+                "region_prepare_ms": 0.219161,
+                "region_references": 176,
+                "region_scratch_bytes": 1836,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  7604,
+                  0,
+                  0,
+                  3893248,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "workspace-cut",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/workspace-cut.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/workspace-cut.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/workspace-cut.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6399806440458633,
+      "gpu_before": "2 %, 0 %, 2520 MHz, 14001 MHz, 34, 43.17 W, 944 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 35, 43.85 W, 873 MiB",
+      "log_sha256": "30d646561b17b45fe8e0f0fc8fa4941ca43ca965f9a8eb04059b208bfd94a112",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.416236,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 9528710269108034239,
+            "candidate": {
+              "bricks": 16520,
+              "cells_sha256": "1e0cb0e4c374b7ad8b4c0f5032ae81382c77639b7b4f7c2bbc4a2a8930f18761",
+              "raw_r16_sha256": "d1a00d8f305d0dc980d11f7b8f7a7a80687f20e5af1828f5b36afb1191f4a3ab",
+              "texels": 8458240,
+              "topology_entries": 65344,
+              "topology_sha256": "5a6537e7ef8a6a93f7f3d1ffcea26e1cfada3c25ebd9b8c42787e242843cbdc6"
+            },
+            "canonical": {
+              "bricks": 16520,
+              "cells_sha256": "1e0cb0e4c374b7ad8b4c0f5032ae81382c77639b7b4f7c2bbc4a2a8930f18761",
+              "raw_r16_sha256": "d1a00d8f305d0dc980d11f7b8f7a7a80687f20e5af1828f5b36afb1191f4a3ab",
+              "texels": 8458240,
+              "topology_entries": 65344,
+              "topology_sha256": "5a6537e7ef8a6a93f7f3d1ffcea26e1cfada3c25ebd9b8c42787e242843cbdc6"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 12419047416383916153,
+            "name": "workspace-cut",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.10915,
+            "trials": [
+              {
+                "admission_ms": 0.04952,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 2.7838719999999997,
+                "bricks": 16520,
+                "builder_wall_ms": 3.872126,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 3.872096,
+                "filter_gpu_ms": 0.048128000000000004,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433236,
+                "pipeline_prepare_ms": 3e-05,
+                "ready_to_render_ms": 4.150237,
+                "region_bytes": 816,
+                "region_prepare_ms": 0.211301,
+                "region_references": 72,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  16520,
+                  0,
+                  0,
+                  8458240,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "resume-to-second-body",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/resume-to-second-body.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/resume-to-second-body.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/resume-to-second-body.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.216692319023423,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 35, 43.85 W, 873 MiB",
+      "gpu_after": "3 %, 0 %, 2520 MHz, 14001 MHz, 35, 43.30 W, 875 MiB",
+      "log_sha256": "2e5756cd1d3d9a00f89e4b0714457799409747ea8d2d30b83053a72e03e6eba6",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.479676,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 4722571129496212202,
+            "candidate": {
+              "bricks": 5188,
+              "cells_sha256": "4e25390d69b8c11d5bb0f26b9797af13fe26d7bb39ea843f6d8763e07c0d8783",
+              "raw_r16_sha256": "22a907e209dffd2fee648dfc7d5c11475d0eec231d91ed4975512e9a4aa1379a",
+              "texels": 2656256,
+              "topology_entries": 25408,
+              "topology_sha256": "fa27b81a28a396026620881d4726506f9c08282a27c37292907766dcb34f8c9d"
+            },
+            "canonical": {
+              "bricks": 5188,
+              "cells_sha256": "4e25390d69b8c11d5bb0f26b9797af13fe26d7bb39ea843f6d8763e07c0d8783",
+              "raw_r16_sha256": "22a907e209dffd2fee648dfc7d5c11475d0eec231d91ed4975512e9a4aa1379a",
+              "texels": 2656256,
+              "topology_entries": 25408,
+              "topology_sha256": "fa27b81a28a396026620881d4726506f9c08282a27c37292907766dcb34f8c9d"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 15891383288828275049,
+            "name": "resume-to-second-body",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.135401,
+            "trials": [
+              {
+                "admission_ms": 0.057311,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.831936,
+                "bricks": 5188,
+                "builder_wall_ms": 1.867328,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 1.867308,
+                "filter_gpu_ms": 0.03776,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433812,
+                "pipeline_prepare_ms": 0.00018,
+                "ready_to_render_ms": 2.063619,
+                "region_bytes": 1392,
+                "region_prepare_ms": 0.226901,
+                "region_references": 216,
+                "region_scratch_bytes": 2684,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  5188,
+                  0,
+                  0,
+                  2656256,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "empty-base-add",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/empty-base-add.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/empty-base-add.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/empty-base-add.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.576242389040999,
+      "gpu_before": "3 %, 0 %, 2520 MHz, 14001 MHz, 35, 43.69 W, 875 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 35, 43.37 W, 874 MiB",
+      "log_sha256": "1cca6c8b27532182551468fd3b5461c84c3f21a91a58cbc9a551d5251107de2c",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.475116,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 14695981039346656037,
+            "candidate": {
+              "bricks": 14120,
+              "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+              "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+              "texels": 7229440,
+              "topology_entries": 66112,
+              "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+            },
+            "canonical": {
+              "bricks": 14120,
+              "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+              "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+              "texels": 7229440,
+              "topology_entries": 66112,
+              "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 16439186744481241111,
+            "name": "empty-base-add",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.092711,
+            "trials": [
+              {
+                "admission_ms": 0.04309,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 2.423904,
+                "bricks": 14120,
+                "builder_wall_ms": 3.657955,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 3.657855,
+                "filter_gpu_ms": 0.038624,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433204,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 3.862046,
+                "region_bytes": 784,
+                "region_prepare_ms": 0.207041,
+                "region_references": 64,
+                "region_scratch_bytes": 1324,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  14120,
+                  0,
+                  0,
+                  7229440,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "zero-edit",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/zero-edit.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/zero-edit.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/zero-edit.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6729765019845217,
+      "gpu_before": "4 %, 0 %, 2512 MHz, 14001 MHz, 35, 43.91 W, 874 MiB",
+      "gpu_after": "3 %, 0 %, 2602 MHz, 14001 MHz, 35, 45.56 W, 869 MiB",
+      "log_sha256": "a0b845c2070a8ab9a892194b0debfdcecdc627722447a84fbb4f76b03e5571e1",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.444366,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 57488,
+              "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+              "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+              "texels": 29433856,
+              "topology_entries": 251968,
+              "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+            },
+            "canonical": {
+              "bricks": 57488,
+              "cells_sha256": "dc39e98676d138d96cb976781a46f48a1cf9d9e0ff4e4e38a9b6b75d1601c693",
+              "raw_r16_sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+              "texels": 29433856,
+              "topology_entries": 251968,
+              "topology_sha256": "b5371dc1d389d9bd17f479134915e4ff8ccf4645076b7557ffb0c9f246600c01"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18108402278844718650,
+            "name": "zero-edit",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.092781,
+            "trials": [
+              {
+                "admission_ms": 0.043191,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 9.908287999999999,
+                "bricks": 57488,
+                "builder_wall_ms": 11.185597,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.185557,
+                "filter_gpu_ms": 0.206496,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433204,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 11.522279,
+                "region_bytes": 784,
+                "region_prepare_ms": 0.22032,
+                "region_references": 64,
+                "region_scratch_bytes": 1324,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  57488,
+                  0,
+                  0,
+                  29433856,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "subgrid-cavity",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/subgrid-cavity.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/subgrid-cavity.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/subgrid-cavity.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.289302824996412,
+      "gpu_before": "3 %, 0 %, 2602 MHz, 14001 MHz, 35, 45.56 W, 869 MiB",
+      "gpu_after": "6 %, 0 %, 2610 MHz, 14001 MHz, 36, 46.07 W, 893 MiB",
+      "log_sha256": "4247be316635a2150b59165fa06d5ebdbffa5eb14524186a9fda814afd71d806",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.401396,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 18108402278844718650,
+            "candidate": {
+              "bricks": 57495,
+              "cells_sha256": "920107cc0d8d5530531d34e490da19be3b955e98053e28fb982d1138cc591616",
+              "raw_r16_sha256": "b8db7133f590fc1db4493582d616da8597fe3b7fb727afeff27ba1b7873a842f",
+              "texels": 29437440,
+              "topology_entries": 252864,
+              "topology_sha256": "8e857cf6a0a523ed95a86d296261d6088ce10c6a8e0903be6b0413967980d2d0"
+            },
+            "canonical": {
+              "bricks": 57495,
+              "cells_sha256": "920107cc0d8d5530531d34e490da19be3b955e98053e28fb982d1138cc591616",
+              "raw_r16_sha256": "b8db7133f590fc1db4493582d616da8597fe3b7fb727afeff27ba1b7873a842f",
+              "texels": 29437440,
+              "topology_entries": 252864,
+              "topology_sha256": "8e857cf6a0a523ed95a86d296261d6088ce10c6a8e0903be6b0413967980d2d0"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 5470114744067985772,
+            "name": "subgrid-cavity",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.10656,
+            "trials": [
+              {
+                "admission_ms": 0.05258,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 9.87328,
+                "bricks": 57495,
+                "builder_wall_ms": 11.237297,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.237267,
+                "filter_gpu_ms": 0.21167999999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433268,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 11.506428,
+                "region_bytes": 848,
+                "region_prepare_ms": 0.219601,
+                "region_references": 80,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  57495,
+                  0,
+                  0,
+                  29437440,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "tool-tangent",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/tool-tangent.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/tool-tangent.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/tool-tangent.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.229983042983804,
+      "gpu_before": "6 %, 0 %, 2610 MHz, 14001 MHz, 36, 46.07 W, 893 MiB",
+      "gpu_after": "5 %, 0 %, 2527 MHz, 14001 MHz, 35, 46.03 W, 907 MiB",
+      "log_sha256": "697ff1426b0702cc3ab5928ddd873abc98f110437a26f621ae0698739d2a007d",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.533836,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 14695981039346656037,
+            "candidate": {
+              "bricks": 14120,
+              "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+              "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+              "texels": 7229440,
+              "topology_entries": 66112,
+              "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+            },
+            "canonical": {
+              "bricks": 14120,
+              "cells_sha256": "3b52eea7e0a8ec85d40ad40236ad9adc637e66f71a60cc958c0adc26fde9968d",
+              "raw_r16_sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+              "texels": 7229440,
+              "topology_entries": 66112,
+              "topology_sha256": "dbe2f298e732d7878a182f80d3b165826776aed40d4ba9dafa00d67fbb6a9ef6"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 16439186744481241111,
+            "name": "tool-tangent",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.09228,
+            "trials": [
+              {
+                "admission_ms": 0.041941,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 2.35824,
+                "bricks": 14120,
+                "builder_wall_ms": 3.451235,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 3.451215,
+                "filter_gpu_ms": 0.037952,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433204,
+                "pipeline_prepare_ms": 3e-05,
+                "ready_to_render_ms": 3.647116,
+                "region_bytes": 784,
+                "region_prepare_ms": 0.20869,
+                "region_references": 64,
+                "region_scratch_bytes": 1324,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  14120,
+                  0,
+                  0,
+                  7229440,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "lattice-box-add",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/lattice-box-add.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/lattice-box-add.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/lattice-box-add.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.2914677880471572,
+      "gpu_before": "5 %, 0 %, 2527 MHz, 14001 MHz, 35, 46.42 W, 907 MiB",
+      "gpu_after": "2 %, 0 %, 2520 MHz, 14001 MHz, 35, 45.03 W, 861 MiB",
+      "log_sha256": "460e748772d4d8e7e03b726ffb158c496b1884d9083cd12dde7a40abfd1bb4f6",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.413086,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 5669983382164248930,
+            "candidate": {
+              "bricks": 54356,
+              "cells_sha256": "f0c9bf4450c61758ab0c706058d085d224af248c27b2b6ef7567f819f06e8aff",
+              "raw_r16_sha256": "846e3b9bd3a91d42c5c52ba7ba7a45f74c9d4a4f9a16a1f83f81c4467cccb453",
+              "texels": 27830272,
+              "topology_entries": 232000,
+              "topology_sha256": "205f85119fec988fe6a1bbf6450e359cd9697b749023dc566e56989f997eee90"
+            },
+            "canonical": {
+              "bricks": 54356,
+              "cells_sha256": "f0c9bf4450c61758ab0c706058d085d224af248c27b2b6ef7567f819f06e8aff",
+              "raw_r16_sha256": "846e3b9bd3a91d42c5c52ba7ba7a45f74c9d4a4f9a16a1f83f81c4467cccb453",
+              "texels": 27830272,
+              "topology_entries": 232000,
+              "topology_sha256": "205f85119fec988fe6a1bbf6450e359cd9697b749023dc566e56989f997eee90"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13486213334871233852,
+            "name": "lattice-box-add",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.109911,
+            "trials": [
+              {
+                "admission_ms": 0.049621,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 9.311072,
+                "bricks": 54356,
+                "builder_wall_ms": 10.607625,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 10.607605,
+                "filter_gpu_ms": 0.223456,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 10.850746,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.244861,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  54356,
+                  0,
+                  0,
+                  27830272,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "lattice-box-cut",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/lattice-box-cut.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/lattice-box-cut.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/lattice-box-cut.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6473302200320177,
+      "gpu_before": "2 %, 0 %, 2520 MHz, 14001 MHz, 35, 45.03 W, 861 MiB",
+      "gpu_after": "2 %, 0 %, 2542 MHz, 14001 MHz, 35, 43.62 W, 852 MiB",
+      "log_sha256": "360ca3f3f38f67476ad153d8273b28cd835cbcd8a7c65fb8cf09d465d727dcb8",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.410206,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 5669983382164248930,
+            "candidate": {
+              "bricks": 61440,
+              "cells_sha256": "a035cca238dbc941509b2aff486b02496930b01f79226d23275be3358adf3129",
+              "raw_r16_sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+              "texels": 31457280,
+              "topology_entries": 260160,
+              "topology_sha256": "29692c191b1657f00f72c23a566166a2c6047593101bd5c62145d618d9460829"
+            },
+            "canonical": {
+              "bricks": 61440,
+              "cells_sha256": "a035cca238dbc941509b2aff486b02496930b01f79226d23275be3358adf3129",
+              "raw_r16_sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+              "texels": 31457280,
+              "topology_entries": 260160,
+              "topology_sha256": "29692c191b1657f00f72c23a566166a2c6047593101bd5c62145d618d9460829"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 5405926044717673362,
+            "name": "lattice-box-cut",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.10916,
+            "trials": [
+              {
+                "admission_ms": 0.07609,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 10.4912,
+                "bricks": 61440,
+                "builder_wall_ms": 12.213351,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.213331,
+                "filter_gpu_ms": 0.28015999999999996,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433332,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 12.419002,
+                "region_bytes": 912,
+                "region_prepare_ms": 0.326401,
+                "region_references": 96,
+                "region_scratch_bytes": 1636,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  61440,
+                  0,
+                  0,
+                  31457280,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "smooth-base-hard-add",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/smooth-base-hard-add.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/smooth-base-hard-add.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/smooth-base-hard-add.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.63945599301951,
+      "gpu_before": "2 %, 0 %, 2542 MHz, 14001 MHz, 35, 44.08 W, 852 MiB",
+      "gpu_after": "4 %, 0 %, 2550 MHz, 14001 MHz, 36, 44.01 W, 870 MiB",
+      "log_sha256": "b24de212991081caf295d2b4d76cbdbd03cb31efa4a7836532dbb251ecf58ae3",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.455306,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 12498378445499708951,
+            "candidate": {
+              "bricks": 44700,
+              "cells_sha256": "a034e8157096c2a8dd6da8012d4788d8f673936ea3cb934f2cd3d34d5381cdb9",
+              "raw_r16_sha256": "ff9f4ce2e625a1ec5f6cbc1e2357ef5722f728e37dec3d868f9cba4aa1e6a3d7",
+              "texels": 22886400,
+              "topology_entries": 193344,
+              "topology_sha256": "9d4aa7be844f8cab6176813583712faff9d0ed3a72d2443780cf2922ad32f65c"
+            },
+            "canonical": {
+              "bricks": 44700,
+              "cells_sha256": "a034e8157096c2a8dd6da8012d4788d8f673936ea3cb934f2cd3d34d5381cdb9",
+              "raw_r16_sha256": "ff9f4ce2e625a1ec5f6cbc1e2357ef5722f728e37dec3d868f9cba4aa1e6a3d7",
+              "texels": 22886400,
+              "topology_entries": 193344,
+              "topology_sha256": "9d4aa7be844f8cab6176813583712faff9d0ed3a72d2443780cf2922ad32f65c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18019489978574989289,
+            "name": "smooth-base-hard-add",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.12586,
+            "trials": [
+              {
+                "admission_ms": 0.080261,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 7.706688,
+                "bricks": 44700,
+                "builder_wall_ms": 9.062998,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 9.062968,
+                "filter_gpu_ms": 0.1616,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835434228,
+                "pipeline_prepare_ms": 6e-05,
+                "ready_to_render_ms": 9.309819,
+                "region_bytes": 1808,
+                "region_prepare_ms": 0.294401,
+                "region_references": 320,
+                "region_scratch_bytes": 2460,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  44700,
+                  0,
+                  0,
+                  22886400,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "smooth-base-hard-cut",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/smooth-base-hard-cut.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/smooth-base-hard-cut.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/smooth-base-hard-cut.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.640928595967125,
+      "gpu_before": "4 %, 0 %, 2550 MHz, 14001 MHz, 36, 44.01 W, 870 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 36, 44.33 W, 865 MiB",
+      "log_sha256": "0bd3328e9b05719c906d478ddff060f87d95f518cff66c00cb2590e8b0826584",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.585467,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 12498378445499708951,
+            "candidate": {
+              "bricks": 47136,
+              "cells_sha256": "5711299c6c88cbd3630d17c8a8b133fa1266b68b70343c5ea70036e78379955a",
+              "raw_r16_sha256": "24be56fb01c5688be2259b89cf0c7f539f2fcf0b4ef29cc9bae036848464299c",
+              "texels": 24133632,
+              "topology_entries": 202304,
+              "topology_sha256": "8747e92e72b89c71c057b96c07a1bebefa485711cc01e0135ff1b6f044036416"
+            },
+            "canonical": {
+              "bricks": 47136,
+              "cells_sha256": "5711299c6c88cbd3630d17c8a8b133fa1266b68b70343c5ea70036e78379955a",
+              "raw_r16_sha256": "24be56fb01c5688be2259b89cf0c7f539f2fcf0b4ef29cc9bae036848464299c",
+              "texels": 24133632,
+              "topology_entries": 202304,
+              "topology_sha256": "8747e92e72b89c71c057b96c07a1bebefa485711cc01e0135ff1b6f044036416"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6525797407499460603,
+            "name": "smooth-base-hard-cut",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.182281,
+            "trials": [
+              {
+                "admission_ms": 0.059011,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 8.201504,
+                "bricks": 47136,
+                "builder_wall_ms": 9.48748,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 9.48746,
+                "filter_gpu_ms": 0.167936,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433780,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 9.722331,
+                "region_bytes": 1360,
+                "region_prepare_ms": 0.220071,
+                "region_references": 208,
+                "region_scratch_bytes": 2700,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  47136,
+                  0,
+                  0,
+                  24133632,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "scaled-tool",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/scaled-tool.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/scaled-tool.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/scaled-tool.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6481012120493688,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 36, 44.33 W, 865 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 36, 44.02 W, 844 MiB",
+      "log_sha256": "216775300f3edf215ef54b3533c38fcd879f0623cddd780ff33dc0d64929111e",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.434306,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 5669983382164248930,
+            "candidate": {
+              "bricks": 51996,
+              "cells_sha256": "3a8696b4546b644a6447c3ec1f67fbde8db25bd72cfa5f00a64499cb11d9f5ff",
+              "raw_r16_sha256": "1f53c295a34a5082f0eb3b81b93a791a6a1641634a7098f17f34a86b6b371c42",
+              "texels": 26621952,
+              "topology_entries": 224320,
+              "topology_sha256": "6266acfcad601afe6192e74e7aac0a9431bf91c044b2604caa7c6302661c468f"
+            },
+            "canonical": {
+              "bricks": 51996,
+              "cells_sha256": "3a8696b4546b644a6447c3ec1f67fbde8db25bd72cfa5f00a64499cb11d9f5ff",
+              "raw_r16_sha256": "1f53c295a34a5082f0eb3b81b93a791a6a1641634a7098f17f34a86b6b371c42",
+              "texels": 26621952,
+              "topology_entries": 224320,
+              "topology_sha256": "6266acfcad601afe6192e74e7aac0a9431bf91c044b2604caa7c6302661c468f"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13153262420254941971,
+            "name": "scaled-tool",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.121401,
+            "trials": [
+              {
+                "admission_ms": 0.051461,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 8.930591999999999,
+                "bricks": 51996,
+                "builder_wall_ms": 10.246333,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 10.246263,
+                "filter_gpu_ms": 0.21689599999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 0.0001,
+                "ready_to_render_ms": 10.523125,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.213141,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  51996,
+                  0,
+                  0,
+                  26621952,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "thin-base",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/thin-base.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/thin-base.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/thin-base.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6075878780102357,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 36, 44.02 W, 844 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 36, 43.26 W, 844 MiB",
+      "log_sha256": "799c91e113eae730403884620cb56f1c1e1a1f987dd0040f8ceb1b71dfb3c5db",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.414186,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 4578603656068524861,
+            "candidate": {
+              "bricks": 10320,
+              "cells_sha256": "2052bb51883b53612690a2d0dfdde5e4defbce9b8a6174ebf825a5bb2f7846b5",
+              "raw_r16_sha256": "4524cec236594631564f8ee8725805ce69df60bb40f34394f5c5fbd6b9930568",
+              "texels": 5283840,
+              "topology_entries": 51264,
+              "topology_sha256": "499627018a0d0457e910c20bfa955ad7f767086e430424b80ca1eaec528f967b"
+            },
+            "canonical": {
+              "bricks": 10320,
+              "cells_sha256": "2052bb51883b53612690a2d0dfdde5e4defbce9b8a6174ebf825a5bb2f7846b5",
+              "raw_r16_sha256": "4524cec236594631564f8ee8725805ce69df60bb40f34394f5c5fbd6b9930568",
+              "texels": 5283840,
+              "topology_entries": 51264,
+              "topology_sha256": "499627018a0d0457e910c20bfa955ad7f767086e430424b80ca1eaec528f967b"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11954808765798621823,
+            "name": "thin-base",
+            "retained_history_steps": 0,
+            "source_admission_cpu_ms": 0.106731,
+            "trials": [
+              {
+                "admission_ms": 0.05087,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1.710496,
+                "bricks": 10320,
+                "builder_wall_ms": 2.827722,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 2.827692,
+                "filter_gpu_ms": 0.040063999999999995,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835433716,
+                "pipeline_prepare_ms": 0.00015,
+                "ready_to_render_ms": 3.079543,
+                "region_bytes": 1296,
+                "region_prepare_ms": 0.224191,
+                "region_references": 192,
+                "region_scratch_bytes": 1892,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  10320,
+                  0,
+                  0,
+                  5283840,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "guardian-add-0.02",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-add-0.02.json",
+        "subject": "guardian",
+        "operation": "add",
+        "radius": 0.02
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-add-0.02.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/guardian-add-0.02.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 2,
+      "wall_seconds": 5.7336814269656315,
+      "gpu_before": "2 %, 0 %, 2512 MHz, 14001 MHz, 36, 43.26 W, 844 MiB",
+      "gpu_after": "2 %, 0 %, 2895 MHz, 14001 MHz, 40, 55.48 W, 822 MiB",
+      "log_sha256": "c2bd2725801e3f7a634f5e43eb3749b86be90b16d9838d7831348ddfe49be2bd",
+      "native": {
+        "all_comparisons_passed": false,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.419196,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 107863,
+              "cells_sha256": "57fba29a8320c8b0d407324e9300002c7c59ee884a7270129eddcd3889a9e5ab",
+              "raw_r16_sha256": "ec51bf4666798f37eb4e00efb6903c3827fc949f449699063c4c016d7110ccf1",
+              "texels": 55225856,
+              "topology_entries": 436416,
+              "topology_sha256": "e00baa3259f44a015f4611c8ad8f9a44597831df5584918d2da6702f39b92a1b"
+            },
+            "canonical": {
+              "bricks": 107863,
+              "cells_sha256": "57fba29a8320c8b0d407324e9300002c7c59ee884a7270129eddcd3889a9e5ab",
+              "raw_r16_sha256": "dfdf0c1e2a6b5cd631f77a99c292a9572a571e882e7f8db575c85c5a0485b232",
+              "texels": 55225856,
+              "topology_entries": 436416,
+              "topology_sha256": "e00baa3259f44a015f4611c8ad8f9a44597831df5584918d2da6702f39b92a1b"
+            },
+            "comparison": {
+              "examples": [
+                {
+                  "candidate_bits": 7217,
+                  "canonical_bits": 7218,
+                  "morton": 1400191,
+                  "sample": 90
+                },
+                {
+                  "candidate_bits": 33281,
+                  "canonical_bits": 33282,
+                  "morton": 1400191,
+                  "sample": 447
+                },
+                {
+                  "candidate_bits": 6650,
+                  "canonical_bits": 6651,
+                  "morton": 1400191,
+                  "sample": 482
+                },
+                {
+                  "candidate_bits": 6444,
+                  "canonical_bits": 6445,
+                  "morton": 1400191,
+                  "sample": 490
+                },
+                {
+                  "candidate_bits": 2865,
+                  "canonical_bits": 2866,
+                  "morton": 1400191,
+                  "sample": 510
+                },
+                {
+                  "candidate_bits": 2124,
+                  "canonical_bits": 2125,
+                  "morton": 1400271,
+                  "sample": 127
+                },
+                {
+                  "candidate_bits": 6368,
+                  "canonical_bits": 6369,
+                  "morton": 1400271,
+                  "sample": 196
+                },
+                {
+                  "candidate_bits": 35442,
+                  "canonical_bits": 35443,
+                  "morton": 1400271,
+                  "sample": 254
+                },
+                {
+                  "candidate_bits": 6078,
+                  "canonical_bits": 6079,
+                  "morton": 1400271,
+                  "sample": 275
+                },
+                {
+                  "candidate_bits": 6219,
+                  "canonical_bits": 6220,
+                  "morton": 1400271,
+                  "sample": 304
+                },
+                {
+                  "candidate_bits": 401,
+                  "canonical_bits": 402,
+                  "morton": 1400271,
+                  "sample": 365
+                },
+                {
+                  "candidate_bits": 1490,
+                  "canonical_bits": 1491,
+                  "morton": 1400271,
+                  "sample": 399
+                },
+                {
+                  "candidate_bits": 35558,
+                  "canonical_bits": 35559,
+                  "morton": 1400271,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 3176,
+                  "canonical_bits": 3177,
+                  "morton": 1400271,
+                  "sample": 435
+                },
+                {
+                  "candidate_bits": 34933,
+                  "canonical_bits": 34934,
+                  "morton": 1400271,
+                  "sample": 436
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400271,
+                  "sample": 442
+                },
+                {
+                  "candidate_bits": 5591,
+                  "canonical_bits": 5592,
+                  "morton": 1400271,
+                  "sample": 466
+                },
+                {
+                  "candidate_bits": 3530,
+                  "canonical_bits": 3531,
+                  "morton": 1400271,
+                  "sample": 476
+                },
+                {
+                  "candidate_bits": 4049,
+                  "canonical_bits": 4050,
+                  "morton": 1400281,
+                  "sample": 374
+                },
+                {
+                  "candidate_bits": 3887,
+                  "canonical_bits": 3888,
+                  "morton": 1400281,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 34740,
+                  "canonical_bits": 34741,
+                  "morton": 1400281,
+                  "sample": 431
+                },
+                {
+                  "candidate_bits": 36177,
+                  "canonical_bits": 36178,
+                  "morton": 1400281,
+                  "sample": 487
+                },
+                {
+                  "candidate_bits": 6986,
+                  "canonical_bits": 6987,
+                  "morton": 1400283,
+                  "sample": 57
+                },
+                {
+                  "candidate_bits": 6978,
+                  "canonical_bits": 6979,
+                  "morton": 1400283,
+                  "sample": 144
+                },
+                {
+                  "candidate_bits": 6226,
+                  "canonical_bits": 6227,
+                  "morton": 1400283,
+                  "sample": 266
+                },
+                {
+                  "candidate_bits": 2954,
+                  "canonical_bits": 2955,
+                  "morton": 1400283,
+                  "sample": 271
+                },
+                {
+                  "candidate_bits": 5570,
+                  "canonical_bits": 5571,
+                  "morton": 1400283,
+                  "sample": 291
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400283,
+                  "sample": 341
+                },
+                {
+                  "candidate_bits": 1198,
+                  "canonical_bits": 1199,
+                  "morton": 1400283,
+                  "sample": 342
+                },
+                {
+                  "candidate_bits": 36546,
+                  "canonical_bits": 36547,
+                  "morton": 1400283,
+                  "sample": 351
+                },
+                {
+                  "candidate_bits": 305,
+                  "canonical_bits": 306,
+                  "morton": 1400283,
+                  "sample": 381
+                },
+                {
+                  "candidate_bits": 6264,
+                  "canonical_bits": 6265,
+                  "morton": 1400283,
+                  "sample": 392
+                }
+              ],
+              "logical_leaves_equal": true,
+              "passed": false,
+              "r16_differences": 172382,
+              "signed_zero_differences": 2,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 863849384562508240,
+            "name": "guardian-add-0.02",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 31.964004,
+            "trials": [
+              {
+                "admission_ms": 15.577275,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 928.7352639999999,
+                "bricks": 107863,
+                "builder_wall_ms": 958.679779,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 958.679759,
+                "filter_gpu_ms": 11.276128,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835692612,
+                "pipeline_prepare_ms": 0.00019,
+                "ready_to_render_ms": 959.214032,
+                "region_bytes": 260192,
+                "region_prepare_ms": 1.707367,
+                "region_references": 64916,
+                "region_scratch_bytes": 506444,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  107863,
+                  0,
+                  0,
+                  55225856,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": []
+    },
+    {
+      "case": {
+        "name": "guardian-add-0.065",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-add-0.065.json",
+        "subject": "guardian",
+        "operation": "add",
+        "radius": 0.065
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-add-0.065.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/guardian-add-0.065.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 2,
+      "wall_seconds": 6.016407095012255,
+      "gpu_before": "2 %, 0 %, 2895 MHz, 14001 MHz, 40, 55.48 W, 822 MiB",
+      "gpu_after": "2 %, 0 %, 2895 MHz, 14001 MHz, 41, 54.92 W, 881 MiB",
+      "log_sha256": "166b7cb3720966d8fe76b889d515102642e45e2c051e24d8ce82e90ca407e623",
+      "native": {
+        "all_comparisons_passed": false,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.423686,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 113349,
+              "cells_sha256": "e2cd793aef912e849568ec20b03c80083613fa4e1aa69387c1470db2d1ff6fc2",
+              "raw_r16_sha256": "eae2215730ae3ba5f5378a3ad8d62236fe5adc99a74cc74e626ffb87f6fee404",
+              "texels": 58034688,
+              "topology_entries": 459584,
+              "topology_sha256": "0e8663d7d8269b8aeefafa23701121db6629b3e1fc2139dc766dfa4693d4d490"
+            },
+            "canonical": {
+              "bricks": 113349,
+              "cells_sha256": "e2cd793aef912e849568ec20b03c80083613fa4e1aa69387c1470db2d1ff6fc2",
+              "raw_r16_sha256": "6649ac0d869705bbb01304e73fd352a5f73ea62c33b8bb462afc1c50595e3581",
+              "texels": 58034688,
+              "topology_entries": 459584,
+              "topology_sha256": "0e8663d7d8269b8aeefafa23701121db6629b3e1fc2139dc766dfa4693d4d490"
+            },
+            "comparison": {
+              "examples": [
+                {
+                  "candidate_bits": 7217,
+                  "canonical_bits": 7218,
+                  "morton": 1400191,
+                  "sample": 90
+                },
+                {
+                  "candidate_bits": 33281,
+                  "canonical_bits": 33282,
+                  "morton": 1400191,
+                  "sample": 447
+                },
+                {
+                  "candidate_bits": 6650,
+                  "canonical_bits": 6651,
+                  "morton": 1400191,
+                  "sample": 482
+                },
+                {
+                  "candidate_bits": 6444,
+                  "canonical_bits": 6445,
+                  "morton": 1400191,
+                  "sample": 490
+                },
+                {
+                  "candidate_bits": 2865,
+                  "canonical_bits": 2866,
+                  "morton": 1400191,
+                  "sample": 510
+                },
+                {
+                  "candidate_bits": 2124,
+                  "canonical_bits": 2125,
+                  "morton": 1400271,
+                  "sample": 127
+                },
+                {
+                  "candidate_bits": 6368,
+                  "canonical_bits": 6369,
+                  "morton": 1400271,
+                  "sample": 196
+                },
+                {
+                  "candidate_bits": 35442,
+                  "canonical_bits": 35443,
+                  "morton": 1400271,
+                  "sample": 254
+                },
+                {
+                  "candidate_bits": 6078,
+                  "canonical_bits": 6079,
+                  "morton": 1400271,
+                  "sample": 275
+                },
+                {
+                  "candidate_bits": 6219,
+                  "canonical_bits": 6220,
+                  "morton": 1400271,
+                  "sample": 304
+                },
+                {
+                  "candidate_bits": 401,
+                  "canonical_bits": 402,
+                  "morton": 1400271,
+                  "sample": 365
+                },
+                {
+                  "candidate_bits": 1490,
+                  "canonical_bits": 1491,
+                  "morton": 1400271,
+                  "sample": 399
+                },
+                {
+                  "candidate_bits": 35558,
+                  "canonical_bits": 35559,
+                  "morton": 1400271,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 3176,
+                  "canonical_bits": 3177,
+                  "morton": 1400271,
+                  "sample": 435
+                },
+                {
+                  "candidate_bits": 34933,
+                  "canonical_bits": 34934,
+                  "morton": 1400271,
+                  "sample": 436
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400271,
+                  "sample": 442
+                },
+                {
+                  "candidate_bits": 5591,
+                  "canonical_bits": 5592,
+                  "morton": 1400271,
+                  "sample": 466
+                },
+                {
+                  "candidate_bits": 3530,
+                  "canonical_bits": 3531,
+                  "morton": 1400271,
+                  "sample": 476
+                },
+                {
+                  "candidate_bits": 4049,
+                  "canonical_bits": 4050,
+                  "morton": 1400281,
+                  "sample": 374
+                },
+                {
+                  "candidate_bits": 3887,
+                  "canonical_bits": 3888,
+                  "morton": 1400281,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 34740,
+                  "canonical_bits": 34741,
+                  "morton": 1400281,
+                  "sample": 431
+                },
+                {
+                  "candidate_bits": 36177,
+                  "canonical_bits": 36178,
+                  "morton": 1400281,
+                  "sample": 487
+                },
+                {
+                  "candidate_bits": 6986,
+                  "canonical_bits": 6987,
+                  "morton": 1400283,
+                  "sample": 57
+                },
+                {
+                  "candidate_bits": 6978,
+                  "canonical_bits": 6979,
+                  "morton": 1400283,
+                  "sample": 144
+                },
+                {
+                  "candidate_bits": 6226,
+                  "canonical_bits": 6227,
+                  "morton": 1400283,
+                  "sample": 266
+                },
+                {
+                  "candidate_bits": 2954,
+                  "canonical_bits": 2955,
+                  "morton": 1400283,
+                  "sample": 271
+                },
+                {
+                  "candidate_bits": 5570,
+                  "canonical_bits": 5571,
+                  "morton": 1400283,
+                  "sample": 291
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400283,
+                  "sample": 341
+                },
+                {
+                  "candidate_bits": 1198,
+                  "canonical_bits": 1199,
+                  "morton": 1400283,
+                  "sample": 342
+                },
+                {
+                  "candidate_bits": 36546,
+                  "canonical_bits": 36547,
+                  "morton": 1400283,
+                  "sample": 351
+                },
+                {
+                  "candidate_bits": 305,
+                  "canonical_bits": 306,
+                  "morton": 1400283,
+                  "sample": 381
+                },
+                {
+                  "candidate_bits": 6264,
+                  "canonical_bits": 6265,
+                  "morton": 1400283,
+                  "sample": 392
+                }
+              ],
+              "logical_leaves_equal": true,
+              "passed": false,
+              "r16_differences": 172382,
+              "signed_zero_differences": 2,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 15942407689268967484,
+            "name": "guardian-add-0.065",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 31.543062,
+            "trials": [
+              {
+                "admission_ms": 17.330552,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1043.921952,
+                "bricks": 113349,
+                "builder_wall_ms": 1077.136433,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 1077.136313,
+                "filter_gpu_ms": 12.549631999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835692684,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 1077.684755,
+                "region_bytes": 260264,
+                "region_prepare_ms": 1.931619,
+                "region_references": 64934,
+                "region_scratch_bytes": 506588,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  113349,
+                  0,
+                  0,
+                  58034688,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": []
+    },
+    {
+      "case": {
+        "name": "guardian-add-0.15",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-add-0.15.json",
+        "subject": "guardian",
+        "operation": "add",
+        "radius": 0.15
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-add-0.15.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/guardian-add-0.15.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 2,
+      "wall_seconds": 6.287373199011199,
+      "gpu_before": "2 %, 0 %, 2895 MHz, 14001 MHz, 41, 54.92 W, 883 MiB",
+      "gpu_after": "0 %, 0 %, 2895 MHz, 14001 MHz, 42, 55.00 W, 860 MiB",
+      "log_sha256": "d28d281b063ea741251df764732ec3cdabbe184332e18fe978409594c497bee5",
+      "native": {
+        "all_comparisons_passed": false,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.380056,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 135679,
+              "cells_sha256": "3f8a640316c2617d51ce104886216b1e1d24c2e11edc08b5da0017122015029a",
+              "raw_r16_sha256": "ffaf0e9003df52c1a8035e57f2fe9f77f99b392a20494ae882ebd98946b5e686",
+              "texels": 69467648,
+              "topology_entries": 553792,
+              "topology_sha256": "3174add43bc9e96ee2f99be70f6bed6ac975047e6d505b70f0ee94bad6172fce"
+            },
+            "canonical": {
+              "bricks": 135679,
+              "cells_sha256": "3f8a640316c2617d51ce104886216b1e1d24c2e11edc08b5da0017122015029a",
+              "raw_r16_sha256": "0c2e3dd5c9d50da3515aeb117fa6005a5eb1f42b43dd63d45bfa01c48ce940d2",
+              "texels": 69467648,
+              "topology_entries": 553792,
+              "topology_sha256": "3174add43bc9e96ee2f99be70f6bed6ac975047e6d505b70f0ee94bad6172fce"
+            },
+            "comparison": {
+              "examples": [
+                {
+                  "candidate_bits": 7217,
+                  "canonical_bits": 7218,
+                  "morton": 1400191,
+                  "sample": 90
+                },
+                {
+                  "candidate_bits": 33281,
+                  "canonical_bits": 33282,
+                  "morton": 1400191,
+                  "sample": 447
+                },
+                {
+                  "candidate_bits": 6650,
+                  "canonical_bits": 6651,
+                  "morton": 1400191,
+                  "sample": 482
+                },
+                {
+                  "candidate_bits": 6444,
+                  "canonical_bits": 6445,
+                  "morton": 1400191,
+                  "sample": 490
+                },
+                {
+                  "candidate_bits": 2865,
+                  "canonical_bits": 2866,
+                  "morton": 1400191,
+                  "sample": 510
+                },
+                {
+                  "candidate_bits": 2124,
+                  "canonical_bits": 2125,
+                  "morton": 1400271,
+                  "sample": 127
+                },
+                {
+                  "candidate_bits": 6368,
+                  "canonical_bits": 6369,
+                  "morton": 1400271,
+                  "sample": 196
+                },
+                {
+                  "candidate_bits": 35442,
+                  "canonical_bits": 35443,
+                  "morton": 1400271,
+                  "sample": 254
+                },
+                {
+                  "candidate_bits": 6078,
+                  "canonical_bits": 6079,
+                  "morton": 1400271,
+                  "sample": 275
+                },
+                {
+                  "candidate_bits": 6219,
+                  "canonical_bits": 6220,
+                  "morton": 1400271,
+                  "sample": 304
+                },
+                {
+                  "candidate_bits": 401,
+                  "canonical_bits": 402,
+                  "morton": 1400271,
+                  "sample": 365
+                },
+                {
+                  "candidate_bits": 1490,
+                  "canonical_bits": 1491,
+                  "morton": 1400271,
+                  "sample": 399
+                },
+                {
+                  "candidate_bits": 35558,
+                  "canonical_bits": 35559,
+                  "morton": 1400271,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 3176,
+                  "canonical_bits": 3177,
+                  "morton": 1400271,
+                  "sample": 435
+                },
+                {
+                  "candidate_bits": 34933,
+                  "canonical_bits": 34934,
+                  "morton": 1400271,
+                  "sample": 436
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400271,
+                  "sample": 442
+                },
+                {
+                  "candidate_bits": 5591,
+                  "canonical_bits": 5592,
+                  "morton": 1400271,
+                  "sample": 466
+                },
+                {
+                  "candidate_bits": 3530,
+                  "canonical_bits": 3531,
+                  "morton": 1400271,
+                  "sample": 476
+                },
+                {
+                  "candidate_bits": 4049,
+                  "canonical_bits": 4050,
+                  "morton": 1400281,
+                  "sample": 374
+                },
+                {
+                  "candidate_bits": 3887,
+                  "canonical_bits": 3888,
+                  "morton": 1400281,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 34740,
+                  "canonical_bits": 34741,
+                  "morton": 1400281,
+                  "sample": 431
+                },
+                {
+                  "candidate_bits": 36177,
+                  "canonical_bits": 36178,
+                  "morton": 1400281,
+                  "sample": 487
+                },
+                {
+                  "candidate_bits": 6986,
+                  "canonical_bits": 6987,
+                  "morton": 1400283,
+                  "sample": 57
+                },
+                {
+                  "candidate_bits": 6978,
+                  "canonical_bits": 6979,
+                  "morton": 1400283,
+                  "sample": 144
+                },
+                {
+                  "candidate_bits": 6226,
+                  "canonical_bits": 6227,
+                  "morton": 1400283,
+                  "sample": 266
+                },
+                {
+                  "candidate_bits": 2954,
+                  "canonical_bits": 2955,
+                  "morton": 1400283,
+                  "sample": 271
+                },
+                {
+                  "candidate_bits": 5570,
+                  "canonical_bits": 5571,
+                  "morton": 1400283,
+                  "sample": 291
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400283,
+                  "sample": 341
+                },
+                {
+                  "candidate_bits": 1198,
+                  "canonical_bits": 1199,
+                  "morton": 1400283,
+                  "sample": 342
+                },
+                {
+                  "candidate_bits": 36546,
+                  "canonical_bits": 36547,
+                  "morton": 1400283,
+                  "sample": 351
+                },
+                {
+                  "candidate_bits": 305,
+                  "canonical_bits": 306,
+                  "morton": 1400283,
+                  "sample": 381
+                },
+                {
+                  "candidate_bits": 6264,
+                  "canonical_bits": 6265,
+                  "morton": 1400283,
+                  "sample": 392
+                }
+              ],
+              "logical_leaves_equal": true,
+              "passed": false,
+              "r16_differences": 172382,
+              "signed_zero_differences": 2,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 9735088318401050418,
+            "name": "guardian-add-0.15",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 31.655643,
+            "trials": [
+              {
+                "admission_ms": 15.714426,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1134.6167679999999,
+                "bricks": 135679,
+                "builder_wall_ms": 1167.102786,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 1167.102766,
+                "filter_gpu_ms": 13.634272,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835692748,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 1167.698839,
+                "region_bytes": 260328,
+                "region_prepare_ms": 1.714237,
+                "region_references": 64950,
+                "region_scratch_bytes": 506716,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  135679,
+                  0,
+                  0,
+                  69467648,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": []
+    },
+    {
+      "case": {
+        "name": "guardian-cut-0.02",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-cut-0.02.json",
+        "subject": "guardian",
+        "operation": "cut",
+        "radius": 0.02
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-cut-0.02.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/guardian-cut-0.02.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 2,
+      "wall_seconds": 5.729346035048366,
+      "gpu_before": "0 %, 0 %, 2895 MHz, 14001 MHz, 42, 55.41 W, 860 MiB",
+      "gpu_after": "2 %, 0 %, 2887 MHz, 14001 MHz, 43, 55.26 W, 828 MiB",
+      "log_sha256": "7c955d0d77c3b92ffe38161bbf789f73041545c7b5e427d20d95c9457a9bca72",
+      "native": {
+        "all_comparisons_passed": false,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.408195,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 107537,
+              "cells_sha256": "6d4ad469df977c10fcbae59511e85415763c9d20b1457f38e5a1a579e0a0a739",
+              "raw_r16_sha256": "aaf37c8239ff3a75c9ab3f4c6859fb95440b3ecc9033bc382667708cad05fa02",
+              "texels": 55058944,
+              "topology_entries": 433856,
+              "topology_sha256": "d78df37a3b8f8b42c434812b3efe0596a0d74082361bac60cf5658887ab02383"
+            },
+            "canonical": {
+              "bricks": 107537,
+              "cells_sha256": "6d4ad469df977c10fcbae59511e85415763c9d20b1457f38e5a1a579e0a0a739",
+              "raw_r16_sha256": "17f41c3e77d53fffab9fbdb6af57481c85c0976114676858a32b856c3296f472",
+              "texels": 55058944,
+              "topology_entries": 433856,
+              "topology_sha256": "d78df37a3b8f8b42c434812b3efe0596a0d74082361bac60cf5658887ab02383"
+            },
+            "comparison": {
+              "examples": [
+                {
+                  "candidate_bits": 7217,
+                  "canonical_bits": 7218,
+                  "morton": 1400191,
+                  "sample": 90
+                },
+                {
+                  "candidate_bits": 33281,
+                  "canonical_bits": 33282,
+                  "morton": 1400191,
+                  "sample": 447
+                },
+                {
+                  "candidate_bits": 6650,
+                  "canonical_bits": 6651,
+                  "morton": 1400191,
+                  "sample": 482
+                },
+                {
+                  "candidate_bits": 6444,
+                  "canonical_bits": 6445,
+                  "morton": 1400191,
+                  "sample": 490
+                },
+                {
+                  "candidate_bits": 2865,
+                  "canonical_bits": 2866,
+                  "morton": 1400191,
+                  "sample": 510
+                },
+                {
+                  "candidate_bits": 2124,
+                  "canonical_bits": 2125,
+                  "morton": 1400271,
+                  "sample": 127
+                },
+                {
+                  "candidate_bits": 6368,
+                  "canonical_bits": 6369,
+                  "morton": 1400271,
+                  "sample": 196
+                },
+                {
+                  "candidate_bits": 35442,
+                  "canonical_bits": 35443,
+                  "morton": 1400271,
+                  "sample": 254
+                },
+                {
+                  "candidate_bits": 6078,
+                  "canonical_bits": 6079,
+                  "morton": 1400271,
+                  "sample": 275
+                },
+                {
+                  "candidate_bits": 6219,
+                  "canonical_bits": 6220,
+                  "morton": 1400271,
+                  "sample": 304
+                },
+                {
+                  "candidate_bits": 401,
+                  "canonical_bits": 402,
+                  "morton": 1400271,
+                  "sample": 365
+                },
+                {
+                  "candidate_bits": 1490,
+                  "canonical_bits": 1491,
+                  "morton": 1400271,
+                  "sample": 399
+                },
+                {
+                  "candidate_bits": 35558,
+                  "canonical_bits": 35559,
+                  "morton": 1400271,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 3176,
+                  "canonical_bits": 3177,
+                  "morton": 1400271,
+                  "sample": 435
+                },
+                {
+                  "candidate_bits": 34933,
+                  "canonical_bits": 34934,
+                  "morton": 1400271,
+                  "sample": 436
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400271,
+                  "sample": 442
+                },
+                {
+                  "candidate_bits": 5591,
+                  "canonical_bits": 5592,
+                  "morton": 1400271,
+                  "sample": 466
+                },
+                {
+                  "candidate_bits": 3530,
+                  "canonical_bits": 3531,
+                  "morton": 1400271,
+                  "sample": 476
+                },
+                {
+                  "candidate_bits": 4049,
+                  "canonical_bits": 4050,
+                  "morton": 1400281,
+                  "sample": 374
+                },
+                {
+                  "candidate_bits": 3887,
+                  "canonical_bits": 3888,
+                  "morton": 1400281,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 34740,
+                  "canonical_bits": 34741,
+                  "morton": 1400281,
+                  "sample": 431
+                },
+                {
+                  "candidate_bits": 36177,
+                  "canonical_bits": 36178,
+                  "morton": 1400281,
+                  "sample": 487
+                },
+                {
+                  "candidate_bits": 6986,
+                  "canonical_bits": 6987,
+                  "morton": 1400283,
+                  "sample": 57
+                },
+                {
+                  "candidate_bits": 6978,
+                  "canonical_bits": 6979,
+                  "morton": 1400283,
+                  "sample": 144
+                },
+                {
+                  "candidate_bits": 6226,
+                  "canonical_bits": 6227,
+                  "morton": 1400283,
+                  "sample": 266
+                },
+                {
+                  "candidate_bits": 2954,
+                  "canonical_bits": 2955,
+                  "morton": 1400283,
+                  "sample": 271
+                },
+                {
+                  "candidate_bits": 5570,
+                  "canonical_bits": 5571,
+                  "morton": 1400283,
+                  "sample": 291
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400283,
+                  "sample": 341
+                },
+                {
+                  "candidate_bits": 1198,
+                  "canonical_bits": 1199,
+                  "morton": 1400283,
+                  "sample": 342
+                },
+                {
+                  "candidate_bits": 36546,
+                  "canonical_bits": 36547,
+                  "morton": 1400283,
+                  "sample": 351
+                },
+                {
+                  "candidate_bits": 305,
+                  "canonical_bits": 306,
+                  "morton": 1400283,
+                  "sample": 381
+                },
+                {
+                  "candidate_bits": 6264,
+                  "canonical_bits": 6265,
+                  "morton": 1400283,
+                  "sample": 392
+                }
+              ],
+              "logical_leaves_equal": true,
+              "passed": false,
+              "r16_differences": 172382,
+              "signed_zero_differences": 2,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 4579591493280361537,
+            "name": "guardian-cut-0.02",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 31.952904,
+            "trials": [
+              {
+                "admission_ms": 18.264926,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 944.843936,
+                "bricks": 107537,
+                "builder_wall_ms": 978.098082,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 978.098052,
+                "filter_gpu_ms": 11.240127999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835692324,
+                "pipeline_prepare_ms": 0.0001,
+                "ready_to_render_ms": 978.728744,
+                "region_bytes": 259904,
+                "region_prepare_ms": 2.116679,
+                "region_references": 64844,
+                "region_scratch_bytes": 506044,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  107537,
+                  0,
+                  0,
+                  55058944,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": []
+    },
+    {
+      "case": {
+        "name": "guardian-cut-0.065",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-cut-0.065.json",
+        "subject": "guardian",
+        "operation": "cut",
+        "radius": 0.065
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-cut-0.065.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/guardian-cut-0.065.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 2,
+      "wall_seconds": 5.3753532890114,
+      "gpu_before": "2 %, 0 %, 2887 MHz, 14001 MHz, 43, 55.26 W, 828 MiB",
+      "gpu_after": "3 %, 0 %, 2887 MHz, 14001 MHz, 44, 82.60 W, 828 MiB",
+      "log_sha256": "edeee478534a6cd670b0513d1c940b9b3fbcb3447d5f6bfb83f0c89fa5ce8b29",
+      "native": {
+        "all_comparisons_passed": false,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.411196,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 108266,
+              "cells_sha256": "5ebb4eeaf07be19f5564a8439dc0e4c54d91ff59887b170f9f0fefbb1c034d0b",
+              "raw_r16_sha256": "a6e08f5f9bb5a6b3bdd59107ecd326b7d788b51e37e5cfe2c35ca3a577e43abf",
+              "texels": 55432192,
+              "topology_entries": 435968,
+              "topology_sha256": "876f75bd1c8e900cbb45a423da2b02946ef7125b0269716ce8ab3e18289fbfa8"
+            },
+            "canonical": {
+              "bricks": 108266,
+              "cells_sha256": "5ebb4eeaf07be19f5564a8439dc0e4c54d91ff59887b170f9f0fefbb1c034d0b",
+              "raw_r16_sha256": "efb300aa9d1b50149924cf2d6a12cca685afcccb97475182d7ae2a49ada3033d",
+              "texels": 55432192,
+              "topology_entries": 435968,
+              "topology_sha256": "876f75bd1c8e900cbb45a423da2b02946ef7125b0269716ce8ab3e18289fbfa8"
+            },
+            "comparison": {
+              "examples": [
+                {
+                  "candidate_bits": 7217,
+                  "canonical_bits": 7218,
+                  "morton": 1400191,
+                  "sample": 90
+                },
+                {
+                  "candidate_bits": 33281,
+                  "canonical_bits": 33282,
+                  "morton": 1400191,
+                  "sample": 447
+                },
+                {
+                  "candidate_bits": 6650,
+                  "canonical_bits": 6651,
+                  "morton": 1400191,
+                  "sample": 482
+                },
+                {
+                  "candidate_bits": 6444,
+                  "canonical_bits": 6445,
+                  "morton": 1400191,
+                  "sample": 490
+                },
+                {
+                  "candidate_bits": 2865,
+                  "canonical_bits": 2866,
+                  "morton": 1400191,
+                  "sample": 510
+                },
+                {
+                  "candidate_bits": 2124,
+                  "canonical_bits": 2125,
+                  "morton": 1400271,
+                  "sample": 127
+                },
+                {
+                  "candidate_bits": 6368,
+                  "canonical_bits": 6369,
+                  "morton": 1400271,
+                  "sample": 196
+                },
+                {
+                  "candidate_bits": 35442,
+                  "canonical_bits": 35443,
+                  "morton": 1400271,
+                  "sample": 254
+                },
+                {
+                  "candidate_bits": 6078,
+                  "canonical_bits": 6079,
+                  "morton": 1400271,
+                  "sample": 275
+                },
+                {
+                  "candidate_bits": 6219,
+                  "canonical_bits": 6220,
+                  "morton": 1400271,
+                  "sample": 304
+                },
+                {
+                  "candidate_bits": 401,
+                  "canonical_bits": 402,
+                  "morton": 1400271,
+                  "sample": 365
+                },
+                {
+                  "candidate_bits": 1490,
+                  "canonical_bits": 1491,
+                  "morton": 1400271,
+                  "sample": 399
+                },
+                {
+                  "candidate_bits": 35558,
+                  "canonical_bits": 35559,
+                  "morton": 1400271,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 3176,
+                  "canonical_bits": 3177,
+                  "morton": 1400271,
+                  "sample": 435
+                },
+                {
+                  "candidate_bits": 34933,
+                  "canonical_bits": 34934,
+                  "morton": 1400271,
+                  "sample": 436
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400271,
+                  "sample": 442
+                },
+                {
+                  "candidate_bits": 5591,
+                  "canonical_bits": 5592,
+                  "morton": 1400271,
+                  "sample": 466
+                },
+                {
+                  "candidate_bits": 3530,
+                  "canonical_bits": 3531,
+                  "morton": 1400271,
+                  "sample": 476
+                },
+                {
+                  "candidate_bits": 4049,
+                  "canonical_bits": 4050,
+                  "morton": 1400281,
+                  "sample": 374
+                },
+                {
+                  "candidate_bits": 3887,
+                  "canonical_bits": 3888,
+                  "morton": 1400281,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 34740,
+                  "canonical_bits": 34741,
+                  "morton": 1400281,
+                  "sample": 431
+                },
+                {
+                  "candidate_bits": 36177,
+                  "canonical_bits": 36178,
+                  "morton": 1400281,
+                  "sample": 487
+                },
+                {
+                  "candidate_bits": 6986,
+                  "canonical_bits": 6987,
+                  "morton": 1400283,
+                  "sample": 57
+                },
+                {
+                  "candidate_bits": 6978,
+                  "canonical_bits": 6979,
+                  "morton": 1400283,
+                  "sample": 144
+                },
+                {
+                  "candidate_bits": 6226,
+                  "canonical_bits": 6227,
+                  "morton": 1400283,
+                  "sample": 266
+                },
+                {
+                  "candidate_bits": 2954,
+                  "canonical_bits": 2955,
+                  "morton": 1400283,
+                  "sample": 271
+                },
+                {
+                  "candidate_bits": 5570,
+                  "canonical_bits": 5571,
+                  "morton": 1400283,
+                  "sample": 291
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400283,
+                  "sample": 341
+                },
+                {
+                  "candidate_bits": 1198,
+                  "canonical_bits": 1199,
+                  "morton": 1400283,
+                  "sample": 342
+                },
+                {
+                  "candidate_bits": 36546,
+                  "canonical_bits": 36547,
+                  "morton": 1400283,
+                  "sample": 351
+                },
+                {
+                  "candidate_bits": 305,
+                  "canonical_bits": 306,
+                  "morton": 1400283,
+                  "sample": 381
+                },
+                {
+                  "candidate_bits": 6264,
+                  "canonical_bits": 6265,
+                  "morton": 1400283,
+                  "sample": 392
+                }
+              ],
+              "logical_leaves_equal": true,
+              "passed": false,
+              "r16_differences": 172382,
+              "signed_zero_differences": 2,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13647441476530789317,
+            "name": "guardian-cut-0.065",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 31.998464,
+            "trials": [
+              {
+                "admission_ms": 17.153332,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 947.605024,
+                "bricks": 108266,
+                "builder_wall_ms": 979.292914,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 979.292884,
+                "filter_gpu_ms": 11.14576,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835692356,
+                "pipeline_prepare_ms": 0.00026,
+                "ready_to_render_ms": 979.887957,
+                "region_bytes": 259936,
+                "region_prepare_ms": 1.806298,
+                "region_references": 64852,
+                "region_scratch_bytes": 506076,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  108266,
+                  0,
+                  0,
+                  55432192,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": []
+    },
+    {
+      "case": {
+        "name": "guardian-cut-0.15",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-cut-0.15.json",
+        "subject": "guardian",
+        "operation": "cut",
+        "radius": 0.15
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-cut-0.15.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/guardian-cut-0.15.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 2,
+      "wall_seconds": 5.749781007994898,
+      "gpu_before": "3 %, 0 %, 2887 MHz, 14001 MHz, 44, 82.60 W, 828 MiB",
+      "gpu_after": "4 %, 0 %, 2887 MHz, 14001 MHz, 43, 55.56 W, 898 MiB",
+      "log_sha256": "ed23180a4ad26e88e888624774f1de307ab48dc833cdfeba2c48ca0570495ebb",
+      "native": {
+        "all_comparisons_passed": false,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.525237,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 102185,
+              "cells_sha256": "f9f2384d837d1c4d797a0e0511d1d8618f55b35ceaa2a3df7aa5fa4c14a0bf36",
+              "raw_r16_sha256": "02de321c282dda962ef16881abda8a9f2e685dd72850328d6ee2a6986e14b55d",
+              "texels": 52318720,
+              "topology_entries": 413312,
+              "topology_sha256": "de6593a5c3d15c61c998c427f8d129a89e3e2e327677154e7b22904006a67533"
+            },
+            "canonical": {
+              "bricks": 102185,
+              "cells_sha256": "f9f2384d837d1c4d797a0e0511d1d8618f55b35ceaa2a3df7aa5fa4c14a0bf36",
+              "raw_r16_sha256": "19b082f8db11d2c5010fe24fe07b25b1fa1ea097e7a1c7b14c5650f7b13a9a5d",
+              "texels": 52318720,
+              "topology_entries": 413312,
+              "topology_sha256": "de6593a5c3d15c61c998c427f8d129a89e3e2e327677154e7b22904006a67533"
+            },
+            "comparison": {
+              "examples": [
+                {
+                  "candidate_bits": 7217,
+                  "canonical_bits": 7218,
+                  "morton": 1400191,
+                  "sample": 90
+                },
+                {
+                  "candidate_bits": 33281,
+                  "canonical_bits": 33282,
+                  "morton": 1400191,
+                  "sample": 447
+                },
+                {
+                  "candidate_bits": 6650,
+                  "canonical_bits": 6651,
+                  "morton": 1400191,
+                  "sample": 482
+                },
+                {
+                  "candidate_bits": 6444,
+                  "canonical_bits": 6445,
+                  "morton": 1400191,
+                  "sample": 490
+                },
+                {
+                  "candidate_bits": 2865,
+                  "canonical_bits": 2866,
+                  "morton": 1400191,
+                  "sample": 510
+                },
+                {
+                  "candidate_bits": 2124,
+                  "canonical_bits": 2125,
+                  "morton": 1400271,
+                  "sample": 127
+                },
+                {
+                  "candidate_bits": 6368,
+                  "canonical_bits": 6369,
+                  "morton": 1400271,
+                  "sample": 196
+                },
+                {
+                  "candidate_bits": 35442,
+                  "canonical_bits": 35443,
+                  "morton": 1400271,
+                  "sample": 254
+                },
+                {
+                  "candidate_bits": 6078,
+                  "canonical_bits": 6079,
+                  "morton": 1400271,
+                  "sample": 275
+                },
+                {
+                  "candidate_bits": 6219,
+                  "canonical_bits": 6220,
+                  "morton": 1400271,
+                  "sample": 304
+                },
+                {
+                  "candidate_bits": 401,
+                  "canonical_bits": 402,
+                  "morton": 1400271,
+                  "sample": 365
+                },
+                {
+                  "candidate_bits": 1490,
+                  "canonical_bits": 1491,
+                  "morton": 1400271,
+                  "sample": 399
+                },
+                {
+                  "candidate_bits": 35558,
+                  "canonical_bits": 35559,
+                  "morton": 1400271,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 3176,
+                  "canonical_bits": 3177,
+                  "morton": 1400271,
+                  "sample": 435
+                },
+                {
+                  "candidate_bits": 34933,
+                  "canonical_bits": 34934,
+                  "morton": 1400271,
+                  "sample": 436
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400271,
+                  "sample": 442
+                },
+                {
+                  "candidate_bits": 5591,
+                  "canonical_bits": 5592,
+                  "morton": 1400271,
+                  "sample": 466
+                },
+                {
+                  "candidate_bits": 3530,
+                  "canonical_bits": 3531,
+                  "morton": 1400271,
+                  "sample": 476
+                },
+                {
+                  "candidate_bits": 4049,
+                  "canonical_bits": 4050,
+                  "morton": 1400281,
+                  "sample": 374
+                },
+                {
+                  "candidate_bits": 3887,
+                  "canonical_bits": 3888,
+                  "morton": 1400281,
+                  "sample": 407
+                },
+                {
+                  "candidate_bits": 34740,
+                  "canonical_bits": 34741,
+                  "morton": 1400281,
+                  "sample": 431
+                },
+                {
+                  "candidate_bits": 36177,
+                  "canonical_bits": 36178,
+                  "morton": 1400281,
+                  "sample": 487
+                },
+                {
+                  "candidate_bits": 6986,
+                  "canonical_bits": 6987,
+                  "morton": 1400283,
+                  "sample": 57
+                },
+                {
+                  "candidate_bits": 6978,
+                  "canonical_bits": 6979,
+                  "morton": 1400283,
+                  "sample": 144
+                },
+                {
+                  "candidate_bits": 6226,
+                  "canonical_bits": 6227,
+                  "morton": 1400283,
+                  "sample": 266
+                },
+                {
+                  "candidate_bits": 2954,
+                  "canonical_bits": 2955,
+                  "morton": 1400283,
+                  "sample": 271
+                },
+                {
+                  "candidate_bits": 5570,
+                  "canonical_bits": 5571,
+                  "morton": 1400283,
+                  "sample": 291
+                },
+                {
+                  "candidate_bits": 3930,
+                  "canonical_bits": 3931,
+                  "morton": 1400283,
+                  "sample": 341
+                },
+                {
+                  "candidate_bits": 1198,
+                  "canonical_bits": 1199,
+                  "morton": 1400283,
+                  "sample": 342
+                },
+                {
+                  "candidate_bits": 36546,
+                  "canonical_bits": 36547,
+                  "morton": 1400283,
+                  "sample": 351
+                },
+                {
+                  "candidate_bits": 305,
+                  "canonical_bits": 306,
+                  "morton": 1400283,
+                  "sample": 381
+                },
+                {
+                  "candidate_bits": 6264,
+                  "canonical_bits": 6265,
+                  "morton": 1400283,
+                  "sample": 392
+                }
+              ],
+              "logical_leaves_equal": true,
+              "passed": false,
+              "r16_differences": 172382,
+              "signed_zero_differences": 2,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8741042072332919131,
+            "name": "guardian-cut-0.15",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 31.683762,
+            "trials": [
+              {
+                "admission_ms": 17.127191,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 883.431072,
+                "bricks": 102185,
+                "builder_wall_ms": 915.502635,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 915.502605,
+                "filter_gpu_ms": 11.147423999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835692372,
+                "pipeline_prepare_ms": 0.00025,
+                "ready_to_render_ms": 916.159757,
+                "region_bytes": 259952,
+                "region_prepare_ms": 2.019979,
+                "region_references": 64856,
+                "region_scratch_bytes": 506076,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  102185,
+                  0,
+                  0,
+                  52318720,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": []
+    },
+    {
+      "case": {
+        "name": "robot-add-0.02",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-add-0.02.json",
+        "subject": "robot",
+        "operation": "add",
+        "radius": 0.02
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-add-0.02.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/robot-add-0.02.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 3.056837201991584,
+      "gpu_before": "4 %, 0 %, 2887 MHz, 14001 MHz, 43, 55.56 W, 898 MiB",
+      "gpu_after": "0 %, 0 %, 2895 MHz, 14001 MHz, 42, 55.15 W, 898 MiB",
+      "log_sha256": "ffa2f3c4a9c4449f719673576bcd2b9da7e3020528c0cee11b9efe959120be91",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.505057,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 139000,
+              "cells_sha256": "05c120673ef7f1a78431de5615e8f171bba6d216969f6ed065d39aa34ebfacba",
+              "raw_r16_sha256": "a3fc4b24948127777467a4e62d3b3ba33f0f79614b1ee8288a5d9d2db100b62f",
+              "texels": 71168000,
+              "topology_entries": 560000,
+              "topology_sha256": "59dd1bf60b2a1530fa6ee6140cb75c3fa33925c096a7f333421f3b3a53087245"
+            },
+            "canonical": {
+              "bricks": 139000,
+              "cells_sha256": "05c120673ef7f1a78431de5615e8f171bba6d216969f6ed065d39aa34ebfacba",
+              "raw_r16_sha256": "a3fc4b24948127777467a4e62d3b3ba33f0f79614b1ee8288a5d9d2db100b62f",
+              "texels": 71168000,
+              "topology_entries": 560000,
+              "topology_sha256": "59dd1bf60b2a1530fa6ee6140cb75c3fa33925c096a7f333421f3b3a53087245"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 16212967813588635871,
+            "name": "robot-add-0.02",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 2.767381,
+            "trials": [
+              {
+                "admission_ms": 1.406246,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 82.605632,
+                "bricks": 139000,
+                "builder_wall_ms": 86.599302,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 86.599262,
+                "filter_gpu_ms": 1.0977919999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835465572,
+                "pipeline_prepare_ms": 0.00031,
+                "ready_to_render_ms": 87.099404,
+                "region_bytes": 33152,
+                "region_prepare_ms": 0.525822,
+                "region_references": 8156,
+                "region_scratch_bytes": 68876,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  139000,
+                  0,
+                  0,
+                  71168000,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "robot-add-0.065",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-add-0.065.json",
+        "subject": "robot",
+        "operation": "add",
+        "radius": 0.065
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-add-0.065.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/robot-add-0.065.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 3.026159379980527,
+      "gpu_before": "0 %, 0 %, 2895 MHz, 14001 MHz, 42, 55.15 W, 898 MiB",
+      "gpu_after": "1 %, 0 %, 2895 MHz, 14001 MHz, 41, 54.72 W, 898 MiB",
+      "log_sha256": "ab7a5d9ad990c2e0fe900584a00f0f6eacbcf1c7e1bdf5729c759c29d20580fd",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.399346,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 144286,
+              "cells_sha256": "8024769d2dce39048a296dbce342618d75beaab4cce033c868be017f7ad3f8fd",
+              "raw_r16_sha256": "1faba4e41241183884608416b9b2cdd03b928bfa9fc14238452d4826397ff1d1",
+              "texels": 73874432,
+              "topology_entries": 578432,
+              "topology_sha256": "5e1adf320602f7ee1f255a2e4eaf0a24f4eff436e1719051872b7dae921c9825"
+            },
+            "canonical": {
+              "bricks": 144286,
+              "cells_sha256": "8024769d2dce39048a296dbce342618d75beaab4cce033c868be017f7ad3f8fd",
+              "raw_r16_sha256": "1faba4e41241183884608416b9b2cdd03b928bfa9fc14238452d4826397ff1d1",
+              "texels": 73874432,
+              "topology_entries": 578432,
+              "topology_sha256": "5e1adf320602f7ee1f255a2e4eaf0a24f4eff436e1719051872b7dae921c9825"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6379054994993219611,
+            "name": "robot-add-0.065",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 2.657462,
+            "trials": [
+              {
+                "admission_ms": 1.726457,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 82.686816,
+                "bricks": 144286,
+                "builder_wall_ms": 86.809102,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 86.809082,
+                "filter_gpu_ms": 1.09568,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835465604,
+                "pipeline_prepare_ms": 0.00012,
+                "ready_to_render_ms": 87.076943,
+                "region_bytes": 33184,
+                "region_prepare_ms": 0.394932,
+                "region_references": 8164,
+                "region_scratch_bytes": 68940,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  144286,
+                  0,
+                  0,
+                  73874432,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "robot-add-0.15",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-add-0.15.json",
+        "subject": "robot",
+        "operation": "add",
+        "radius": 0.15
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-add-0.15.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/robot-add-0.15.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 3.0521188529673964,
+      "gpu_before": "1 %, 0 %, 2895 MHz, 14001 MHz, 41, 55.16 W, 898 MiB",
+      "gpu_after": "3 %, 0 %, 2895 MHz, 14001 MHz, 41, 54.94 W, 908 MiB",
+      "log_sha256": "1e33d457a5c520c5da48b18e401c99949538bd3338a6f9b85a86bcd11edb4941",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.415816,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 146689,
+              "cells_sha256": "82d8934afdf2671f0e280704e917c9a9ae446a492c1d355cb5103ad5870041bc",
+              "raw_r16_sha256": "a379a6dbe571fec04d462c8e69814d04c2d96bfe01c8e234295a70ce0ff0833d",
+              "texels": 75104768,
+              "topology_entries": 601216,
+              "topology_sha256": "b778e56bfd2705e0acc528560076fba138d1dd0e8d832748ddbd5d67afdb8943"
+            },
+            "canonical": {
+              "bricks": 146689,
+              "cells_sha256": "82d8934afdf2671f0e280704e917c9a9ae446a492c1d355cb5103ad5870041bc",
+              "raw_r16_sha256": "a379a6dbe571fec04d462c8e69814d04c2d96bfe01c8e234295a70ce0ff0833d",
+              "texels": 75104768,
+              "topology_entries": 601216,
+              "topology_sha256": "b778e56bfd2705e0acc528560076fba138d1dd0e8d832748ddbd5d67afdb8943"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 130022758464651309,
+            "name": "robot-add-0.15",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 3.300384,
+            "trials": [
+              {
+                "admission_ms": 1.325266,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 82.77891199999999,
+                "bricks": 146689,
+                "builder_wall_ms": 86.876623,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 86.876603,
+                "filter_gpu_ms": 1.104128,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835465604,
+                "pipeline_prepare_ms": 0.00012,
+                "ready_to_render_ms": 87.358055,
+                "region_bytes": 33184,
+                "region_prepare_ms": 0.531452,
+                "region_references": 8164,
+                "region_scratch_bytes": 68940,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  146689,
+                  0,
+                  0,
+                  75104768,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "robot-cut-0.02",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-cut-0.02.json",
+        "subject": "robot",
+        "operation": "cut",
+        "radius": 0.02
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-cut-0.02.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/robot-cut-0.02.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6471810399671085,
+      "gpu_before": "3 %, 0 %, 2895 MHz, 14001 MHz, 41, 54.94 W, 908 MiB",
+      "gpu_after": "3 %, 0 %, 2895 MHz, 14001 MHz, 41, 70.97 W, 902 MiB",
+      "log_sha256": "323179f7e0bfca93619910af46325605ace0399f325a249fff85f90ff90c685f",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.391275,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 138548,
+              "cells_sha256": "1af1de11f915c9f68217e50e166509c1aafcdfaacb783932a38702a9fe69c5f2",
+              "raw_r16_sha256": "566281176011f88581f866b58aefc57ea2e1e961a0b927f49f9ce5586700579e",
+              "texels": 70936576,
+              "topology_entries": 557568,
+              "topology_sha256": "1ba5277f2232ffeb15c19ed8844e75756b0a39eaf9c8028ba8d6787aad7b9d39"
+            },
+            "canonical": {
+              "bricks": 138548,
+              "cells_sha256": "1af1de11f915c9f68217e50e166509c1aafcdfaacb783932a38702a9fe69c5f2",
+              "raw_r16_sha256": "566281176011f88581f866b58aefc57ea2e1e961a0b927f49f9ce5586700579e",
+              "texels": 70936576,
+              "topology_entries": 557568,
+              "topology_sha256": "1ba5277f2232ffeb15c19ed8844e75756b0a39eaf9c8028ba8d6787aad7b9d39"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 14558276835393242562,
+            "name": "robot-cut-0.02",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 2.665141,
+            "trials": [
+              {
+                "admission_ms": 1.722857,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 78.498144,
+                "bricks": 138548,
+                "builder_wall_ms": 82.802655,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 82.802635,
+                "filter_gpu_ms": 1.065024,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835465172,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 83.064756,
+                "region_bytes": 32752,
+                "region_prepare_ms": 0.650893,
+                "region_references": 8056,
+                "region_scratch_bytes": 68108,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  138548,
+                  0,
+                  0,
+                  70936576,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "robot-cut-0.065",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-cut-0.065.json",
+        "subject": "robot",
+        "operation": "cut",
+        "radius": 0.065
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-cut-0.065.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/robot-cut-0.065.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 3.012413310003467,
+      "gpu_before": "3 %, 0 %, 2895 MHz, 14001 MHz, 41, 70.97 W, 902 MiB",
+      "gpu_after": "2 %, 0 %, 2512 MHz, 14001 MHz, 40, 48.43 W, 856 MiB",
+      "log_sha256": "b4aefc4b6c5eeb58036289d88db4ad38476112227b55336ee00ba4dd603fd827",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.376056,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 138662,
+              "cells_sha256": "ec25fda8df1c824bbaeb30e17a8701517fdb9354a5ccc1750a3893b8374f1a25",
+              "raw_r16_sha256": "ac632711fb46ce9147c1b14c55ceec24c1765ba60c334b5a8a8b0853ee2c079d",
+              "texels": 70994944,
+              "topology_entries": 559424,
+              "topology_sha256": "bce9ffbd2a106d50f3cf7b32748eb64d86ef05dfc12c96a31e1f0cb47d3e39a6"
+            },
+            "canonical": {
+              "bricks": 138662,
+              "cells_sha256": "ec25fda8df1c824bbaeb30e17a8701517fdb9354a5ccc1750a3893b8374f1a25",
+              "raw_r16_sha256": "ac632711fb46ce9147c1b14c55ceec24c1765ba60c334b5a8a8b0853ee2c079d",
+              "texels": 70994944,
+              "topology_entries": 559424,
+              "topology_sha256": "bce9ffbd2a106d50f3cf7b32748eb64d86ef05dfc12c96a31e1f0cb47d3e39a6"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2164569866644847086,
+            "name": "robot-cut-0.065",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 2.700761,
+            "trials": [
+              {
+                "admission_ms": 1.328926,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 82.183264,
+                "bricks": 138662,
+                "builder_wall_ms": 86.151619,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 86.151579,
+                "filter_gpu_ms": 1.0748159999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835465172,
+                "pipeline_prepare_ms": 0.0001,
+                "ready_to_render_ms": 86.529991,
+                "region_bytes": 32752,
+                "region_prepare_ms": 0.497562,
+                "region_references": 8056,
+                "region_scratch_bytes": 68108,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  138662,
+                  0,
+                  0,
+                  70994944,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    },
+    {
+      "case": {
+        "name": "robot-cut-0.15",
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-cut-0.15.json",
+        "subject": "robot",
+        "operation": "cut",
+        "radius": 0.15
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-cut-0.15.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/pruned4/robot-cut-0.15.json",
+        "--commit-mode",
+        "pruned",
+        "--commit-regions",
+        "4",
+        "--commit-qualify"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.6554900780320168,
+      "gpu_before": "6 %, 0 %, 2512 MHz, 14001 MHz, 40, 48.43 W, 856 MiB",
+      "gpu_after": "3 %, 0 %, 2895 MHz, 14001 MHz, 40, 71.37 W, 855 MiB",
+      "log_sha256": "fba02dd3c73e81f7974883345c85ba74857f0e7faa7336d66381307bae915d3d",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": false,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "pruned",
+        "pipeline_prepare_ms": 1.419766,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 138459,
+              "cells_sha256": "ec280b72362f137f15d5962ba13dd0f00e936a1b41d5cb203a85b60726c497c4",
+              "raw_r16_sha256": "33da82ff996a46752ad995f67e70ca9ba264e88871f991e043b8454788fcbf2d",
+              "texels": 70891008,
+              "topology_entries": 549440,
+              "topology_sha256": "703152aa159df95e8ea9977c70528633c3204208eca3ecf56a09773cbd0121df"
+            },
+            "canonical": {
+              "bricks": 138459,
+              "cells_sha256": "ec280b72362f137f15d5962ba13dd0f00e936a1b41d5cb203a85b60726c497c4",
+              "raw_r16_sha256": "33da82ff996a46752ad995f67e70ca9ba264e88871f991e043b8454788fcbf2d",
+              "texels": 70891008,
+              "topology_entries": 549440,
+              "topology_sha256": "703152aa159df95e8ea9977c70528633c3204208eca3ecf56a09773cbd0121df"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 16106811259917256152,
+            "name": "robot-cut-0.15",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 2.672311,
+            "trials": [
+              {
+                "admission_ms": 1.473026,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 78.87702399999999,
+                "bricks": 138459,
+                "builder_wall_ms": 82.796185,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 82.796145,
+                "filter_gpu_ms": 1.051136,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835465244,
+                "pipeline_prepare_ms": 0.00012,
+                "ready_to_render_ms": 83.177147,
+                "region_bytes": 32824,
+                "region_prepare_ms": 0.437902,
+                "region_references": 8074,
+                "region_scratch_bytes": 68252,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  138459,
+                  0,
+                  0,
+                  70891008,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        null
+      ]
+    }
+  ],
+  "complete": true,
+  "passed": false
+}

@@ -90,3 +90,31 @@ GPU build, then retry. The pilot retains the exact preview/pending state and
 publishes the retry only after a completed replacement frame. Allocation and
 pre-submit cancellation dispositions, stale branch and post-submit discard are
 serialized injections; they do not establish general concurrent recovery.
+
+## Final bounded decision
+
+[Results](sdf-cached-commit-results.md) and the
+[interactive report](http://starship:8787/reports/3659235195747d263ebf8734145db49ba6c1bed67c875e6f62f63274e68d300f/)
+retain the complete outcome. 61 cache pairs match reachable topology, logical
+leaves and 2,953,737,728 raw R16 sample comparisons. Repeated chains, overflow
+fallback, 14 publication sequences / 66 frames and four original-consumer
+retained-source replays pass. All 206 original shader hashes, 940 protected
+source/content hashes and the public executable remain unchanged.
+
+The matched 480-commit series gives pooled medians of 87.741–116.038 ms Guardian
+and 24.592–27.305 ms Robot: 9.15–11.74x and 3.69–3.95x faster than full rebuilding.
+New allocation adds roughly 8 ms. All useful speedup gates pass; none of the
+240 reuse commits meets 16.67 ms. This is a construction improvement, with
+continuous editing and rendering interference still unqualified.
+
+Regional pruning fails strict cache identity and is excluded. Raw R16 writes
+expose small full/pruned float differences that packed-half diagnostics can
+miss. Guardian A16 leaf-set differences leave matched sample counts unscored;
+the native legacy sentinel is not interpreted as actual differing words.
+The short rejected-route timings are descriptive only.
+
+Robot's remaining global copy/tool pass and Guardian's canonical fallback,
+classification and study validation justify investigating conservative local
+work, stable atlas slots and bounded submissions next. That is a measured next
+boundary, not an implemented allocator/updater. Source/history/material and
+public-mode contracts remain intact; no push or project-site deployment.

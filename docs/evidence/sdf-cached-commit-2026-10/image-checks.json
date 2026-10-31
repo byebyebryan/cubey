@@ -1,0 +1,486 @@
+{
+  "passed": true,
+  "unique_images": 10,
+  "sources": [
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-add-0.065-original-cached.png",
+      "source_sha256": "30c33de7582f2058b7964175f5ce5687f53fa94630246acfea165cbd71af4fd6",
+      "export": "images/native-30c33de7582f2058b7.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-add-0.065-none-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-add-0.065-none-result.frame-1.png",
+      "source_sha256": "94cc54ed492473516822e6f7d2e62bc8847d93574e6a609e0ae7348ed9d68d50",
+      "export": "images/native-94cc54ed4924735168.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-add-0.065-none-result.frame-2.png",
+      "source_sha256": "30c33de7582f2058b7964175f5ce5687f53fa94630246acfea165cbd71af4fd6",
+      "export": "images/native-30c33de7582f2058b7.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-add-0.065-none-result.frame-3.png",
+      "source_sha256": "30c33de7582f2058b7964175f5ce5687f53fa94630246acfea165cbd71af4fd6",
+      "export": "images/native-30c33de7582f2058b7.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-original-cached.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-none-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-none-result.frame-1.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-none-result.frame-2.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-none-result.frame-3.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-original-cached.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-allocation-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-allocation-result.frame-1.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-allocation-result.frame-2.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-allocation-result.frame-3.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-allocation-result.frame-4.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-original-cached.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-cancel-before-submit-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-cancel-before-submit-result.frame-1.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-cancel-before-submit-result.frame-2.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-cancel-before-submit-result.frame-3.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-cancel-before-submit-result.frame-4.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-original-cached.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-stale-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-stale-result.frame-1.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-stale-result.frame-2.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-stale-result.frame-3.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-stale-result.frame-4.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-original-cached.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-discard-after-submit-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-discard-after-submit-result.frame-1.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-discard-after-submit-result.frame-2.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-discard-after-submit-result.frame-3.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-discard-after-submit-result.frame-4.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-original-cached.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-build-capacity-result.frame-0.png",
+      "source_sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "export": "images/native-c7f3e33e38022c38a1.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-build-capacity-result.frame-1.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-build-capacity-result.frame-2.png",
+      "source_sha256": "27307f395d1bd5023bd4b73de6ea0a85329f97066a9b2099a3f265ff74c7ee53",
+      "export": "images/native-27307f395d1bd5023b.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-build-capacity-result.frame-3.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/guardian-cut-0.065-build-capacity-result.frame-4.png",
+      "source_sha256": "4b9d17445e989a18f07f3cf405a88c07957002580823c971f3cbb196e6b99cf7",
+      "export": "images/native-4b9d17445e989a18f0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-add-0.065-original-cached.png",
+      "source_sha256": "6e961e823720d855a5d399c8fe57b8bd5db77beb59d5498b64e10cdbc2ffbdb6",
+      "export": "images/native-6e961e823720d855a5.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-add-0.065-none-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-add-0.065-none-result.frame-1.png",
+      "source_sha256": "3b490019e400ed8ef090ffa352453cd5675594145d1430a23c0efa9ed24b936b",
+      "export": "images/native-3b490019e400ed8ef0.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-add-0.065-none-result.frame-2.png",
+      "source_sha256": "6e961e823720d855a5d399c8fe57b8bd5db77beb59d5498b64e10cdbc2ffbdb6",
+      "export": "images/native-6e961e823720d855a5.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-add-0.065-none-result.frame-3.png",
+      "source_sha256": "6e961e823720d855a5d399c8fe57b8bd5db77beb59d5498b64e10cdbc2ffbdb6",
+      "export": "images/native-6e961e823720d855a5.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-original-cached.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-none-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-none-result.frame-1.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-none-result.frame-2.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-none-result.frame-3.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-original-cached.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-allocation-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-allocation-result.frame-1.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-allocation-result.frame-2.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-allocation-result.frame-3.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-allocation-result.frame-4.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-original-cached.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-cancel-before-submit-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-cancel-before-submit-result.frame-1.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-cancel-before-submit-result.frame-2.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-cancel-before-submit-result.frame-3.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-cancel-before-submit-result.frame-4.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-original-cached.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-stale-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-stale-result.frame-1.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-stale-result.frame-2.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-stale-result.frame-3.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-stale-result.frame-4.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-original-cached.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-discard-after-submit-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-discard-after-submit-result.frame-1.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-discard-after-submit-result.frame-2.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-discard-after-submit-result.frame-3.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-discard-after-submit-result.frame-4.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-original-cached.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-build-capacity-result.frame-0.png",
+      "source_sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "export": "images/native-38ea8676c8bca603cb.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-build-capacity-result.frame-1.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-build-capacity-result.frame-2.png",
+      "source_sha256": "19a03102a6d2e89408a0b2bb26dd53360e55f56a4d4821941ca28345a2555157",
+      "export": "images/native-19a03102a6d2e89408.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-build-capacity-result.frame-3.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    },
+    {
+      "source": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/sequences/robot-cut-0.065-build-capacity-result.frame-4.png",
+      "source_sha256": "70eb1ef6e042ce5c937909edfdd785569ed4e82f0d5a4662c4dbbb3d728bb7a5",
+      "export": "images/native-70eb1ef6e042ce5c93.webp",
+      "rgba_equal": true
+    }
+  ]
+}

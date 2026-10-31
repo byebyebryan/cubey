@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "scope": "Static HTML/data/assets and mock-DOM interaction; browser rendering is checked separately",
+  "ids": 40,
+  "cost_states": 8,
+  "image_states": 8,
+  "sequences": 14,
+  "sequence_states": 66,
+  "reset": true
+}

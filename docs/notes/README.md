@@ -100,6 +100,9 @@ the architecture and project guides remain current authority.
   boundaries and conditional local storage/time-budget experiments.
 - [Cached commit loop execution](sdf-cached-commit-loop-progress.md): private
   sample-reuse/canonical-pruning qualification and measured commit checkpoints.
+- [Cached commit reuse results](sdf-cached-commit-results.md): identical raw
+  Cached fields, matched commit speedups, rejected regional sampling and the
+  measured case for local storage and bounded maintenance.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

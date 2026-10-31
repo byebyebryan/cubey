@@ -1,0 +1,69 @@
+{
+  "passed": true,
+  "scope": "Private bounded native cache builder; no public promotion or continuous-editing acceptance",
+  "source_head_before_results_commit": "b8b1742942234ff5ba1b1b4fbdaa053c7fb008fe",
+  "implementation": "207d2517",
+  "main_timing_source": "22cc86b999f048ccd8b576734ee4e56888da3a73",
+  "focused_tests": {
+    "passed": 13,
+    "receipt": "ctest-focused.log"
+  },
+  "final_documentation_tests": {
+    "passed": 3,
+    "receipt": "ctest-final-docs.log"
+  },
+  "native": {
+    "canonical_pairs": 61,
+    "stored_r16_comparisons": 2953737728,
+    "independent_saved_dump_hashes_equal": true,
+    "measured_commits": 480,
+    "warmup_commits": 144,
+    "publication_sequences": 14,
+    "sequence_frames": 66,
+    "retained_consumer_replays": 4,
+    "negative_requests": 8,
+    "failure_kinds": [
+      "allocation",
+      "cancel-before-submit",
+      "stale",
+      "discard-after-submit",
+      "build-capacity"
+    ],
+    "logs_scanned": 176,
+    "validation_error_patterns_found": 0,
+    "qualified_reuse_deadline_hits_16_67_ms": 0,
+    "rejected_pruning_routes": [
+      "A4",
+      "A16"
+    ]
+  },
+  "preservation": {
+    "original_shaders_unchanged": 206,
+    "protected_source_content_unchanged": 940,
+    "public_executable_byte_identical": true,
+    "current_study_executable_matches_timing": true,
+    "field_kernel_hashes_match": true
+  },
+  "report": {
+    "static_receipt": "static-checks.json",
+    "browser_receipt": "browser-checks.json",
+    "delivery_receipt": "delivery-checks.json",
+    "published_files": 26,
+    "publication_receipt": "../sdf-cached-commit-report-2026-10.json"
+  },
+  "requested_memory": {
+    "two_fields_and_lists_bytes": 1835432420,
+    "largest_diagnostic_staging_bytes": 76695844,
+    "combined_below_2_GiB": true,
+    "is_allocator_residency_or_total_renderer": false
+  },
+  "limits": [
+    "Ordinary Cached quality control; analytical sub-grid/grazing and prior unscored Guardian depth remain unqualified",
+    "Native sequences and failures are serialized; no concurrent input or GPU preemption",
+    "No rendering runs concurrently during builder timings; no physical input-to-display or XR qualification",
+    "Cold means new Field allocation per commit, not process startup",
+    "Requested resource sizes are not allocator residency",
+    "Regional pruning remains excluded; differing leaf sets leave matched R16 counts unscored",
+    "No persistent allocator, background updater, brush/undo UI, push or site deployment"
+  ]
+}

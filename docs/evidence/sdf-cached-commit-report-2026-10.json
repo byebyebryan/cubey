@@ -1,0 +1,37 @@
+{
+  "report_id": "3659235195747d263ebf8734145db49ba6c1bed67c875e6f62f63274e68d300f",
+  "title": "Cubey SDF — Qualified cache reuse and remaining commit costs",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-10-31T00:00:43.518731+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/3659235195747d263ebf8734145db49ba6c1bed67c875e6f62f63274e68d300f",
+  "file_count": 26,
+  "byte_count": 2636079,
+  "url": "http://starship:8787/reports/3659235195747d263ebf8734145db49ba6c1bed67c875e6f62f63274e68d300f/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-10-31T00:00:43.919289+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 68870,
+    "verified_url": "http://starship:8787/reports/3659235195747d263ebf8734145db49ba6c1bed67c875e6f62f63274e68d300f/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  }
+}

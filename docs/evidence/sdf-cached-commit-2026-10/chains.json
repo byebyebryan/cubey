@@ -1,0 +1,2328 @@
+{
+  "source_head": "665e719ffc4a18a395fedb0c04c8392c75ec6c0a",
+  "source_status": "",
+  "binary_sha256": "c7e6bd52b00339f48e2bb4f1fce0cacc65cb52318319ffcdbd2277f0992bac86",
+  "edit_binary_sha256": "c205d686ae361d2257deddcba09b3cb2270923feb8fab0cc130c5b0af7502964",
+  "harness_sha256": "0b587347efb2956d36ec92f41b3dbb0dc413a80d2d4dd40f254fca3a2c0ff826",
+  "shaders": {
+    "commit_canonical_fallback.comp.spv": "6086287eef48a5fbef5140ffebe6e2f1a821b9b6c54397400bbaf875dae73f2b",
+    "commit_pruned_bricks.comp.spv": "bc22aa5962ee905ad096d9274e8440b9b4c4ba3011b4578b6ca2a9ad52a7296c",
+    "commit_pruned_filter.comp.spv": "26f79b8d6f1ee8e83d73f5d31b6a2a9582d4b35645a38d2a8f78ac2a937888f3",
+    "commit_reuse_bricks.comp.spv": "d64fb0c80293faf97f6f03330c0780f692469b244e92d8146446ebb0c7729a48"
+  },
+  "original_shader_count": 206,
+  "protected_unchanged": 940,
+  "mutable_existing": [
+    "projects/sdf/CMakeLists.txt",
+    "projects/sdf/sdf_field.h",
+    "projects/sdf/tools/cached_edit_study.cpp"
+  ],
+  "mode": "reuse",
+  "regions": 4,
+  "runs": [
+    {
+      "case": {
+        "name": "guardian-chain",
+        "subject": "guardian",
+        "length": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-chain.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/guardian-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.json",
+        "--commit-mode",
+        "reuse",
+        "--commit-regions",
+        "4",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 28.81787509296555,
+      "gpu_before": "2 %, 0 %, 382 MHz, 405 MHz, 33, 20.00 W, 988 MiB",
+      "gpu_after": "2 %, 0 %, 2895 MHz, 14001 MHz, 41, 55.36 W, 910 MiB",
+      "log_sha256": "c89f57301adeaae57af2958b25f8b1f5ea2b98d17a26b0022cf5b0a56be403ab",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "reuse",
+        "pipeline_prepare_ms": 1.269005,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 107230,
+              "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+              "texels": 54901760,
+              "topology_entries": 433024,
+              "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+            },
+            "canonical": {
+              "bricks": 107230,
+              "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+              "texels": 54901760,
+              "topology_entries": 433024,
+              "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11387020687829324324,
+            "name": "guardian-chain-0",
+            "retained_history_steps": 66,
+            "source_admission_cpu_ms": 34.442237,
+            "trials": [
+              {
+                "admission_ms": 17.876386,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 32.997152,
+                "bricks": 107230,
+                "builder_wall_ms": 65.114339,
+                "fallback_gpu_ms": 17.118496,
+                "field_wall_ms": 65.114319,
+                "filter_gpu_ms": 12.484448,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 65.36971,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 15.878656,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  107081,
+                  149,
+                  53961149,
+                  864323,
+                  76288,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 11387020687829324324,
+            "candidate": {
+              "bricks": 107803,
+              "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+              "texels": 55195136,
+              "topology_entries": 434240,
+              "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+            },
+            "canonical": {
+              "bricks": 107803,
+              "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+              "texels": 55195136,
+              "topology_entries": 434240,
+              "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8852747534494244074,
+            "name": "guardian-chain-1",
+            "retained_history_steps": 67,
+            "source_admission_cpu_ms": 33.376764,
+            "trials": [
+              {
+                "admission_ms": 16.639171,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 36.365728,
+                "bricks": 107803,
+                "builder_wall_ms": 68.953265,
+                "fallback_gpu_ms": 20.88048,
+                "field_wall_ms": 68.953235,
+                "filter_gpu_ms": 13.93648,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 7e-05,
+                "ready_to_render_ms": 69.192096,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 15.485247999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  107188,
+                  615,
+                  54014296,
+                  865960,
+                  314880,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8852747534494244074,
+            "candidate": {
+              "bricks": 107862,
+              "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+              "texels": 55225344,
+              "topology_entries": 434304,
+              "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+            },
+            "canonical": {
+              "bricks": 107862,
+              "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+              "texels": 55225344,
+              "topology_entries": 434304,
+              "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 14812328068284063311,
+            "name": "guardian-chain-2",
+            "retained_history_steps": 68,
+            "source_admission_cpu_ms": 33.410483,
+            "trials": [
+              {
+                "admission_ms": 16.961863,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 31.699583999999998,
+                "bricks": 107862,
+                "builder_wall_ms": 62.768949,
+                "fallback_gpu_ms": 15.93376,
+                "field_wall_ms": 62.768919,
+                "filter_gpu_ms": 12.516544,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 62.98882,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 15.765823999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  107702,
+                  160,
+                  54271105,
+                  872319,
+                  81920,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 14812328068284063311,
+            "candidate": {
+              "bricks": 108059,
+              "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+              "texels": 55326208,
+              "topology_entries": 434304,
+              "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+            },
+            "canonical": {
+              "bricks": 108059,
+              "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+              "texels": 55326208,
+              "topology_entries": 434304,
+              "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 10805705327011228654,
+            "name": "guardian-chain-3",
+            "retained_history_steps": 69,
+            "source_admission_cpu_ms": 34.893929,
+            "trials": [
+              {
+                "admission_ms": 16.694991,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 35.267072,
+                "bricks": 108059,
+                "builder_wall_ms": 67.245538,
+                "fallback_gpu_ms": 19.769887999999998,
+                "field_wall_ms": 67.245498,
+                "filter_gpu_ms": 13.576607999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00013,
+                "ready_to_render_ms": 67.531049,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 15.497183999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  107770,
+                  289,
+                  54301690,
+                  876550,
+                  147968,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 10805705327011228654,
+            "candidate": {
+              "bricks": 108133,
+              "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+              "texels": 55364096,
+              "topology_entries": 434368,
+              "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+            },
+            "canonical": {
+              "bricks": 108133,
+              "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+              "texels": 55364096,
+              "topology_entries": 434368,
+              "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2265004877042027597,
+            "name": "guardian-chain-4",
+            "retained_history_steps": 70,
+            "source_admission_cpu_ms": 35.994815,
+            "trials": [
+              {
+                "admission_ms": 17.517735,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 32.100896,
+                "bricks": 108133,
+                "builder_wall_ms": 63.798683,
+                "fallback_gpu_ms": 16.202144,
+                "field_wall_ms": 63.798653,
+                "filter_gpu_ms": 12.507359999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 7e-05,
+                "ready_to_render_ms": 64.019124,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 15.898752,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  107960,
+                  173,
+                  54395667,
+                  879853,
+                  88576,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2265004877042027597,
+            "candidate": {
+              "bricks": 108315,
+              "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+              "texels": 55457280,
+              "topology_entries": 434624,
+              "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+            },
+            "canonical": {
+              "bricks": 108315,
+              "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+              "texels": 55457280,
+              "topology_entries": 434624,
+              "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13914239577526188516,
+            "name": "guardian-chain-5",
+            "retained_history_steps": 71,
+            "source_admission_cpu_ms": 35.266431,
+            "trials": [
+              {
+                "admission_ms": 17.962597,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 33.939648,
+                "bricks": 108315,
+                "builder_wall_ms": 66.191363,
+                "fallback_gpu_ms": 17.640096,
+                "field_wall_ms": 66.191323,
+                "filter_gpu_ms": 12.540223999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 66.422244,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 16.299552,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  108038,
+                  277,
+                  54431117,
+                  884339,
+                  141824,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 13914239577526188516,
+            "candidate": {
+              "bricks": 108403,
+              "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+              "texels": 55502336,
+              "topology_entries": 434688,
+              "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+            },
+            "canonical": {
+              "bricks": 108403,
+              "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+              "texels": 55502336,
+              "topology_entries": 434688,
+              "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 4948006443937280152,
+            "name": "guardian-chain-6",
+            "retained_history_steps": 72,
+            "source_admission_cpu_ms": 35.983674,
+            "trials": [
+              {
+                "admission_ms": 17.554995,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 33.0304,
+                "bricks": 108403,
+                "builder_wall_ms": 65.164009,
+                "fallback_gpu_ms": 16.99936,
+                "field_wall_ms": 65.163979,
+                "filter_gpu_ms": 12.524576,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 65.39049,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 16.03104,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  108216,
+                  187,
+                  54518830,
+                  887762,
+                  95744,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 4948006443937280152,
+            "candidate": {
+              "bricks": 108553,
+              "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+              "texels": 55579136,
+              "topology_entries": 434688,
+              "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+            },
+            "canonical": {
+              "bricks": 108553,
+              "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+              "texels": 55579136,
+              "topology_entries": 434688,
+              "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 71955226333116876,
+            "name": "guardian-chain-7",
+            "retained_history_steps": 73,
+            "source_admission_cpu_ms": 35.795584,
+            "trials": [
+              {
+                "admission_ms": 18.61554,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 34.372448,
+                "bricks": 108553,
+                "builder_wall_ms": 67.645399,
+                "fallback_gpu_ms": 18.496256,
+                "field_wall_ms": 67.645369,
+                "filter_gpu_ms": 12.562752,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.0004,
+                "ready_to_render_ms": 67.87409,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 15.876192,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  108308,
+                  245,
+                  54561657,
+                  892039,
+                  125440,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ]
+      ]
+    },
+    {
+      "case": {
+        "name": "robot-chain",
+        "subject": "robot",
+        "length": 16,
+        "input": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-chain.json"
+      },
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/prepare/robot-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.json",
+        "--commit-mode",
+        "reuse",
+        "--commit-regions",
+        "4",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 37.91432919399813,
+      "gpu_before": "2 %, 0 %, 2895 MHz, 14001 MHz, 41, 55.37 W, 915 MiB",
+      "gpu_after": "2 %, 0 %, 2092 MHz, 14001 MHz, 35, 35.38 W, 930 MiB",
+      "log_sha256": "024d097b2bb99057fed986dea9d8e852f21888eb523568d1fe756e5f3a573ef1",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "reuse",
+        "pipeline_prepare_ms": 1.351535,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 138463,
+              "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+              "texels": 70893056,
+              "topology_entries": 557696,
+              "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+            },
+            "canonical": {
+              "bricks": 138463,
+              "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+              "texels": 70893056,
+              "topology_entries": 557696,
+              "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1656876359464538019,
+            "name": "robot-chain-0",
+            "retained_history_steps": 83,
+            "source_admission_cpu_ms": 2.650182,
+            "trials": [
+              {
+                "admission_ms": 1.335596,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 21.331519999999998,
+                "bricks": 138463,
+                "builder_wall_ms": 25.116427,
+                "fallback_gpu_ms": 1.713984,
+                "field_wall_ms": 25.116407,
+                "filter_gpu_ms": 1.13952,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 25.132097,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 19.617535999999998,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  138179,
+                  284,
+                  69720498,
+                  1027150,
+                  145408,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1656876359464538019,
+            "candidate": {
+              "bricks": 138828,
+              "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+              "texels": 71079936,
+              "topology_entries": 558336,
+              "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+            },
+            "canonical": {
+              "bricks": 138828,
+              "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+              "texels": 71079936,
+              "topology_entries": 558336,
+              "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6686574029110803346,
+            "name": "robot-chain-1",
+            "retained_history_steps": 84,
+            "source_admission_cpu_ms": 2.537111,
+            "trials": [
+              {
+                "admission_ms": 1.207005,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.371872,
+                "bricks": 138828,
+                "builder_wall_ms": 23.112178,
+                "fallback_gpu_ms": 1.8133439999999998,
+                "field_wall_ms": 23.112148,
+                "filter_gpu_ms": 1.14752,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 23.128958,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 17.558528,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  138400,
+                  428,
+                  69830940,
+                  1029860,
+                  219136,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6686574029110803346,
+            "candidate": {
+              "bricks": 138944,
+              "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+              "texels": 71139328,
+              "topology_entries": 558400,
+              "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+            },
+            "canonical": {
+              "bricks": 138944,
+              "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+              "texels": 71139328,
+              "topology_entries": 558400,
+              "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6371340924806423733,
+            "name": "robot-chain-2",
+            "retained_history_steps": 85,
+            "source_admission_cpu_ms": 2.557051,
+            "trials": [
+              {
+                "admission_ms": 1.246345,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.524352,
+                "bricks": 138944,
+                "builder_wall_ms": 23.231299,
+                "fallback_gpu_ms": 1.501152,
+                "field_wall_ms": 23.231279,
+                "filter_gpu_ms": 1.1614399999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00016,
+                "ready_to_render_ms": 23.242169,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.0232,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  138731,
+                  213,
+                  69994697,
+                  1035575,
+                  109056,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6371340924806423733,
+            "candidate": {
+              "bricks": 139074,
+              "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+              "texels": 71205888,
+              "topology_entries": 558464,
+              "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+            },
+            "canonical": {
+              "bricks": 139074,
+              "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+              "texels": 71205888,
+              "topology_entries": 558464,
+              "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3539029408402405265,
+            "name": "robot-chain-3",
+            "retained_history_steps": 86,
+            "source_admission_cpu_ms": 2.616941,
+            "trials": [
+              {
+                "admission_ms": 1.283076,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.693728,
+                "bricks": 139074,
+                "builder_wall_ms": 23.627231,
+                "fallback_gpu_ms": 1.543648,
+                "field_wall_ms": 23.627191,
+                "filter_gpu_ms": 1.170656,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 23.646151,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.15008,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  138848,
+                  226,
+                  70050692,
+                  1039484,
+                  115712,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3539029408402405265,
+            "candidate": {
+              "bricks": 139196,
+              "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+              "texels": 71268352,
+              "topology_entries": 558592,
+              "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+            },
+            "canonical": {
+              "bricks": 139196,
+              "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+              "texels": 71268352,
+              "topology_entries": 558592,
+              "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 998405047903929733,
+            "name": "robot-chain-4",
+            "retained_history_steps": 87,
+            "source_admission_cpu_ms": 2.691091,
+            "trials": [
+              {
+                "admission_ms": 1.320316,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.555264,
+                "bricks": 139196,
+                "builder_wall_ms": 23.36054,
+                "fallback_gpu_ms": 1.746368,
+                "field_wall_ms": 23.36051,
+                "filter_gpu_ms": 1.1871040000000002,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00026,
+                "ready_to_render_ms": 23.37753,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 17.808896,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  138978,
+                  218,
+                  70113110,
+                  1043626,
+                  111616,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 998405047903929733,
+            "candidate": {
+              "bricks": 139331,
+              "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+              "texels": 71337472,
+              "topology_entries": 558784,
+              "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+            },
+            "canonical": {
+              "bricks": 139331,
+              "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+              "texels": 71337472,
+              "topology_entries": 558784,
+              "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8183933449876945312,
+            "name": "robot-chain-5",
+            "retained_history_steps": 88,
+            "source_admission_cpu_ms": 2.763402,
+            "trials": [
+              {
+                "admission_ms": 1.354905,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.631072,
+                "bricks": 139331,
+                "builder_wall_ms": 23.46532,
+                "fallback_gpu_ms": 1.5884159999999998,
+                "field_wall_ms": 23.46528,
+                "filter_gpu_ms": 1.199872,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 9e-05,
+                "ready_to_render_ms": 23.48425,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.042656,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139099,
+                  232,
+                  70171134,
+                  1047554,
+                  118784,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8183933449876945312,
+            "candidate": {
+              "bricks": 139432,
+              "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+              "texels": 71389184,
+              "topology_entries": 558848,
+              "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+            },
+            "canonical": {
+              "bricks": 139432,
+              "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+              "texels": 71389184,
+              "topology_entries": 558848,
+              "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 7167858666550911522,
+            "name": "robot-chain-6",
+            "retained_history_steps": 89,
+            "source_admission_cpu_ms": 2.890542,
+            "trials": [
+              {
+                "admission_ms": 1.398646,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.653439999999996,
+                "bricks": 139432,
+                "builder_wall_ms": 23.602861,
+                "fallback_gpu_ms": 1.5833279999999998,
+                "field_wall_ms": 23.602841,
+                "filter_gpu_ms": 1.212256,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 23.635651,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.070111999999998,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139234,
+                  198,
+                  70236531,
+                  1051277,
+                  101376,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 7167858666550911522,
+            "candidate": {
+              "bricks": 139601,
+              "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+              "texels": 71475712,
+              "topology_entries": 559040,
+              "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+            },
+            "canonical": {
+              "bricks": 139601,
+              "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+              "texels": 71475712,
+              "topology_entries": 559040,
+              "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1904747401656695727,
+            "name": "robot-chain-7",
+            "retained_history_steps": 90,
+            "source_admission_cpu_ms": 2.892523,
+            "trials": [
+              {
+                "admission_ms": 1.660437,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.823904,
+                "bricks": 139601,
+                "builder_wall_ms": 24.056762,
+                "fallback_gpu_ms": 1.649568,
+                "field_wall_ms": 24.056732,
+                "filter_gpu_ms": 1.226464,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 24.076122,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.174336,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139335,
+                  266,
+                  70284834,
+                  1054686,
+                  136192,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1904747401656695727,
+            "candidate": {
+              "bricks": 139675,
+              "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+              "texels": 71513600,
+              "topology_entries": 559104,
+              "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+            },
+            "canonical": {
+              "bricks": 139675,
+              "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+              "texels": 71513600,
+              "topology_entries": 559104,
+              "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18314936555967059383,
+            "name": "robot-chain-8",
+            "retained_history_steps": 91,
+            "source_admission_cpu_ms": 2.949692,
+            "trials": [
+              {
+                "admission_ms": 1.500036,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.845439999999996,
+                "bricks": 139675,
+                "builder_wall_ms": 23.921752,
+                "fallback_gpu_ms": 1.60656,
+                "field_wall_ms": 23.921732,
+                "filter_gpu_ms": 1.238752,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 23.930582,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.238879999999998,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139504,
+                  171,
+                  70367804,
+                  1058244,
+                  87552,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 18314936555967059383,
+            "candidate": {
+              "bricks": 139870,
+              "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+              "texels": 71613440,
+              "topology_entries": 559168,
+              "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+            },
+            "canonical": {
+              "bricks": 139870,
+              "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+              "texels": 71613440,
+              "topology_entries": 559168,
+              "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8134416226798193819,
+            "name": "robot-chain-9",
+            "retained_history_steps": 92,
+            "source_admission_cpu_ms": 3.076473,
+            "trials": [
+              {
+                "admission_ms": 1.531257,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 20.8496,
+                "bricks": 139870,
+                "builder_wall_ms": 25.331908,
+                "fallback_gpu_ms": 1.7189759999999998,
+                "field_wall_ms": 25.331888,
+                "filter_gpu_ms": 1.2525439999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00014,
+                "ready_to_render_ms": 25.350028,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 19.130623999999997,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139580,
+                  290,
+                  70402768,
+                  1062192,
+                  148480,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8134416226798193819,
+            "candidate": {
+              "bricks": 139943,
+              "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+              "texels": 71650816,
+              "topology_entries": 559296,
+              "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+            },
+            "canonical": {
+              "bricks": 139943,
+              "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+              "texels": 71650816,
+              "topology_entries": 559296,
+              "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13921503348872132687,
+            "name": "robot-chain-10",
+            "retained_history_steps": 93,
+            "source_admission_cpu_ms": 3.150564,
+            "trials": [
+              {
+                "admission_ms": 1.550346,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.729983999999998,
+                "bricks": 139943,
+                "builder_wall_ms": 23.72871,
+                "fallback_gpu_ms": 1.654432,
+                "field_wall_ms": 23.72867,
+                "filter_gpu_ms": 1.268832,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00035,
+                "ready_to_render_ms": 23.745651,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.075552,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139771,
+                  172,
+                  70496537,
+                  1066215,
+                  88064,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 13921503348872132687,
+            "candidate": {
+              "bricks": 140119,
+              "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+              "texels": 71740928,
+              "topology_entries": 559488,
+              "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+            },
+            "canonical": {
+              "bricks": 140119,
+              "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+              "texels": 71740928,
+              "topology_entries": 559488,
+              "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11511871129919973718,
+            "name": "robot-chain-11",
+            "retained_history_steps": 94,
+            "source_admission_cpu_ms": 3.266914,
+            "trials": [
+              {
+                "admission_ms": 2.016958,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 20.37568,
+                "bricks": 140119,
+                "builder_wall_ms": 25.409928,
+                "fallback_gpu_ms": 1.937536,
+                "field_wall_ms": 25.409888,
+                "filter_gpu_ms": 1.2804479999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 3e-05,
+                "ready_to_render_ms": 25.429148,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.438143999999998,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  139849,
+                  270,
+                  70532294,
+                  1070394,
+                  138240,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 11511871129919973718,
+            "candidate": {
+              "bricks": 140238,
+              "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+              "texels": 71801856,
+              "topology_entries": 559744,
+              "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+            },
+            "canonical": {
+              "bricks": 140238,
+              "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+              "texels": 71801856,
+              "topology_entries": 559744,
+              "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 17459683113264300848,
+            "name": "robot-chain-12",
+            "retained_history_steps": 95,
+            "source_admission_cpu_ms": 3.329514,
+            "trials": [
+              {
+                "admission_ms": 1.630167,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.764224,
+                "bricks": 140238,
+                "builder_wall_ms": 23.913831,
+                "fallback_gpu_ms": 1.9326079999999999,
+                "field_wall_ms": 23.913791,
+                "filter_gpu_ms": 1.29264,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00025,
+                "ready_to_render_ms": 23.931611,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 17.831616,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  140021,
+                  217,
+                  70617102,
+                  1073650,
+                  111104,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 17459683113264300848,
+            "candidate": {
+              "bricks": 140358,
+              "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+              "texels": 71863296,
+              "topology_entries": 559744,
+              "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+            },
+            "canonical": {
+              "bricks": 140358,
+              "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+              "texels": 71863296,
+              "topology_entries": 559744,
+              "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1719149047447049442,
+            "name": "robot-chain-13",
+            "retained_history_steps": 96,
+            "source_admission_cpu_ms": 3.328804,
+            "trials": [
+              {
+                "admission_ms": 1.711867,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 20.387871999999998,
+                "bricks": 140358,
+                "builder_wall_ms": 24.834385,
+                "fallback_gpu_ms": 1.956032,
+                "field_wall_ms": 24.834345,
+                "filter_gpu_ms": 1.307456,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00048,
+                "ready_to_render_ms": 24.855435,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.431839999999998,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  140139,
+                  219,
+                  70673897,
+                  1077271,
+                  112128,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1719149047447049442,
+            "candidate": {
+              "bricks": 140537,
+              "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+              "texels": 71954944,
+              "topology_entries": 559936,
+              "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+            },
+            "canonical": {
+              "bricks": 140537,
+              "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+              "texels": 71954944,
+              "topology_entries": 559936,
+              "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3687383293623848582,
+            "name": "robot-chain-14",
+            "retained_history_steps": 97,
+            "source_admission_cpu_ms": 3.336074,
+            "trials": [
+              {
+                "admission_ms": 1.768458,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.796096,
+                "bricks": 140537,
+                "builder_wall_ms": 24.297484,
+                "fallback_gpu_ms": 1.825184,
+                "field_wall_ms": 24.297454,
+                "filter_gpu_ms": 1.319616,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 4e-05,
+                "ready_to_render_ms": 24.314104,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 17.970912,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  140267,
+                  270,
+                  70735982,
+                  1080722,
+                  138240,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3687383293623848582,
+            "candidate": {
+              "bricks": 140642,
+              "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.r16.bin"
+              ],
+              "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+              "texels": 72008704,
+              "topology_entries": 560128,
+              "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+            },
+            "canonical": {
+              "bricks": 140642,
+              "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.r16.bin"
+              ],
+              "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+              "texels": 72008704,
+              "topology_entries": 560128,
+              "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2830288357869539815,
+            "name": "robot-chain-15",
+            "retained_history_steps": 98,
+            "source_admission_cpu_ms": 3.439185,
+            "trials": [
+              {
+                "admission_ms": 1.755667,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 19.896544,
+                "bricks": 140642,
+                "builder_wall_ms": 24.270403,
+                "fallback_gpu_ms": 1.7920639999999999,
+                "field_wall_ms": 24.270373,
+                "filter_gpu_ms": 1.3315839999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1835432420,
+                "pipeline_prepare_ms": 0.00012,
+                "ready_to_render_ms": 24.292743,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 18.10448,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  140441,
+                  201,
+                  70820846,
+                  1084946,
+                  102912,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      },
+      "independent_files": [
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ],
+        [
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.topology.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.topology.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.cells.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.cells.bin",
+            "byte_identical": true
+          },
+          {
+            "candidate": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-candidate.r16.bin",
+            "canonical": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.r16.bin",
+            "byte_identical": true
+          }
+        ]
+      ]
+    }
+  ],
+  "complete": true,
+  "passed": true
+}

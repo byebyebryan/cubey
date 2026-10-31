@@ -1,0 +1,232 @@
+Start testing: Oct 30 16:10 PDT
+----------------------------------------------------------
+8/300 Testing: documentation_hygiene
+8/300 Test: documentation_hygiene
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tools/check_documentation.py"
+Directory: /home/bryan/code/cubey/build/release
+"documentation_hygiene" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+PASS: documentation navigation
+<end of output>
+Test time =   0.53 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_hygiene" end time: Oct 30 16:10 PDT
+"documentation_hygiene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/300 Testing: documentation_media
+9/300 Test: documentation_media
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tools/check_documentation.py" "--check" "media"
+Directory: /home/bryan/code/cubey/build/release
+"documentation_media" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+PASS: documentation media
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_media" end time: Oct 30 16:10 PDT
+"documentation_media" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/300 Testing: documentation_rules
+10/300 Test: documentation_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tests/tools/test_documentation.py"
+Directory: /home/bryan/code/cubey/build/release
+"documentation_rules" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.095s
+
+OK
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_rules" end time: Oct 30 16:10 PDT
+"documentation_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/300 Testing: shader_build_rules
+13/300 Test: shader_build_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tests/tools/test_shader_build.py" "--cmake" "/usr/bin/cmake"
+Directory: /home/bryan/code/cubey/build/release
+"shader_build_rules" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.863s
+
+OK
+<end of output>
+Test time =   0.89 sec
+----------------------------------------------------------
+Test Passed.
+"shader_build_rules" end time: Oct 30 16:10 PDT
+"shader_build_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+263/300 Testing: sdf_render_mode_tests
+263/300 Test: sdf_render_mode_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_render_mode_tests"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_render_mode_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+named modes, explicit legacy controls, conflicts, recipes, debug and template/layering contracts passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_render_mode_tests" end time: Oct 30 16:10 PDT
+"sdf_render_mode_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+264/300 Testing: sdf_shader_selection_tests
+264/300 Test: sdf_shader_selection_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_shader_selection_tests"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_shader_selection_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+source shader eligibility/default/debug/appearance/history boundaries passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_shader_selection_tests" end time: Oct 30 16:10 PDT
+"sdf_shader_selection_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+265/300 Testing: sdf_region_tests
+265/300 Test: sdf_region_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_region_tests" "/home/bryan/code/cubey/projects/sdf/comparison/fixtures.json"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_region_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+region comparisons=76699 max_error=5.96046e-08 fallback_cases=32 nested_complement_points=4096 bound_points=3539082 far_points=3153180 known_surface_points=103
+<end of output>
+Test time =   0.92 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_region_tests" end time: Oct 30 16:10 PDT
+"sdf_region_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+266/300 Testing: sdf_recipe_tests
+266/300 Test: sdf_recipe_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_recipe_tests"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_recipe_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_recipe_tests" end time: Oct 30 16:10 PDT
+"sdf_recipe_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+267/300 Testing: sdf_authored_tests
+267/300 Test: sdf_authored_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_authored_tests"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_authored_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.30 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_authored_tests" end time: Oct 30 16:10 PDT
+"sdf_authored_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+268/300 Testing: sdf_material_tests
+268/300 Test: sdf_material_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_material_tests"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_material_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_material_tests" end time: Oct 30 16:10 PDT
+"sdf_material_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+269/300 Testing: sdf_normal_projection_tests
+269/300 Test: sdf_normal_projection_tests
+Command: "/home/bryan/.local/bin/python3.12" "/home/bryan/code/cubey/projects/sdf/tools/normal_projection_tests.py"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_normal_projection_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.004s
+
+OK
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_normal_projection_tests" end time: Oct 30 16:10 PDT
+"sdf_normal_projection_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+270/300 Testing: sdf_mirror_author_tests
+270/300 Test: sdf_mirror_author_tests
+Command: "/home/bryan/.local/bin/python3.12" "/home/bryan/code/cubey/projects/sdf/tools/mirror_author_tests.py"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_mirror_author_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.015s
+
+OK
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_mirror_author_tests" end time: Oct 30 16:10 PDT
+"sdf_mirror_author_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+271/300 Testing: sdf_workshop_tests
+271/300 Test: sdf_workshop_tests
+Command: "/home/bryan/code/cubey/build/release/projects/sdf/cubey_sdf_workshop_tests"
+Directory: /home/bryan/code/cubey/build/release/projects/sdf
+"sdf_workshop_tests" start time: Oct 30 16:10 PDT
+Output:
+----------------------------------------------------------
+Shared/legacy seven-recipe fingerprints exact; CSG appearance leaves geometry cache identity intact; affine bump derivative verified; working materials survive specimen and CSG option changes.
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"sdf_workshop_tests" end time: Oct 30 16:10 PDT
+"sdf_workshop_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 30 16:10 PDT
+
+build =   0.89 sec*proc
+
+docs =   0.71 sec*proc
+
+policy =   1.60 sec*proc
+
+unit =   1.60 sec*proc
