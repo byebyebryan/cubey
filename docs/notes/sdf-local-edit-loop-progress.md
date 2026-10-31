@@ -53,3 +53,20 @@ uses a full old-source center evaluation and a strict guarded `2R` separation;
 uncertain bricks retain canonical sampling. No general regional evaluator is
 reintroduced. Scheduled publication and timestamped input remain behind the
 independent correctness and cost gates.
+
+Root dominance now passes the same 39 standalone and 32 chained exact-cache
+comparisons as the local route. The expanded preview passes 75 regular rays and
+45 pending/base ownership checks. The near-workspace normal control exposed a
+finite-difference blend across the clipping branch; the private sphere preview
+now uses its analytic sphere or workspace-face normal, retaining raw cutters.
+Admission accepts 0/1/2/4/8 and rejects the tested ninth stamp, mixed operations,
+changed prefix/palette/radius/scale/material, smoothing and non-sphere tools.
+
+Sixteen subject batches at 1/2/4/8 stamps pass fresh canonical topology and every
+raw R16 texel, with independent saved-file comparisons. The same sixteen pass
+32-group dispatch slicing using the exact same SPIR-V and dispatch-base offsets.
+Sliced raw copies use 16 MiB slabs. This is serialized unit qualification, not
+proof of interleaved frame time. The first four-stamp Guardian cut measurements
+already exceed the 8 ms GPU allowance available across four 2 ms maintenance
+frames; the matched final series and prefix/failure checks will settle the stop
+gate without enlarging the pending queue or changing quality.

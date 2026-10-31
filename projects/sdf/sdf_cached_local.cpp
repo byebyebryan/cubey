@@ -80,6 +80,9 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
         vkCmdCopyBuffer(c, base.nodes().handle(), dst.nodes_[target]->handle(), 1, &region);
     };
     const auto submit = [&](auto record) {
+        if (slicing_.before)
+            slicing_.before("copy");
+        const auto unit_started = Clock::now();
         static_cast<void>(gpu_.submit_and_wait(
             {.label = "local clone chunk", .work = [&](vulkan::GpuOwnerContext& owner) {
                  vulkan::ImmediateCommands commands(owner);
@@ -99,6 +102,8 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
         result.gpu_ms += cost;
         result.max_chunk_gpu_ms = std::max(result.max_chunk_gpu_ms, cost);
         ++result.chunks;
+        if (slicing_.after)
+            slicing_.after({"copy", 0, 0, cost, milliseconds(unit_started)});
     };
     if (!slab_bytes)
         submit([&](VkCommandBuffer c) {
@@ -170,8 +175,11 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
                     ? state->second.high_water
                     : base.stats_.brick_count;
     counts[1] = base.stats_.brick_count;
-    result.copy = clone(dst, base);
+    result.copy = clone(dst, base, slicing_.copy_slab_bytes);
     const auto program = authored_program_bytes(&p.edited);
+    if (slicing_.before)
+        slicing_.before("initialize");
+    const auto init_started = Clock::now();
     static_cast<void>(gpu_.submit_and_wait(
         {.label = "local initialize", .work = [&](vulkan::GpuOwnerContext& owner) {
              local_controls_->upload(&controls, sizeof(controls));
@@ -179,10 +187,19 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
              dst.authored_program_->upload(program.data(), program.size());
              vulkan::ImmediateCommands commands(owner);
              auto c = commands.command_buffer();
+             profiler_->begin_frame(c, 0);
+             profiler_->begin_pass(c, 0, "local.initialize");
              vkCmdFillBuffer(c, dst.frontiers_[0]->handle(), 0, 4, 0);
              local_barrier(c);
+             profiler_->end_pass(c, 0);
              commands.submit_and_wait();
          }}));
+    profiler_->collect(0);
+    double init_gpu = 0;
+    for (const auto& t : profiler_->latest_timings())
+        init_gpu += t.milliseconds;
+    if (slicing_.after)
+        slicing_.after({"initialize", 0, 0, init_gpu, milliseconds(init_started)});
     const auto dispatch = [&](unsigned kind, unsigned level, unsigned count, unsigned input,
                               unsigned new_texels = 0) {
         vulkan::DescriptorWriteBatch writes;
@@ -209,41 +226,66 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
                                            : *local_canonical_;
         const unsigned groups = kind == 2 ? (count + 63) / 64 : count,
                        stride = kind == 2 ? 65535 : 1024;
-        static_cast<void>(gpu_.submit_and_wait(
-            {.label = "local dispatch", .work = [&](vulkan::GpuOwnerContext& owner) {
-                 vulkan::ImmediateCommands commands(owner);
-                 auto c = commands.command_buffer();
-                 local_barrier(c);
-                 if (kind == 0)
-                     vkCmdFillBuffer(c, dst.counters_->handle(), 0, 4, 0);
-                 local_barrier(c);
-                 profiler_->begin_frame(c, 0);
-                 profiler_->begin_pass(c, 0, "local.work");
-                 vulkan::CommandRecorder recorder(c);
-                 recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline());
-                 recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(), 0,
-                                              set);
-                 recorder.push_constants(pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                                         std::array<std::uint32_t, 5>{
-                                             level, count, kind == 2 ? new_texels : dst.capacity,
-                                             fallback_limit_, dst.atlas_axis});
-                 recorder.dispatch(std::min(groups, stride), (groups + stride - 1) / stride, 1);
-                 profiler_->end_pass(c, 0);
-                 local_barrier(c);
-                 commands.submit_and_wait();
-             }}));
-        profiler_->collect(0);
-        for (const auto& t : profiler_->latest_timings()) {
-            if (kind == 0)
-                result.local_work[15]++; // number of classifier timing spans
-            if (kind == 1)
-                result.reuse_gpu_ms += t.milliseconds;
-            if (kind == 2)
-                result.fallback_gpu_ms += t.milliseconds;
-        }
+        const unsigned pipeline_index = kind == 2 ? 2 : kind + (dominance ? 3 : 0);
         double cost = 0;
-        for (const auto& t : profiler_->latest_timings())
-            cost += t.milliseconds;
+        for (unsigned offset = 0; offset < groups;) {
+            const unsigned chunk =
+                slicing_.groups
+                    ? std::min({slicing_.groups, groups - offset, stride - offset % stride})
+                    : groups;
+            const std::string kind_name = kind == 0   ? "classify"
+                                          : kind == 1 ? "samples"
+                                                      : "canonical";
+            if (slicing_.before)
+                slicing_.before(kind_name);
+            const auto unit_started = Clock::now();
+            static_cast<void>(gpu_.submit_and_wait(
+                {.label = "local dispatch", .work = [&](vulkan::GpuOwnerContext& owner) {
+                     vulkan::ImmediateCommands commands(owner);
+                     auto c = commands.command_buffer();
+                     local_barrier(c);
+                     if (kind == 0 && offset == 0)
+                         vkCmdFillBuffer(c, dst.counters_->handle(), 0, 4, 0);
+                     local_barrier(c);
+                     profiler_->begin_frame(c, 0);
+                     profiler_->begin_pass(c, 0, "local.work");
+                     vulkan::CommandRecorder recorder(c);
+                     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                            slicing_.groups
+                                                ? sliced_pipelines_[pipeline_index]->handle()
+                                                : pipeline.pipeline());
+                     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(),
+                                                  0, set);
+                     recorder.push_constants(
+                         pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                         std::array<std::uint32_t, 5>{level, count,
+                                                      kind == 2 ? new_texels : dst.capacity,
+                                                      fallback_limit_, dst.atlas_axis});
+                     if (slicing_.groups)
+                         vkCmdDispatchBase(c, offset % stride, offset / stride, 0, chunk, 1, 1);
+                     else
+                         recorder.dispatch(std::min(groups, stride), (groups + stride - 1) / stride,
+                                           1);
+                     profiler_->end_pass(c, 0);
+                     local_barrier(c);
+                     commands.submit_and_wait();
+                 }}));
+            profiler_->collect(0);
+            double unit_gpu = 0;
+            for (const auto& t : profiler_->latest_timings()) {
+                if (kind == 0)
+                    result.local_work[15]++; // number of classifier timing spans
+                if (kind == 1)
+                    result.reuse_gpu_ms += t.milliseconds;
+                if (kind == 2)
+                    result.fallback_gpu_ms += t.milliseconds;
+                unit_gpu += t.milliseconds;
+            }
+            cost += unit_gpu;
+            if (slicing_.after)
+                slicing_.after({kind_name, level, chunk, unit_gpu, milliseconds(unit_started)});
+            offset += chunk;
+        }
         return cost;
     };
     unsigned count = 1, input = 0;

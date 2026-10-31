@@ -106,6 +106,25 @@ double CachedCommitStudy::prepare(CommitBuilder mode) {
             create(local_dom_filter_, "local_dom_filter.comp.spv");
             create(local_dom_samples_, "local_dom_samples.comp.spv");
         }
+        if (slicing_.groups) {
+            const std::array resources{&local_filter_, &local_samples_, &local_canonical_,
+                                       &local_dom_filter_, &local_dom_samples_};
+            const std::array names{"local_filter.comp.spv", "local_samples.comp.spv",
+                                   "local_canonical.comp.spv", "local_dom_filter.comp.spv",
+                                   "local_dom_samples.comp.spv"};
+            for (std::size_t i = 0; i < resources.size(); ++i) {
+                if (!*resources[i] || sliced_pipelines_[i])
+                    continue;
+                const std::array stages{render::compute_shader_file(
+                    std::filesystem::path(CUBEY_SDF_SHADER_DIR) / names[i])};
+                const render::ShaderProgram shader(device_, stages);
+                const vulkan::ComputePipelineInfo info(
+                    {.layout = (*resources[i])->layout(), .shader_stage = shader.stages().front()});
+                auto create_info = info.create_info();
+                create_info.flags |= VK_PIPELINE_CREATE_DISPATCH_BASE_BIT;
+                sliced_pipelines_[i].emplace(device_, create_info);
+            }
+        }
     }
     return elapsed(start);
 }

@@ -72,17 +72,16 @@ Hit trace(vec3 origin,vec3 direction,float limit) {
     }
     return Hit(0,2,steps,ivec3(0),0u);
 }
-float strokeToolDistance(vec3 p,uint index) {
-    return max(authoredPrimitive(p,strokeTools[index]),boxDistance(p,vec3(.499)));
-}
 vec3 hitNormal(vec3 p,Hit hit) {
     if(hit.pointer<STROKE_SURFACE)return strokeBaseNormal(p,hit);
-    uint index=hit.pointer-STROKE_SURFACE;vec3 gradient;
-    for(int axis=0;axis<3;axis++) {
-        vec3 d=vec3(0);d[axis]=VOXEL*.5;
-        gradient[axis]=strokeToolDistance(p+d,index)-strokeToolDistance(p-d,index);
+    uint index=hit.pointer-STROKE_SURFACE;
+    vec3 delta=p-strokeTools[index].center_code.xyz;
+    vec3 n=length(delta)>1e-12?normalize(delta):vec3(0,1,0);
+    if(strokeHeader.y==0u && boxDistance(p,vec3(.499))>
+        authoredPrimitive(p,strokeTools[index])) {
+        vec3 a=abs(p);int axis=a.x>a.y?(a.x>a.z?0:2):(a.y>a.z?1:2);
+        n=vec3(0);n[axis]=p[axis]<0.0?-1.0:1.0;
     }
-    vec3 n=length(gradient)>1e-12?normalize(gradient):vec3(0,1,0);
     return strokeHeader.y!=0u?-n:n;
 }
 #endif

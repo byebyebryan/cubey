@@ -3,6 +3,7 @@
 #include "sdf_cached_stroke.h"
 #include "sdf_field.h"
 #include "sdf_regions.h"
+#include <functional>
 #include <unordered_map>
 
 namespace cubey::projects::sdf {
@@ -17,6 +18,16 @@ struct CommitCopyStats {
     double wall_ms = 0, gpu_ms = 0, max_chunk_gpu_ms = 0;
     std::uint64_t bytes = 0;
     std::uint32_t chunks = 0;
+};
+struct CommitUnit {
+    std::string kind;
+    unsigned level = 0, groups = 0;
+    double gpu_ms = 0, wall_ms = 0;
+};
+struct CommitSlicing {
+    unsigned groups = 0, copy_slab_bytes = 0;
+    std::function<void(std::string_view)> before;
+    std::function<void(const CommitUnit&)> after;
 };
 struct CommitBuildStats {
     double admission_ms = 0, pipeline_prepare_ms = 0, region_prepare_ms = 0, wall_ms = 0;
@@ -48,6 +59,11 @@ class CachedCommitStudy {
     CachedCommitStudy(vulkan::Device& device, ProjectGpuServices& gpu,
                       std::uint32_t fallback_limit = 2U * 1024U * 1024U);
     double prepare(CommitBuilder mode);
+    // Private cooperative scheduling. Callbacks run on the caller/worker, never
+    // while holding the GPU owner. They may defer the next bounded submission.
+    void set_slicing(CommitSlicing slicing) {
+        slicing_ = std::move(slicing);
+    }
     [[nodiscard]] std::uint64_t working_bytes() const {
         return 132U + fallbacks_->size() + new_bricks_->size() +
                (local_entries_ ? local_entries_->size() + 608U : 0U);
@@ -84,5 +100,7 @@ class CachedCommitStudy {
         std::uint32_t high_water;
     };
     std::unordered_map<const Field*, LocalFieldState> local_fields_;
+    CommitSlicing slicing_;
+    std::array<std::optional<vulkan::ComputePipeline>, 5> sliced_pipelines_;
 };
 } // namespace cubey::projects::sdf

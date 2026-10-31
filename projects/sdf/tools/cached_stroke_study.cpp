@@ -32,6 +32,60 @@ void save(const std::filesystem::path& path, const Json& value) {
     if (!file)
         throw std::runtime_error("cannot save cached edit receipt");
 }
+template <class T> std::string digest(const std::vector<T>& v) {
+    return asset::sha256_hex(std::as_bytes(std::span(v)));
+}
+template <class T> void binary(const std::filesystem::path& p, const std::vector<T>& v) {
+    std::ofstream f(p, std::ios::binary);
+    f.write(reinterpret_cast<const char*>(v.data()),
+            static_cast<std::streamsize>(v.size() * sizeof(T)));
+    if (!f)
+        throw std::runtime_error("cannot save raw cache snapshot");
+}
+Json describe(const CommitSnapshot& s, const std::filesystem::path& prefix, bool dump) {
+    Json result{{"topology_entries", s.topology.size()},
+                {"bricks", s.cells.size()},
+                {"texels", s.samples.size()},
+                {"topology_sha256", digest(s.topology)},
+                {"cells_sha256", digest(s.cells)},
+                {"raw_r16_sha256", digest(s.samples)}};
+    result["physical_slots_sha256"] = digest(s.slots);
+    if (dump) {
+        for (const auto& suffix : {".topology.bin", ".cells.bin", ".r16.bin"})
+            result["files"].push_back(prefix.string() + suffix);
+        binary(prefix.string() + ".topology.bin", s.topology);
+        binary(prefix.string() + ".cells.bin", s.cells);
+        binary(prefix.string() + ".r16.bin", s.samples);
+        result["slots_file"] = prefix.string() + ".slots.bin";
+        binary(prefix.string() + ".slots.bin", s.slots);
+    }
+    return result;
+}
+Json compare(const CommitSnapshot& a, const CommitSnapshot& b) {
+    const bool topology = a.topology == b.topology, cells = a.cells == b.cells;
+    std::uint64_t differences = 0, zero_differences = 0;
+    Json examples = Json::array();
+    if (cells && a.samples.size() == b.samples.size()) {
+        for (std::size_t i = 0; i < a.samples.size(); ++i)
+            if (a.samples[i] != b.samples[i]) {
+                ++differences;
+                if ((a.samples[i] & 0x7fffU) == 0 && (b.samples[i] & 0x7fffU) == 0)
+                    ++zero_differences;
+                if (examples.size() < 32)
+                    examples.push_back({{"morton", a.cells[i / 512]},
+                                        {"sample", i % 512},
+                                        {"candidate_bits", a.samples[i]},
+                                        {"canonical_bits", b.samples[i]}});
+            }
+    } else
+        differences = std::max(a.samples.size(), b.samples.size());
+    return {{"passed", topology && cells && differences == 0},
+            {"topology_equal", topology},
+            {"logical_leaves_equal", cells},
+            {"r16_differences", differences},
+            {"signed_zero_differences", zero_differences},
+            {"examples", examples}};
+}
 Json identity(const CachedStrokeProgram& p) {
     return {{"base_geometry_hash", authored_geometry_hash(p.base)},
             {"edited_geometry_hash", authored_geometry_hash(p.edited)},
@@ -80,6 +134,67 @@ std::unique_ptr<vulkan::Buffer> controls(vulkan::Device& device, const CachedStr
                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT});
     p->upload(&data, sizeof(data));
     return p;
+}
+void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& input,
+               const std::vector<CachedStrokeProgram>& programs,
+               const std::filesystem::path& output, CommitBuilder mode, unsigned trials,
+               unsigned warmup, unsigned slice_groups, Json& receipt) {
+    Field base(device, gpu), candidate(device, gpu);
+    CachedCommitStudy builder(device, gpu);
+    Json units;
+    builder.set_slicing({.groups = slice_groups,
+                         .copy_slab_bytes = slice_groups ? 16U * 1024U * 1024U : 0U,
+                         .before = {},
+                         .after = [&](const CommitUnit& u) {
+                             units.push_back({{"kind", u.kind},
+                                              {"level", u.level},
+                                              {"groups", u.groups},
+                                              {"gpu_ms", u.gpu_ms},
+                                              {"wall_ms", u.wall_ms}});
+                         }});
+    receipt["cache_pipeline_prepare_ms"] = builder.prepare(mode);
+    receipt["cache_runs"] = Json::array();
+    bool passed = true;
+    for (std::size_t i = 0; i < programs.size(); ++i) {
+        const auto& p = programs[i];
+        base.build(p.base);
+        Json row{{"name", input.at("cases").at(i).at("name")}, {"trials", Json::array()}};
+        for (unsigned t = 0; t < trials + warmup; ++t) {
+            units = Json::array();
+            const auto stats = builder.build(candidate, base, p, mode);
+            row["trials"].push_back(
+                {{"warmup", t < warmup},
+                 {"builder_wall_ms", stats.wall_ms},
+                 {"admission_ms", stats.admission_ms},
+                 {"filter_gpu_ms", candidate.stats().filter_gpu_ms},
+                 {"reuse_gpu_ms", stats.reuse_gpu_ms},
+                 {"fallback_gpu_ms", stats.fallback_gpu_ms},
+                 {"copy_gpu_ms", stats.copy.gpu_ms},
+                 {"copy_wall_ms", stats.copy.wall_ms},
+                 {"local_work", stats.local_work},
+                 {"units", units},
+                 {"locality_bound", stats.locality_bound},
+                 {"locality_guard", stats.locality_guard},
+                 {"geometry_payload_bytes", base.stats().allocation_bytes +
+                                                candidate.stats().allocation_bytes +
+                                                builder.working_bytes()}});
+        }
+        const auto actual = CachedCommitStudy::snapshot(device, gpu, candidate);
+        base.build(p.edited);
+        const auto expected = CachedCommitStudy::snapshot(device, gpu, base);
+        auto prefix = output;
+        prefix.replace_extension("case-" + std::to_string(i));
+        row["candidate"] = describe(actual, prefix.string() + "-candidate", true);
+        row["canonical"] = describe(expected, prefix.string() + "-canonical", true);
+        row["comparison"] = compare(actual, expected);
+        passed = passed && row["comparison"].at("passed").get<bool>();
+        receipt["cache_runs"].push_back(std::move(row));
+        save(output, receipt);
+    }
+    receipt["cache_complete"] = true;
+    receipt["cache_passed"] = passed;
+    if (!passed)
+        throw std::runtime_error("stroke cache qualification failed");
 }
 Json run_queries(vulkan::Device& device, ProjectGpuServices& gpu, const Json& input,
                  const std::vector<CachedStrokeProgram>& programs) {
@@ -162,6 +277,190 @@ Json run_queries(vulkan::Device& device, ProjectGpuServices& gpu, const Json& in
     }
     return result;
 }
+int run_prefix(SdfConfig config, const Json& input, const CachedStrokeProgram& whole,
+               const std::filesystem::path& output, CommitBuilder mode) {
+    const auto& c = input.at("cases").at(0);
+    auto first =
+        prepare_cached_stroke(whole.base, parse_authored_scene(c.at("prefix_scene").dump()));
+    auto tail = prepare_cached_stroke(first.edited, whole.edited);
+    if (whole.controls.header[0] != 8 || first.controls.header[0] != 4 ||
+        tail.controls.header[0] != 4 || first.controls.header[1] != whole.controls.header[1] ||
+        tail.controls.header[1] != whole.controls.header[1])
+        throw std::invalid_argument(
+            "prefix control requires eight same-operation stamps split four/four");
+    const std::string fault = input.value("prefix_fault", std::string("none"));
+    if (fault != "none" && fault != "allocation" && fault != "cancel-before-submit" &&
+        fault != "stale" && fault != "discard-after-submit" && fault != "build-capacity" &&
+        fault != "append-capacity")
+        throw std::invalid_argument("unknown prefix fault");
+    if (config.common.frames != (fault == "none" ? 4U : 5U) ||
+        !config.common.headless_render_only || !config.common.profile_output_prefix.empty() ||
+        !config.quality_output.empty())
+        throw std::invalid_argument("prefix study needs four/five unprofiled capture frames");
+    ProjectRuntimeAdapter runtime;
+    std::unique_ptr<Field> base, candidate;
+    std::unique_ptr<CachedCommitStudy> builder;
+    std::unique_ptr<vulkan::Buffer> all_controls, tail_controls;
+    Renderer original, preview, replacement;
+    unsigned published = 0, retired = 0;
+    bool fault_done = false;
+    Json receipt{{"scope",
+                  "Serialized four/four prefix publication with completed-frame readbacks; "
+                  "no in-flight descriptors, paced service or live input acceptance"},
+                 {"format", "cubey.sdf.cached-stroke-prefix"},
+                 {"version", 1},
+                 {"frames", Json::array()},
+                 {"attempts", Json::array()},
+                 {"initial", identity(whole)},
+                 {"prefix", identity(first)},
+                 {"tail", identity(tail)},
+                 {"fault", fault},
+                 {"complete", false}};
+    std::optional<ProjectGpuReadbackTicket> readback;
+    auto finish = [&] {
+        if (!readback)
+            return;
+        runtime.gpu().wait_queue_idle("prefix replacement and all prior readers completed");
+        const auto pixels = runtime.gpu().take_completed_readback(*readback);
+        auto& row = receipt["frames"].back();
+        retired = row.at("baked_prefix").get<unsigned>();
+        row["retired_after_completed_frame"] = retired;
+        row["total_uncommitted_after_completion"] = 8 - retired;
+        auto path = output;
+        path.replace_extension("frame-" + std::to_string(row.at("frame").get<unsigned>()) + ".png");
+        write_png_rgba8(path, pixels.width, pixels.height, pixels.rgba8);
+        row["image"] = path.string();
+        readback.reset();
+    };
+    host::HeadlessPngHostCallbacks callbacks;
+    callbacks.create_resources = [&](host::HeadlessPngContext& ctx) {
+        runtime.attach_gpu_if_needed(ctx.gpu());
+        base = std::make_unique<Field>(ctx.device(), runtime.gpu());
+        base->build(whole.base);
+        builder = std::make_unique<CachedCommitStudy>(ctx.device(), runtime.gpu());
+        receipt["pipeline_prepare_ms"] = builder->prepare(mode);
+        const unsigned capacity = fault == "build-capacity"    ? 1U
+                                  : fault == "append-capacity" ? base->stats().brick_count
+                                                               : 0U;
+        candidate = std::make_unique<Field>(ctx.device(), runtime.gpu(), 64, 128, capacity);
+        const auto slots = host::headless_capture_frame_slot_count(config.common);
+        all_controls = controls(ctx.device(), whole.controls);
+        tail_controls = controls(ctx.device(), tail.controls);
+        original.create(ctx.device(), ctx.gpu(), ctx.render_target().extent,
+                        ctx.render_target().format, slots, base.get(), config, &whole.base);
+        preview.create(ctx.device(), ctx.gpu(), ctx.render_target().extent,
+                       ctx.render_target().format, slots, base.get(), config, &whole.edited,
+                       nullptr, {}, nullptr, all_controls.get());
+        replacement.create(ctx.device(), ctx.gpu(), ctx.render_target().extent,
+                           ctx.render_target().format, slots, base.get(), config, &whole.edited,
+                           nullptr, {}, nullptr, tail_controls.get());
+        receipt["peak_geometry_payload_bytes"] = base->stats().allocation_bytes +
+                                                 candidate->stats().allocation_bytes +
+                                                 builder->working_bytes();
+    };
+    callbacks.before_frame = [&](host::HeadlessPngContext& ctx,
+                                 const host::HeadlessCaptureFrame& frame) {
+        finish(); // This is deliberately serialized qualification, not S1/S2.
+        if (frame.index >= 2 && published == 0) {
+            const bool injected = !fault_done && fault != "none";
+            Json attempt{{"frame", frame.index},
+                         {"prefix_end", 4},
+                         {"injected", injected},
+                         {"pending_before", 8 - retired}};
+            const auto started = Clock::now();
+            bool failed = injected && (fault == "allocation" || fault == "cancel-before-submit");
+            attempt["submitted_gpu_work"] = !failed;
+            if (!failed) {
+                try {
+                    const auto s = builder->build(*candidate, *base, first, mode);
+                    attempt.update({{"builder_wall_ms", s.wall_ms}, {"local_work", s.local_work}});
+                } catch (const CapacityExceeded& error) {
+                    if (!injected || (fault != "build-capacity" && fault != "append-capacity"))
+                        throw;
+                    failed = true;
+                    attempt["reason"] = error.what();
+                    candidate.reset();
+                    candidate = std::make_unique<Field>(ctx.device(), runtime.gpu());
+                }
+                if (injected && (fault == "stale" || fault == "discard-after-submit"))
+                    failed = true;
+            }
+            if (!failed) {
+                replacement.update_field(ctx.device(), *candidate);
+                published = 4;
+            }
+            attempt.update({{"published", !failed},
+                            {"ready_ms", elapsed(started)},
+                            {"retired_before_replacement_completion", retired},
+                            {"pending_after", 8 - retired}});
+            receipt["attempts"].push_back(std::move(attempt));
+            fault_done = true;
+        } else if (published == 4 && retired == 4) {
+            const auto s = builder->build(*base, *candidate, tail, mode);
+            original.update_authored(ctx.device(), &whole.edited);
+            original.update_field(ctx.device(), *base);
+            published = 8;
+            receipt["attempts"].push_back({{"frame", frame.index},
+                                           {"prefix_end", 8},
+                                           {"published", true},
+                                           {"builder_wall_ms", s.wall_ms},
+                                           {"retired_before_replacement_completion", retired},
+                                           {"pending_after", 4}});
+        }
+        Json baked = Json::array(), pending = Json::array();
+        if (frame.index) {
+            for (unsigned id = 1; id <= 8; ++id)
+                (id <= published ? baked : pending).push_back(id);
+        }
+        receipt["frames"].push_back(
+            {{"frame", frame.index},
+             {"baked_prefix", published},
+             {"baked_ids", baked},
+             {"render_pending_ids", pending},
+             {"total_uncommitted_before_completion", frame.index ? 8 - retired : 0},
+             {"display", frame.index == 0 ? "base"
+                         : published == 0 ? "preview-eight"
+                         : published == 4 ? "prefix-four-plus-tail-four"
+                                          : "committed"}});
+    };
+    callbacks.record_frame = [&](host::HeadlessPngContext& ctx,
+                                 const host::HeadlessCaptureFrame& frame, VkCommandBuffer command,
+                                 const host::HeadlessRenderTarget& target) {
+        auto& renderer = frame.index == 0 || published == 8 ? original
+                         : published == 4                   ? replacement
+                                                            : preview;
+        renderer.record(ctx.device(), command, target, frame.frame_slot, false, config, config.yaw,
+                        config.pitch, config.distance, ctx.profile_recorder(), frame.index);
+        vulkan::transition_image_layout(
+            command, vulkan::finish_color_attachment_for_readback_transition(target.image));
+        readback = runtime.gpu().enqueue_rgba8_image_readback(target.image, target.extent,
+                                                              "prefix replacement completion");
+    };
+    callbacks.shutdown = [&](host::HeadlessPngContext&) {
+        finish();
+        original.destroy();
+        preview.destroy();
+        replacement.destroy();
+        candidate.reset();
+        base.reset();
+        builder.reset();
+        all_controls.reset();
+        tail_controls.reset();
+        runtime.detach_gpu_if_attached();
+        auto retained = output;
+        retained.replace_extension("retained-source.json");
+        save(retained, Json::parse(serialize_authored_scene(whole.edited)));
+        receipt.update({{"retained_source_file", retained.string()},
+                        {"complete", true},
+                        {"drained", retired == 8}});
+        save(output, receipt);
+    };
+    return host::HeadlessPngHost(
+               {.run_config = config.common,
+                .required_queue_flags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT},
+               std::move(callbacks))
+        .run();
+}
 } // namespace
 
 int main(int argc, char** argv) {
@@ -169,12 +468,15 @@ int main(int argc, char** argv) {
         std::filesystem::path input_path, output_path;
         std::string phase = "preview";
         std::string builder_name = "full";
-        bool query = false, validate = false;
+        bool query = false, validate = false, cache_qualify = false;
+        unsigned cache_trials = 1, cache_warmup = 0;
+        unsigned slice_groups = 0;
         std::vector<char*> arguments{argv[0]};
         for (int i = 1; i < argc; ++i) {
             const std::string_view flag(argv[i]);
             if (flag == "--edit-input" || flag == "--edit-output" || flag == "--edit-phase" ||
-                flag == "--edit-commit-builder") {
+                flag == "--edit-commit-builder" || flag == "--edit-cache-trials" ||
+                flag == "--edit-cache-warmup" || flag == "--edit-slice-groups") {
                 if (++i >= argc)
                     throw std::invalid_argument("missing edit study value");
                 if (flag == "--edit-input")
@@ -183,10 +485,18 @@ int main(int argc, char** argv) {
                     output_path = argv[i];
                 else if (flag == "--edit-phase")
                     phase = argv[i];
-                else
+                else if (flag == "--edit-commit-builder")
                     builder_name = argv[i];
+                else if (flag == "--edit-cache-trials")
+                    cache_trials = static_cast<unsigned>(std::stoul(argv[i]));
+                else if (flag == "--edit-slice-groups")
+                    slice_groups = static_cast<unsigned>(std::stoul(argv[i]));
+                else
+                    cache_warmup = static_cast<unsigned>(std::stoul(argv[i]));
             } else if (flag == "--edit-queries")
                 query = true;
+            else if (flag == "--edit-cache-qualify")
+                cache_qualify = true;
             else if (flag == "--edit-validate-only")
                 validate = true;
             else
@@ -208,12 +518,14 @@ int main(int argc, char** argv) {
             overrides.source_optimization || overrides.query_stepping || overrides.frame_profile)
             throw std::invalid_argument("one-edit study requires static opaque headless SS1 "
                                         "without other studies or rendering overrides");
-        if (phase != "base" && phase != "preview" && phase != "committed" && phase != "sequence")
+        if (phase != "base" && phase != "preview" && phase != "committed" && phase != "sequence" &&
+            phase != "prefix")
             throw std::invalid_argument("invalid edit phase");
         if (builder_name != "full" && builder_name != "local" && builder_name != "local-dom")
             throw std::invalid_argument("invalid commit builder");
         if (builder_name != "full" &&
-            (query || validate || (phase != "sequence" && phase != "committed")))
+            (query || validate ||
+             (phase != "sequence" && phase != "committed" && phase != "prefix" && !cache_qualify)))
             throw std::invalid_argument("commit builder needs an actual commit phase");
         const auto builder_mode =
             builder_name == "local-dom" ? CommitBuilder::LocalDominance : CommitBuilder::Local;
@@ -230,8 +542,12 @@ int main(int argc, char** argv) {
             if (query)
                 static_cast<void>(queries(c));
         }
-        if (!query && programs.size() != 1)
+        if (!query && !cache_qualify && programs.size() != 1)
             throw std::invalid_argument("native edit capture requires one case");
+        if (!cache_trials || cache_trials > 100 || cache_warmup > 10 ||
+            (cache_qualify && (query || validate || builder_name == "full")) ||
+            ((cache_trials != 1 || cache_warmup) && !cache_qualify))
+            throw std::invalid_argument("invalid cache qualification configuration");
         const bool sequence = phase == "sequence";
         const bool fault = input.value("fault_before_publish", false);
         const auto failure_kind =
@@ -258,7 +574,7 @@ int main(int argc, char** argv) {
         Json receipt{{"format", "cubey.sdf.cached-edit-results"},
                      {"version", 1},
                      {"phase", phase},
-                     {"scope", "Private one-operation Cached preview; serialized commit, no "
+                     {"scope", "Private eight-sphere Cached preview; serialized commit, no "
                                "continuous input/updater/VR"},
                      {"programs", Json::array()},
                      {"frames", Json::array()},
@@ -270,6 +586,11 @@ int main(int argc, char** argv) {
             receipt["validated_without_gpu"] = true;
             save(output_path, receipt);
             return 0;
+        }
+        if (phase == "prefix") {
+            if (builder_name == "full" || query || cache_qualify)
+                throw std::invalid_argument("prefix study requires the qualified local builder");
+            return run_prefix(config, input, programs[0], output_path, builder_mode);
         }
         ProjectRuntimeAdapter runtime;
         std::unique_ptr<Field> base_field, candidate_field;
@@ -304,6 +625,11 @@ int main(int argc, char** argv) {
         host::HeadlessPngHostCallbacks callbacks;
         callbacks.create_resources = [&](host::HeadlessPngContext& ctx) {
             runtime.attach_gpu_if_needed(ctx.gpu());
+            if (cache_qualify) {
+                run_cache(ctx.device(), runtime.gpu(), input, programs, output_path, builder_mode,
+                          cache_trials, cache_warmup, slice_groups, receipt);
+                return;
+            }
             if (query) {
                 receipt["queries"] = run_queries(ctx.device(), runtime.gpu(), input, programs);
                 return;
@@ -463,7 +789,7 @@ int main(int argc, char** argv) {
                                      const host::HeadlessCaptureFrame& frame,
                                      VkCommandBuffer command,
                                      const host::HeadlessRenderTarget& target) {
-            if (query) {
+            if (query || cache_qualify) {
                 render::record_render_target_pass(vulkan::CommandRecorder(command),
                                                   render::render_target_view(target),
                                                   {.color = render::color_clear_value(0, 0, 0, 1)},
@@ -504,7 +830,7 @@ int main(int argc, char** argv) {
             receipt["retained_source_file"] = retained.string();
             save(output_path, receipt);
         };
-        if (query) {
+        if (query || cache_qualify) {
             config.common.headless_render_only = true;
             config.common.frames = 1;
             config.common.width = config.common.height = 16;

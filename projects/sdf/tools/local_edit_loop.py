@@ -115,7 +115,7 @@ def timing(args):
     receipt=dict(identity(args),runs=[],complete=False)
     for repeat in range(3):
         for row in rows:
-            for mode in (['reuse','local'] if repeat%2==0 else ['local','reuse']):
+            for mode in (args.modes if repeat%2==0 else reversed(args.modes)):
                 out=args.output/f"{row['name']}-{mode}-{repeat}.json"
                 cmd=command(args,row['input'],out,mode)+['--commit-warmup','3','--commit-trials','10']
                 receipt['runs'].append(dict(case=row,repeat=repeat,mode=mode,**run(cmd,out)))
@@ -130,6 +130,7 @@ def main():
     p.add_argument('--mode',choices=['local','local-dom','reuse','full'],default='local')
     p.add_argument('--chains',action='store_true');p.add_argument('--dump',action='store_true')
     p.add_argument('--radius',type=float,default=.065)
+    p.add_argument('--modes',nargs='+',choices=['full','reuse','local','local-dom'],default=['full','reuse','local','local-dom'])
     p.add_argument('--binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_commit_study')
     args=p.parse_args();args.output=args.output.resolve();args.output.mkdir(parents=True,exist_ok=False)
     if args.phase!='inputs' and not args.inputs:p.error('--inputs required')
