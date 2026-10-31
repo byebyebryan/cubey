@@ -6,6 +6,14 @@ The [research packet](../evidence/sdf-local-edit-research-2026-10/README.md)
 contains source identities, CPU probes and primary references. No new native
 GPU timing is claimed here.
 
+This plan's bounded native loop is complete; see the
+[results and measured stop gate](sdf-local-edit-results.md). The
+[interactive editing followup plan](sdf-interactive-edit-followup-plan.md)
+records the next proposed experiments: a 4 ms maintenance/worker probe for
+Guardian, and separate varying-radius rounded-segment and path/width admission
+qualification based on existing projectR/Cubey mechanisms.
+The original study scope and measurements below are preserved.
+
 ## Recommendation
 
 Test **stable brick slots with local patches**, a **bounded eight-edit preview**,

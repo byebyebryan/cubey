@@ -152,6 +152,14 @@ preparation path.
 
 ## Next decision
 
+The [interactive editing followup plan](sdf-interactive-edit-followup-plan.md)
+separates Guardian's commit-service probe from varying-radius rounded brush
+segments. Guardian already uses 996 tapered segments; new brush support does
+not simplify that existing source. Segments provide continuity; spatial
+path/width admission must supply any reduction in incoming edit count. The
+larger maintenance-budget test preserves the exact cache contract; approximate
+construction remains a separate future fork.
+
 Investigate reuse or amortization of exact canonical node-center evaluations,
 and compare explicit admission rates or larger maintenance allowances. Keep raw
 cache identity as the oracle. A narrower source-evaluation optimization must

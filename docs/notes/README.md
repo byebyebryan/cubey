@@ -111,6 +111,10 @@ the architecture and project guides remain current authority.
 - [Local cache and eight-edit results](sdf-local-edit-results.md): exact local
   updates, cheap sphere intervals, four/four handoff, sliced-work cost and the
   Guardian service-rate stop gate.
+- [Interactive editing followup plan](sdf-interactive-edit-followup-plan.md):
+  Guardian commit-service priorities, varying-radius rounded brush segments,
+  spatial path/width admission and worker preparation, with conditional
+  exact/approximate alternatives.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
