@@ -70,3 +70,25 @@ proof of interleaved frame time. The first four-stamp Guardian cut measurements
 already exceed the 8 ms GPU allowance available across four 2 ms maintenance
 frames; the matched final series and prefix/failure checks will settle the stop
 gate without enlarging the pending queue or changing quality.
+
+## Final execution boundary
+
+The local, dominance, multi-stamp and sliced-work identity gates pass. The final
+preview roster passes 82 regular rays and 49 ownership checks; 28 four/four
+prefix and failure/retry sequences match independent intermediate and settled
+Cached renders while preserving retained source/history.
+
+Matched four-stamp construction confirms the service stop gate: Guardian cuts
+take 10.6 ms GPU whole, 16.0 ms at 512 groups, 37.7 ms at 128 groups, and 132.4 ms
+at 32 groups. Smaller submissions bound units but increase complete job work.
+The best tested route already exceeds the four-frame 8 ms GPU allowance for a
+2 ms/frame service budget, before preparation and publication. Robot remains a
+promising separate subject, not a substitute pass for the joint target.
+
+The loop stops before paced/interleaved S1/S2 acceptance, as the research plan
+requires at a failed cost gate. In-flight descriptor lifetime, delayed old
+readers, real timestamped arrivals, admission pauses, complete frame deadlines
+and large-edit frame allowances remain unqualified. See
+[results](sdf-local-edit-results.md) and the
+[evidence packet](../evidence/sdf-local-edit-2026-10/README.md). All implementation
+and evidence are local; no push or project-site deployment is authorized.

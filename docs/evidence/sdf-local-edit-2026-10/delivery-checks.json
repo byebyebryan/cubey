@@ -1,0 +1,282 @@
+{
+  "passed": true,
+  "url": "http://starship:8787/reports/7065079f32671e48c8de847c1f412f728ff5f99d1f96de71eed3d7ffb49a6e3a/",
+  "files": [
+    {
+      "path": "data.json",
+      "http_200": true,
+      "sha256": "29183a09825814c3a9cace4d679ae51cb304ea62860b0d1ec9e443bed290e4e6",
+      "bytes": 578994
+    },
+    {
+      "path": "images/guardian-add-8-none.frame-0.png",
+      "http_200": true,
+      "sha256": "c12600bed8996ebaee6f652d9e03ef319a4ebae3c0e40bfd10ef7aa76ee89dd5",
+      "bytes": 26149
+    },
+    {
+      "path": "images/guardian-add-8-none.frame-1.png",
+      "http_200": true,
+      "sha256": "c578d531e3480f6255281ef02d78a4c9a4f9bf3d5a0d2423cd6201bb3e4e1c1b",
+      "bytes": 26170
+    },
+    {
+      "path": "images/guardian-add-8-none.frame-2.png",
+      "http_200": true,
+      "sha256": "3d288fd2fb7539320450ec12af66e035ea589216718c614918648c38e9f3bcca",
+      "bytes": 26177
+    },
+    {
+      "path": "images/guardian-add-8-none.frame-3.png",
+      "http_200": true,
+      "sha256": "b273dbe911f91775ae2d102a7a2332e2331ea3e86899cffa66a5e210670000f0",
+      "bytes": 26181
+    },
+    {
+      "path": "images/guardian-close-add-base.png",
+      "http_200": true,
+      "sha256": "66c97f0bc18ab27fb9e213817ef86fe00b07a7d62302cd5f483bb679653bd118",
+      "bytes": 306597
+    },
+    {
+      "path": "images/guardian-close-add-committed.png",
+      "http_200": true,
+      "sha256": "b064340b27ccda773101dcba871aab7e8c5f4969d09d0c6cdc862db2949e303c",
+      "bytes": 306758
+    },
+    {
+      "path": "images/guardian-close-add-preview.png",
+      "http_200": true,
+      "sha256": "360ab23ec1e12bb7614e599fa926de306e159e093c7749fcffe51c08a687e923",
+      "bytes": 306837
+    },
+    {
+      "path": "images/guardian-close-cut-base.png",
+      "http_200": true,
+      "sha256": "66c97f0bc18ab27fb9e213817ef86fe00b07a7d62302cd5f483bb679653bd118",
+      "bytes": 306597
+    },
+    {
+      "path": "images/guardian-close-cut-committed.png",
+      "http_200": true,
+      "sha256": "af460981a4a34407161029eaa18a5411d30d4b8a071167661aff73457d5e3ce6",
+      "bytes": 305974
+    },
+    {
+      "path": "images/guardian-close-cut-preview.png",
+      "http_200": true,
+      "sha256": "d08bd6fb5c8491d4b2c357654192564c018ccdc02f006e16e85d8e5f518b421a",
+      "bytes": 305748
+    },
+    {
+      "path": "images/guardian-close-none-preview.png",
+      "http_200": true,
+      "sha256": "66c97f0bc18ab27fb9e213817ef86fe00b07a7d62302cd5f483bb679653bd118",
+      "bytes": 306597
+    },
+    {
+      "path": "images/guardian-cut-8-none.frame-0.png",
+      "http_200": true,
+      "sha256": "c12600bed8996ebaee6f652d9e03ef319a4ebae3c0e40bfd10ef7aa76ee89dd5",
+      "bytes": 26149
+    },
+    {
+      "path": "images/guardian-cut-8-none.frame-1.png",
+      "http_200": true,
+      "sha256": "2b7a56486f512b6e684cfd54c3e2dfc275ee248fead5c5fdcaf5b57eee535524",
+      "bytes": 26089
+    },
+    {
+      "path": "images/guardian-cut-8-none.frame-2.png",
+      "http_200": true,
+      "sha256": "290ed8fb9e8e51b1d0b0b3f8408eec234a4d891d5b971083a2fdf541f9abfa90",
+      "bytes": 26102
+    },
+    {
+      "path": "images/guardian-cut-8-none.frame-3.png",
+      "http_200": true,
+      "sha256": "b480f56f441c66db133af8ec1e4edff57d1b85cbe311e10f7b534ca3ce203e66",
+      "bytes": 26097
+    },
+    {
+      "path": "images/guardian-preset-add-base.png",
+      "http_200": true,
+      "sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "bytes": 137209
+    },
+    {
+      "path": "images/guardian-preset-add-committed.png",
+      "http_200": true,
+      "sha256": "8b61fa387ead2a30da9b05b7140f8d3a6a192c46a2e33d9cbaafb744b3fb2cf8",
+      "bytes": 137515
+    },
+    {
+      "path": "images/guardian-preset-add-preview.png",
+      "http_200": true,
+      "sha256": "368a346f1d9cd15d2fe1c3c53a942921faaa05cc017bf3ff94e642d355c70677",
+      "bytes": 137376
+    },
+    {
+      "path": "images/guardian-preset-cut-base.png",
+      "http_200": true,
+      "sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "bytes": 137209
+    },
+    {
+      "path": "images/guardian-preset-cut-committed.png",
+      "http_200": true,
+      "sha256": "5f0ace82d9d83f1500d39d47af6cc62cae5bb7a2af27ccd100cb36d795447a30",
+      "bytes": 136707
+    },
+    {
+      "path": "images/guardian-preset-cut-preview.png",
+      "http_200": true,
+      "sha256": "a26658cade43abe11169d03d6b1967e70fc0b4b7452f4adc2530b4af32e6cdb4",
+      "bytes": 136734
+    },
+    {
+      "path": "images/guardian-preset-none-preview.png",
+      "http_200": true,
+      "sha256": "c7f3e33e38022c38a159ee786a871c90ac9cdbf619d6a676b04eb72f263c7ac3",
+      "bytes": 137209
+    },
+    {
+      "path": "images/robot-add-8-none.frame-0.png",
+      "http_200": true,
+      "sha256": "8408ae7807ead58cf7222e45e0140ee203bf1beea151df89487f1f3db7938f44",
+      "bytes": 23725
+    },
+    {
+      "path": "images/robot-add-8-none.frame-1.png",
+      "http_200": true,
+      "sha256": "13a5695c7131cf6792f6deee14e986455c5e58b20f9545847ce2d1b9307ec91c",
+      "bytes": 23935
+    },
+    {
+      "path": "images/robot-add-8-none.frame-2.png",
+      "http_200": true,
+      "sha256": "9792d9f9cfb135f45414be7517bc3ae991ecf4ba3be97c97a6080cb5f2334dcd",
+      "bytes": 23985
+    },
+    {
+      "path": "images/robot-add-8-none.frame-3.png",
+      "http_200": true,
+      "sha256": "47bc06d3041da4099a3856b828f0aeee20dcae48327f5514dd45035073fac7a9",
+      "bytes": 23982
+    },
+    {
+      "path": "images/robot-close-add-base.png",
+      "http_200": true,
+      "sha256": "9edaf169fbca3abab3d6303544c0b9b3e7cf30a61e5dbb34197f012b6bf2eadb",
+      "bytes": 176265
+    },
+    {
+      "path": "images/robot-close-add-committed.png",
+      "http_200": true,
+      "sha256": "8fce9628d2774e704e53903c81f1d0710188de34dcf761992ed4b9ae9a977d21",
+      "bytes": 182979
+    },
+    {
+      "path": "images/robot-close-add-preview.png",
+      "http_200": true,
+      "sha256": "480e0a42b85665b09c9dd74e4071883bc874973052b62387b7757467306de594",
+      "bytes": 182212
+    },
+    {
+      "path": "images/robot-close-cut-base.png",
+      "http_200": true,
+      "sha256": "9edaf169fbca3abab3d6303544c0b9b3e7cf30a61e5dbb34197f012b6bf2eadb",
+      "bytes": 176265
+    },
+    {
+      "path": "images/robot-close-cut-committed.png",
+      "http_200": true,
+      "sha256": "d20fcd0381e9e9fca236325501052c7a965ad37143b3b6e16727b4ebd7cf67f7",
+      "bytes": 180380
+    },
+    {
+      "path": "images/robot-close-cut-preview.png",
+      "http_200": true,
+      "sha256": "76d2189078cc15b2808b75692088e5ae12fc7861bf30b8f057c73367b6073ca1",
+      "bytes": 179714
+    },
+    {
+      "path": "images/robot-close-none-preview.png",
+      "http_200": true,
+      "sha256": "9edaf169fbca3abab3d6303544c0b9b3e7cf30a61e5dbb34197f012b6bf2eadb",
+      "bytes": 176265
+    },
+    {
+      "path": "images/robot-cut-8-none.frame-0.png",
+      "http_200": true,
+      "sha256": "8408ae7807ead58cf7222e45e0140ee203bf1beea151df89487f1f3db7938f44",
+      "bytes": 23725
+    },
+    {
+      "path": "images/robot-cut-8-none.frame-1.png",
+      "http_200": true,
+      "sha256": "b9c5b0ba989f0f6a9dc3a86b4a9da5312bb6ff19f33fed57251dd1011c65e7f1",
+      "bytes": 23875
+    },
+    {
+      "path": "images/robot-cut-8-none.frame-2.png",
+      "http_200": true,
+      "sha256": "59ac8f7add38adee6371464426fe0d7ae03c10deffa487078d848e8d5ec0bb2e",
+      "bytes": 23856
+    },
+    {
+      "path": "images/robot-cut-8-none.frame-3.png",
+      "http_200": true,
+      "sha256": "397f5360826035e1eb9411336b83a39047eab4f543eb98875796991d42f54fc0",
+      "bytes": 23851
+    },
+    {
+      "path": "images/robot-preset-add-base.png",
+      "http_200": true,
+      "sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "bytes": 110445
+    },
+    {
+      "path": "images/robot-preset-add-committed.png",
+      "http_200": true,
+      "sha256": "7c33b8b982023520b4257560dac4f05119af1daed71725b5b1338c80d0d3b898",
+      "bytes": 112655
+    },
+    {
+      "path": "images/robot-preset-add-preview.png",
+      "http_200": true,
+      "sha256": "35fc34ed64d3a38d815a194dad197c01140056518812fb4c7a2bd497f6321925",
+      "bytes": 112650
+    },
+    {
+      "path": "images/robot-preset-cut-base.png",
+      "http_200": true,
+      "sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "bytes": 110445
+    },
+    {
+      "path": "images/robot-preset-cut-committed.png",
+      "http_200": true,
+      "sha256": "3d505eecad49de3c5bf71864a7ba98ca791ca3baff11988e570a7bf39fb7db14",
+      "bytes": 111953
+    },
+    {
+      "path": "images/robot-preset-cut-preview.png",
+      "http_200": true,
+      "sha256": "2396ca2a48f83e0f4cd19403ad9ba66946553812773067edbf4db4e2d129ce84",
+      "bytes": 111796
+    },
+    {
+      "path": "images/robot-preset-none-preview.png",
+      "http_200": true,
+      "sha256": "38ea8676c8bca603cb2a4f823bca8604a4b66a696737ca0e7c7ea4212e1e441d",
+      "bytes": 110445
+    },
+    {
+      "path": "index.html",
+      "http_200": true,
+      "sha256": "92faf082a66d7810bd38d4b5968c487621453eb4a11ca1cc4ccf128251a947c5",
+      "bytes": 359368
+    }
+  ]
+}

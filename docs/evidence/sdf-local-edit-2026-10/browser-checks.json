@@ -1,0 +1,616 @@
+{
+  "url": "http://starship:8787/reports/7065079f32671e48c8de847c1f412f728ff5f99d1f96de71eed3d7ffb49a6e3a/",
+  "checks": [
+    {
+      "type": "commit",
+      "s": "guardian",
+      "op": "add",
+      "r": "0.02",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical947.588 ms954.229 ms15.542 ms12.729 ms0.000 ms—917.418 msGlobal reuse65.111 ms68.073 ms15.341 ms12.618 ms0.000 ms15.843 ms19.288 msLocal29.096 ms29.940 ms15.290 ms5.585 ms1.280 ms0.004 ms5.542 msLocal + dominance23.768 ms24.389 ms15.135 ms6.076 ms1.279 ms0.007 ms0.000 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "guardian",
+      "op": "add",
+      "r": "0.065",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical995.676 ms999.949 ms15.337 ms13.157 ms0.000 ms—965.046 msGlobal reuse111.121 ms113.417 ms15.338 ms13.094 ms0.000 ms16.343 ms64.305 msLocal75.617 ms76.761 ms15.387 ms5.901 ms1.292 ms0.219 ms50.973 msLocal + dominance24.433 ms24.888 ms15.316 ms6.441 ms1.279 ms0.037 ms0.000 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "guardian",
+      "op": "add",
+      "r": "0.15",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical1185.719 ms1191.477 ms15.597 ms14.794 ms0.000 ms—1153.849 msGlobal reuse316.464 ms321.684 ms15.421 ms14.790 ms0.000 ms18.064 ms265.920 msLocal283.461 ms287.127 ms15.276 ms8.198 ms1.293 ms1.317 ms255.246 msLocal + dominance33.467 ms35.958 ms15.249 ms9.857 ms1.280 ms0.187 ms5.367 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "guardian",
+      "op": "cut",
+      "r": "0.02",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical944.322 ms951.191 ms15.475 ms12.727 ms0.000 ms—914.492 msGlobal reuse62.923 ms66.130 ms15.262 ms12.558 ms0.000 ms15.761 ms17.436 msLocal27.674 ms28.099 ms15.490 ms5.603 ms1.280 ms0.008 ms3.817 msLocal + dominance26.300 ms27.049 ms15.610 ms6.069 ms1.279 ms0.008 ms1.931 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "guardian",
+      "op": "cut",
+      "r": "0.065",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical951.030 ms957.286 ms15.389 ms12.733 ms0.000 ms—920.899 msGlobal reuse85.049 ms88.136 ms15.389 ms12.663 ms0.000 ms15.662 ms39.399 msLocal50.920 ms53.153 ms15.393 ms5.824 ms1.291 ms0.135 ms26.568 msLocal + dominance30.718 ms32.383 ms15.275 ms6.331 ms1.280 ms0.031 ms6.267 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "guardian",
+      "op": "cut",
+      "r": "0.15",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical898.433 ms904.959 ms15.504 ms12.396 ms0.000 ms—868.646 msGlobal reuse123.100 ms128.266 ms15.420 ms12.339 ms0.000 ms14.366 ms78.999 msLocal93.813 ms96.339 ms15.377 ms6.339 ms1.290 ms0.384 ms68.425 msLocal + dominance33.669 ms34.222 ms15.312 ms7.277 ms1.280 ms0.074 ms8.132 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "robot",
+      "op": "add",
+      "r": "0.02",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical95.663 ms96.351 ms1.339 ms1.151 ms0.000 ms—91.971 msGlobal reuse23.477 ms23.916 ms1.360 ms1.139 ms0.000 ms17.863 ms1.683 msLocal4.155 ms4.596 ms1.168 ms0.459 ms1.282 ms0.004 ms0.414 msLocal + dominance3.729 ms3.895 ms1.154 ms0.515 ms1.283 ms0.006 ms0.000 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "robot",
+      "op": "add",
+      "r": "0.065",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical99.217 ms100.664 ms1.414 ms1.176 ms0.000 ms—95.448 msGlobal reuse27.373 ms27.820 ms1.332 ms1.164 ms0.000 ms18.290 ms5.065 msLocal8.297 ms8.758 ms1.213 ms0.695 ms1.280 ms0.222 ms3.829 msLocal + dominance4.335 ms4.642 ms1.130 ms0.755 ms1.281 ms0.041 ms0.245 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "robot",
+      "op": "add",
+      "r": "0.15",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical100.871 ms101.586 ms1.462 ms1.203 ms0.000 ms—97.019 msGlobal reuse37.431 ms38.020 ms1.322 ms1.191 ms0.000 ms18.011 ms15.606 msLocal21.595 ms22.084 ms1.425 ms1.977 ms1.281 ms1.007 ms14.643 msLocal + dominance6.385 ms6.693 ms1.215 ms2.219 ms1.279 ms0.160 ms0.580 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "robot",
+      "op": "cut",
+      "r": "0.02",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical95.330 ms96.141 ms1.392 ms1.151 ms0.000 ms—91.667 msGlobal reuse22.913 ms23.350 ms1.260 ms1.137 ms0.000 ms17.848 ms1.485 msLocal4.006 ms4.905 ms1.146 ms0.466 ms1.282 ms0.008 ms0.222 msLocal + dominance4.002 ms4.192 ms1.161 ms0.499 ms1.283 ms0.008 ms0.142 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "robot",
+      "op": "cut",
+      "r": "0.065",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical95.437 ms95.809 ms1.385 ms1.152 ms0.000 ms—91.753 msGlobal reuse24.571 ms25.296 ms1.442 ms1.137 ms0.000 ms17.858 ms3.004 msLocal5.990 ms6.154 ms1.304 ms0.619 ms1.279 ms0.099 ms1.773 msLocal + dominance4.177 ms4.485 ms1.153 ms0.660 ms1.281 ms0.028 ms0.267 ms"
+      }
+    },
+    {
+      "type": "commit",
+      "s": "robot",
+      "op": "cut",
+      "r": "0.15",
+      "dom": {
+        "rows": 4,
+        "text": "Full canonical95.341 ms96.494 ms1.398 ms1.139 ms0.000 ms—91.609 msGlobal reuse29.757 ms31.117 ms1.382 ms1.127 ms0.000 ms17.473 ms8.423 msLocal12.953 ms13.311 ms1.378 ms1.313 ms1.279 ms0.493 ms7.320 msLocal + dominance5.507 ms5.725 ms1.165 ms1.413 ms1.278 ms0.080 ms0.603 ms"
+      }
+    },
+    {
+      "type": "render",
+      "s": "guardian",
+      "view": "preset",
+      "op": "add",
+      "dom": {
+        "rows": 5,
+        "text": "01.852 ms1.926 ms2.018 ms0 / 4500 / 45011.829 ms1.902 ms2.227 ms0 / 4500 / 45021.836 ms1.906 ms2.124 ms0 / 4500 / 45041.845 ms1.921 ms2.105 ms0 / 4500 / 45081.875 ms1.950 ms2.576 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "preset",
+      "op": "add",
+      "left": "base",
+      "dom": {
+        "baked": "images/guardian-preset-add-committed.png",
+        "pending": "images/guardian-preset-add-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "preset",
+      "op": "add",
+      "left": "preview",
+      "dom": {
+        "baked": "images/guardian-preset-add-committed.png",
+        "pending": "images/guardian-preset-add-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "guardian",
+      "view": "preset",
+      "op": "cut",
+      "dom": {
+        "rows": 5,
+        "text": "01.852 ms1.926 ms2.018 ms0 / 4500 / 45011.833 ms1.911 ms2.102 ms0 / 4500 / 45021.839 ms1.914 ms2.396 ms0 / 4500 / 45041.849 ms1.915 ms2.108 ms0 / 4500 / 45081.872 ms1.947 ms2.201 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "preset",
+      "op": "cut",
+      "left": "base",
+      "dom": {
+        "baked": "images/guardian-preset-cut-committed.png",
+        "pending": "images/guardian-preset-cut-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "preset",
+      "op": "cut",
+      "left": "preview",
+      "dom": {
+        "baked": "images/guardian-preset-cut-committed.png",
+        "pending": "images/guardian-preset-cut-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "guardian",
+      "view": "close",
+      "op": "add",
+      "dom": {
+        "rows": 5,
+        "text": "02.578 ms2.650 ms2.890 ms0 / 4500 / 45012.521 ms2.604 ms2.777 ms0 / 4500 / 45022.526 ms2.611 ms2.726 ms0 / 4500 / 45042.547 ms2.630 ms2.769 ms0 / 4500 / 45082.571 ms2.662 ms3.134 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "close",
+      "op": "add",
+      "left": "base",
+      "dom": {
+        "baked": "images/guardian-close-add-committed.png",
+        "pending": "images/guardian-close-add-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "close",
+      "op": "add",
+      "left": "preview",
+      "dom": {
+        "baked": "images/guardian-close-add-committed.png",
+        "pending": "images/guardian-close-add-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "guardian",
+      "view": "close",
+      "op": "cut",
+      "dom": {
+        "rows": 5,
+        "text": "02.578 ms2.650 ms2.890 ms0 / 4500 / 45012.530 ms2.604 ms2.834 ms0 / 4500 / 45022.536 ms2.623 ms3.015 ms0 / 4500 / 45042.547 ms2.625 ms2.782 ms0 / 4500 / 45082.584 ms2.664 ms2.988 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "close",
+      "op": "cut",
+      "left": "base",
+      "dom": {
+        "baked": "images/guardian-close-cut-committed.png",
+        "pending": "images/guardian-close-cut-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "guardian",
+      "view": "close",
+      "op": "cut",
+      "left": "preview",
+      "dom": {
+        "baked": "images/guardian-close-cut-committed.png",
+        "pending": "images/guardian-close-cut-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "robot",
+      "view": "preset",
+      "op": "add",
+      "dom": {
+        "rows": 5,
+        "text": "04.103 ms4.251 ms4.623 ms0 / 4500 / 45013.784 ms3.913 ms4.051 ms0 / 4500 / 45023.808 ms3.965 ms4.469 ms0 / 4500 / 45043.842 ms3.977 ms4.151 ms0 / 4500 / 45083.930 ms4.073 ms4.201 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "preset",
+      "op": "add",
+      "left": "base",
+      "dom": {
+        "baked": "images/robot-preset-add-committed.png",
+        "pending": "images/robot-preset-add-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "preset",
+      "op": "add",
+      "left": "preview",
+      "dom": {
+        "baked": "images/robot-preset-add-committed.png",
+        "pending": "images/robot-preset-add-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "robot",
+      "view": "preset",
+      "op": "cut",
+      "dom": {
+        "rows": 5,
+        "text": "04.103 ms4.251 ms4.623 ms0 / 4500 / 45013.776 ms3.920 ms4.060 ms0 / 4500 / 45023.811 ms3.974 ms4.431 ms0 / 4500 / 45043.848 ms4.007 ms4.240 ms0 / 4500 / 45083.936 ms4.075 ms4.214 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "preset",
+      "op": "cut",
+      "left": "base",
+      "dom": {
+        "baked": "images/robot-preset-cut-committed.png",
+        "pending": "images/robot-preset-cut-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "preset",
+      "op": "cut",
+      "left": "preview",
+      "dom": {
+        "baked": "images/robot-preset-cut-committed.png",
+        "pending": "images/robot-preset-cut-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "robot",
+      "view": "close",
+      "op": "add",
+      "dom": {
+        "rows": 5,
+        "text": "09.143 ms9.266 ms10.007 ms0 / 4500 / 45017.509 ms7.644 ms7.847 ms0 / 4500 / 45027.595 ms7.741 ms8.130 ms0 / 4500 / 45047.745 ms7.883 ms8.080 ms0 / 4500 / 45088.103 ms8.269 ms9.264 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "close",
+      "op": "add",
+      "left": "base",
+      "dom": {
+        "baked": "images/robot-close-add-committed.png",
+        "pending": "images/robot-close-add-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "close",
+      "op": "add",
+      "left": "preview",
+      "dom": {
+        "baked": "images/robot-close-add-committed.png",
+        "pending": "images/robot-close-add-preview.png"
+      }
+    },
+    {
+      "type": "render",
+      "s": "robot",
+      "view": "close",
+      "op": "cut",
+      "dom": {
+        "rows": 5,
+        "text": "09.143 ms9.266 ms10.007 ms0 / 4500 / 45017.475 ms7.599 ms7.842 ms0 / 4500 / 45027.546 ms7.688 ms8.550 ms0 / 4500 / 45047.743 ms7.866 ms8.089 ms0 / 4500 / 45088.072 ms8.215 ms8.898 ms0 / 4500 / 450"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "close",
+      "op": "cut",
+      "left": "base",
+      "dom": {
+        "baked": "images/robot-close-cut-committed.png",
+        "pending": "images/robot-close-cut-base.png"
+      }
+    },
+    {
+      "type": "images",
+      "s": "robot",
+      "view": "close",
+      "op": "cut",
+      "left": "preview",
+      "dom": {
+        "baked": "images/robot-close-cut-committed.png",
+        "pending": "images/robot-close-cut-preview.png"
+      }
+    },
+    {
+      "type": "sequence",
+      "s": "guardian",
+      "op": "add",
+      "dom": {
+        "images": [
+          "images/guardian-add-8-none.frame-0.png",
+          "images/guardian-add-8-none.frame-1.png",
+          "images/guardian-add-8-none.frame-2.png",
+          "images/guardian-add-8-none.frame-3.png"
+        ],
+        "text": "baseBaked IDs: nonePending: nonepreview eightBaked IDs: nonePending: 1, 2, 3, 4, 5, 6, 7, 8prefix four plus tail fourBaked IDs: 1, 2, 3, 4Pending: 5, 6, 7, 8committedBaked IDs: 1, 2, 3, 4, 5, 6, 7, 8Pending: none"
+      }
+    },
+    {
+      "type": "sequence",
+      "s": "guardian",
+      "op": "cut",
+      "dom": {
+        "images": [
+          "images/guardian-cut-8-none.frame-0.png",
+          "images/guardian-cut-8-none.frame-1.png",
+          "images/guardian-cut-8-none.frame-2.png",
+          "images/guardian-cut-8-none.frame-3.png"
+        ],
+        "text": "baseBaked IDs: nonePending: nonepreview eightBaked IDs: nonePending: 1, 2, 3, 4, 5, 6, 7, 8prefix four plus tail fourBaked IDs: 1, 2, 3, 4Pending: 5, 6, 7, 8committedBaked IDs: 1, 2, 3, 4, 5, 6, 7, 8Pending: none"
+      }
+    },
+    {
+      "type": "sequence",
+      "s": "robot",
+      "op": "add",
+      "dom": {
+        "images": [
+          "images/robot-add-8-none.frame-0.png",
+          "images/robot-add-8-none.frame-1.png",
+          "images/robot-add-8-none.frame-2.png",
+          "images/robot-add-8-none.frame-3.png"
+        ],
+        "text": "baseBaked IDs: nonePending: nonepreview eightBaked IDs: nonePending: 1, 2, 3, 4, 5, 6, 7, 8prefix four plus tail fourBaked IDs: 1, 2, 3, 4Pending: 5, 6, 7, 8committedBaked IDs: 1, 2, 3, 4, 5, 6, 7, 8Pending: none"
+      }
+    },
+    {
+      "type": "sequence",
+      "s": "robot",
+      "op": "cut",
+      "dom": {
+        "images": [
+          "images/robot-cut-8-none.frame-0.png",
+          "images/robot-cut-8-none.frame-1.png",
+          "images/robot-cut-8-none.frame-2.png",
+          "images/robot-cut-8-none.frame-3.png"
+        ],
+        "text": "baseBaked IDs: nonePending: nonepreview eightBaked IDs: nonePending: 1, 2, 3, 4, 5, 6, 7, 8prefix four plus tail fourBaked IDs: 1, 2, 3, 4Pending: 5, 6, 7, 8committedBaked IDs: 1, 2, 3, 4, 5, 6, 7, 8Pending: none"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "0.5",
+      "groups": "0",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.402 ms2.000 ms≥ 15Fail1.899 ms2.233 msguardian cut10.619 ms10.619 ms2.000 ms≥ 22Fail3.262 ms3.580 msrobot add1.882 ms1.882 ms2.000 ms≥ 4Pass necessary condition1.290 ms1.436 msrobot cut1.972 ms1.972 ms2.000 ms≥ 4Pass necessary condition1.288 ms1.414 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "0.5",
+      "groups": "32",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms10.903 ms2.000 ms≥ 22Fail1.851 ms1.980 msguardian cut10.619 ms132.410 ms2.000 ms≥ 265Fail2.315 ms2.429 msrobot add1.882 ms2.068 ms2.000 ms≥ 5Pass necessary condition0.191 ms1.873 msrobot cut1.972 ms6.499 ms2.000 ms≥ 13Pass necessary condition0.154 ms1.890 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "0.5",
+      "groups": "128",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.073 ms2.000 ms≥ 15Fail1.894 ms2.204 msguardian cut10.619 ms37.724 ms2.000 ms≥ 76Fail1.860 ms1.983 msrobot add1.882 ms1.575 ms2.000 ms≥ 4Pass necessary condition0.231 ms0.756 msrobot cut1.972 ms2.617 ms2.000 ms≥ 6Pass necessary condition0.175 ms1.826 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "0.5",
+      "groups": "512",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.032 ms2.000 ms≥ 15Fail1.911 ms2.022 msguardian cut10.619 ms15.998 ms2.000 ms≥ 32Fail1.858 ms2.078 msrobot add1.882 ms1.534 ms2.000 ms≥ 4Pass necessary condition0.307 ms0.943 msrobot cut1.972 ms1.770 ms2.000 ms≥ 4Pass necessary condition0.171 ms2.594 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "0.5",
+      "groups": "2048",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.033 ms2.000 ms≥ 15Fail2.020 ms2.115 msguardian cut10.619 ms11.493 ms2.000 ms≥ 23Fail4.431 ms4.749 msrobot add1.882 ms1.532 ms2.000 ms≥ 4Pass necessary condition0.293 ms1.093 msrobot cut1.972 ms1.621 ms2.000 ms≥ 4Pass necessary condition0.171 ms0.788 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "1",
+      "groups": "0",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.402 ms4.000 ms≥ 8Fail1.899 ms2.233 msguardian cut10.619 ms10.619 ms4.000 ms≥ 11Fail3.262 ms3.580 msrobot add1.882 ms1.882 ms4.000 ms≥ 2Pass necessary condition1.290 ms1.436 msrobot cut1.972 ms1.972 ms4.000 ms≥ 2Pass necessary condition1.288 ms1.414 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "1",
+      "groups": "32",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms10.903 ms4.000 ms≥ 11Fail1.851 ms1.980 msguardian cut10.619 ms132.410 ms4.000 ms≥ 133Fail2.315 ms2.429 msrobot add1.882 ms2.068 ms4.000 ms≥ 3Pass necessary condition0.191 ms1.873 msrobot cut1.972 ms6.499 ms4.000 ms≥ 7Pass necessary condition0.154 ms1.890 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "1",
+      "groups": "128",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.073 ms4.000 ms≥ 8Fail1.894 ms2.204 msguardian cut10.619 ms37.724 ms4.000 ms≥ 38Fail1.860 ms1.983 msrobot add1.882 ms1.575 ms4.000 ms≥ 2Pass necessary condition0.231 ms0.756 msrobot cut1.972 ms2.617 ms4.000 ms≥ 3Pass necessary condition0.175 ms1.826 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "1",
+      "groups": "512",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.032 ms4.000 ms≥ 8Fail1.911 ms2.022 msguardian cut10.619 ms15.998 ms4.000 ms≥ 16Fail1.858 ms2.078 msrobot add1.882 ms1.534 ms4.000 ms≥ 2Pass necessary condition0.307 ms0.943 msrobot cut1.972 ms1.770 ms4.000 ms≥ 2Pass necessary condition0.171 ms2.594 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "1",
+      "groups": "2048",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.033 ms4.000 ms≥ 8Fail2.020 ms2.115 msguardian cut10.619 ms11.493 ms4.000 ms≥ 12Fail4.431 ms4.749 msrobot add1.882 ms1.532 ms4.000 ms≥ 2Pass necessary condition0.293 ms1.093 msrobot cut1.972 ms1.621 ms4.000 ms≥ 2Pass necessary condition0.171 ms0.788 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "2",
+      "groups": "0",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.402 ms8.000 ms≥ 4Pass necessary condition1.899 ms2.233 msguardian cut10.619 ms10.619 ms8.000 ms≥ 6Fail3.262 ms3.580 msrobot add1.882 ms1.882 ms8.000 ms≥ 1Pass necessary condition1.290 ms1.436 msrobot cut1.972 ms1.972 ms8.000 ms≥ 1Pass necessary condition1.288 ms1.414 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "2",
+      "groups": "32",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms10.903 ms8.000 ms≥ 6Pass necessary condition1.851 ms1.980 msguardian cut10.619 ms132.410 ms8.000 ms≥ 67Fail2.315 ms2.429 msrobot add1.882 ms2.068 ms8.000 ms≥ 2Pass necessary condition0.191 ms1.873 msrobot cut1.972 ms6.499 ms8.000 ms≥ 4Pass necessary condition0.154 ms1.890 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "2",
+      "groups": "128",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.073 ms8.000 ms≥ 4Pass necessary condition1.894 ms2.204 msguardian cut10.619 ms37.724 ms8.000 ms≥ 19Fail1.860 ms1.983 msrobot add1.882 ms1.575 ms8.000 ms≥ 1Pass necessary condition0.231 ms0.756 msrobot cut1.972 ms2.617 ms8.000 ms≥ 2Pass necessary condition0.175 ms1.826 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "2",
+      "groups": "512",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.032 ms8.000 ms≥ 4Pass necessary condition1.911 ms2.022 msguardian cut10.619 ms15.998 ms8.000 ms≥ 8Fail1.858 ms2.078 msrobot add1.882 ms1.534 ms8.000 ms≥ 1Pass necessary condition0.307 ms0.943 msrobot cut1.972 ms1.770 ms8.000 ms≥ 1Pass necessary condition0.171 ms2.594 ms"
+      }
+    },
+    {
+      "type": "budget",
+      "b": "2",
+      "groups": "2048",
+      "dom": {
+        "rows": 4,
+        "text": "guardian add7.402 ms7.033 ms8.000 ms≥ 4Pass necessary condition2.020 ms2.115 msguardian cut10.619 ms11.493 ms8.000 ms≥ 6Fail4.431 ms4.749 msrobot add1.882 ms1.532 ms8.000 ms≥ 1Pass necessary condition0.293 ms1.093 msrobot cut1.972 ms1.621 ms8.000 ms≥ 1Pass necessary condition0.171 ms0.788 ms"
+      }
+    }
+  ],
+  "fullRange": 4,
+  "divider": {
+    "clip": "inset(0px 63% 0px 0px)",
+    "left": "37%",
+    "value": "37"
+  },
+  "layout": {
+    "images": [
+      {
+        "complete": true,
+        "src": "images/robot-close-cut-committed.png",
+        "width": 960
+      },
+      {
+        "complete": true,
+        "src": "images/robot-close-cut-preview.png",
+        "width": 960
+      },
+      {
+        "complete": true,
+        "src": "images/robot-cut-8-none.frame-0.png",
+        "width": 320
+      },
+      {
+        "complete": true,
+        "src": "images/robot-cut-8-none.frame-1.png",
+        "width": 320
+      },
+      {
+        "complete": true,
+        "src": "images/robot-cut-8-none.frame-2.png",
+        "width": 320
+      },
+      {
+        "complete": true,
+        "src": "images/robot-cut-8-none.frame-3.png",
+        "width": 320
+      }
+    ],
+    "retainedReplayText": true,
+    "scrollWidth": 1585,
+    "width": 1600
+  },
+  "passed": true
+}

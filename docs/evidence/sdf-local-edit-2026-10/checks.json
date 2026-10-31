@@ -1,0 +1,130 @@
+{
+  "passed": true,
+  "scope": "Bounded local-cache and eight-sphere qualification; joint paced service stops at Guardian cost gate",
+  "source_head_before_results_commit": "a3e6f24f1ad992bb2ad26ed7b6893d49f82d1801",
+  "focused_tests_passed": 13,
+  "final_documentation_tests_passed": 3,
+  "native": {
+    "pairs": 234,
+    "stored_r16_comparisons": 11636023808,
+    "routes": {
+      "local": 39,
+      "local_chains": 32,
+      "dominance": 39,
+      "dominance_chains": 32,
+      "batches": 16,
+      "sliced": 16,
+      "calibration": 60
+    },
+    "all_exact": true,
+    "geometry": {
+      "passed": true,
+      "regular_rays": 82,
+      "max_regular_depth": 0.0002514933614422288,
+      "max_regular_normal_degrees": 0.3808974316451651,
+      "failures": [],
+      "diagnostics": [
+        {
+          "case": "subgrid-cavity",
+          "query": 0,
+          "expected_t": 0.00019531249999999998,
+          "result": {
+            "normal": [
+              -0.0,
+              -0.0,
+              -1.0
+            ],
+            "pending_surface": true,
+            "source_residual": -1.4551915228366852e-11,
+            "status": 1,
+            "steps": 21.0,
+            "t": 0.00019531250291038305
+          },
+          "differences": []
+        },
+        {
+          "case": "tool-tangent",
+          "query": 0,
+          "expected_t": 0.7,
+          "result": {
+            "normal": [
+              1.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": true,
+            "source_residual": 0.0,
+            "status": 1,
+            "steps": 1.0,
+            "t": 0.699999988079071
+          },
+          "differences": []
+        },
+        {
+          "case": "tool-tangent",
+          "query": 1,
+          "expected_t": null,
+          "result": {
+            "normal": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "pending_surface": false,
+            "source_residual": 0.0,
+            "status": 0,
+            "steps": 1.0,
+            "t": 0.0
+          },
+          "differences": []
+        }
+      ],
+      "pending_owner_checks": 49,
+      "pending_owner_checks_passed": true
+    },
+    "prefix_sequences": 28,
+    "sequence_frames": 136,
+    "camera_rays": 115200,
+    "shadow_rays": 21567,
+    "camera_shadow_exhaustions": 0,
+    "negative_requests": 10,
+    "retained_consumer_replays": 4
+  },
+  "measured_commit_samples": 1440,
+  "measured_render_frames": 21600,
+  "measured_calibration_commits": 600,
+  "render_gpu_over_16_67": 0,
+  "render_gpu_over_11_11": 0,
+  "preservation": {
+    "original_spvs": 211,
+    "protected_source_files": 531,
+    "public_executable_byte_identical": true
+  },
+  "requested_memory": {
+    "geometry_and_lists_bytes": 1837530180,
+    "diagnostic_staging_bytes": 76695844,
+    "combined_bytes": 1914226024,
+    "is_allocator_residency": false
+  },
+  "identity": {
+    "current_commit_binary_matches_selected_timing": true,
+    "current_stroke_binary_matches_final_captures": true,
+    "render_timing_stroke_shaders_match_current": true,
+    "current_stroke_binary_matches_render_timing": false,
+    "render_binary_difference": "Only the inherited scalar-sequence guard changed after rendering timing; shaders and timed rendering branch unchanged; see faed0dae"
+  },
+  "report": {
+    "publication_receipt": "../sdf-local-edit-report-2026-10.json",
+    "static": "static-checks.json",
+    "browser": "browser-checks.json",
+    "delivery": "delivery-checks.json",
+    "files": 46
+  },
+  "deferred": [
+    "Paced/interleaved complete-frame deadlines",
+    "Timestamped stroke arrivals, admission pauses and drain service",
+    "In-flight descriptor/control lifetime and delayed old readers",
+    "Large-edit 4/8/16-frame completion",
+    "Long-session source/slot capacity and XR acceptance"
+  ]
+}

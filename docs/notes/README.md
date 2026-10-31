@@ -108,6 +108,9 @@ the architecture and project guides remain current authority.
   bounded pending prefixes and proposed scheduling/service-rate experiments.
 - [Local update loop execution](sdf-local-edit-loop-progress.md): scoped native
   locality, stable-slot, eight-edit and scheduled-publication checkpoints.
+- [Local cache and eight-edit results](sdf-local-edit-results.md): exact local
+  updates, cheap sphere intervals, four/four handoff, sliced-work cost and the
+  Guardian service-rate stop gate.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

@@ -1,0 +1,4033 @@
+{
+  "source_head": "877765865ec4186a62535ba82cd2158f4711f484",
+  "source_status": "?? projects/sdf/tools/stroke_loop.py\n",
+  "binary_sha256": "8db9db2e74c0b5a67762b18692ea8a15c4383def683b5d2088e9f5af5de0c946",
+  "harness_sha256": "21f24e83f93d78e4f04b3ce6739a46205abfd641298f723f535b483d55cb61d7",
+  "shaders": {
+    "local_canonical.comp.spv": "4103fd5c3347d037bca6d0e5ab69564ccffabc6f4981ca1edde909afe7b6c7c3",
+    "local_dom_filter.comp.spv": "cfc9af42756fe995dc5de953585d6064e999a4f158440a4b909b01691e74c796",
+    "local_dom_samples.comp.spv": "656c2d801601488bd7d8fdfda863c9c642eff27e3b86b44e34ce15f6a8bc9cc1",
+    "local_filter.comp.spv": "770f821a2dca049f597e5f2a1db3412ba39619a4b6de3ac99c744e7cfea7ac8d",
+    "local_samples.comp.spv": "1514c9d765cfa4a74d3c83201fd4e30e4d0ef816fe38c58075d3163910f103a7"
+  },
+  "original_shaders_unchanged": 211,
+  "public_executable_unchanged": true,
+  "mode": "local-dom",
+  "runs": [
+    {
+      "case": {
+        "name": "guardian-chain",
+        "subject": "guardian",
+        "length": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/guardian-chain.json"
+      },
+      "independent_files": [
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.r16.bin",
+          "byte_identical": true
+        }
+      ],
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/guardian-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.json",
+        "--commit-mode",
+        "local-dom",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 38.22196201002225,
+      "gpu_before": "0 %, 0 %, 840 MHz, 7001 MHz, 30, 12.81 W, 695 MiB",
+      "gpu_after": "1 %, 0 %, 2895 MHz, 14001 MHz, 39, 53.90 W, 733 MiB",
+      "log_sha256": "b7cf265920c832ca984920e1a53797b15497d359744db0940ecc0364483d5146",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "copy_only": false,
+        "copy_slab_bytes": 0,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "local-dom",
+        "pipeline_prepare_ms": 2.985183,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 107230,
+              "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "6b21ec1966c47e6764a36bee6d6051df5ea74513de74872f4cbabb52f032874f",
+              "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-candidate.slots.bin",
+              "texels": 54901760,
+              "topology_entries": 433024,
+              "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+            },
+            "canonical": {
+              "bricks": 107230,
+              "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "798b469e4efc1a03601e4558895f3573cca5facb474450ba4a76f22cadd6a23b",
+              "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-0-canonical.slots.bin",
+              "texels": 54901760,
+              "topology_entries": 433024,
+              "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11387020687829324324,
+            "name": "guardian-chain-0",
+            "retained_history_steps": 66,
+            "retained_logical_bricks": 107081,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 34.873503,
+            "trials": [
+              {
+                "admission_ms": 15.177356,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1.9248319999999999,
+                "bricks": 107230,
+                "builder_wall_ms": 26.686987,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.26288,
+                "copy_max_chunk_gpu_ms": 1.26288,
+                "copy_wall_ms": 1.927639,
+                "fallback_gpu_ms": 1.91648,
+                "field_wall_ms": 26.686987,
+                "filter_gpu_ms": 6.028192,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  107435,
+                  107230,
+                  0,
+                  590,
+                  149,
+                  205,
+                  2920,
+                  2392,
+                  64,
+                  441,
+                  4258,
+                  132,
+                  17,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.0002,
+                "ready_to_render_ms": 26.878728,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.008352,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  441,
+                  149,
+                  221534,
+                  4258,
+                  67584,
+                  205,
+                  2920,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 11387020687829324324,
+            "candidate": {
+              "bricks": 107803,
+              "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "02cff95d829779aaa50a5d1454765411b61b478030a879a382cc9f67e918ae3a",
+              "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-candidate.slots.bin",
+              "texels": 55195136,
+              "topology_entries": 434240,
+              "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+            },
+            "canonical": {
+              "bricks": 107803,
+              "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "1832dbeb677f523a1e4c06241c13c87c79268bac713a43146a577be816386fe2",
+              "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-1-canonical.slots.bin",
+              "texels": 55195136,
+              "topology_entries": 434240,
+              "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8852747534494244074,
+            "name": "guardian-chain-1",
+            "retained_history_steps": 67,
+            "retained_logical_bricks": 107188,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 33.840239,
+            "trials": [
+              {
+                "admission_ms": 15.134007,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.583872,
+                "bricks": 107803,
+                "builder_wall_ms": 37.699376,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.102976,
+                "copy_max_chunk_gpu_ms": 8.102976,
+                "copy_wall_ms": 8.482397,
+                "fallback_gpu_ms": 3.546528,
+                "field_wall_ms": 37.699376,
+                "filter_gpu_ms": 9.105535999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108050,
+                  107803,
+                  0,
+                  1167,
+                  615,
+                  42,
+                  2982,
+                  3610,
+                  1280,
+                  552,
+                  5871,
+                  233,
+                  382,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00024,
+                "ready_to_render_ms": 37.864967,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.037343999999999995,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  552,
+                  615,
+                  276753,
+                  5871,
+                  119296,
+                  42,
+                  2982,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8852747534494244074,
+            "candidate": {
+              "bricks": 107862,
+              "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "b0b6915934c43b53ba100c6bc25c7fe5de439dc43ee625474e96e51cdf03be09",
+              "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-candidate.slots.bin",
+              "texels": 55225344,
+              "topology_entries": 434304,
+              "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+            },
+            "canonical": {
+              "bricks": 107862,
+              "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "5b184b645c4dbcf08f422316c2cb5e4ac8d2c346230179177899f069e99fcc9c",
+              "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-2-canonical.slots.bin",
+              "texels": 55225344,
+              "topology_entries": 434304,
+              "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 14812328068284063311,
+            "name": "guardian-chain-2",
+            "retained_history_steps": 68,
+            "retained_logical_bricks": 107702,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 33.535618,
+            "trials": [
+              {
+                "admission_ms": 16.359532,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.24944,
+                "bricks": 107862,
+                "builder_wall_ms": 38.76241,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.075936,
+                "copy_max_chunk_gpu_ms": 8.075936,
+                "copy_wall_ms": 8.615557,
+                "fallback_gpu_ms": 3.19808,
+                "field_wall_ms": 38.76241,
+                "filter_gpu_ms": 9.118112,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108210,
+                  107862,
+                  0,
+                  1229,
+                  160,
+                  101,
+                  3198,
+                  3394,
+                  128,
+                  1069,
+                  12219,
+                  155,
+                  5,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00022,
+                "ready_to_render_ms": 39.018781,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.051359999999999996,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1069,
+                  160,
+                  535109,
+                  12219,
+                  79360,
+                  101,
+                  3198,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 14812328068284063311,
+            "candidate": {
+              "bricks": 108059,
+              "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "ec58528b685f2ee5fd107ef956e0f01ac7a42b01f8d815865a833ecaf25d94be",
+              "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-candidate.slots.bin",
+              "texels": 55326208,
+              "topology_entries": 434304,
+              "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+            },
+            "canonical": {
+              "bricks": 108059,
+              "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "1cef0eaaedd5bb036236e64ac842140d32f6c0e0e38fb3b73d1e38b1294b61e8",
+              "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-3-canonical.slots.bin",
+              "texels": 55326208,
+              "topology_entries": 434304,
+              "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 10805705327011228654,
+            "name": "guardian-chain-3",
+            "retained_history_steps": 69,
+            "retained_logical_bricks": 107770,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 34.731722,
+            "trials": [
+              {
+                "admission_ms": 16.178811,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 4.04688,
+                "bricks": 108059,
+                "builder_wall_ms": 39.534393,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.117376,
+                "copy_max_chunk_gpu_ms": 8.117376,
+                "copy_wall_ms": 8.571238,
+                "fallback_gpu_ms": 3.99376,
+                "field_wall_ms": 39.534393,
+                "filter_gpu_ms": 9.136256,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108499,
+                  108059,
+                  0,
+                  1428,
+                  289,
+                  92,
+                  3324,
+                  3332,
+                  0,
+                  1139,
+                  16396,
+                  281,
+                  8,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00022,
+                "ready_to_render_ms": 39.741974,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.05312,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1139,
+                  289,
+                  566772,
+                  16396,
+                  143872,
+                  92,
+                  3324,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 10805705327011228654,
+            "candidate": {
+              "bricks": 108133,
+              "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "1eb13c9658cc593aeda20182254ad5696b66e7d63e5385cd9cc6384399d38559",
+              "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-candidate.slots.bin",
+              "texels": 55364096,
+              "topology_entries": 434368,
+              "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+            },
+            "canonical": {
+              "bricks": 108133,
+              "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "949e70600e07c7cfbb5af87b621dd927bebd157aa493d6faf28d9ac3fbf263cb",
+              "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-4-canonical.slots.bin",
+              "texels": 55364096,
+              "topology_entries": 434368,
+              "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2265004877042027597,
+            "name": "guardian-chain-4",
+            "retained_history_steps": 70,
+            "retained_logical_bricks": 107960,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.964228,
+            "trials": [
+              {
+                "admission_ms": 16.684773,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.325248,
+                "bricks": 108133,
+                "builder_wall_ms": 38.725349,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.013311999999999,
+                "copy_max_chunk_gpu_ms": 8.013311999999999,
+                "copy_wall_ms": 8.341906,
+                "fallback_gpu_ms": 3.268224,
+                "field_wall_ms": 38.725349,
+                "filter_gpu_ms": 9.120864,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108672,
+                  108133,
+                  0,
+                  1456,
+                  173,
+                  99,
+                  3311,
+                  3345,
+                  64,
+                  1283,
+                  19187,
+                  165,
+                  8,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 38.93207,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.057024,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1283,
+                  173,
+                  637709,
+                  19187,
+                  84480,
+                  99,
+                  3311,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2265004877042027597,
+            "candidate": {
+              "bricks": 108315,
+              "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "b744b4c767dd1a8b7e062b7ca58fff1fc202899cef28f99ef35573218957d50f",
+              "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-candidate.slots.bin",
+              "texels": 55457280,
+              "topology_entries": 434624,
+              "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+            },
+            "canonical": {
+              "bricks": 108315,
+              "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "7eadfb7c37c07c7f2baa9dfabbd5a1cf5e2be86cddafa92003eb4bfd08fa66c8",
+              "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-5-canonical.slots.bin",
+              "texels": 55457280,
+              "topology_entries": 434624,
+              "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13914239577526188516,
+            "name": "guardian-chain-5",
+            "retained_history_steps": 71,
+            "retained_logical_bricks": 108038,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.046655,
+            "trials": [
+              {
+                "admission_ms": 16.228301,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 4.067264,
+                "bricks": 108315,
+                "builder_wall_ms": 39.576643,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.130528,
+                "copy_max_chunk_gpu_ms": 8.130528,
+                "copy_wall_ms": 8.493827,
+                "fallback_gpu_ms": 4.009888,
+                "field_wall_ms": 39.576643,
+                "filter_gpu_ms": 9.15024,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108949,
+                  108315,
+                  0,
+                  1538,
+                  277,
+                  95,
+                  3522,
+                  3518,
+                  320,
+                  1261,
+                  21969,
+                  270,
+                  7,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 39.788344,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.057375999999999996,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1261,
+                  277,
+                  623663,
+                  21969,
+                  138240,
+                  95,
+                  3522,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 13914239577526188516,
+            "candidate": {
+              "bricks": 108403,
+              "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "09417244131c8d1ffc1b468e4eb88a1e45ace58015a7ed9454cc7d51c4591e8d",
+              "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-candidate.slots.bin",
+              "texels": 55502336,
+              "topology_entries": 434688,
+              "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+            },
+            "canonical": {
+              "bricks": 108403,
+              "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "ece844627534ee4aa70def4a77c12329c5222d403e3fe79d18eda58a357bbe13",
+              "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-6-canonical.slots.bin",
+              "texels": 55502336,
+              "topology_entries": 434688,
+              "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 4948006443937280152,
+            "name": "guardian-chain-6",
+            "retained_history_steps": 72,
+            "retained_logical_bricks": 108216,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 36.316079,
+            "trials": [
+              {
+                "admission_ms": 17.139315,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.488704,
+                "bricks": 108403,
+                "builder_wall_ms": 39.977565,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.085632,
+                "copy_max_chunk_gpu_ms": 8.085632,
+                "copy_wall_ms": 8.935329,
+                "fallback_gpu_ms": 3.426976,
+                "field_wall_ms": 39.977565,
+                "filter_gpu_ms": 9.166048,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  109136,
+                  108403,
+                  0,
+                  1513,
+                  187,
+                  99,
+                  3611,
+                  3429,
+                  128,
+                  1326,
+                  22882,
+                  182,
+                  5,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00023,
+                "ready_to_render_ms": 40.211636,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.061728,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1326,
+                  187,
+                  656030,
+                  22882,
+                  93184,
+                  99,
+                  3611,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 4948006443937280152,
+            "candidate": {
+              "bricks": 108553,
+              "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "9791555999fdb0d9d9000f861e23e883c3c42e1b6ec69a846c3cda39689299e3",
+              "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-candidate.slots.bin",
+              "texels": 55579136,
+              "topology_entries": 434688,
+              "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+            },
+            "canonical": {
+              "bricks": 108553,
+              "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "23153f65d7e0e342cc1b67aa9663ba395b616bd4462289e6229d22b6a08ebcfa",
+              "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/guardian-chain.case-7-canonical.slots.bin",
+              "texels": 55579136,
+              "topology_entries": 434688,
+              "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 71955226333116876,
+            "name": "guardian-chain-7",
+            "retained_history_steps": 73,
+            "retained_logical_bricks": 108308,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.962168,
+            "trials": [
+              {
+                "admission_ms": 17.506296,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.9232959999999997,
+                "bricks": 108553,
+                "builder_wall_ms": 40.963039,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.207744,
+                "copy_max_chunk_gpu_ms": 8.207744,
+                "copy_wall_ms": 8.552017,
+                "fallback_gpu_ms": 3.8620799999999997,
+                "field_wall_ms": 40.963039,
+                "filter_gpu_ms": 9.164384,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  109381,
+                  108553,
+                  0,
+                  1534,
+                  245,
+                  95,
+                  3488,
+                  3360,
+                  0,
+                  1289,
+                  23840,
+                  238,
+                  7,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00058,
+                "ready_to_render_ms": 41.14001,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.061216,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1289,
+                  245,
+                  636128,
+                  23840,
+                  121856,
+                  95,
+                  3488,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      }
+    },
+    {
+      "case": {
+        "name": "robot-chain",
+        "subject": "robot",
+        "length": 16,
+        "input": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/robot-chain.json"
+      },
+      "independent_files": [
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.r16.bin",
+          "byte_identical": true
+        }
+      ],
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/robot-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.json",
+        "--commit-mode",
+        "local-dom",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 59.25288487499347,
+      "gpu_before": "1 %, 0 %, 2895 MHz, 14001 MHz, 39, 54.00 W, 733 MiB",
+      "gpu_after": "2 %, 0 %, 1957 MHz, 7001 MHz, 37, 38.31 W, 729 MiB",
+      "log_sha256": "71d8c69883c42366f142ca96a844a9ce3b161d53e13cdb28aaf60e9ab4f64b91",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "copy_only": false,
+        "copy_slab_bytes": 0,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "local-dom",
+        "pipeline_prepare_ms": 2.915793,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 138463,
+              "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "2680a6381d6c78ade95f5ce52f42a60178d40853e3827154e306380343f33682",
+              "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-candidate.slots.bin",
+              "texels": 70893056,
+              "topology_entries": 557696,
+              "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+            },
+            "canonical": {
+              "bricks": 138463,
+              "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "4db765f1104881a21da07cb676c11630a3185f68acdd8334574e107daf115d7e",
+              "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-0-canonical.slots.bin",
+              "texels": 70893056,
+              "topology_entries": 557696,
+              "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1656876359464538019,
+            "name": "robot-chain-0",
+            "retained_history_steps": 83,
+            "retained_logical_bricks": 138179,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.697742,
+            "trials": [
+              {
+                "admission_ms": 1.222505,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.15023999999999998,
+                "bricks": 138463,
+                "builder_wall_ms": 4.350189,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.2649599999999999,
+                "copy_max_chunk_gpu_ms": 1.2649599999999999,
+                "copy_wall_ms": 1.659358,
+                "fallback_gpu_ms": 0.141536,
+                "field_wall_ms": 4.350189,
+                "filter_gpu_ms": 0.498624,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  138728,
+                  138463,
+                  0,
+                  763,
+                  284,
+                  265,
+                  2375,
+                  2937,
+                  320,
+                  479,
+                  1722,
+                  115,
+                  169,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.0003,
+                "ready_to_render_ms": 4.360309,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.008704,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  479,
+                  284,
+                  243526,
+                  1722,
+                  58880,
+                  265,
+                  2375,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1656876359464538019,
+            "candidate": {
+              "bricks": 138828,
+              "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "3339fe8753d60935898027fa95fc7ebedcf0ac2f7054a4e1549d9de3bed469fb",
+              "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-candidate.slots.bin",
+              "texels": 71079936,
+              "topology_entries": 558336,
+              "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+            },
+            "canonical": {
+              "bricks": 138828,
+              "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "238153f3463fa257705133fa0b0b50d86bf781d3c9f556d19309ce49725f90b3",
+              "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-1-canonical.slots.bin",
+              "texels": 71079936,
+              "topology_entries": 558336,
+              "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6686574029110803346,
+            "name": "robot-chain-1",
+            "retained_history_steps": 84,
+            "retained_logical_bricks": 138400,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.514651,
+            "trials": [
+              {
+                "admission_ms": 1.219425,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.25408,
+                "bricks": 138828,
+                "builder_wall_ms": 11.699421,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.155263999999999,
+                "copy_max_chunk_gpu_ms": 8.155263999999999,
+                "copy_wall_ms": 8.465477,
+                "fallback_gpu_ms": 0.208832,
+                "field_wall_ms": 11.699421,
+                "filter_gpu_ms": 0.772416,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139156,
+                  138828,
+                  0,
+                  1136,
+                  428,
+                  63,
+                  2658,
+                  3422,
+                  640,
+                  708,
+                  4429,
+                  122,
+                  306,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00036,
+                "ready_to_render_ms": 11.713341,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.045248,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  708,
+                  428,
+                  358067,
+                  4429,
+                  62464,
+                  63,
+                  2658,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6686574029110803346,
+            "candidate": {
+              "bricks": 138944,
+              "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "9bebdf34e38fe7dc0a2af7995c5c6fd7bea6034e79b00343cea1d77b5f89136c",
+              "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-candidate.slots.bin",
+              "texels": 71139328,
+              "topology_entries": 558400,
+              "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+            },
+            "canonical": {
+              "bricks": 138944,
+              "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "2ac8cba6eb77521c6e279597569adc75af216880ad11f9eaa55de5100b6933d0",
+              "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-2-canonical.slots.bin",
+              "texels": 71139328,
+              "topology_entries": 558400,
+              "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6371340924806423733,
+            "name": "robot-chain-2",
+            "retained_history_steps": 85,
+            "retained_logical_bricks": 138731,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.549051,
+            "trials": [
+              {
+                "admission_ms": 1.261166,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.20310399999999998,
+                "bricks": 138944,
+                "builder_wall_ms": 4.991832,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.495808,
+                "copy_max_chunk_gpu_ms": 1.495808,
+                "copy_wall_ms": 1.856818,
+                "fallback_gpu_ms": 0.190208,
+                "field_wall_ms": 4.991832,
+                "filter_gpu_ms": 0.506496,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139369,
+                  138944,
+                  0,
+                  1259,
+                  213,
+                  97,
+                  3459,
+                  3133,
+                  128,
+                  1046,
+                  10128,
+                  175,
+                  38,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00037,
+                "ready_to_render_ms": 5.010192,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.012896,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1046,
+                  213,
+                  525424,
+                  10128,
+                  89600,
+                  97,
+                  3459,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6371340924806423733,
+            "candidate": {
+              "bricks": 139074,
+              "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "5e77f9df12c1e3890847ce629d8d086166e920b36d24523dda490f967ad6d369",
+              "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-candidate.slots.bin",
+              "texels": 71205888,
+              "topology_entries": 558464,
+              "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+            },
+            "canonical": {
+              "bricks": 139074,
+              "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "d8f5f67d53e95172ed7f3a28235164f7dc7063b96e9b1be49dd04d0dfeea4c95",
+              "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-3-canonical.slots.bin",
+              "texels": 71205888,
+              "topology_entries": 558464,
+              "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3539029408402405265,
+            "name": "robot-chain-3",
+            "retained_history_steps": 86,
+            "retained_logical_bricks": 138848,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.678082,
+            "trials": [
+              {
+                "admission_ms": 1.517056,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.319936,
+                "bricks": 139074,
+                "builder_wall_ms": 12.246563,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.19136,
+                "copy_max_chunk_gpu_ms": 8.19136,
+                "copy_wall_ms": 8.641568,
+                "fallback_gpu_ms": 0.266752,
+                "field_wall_ms": 12.246563,
+                "filter_gpu_ms": 0.79904,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139595,
+                  139074,
+                  0,
+                  1379,
+                  226,
+                  96,
+                  3457,
+                  3071,
+                  64,
+                  1153,
+                  14230,
+                  179,
+                  47,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 12.259353,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.053183999999999995,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1153,
+                  226,
+                  576106,
+                  14230,
+                  91648,
+                  96,
+                  3457,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3539029408402405265,
+            "candidate": {
+              "bricks": 139196,
+              "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "db598495a06f054ed57f35bf9908b5b19ec35fd2de6417e8554472eeeaf09fe9",
+              "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-candidate.slots.bin",
+              "texels": 71268352,
+              "topology_entries": 558592,
+              "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+            },
+            "canonical": {
+              "bricks": 139196,
+              "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "55afb725530c14cfcd647aca2f4661111c992fba2b9f266830990e6db8d20fa1",
+              "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-4-canonical.slots.bin",
+              "texels": 71268352,
+              "topology_entries": 558592,
+              "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 998405047903929733,
+            "name": "robot-chain-4",
+            "retained_history_steps": 87,
+            "retained_logical_bricks": 138978,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.746602,
+            "trials": [
+              {
+                "admission_ms": 1.355296,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.545984,
+                "bricks": 139196,
+                "builder_wall_ms": 23.964455,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 18.186816,
+                "copy_max_chunk_gpu_ms": 18.186816,
+                "copy_wall_ms": 18.774142,
+                "fallback_gpu_ms": 0.401952,
+                "field_wall_ms": 23.964455,
+                "filter_gpu_ms": 1.289632,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139813,
+                  139196,
+                  0,
+                  1417,
+                  218,
+                  96,
+                  3227,
+                  3109,
+                  128,
+                  1199,
+                  17702,
+                  177,
+                  41,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00033,
+                "ready_to_render_ms": 23.976615,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.144032,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1199,
+                  218,
+                  596186,
+                  17702,
+                  90624,
+                  96,
+                  3227,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 998405047903929733,
+            "candidate": {
+              "bricks": 139331,
+              "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "bba7c1589b02cc625c4a72ba9cd26d86838b875776ba46437dd84d9d4f413091",
+              "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-candidate.slots.bin",
+              "texels": 71337472,
+              "topology_entries": 558784,
+              "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+            },
+            "canonical": {
+              "bricks": 139331,
+              "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "628e6c13dba015567d7eeb1fd0caabeaece752ae15700da5cd92fa636c046c1b",
+              "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-5-canonical.slots.bin",
+              "texels": 71337472,
+              "topology_entries": 558784,
+              "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8183933449876945312,
+            "name": "robot-chain-5",
+            "retained_history_steps": 88,
+            "retained_logical_bricks": 139099,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.765562,
+            "trials": [
+              {
+                "admission_ms": 1.657408,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.22297599999999998,
+                "bricks": 139331,
+                "builder_wall_ms": 5.064652,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.511808,
+                "copy_max_chunk_gpu_ms": 1.511808,
+                "copy_wall_ms": 1.828648,
+                "fallback_gpu_ms": 0.20668799999999998,
+                "field_wall_ms": 5.064652,
+                "filter_gpu_ms": 0.519936,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140045,
+                  139331,
+                  0,
+                  1433,
+                  232,
+                  97,
+                  3255,
+                  3209,
+                  192,
+                  1201,
+                  19437,
+                  179,
+                  53,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 5.077612,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.016288,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1201,
+                  232,
+                  595475,
+                  19437,
+                  91648,
+                  97,
+                  3255,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8183933449876945312,
+            "candidate": {
+              "bricks": 139432,
+              "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "693542f0b44f0d701f08fe164b4d9df1429d84df6a0fa5cb6abe14660744ee81",
+              "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-candidate.slots.bin",
+              "texels": 71389184,
+              "topology_entries": 558848,
+              "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+            },
+            "canonical": {
+              "bricks": 139432,
+              "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "33bcd875633873c07558266ef982a06f4f92ed2e31a66a3a81263c11f9d871fd",
+              "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-6-canonical.slots.bin",
+              "texels": 71389184,
+              "topology_entries": 558848,
+              "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 7167858666550911522,
+            "name": "robot-chain-6",
+            "retained_history_steps": 89,
+            "retained_logical_bricks": 139234,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.810672,
+            "trials": [
+              {
+                "admission_ms": 1.460027,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.325184,
+                "bricks": 139432,
+                "builder_wall_ms": 12.163633,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.203199999999999,
+                "copy_max_chunk_gpu_ms": 8.203199999999999,
+                "copy_wall_ms": 8.537067,
+                "fallback_gpu_ms": 0.278304,
+                "field_wall_ms": 12.163633,
+                "filter_gpu_ms": 0.815712,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140243,
+                  139432,
+                  0,
+                  1405,
+                  198,
+                  97,
+                  3710,
+                  3138,
+                  128,
+                  1207,
+                  19852,
+                  162,
+                  36,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00036,
+                "ready_to_render_ms": 12.174823,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.04688,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1207,
+                  198,
+                  598132,
+                  19852,
+                  82944,
+                  97,
+                  3710,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 7167858666550911522,
+            "candidate": {
+              "bricks": 139601,
+              "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "f5cbf4acb7b17874b21b44e6a53dee9a09af3cc38e4ed801c97f359965c9f285",
+              "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-candidate.slots.bin",
+              "texels": 71475712,
+              "topology_entries": 559040,
+              "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+            },
+            "canonical": {
+              "bricks": 139601,
+              "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "6cfc98a7ef144eef99ea7d539065c5e28462efef111aa964f3b00874ed0a468d",
+              "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-7-canonical.slots.bin",
+              "texels": 71475712,
+              "topology_entries": 559040,
+              "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1904747401656695727,
+            "name": "robot-chain-7",
+            "retained_history_steps": 90,
+            "retained_logical_bricks": 139335,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.928663,
+            "trials": [
+              {
+                "admission_ms": 1.464896,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.240384,
+                "bricks": 139601,
+                "builder_wall_ms": 5.056502,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.5047359999999999,
+                "copy_max_chunk_gpu_ms": 1.5047359999999999,
+                "copy_wall_ms": 1.835028,
+                "fallback_gpu_ms": 0.22547199999999998,
+                "field_wall_ms": 5.056502,
+                "filter_gpu_ms": 0.5327679999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140509,
+                  139601,
+                  0,
+                  1432,
+                  266,
+                  97,
+                  3461,
+                  3195,
+                  192,
+                  1166,
+                  19325,
+                  201,
+                  65,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00041,
+                "ready_to_render_ms": 5.068722,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.014912,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1166,
+                  266,
+                  577667,
+                  19325,
+                  102912,
+                  97,
+                  3461,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1904747401656695727,
+            "candidate": {
+              "bricks": 139675,
+              "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "ac89aee5ece40641b298f28e1780fb87c9ccee91cc2a4647aa733e08956baa21",
+              "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-candidate.slots.bin",
+              "texels": 71513600,
+              "topology_entries": 559104,
+              "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+            },
+            "canonical": {
+              "bricks": 139675,
+              "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "1cf0d4509e6b2111f25a04b1d1400345235e9d119338f82f9cc63f653f8b4f83",
+              "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-8-canonical.slots.bin",
+              "texels": 71513600,
+              "topology_entries": 559104,
+              "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18314936555967059383,
+            "name": "robot-chain-8",
+            "retained_history_steps": 91,
+            "retained_logical_bricks": 139504,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.043813,
+            "trials": [
+              {
+                "admission_ms": 1.496527,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.317824,
+                "bricks": 139675,
+                "builder_wall_ms": 12.200284,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.250656,
+                "copy_max_chunk_gpu_ms": 8.250656,
+                "copy_wall_ms": 8.722958,
+                "fallback_gpu_ms": 0.266144,
+                "field_wall_ms": 12.200284,
+                "filter_gpu_ms": 0.84464,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140680,
+                  139675,
+                  0,
+                  1365,
+                  171,
+                  97,
+                  3194,
+                  3142,
+                  64,
+                  1194,
+                  18901,
+                  131,
+                  40,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00028,
+                "ready_to_render_ms": 12.211754,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.05168,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1194,
+                  171,
+                  592427,
+                  18901,
+                  67072,
+                  97,
+                  3194,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 18314936555967059383,
+            "candidate": {
+              "bricks": 139870,
+              "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "8aa71d64a8e276c5f975ef2fffef888e1efc9b226ea8ee07c85cbd53ab511e38",
+              "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-candidate.slots.bin",
+              "texels": 71613440,
+              "topology_entries": 559168,
+              "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+            },
+            "canonical": {
+              "bricks": 139870,
+              "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "3f8a0c47b89bfd14a372ad7562b7323d1368e4ab0f7607de82a31e8f67c80c65",
+              "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-9-canonical.slots.bin",
+              "texels": 71613440,
+              "topology_entries": 559168,
+              "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8134416226798193819,
+            "name": "robot-chain-9",
+            "retained_history_steps": 92,
+            "retained_logical_bricks": 139580,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.088784,
+            "trials": [
+              {
+                "admission_ms": 1.886008,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.25888,
+                "bricks": 139870,
+                "builder_wall_ms": 5.224622,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.519104,
+                "copy_max_chunk_gpu_ms": 1.519104,
+                "copy_wall_ms": 1.751178,
+                "fallback_gpu_ms": 0.24412799999999998,
+                "field_wall_ms": 5.224622,
+                "filter_gpu_ms": 0.545952,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140970,
+                  139870,
+                  0,
+                  1431,
+                  290,
+                  95,
+                  3330,
+                  3134,
+                  64,
+                  1141,
+                  19480,
+                  221,
+                  69,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00032,
+                "ready_to_render_ms": 5.237853,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.014752,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1141,
+                  290,
+                  564712,
+                  19480,
+                  113152,
+                  95,
+                  3330,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8134416226798193819,
+            "candidate": {
+              "bricks": 139943,
+              "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "75988676fc1053c95d2b8fe10b131ba335cecac8d505e78ec8ceef0272f5ba0a",
+              "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-candidate.slots.bin",
+              "texels": 71650816,
+              "topology_entries": 559296,
+              "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+            },
+            "canonical": {
+              "bricks": 139943,
+              "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "10325689027b440fe7a41dd31e70b1afc6c6d76908023c9797d1a4ad38c33c73",
+              "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-10-canonical.slots.bin",
+              "texels": 71650816,
+              "topology_entries": 559296,
+              "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13921503348872132687,
+            "name": "robot-chain-10",
+            "retained_history_steps": 93,
+            "retained_logical_bricks": 139771,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.215444,
+            "trials": [
+              {
+                "admission_ms": 1.628097,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.52528,
+                "bricks": 139943,
+                "builder_wall_ms": 23.812983,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 18.3064,
+                "copy_max_chunk_gpu_ms": 18.3064,
+                "copy_wall_ms": 18.920862,
+                "fallback_gpu_ms": 0.40809599999999996,
+                "field_wall_ms": 23.812983,
+                "filter_gpu_ms": 1.3215999999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141142,
+                  139943,
+                  0,
+                  1370,
+                  172,
+                  99,
+                  3529,
+                  3191,
+                  192,
+                  1198,
+                  19981,
+                  130,
+                  42,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00063,
+                "ready_to_render_ms": 23.828414,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.117184,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1198,
+                  172,
+                  593395,
+                  19981,
+                  66560,
+                  99,
+                  3529,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 13921503348872132687,
+            "candidate": {
+              "bricks": 140119,
+              "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "f1441845b9e42c76aa30602120f5e500ef2e349df0929b5a0d21b3d9cd29f1be",
+              "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-candidate.slots.bin",
+              "texels": 71740928,
+              "topology_entries": 559488,
+              "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+            },
+            "canonical": {
+              "bricks": 140119,
+              "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "9a2bc61403178fd1c05b38fd861afc309ad39b52bb5965e7848613892c937d3d",
+              "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-11-canonical.slots.bin",
+              "texels": 71740928,
+              "topology_entries": 559488,
+              "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11511871129919973718,
+            "name": "robot-chain-11",
+            "retained_history_steps": 94,
+            "retained_logical_bricks": 139849,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.273364,
+            "trials": [
+              {
+                "admission_ms": 1.643717,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.383232,
+                "bricks": 140119,
+                "builder_wall_ms": 12.390974,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.264672,
+                "copy_max_chunk_gpu_ms": 8.264672,
+                "copy_wall_ms": 8.579038,
+                "fallback_gpu_ms": 0.334432,
+                "field_wall_ms": 12.390974,
+                "filter_gpu_ms": 0.867872,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141412,
+                  140119,
+                  0,
+                  1403,
+                  270,
+                  94,
+                  3231,
+                  3169,
+                  192,
+                  1133,
+                  20615,
+                  226,
+                  44,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00022,
+                "ready_to_render_ms": 12.401594,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.048799999999999996,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1133,
+                  270,
+                  559481,
+                  20615,
+                  115712,
+                  94,
+                  3231,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 11511871129919973718,
+            "candidate": {
+              "bricks": 140238,
+              "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "dfa1a13baafad15a9c021fe9e440bafd525ab966a5e52763665ae47ef4fa9436",
+              "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-candidate.slots.bin",
+              "texels": 71801856,
+              "topology_entries": 559744,
+              "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+            },
+            "canonical": {
+              "bricks": 140238,
+              "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e4427b50bccaad1b6e8ec68c11d67d4203ca6291a8c5f5a45dbd04df58b1f856",
+              "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-12-canonical.slots.bin",
+              "texels": 71801856,
+              "topology_entries": 559744,
+              "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 17459683113264300848,
+            "name": "robot-chain-12",
+            "retained_history_steps": 95,
+            "retained_logical_bricks": 140021,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.268244,
+            "trials": [
+              {
+                "admission_ms": 1.704908,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.544832,
+                "bricks": 140238,
+                "builder_wall_ms": 23.680314,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 18.462208,
+                "copy_max_chunk_gpu_ms": 18.462208,
+                "copy_wall_ms": 18.998253,
+                "fallback_gpu_ms": 0.438112,
+                "field_wall_ms": 23.680314,
+                "filter_gpu_ms": 1.3650879999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141629,
+                  140238,
+                  0,
+                  1372,
+                  217,
+                  98,
+                  2997,
+                  3275,
+                  256,
+                  1155,
+                  19956,
+                  172,
+                  45,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00026,
+                "ready_to_render_ms": 23.692234,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.10672,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1155,
+                  217,
+                  571404,
+                  19956,
+                  88064,
+                  98,
+                  2997,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 17459683113264300848,
+            "candidate": {
+              "bricks": 140358,
+              "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "c3f29e8a80e70cf1922cb184c33b732fa5371f2533ceff65d125938974b78ff6",
+              "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-candidate.slots.bin",
+              "texels": 71863296,
+              "topology_entries": 559744,
+              "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+            },
+            "canonical": {
+              "bricks": 140358,
+              "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "f44cd07d864daadea254330bd31611d9a5b7845498c6339f9d561c0a99c64cf7",
+              "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-13-canonical.slots.bin",
+              "texels": 71863296,
+              "topology_entries": 559744,
+              "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1719149047447049442,
+            "name": "robot-chain-13",
+            "retained_history_steps": 96,
+            "retained_logical_bricks": 140139,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.310175,
+            "trials": [
+              {
+                "admission_ms": 1.835648,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.350048,
+                "bricks": 140358,
+                "builder_wall_ms": 12.771795,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.270912,
+                "copy_max_chunk_gpu_ms": 8.270912,
+                "copy_wall_ms": 8.601777,
+                "fallback_gpu_ms": 0.300896,
+                "field_wall_ms": 12.771795,
+                "filter_gpu_ms": 0.898848,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141848,
+                  140358,
+                  0,
+                  1337,
+                  219,
+                  99,
+                  3350,
+                  3050,
+                  64,
+                  1118,
+                  19501,
+                  179,
+                  40,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00025,
+                "ready_to_render_ms": 12.787006,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.049152,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1118,
+                  219,
+                  552915,
+                  19501,
+                  91648,
+                  99,
+                  3350,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1719149047447049442,
+            "candidate": {
+              "bricks": 140537,
+              "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "dde0e828608d31d413882248dbb0221ba3aafd6273e473f9c166c240b81480e1",
+              "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-candidate.slots.bin",
+              "texels": 71954944,
+              "topology_entries": 559936,
+              "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+            },
+            "canonical": {
+              "bricks": 140537,
+              "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "11c9d3e192cb77715694a5bd8d8bd9ecbb0d878b5ad05114dfdc225e61abf448",
+              "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-14-canonical.slots.bin",
+              "texels": 71954944,
+              "topology_entries": 559936,
+              "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3687383293623848582,
+            "name": "robot-chain-14",
+            "retained_history_steps": 97,
+            "retained_logical_bricks": 140267,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.371264,
+            "trials": [
+              {
+                "admission_ms": 1.797748,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.36495999999999995,
+                "bricks": 140537,
+                "builder_wall_ms": 12.611485,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.271264,
+                "copy_max_chunk_gpu_ms": 8.271264,
+                "copy_wall_ms": 8.536187,
+                "fallback_gpu_ms": 0.315808,
+                "field_wall_ms": 12.611485,
+                "filter_gpu_ms": 0.8812159999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  142118,
+                  140537,
+                  0,
+                  1358,
+                  270,
+                  91,
+                  3508,
+                  3148,
+                  192,
+                  1088,
+                  18972,
+                  191,
+                  79,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00025,
+                "ready_to_render_ms": 12.625245,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.049152,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1088,
+                  270,
+                  538084,
+                  18972,
+                  97792,
+                  91,
+                  3508,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3687383293623848582,
+            "candidate": {
+              "bricks": 140642,
+              "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "99574c98783a041b08b0e5e2ea59f9a6042abce85c70b709f932f40cc9828a9b",
+              "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-candidate.slots.bin",
+              "texels": 72008704,
+              "topology_entries": 560128,
+              "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+            },
+            "canonical": {
+              "bricks": 140642,
+              "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "a5f1cddf576e084492ce28071fc1bbfb0e177572c5242d0989577739e77c5f82",
+              "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/robot-chain.case-15-canonical.slots.bin",
+              "texels": 72008704,
+              "topology_entries": 560128,
+              "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2830288357869539815,
+            "name": "robot-chain-15",
+            "retained_history_steps": 98,
+            "retained_logical_bricks": 140441,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.456886,
+            "trials": [
+              {
+                "admission_ms": 1.786658,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.346656,
+                "bricks": 140642,
+                "builder_wall_ms": 12.765836,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.269632,
+                "copy_max_chunk_gpu_ms": 8.269632,
+                "copy_wall_ms": 8.609997,
+                "fallback_gpu_ms": 0.29696,
+                "field_wall_ms": 12.765836,
+                "filter_gpu_ms": 0.9030079999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  142319,
+                  140642,
+                  0,
+                  1302,
+                  201,
+                  96,
+                  3063,
+                  3145,
+                  192,
+                  1101,
+                  19034,
+                  157,
+                  44,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00026,
+                "ready_to_render_ms": 12.778826,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.049696,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1101,
+                  201,
+                  544678,
+                  19034,
+                  80384,
+                  96,
+                  3063,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      }
+    },
+    {
+      "case": {
+        "name": "recreate-chain",
+        "subject": "fixture",
+        "length": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/recreate-chain.json"
+      },
+      "independent_files": [
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.r16.bin",
+          "byte_identical": true
+        }
+      ],
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/recreate-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.json",
+        "--commit-mode",
+        "local-dom",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 24.940093425975647,
+      "gpu_before": "0 %, 0 %, 1957 MHz, 7001 MHz, 37, 30.64 W, 729 MiB",
+      "gpu_after": "100 %, 0 %, 600 MHz, 405 MHz, 36, 17.71 W, 749 MiB",
+      "log_sha256": "1e0358898b76daef7c657aebbc13090229912ac40362684e3174551b64f361f8",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "copy_only": false,
+        "copy_slab_bytes": 0,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "local-dom",
+        "pipeline_prepare_ms": 2.914953,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 9533897878463992902,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-0-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6047568250574828742,
+            "name": "recreate-0",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.12731,
+            "trials": [
+              {
+                "admission_ms": 0.08609,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 2.37865,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.195072,
+                "copy_max_chunk_gpu_ms": 1.195072,
+                "copy_wall_ms": 1.606077,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 2.37865,
+                "filter_gpu_ms": 0.025120000000000003,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00046,
+                "ready_to_render_ms": 2.37976,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6047568250574828742,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "fcf8f33c94881c3d2d87d8e6272068a771085c47202389e7166ad8ccb358e314",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "1510ee81a0d827aa5e65a9504ad649ddf4769882aff3a3115958753cc69e8f77",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-1-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2639935109288513470,
+            "name": "recreate-1",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.064711,
+            "trials": [
+              {
+                "admission_ms": 0.083321,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.02112,
+                "bricks": 2384,
+                "builder_wall_ms": 6.89383,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 5.298848,
+                "copy_max_chunk_gpu_ms": 5.298848,
+                "copy_wall_ms": 5.766245,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 6.89383,
+                "filter_gpu_ms": 0.18598399999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  4768,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00028,
+                "ready_to_render_ms": 6.89447,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.02112,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2639935109288513470,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-2-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2711547477726387422,
+            "name": "recreate-2",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.07392,
+            "trials": [
+              {
+                "admission_ms": 0.085831,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 11.017218,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.476064,
+                "copy_max_chunk_gpu_ms": 9.476064,
+                "copy_wall_ms": 9.862292,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.017218,
+                "filter_gpu_ms": 0.093632,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  4768,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00036,
+                "ready_to_render_ms": 11.017978,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2711547477726387422,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e38ec9f974fd21523474d149438cc274bc86a4ed2d89a6ab90a4fc28e1f23610",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "8ceb867cdb27c8126a379e811d2d57dfa4255c03a7b95ca6436076da06b052c3",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-3-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3479698832345753814,
+            "name": "recreate-3",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.08603,
+            "trials": [
+              {
+                "admission_ms": 0.12793,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.026784,
+                "bricks": 2384,
+                "builder_wall_ms": 11.753161,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.547328,
+                "copy_max_chunk_gpu_ms": 9.547328,
+                "copy_wall_ms": 10.092614,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.753161,
+                "filter_gpu_ms": 0.246624,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  7152,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00035,
+                "ready_to_render_ms": 11.754621,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.026784,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3479698832345753814,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-4-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2852856264191885366,
+            "name": "recreate-4",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.100881,
+            "trials": [
+              {
+                "admission_ms": 0.10214,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 11.457819,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.670335999999999,
+                "copy_max_chunk_gpu_ms": 9.670335999999999,
+                "copy_wall_ms": 10.236695,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.457819,
+                "filter_gpu_ms": 0.11171199999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  7152,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.0003,
+                "ready_to_render_ms": 11.458339,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2852856264191885366,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "0ae4290a59c084d7819ea1a0fd537bb4cef93775451c87a1ff818d8ed3280931",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "80943e788ddf195195531ddb4c6a8cdbf6e9960012b9f513be6352f85f9e38fb",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-5-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 4163199066008508846,
+            "name": "recreate-5",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.11439,
+            "trials": [
+              {
+                "admission_ms": 0.110141,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.025088,
+                "bricks": 2384,
+                "builder_wall_ms": 12.437864,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.679936,
+                "copy_max_chunk_gpu_ms": 9.679936,
+                "copy_wall_ms": 10.392445,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.437864,
+                "filter_gpu_ms": 0.300416,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  9536,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00032,
+                "ready_to_render_ms": 12.438574,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.025088,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 4163199066008508846,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-6-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 16610324645591461230,
+            "name": "recreate-6",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.132961,
+            "trials": [
+              {
+                "admission_ms": 0.11856,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 11.59166,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.943264,
+                "copy_max_chunk_gpu_ms": 9.943264,
+                "copy_wall_ms": 10.347155,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.59166,
+                "filter_gpu_ms": 0.11683199999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  9536,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.0003,
+                "ready_to_render_ms": 11.59303,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 16610324645591461230,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "dcc2df37cd47d9df62374158152c22943c2b18e59e3faeb3685dfd8b844a78f0",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "7cd71f81b8617b779db56deb2dbee82a21e9c22c1d7fffa79b2f267648c3bf39",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/dominance-chains-v1/recreate-chain.case-7-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 14169407194416928358,
+            "name": "recreate-7",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.14322,
+            "trials": [
+              {
+                "admission_ms": 0.189991,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.03408,
+                "bricks": 2384,
+                "builder_wall_ms": 11.835692,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.917472,
+                "copy_max_chunk_gpu_ms": 9.917472,
+                "copy_wall_ms": 10.328305,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.835692,
+                "filter_gpu_ms": 0.30633599999999994,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  11920,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00034,
+                "ready_to_render_ms": 11.837212,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.03408,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      }
+    }
+  ],
+  "complete": true,
+  "passed": true
+}

@@ -1,0 +1,61 @@
+Start testing: Oct 30 20:14 PDT
+----------------------------------------------------------
+8/300 Testing: documentation_hygiene
+8/300 Test: documentation_hygiene
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tools/check_documentation.py"
+Directory: /home/bryan/code/cubey/build/release
+"documentation_hygiene" start time: Oct 30 20:14 PDT
+Output:
+----------------------------------------------------------
+PASS: documentation navigation
+<end of output>
+Test time =   0.55 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_hygiene" end time: Oct 30 20:14 PDT
+"documentation_hygiene" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/300 Testing: documentation_media
+9/300 Test: documentation_media
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tools/check_documentation.py" "--check" "media"
+Directory: /home/bryan/code/cubey/build/release
+"documentation_media" start time: Oct 30 20:14 PDT
+Output:
+----------------------------------------------------------
+PASS: documentation media
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_media" end time: Oct 30 20:14 PDT
+"documentation_media" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/300 Testing: documentation_rules
+10/300 Test: documentation_rules
+Command: "/home/bryan/.local/bin/python3.12" "-B" "/home/bryan/code/cubey/tests/tools/test_documentation.py"
+Directory: /home/bryan/code/cubey/build/release
+"documentation_rules" start time: Oct 30 20:14 PDT
+Output:
+----------------------------------------------------------
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 0.097s
+
+OK
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"documentation_rules" end time: Oct 30 20:14 PDT
+"documentation_rules" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 30 20:14 PDT
+
+docs =   0.72 sec*proc
+
+policy =   0.72 sec*proc
+
+unit =   0.72 sec*proc

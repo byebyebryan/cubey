@@ -1,0 +1,4031 @@
+{
+  "source_head": "092c01fc45a495ed7eb53ade136811a557250e7d",
+  "source_status": " M projects/sdf/sdf_cached_commit.h\n M projects/sdf/sdf_cached_local.cpp\n M projects/sdf/tools/local_edit_loop.py\n?? projects/sdf/sdf_cached_stroke.cpp\n?? projects/sdf/sdf_cached_stroke.h\n?? projects/sdf/shaders/cached_stroke_quality_workload.comp\n?? projects/sdf/shaders/cached_stroke_queries.comp\n?? projects/sdf/shaders/cached_stroke_sdf.frag\n?? projects/sdf/shaders/cached_stroke_trace.glsl\n?? projects/sdf/shaders/quality_cached_stroke_sdf.frag\n?? projects/sdf/tools/cached_stroke_study.cpp\n?? projects/sdf/tools/stroke_renderer.cpp\n",
+  "binary_sha256": "49f434ba8451c425b4fd17af0ff5d031c477313517ad0cda56f85fcabe3e8439",
+  "harness_sha256": "e180256d0728eed720d30cf28a41d53d7856634e5b2c11fc00b01049b21c1c21",
+  "shaders": {
+    "local_canonical.comp.spv": "4103fd5c3347d037bca6d0e5ab69564ccffabc6f4981ca1edde909afe7b6c7c3",
+    "local_filter.comp.spv": "770f821a2dca049f597e5f2a1db3412ba39619a4b6de3ac99c744e7cfea7ac8d",
+    "local_samples.comp.spv": "1514c9d765cfa4a74d3c83201fd4e30e4d0ef816fe38c58075d3163910f103a7"
+  },
+  "original_shaders_unchanged": 211,
+  "public_executable_unchanged": true,
+  "mode": "local",
+  "runs": [
+    {
+      "case": {
+        "name": "guardian-chain",
+        "subject": "guardian",
+        "length": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/guardian-chain.json"
+      },
+      "independent_files": [
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.r16.bin",
+          "byte_identical": true
+        }
+      ],
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/guardian-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.json",
+        "--commit-mode",
+        "local",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 37.314164059003815,
+      "gpu_before": "0 %, 0 %, 180 MHz, 405 MHz, 33, 13.14 W, 988 MiB",
+      "gpu_after": "1 %, 0 %, 2895 MHz, 14001 MHz, 42, 54.86 W, 988 MiB",
+      "log_sha256": "cc68151fb66d61d69b648588fa0001fefcf89ed6159040f8bd600e2bd1e42ef3",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "copy_only": false,
+        "copy_slab_bytes": 0,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "local",
+        "pipeline_prepare_ms": 1.989728,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15419350890978506480,
+            "candidate": {
+              "bricks": 107230,
+              "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "05d1cf0f81e6cff43d24b2a9ce9feaba13f16000fe7dd72a16d357dd18090a0e",
+              "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-candidate.slots.bin",
+              "texels": 54901760,
+              "topology_entries": 433024,
+              "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+            },
+            "canonical": {
+              "bricks": 107230,
+              "cells_sha256": "d0e0d2a68e325380a096944d31b341be5c0d606299896e87af031a12e835cf13",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "6e9343c952d57d8bb82d8f4cbef91dcaa163f9d65b8b0456ba05b739b5267910",
+              "raw_r16_sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-0-canonical.slots.bin",
+              "texels": 54901760,
+              "topology_entries": 433024,
+              "topology_sha256": "2d89243655178832bac9da3c2f69bae2b95262311f7e7a0494d2b99415d29325"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11387020687829324324,
+            "name": "guardian-chain-0",
+            "retained_history_steps": 66,
+            "retained_logical_bricks": 107081,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 34.989992,
+            "trials": [
+              {
+                "admission_ms": 15.599173,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 1.884672,
+                "bricks": 107230,
+                "builder_wall_ms": 26.062536,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.267712,
+                "copy_max_chunk_gpu_ms": 1.267712,
+                "copy_wall_ms": 1.660507,
+                "fallback_gpu_ms": 1.875872,
+                "field_wall_ms": 26.062536,
+                "filter_gpu_ms": 5.600096,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  107435,
+                  107230,
+                  0,
+                  590,
+                  149,
+                  205,
+                  2920,
+                  2392,
+                  64,
+                  441,
+                  4258,
+                  149,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00013,
+                "ready_to_render_ms": 26.282356,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.008799999999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  441,
+                  149,
+                  221534,
+                  4258,
+                  76288,
+                  205,
+                  2920,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 11387020687829324324,
+            "candidate": {
+              "bricks": 107803,
+              "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "5098aafee14ab78c2e0588dbb167fb7072754f6d2c3c06f7e895f57cb53fdc8b",
+              "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-candidate.slots.bin",
+              "texels": 55195136,
+              "topology_entries": 434240,
+              "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+            },
+            "canonical": {
+              "bricks": 107803,
+              "cells_sha256": "63be7e4985cff39f1b4aeeb83e52a1e94ca04f55912a5841273178bc04da69d9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "22240047e2b8427c442afbfc5dfc3b696cbc370e6740487811cfb2a69b107605",
+              "raw_r16_sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-1-canonical.slots.bin",
+              "texels": 55195136,
+              "topology_entries": 434240,
+              "topology_sha256": "2fbeb85fdac06bb0b3c52063306ae9a4cf703169c2332a56a4e260d083496296"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8852747534494244074,
+            "name": "guardian-chain-1",
+            "retained_history_steps": 67,
+            "retained_logical_bricks": 107188,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 33.570005,
+            "trials": [
+              {
+                "admission_ms": 15.317222,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 6.595616,
+                "bricks": 107803,
+                "builder_wall_ms": 40.674305,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.04032,
+                "copy_max_chunk_gpu_ms": 8.04032,
+                "copy_wall_ms": 8.405564,
+                "fallback_gpu_ms": 6.561024,
+                "field_wall_ms": 40.674305,
+                "filter_gpu_ms": 8.64032,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108050,
+                  107803,
+                  0,
+                  1167,
+                  615,
+                  42,
+                  2982,
+                  3610,
+                  1280,
+                  552,
+                  5871,
+                  615,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00011,
+                "ready_to_render_ms": 40.837265,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.034592,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  552,
+                  615,
+                  276753,
+                  5871,
+                  314880,
+                  42,
+                  2982,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8852747534494244074,
+            "candidate": {
+              "bricks": 107862,
+              "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "d8dc3aecb22b018d42a7022511b0d34ba6fa5359667d64cea83b20354f7884b5",
+              "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-candidate.slots.bin",
+              "texels": 55225344,
+              "topology_entries": 434304,
+              "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+            },
+            "canonical": {
+              "bricks": 107862,
+              "cells_sha256": "9645cb3cd31abb244a78c6414300235c91bab42b4833e45fdd985ff44852f937",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "85ee9ee77e4be1b285881ff38bf59cdb374ece3ecd82fc5279c774a7473220f4",
+              "raw_r16_sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-2-canonical.slots.bin",
+              "texels": 55225344,
+              "topology_entries": 434304,
+              "topology_sha256": "47a9aa5e8dc648b2bfcc33c9124d33ded4516e977c8ad87d8c9ad36b74f77d60"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 14812328068284063311,
+            "name": "guardian-chain-2",
+            "retained_history_steps": 68,
+            "retained_logical_bricks": 107702,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 33.456256,
+            "trials": [
+              {
+                "admission_ms": 15.083251,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.31296,
+                "bricks": 107862,
+                "builder_wall_ms": 37.517532,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 7.978015999999999,
+                "copy_max_chunk_gpu_ms": 7.978015999999999,
+                "copy_wall_ms": 8.406535,
+                "fallback_gpu_ms": 3.259744,
+                "field_wall_ms": 37.517532,
+                "filter_gpu_ms": 8.672671999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108210,
+                  107862,
+                  0,
+                  1229,
+                  160,
+                  101,
+                  3198,
+                  3394,
+                  128,
+                  1069,
+                  12219,
+                  160,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00057,
+                "ready_to_render_ms": 37.719973,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.053216,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1069,
+                  160,
+                  535109,
+                  12219,
+                  81920,
+                  101,
+                  3198,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 14812328068284063311,
+            "candidate": {
+              "bricks": 108059,
+              "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "f8de154ab6df8fa8ba10d166963b56e7eb59836b9e333528f462a32142777ad2",
+              "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-candidate.slots.bin",
+              "texels": 55326208,
+              "topology_entries": 434304,
+              "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+            },
+            "canonical": {
+              "bricks": 108059,
+              "cells_sha256": "162e955953d8cd8451498f095308be43640c200cb9ddcbf49d1337f8e21d76a0",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "280074c30c183aaf33bdade4eebb56d3ac5f5ba01edacd0cf00df6c34196f300",
+              "raw_r16_sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-3-canonical.slots.bin",
+              "texels": 55326208,
+              "topology_entries": 434304,
+              "topology_sha256": "58b22a117fd6a85c436c404894ab1759dba86ebf674042dd04588bcc61bbfa8a"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 10805705327011228654,
+            "name": "guardian-chain-3",
+            "retained_history_steps": 69,
+            "retained_logical_bricks": 107770,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.033322,
+            "trials": [
+              {
+                "admission_ms": 16.503077,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.6859519999999995,
+                "bricks": 108059,
+                "builder_wall_ms": 28.914877,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.223136,
+                "copy_max_chunk_gpu_ms": 1.223136,
+                "copy_wall_ms": 1.535076,
+                "fallback_gpu_ms": 3.6719359999999996,
+                "field_wall_ms": 28.914877,
+                "filter_gpu_ms": 5.572031999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108499,
+                  108059,
+                  0,
+                  1428,
+                  289,
+                  92,
+                  3324,
+                  3332,
+                  0,
+                  1139,
+                  16396,
+                  289,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00014,
+                "ready_to_render_ms": 29.120868,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.014015999999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1139,
+                  289,
+                  566772,
+                  16396,
+                  147968,
+                  92,
+                  3324,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 10805705327011228654,
+            "candidate": {
+              "bricks": 108133,
+              "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "5b3a04406ab85cc6412ab1ed97af0203da93134bfd5a8b654c4da23fd4c9eabf",
+              "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-candidate.slots.bin",
+              "texels": 55364096,
+              "topology_entries": 434368,
+              "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+            },
+            "canonical": {
+              "bricks": 108133,
+              "cells_sha256": "ee39153388cb43d8037a232f8ac90f10736d8494ccc62b614c018205eb6b9c22",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "4a3f1e043eca950ef8c76cbb1693fed5cacf47086529709ecff56a05b915e266",
+              "raw_r16_sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-4-canonical.slots.bin",
+              "texels": 55364096,
+              "topology_entries": 434368,
+              "topology_sha256": "4bb1a6d1508881fb48c89a97351a00a9e96285d6f7c53e34486a008cb8a1789c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2265004877042027597,
+            "name": "guardian-chain-4",
+            "retained_history_steps": 70,
+            "retained_logical_bricks": 107960,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.919405,
+            "trials": [
+              {
+                "admission_ms": 16.423906,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.36416,
+                "bricks": 108133,
+                "builder_wall_ms": 38.581776,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.006528,
+                "copy_max_chunk_gpu_ms": 8.006528,
+                "copy_wall_ms": 8.316094,
+                "fallback_gpu_ms": 3.31264,
+                "field_wall_ms": 38.581776,
+                "filter_gpu_ms": 8.687039999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108672,
+                  108133,
+                  0,
+                  1456,
+                  173,
+                  99,
+                  3311,
+                  3345,
+                  64,
+                  1283,
+                  19187,
+                  173,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 7e-05,
+                "ready_to_render_ms": 38.741486,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.051519999999999996,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1283,
+                  173,
+                  637709,
+                  19187,
+                  88576,
+                  99,
+                  3311,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2265004877042027597,
+            "candidate": {
+              "bricks": 108315,
+              "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e7e67196419591429d862802071650f60e04373dedc9eed536443c36e70114a7",
+              "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-candidate.slots.bin",
+              "texels": 55457280,
+              "topology_entries": 434624,
+              "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+            },
+            "canonical": {
+              "bricks": 108315,
+              "cells_sha256": "2c2c652ba9b3c9ac7df46c38ce756308398a8ad8d323319255c17adfc3e1fcb5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "b6cbb88a5359d731464a9ef414008ab506fabddce829b76f38170098bb9be1df",
+              "raw_r16_sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-5-canonical.slots.bin",
+              "texels": 55457280,
+              "topology_entries": 434624,
+              "topology_sha256": "b23ab0c52c4ed8f58f33cbf5d2bdd70549b87689823de62640653d8105431c0a"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13914239577526188516,
+            "name": "guardian-chain-5",
+            "retained_history_steps": 71,
+            "retained_logical_bricks": 108038,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.053832,
+            "trials": [
+              {
+                "admission_ms": 16.377416,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 4.376192,
+                "bricks": 108315,
+                "builder_wall_ms": 40.203763,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.097696,
+                "copy_max_chunk_gpu_ms": 8.097696,
+                "copy_wall_ms": 8.667565,
+                "fallback_gpu_ms": 4.320608,
+                "field_wall_ms": 40.203763,
+                "filter_gpu_ms": 8.72912,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  108949,
+                  108315,
+                  0,
+                  1538,
+                  277,
+                  95,
+                  3522,
+                  3518,
+                  320,
+                  1261,
+                  21969,
+                  277,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00012,
+                "ready_to_render_ms": 40.412083,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.055583999999999995,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1261,
+                  277,
+                  623663,
+                  21969,
+                  141824,
+                  95,
+                  3522,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 13914239577526188516,
+            "candidate": {
+              "bricks": 108403,
+              "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "b8ae073d42afa486cafbac43df23ddcb546da8ce506dd963e28a5e63c523d6a6",
+              "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-candidate.slots.bin",
+              "texels": 55502336,
+              "topology_entries": 434688,
+              "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+            },
+            "canonical": {
+              "bricks": 108403,
+              "cells_sha256": "8225a6c4f062100c9139b3a1c9c02ba4088c03ecf3774399ccc232cae2219784",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "9feaa86584272321e6bc172505cfff4f5be9a46304db217d18c67ed53e889ce3",
+              "raw_r16_sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-6-canonical.slots.bin",
+              "texels": 55502336,
+              "topology_entries": 434688,
+              "topology_sha256": "f27777de1735955c90be9253cca0566cc4d648e6383b58fb619226d1efeea704"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 4948006443937280152,
+            "name": "guardian-chain-6",
+            "retained_history_steps": 72,
+            "retained_logical_bricks": 108216,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 35.405203,
+            "trials": [
+              {
+                "admission_ms": 17.34207,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.472352,
+                "bricks": 108403,
+                "builder_wall_ms": 39.4467,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.04064,
+                "copy_max_chunk_gpu_ms": 8.04064,
+                "copy_wall_ms": 8.444194,
+                "fallback_gpu_ms": 3.4148799999999997,
+                "field_wall_ms": 39.4467,
+                "filter_gpu_ms": 8.689312,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  109136,
+                  108403,
+                  0,
+                  1513,
+                  187,
+                  99,
+                  3611,
+                  3429,
+                  128,
+                  1326,
+                  22882,
+                  187,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00015,
+                "ready_to_render_ms": 39.55385,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.057471999999999995,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1326,
+                  187,
+                  656030,
+                  22882,
+                  95744,
+                  99,
+                  3611,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 4948006443937280152,
+            "candidate": {
+              "bricks": 108553,
+              "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "8e769315e279fdb10b8b380167a2ebecd744bc32df721ff4548ab96bd3a01cad",
+              "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-candidate.slots.bin",
+              "texels": 55579136,
+              "topology_entries": 434688,
+              "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+            },
+            "canonical": {
+              "bricks": 108553,
+              "cells_sha256": "6d503768d27b5cb2dd66e3ebc65f4f35418114c4d1da0d66d0bda97167be40ff",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "2bbb85cc825692da8d0efafb8e9426ce1752b2ae445edff52479041eba72d48f",
+              "raw_r16_sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/guardian-chain.case-7-canonical.slots.bin",
+              "texels": 55579136,
+              "topology_entries": 434688,
+              "topology_sha256": "ac509d3f2e02cb5b8fffbd5eea572aeca18256fafa4105bc2c4ad17258d0616c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 71955226333116876,
+            "name": "guardian-chain-7",
+            "retained_history_steps": 73,
+            "retained_logical_bricks": 108308,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 36.646848,
+            "trials": [
+              {
+                "admission_ms": 17.46865,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 3.9531199999999997,
+                "bricks": 108553,
+                "builder_wall_ms": 41.014696,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.885824,
+                "copy_max_chunk_gpu_ms": 8.885824,
+                "copy_wall_ms": 9.278168,
+                "fallback_gpu_ms": 3.8891839999999998,
+                "field_wall_ms": 41.014696,
+                "filter_gpu_ms": 8.724383999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  109381,
+                  108553,
+                  0,
+                  1534,
+                  245,
+                  95,
+                  3488,
+                  3360,
+                  0,
+                  1289,
+                  23840,
+                  245,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.007085006218403578,
+                "locality_guard": 0.0012172998394817114,
+                "pipeline_prepare_ms": 0.00014,
+                "ready_to_render_ms": 41.246967,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.06393599999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1289,
+                  245,
+                  636128,
+                  23840,
+                  125440,
+                  95,
+                  3488,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      }
+    },
+    {
+      "case": {
+        "name": "robot-chain",
+        "subject": "robot",
+        "length": 16,
+        "input": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/robot-chain.json"
+      },
+      "independent_files": [
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.r16.bin",
+          "byte_identical": true
+        }
+      ],
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/robot-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.json",
+        "--commit-mode",
+        "local",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 58.18436481896788,
+      "gpu_before": "1 %, 0 %, 2895 MHz, 14001 MHz, 42, 54.83 W, 988 MiB",
+      "gpu_after": "1 %, 0 %, 2872 MHz, 14001 MHz, 40, 53.71 W, 988 MiB",
+      "log_sha256": "0a38c4ae7ae09e351aa053500a627118dfb8fe8340784e7ceb3cfa60bcd44dee",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "copy_only": false,
+        "copy_slab_bytes": 0,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "local",
+        "pipeline_prepare_ms": 1.832287,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 15329115976364195548,
+            "candidate": {
+              "bricks": 138463,
+              "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "5afc09ee31682b108ace8798907292f243b56954a95019d89c4d23ecbed90c08",
+              "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-candidate.slots.bin",
+              "texels": 70893056,
+              "topology_entries": 557696,
+              "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+            },
+            "canonical": {
+              "bricks": 138463,
+              "cells_sha256": "b545d1ef628fbaed2b8c0c8b55b855016465662b386ba293cc7ed1d6a1e68fb9",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e0ed12dccb2e3d5fa783001e273349f73aa9d6e64a9c79d86db7996c6fceca80",
+              "raw_r16_sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-0-canonical.slots.bin",
+              "texels": 70893056,
+              "topology_entries": 557696,
+              "topology_sha256": "1914d4d224de97aefed9ef9d8530cc93e37016dc2c383c7493ce4cf8fa67c2b8"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1656876359464538019,
+            "name": "robot-chain-0",
+            "retained_history_steps": 83,
+            "retained_logical_bricks": 138179,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.654111,
+            "trials": [
+              {
+                "admission_ms": 1.185745,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.252096,
+                "bricks": 138463,
+                "builder_wall_ms": 4.607188,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.264672,
+                "copy_max_chunk_gpu_ms": 1.264672,
+                "copy_wall_ms": 1.605656,
+                "fallback_gpu_ms": 0.243744,
+                "field_wall_ms": 4.607188,
+                "filter_gpu_ms": 0.47014399999999995,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  138728,
+                  138463,
+                  0,
+                  763,
+                  284,
+                  265,
+                  2375,
+                  2937,
+                  320,
+                  479,
+                  1722,
+                  284,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 4.621508,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.008352,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  479,
+                  284,
+                  243526,
+                  1722,
+                  145408,
+                  265,
+                  2375,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1656876359464538019,
+            "candidate": {
+              "bricks": 138828,
+              "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "bc2728031cc71df29c348a0cb18b78780be3a09984e9f821062aa61a96e58127",
+              "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-candidate.slots.bin",
+              "texels": 71079936,
+              "topology_entries": 558336,
+              "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+            },
+            "canonical": {
+              "bricks": 138828,
+              "cells_sha256": "5c3e01125fc6613b7616d0a5887005e39663b3c724511b347a179f20c0fa1d3a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "bf9d4cdc5849536b18a6f49b2de39d639e824e4b33caa4f6006535a4e624e069",
+              "raw_r16_sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-1-canonical.slots.bin",
+              "texels": 71079936,
+              "topology_entries": 558336,
+              "topology_sha256": "b053a206f6f990e7738082c2d883d91583ffeb90b33d13b2030e7e787fe795a4"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6686574029110803346,
+            "name": "robot-chain-1",
+            "retained_history_steps": 84,
+            "retained_logical_bricks": 138400,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.47549,
+            "trials": [
+              {
+                "admission_ms": 1.231565,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.430048,
+                "bricks": 138828,
+                "builder_wall_ms": 12.025659,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.152671999999999,
+                "copy_max_chunk_gpu_ms": 8.152671999999999,
+                "copy_wall_ms": 8.723476,
+                "fallback_gpu_ms": 0.39910399999999996,
+                "field_wall_ms": 12.025659,
+                "filter_gpu_ms": 0.7471999999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139156,
+                  138828,
+                  0,
+                  1136,
+                  428,
+                  63,
+                  2658,
+                  3422,
+                  640,
+                  708,
+                  4429,
+                  428,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.0002,
+                "ready_to_render_ms": 12.035239,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.030944,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  708,
+                  428,
+                  358067,
+                  4429,
+                  219136,
+                  63,
+                  2658,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6686574029110803346,
+            "candidate": {
+              "bricks": 138944,
+              "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "33eee3160596440cf8e20b2bf61eaf58136e3d5a3864c3df45ccdb482b64d1a3",
+              "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-candidate.slots.bin",
+              "texels": 71139328,
+              "topology_entries": 558400,
+              "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+            },
+            "canonical": {
+              "bricks": 138944,
+              "cells_sha256": "699dbc8c35970cb2e77236cafc81c98ca5bc297d8984242d0ccee1841a0bae80",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "8cc2bfe43f2f855749eda47d62260e5f082ac79c0381eee4945139f04b9a9ff7",
+              "raw_r16_sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-2-canonical.slots.bin",
+              "texels": 71139328,
+              "topology_entries": 558400,
+              "topology_sha256": "7899cddde52320dee1e81bce23215fe53fc35a9006dff91bdc309052ee39bcdc"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6371340924806423733,
+            "name": "robot-chain-2",
+            "retained_history_steps": 85,
+            "retained_logical_bricks": 138731,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.56702,
+            "trials": [
+              {
+                "admission_ms": 1.256325,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.32176,
+                "bricks": 138944,
+                "builder_wall_ms": 11.734687,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.082784,
+                "copy_max_chunk_gpu_ms": 8.082784,
+                "copy_wall_ms": 8.447364,
+                "fallback_gpu_ms": 0.276512,
+                "field_wall_ms": 11.734687,
+                "filter_gpu_ms": 0.7572479999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139369,
+                  138944,
+                  0,
+                  1259,
+                  213,
+                  97,
+                  3459,
+                  3133,
+                  128,
+                  1046,
+                  10128,
+                  213,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00016,
+                "ready_to_render_ms": 11.745337,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.045248,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1046,
+                  213,
+                  525424,
+                  10128,
+                  109056,
+                  97,
+                  3459,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6371340924806423733,
+            "candidate": {
+              "bricks": 139074,
+              "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "3c981311af03d98e2e938f7698e7faf6c174fe11c80909832a62c30b7be10b3b",
+              "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-candidate.slots.bin",
+              "texels": 71205888,
+              "topology_entries": 558464,
+              "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+            },
+            "canonical": {
+              "bricks": 139074,
+              "cells_sha256": "57b0cdde250f30d1c792d18519638764b90c98841c4182ec5424138517a505ac",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "b49f0c2f288c8024880c4873cc801d3dc3a137b8d4cf672cc7df4d029d45f38d",
+              "raw_r16_sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-3-canonical.slots.bin",
+              "texels": 71205888,
+              "topology_entries": 558464,
+              "topology_sha256": "26d31667b6113142c385160b9e5257b9aae203ae9d279311d2dda49a180693a8"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3539029408402405265,
+            "name": "robot-chain-3",
+            "retained_history_steps": 86,
+            "retained_logical_bricks": 138848,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.596001,
+            "trials": [
+              {
+                "admission_ms": 1.323716,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.521664,
+                "bricks": 139074,
+                "builder_wall_ms": 23.423095,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 18.26928,
+                "copy_max_chunk_gpu_ms": 18.26928,
+                "copy_wall_ms": 18.877056,
+                "fallback_gpu_ms": 0.419616,
+                "field_wall_ms": 23.423095,
+                "filter_gpu_ms": 1.2272319999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139595,
+                  139074,
+                  0,
+                  1379,
+                  226,
+                  96,
+                  3457,
+                  3071,
+                  64,
+                  1153,
+                  14230,
+                  226,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00018,
+                "ready_to_render_ms": 23.439165,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.102048,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1153,
+                  226,
+                  576106,
+                  14230,
+                  115712,
+                  96,
+                  3457,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3539029408402405265,
+            "candidate": {
+              "bricks": 139196,
+              "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "9af8d1a316e5fcc0ce98ff19a161b845b110cd2077564140f1d97563cbdf27fa",
+              "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-candidate.slots.bin",
+              "texels": 71268352,
+              "topology_entries": 558592,
+              "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+            },
+            "canonical": {
+              "bricks": 139196,
+              "cells_sha256": "3a2d965c829c5af0ebdabe988eff0a68c9a455c42a710eb012d3bad486b5b097",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "38a128043386f20816b36322bd7aabd67952424e16c1953e4ff47dba84bf3ac9",
+              "raw_r16_sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-4-canonical.slots.bin",
+              "texels": 71268352,
+              "topology_entries": 558592,
+              "topology_sha256": "884bf29c0c46b579ef1cf8c0e241c0824aa7e0c3549912fdc9d8ff9eece7536c"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 998405047903929733,
+            "name": "robot-chain-4",
+            "retained_history_steps": 87,
+            "retained_logical_bricks": 138978,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.728981,
+            "trials": [
+              {
+                "admission_ms": 1.988968,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.346016,
+                "bricks": 139196,
+                "builder_wall_ms": 12.615901,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.210303999999999,
+                "copy_max_chunk_gpu_ms": 8.210303999999999,
+                "copy_wall_ms": 8.610915,
+                "fallback_gpu_ms": 0.299008,
+                "field_wall_ms": 12.615901,
+                "filter_gpu_ms": 0.770272,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  139813,
+                  139196,
+                  0,
+                  1417,
+                  218,
+                  96,
+                  3227,
+                  3109,
+                  128,
+                  1199,
+                  17702,
+                  218,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 12.628351,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.047008,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1199,
+                  218,
+                  596186,
+                  17702,
+                  111616,
+                  96,
+                  3227,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 998405047903929733,
+            "candidate": {
+              "bricks": 139331,
+              "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "d9961eca1228920f79ea8e7723d2e879afaa7571fe1cae3bd788ba0a7bcbe8e1",
+              "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-candidate.slots.bin",
+              "texels": 71337472,
+              "topology_entries": 558784,
+              "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+            },
+            "canonical": {
+              "bricks": 139331,
+              "cells_sha256": "9e16fd14a3de24990260b395ec0ed45e70ba1f56130510053d86890ce98ca50a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "7099a644d150c4e7a273c2380384e78ed159f6bcbb8feddb2079b3879d4a632f",
+              "raw_r16_sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-5-canonical.slots.bin",
+              "texels": 71337472,
+              "topology_entries": 558784,
+              "topology_sha256": "3f10d616212e9ae1f96210edcb12e1f1db34eaae965f6803767059bdaf55b178"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8183933449876945312,
+            "name": "robot-chain-5",
+            "retained_history_steps": 88,
+            "retained_logical_bricks": 139099,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.740821,
+            "trials": [
+              {
+                "admission_ms": 1.380095,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.35872,
+                "bricks": 139331,
+                "builder_wall_ms": 12.122488,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.212768,
+                "copy_max_chunk_gpu_ms": 8.212768,
+                "copy_wall_ms": 8.601125,
+                "fallback_gpu_ms": 0.31129599999999996,
+                "field_wall_ms": 12.122488,
+                "filter_gpu_ms": 0.786528,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140045,
+                  139331,
+                  0,
+                  1433,
+                  232,
+                  97,
+                  3255,
+                  3209,
+                  192,
+                  1201,
+                  19437,
+                  232,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00014,
+                "ready_to_render_ms": 12.134969,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.047424,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1201,
+                  232,
+                  595475,
+                  19437,
+                  118784,
+                  97,
+                  3255,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8183933449876945312,
+            "candidate": {
+              "bricks": 139432,
+              "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "570ba113a3af235b6e69db55b38f2b22682705b2ba8ad53ce6df82a9262fedde",
+              "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-candidate.slots.bin",
+              "texels": 71389184,
+              "topology_entries": 558848,
+              "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+            },
+            "canonical": {
+              "bricks": 139432,
+              "cells_sha256": "c4b5f6dea778f95eab7b90975b4f63094fc5e747a01e7bd4b58ebe1157c35c54",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "9c41afadd32c3f041b54a2697f534d6011418349d10931b4d986d767533336f3",
+              "raw_r16_sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-6-canonical.slots.bin",
+              "texels": 71389184,
+              "topology_entries": 558848,
+              "topology_sha256": "87a9d0bf074b1849a3b4175b54e0ca671aaa42b8acfda7b67ae6031be1ba64de"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 7167858666550911522,
+            "name": "robot-chain-6",
+            "retained_history_steps": 89,
+            "retained_logical_bricks": 139234,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 2.796251,
+            "trials": [
+              {
+                "admission_ms": 1.427676,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.340448,
+                "bricks": 139432,
+                "builder_wall_ms": 12.28192,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.22064,
+                "copy_max_chunk_gpu_ms": 8.22064,
+                "copy_wall_ms": 8.720535,
+                "fallback_gpu_ms": 0.291136,
+                "field_wall_ms": 12.28192,
+                "filter_gpu_ms": 0.788864,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140243,
+                  139432,
+                  0,
+                  1405,
+                  198,
+                  97,
+                  3710,
+                  3138,
+                  128,
+                  1207,
+                  19852,
+                  198,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00029,
+                "ready_to_render_ms": 12.2982,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.049311999999999995,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1207,
+                  198,
+                  598132,
+                  19852,
+                  101376,
+                  97,
+                  3710,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 7167858666550911522,
+            "candidate": {
+              "bricks": 139601,
+              "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "ce7b0bd934ae21f3c027e5a121a9ca111394717f2ac8ad52134d1eea6f8d0607",
+              "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-candidate.slots.bin",
+              "texels": 71475712,
+              "topology_entries": 559040,
+              "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+            },
+            "canonical": {
+              "bricks": 139601,
+              "cells_sha256": "82ffb79e6b8d9bd3231b0245be3e9a2f28dcc46fa759e6ab1dd04618366b304c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "48cf51dee7a00b914b2bd43019af7131e1a056d766fa5bb589d3932c29bc778f",
+              "raw_r16_sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-7-canonical.slots.bin",
+              "texels": 71475712,
+              "topology_entries": 559040,
+              "topology_sha256": "56879757aa4868f600f1382e83c9f211411f5612a6f64f26462243f7cdb80e9f"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1904747401656695727,
+            "name": "robot-chain-7",
+            "retained_history_steps": 90,
+            "retained_logical_bricks": 139335,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.296513,
+            "trials": [
+              {
+                "admission_ms": 1.440476,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.574944,
+                "bricks": 139601,
+                "builder_wall_ms": 23.694486,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 18.410591999999998,
+                "copy_max_chunk_gpu_ms": 18.410591999999998,
+                "copy_wall_ms": 19.083838,
+                "fallback_gpu_ms": 0.478912,
+                "field_wall_ms": 23.694486,
+                "filter_gpu_ms": 1.2667199999999998,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140509,
+                  139601,
+                  0,
+                  1432,
+                  266,
+                  97,
+                  3461,
+                  3195,
+                  192,
+                  1166,
+                  19325,
+                  266,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.0005,
+                "ready_to_render_ms": 23.704716,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.09603199999999999,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1166,
+                  266,
+                  577667,
+                  19325,
+                  136192,
+                  97,
+                  3461,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1904747401656695727,
+            "candidate": {
+              "bricks": 139675,
+              "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "6f6c9e9a1e3a261a1cc125e143860dbc13d86aa2d176159153e86ea965f80743",
+              "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-candidate.slots.bin",
+              "texels": 71513600,
+              "topology_entries": 559104,
+              "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+            },
+            "canonical": {
+              "bricks": 139675,
+              "cells_sha256": "81f7b1ac101a88276d03cdd6383519c3a23f95319b3714d80822035ef37a443c",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "bf73453cee8de24f968997872c3d854e7386a3774976137dfb2ce61af5cbb56e",
+              "raw_r16_sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-8-canonical.slots.bin",
+              "texels": 71513600,
+              "topology_entries": 559104,
+              "topology_sha256": "38f0f5252c2f173a78d331d7f6da53ce01a252770e08097c2b51066665aaaeeb"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 18314936555967059383,
+            "name": "robot-chain-8",
+            "retained_history_steps": 91,
+            "retained_logical_bricks": 139504,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.368594,
+            "trials": [
+              {
+                "admission_ms": 1.511606,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.332416,
+                "bricks": 139675,
+                "builder_wall_ms": 12.38866,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.175328,
+                "copy_max_chunk_gpu_ms": 8.175328,
+                "copy_wall_ms": 8.539404,
+                "fallback_gpu_ms": 0.282976,
+                "field_wall_ms": 12.38866,
+                "filter_gpu_ms": 0.8058559999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140680,
+                  139675,
+                  0,
+                  1365,
+                  171,
+                  97,
+                  3194,
+                  3142,
+                  64,
+                  1194,
+                  18901,
+                  171,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 12.40284,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.04944,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1194,
+                  171,
+                  592427,
+                  18901,
+                  87552,
+                  97,
+                  3194,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 18314936555967059383,
+            "candidate": {
+              "bricks": 139870,
+              "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "269ede034e35825edde9a9d7fa9b86852ec6e08a786bbcce09c681a11a428f2e",
+              "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-candidate.slots.bin",
+              "texels": 71613440,
+              "topology_entries": 559168,
+              "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+            },
+            "canonical": {
+              "bricks": 139870,
+              "cells_sha256": "31aea5909a309be07fc9acf38f29298a5304e84b38ae63ea65b4b79d2cca930a",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "0615aadb408bb59c8050e64223e2158431807dbd00df50f7da192f6bb210eec3",
+              "raw_r16_sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-9-canonical.slots.bin",
+              "texels": 71613440,
+              "topology_entries": 559168,
+              "topology_sha256": "90f5ba21b4830bc2cdca5ecb7d0b88c724ed26a9390712ccb2e8060496eec6d1"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 8134416226798193819,
+            "name": "robot-chain-9",
+            "retained_history_steps": 92,
+            "retained_logical_bricks": 139580,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.202753,
+            "trials": [
+              {
+                "admission_ms": 1.567426,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.41004799999999997,
+                "bricks": 139870,
+                "builder_wall_ms": 12.39225,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.23664,
+                "copy_max_chunk_gpu_ms": 8.23664,
+                "copy_wall_ms": 8.572984,
+                "fallback_gpu_ms": 0.362784,
+                "field_wall_ms": 12.39225,
+                "filter_gpu_ms": 0.817728,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  140970,
+                  139870,
+                  0,
+                  1431,
+                  290,
+                  95,
+                  3330,
+                  3134,
+                  64,
+                  1141,
+                  19480,
+                  290,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00016,
+                "ready_to_render_ms": 12.41019,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.047264,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1141,
+                  290,
+                  564712,
+                  19480,
+                  148480,
+                  95,
+                  3330,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 8134416226798193819,
+            "candidate": {
+              "bricks": 139943,
+              "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "c9b0047a27cf92d6ad629a22b4e203db9873d47890e2268a5846d64cfb0d111a",
+              "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-candidate.slots.bin",
+              "texels": 71650816,
+              "topology_entries": 559296,
+              "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+            },
+            "canonical": {
+              "bricks": 139943,
+              "cells_sha256": "aa49c2d38ea6b090932cc7a56ea5cf776b01e0a677e1114b3432b5102cf4cc32",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "69096a6762ceb4f61b33ae564047707b22e6a3ac9b7098d55ed6b0ea160d8091",
+              "raw_r16_sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-10-canonical.slots.bin",
+              "texels": 71650816,
+              "topology_entries": 559296,
+              "topology_sha256": "e5c1f259eac345ff64912dbbe0f20b4de86dbd1da0d15da24fb528ad19e3eb73"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 13921503348872132687,
+            "name": "robot-chain-10",
+            "retained_history_steps": 93,
+            "retained_logical_bricks": 139771,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.370234,
+            "trials": [
+              {
+                "admission_ms": 1.646677,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.543136,
+                "bricks": 139943,
+                "builder_wall_ms": 23.477336,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 18.353568,
+                "copy_max_chunk_gpu_ms": 18.353568,
+                "copy_wall_ms": 18.774556,
+                "fallback_gpu_ms": 0.42991999999999997,
+                "field_wall_ms": 23.477336,
+                "filter_gpu_ms": 1.294816,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141142,
+                  139943,
+                  0,
+                  1370,
+                  172,
+                  99,
+                  3529,
+                  3191,
+                  192,
+                  1198,
+                  19981,
+                  172,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00066,
+                "ready_to_render_ms": 23.491126,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.113216,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1198,
+                  172,
+                  593395,
+                  19981,
+                  88064,
+                  99,
+                  3529,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 13921503348872132687,
+            "candidate": {
+              "bricks": 140119,
+              "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "b48bf553233ca605ea74570dcdcebba3f3c4185be9b6aecb83c67d0fa59100b3",
+              "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-candidate.slots.bin",
+              "texels": 71740928,
+              "topology_entries": 559488,
+              "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+            },
+            "canonical": {
+              "bricks": 140119,
+              "cells_sha256": "444f083d066cf764c387a054024beff526f2339f8bbaeca438fe0accccbeade6",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "357c06f0f0cee01e8c1b5373cabb53f628b11672d18c8919b388f7658380d575",
+              "raw_r16_sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-11-canonical.slots.bin",
+              "texels": 71740928,
+              "topology_entries": 559488,
+              "topology_sha256": "19b6a1cb3368ddfce2610b1325bbd2a6adf0712e3daf5871912a9bc2bdace077"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 11511871129919973718,
+            "name": "robot-chain-11",
+            "retained_history_steps": 94,
+            "retained_logical_bricks": 139849,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.380513,
+            "trials": [
+              {
+                "admission_ms": 1.652246,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.40803199999999995,
+                "bricks": 140119,
+                "builder_wall_ms": 12.592831,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.323167999999999,
+                "copy_max_chunk_gpu_ms": 8.323167999999999,
+                "copy_wall_ms": 8.698416,
+                "fallback_gpu_ms": 0.35670399999999997,
+                "field_wall_ms": 12.592831,
+                "filter_gpu_ms": 0.8333119999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141412,
+                  140119,
+                  0,
+                  1403,
+                  270,
+                  94,
+                  3231,
+                  3169,
+                  192,
+                  1133,
+                  20615,
+                  270,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 12.606781,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.051328,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1133,
+                  270,
+                  559481,
+                  20615,
+                  138240,
+                  94,
+                  3231,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 11511871129919973718,
+            "candidate": {
+              "bricks": 140238,
+              "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "0941d6f5171554cb232b1bafb2a9d67d846c932d8630f132b950386cd653a041",
+              "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-candidate.slots.bin",
+              "texels": 71801856,
+              "topology_entries": 559744,
+              "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+            },
+            "canonical": {
+              "bricks": 140238,
+              "cells_sha256": "9055cc2139cca38259e857858aa761d8f2a6bc0df9d8dab15372f5d9d1ffdf42",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "782b8409cd88b442eefd70dca5eaacf200427fd97c86c9f8fae64b8a5cfd2bba",
+              "raw_r16_sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-12-canonical.slots.bin",
+              "texels": 71801856,
+              "topology_entries": 559744,
+              "topology_sha256": "5458145419c72e2cd93c0d99807d5a4561f9790452aea11b8efbda38dca47ffe"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 17459683113264300848,
+            "name": "robot-chain-12",
+            "retained_history_steps": 95,
+            "retained_logical_bricks": 140021,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.360444,
+            "trials": [
+              {
+                "admission_ms": 1.692317,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.37695999999999996,
+                "bricks": 140238,
+                "builder_wall_ms": 12.456241,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.240928,
+                "copy_max_chunk_gpu_ms": 8.240928,
+                "copy_wall_ms": 8.577485,
+                "fallback_gpu_ms": 0.323744,
+                "field_wall_ms": 12.456241,
+                "filter_gpu_ms": 0.8400320000000001,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141629,
+                  140238,
+                  0,
+                  1372,
+                  217,
+                  98,
+                  2997,
+                  3275,
+                  256,
+                  1155,
+                  19956,
+                  217,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 7e-05,
+                "ready_to_render_ms": 12.469501,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.053216,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1155,
+                  217,
+                  571404,
+                  19956,
+                  111104,
+                  98,
+                  2997,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 17459683113264300848,
+            "candidate": {
+              "bricks": 140358,
+              "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "0edecef8a25de36ddcb44d1044a7c3ae57a80c21d6c87e39e6aea715068f4b7a",
+              "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-candidate.slots.bin",
+              "texels": 71863296,
+              "topology_entries": 559744,
+              "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+            },
+            "canonical": {
+              "bricks": 140358,
+              "cells_sha256": "7a85bd3f116b143d4cddf622ebc472356994e6de80b40d299f07e9fdac80cbdd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "c7dd424555ffbcc6077808dc2c4d38112515a705538b939b9c2a8d5e06523779",
+              "raw_r16_sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-13-canonical.slots.bin",
+              "texels": 71863296,
+              "topology_entries": 559744,
+              "topology_sha256": "2e0e485a0adb3f4ab30c88aa0c2e5ae280b32de2f7504ae8e9be1522aa9dc020"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 1719149047447049442,
+            "name": "robot-chain-13",
+            "retained_history_steps": 96,
+            "retained_logical_bricks": 140139,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.399124,
+            "trials": [
+              {
+                "admission_ms": 2.432649,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.5810559999999999,
+                "bricks": 140358,
+                "builder_wall_ms": 25.658394,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 19.983648,
+                "copy_max_chunk_gpu_ms": 19.983648,
+                "copy_wall_ms": 20.333353,
+                "fallback_gpu_ms": 0.46870399999999995,
+                "field_wall_ms": 25.658394,
+                "filter_gpu_ms": 1.3549120000000001,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  141848,
+                  140358,
+                  0,
+                  1337,
+                  219,
+                  99,
+                  3350,
+                  3050,
+                  64,
+                  1118,
+                  19501,
+                  219,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 8e-05,
+                "ready_to_render_ms": 25.671034,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.112352,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1118,
+                  219,
+                  552915,
+                  19501,
+                  112128,
+                  99,
+                  3350,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 1719149047447049442,
+            "candidate": {
+              "bricks": 140537,
+              "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "ac0b3ca870dd94a91b033c210f0ce2d00920a11a855b8e3b46b9eb1cf1abeeff",
+              "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-candidate.slots.bin",
+              "texels": 71954944,
+              "topology_entries": 559936,
+              "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+            },
+            "canonical": {
+              "bricks": 140537,
+              "cells_sha256": "3fd4cf85d25654f2650cb1ebe1c827037b2b733d04f2c4c2d94f1f2a1585eaa5",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "2f33da09e1fe49a854b2947c5daf1c378c17144079e04681eec8835253e29eda",
+              "raw_r16_sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-14-canonical.slots.bin",
+              "texels": 71954944,
+              "topology_entries": 559936,
+              "topology_sha256": "5e917539351d9fdb5fdc436e02b025ae9ffc1a6c34051c1cd9f62b5375c270cd"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3687383293623848582,
+            "name": "robot-chain-14",
+            "retained_history_steps": 97,
+            "retained_logical_bricks": 140267,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.836495,
+            "trials": [
+              {
+                "admission_ms": 1.889638,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.42153599999999997,
+                "bricks": 140537,
+                "builder_wall_ms": 12.804022,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.270719999999999,
+                "copy_max_chunk_gpu_ms": 8.270719999999999,
+                "copy_wall_ms": 8.765226,
+                "fallback_gpu_ms": 0.36848,
+                "field_wall_ms": 12.804022,
+                "filter_gpu_ms": 0.864608,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  142118,
+                  140537,
+                  0,
+                  1358,
+                  270,
+                  91,
+                  3508,
+                  3148,
+                  192,
+                  1088,
+                  18972,
+                  270,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 5e-05,
+                "ready_to_render_ms": 12.816263,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.053056,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1088,
+                  270,
+                  538084,
+                  18972,
+                  138240,
+                  91,
+                  3508,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3687383293623848582,
+            "candidate": {
+              "bricks": 140642,
+              "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "f7212e3cb58e3fa9437f6a87b7ea0a56d7e237ecc7197c33ba68d61de04a2605",
+              "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-candidate.slots.bin",
+              "texels": 72008704,
+              "topology_entries": 560128,
+              "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+            },
+            "canonical": {
+              "bricks": 140642,
+              "cells_sha256": "b6a25ac62e90647e461c2367c0ff3cb9c4699ac68ce09e9ebd157d5956aa193f",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "c8f44edfda00904fd892664728e050afdb199a99f3ab025dd92081e59aed2e6e",
+              "raw_r16_sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/robot-chain.case-15-canonical.slots.bin",
+              "texels": 72008704,
+              "topology_entries": 560128,
+              "topology_sha256": "6690c918300ed755b83119a830f9fbbb14fc22a4af647d5f0ead40db2173e1fa"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2830288357869539815,
+            "name": "robot-chain-15",
+            "retained_history_steps": 98,
+            "retained_logical_bricks": 140441,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 3.455094,
+            "trials": [
+              {
+                "admission_ms": 1.778647,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.37113599999999997,
+                "bricks": 140642,
+                "builder_wall_ms": 12.827142,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 8.254368,
+                "copy_max_chunk_gpu_ms": 8.254368,
+                "copy_wall_ms": 8.592835,
+                "fallback_gpu_ms": 0.319648,
+                "field_wall_ms": 12.827142,
+                "filter_gpu_ms": 0.8666559999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  142319,
+                  140642,
+                  0,
+                  1302,
+                  201,
+                  96,
+                  3063,
+                  3145,
+                  192,
+                  1101,
+                  19034,
+                  201,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.0068175713531672955,
+                "locality_guard": 0.0001496473851148039,
+                "pipeline_prepare_ms": 0.00021,
+                "ready_to_render_ms": 12.839812,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.051488,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  1101,
+                  201,
+                  544678,
+                  19034,
+                  102912,
+                  96,
+                  3063,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      }
+    },
+    {
+      "case": {
+        "name": "recreate-chain",
+        "subject": "fixture",
+        "length": 8,
+        "input": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/recreate-chain.json"
+      },
+      "independent_files": [
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.r16.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.topology.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.topology.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.cells.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.cells.bin",
+          "byte_identical": true
+        },
+        {
+          "candidate": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.r16.bin",
+          "canonical": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.r16.bin",
+          "byte_identical": true
+        }
+      ],
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/inputs-v2/recreate-chain.json",
+        "--commit-output",
+        "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.json",
+        "--commit-mode",
+        "local",
+        "--commit-qualify",
+        "--commit-chain",
+        "--commit-dump"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 24.904905153962318,
+      "gpu_before": "1 %, 0 %, 2872 MHz, 14001 MHz, 40, 53.89 W, 988 MiB",
+      "gpu_after": "57 %, 0 %, 330 MHz, 405 MHz, 38, 17.04 W, 988 MiB",
+      "log_sha256": "338f97c1c65713cc6f531eea8a87e28cb2512efbb94b0cced6c792ad77b4c310",
+      "native": {
+        "all_comparisons_passed": true,
+        "chain": true,
+        "cold": false,
+        "complete": true,
+        "copy_only": false,
+        "copy_slab_bytes": 0,
+        "fallback_limit": 2097152,
+        "format": "cubey.sdf.cached-commit-results",
+        "mode": "local",
+        "pipeline_prepare_ms": 1.692067,
+        "qualified": true,
+        "region_axis": 4,
+        "runs": [
+          {
+            "base_from_previous_candidate": false,
+            "base_geometry_hash": 9533897878463992902,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-0-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 6047568250574828742,
+            "name": "recreate-0",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.10728,
+            "trials": [
+              {
+                "admission_ms": 0.064731,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 2.763882,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 1.196448,
+                "copy_max_chunk_gpu_ms": 1.196448,
+                "copy_wall_ms": 1.890057,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 2.763882,
+                "filter_gpu_ms": 0.027007999999999997,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00033,
+                "ready_to_render_ms": 2.764482,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 6047568250574828742,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "085fd9cd64b2461140c617a2242f875d15aab90c6f0f9e39d7288e6aae67dee6",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "0a3bb04b1cf06a7c0b93fc39b9ddb8f4ee08bdab91abd3c2f3e5fabd64887810",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-1-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2639935109288513470,
+            "name": "recreate-1",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.063891,
+            "trials": [
+              {
+                "admission_ms": 0.07555,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.11968,
+                "bricks": 2384,
+                "builder_wall_ms": 6.24564,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 4.359071999999999,
+                "copy_max_chunk_gpu_ms": 4.359071999999999,
+                "copy_wall_ms": 4.728325,
+                "fallback_gpu_ms": 0.064064,
+                "field_wall_ms": 6.24564,
+                "filter_gpu_ms": 0.10889599999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  4768,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00029,
+                "ready_to_render_ms": 6.24616,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.055616,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  1220608,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2639935109288513470,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-2-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2711547477726387422,
+            "name": "recreate-2",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.07263,
+            "trials": [
+              {
+                "admission_ms": 0.07848,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 13.102991,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 11.240896,
+                "copy_max_chunk_gpu_ms": 11.240896,
+                "copy_wall_ms": 11.807817,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 13.102991,
+                "filter_gpu_ms": 0.09536,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  4768,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00031,
+                "ready_to_render_ms": 13.103521,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2711547477726387422,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "f6a3b210c78ceb8bbb50dd597ff59d7e983a22c49537c5e186763517a907d645",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "eb17220c599b889ab69ef5f6e82553021d1f762546a3c9c09bc3470266106055",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-3-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 3479698832345753814,
+            "name": "recreate-3",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.08427,
+            "trials": [
+              {
+                "admission_ms": 0.08694,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.19974399999999998,
+                "bricks": 2384,
+                "builder_wall_ms": 12.877581,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.506048,
+                "copy_max_chunk_gpu_ms": 9.506048,
+                "copy_wall_ms": 10.183463,
+                "fallback_gpu_ms": 0.128992,
+                "field_wall_ms": 12.877581,
+                "filter_gpu_ms": 0.160352,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  7152,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00034,
+                "ready_to_render_ms": 12.878431,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.070752,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  1220608,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 3479698832345753814,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-4-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 2852856264191885366,
+            "name": "recreate-4",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.096401,
+            "trials": [
+              {
+                "admission_ms": 0.09424,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 11.283286,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.6816,
+                "copy_max_chunk_gpu_ms": 9.6816,
+                "copy_wall_ms": 10.203393,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 11.283286,
+                "filter_gpu_ms": 0.10368,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  7152,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00028,
+                "ready_to_render_ms": 11.283846,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 2852856264191885366,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "54f41862e62487c6b8fdbc8c4619729012320bd8e7b70b7c78156eaec552fbea",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "1723c411a386588527103b24ac475376654c33f9034306076654fc1076315837",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-5-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 4163199066008508846,
+            "name": "recreate-5",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.11265,
+            "trials": [
+              {
+                "admission_ms": 0.10291,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.21311999999999998,
+                "bricks": 2384,
+                "builder_wall_ms": 12.327739,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.642752,
+                "copy_max_chunk_gpu_ms": 9.642752,
+                "copy_wall_ms": 10.550224,
+                "fallback_gpu_ms": 0.155712,
+                "field_wall_ms": 12.327739,
+                "filter_gpu_ms": 0.19081599999999999,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  9536,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00022,
+                "ready_to_render_ms": 12.328669,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.057408,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  1220608,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 4163199066008508846,
+            "candidate": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-candidate.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "canonical": {
+              "bricks": 0,
+              "cells_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "raw_r16_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-6-canonical.slots.bin",
+              "texels": 0,
+              "topology_entries": 576,
+              "topology_sha256": "8d93158a3e89b5bcccbd094ca519b26513adf305b190cca723e309a98f0ae454"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 16610324645591461230,
+            "name": "recreate-6",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.148161,
+            "trials": [
+              {
+                "admission_ms": 0.123141,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.0,
+                "bricks": 0,
+                "builder_wall_ms": 12.2174,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.925279999999999,
+                "copy_max_chunk_gpu_ms": 9.925279999999999,
+                "copy_wall_ms": 10.695614,
+                "fallback_gpu_ms": 0.0,
+                "field_wall_ms": 12.2174,
+                "filter_gpu_ms": 0.127232,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  9536,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  96,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.0004,
+                "ready_to_render_ms": 12.21834,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.0,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  2384,
+                  480,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "base_from_previous_candidate": true,
+            "base_geometry_hash": 16610324645591461230,
+            "candidate": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.r16.bin"
+              ],
+              "physical_slots_sha256": "d4613e3df59e4e286e755787385af15f811b8fbc595561c33bcedbb44b7e71c0",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-candidate.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "canonical": {
+              "bricks": 2384,
+              "cells_sha256": "0e55e25b18e500cfe5a60e041218d57a2b6d23289909847ab35a5caefcd27afd",
+              "files": [
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.topology.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.cells.bin",
+                "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.r16.bin"
+              ],
+              "physical_slots_sha256": "e8addecb7a541d208bfac15ef7165a953ae2976b533a103a443927c127ef8eb3",
+              "raw_r16_sha256": "4e9e4d53a5155377770a4f5820f012f781b5bf366a62bcaf7996946d6a1e9648",
+              "slots_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/local-chains-v2/recreate-chain.case-7-canonical.slots.bin",
+              "texels": 1220608,
+              "topology_entries": 9280,
+              "topology_sha256": "8e13a96ecf070d02e96fbd181d2723ce605623871d1a203e66cc0fe104534879"
+            },
+            "comparison": {
+              "examples": [],
+              "logical_leaves_equal": true,
+              "passed": true,
+              "r16_differences": 0,
+              "signed_zero_differences": 0,
+              "topology_equal": true
+            },
+            "edited_geometry_hash": 14169407194416928358,
+            "name": "recreate-7",
+            "retained_history_steps": 0,
+            "retained_logical_bricks": 0,
+            "retained_slots_moved": 0,
+            "source_admission_cpu_ms": 0.14521,
+            "trials": [
+              {
+                "admission_ms": 0.126791,
+                "allocation_ms": 0.0,
+                "brick_gpu_ms": 0.254496,
+                "bricks": 2384,
+                "builder_wall_ms": 12.202079,
+                "copy_bytes": 345131300,
+                "copy_chunks": 1,
+                "copy_gpu_ms": 9.847488,
+                "copy_max_chunk_gpu_ms": 9.847488,
+                "copy_wall_ms": 10.241342,
+                "fallback_gpu_ms": 0.19648,
+                "field_wall_ms": 12.202079,
+                "filter_gpu_ms": 0.207072,
+                "full_fallback": false,
+                "geometry_payload_bytes": 1837530180,
+                "local_work": [
+                  11920,
+                  2384,
+                  0,
+                  2384,
+                  2384,
+                  0,
+                  560,
+                  8720,
+                  8704,
+                  0,
+                  0,
+                  2384,
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "locality_bound": 0.006800306029617786,
+                "locality_guard": 8.071899355854839e-05,
+                "pipeline_prepare_ms": 0.00035,
+                "ready_to_render_ms": 12.202929,
+                "region_bytes": 0,
+                "region_prepare_ms": 0.0,
+                "region_references": 0,
+                "region_scratch_bytes": 0,
+                "reuse_gpu_ms": 0.058016,
+                "trial": 0,
+                "warmup": false,
+                "work_counts": [
+                  0,
+                  2384,
+                  0,
+                  0,
+                  1220608,
+                  0,
+                  560,
+                  0
+                ]
+              }
+            ]
+          }
+        ],
+        "scope": "Private serialized builder; qualification readbacks/encoding excluded from commit timing",
+        "snapshot_staging_peak_bytes": 76695844,
+        "version": 1,
+        "warmup": 0
+      }
+    }
+  ],
+  "complete": true,
+  "passed": true
+}

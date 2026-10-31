@@ -1,0 +1,1958 @@
+{
+  "source_head": "faed0dae55ee129a6d0f9d7d352330bb2fbe06d5",
+  "source_status": "?? docs/evidence/sdf-local-edit-2026-10/\n",
+  "binary_sha256": "ce1254ee409483d4bf259426bb9e8a29f0a24af4d1479e607fbe04bc7194f3ed",
+  "harness_sha256": "aa260c5ff2e18cf90a0180660288b8d256a9d19d7b19134d484ebb07fd443f6f",
+  "shaders": {
+    "local_canonical.comp.spv": "4103fd5c3347d037bca6d0e5ab69564ccffabc6f4981ca1edde909afe7b6c7c3",
+    "local_dom_filter.comp.spv": "cfc9af42756fe995dc5de953585d6064e999a4f158440a4b909b01691e74c796",
+    "local_dom_samples.comp.spv": "656c2d801601488bd7d8fdfda863c9c642eff27e3b86b44e34ce15f6a8bc9cc1",
+    "local_filter.comp.spv": "770f821a2dca049f597e5f2a1db3412ba39619a4b6de3ac99c744e7cfea7ac8d",
+    "local_samples.comp.spv": "1514c9d765cfa4a74d3c83201fd4e30e4d0ef816fe38c58075d3163910f103a7"
+  },
+  "original_shaders_unchanged": 211,
+  "public_executable_unchanged": true,
+  "stroke_shaders": {
+    "cached_stroke_quality_workload.comp.spv": "a102a49847c8a5949eb0d4baac1105bf5960b1871598e49eb5a999cf23f2fc24",
+    "cached_stroke_queries.comp.spv": "60d6a00ae8962c574cfbc3c893ce993680d333c74580cb137b9f861f502dcbd0",
+    "cached_stroke_sdf.frag.spv": "52d528d3a8251b51abb67930f2a7ad9b379753e88ab207a95fb5cfaa96767036",
+    "quality_cached_stroke_sdf.frag.spv": "4b23e97894e4b89931ac6e19f40b06ae370dc8421ad88669a493d0b884befec7"
+  },
+  "stroke_harness_sha256": "7c95ec302af4877514e605ee32873c1be8d347230cd1f94d406d170299234c79",
+  "native": {
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_stroke_study",
+      "--edit-input",
+      "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/stroke-inputs-v3/geometry-input.json",
+      "--edit-output",
+      "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/stroke-geometry-v4/queries.json",
+      "--edit-phase",
+      "preview",
+      "--headless",
+      "--require-validation",
+      "--motion",
+      "static",
+      "--supersample",
+      "1",
+      "--width",
+      "16",
+      "--height",
+      "16",
+      "--shadows",
+      "1",
+      "--no-ao",
+      "--no-ground",
+      "--no-clouds",
+      "--no-occluder",
+      "--edit-queries"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.3567312019877136,
+    "gpu_before": "0 %, 0 %, 180 MHz, 405 MHz, 33, 12.97 W, 780 MiB",
+    "gpu_after": "0 %, 0 %, 180 MHz, 405 MHz, 33, 20.84 W, 780 MiB",
+    "log_sha256": "f866ea517bbe051507e85ef174e71d9e41d16a93733fff519101ca7d66d16de6",
+    "native": {
+      "commit_builder": "full",
+      "commits": [],
+      "format": "cubey.sdf.cached-edit-results",
+      "frames": [],
+      "phase": "preview",
+      "programs": [
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 6881074465200632532,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 6881074465200632532,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 345864672403842498,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 18160140233868612311,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 13303006607403960551,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 2092947763437958306,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 7628013126670134945,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 7653545218569773480,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 18080757779593155586,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 9528710269108034239,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 12419047416383916153,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 4722571129496212202,
+          "base_instructions": 3,
+          "base_leaves": 2,
+          "edited_geometry_hash": 15891383288828275049,
+          "edited_instructions": 5,
+          "edited_leaves": 3,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 14695981039346656037,
+          "base_instructions": 0,
+          "base_leaves": 0,
+          "edited_geometry_hash": 16439186744481241111,
+          "edited_instructions": 1,
+          "edited_leaves": 1,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 18108402278844718650,
+          "edited_instructions": 1,
+          "edited_leaves": 1,
+          "pending_operations": 0,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 5470114744067985772,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 14695981039346656037,
+          "base_instructions": 0,
+          "base_leaves": 0,
+          "edited_geometry_hash": 16439186744481241111,
+          "edited_instructions": 1,
+          "edited_leaves": 1,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 14559621185031785962,
+          "edited_instructions": 5,
+          "edited_leaves": 3,
+          "pending_operations": 2,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 17585776336014771894,
+          "edited_instructions": 5,
+          "edited_leaves": 3,
+          "pending_operations": 2,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 4028616824422977706,
+          "edited_instructions": 5,
+          "edited_leaves": 3,
+          "pending_operations": 2,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 8057398308313289686,
+          "edited_instructions": 5,
+          "edited_leaves": 3,
+          "pending_operations": 2,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 13118015056526707798,
+          "edited_instructions": 9,
+          "edited_leaves": 5,
+          "pending_operations": 4,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 4336087914121909998,
+          "edited_instructions": 9,
+          "edited_leaves": 5,
+          "pending_operations": 4,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 137963712278122390,
+          "edited_instructions": 9,
+          "edited_leaves": 5,
+          "pending_operations": 4,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 2017428045229775502,
+          "edited_instructions": 9,
+          "edited_leaves": 5,
+          "pending_operations": 4,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 4853303883671826174,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 11687015017861915830,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 8291833853371938846,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 18108402278844718650,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 10697810056842756054,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 12189613421225080762,
+          "base_instructions": 15,
+          "base_leaves": 8,
+          "edited_geometry_hash": 13593887060347971946,
+          "edited_instructions": 31,
+          "edited_leaves": 16,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 5720342396827874144,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 12040319607025039060,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 9528710269108034239,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 14154744886753525331,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": true
+        },
+        {
+          "base_geometry_hash": 11842119569115874708,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 15726378941952951662,
+          "edited_instructions": 5,
+          "edited_leaves": 3,
+          "pending_operations": 2,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 11842119569115874708,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 5902715736034183332,
+          "edited_instructions": 17,
+          "edited_leaves": 9,
+          "pending_operations": 8,
+          "retained_history_steps": 0,
+          "subtract": false
+        },
+        {
+          "base_geometry_hash": 11842119569115874708,
+          "base_instructions": 1,
+          "base_leaves": 1,
+          "edited_geometry_hash": 14419243284098958834,
+          "edited_instructions": 3,
+          "edited_leaves": 2,
+          "pending_operations": 1,
+          "retained_history_steps": 0,
+          "subtract": false
+        }
+      ],
+      "queries": {
+        "cases": [
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 6881074465200632532,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "add-outside-base",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.9999999403953552
+                ],
+                "pending_surface": true,
+                "source_residual": -1.4901161193847656e-08,
+                "status": 1,
+                "steps": 11.0,
+                "t": 0.6200000047683716
+              },
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 8.0,
+                "t": -0.0
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 6881074465200632532,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "union-inside-exits",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.9999999403953552,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -1.4901161193847656e-08,
+                "status": 1,
+                "steps": 20.0,
+                "t": 0.20999999344348907
+              },
+              {
+                "normal": [
+                  -0.9999979734420776,
+                  0.0014458770165219903,
+                  0.0014458770165219903
+                ],
+                "pending_surface": false,
+                "source_residual": -9.293854236602783e-05,
+                "status": 1,
+                "steps": 42.0,
+                "t": 0.4499070644378662
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 345864672403842498,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "cavity",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  -0.9999999403953552
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.05999999865889549
+              },
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  -0.9999999403953552
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 23.0,
+                "t": 0.05999999865889549
+              },
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 18160140233868612311,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "cut-covers-body",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 25.0,
+                "t": 0.0
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 25.0,
+                "t": 0.0
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 13303006607403960551,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "union-covers-body",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.3999999761581421
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.30000001192092896
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 2092947763437958306,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "invisible-inner-add",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.001281928620301187,
+                  0.001281928620301187,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": -9.284913539886475e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.19990715384483337
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 7628013126670134945,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "outside-cut",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 11.0,
+                "t": 0.0
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 7653545218569773480,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 18080757779593155586,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "workspace-add",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 5.0,
+                "t": 0.20099997520446777
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 2.0,
+                "t": 0.0010000169277191162
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 9528710269108034239,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 12419047416383916153,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "workspace-cut",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": -1.4901161193847656e-08,
+                "status": 1,
+                "steps": 11.0,
+                "t": 0.30000001192092896
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 11.0,
+                "t": 0.0
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 4722571129496212202,
+            "base_instructions": 3,
+            "base_leaves": 2,
+            "edited_geometry_hash": 15891383288828275049,
+            "edited_instructions": 5,
+            "edited_leaves": 3,
+            "name": "resume-to-second-body",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.004700750578194857,
+                  0.004700750578194857,
+                  0.9999778866767883
+                ],
+                "pending_surface": false,
+                "source_residual": 9.945407509803772e-05,
+                "status": 1,
+                "steps": 33.0,
+                "t": 0.789900541305542
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 14695981039346656037,
+            "base_instructions": 0,
+            "base_leaves": 0,
+            "edited_geometry_hash": 16439186744481241111,
+            "edited_instructions": 1,
+            "edited_leaves": 1,
+            "name": "empty-base-add",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 2.2351741790771484e-08,
+                "status": 1,
+                "steps": 1.0,
+                "t": 0.5999999642372131
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 1.0,
+                "t": 0.10000000149011612
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 18108402278844718650,
+            "edited_instructions": 1,
+            "edited_leaves": 1,
+            "name": "zero-edit",
+            "pending_operations": 0,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.001281928620301187,
+                  0.001281928620301187,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": -9.284913539886475e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.19990715384483337
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 5470114744067985772,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "subgrid-cavity",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  -1.0
+                ],
+                "pending_surface": true,
+                "source_residual": -1.4551915228366852e-11,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.00019531250291038305
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 14695981039346656037,
+            "base_instructions": 0,
+            "base_leaves": 0,
+            "edited_geometry_hash": 16439186744481241111,
+            "edited_instructions": 1,
+            "edited_leaves": 1,
+            "name": "tool-tangent",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 1.0,
+                "t": 0.699999988079071
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 1.0,
+                "t": 0.0
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 14559621185031785962,
+            "edited_instructions": 5,
+            "edited_leaves": 3,
+            "name": "2-disjoint-add",
+            "pending_operations": 2,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.9999982118606567,
+                  0.0012819285038858652,
+                  0.0012819285038858652
+                ],
+                "pending_surface": false,
+                "source_residual": -9.284913539886475e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.19990715384483337
+              },
+              {
+                "normal": [
+                  -0.9999980926513672,
+                  0.0013744832249358296,
+                  0.0013744832249358296
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.7496599555015564,
+                  0.0013483564835041761,
+                  0.6618219017982483
+                ],
+                "pending_surface": false,
+                "source_residual": 8.825957775115967e-05,
+                "status": 1,
+                "steps": 32.0,
+                "t": 0.5675790309906006
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 17585776336014771894,
+            "edited_instructions": 5,
+            "edited_leaves": 3,
+            "name": "2-overlap-add",
+            "pending_operations": 2,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 5.587935447692871e-09,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4949999749660492
+              },
+              {
+                "normal": [
+                  0.0299401693046093,
+                  0.43388980627059937,
+                  0.9004682898521423
+                ],
+                "pending_surface": false,
+                "source_residual": -0.00010922551155090332,
+                "status": 1,
+                "steps": 43.0,
+                "t": 0.08671976625919342
+              },
+              {
+                "normal": [
+                  -0.4998664855957031,
+                  0.0013386757345870137,
+                  0.8661013245582581
+                ],
+                "pending_surface": false,
+                "source_residual": 7.933378219604492e-05,
+                "status": 1,
+                "steps": 25.0,
+                "t": 0.5267032980918884
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 4028616824422977706,
+            "edited_instructions": 5,
+            "edited_leaves": 3,
+            "name": "2-disjoint-cut",
+            "pending_operations": 2,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  1.0,
+                  -0.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.002499999478459358
+              },
+              {
+                "normal": [
+                  -0.9999980926513672,
+                  0.0013744832249358296,
+                  0.0013744832249358296
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.7496599555015564,
+                  0.0013483564835041761,
+                  0.6618219017982483
+                ],
+                "pending_surface": false,
+                "source_residual": 8.825957775115967e-05,
+                "status": 1,
+                "steps": 32.0,
+                "t": 0.5675790309906006
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 8057398308313289686,
+            "edited_instructions": 5,
+            "edited_leaves": 3,
+            "name": "2-overlap-cut",
+            "pending_operations": 2,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 2.421438694000244e-08,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.5449999570846558
+              },
+              {
+                "normal": [
+                  -0.0,
+                  -1.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 43.0,
+                "t": 0.02500000037252903
+              },
+              {
+                "normal": [
+                  -0.4998664855957031,
+                  0.0013386757345870137,
+                  0.8661013245582581
+                ],
+                "pending_surface": false,
+                "source_residual": 7.933378219604492e-05,
+                "status": 1,
+                "steps": 25.0,
+                "t": 0.5267032980918884
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 13118015056526707798,
+            "edited_instructions": 9,
+            "edited_leaves": 5,
+            "name": "4-disjoint-add",
+            "pending_operations": 4,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.9999982118606567,
+                  0.0012819285038858652,
+                  0.0012819285038858652
+                ],
+                "pending_surface": false,
+                "source_residual": -9.284913539886475e-05,
+                "status": 1,
+                "steps": 41.0,
+                "t": 0.19990715384483337
+              },
+              {
+                "normal": [
+                  -0.9999980926513672,
+                  0.0013744832249358296,
+                  0.0013744832249358296
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.7496599555015564,
+                  0.0013483564835041761,
+                  0.6618219017982483
+                ],
+                "pending_surface": false,
+                "source_residual": 8.825957775115967e-05,
+                "status": 1,
+                "steps": 32.0,
+                "t": 0.5675790309906006
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 4336087914121909998,
+            "edited_instructions": 9,
+            "edited_leaves": 5,
+            "name": "4-overlap-add",
+            "pending_operations": 4,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 5.587935447692871e-09,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4949999749660492
+              },
+              {
+                "normal": [
+                  0.0299401693046093,
+                  0.43388980627059937,
+                  0.9004682898521423
+                ],
+                "pending_surface": false,
+                "source_residual": -0.00010922551155090332,
+                "status": 1,
+                "steps": 43.0,
+                "t": 0.08671976625919342
+              },
+              {
+                "normal": [
+                  -0.4998664855957031,
+                  0.0013386757345870137,
+                  0.8661013245582581
+                ],
+                "pending_surface": false,
+                "source_residual": 7.933378219604492e-05,
+                "status": 1,
+                "steps": 25.0,
+                "t": 0.5267032980918884
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 137963712278122390,
+            "edited_instructions": 9,
+            "edited_leaves": 5,
+            "name": "4-disjoint-cut",
+            "pending_operations": 4,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  1.0,
+                  -0.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.002499999478459358
+              },
+              {
+                "normal": [
+                  -0.9999980926513672,
+                  0.0013744832249358296,
+                  0.0013744832249358296
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  0.7496599555015564,
+                  0.0013483564835041761,
+                  0.6618219017982483
+                ],
+                "pending_surface": false,
+                "source_residual": 8.825957775115967e-05,
+                "status": 1,
+                "steps": 32.0,
+                "t": 0.5675790309906006
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 2017428045229775502,
+            "edited_instructions": 9,
+            "edited_leaves": 5,
+            "name": "4-overlap-cut",
+            "pending_operations": 4,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 2.421438694000244e-08,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.5449999570846558
+              },
+              {
+                "normal": [
+                  -0.0,
+                  -1.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 43.0,
+                "t": 0.02500000037252903
+              },
+              {
+                "normal": [
+                  -0.4998664855957031,
+                  0.0013386757345870137,
+                  0.8661013245582581
+                ],
+                "pending_surface": false,
+                "source_residual": 7.933378219604492e-05,
+                "status": 1,
+                "steps": 25.0,
+                "t": 0.5267032980918884
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 4853303883671826174,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "8-disjoint-add",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": 5.587935447692871e-09,
+                "status": 1,
+                "steps": 76.0,
+                "t": 0.2175000011920929
+              },
+              {
+                "normal": [
+                  -1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": 5.587935447692871e-09,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.48249998688697815
+              },
+              {
+                "normal": [
+                  0.7496599555015564,
+                  0.0013483564835041761,
+                  0.6618219017982483
+                ],
+                "pending_surface": false,
+                "source_residual": 8.825957775115967e-05,
+                "status": 1,
+                "steps": 32.0,
+                "t": 0.5675790309906006
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 11687015017861915830,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "8-overlap-add",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 5.587935447692871e-09,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4949999749660492
+              },
+              {
+                "normal": [
+                  0.0299401693046093,
+                  0.43388980627059937,
+                  0.9004682898521423
+                ],
+                "pending_surface": false,
+                "source_residual": -0.00010922551155090332,
+                "status": 1,
+                "steps": 43.0,
+                "t": 0.08671976625919342
+              },
+              {
+                "normal": [
+                  -0.4998664855957031,
+                  0.0013386757345870137,
+                  0.8661013245582581
+                ],
+                "pending_surface": false,
+                "source_residual": 7.933378219604492e-05,
+                "status": 1,
+                "steps": 25.0,
+                "t": 0.5267032980918884
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 8291833853371938846,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "8-disjoint-cut",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  0.0012820652918890119,
+                  0.0012820652918890119,
+                  0.9999983310699463
+                ],
+                "pending_surface": false,
+                "source_residual": 9.350478649139404e-05,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.4999064803123474
+              },
+              {
+                "normal": [
+                  1.0,
+                  -0.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.002499999478459358
+              },
+              {
+                "normal": [
+                  -1.0,
+                  -0.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": 2.421438694000244e-08,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.5324999690055847
+              },
+              {
+                "normal": [
+                  0.7496599555015564,
+                  0.0013483564835041761,
+                  0.6618219017982483
+                ],
+                "pending_surface": false,
+                "source_residual": 8.825957775115967e-05,
+                "status": 1,
+                "steps": 32.0,
+                "t": 0.5675790309906006
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 18108402278844718650,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 10697810056842756054,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "8-overlap-cut",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 2.421438694000244e-08,
+                "status": 1,
+                "steps": 21.0,
+                "t": 0.5449999570846558
+              },
+              {
+                "normal": [
+                  -0.0,
+                  -1.0,
+                  -0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -0.0,
+                "status": 1,
+                "steps": 43.0,
+                "t": 0.02500000037252903
+              },
+              {
+                "normal": [
+                  -0.4998664855957031,
+                  0.0013386757345870137,
+                  0.8661013245582581
+                ],
+                "pending_surface": false,
+                "source_residual": 7.933378219604492e-05,
+                "status": 1,
+                "steps": 25.0,
+                "t": 0.5267032980918884
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 12189613421225080762,
+            "base_instructions": 15,
+            "base_leaves": 8,
+            "edited_geometry_hash": 13593887060347971946,
+            "edited_instructions": 31,
+            "edited_leaves": 16,
+            "name": "eight-hidden-base-boundaries",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 135.0,
+                "t": 0.0
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 68.0,
+                "t": 0.0
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 5720342396827874144,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 12040319607025039060,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "eight-workspace-add",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 5.0,
+                "t": 0.20099997520446777
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 2.0,
+                "t": 0.0010000169277191162
+              },
+              {
+                "normal": [
+                  0.9344861507415771,
+                  0.0,
+                  0.3559994399547577
+                ],
+                "pending_surface": true,
+                "source_residual": 1.862645149230957e-09,
+                "status": 1,
+                "steps": 3.0,
+                "t": 0.047362156212329865
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 9528710269108034239,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 14154744886753525331,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "eight-workspace-cut",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  -0.0,
+                  -0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": -5.587935447692871e-09,
+                "status": 1,
+                "steps": 11.0,
+                "t": 0.23499998450279236
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 11.0,
+                "t": 0.0
+              },
+              {
+                "normal": [
+                  -0.9344861507415771,
+                  -0.0,
+                  -0.3559994399547577
+                ],
+                "pending_surface": true,
+                "source_residual": -1.862645149230957e-09,
+                "status": 1,
+                "steps": 3.0,
+                "t": 0.047362156212329865
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": true
+          },
+          {
+            "base_geometry_hash": 11842119569115874708,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 15726378941952951662,
+            "edited_instructions": 5,
+            "edited_leaves": 3,
+            "name": "touching",
+            "pending_operations": 2,
+            "results": [
+              {
+                "normal": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": 1.862645149230957e-09,
+                "status": 1,
+                "steps": 3.0,
+                "t": 0.07500000298023224
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  1.0
+                ],
+                "pending_surface": true,
+                "source_residual": -2.421438694000244e-08,
+                "status": 1,
+                "steps": 5.0,
+                "t": 0.675000011920929
+              },
+              {
+                "normal": [
+                  -1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -1.862645149230957e-09,
+                "status": 1,
+                "steps": 5.0,
+                "t": 0.07500000298023224
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 11842119569115874708,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 5902715736034183332,
+            "edited_instructions": 17,
+            "edited_leaves": 9,
+            "name": "equal-endpoints",
+            "pending_operations": 8,
+            "results": [
+              {
+                "normal": [
+                  1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 3.0,
+                "t": 0.02500000037252903
+              },
+              {
+                "normal": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": false,
+                "source_residual": 0.0,
+                "status": 0,
+                "steps": 5.0,
+                "t": 0.0
+              },
+              {
+                "normal": [
+                  -1.0,
+                  0.0,
+                  0.0
+                ],
+                "pending_surface": true,
+                "source_residual": -1.862645149230957e-09,
+                "status": 1,
+                "steps": 5.0,
+                "t": 0.07500000298023224
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          },
+          {
+            "base_geometry_hash": 11842119569115874708,
+            "base_instructions": 1,
+            "base_leaves": 1,
+            "edited_geometry_hash": 14419243284098958834,
+            "edited_instructions": 3,
+            "edited_leaves": 2,
+            "name": "regular-grazing",
+            "pending_operations": 1,
+            "results": [
+              {
+                "normal": [
+                  0.0,
+                  0.9990000128746033,
+                  0.044710636138916016
+                ],
+                "pending_surface": true,
+                "source_residual": 0.0,
+                "status": 1,
+                "steps": 5.0,
+                "t": 0.6988822221755981
+              }
+            ],
+            "retained_history_steps": 0,
+            "subtract": false
+          }
+        ],
+        "shader_sha256": "60d6a00ae8962c574cfbc3c893ce993680d333c74580cb137b9f861f502dcbd0"
+      },
+      "retained_source_file": "/home/bryan/code/cubey/outputs/sdf/local-edit-loop-20261030/stroke-geometry-v4/queries.retained-source.json",
+      "scope": "Private eight-sphere Cached preview; serialized commit, no continuous input/updater/VR",
+      "version": 1
+    }
+  },
+  "score": {
+    "passed": true,
+    "regular_rays": 82,
+    "max_regular_depth": 0.0002514933614422288,
+    "max_regular_normal_degrees": 0.3808974316451651,
+    "failures": [],
+    "diagnostics": [
+      {
+        "case": "subgrid-cavity",
+        "query": 0,
+        "expected_t": 0.00019531249999999998,
+        "result": {
+          "normal": [
+            -0.0,
+            -0.0,
+            -1.0
+          ],
+          "pending_surface": true,
+          "source_residual": -1.4551915228366852e-11,
+          "status": 1,
+          "steps": 21.0,
+          "t": 0.00019531250291038305
+        },
+        "differences": []
+      },
+      {
+        "case": "tool-tangent",
+        "query": 0,
+        "expected_t": 0.7,
+        "result": {
+          "normal": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "pending_surface": true,
+          "source_residual": 0.0,
+          "status": 1,
+          "steps": 1.0,
+          "t": 0.699999988079071
+        },
+        "differences": []
+      },
+      {
+        "case": "tool-tangent",
+        "query": 1,
+        "expected_t": null,
+        "result": {
+          "normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "pending_surface": false,
+          "source_residual": 0.0,
+          "status": 0,
+          "steps": 1.0,
+          "t": 0.0
+        },
+        "differences": []
+      }
+    ],
+    "pending_owner_checks": 49,
+    "pending_owner_checks_passed": true
+  },
+  "complete": true
+}
