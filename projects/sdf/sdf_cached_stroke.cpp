@@ -27,13 +27,19 @@ CachedStrokeProgram prepare_cached_stroke(AuthoredScene base, AuthoredScene edit
         throw std::invalid_argument("stroke requires an ordered primitive/operator suffix");
     std::size_t at = count;
     unsigned operation = 10;
+    float operator_material = 0;
     for (std::size_t i = 0; i < n; ++i) {
         const auto& tool = edited.program.at(at++);
         if (tool.center_code.w != 2.F)
             throw std::invalid_argument("stroke admits spheres only");
         unsigned op = 10;
-        if (count || i)
-            op = static_cast<unsigned>(edited.program.at(at++).center_code.w);
+        if (count || i) {
+            const auto& instruction = edited.program.at(at++);
+            op = static_cast<unsigned>(instruction.center_code.w);
+            if (i && instruction.settings.w != operator_material)
+                throw std::invalid_argument("stroke requires fixed operator material settings");
+            operator_material = instruction.settings.w;
+        }
         if ((op != 10 && op != 11) || (i && op != operation))
             throw std::invalid_argument("stroke requires one hard operation until drain");
         operation = op;

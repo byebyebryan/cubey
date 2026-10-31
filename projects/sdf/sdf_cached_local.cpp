@@ -35,8 +35,8 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
                                           std::uint32_t region_axis) {
     static_cast<void>(region_axis);
     const auto start = Clock::now();
-    if (mode != CommitBuilder::Local || &dst == &base || dst.atlas_axis != 64 ||
-        base.atlas_axis != 64 || !base.authored_hash_ ||
+    if ((mode != CommitBuilder::Local && mode != CommitBuilder::LocalDominance) || &dst == &base ||
+        dst.atlas_axis != 64 || base.atlas_axis != 64 || !base.authored_hash_ ||
         *base.authored_hash_ != authored_geometry_hash(program.base))
         throw std::invalid_argument("stroke commit requires distinct matching local fields");
     auto admitted = prepare_cached_stroke(program.base, program.edited);
@@ -47,7 +47,8 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
     p.controls.header = program.controls.header;
     p.controls.primitive = program.controls.tools[0];
     auto result = build_local(dst, base, p,
-                              std::span(program.controls.tools).first(program.controls.header[0]));
+                              std::span(program.controls.tools).first(program.controls.header[0]),
+                              mode == CommitBuilder::LocalDominance);
     result.admission_ms = admission;
     result.pipeline_prepare_ms = pipeline;
     result.wall_ms = milliseconds(start);
@@ -137,7 +138,8 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
 
 CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
                                                 const CachedEditProgram& p,
-                                                std::span<const SceneInstruction> tools) {
+                                                std::span<const SceneInstruction> tools,
+                                                bool dominance) {
     const auto start = Clock::now();
     CommitBuildStats result;
     const auto target = 1U - dst.displayed_;
@@ -202,8 +204,8 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
                                       VK_IMAGE_LAYOUT_GENERAL);
         writes.storage_image(set, 9, dst.atlases_[target]->view());
         writes.update(device_);
-        const auto& pipeline = kind == 0   ? *local_filter_
-                               : kind == 1 ? *local_samples_
+        const auto& pipeline = kind == 0   ? (dominance ? *local_dom_filter_ : *local_filter_)
+                               : kind == 1 ? (dominance ? *local_dom_samples_ : *local_samples_)
                                            : *local_canonical_;
         const unsigned groups = kind == 2 ? (count + 63) / 64 : count,
                        stride = kind == 2 ? 65535 : 1024;

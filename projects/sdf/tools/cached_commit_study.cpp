@@ -127,12 +127,13 @@ int main(int argc, char** argv) {
             warmup > 10 || (qualify && (trials != 1 || warmup)) || (chain && (!qualify || cold)) ||
             (dump && !qualify) || (axis != 4 && axis != 16))
             throw std::invalid_argument("invalid commit study configuration");
-        const auto mode = mode_name == "reuse"   ? CommitBuilder::Reuse
-                          : mode_name == "full"  ? CommitBuilder::Full
-                          : mode_name == "local" ? CommitBuilder::Local
-                                                 : CommitBuilder::Pruned;
+        const auto mode = mode_name == "reuse"       ? CommitBuilder::Reuse
+                          : mode_name == "full"      ? CommitBuilder::Full
+                          : mode_name == "local"     ? CommitBuilder::Local
+                          : mode_name == "local-dom" ? CommitBuilder::LocalDominance
+                                                     : CommitBuilder::Pruned;
         if (mode_name != "reuse" && mode_name != "full" && mode_name != "pruned" &&
-            mode_name != "local")
+            mode_name != "local" && mode_name != "local-dom")
             throw std::invalid_argument("invalid commit builder mode");
         const auto input = Json::parse(std::ifstream(input_path));
         if (input.at("format") != "cubey.sdf.cached-edit-study" || input.at("version") != 1 ||
@@ -197,7 +198,8 @@ int main(int argc, char** argv) {
                          {"base_from_previous_candidate", chain && n > 0},
                          {"trials", Json::array()}};
                 std::optional<CommitSnapshot> old_snapshot;
-                if (qualify && mode == CommitBuilder::Local)
+                if (qualify &&
+                    (mode == CommitBuilder::Local || mode == CommitBuilder::LocalDominance))
                     old_snapshot = CachedCommitStudy::snapshot(ctx.device(), runtime.gpu(), *base);
                 for (unsigned trial = 0; trial < trials + warmup; ++trial) {
                     const auto t = Clock::now();

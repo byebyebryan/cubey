@@ -10,7 +10,8 @@ enum class CommitBuilder {
     Full,
     Reuse,
     Pruned,
-    Local
+    Local,
+    LocalDominance
 };
 struct CommitCopyStats {
     double wall_ms = 0, gpu_ms = 0, max_chunk_gpu_ms = 0;
@@ -73,9 +74,11 @@ class CachedCommitStudy {
     std::optional<vulkan::GpuTimestampProfiler> profiler_;
     CommitBuildStats build_local(Field& destination, const Field& base,
                                  const CachedEditProgram& program,
-                                 std::span<const SceneInstruction> tools = {});
+                                 std::span<const SceneInstruction> tools = {},
+                                 bool dominance = false);
     std::unique_ptr<vulkan::Buffer> local_controls_, local_counts_, local_entries_;
     std::optional<render::ComputePipelineResource> local_filter_, local_samples_, local_canonical_;
+    std::optional<render::ComputePipelineResource> local_dom_filter_, local_dom_samples_;
     struct LocalFieldState {
         std::uint64_t hash;
         std::uint32_t high_water;

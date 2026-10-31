@@ -210,12 +210,13 @@ int main(int argc, char** argv) {
                                         "without other studies or rendering overrides");
         if (phase != "base" && phase != "preview" && phase != "committed" && phase != "sequence")
             throw std::invalid_argument("invalid edit phase");
-        if (builder_name != "full" && builder_name != "local")
+        if (builder_name != "full" && builder_name != "local" && builder_name != "local-dom")
             throw std::invalid_argument("invalid commit builder");
         if (builder_name != "full" &&
             (query || validate || (phase != "sequence" && phase != "committed")))
             throw std::invalid_argument("commit builder needs an actual commit phase");
-        const auto builder_mode = CommitBuilder::Local;
+        const auto builder_mode =
+            builder_name == "local-dom" ? CommitBuilder::LocalDominance : CommitBuilder::Local;
         if (query && phase != "preview")
             throw std::invalid_argument("edit query batches describe the preview phase only");
         const auto input = Json::parse(std::ifstream(input_path));

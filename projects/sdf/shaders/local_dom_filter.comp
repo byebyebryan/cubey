@@ -1,0 +1,80 @@
+#version 450
+#extension GL_GOOGLE_include_directive : require
+#include "field.glsl"
+#define AUTHORED_BINDING 10
+#include "authored.glsl"
+#include "local_controls.glsl"
+#include "local_root_bound.glsl"
+layout(local_size_x=4,local_size_y=4,local_size_z=4) in;
+layout(std430,set=0,binding=0) readonly buffer Original {uint original[];};
+layout(std430,set=0,binding=1) buffer Nodes {uint nodes[];};
+layout(std430,set=0,binding=5) readonly buffer Input {uint inputs[];};
+layout(std430,set=0,binding=6) writeonly buffer Output {uint outputs[];};
+layout(std430,set=0,binding=7) buffer Counters {uint counters[];};
+layout(std430,set=0,binding=18) buffer Counts {uint counts[];};
+layout(std430,set=0,binding=22) writeonly buffer Entries {uvec2 entries[];};
+layout(push_constant) uniform Params {uint depth;uint count;uint capacity;uint refCapacity;uint atlasAxis;} pc;
+uint oldHeader(uint code) {
+    for(uint d=2u;d<=pc.depth;d+=2u) {
+        uint h=original[LEVEL[d]+(code>>(3u*(pc.depth-d)))];
+        if(d==pc.depth)return h;
+        if((h&SUBDIVIDED)==0u)return OVERWRITTEN|(h&FILLED);
+    }
+    return OVERWRITTEN;
+}
+void append(uint ptr) {
+    uint i=atomicAdd(counters[0],1u);
+    if(i<pc.capacity)outputs[i]=ptr;
+    else atomicOr(counts[2],1u);
+}
+void main() {
+    uint i=gl_WorkGroupID.x+gl_WorkGroupID.y*1024u;
+    if(i>=pc.count)return;
+    uint parent=inputs[i];bool retire=(parent&NEW_EDIT)!=0u;parent&=~NEW_EDIT;
+    uint code=((parent-LEVEL[pc.depth-2u])<<6u)|morton(ivec3(gl_LocalInvocationID));
+    uint ptr=LEVEL[pc.depth]+code;
+    if(retire) {
+        uint h=original[ptr];
+        if((h&SUBDIVIDED)!=0u) {
+            if(pc.depth==8u){atomicAdd(counts[1],0xffffffffu);atomicAdd(counts[5],1u);}
+            else append(ptr|NEW_EDIT);
+        }
+        return;
+    }
+    uint old=oldHeader(code);bool exposed=(old&OVERWRITTEN)!=0u;
+    float size=1.0/float(1u<<pc.depth),radius=size*.866025404;
+    vec3 p=(vec3(unmorton(code))+.5)*size-.5;
+    // Every exposed child is initialized, even outside the geometric mask.
+    if(!exposed&&localFar(p,radius)){atomicAdd(counts[6],1u);return;}
+    atomicAdd(counts[7],1u);if(exposed)atomicAdd(counts[8],1u);
+    float d=authoredDistance(p),threshold=radius+2e-6;
+    uint h=d>threshold?0u:d<-threshold?FILLED:SUBDIVIDED;
+    if(pc.depth<8u) {
+        nodes[ptr]=h;
+        if(h==SUBDIVIDED)append(ptr);
+        else if(!exposed&&(old&SUBDIVIDED)!=0u)append(ptr|NEW_EDIT);
+        return;
+    }
+    bool existed=!exposed&&(old&SUBDIVIDED)!=0u;
+    if(h!=SUBDIVIDED) {
+        nodes[ptr]=h;
+        if(existed){atomicAdd(counts[1],0xffffffffu);atomicAdd(counts[5],1u);}
+        return;
+    }
+    uint slot;
+    if(existed){slot=old&POINTER;atomicAdd(counts[9],1u);}
+    else {slot=atomicAdd(counts[0],1u);atomicAdd(counts[1],1u);atomicAdd(counts[4],1u);}
+    uint entry=atomicAdd(counts[3],1u);
+    if(slot>=pc.capacity||entry>=pc.capacity){atomicOr(counts[2],1u);return;}
+    nodes[ptr]=SUBDIVIDED|slot;
+    uint flags=existed?0u:NEW_EDIT;
+    float separation=0.0;
+    if(!existed) {
+        separation=localToolOperand(p)-localBaseDistance(p);
+        if(localHeader.y==0u)separation=-separation;
+    }
+    if(!existed&&separation>2.0*radius+2.0*localInfo.y) {
+        flags|=OVERWRITTEN;atomicAdd(counts[12],1u);
+    }
+    entries[entry]=uvec2(ptr,slot|flags);
+}

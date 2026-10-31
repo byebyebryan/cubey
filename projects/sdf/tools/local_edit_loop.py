@@ -87,7 +87,7 @@ def qualify(args):
         checks=[]
         for case in native['runs']:
             assert case['comparison']['passed']
-            if args.mode=='local':assert case['retained_slots_moved']==0
+            if args.mode.startswith('local'):assert case['retained_slots_moved']==0
             if args.dump:
                 for a,b in zip(case['candidate']['files'],case['canonical']['files']):
                     identical=filecmp.cmp(a,b,shallow=False);assert identical
@@ -127,7 +127,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('phase',choices=['inputs','qualify','copies','timing'])
     p.add_argument('--output',type=Path,required=True);p.add_argument('--inputs',type=Path)
-    p.add_argument('--mode',choices=['local','reuse','full'],default='local')
+    p.add_argument('--mode',choices=['local','local-dom','reuse','full'],default='local')
     p.add_argument('--chains',action='store_true');p.add_argument('--dump',action='store_true')
     p.add_argument('--radius',type=float,default=.065)
     p.add_argument('--binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_commit_study')

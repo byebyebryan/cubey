@@ -83,7 +83,7 @@ double CachedCommitStudy::prepare(CommitBuilder mode) {
         create(pruned_filter_, "commit_pruned_filter.comp.spv");
         create(pruned_bricks_, "commit_pruned_bricks.comp.spv");
     }
-    if (mode == CommitBuilder::Local) {
+    if (mode == CommitBuilder::Local || mode == CommitBuilder::LocalDominance) {
         if (!local_entries_) {
             const auto usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             local_entries_ = std::make_unique<vulkan::Buffer>(
@@ -102,6 +102,10 @@ double CachedCommitStudy::prepare(CommitBuilder mode) {
         create(local_filter_, "local_filter.comp.spv");
         create(local_samples_, "local_samples.comp.spv");
         create(local_canonical_, "local_canonical.comp.spv");
+        if (mode == CommitBuilder::LocalDominance) {
+            create(local_dom_filter_, "local_dom_filter.comp.spv");
+            create(local_dom_samples_, "local_dom_samples.comp.spv");
+        }
     }
     return elapsed(start);
 }
@@ -119,8 +123,8 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base, const C
     CommitBuildStats result;
     result.admission_ms = elapsed(start);
     result.pipeline_prepare_ms = prepare(mode);
-    if (mode == CommitBuilder::Local) {
-        auto local = build_local(dst, base, p);
+    if (mode == CommitBuilder::Local || mode == CommitBuilder::LocalDominance) {
+        auto local = build_local(dst, base, p, {}, mode == CommitBuilder::LocalDominance);
         local.admission_ms = result.admission_ms;
         local.pipeline_prepare_ms = result.pipeline_prepare_ms;
         local.wall_ms = elapsed(start);
