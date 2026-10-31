@@ -115,6 +115,9 @@ the architecture and project guides remain current authority.
   Guardian commit-service priorities, varying-radius rounded brush segments,
   spatial path/width admission and worker preparation, with conditional
   exact/approximate alternatives.
+- [Interactive editing results](sdf-interactive-edit-results.md): qualified
+  tapered preview/local commits, bounded worker service, path/width sampling
+  work and the retained Guardian throughput miss.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

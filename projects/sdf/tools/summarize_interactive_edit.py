@@ -25,17 +25,25 @@ def summarize(raw):
         return result
     geometry = read('geometry', 'geometry.json')['score']
     assert geometry['passed'] and geometry['owners_passed']
+    supplemental_geometry = read('coverage-geometry', 'geometry.json')['score']
+    assert supplemental_geometry['passed'] and supplemental_geometry['owners_passed']
+    geometry['regular_rays'] += supplemental_geometry['regular_rays']
+    geometry['owner_checks'] += supplemental_geometry['owner_checks']
+    geometry['max_regular_depth'] = max(geometry['max_regular_depth'], supplemental_geometry['max_regular_depth'])
+    geometry['max_regular_normal_degrees'] = max(geometry['max_regular_normal_degrees'], supplemental_geometry['max_regular_normal_degrees'])
     admission = read('admission', 'admission.json')
     assert all((r['exit_code'] == 0) == r['expected'] for r in admission['cases'])
     cache_comparisons = words = peak_geometry = 0
     phases = {}
-    for name in ('cache-fixtures', 'cache-dominance', 'cache-local', 'cache-sliced', 'sampling-work'):
+    for name in ('cache-fixtures', 'cache-dominance', 'cache-local', 'cache-sliced', 'coverage-caches', 'sampling-work'):
         data = read(name, 'sampling-work.json' if name == 'sampling-work' else 'caches.json')
         comparisons = count = 0
         for run in data['runs']:
             assert run['exit_code'] == 0 and run['native']['cache_passed']
             for case in run['native']['cache_runs']:
                 assert case['comparison']['passed']
+                assert all(case['candidate'][key] == case['canonical'][key] for key in
+                           ('topology_sha256', 'cells_sha256', 'raw_r16_sha256'))
                 comparisons += 1; count += case['candidate']['texels']
                 peak_geometry = max(peak_geometry, max(t['geometry_payload_bytes'] for t in case['trials']))
         phases[name] = dict(comparisons=comparisons, raw_r16_words=count)
@@ -94,6 +102,7 @@ def summarize(raw):
         tools=values[0]['tools'], batches=values[0]['batches'])
         for (s, p, r), values in sorted(work_cohorts.items())]
     return dict(source_head=execution['source_head'], binary_sha256=execution['binary_sha256'],
+        audit_harness_sha256=digest(Path(__file__)),
         admission_checks=len(admission['cases']), geometry=geometry,
         cache_comparisons=cache_comparisons, raw_r16_words=words, cache_phases=phases,
         peak_geometry_payload_bytes=peak_geometry, service=service_summary,

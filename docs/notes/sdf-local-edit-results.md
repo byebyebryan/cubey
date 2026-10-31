@@ -160,6 +160,11 @@ path/width admission must supply any reduction in incoming edit count. The
 larger maintenance-budget test preserves the exact cache contract; approximate
 construction remains a separate future fork.
 
+The [completed followup](sdf-interactive-edit-results.md) qualifies tapered
+preview/local commits and measures path/width admission savings. Guardian still
+misses its paced service target; repeated source preparation and scheduling
+utilization are the next scoped questions.
+
 Investigate reuse or amortization of exact canonical node-center evaluations,
 and compare explicit admission rates or larger maintenance allowances. Keep raw
 cache identity as the oracle. A narrower source-evaluation optimization must

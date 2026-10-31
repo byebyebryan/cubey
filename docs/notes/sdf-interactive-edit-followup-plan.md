@@ -1,9 +1,12 @@
 # SDF interactive editing followup plan
 
-Status: proposed next pass after the
-[completed local-cache study](sdf-local-edit-results.md). Planning only; no
-runtime, shader, public-mode or quality-contract change is made here. The
-[previous plan](sdf-local-edit-research-plan.md) remains the record of that study.
+Status: bounded pass executed; see the
+[interactive editing results](sdf-interactive-edit-results.md). Service and
+rounded-segment geometry/sampling were evaluated independently. Guardian missed
+the service gate, so the combined timed-stroke phase remains stopped. The
+[previous plan](sdf-local-edit-research-plan.md) records the completed local-cache
+study. The proposed experiments below are preserved as their execution contract;
+remaining performance alternatives are not automatically selected.
 Revised 2026-10-31 after checking Guardian's segment composition and the existing
 [rounded tapered segment contract](sdf-rounded-stroke-contract.md).
 

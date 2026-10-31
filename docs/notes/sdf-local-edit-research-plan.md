@@ -12,6 +12,8 @@ This plan's bounded native loop is complete; see the
 records the next proposed experiments: a 4 ms maintenance/worker probe for
 Guardian, and separate varying-radius rounded-segment and path/width admission
 qualification based on existing projectR/Cubey mechanisms.
+That bounded followup is now executed; see its
+[results and service stop gate](sdf-interactive-edit-results.md).
 The original study scope and measurements below are preserved.
 
 ## Recommendation
