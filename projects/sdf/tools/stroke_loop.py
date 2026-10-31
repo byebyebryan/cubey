@@ -111,6 +111,14 @@ def inputs(args):
         qs=[oracle(o,d,[body],tools,cut) for o,d in [([.004,0,.7],[0,0,-1]),([.004,0,.498],[0,0,1]),
             ([.004,0,.4989],[1,0,0])]]
         geometry.append(stroke_case('eight-workspace-'+('cut' if cut else 'add'),document(body),tools,cut,qs))
+    body=sphere('body',.06,[-.25,0,0])
+    for label,centers in [('touching',[[0,0,0],[.05,0,0]]),('equal-endpoints',[[0,0,0]]*8)]:
+        tools=[dict(name=f'equal-{i}',type='sphere',radius=.025,position=center) for i,center in enumerate(centers)]
+        qs=[oracle(o,d,[body],tools,False) for o,d in [([0,0,0],[1,0,0]),([.05,0,.7],[0,0,-1]),([-.1,0,0],[1,0,0])]]
+        geometry.append(stroke_case(label,document(body),tools,False,qs))
+    tool=dict(name='grazing-tool',type='sphere',radius=.025,position=[0,0,0])
+    qs=[oracle([0,.025*.999,.7],[0,0,-1],[body],[tool],False)]
+    geometry.append(stroke_case('regular-grazing',document(body),[tool],False,qs))
     geom=args.output/'geometry-input.json';save(geom,e.manifest(geometry))
     rows=[]
     for subject in ('guardian','robot'):
@@ -270,10 +278,10 @@ def calibrate(args):
     receipt=dict(identity(args),runs=[],complete=False)
     for repeat in range(3):
         for row in rows:
-            for groups in (32,128,512,2048) if repeat%2==0 else (2048,512,128,32):
+            for groups in (0,32,128,512,2048) if repeat%2==0 else (2048,512,128,32,0):
                 out=args.output/f"{Path(row['input']).stem}-{groups}-{repeat}.json"
                 cmd=e.native(args,Path(row['input']),out,extra=['--edit-cache-qualify','--edit-commit-builder','local-dom',
-                    '--edit-cache-trials','3','--edit-cache-warmup','1','--edit-slice-groups',str(groups)])
+                    '--edit-cache-trials','10','--edit-cache-warmup','3','--edit-slice-groups',str(groups)])
                 r=local.run(cmd,out);assert r['native']['cache_complete'] and r['native']['cache_passed']
                 receipt['runs'].append(dict(case=row,groups=groups,repeat=repeat,**r));save(args.output/'calibrate.json',receipt)
                 print(Path(row['input']).stem,groups,repeat,flush=True)
