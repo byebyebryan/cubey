@@ -3,6 +3,7 @@
 #include "../sdf_config.h"
 #include "../sdf_render_modes.h"
 #include "../sdf_renderer.h"
+#include "stroke_service.h"
 #include <chrono>
 #include <cstring>
 #include <cubey/asset/file_digest.h>
@@ -519,13 +520,13 @@ int main(int argc, char** argv) {
             throw std::invalid_argument("one-edit study requires static opaque headless SS1 "
                                         "without other studies or rendering overrides");
         if (phase != "base" && phase != "preview" && phase != "committed" && phase != "sequence" &&
-            phase != "prefix")
+            phase != "prefix" && phase != "service")
             throw std::invalid_argument("invalid edit phase");
         if (builder_name != "full" && builder_name != "local" && builder_name != "local-dom")
             throw std::invalid_argument("invalid commit builder");
-        if (builder_name != "full" &&
-            (query || validate ||
-             (phase != "sequence" && phase != "committed" && phase != "prefix" && !cache_qualify)))
+        if (builder_name != "full" && (query || validate ||
+                                       (phase != "sequence" && phase != "committed" &&
+                                        phase != "prefix" && phase != "service" && !cache_qualify)))
             throw std::invalid_argument("commit builder needs an actual commit phase");
         const auto builder_mode =
             builder_name == "local-dom" ? CommitBuilder::LocalDominance : CommitBuilder::Local;
@@ -586,6 +587,11 @@ int main(int argc, char** argv) {
             receipt["validated_without_gpu"] = true;
             save(output_path, receipt);
             return 0;
+        }
+        if (phase == "service") {
+            if (builder_name != "local-dom" || query || cache_qualify)
+                throw std::invalid_argument("service requires the local dominance control");
+            return run_cached_stroke_service(config, input, programs[0], output_path);
         }
         if (phase == "prefix") {
             if (builder_name == "full" || query || cache_qualify)
