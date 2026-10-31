@@ -106,6 +106,8 @@ the architecture and project guides remain current authority.
 - [Local cache updates and eight pending edits](sdf-local-edit-research-plan.md):
   active-brick distance bounds, local tree changes, stable slots, copied candidates,
   bounded pending prefixes and proposed scheduling/service-rate experiments.
+- [Local update loop execution](sdf-local-edit-loop-progress.md): scoped native
+  locality, stable-slot, eight-edit and scheduled-publication checkpoints.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
