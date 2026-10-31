@@ -561,7 +561,7 @@ int main(int argc, char** argv) {
             (query || config.common.frames != sequence_frames ||
              !config.common.headless_render_only || !config.common.profile_output_prefix.empty() ||
              config.common.print_frame_stats || !config.quality_output.empty() ||
-             !programs[0].controls.header[0]))
+             programs[0].controls.header[0] != 1))
             throw std::invalid_argument("edit sequence requires matched render-only capture frames "
                                         "and one pending operation");
         if (!config.quality_output.empty() &&
