@@ -1,5 +1,8 @@
 #ifndef SDF_CACHED_EDIT_TRACE
 #define SDF_CACHED_EDIT_TRACE
+#ifdef SDF_STROKE8
+#include "cached_stroke_trace.glsl"
+#else
 // One hard Boolean with a convex sphere / unrounded box. The old cached tracer
 // supplies every base boundary and base normal; no base CSG evaluator is used.
 #define trace cachedEditBaseTrace
@@ -103,4 +106,5 @@ vec3 hitNormal(vec3 p,Hit hit) {
     vec3 n=length(gradient)>1e-12?normalize(gradient):vec3(0,1,0);
     return editHeader.y!=0u?-n:n;
 }
+#endif
 #endif

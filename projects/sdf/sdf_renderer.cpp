@@ -279,7 +279,11 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
     if (live_edit_controls_)
         fragment = "live_edit_sdf.frag.spv";
     if (cached_edit_controls_)
+#ifdef CUBEY_SDF_STROKE_STUDY
+        fragment = "cached_stroke_sdf.frag.spv";
+#else
         fragment = "cached_edit_sdf.frag.spv";
+#endif
     const std::array stages{
         render::vertex_shader_file(path / "sdf.vert.spv"),
         render::fragment_shader_file(path / (quality_capture_ ? "quality_" + fragment : fragment))};
@@ -370,7 +374,12 @@ void Renderer::create(vulkan::Device& device, vulkan::GpuRuntime& gpu, VkExtent2
             device,
             render::ComputePipelineResourceConfig{
                 .shader_stage = render::compute_shader_file(
-                    path / (cached_edit_controls_ ? "cached_edit_quality_workload.comp.spv"
+                    path / (cached_edit_controls_ ?
+#ifdef CUBEY_SDF_STROKE_STUDY
+                                  "cached_stroke_quality_workload.comp.spv"
+#else
+                                  "cached_edit_quality_workload.comp.spv"
+#endif
                             : live_edit_controls_ ? "live_edit_quality_workload.comp.spv"
                             : prefix + (quality_capture_ ? "quality_workload_" : "query_workload_") +
                                   variant + ".comp.spv")),

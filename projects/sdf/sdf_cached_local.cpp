@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/immediate_commands.h>
 #include <limits>
@@ -28,6 +29,31 @@ struct alignas(16) LocalControls {
 };
 static_assert(sizeof(LocalControls) == 544);
 } // namespace
+
+CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
+                                          const CachedStrokeProgram& program, CommitBuilder mode,
+                                          std::uint32_t region_axis) {
+    static_cast<void>(region_axis);
+    const auto start = Clock::now();
+    if (mode != CommitBuilder::Local || &dst == &base || dst.atlas_axis != 64 ||
+        base.atlas_axis != 64 || !base.authored_hash_ ||
+        *base.authored_hash_ != authored_geometry_hash(program.base))
+        throw std::invalid_argument("stroke commit requires distinct matching local fields");
+    auto admitted = prepare_cached_stroke(program.base, program.edited);
+    if (std::memcmp(&admitted.controls, &program.controls, sizeof(program.controls)) != 0)
+        throw std::invalid_argument("stroke controls differ from source");
+    const double admission = milliseconds(start), pipeline = prepare(mode);
+    CachedEditProgram p{std::move(admitted.base), std::move(admitted.edited), {}};
+    p.controls.header = program.controls.header;
+    p.controls.primitive = program.controls.tools[0];
+    auto result = build_local(dst, base, p,
+                              std::span(program.controls.tools).first(program.controls.header[0]));
+    result.admission_ms = admission;
+    result.pipeline_prepare_ms = pipeline;
+    result.wall_ms = milliseconds(start);
+    dst.stats_.build_ms = result.wall_ms;
+    return result;
+}
 
 CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uint32_t slab_bytes,
                                          bool publish) {
@@ -110,13 +136,16 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
 }
 
 CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
-                                                const CachedEditProgram& p) {
+                                                const CachedEditProgram& p,
+                                                std::span<const SceneInstruction> tools) {
     const auto start = Clock::now();
     CommitBuildStats result;
     const auto target = 1U - dst.displayed_;
     LocalControls controls;
     controls.header = p.controls.header;
     controls.tools[0] = p.controls.primitive;
+    if (!tools.empty())
+        std::copy(tools.begin(), tools.end(), controls.tools.begin());
     // Real active-brick enclosure plus both evaluation budgets and a conservative
     // R16 encoding allowance (two relative ULPs). A separate brush budget protects
     // the lower-bound evaluation. Strict native topology/raw-bit qualification is

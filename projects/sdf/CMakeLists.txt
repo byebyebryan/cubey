@@ -10,6 +10,8 @@ cubey_add_app_target(
     SOURCES main.cpp sdf_workshop.cpp sdf_app.cpp sdf_field.cpp sdf_recipe.cpp sdf_validation.cpp sdf_renderer.cpp sdf_environment.cpp sdf_timeline.cpp sdf_authored.cpp sdf_history.cpp sdf_material.cpp sdf_comparison.cpp sdf_regions.cpp sdf_bounds.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp
     SHADERS
         shaders/local_filter.comp shaders/local_samples.comp shaders/local_canonical.comp
+        shaders/cached_stroke_sdf.frag shaders/quality_cached_stroke_sdf.frag
+        shaders/cached_stroke_quality_workload.comp shaders/cached_stroke_queries.comp
         shaders/commit_reuse_bricks.comp shaders/commit_canonical_fallback.comp
         shaders/commit_prune_probe.comp
         shaders/commit_pruned_bricks.comp shaders/commit_pruned_filter.comp
@@ -179,15 +181,19 @@ cubey_add_app_target(
 )
 
 if (BUILD_TESTING)
+    add_executable(cubey_project_sdf_cached_stroke_study tools/cached_stroke_study.cpp tools/stroke_renderer.cpp sdf_cached_stroke.cpp sdf_cached_commit.cpp sdf_cached_local.cpp sdf_cached_edit.cpp sdf_environment.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp)
+    target_link_libraries(cubey_project_sdf_cached_stroke_study PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
+    target_compile_definitions(cubey_project_sdf_cached_stroke_study PRIVATE CUBEY_SDF_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders")
+    add_dependencies(cubey_project_sdf_cached_stroke_study cubey_project_sdf)
     add_executable(cubey_project_sdf_cached_commit_probe tools/cached_commit_probe.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
     target_link_libraries(cubey_project_sdf_cached_commit_probe PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     target_compile_definitions(cubey_project_sdf_cached_commit_probe PRIVATE CUBEY_SDF_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders")
     add_dependencies(cubey_project_sdf_cached_commit_probe cubey_project_sdf)
-    add_executable(cubey_project_sdf_cached_commit_study tools/cached_commit_study.cpp sdf_cached_commit.cpp sdf_cached_local.cpp sdf_cached_edit.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
+    add_executable(cubey_project_sdf_cached_commit_study tools/cached_commit_study.cpp sdf_cached_commit.cpp sdf_cached_local.cpp sdf_cached_stroke.cpp sdf_cached_edit.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp)
     target_link_libraries(cubey_project_sdf_cached_commit_study PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     target_compile_definitions(cubey_project_sdf_cached_commit_study PRIVATE CUBEY_SDF_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders")
     add_dependencies(cubey_project_sdf_cached_commit_study cubey_project_sdf)
-    add_executable(cubey_project_sdf_cached_edit_study tools/cached_edit_study.cpp sdf_cached_commit.cpp sdf_cached_local.cpp sdf_cached_edit.cpp sdf_renderer.cpp sdf_environment.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp)
+    add_executable(cubey_project_sdf_cached_edit_study tools/cached_edit_study.cpp sdf_cached_commit.cpp sdf_cached_local.cpp sdf_cached_stroke.cpp sdf_cached_edit.cpp sdf_renderer.cpp sdf_environment.cpp sdf_field.cpp sdf_regions.cpp sdf_bounds.cpp sdf_authored.cpp sdf_history.cpp sdf_timeline.cpp sdf_material.cpp sdf_recipe.cpp sdf_shader_selection.cpp sdf_prepared_cones.cpp sdf_render_modes.cpp)
     target_link_libraries(cubey_project_sdf_cached_edit_study PRIVATE cubey::cubey cubey::host cubey_project_options cubey_project_warnings)
     target_compile_definitions(cubey_project_sdf_cached_edit_study PRIVATE CUBEY_SDF_SHADER_DIR="${CMAKE_CURRENT_BINARY_DIR}/shaders")
     add_dependencies(cubey_project_sdf_cached_edit_study cubey_project_sdf)

@@ -1,5 +1,6 @@
 #pragma once
 #include "sdf_cached_edit.h"
+#include "sdf_cached_stroke.h"
 #include "sdf_field.h"
 #include "sdf_regions.h"
 #include <unordered_map>
@@ -52,6 +53,9 @@ class CachedCommitStudy {
     }
     CommitBuildStats build(Field& destination, const Field& base, const CachedEditProgram& program,
                            CommitBuilder mode, std::uint32_t region_axis = 4);
+    CommitBuildStats build(Field& destination, const Field& base,
+                           const CachedStrokeProgram& program, CommitBuilder mode,
+                           std::uint32_t region_axis = 4);
     static CommitSnapshot snapshot(vulkan::Device& device, ProjectGpuServices& gpu,
                                    const Field& field);
     CommitCopyStats clone(Field& destination, const Field& base, std::uint32_t slab_bytes = 0,
@@ -68,7 +72,8 @@ class CachedCommitStudy {
         pruned_filter_;
     std::optional<vulkan::GpuTimestampProfiler> profiler_;
     CommitBuildStats build_local(Field& destination, const Field& base,
-                                 const CachedEditProgram& program);
+                                 const CachedEditProgram& program,
+                                 std::span<const SceneInstruction> tools = {});
     std::unique_ptr<vulkan::Buffer> local_controls_, local_counts_, local_entries_;
     std::optional<render::ComputePipelineResource> local_filter_, local_samples_, local_canonical_;
     struct LocalFieldState {

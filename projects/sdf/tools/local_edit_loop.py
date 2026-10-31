@@ -62,7 +62,7 @@ def inputs(args):
         ('erase-whole',document(sphere('body',.16)),sphere('tool',.35),True),
         ('disconnected-add',document(sphere('body',.04,[-.25,0,0])),sphere('tool',.02,[.25,0,0]),False),
         ('face-contact-add',document(dict(name='body',type='box',half_extent=[.125]*3)),sphere('tool',1/256,[.125,0,0]),False),
-        ('workspace-wide-cut',document(dict(name='body',type='box',half_extent=[.6]*3)),sphere('tool',.2,[.499,0,0]),True),
+        ('workspace-wide-cut',document(sphere('body',.1,[.45,0,0])),sphere('tool',.04,[.499,0,0]),True),
     ]:
         c=edit.case(name,base,tool,[],cut);path=args.output/(name+'.json');save(path,edit.manifest([c]));extra.append(dict(name=name,input=str(path)))
     result['fixtures']+=extra
