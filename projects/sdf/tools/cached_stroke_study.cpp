@@ -140,7 +140,7 @@ std::unique_ptr<vulkan::Buffer> controls(vulkan::Device& device, const CachedStr
 void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& input,
                const std::vector<CachedStrokeProgram>& programs,
                const std::filesystem::path& output, CommitBuilder mode, unsigned trials,
-               unsigned warmup, unsigned slice_groups, bool dump, Json& receipt) {
+               unsigned warmup, unsigned slice_groups, bool dump, bool chain, Json& receipt) {
     Field base(device, gpu), candidate(device, gpu);
     CachedCommitStudy builder(device, gpu);
     Json units;
@@ -157,18 +157,23 @@ void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& inpu
     receipt["cache_pipeline_prepare_ms"] = builder.prepare(mode);
     receipt["cache_runs"] = Json::array();
     bool passed = true;
+    Field* published = &base;
+    Field* destination = &candidate;
+    if (chain)
+        published->build(programs.front().base);
     for (std::size_t i = 0; i < programs.size(); ++i) {
         const auto& p = programs[i];
-        base.build(p.base);
+        if (!chain)
+            published->build(p.base);
         Json row{{"name", input.at("cases").at(i).at("name")}, {"trials", Json::array()}};
         for (unsigned t = 0; t < trials + warmup; ++t) {
             units = Json::array();
-            const auto stats = builder.build(candidate, base, p, mode);
+            const auto stats = builder.build(*destination, *published, p, mode);
             row["trials"].push_back(
                 {{"warmup", t < warmup},
                  {"builder_wall_ms", stats.wall_ms},
                  {"admission_ms", stats.admission_ms},
-                 {"filter_gpu_ms", candidate.stats().filter_gpu_ms},
+                 {"filter_gpu_ms", destination->stats().filter_gpu_ms},
                  {"reuse_gpu_ms", stats.reuse_gpu_ms},
                  {"fallback_gpu_ms", stats.fallback_gpu_ms},
                  {"copy_gpu_ms", stats.copy.gpu_ms},
@@ -181,9 +186,9 @@ void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& inpu
                                                 candidate.stats().allocation_bytes +
                                                 builder.working_bytes()}});
         }
-        const auto actual = CachedCommitStudy::snapshot(device, gpu, candidate);
-        base.build(p.edited);
-        const auto expected = CachedCommitStudy::snapshot(device, gpu, base);
+        const auto actual = CachedCommitStudy::snapshot(device, gpu, *destination);
+        published->build(p.edited);
+        const auto expected = CachedCommitStudy::snapshot(device, gpu, *published);
         auto prefix = output;
         prefix.replace_extension("case-" + std::to_string(i));
         row["candidate"] = describe(actual, prefix.string() + "-candidate", dump);
@@ -192,6 +197,8 @@ void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& inpu
         passed = passed && row["comparison"].at("passed").get<bool>();
         receipt["cache_runs"].push_back(std::move(row));
         save(output, receipt);
+        if (chain)
+            std::swap(published, destination);
     }
     receipt["cache_complete"] = true;
     receipt["cache_passed"] = passed;
@@ -471,7 +478,8 @@ int main(int argc, char** argv) {
         std::filesystem::path input_path, output_path;
         std::string phase = "preview";
         std::string builder_name = "full";
-        bool query = false, validate = false, cache_qualify = false, rounded = false, dump = true;
+        bool query = false, validate = false, cache_qualify = false, rounded = false, dump = true,
+             chain = false;
         unsigned cache_trials = 1, cache_warmup = 0;
         unsigned slice_groups = 0;
         std::vector<char*> arguments{argv[0]};
@@ -506,6 +514,8 @@ int main(int argc, char** argv) {
                 rounded = true;
             else if (flag == "--edit-cache-no-dump")
                 dump = false;
+            else if (flag == "--edit-cache-chain")
+                chain = true;
             else
                 arguments.push_back(argv[i]);
         }
@@ -553,6 +563,7 @@ int main(int argc, char** argv) {
         if (!query && !cache_qualify && programs.size() != 1)
             throw std::invalid_argument("native edit capture requires one case");
         if (!cache_trials || cache_trials > 100 || cache_warmup > 10 ||
+            (chain && (!cache_qualify || cache_trials != 1 || cache_warmup != 0)) ||
             (cache_qualify && (query || validate || builder_name == "full")) ||
             ((cache_trials != 1 || cache_warmup) && !cache_qualify))
             throw std::invalid_argument("invalid cache qualification configuration");
@@ -640,7 +651,7 @@ int main(int argc, char** argv) {
             runtime.attach_gpu_if_needed(ctx.gpu());
             if (cache_qualify) {
                 run_cache(ctx.device(), runtime.gpu(), input, programs, output_path, builder_mode,
-                          cache_trials, cache_warmup, slice_groups, dump, receipt);
+                          cache_trials, cache_warmup, slice_groups, dump, chain, receipt);
                 return;
             }
             if (query) {

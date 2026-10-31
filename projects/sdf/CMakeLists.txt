@@ -236,6 +236,8 @@ if (BUILD_TESTING)
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/normal_projection_tests.py")
     add_test(NAME sdf_mirror_author_tests
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/mirror_author_tests.py")
+    add_test(NAME sdf_stroke_sampling_tests
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/test_stroke_sampling.py")
 endif()
 
 target_compile_definitions(cubey_project_sdf PRIVATE CUBEY_MATERIAL_RECIPE_DIR="${PROJECT_SOURCE_DIR}/assets/materials")

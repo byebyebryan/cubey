@@ -6,12 +6,16 @@ import json
 import math
 from pathlib import Path
 import random
+import stroke_sampling
+import statistics
 
 import cached_edit_loop as edit
 import local_edit_loop as local
 import stroke_loop as stroke
 from interactive_edit_loop import identity, save, RAW
-from investigate_guardian import ROOT, digest
+from investigate_guardian import ROOT, digest, PRESETS, camera_queries
+from quality_speed_loop import profile
+from benchmark_tracing import percentile
 from sdf_author import capsule, round_cone
 from tracing_comparison import document, sphere, ray, dot, unit, H
 
@@ -171,6 +175,20 @@ def inputs(args):
         for _ in range(8):
             d = unit([rng.uniform(-1, 1) for _ in range(3)])
             rays.append(([center[i]+d[i]*.35 for i in range(3)], [-x for x in d]))
+        bottom = shape.get('radius', shape.get('bottom_radius'))
+        top = shape.get('radius', shape.get('top_radius'))
+        h = shape['half_length']; slope = (top-bottom)/(2*h)
+        if abs(slope) < 1:
+            radial = math.sqrt(1-slope*slope)
+            radius = (bottom+slope*h)/radial
+            extra = [([radius*.999, 0, .35], [0, 0, -1]),
+                     ([radius*1.001, 0, .35], [0, 0, -1]),
+                     ([radius*.9, 0, 0], [slope, radial, 0]),
+                     ([bottom*radial*.9, -h-bottom*slope, .35], [0, 0, -1])]
+            q = shape.get('rotation_xyzw', [0, 0, 0, 1]); scale = shape.get('scale', 1)
+            for o, d in extra:
+                position = rotate([x*scale for x in o], q)
+                rays.append(([x+y for x, y in zip(position, shape['position'])], unit(rotate(d, q))))
         geometry.append(stroke.stroke_case(shape['name'], document(None), [shape], False,
             [oracle(o, d, [], [shape], False) for o, d in rays]))
     body = sphere('body', .22)
@@ -272,7 +290,8 @@ def admission(args):
     cases += [('legacy-rejects-variable-radius', varying_spheres, False, False),
               ('rounded-admits-variable-radius', varying_spheres, True, True)]
     for label in ('mixed', 'material', 'scale', 'prefix', 'palette', 'smoothing', 'box', 'cut-material', 'zero-radii'):
-        c = copy.deepcopy(good); tool = c['scene']['root']['children'][1]
+        c = copy.deepcopy(good); c['base'] = copy.deepcopy(c['base'])
+        tool = c['scene']['root']['children'][1]
         if label == 'mixed': c['scene']['root']['type'] = 'subtract'
         elif label == 'material': tool['material'] = 'red'
         elif label == 'scale': tool['scale'] = 1.1
@@ -306,14 +325,231 @@ def admission(args):
     print(len(cases), 'admission/canonicalization checks passed', flush=True)
 
 
+def sampling(args):
+    tolerance = H/4  # reserve the other quarter-spacing for scripted input interpolation
+    rows = []
+    for hz in (120, 240):
+        count = int(.05*hz)+1
+        for name in ('straight', 'corner', 'curve', 'width-bulge', 'stationary-width'):
+            def sample(t):
+                p, r = [-.02+.04*t, 0, 0], .02
+                if name == 'corner':
+                    p = [-.02+.04*min(t, .5), .04*max(t-.5, 0), 0]
+                elif name == 'curve': p[1] = .004*math.sin(math.pi*t)
+                elif name == 'width-bulge': r += .003*math.sin(math.pi*t)
+                elif name == 'stationary-width': p = [0, 0, 0]; r += .005*t
+                return p, r
+            poses = []
+            for i in range(count):
+                p, r = sample(i/(count-1))
+                poses.append(dict(t=i/hz, p=p, r=r, corner=name == 'corner' and i == (count-1)//2))
+            spans = stroke_sampling.segment(poses, tolerance)
+            metrics = stroke_sampling.validate(poses, spans, tolerance)
+            dense_error = 0
+            for first, last in spans:
+                for j in range(65):
+                    u = j/64
+                    t = (first+(last-first)*u)/(count-1)
+                    p, r = sample(t)
+                    a, b = poses[first], poses[last]
+                    fitted = [x+(y-x)*u for x, y in zip(a['p'], b['p'])]
+                    dense_error = max(dense_error, math.dist(p, fitted)+abs(r-(a['r']+(b['r']-a['r'])*u)))
+            assert dense_error <= H/2+1e-12, (name, hz, dense_error)
+            row = dict(name=f'{name}-{hz}', raw_hz=hz, duration_seconds=.05, poses=poses,
+                spans=spans, raw_segments=len(poses)-1, accepted_segments=len(spans),
+                tolerance=tolerance, scripted_combined_error=dense_error, **metrics)
+            rows.append(row)
+    # Separate strokes are segmented separately; no geometry is synthesized in
+    # the gap between release and restart, irrespective of timestamp spacing.
+    lift_paths = [[dict(t=j*.01, p=[start+j*.02, 0, 0], r=.01) for j in range(3)]
+                  for start in (-.12, .08)]
+    lift_tools = []
+    for index, poses in enumerate(lift_paths):
+        for a, b in stroke_sampling.segment(poses, tolerance):
+            lift_tools.append(segment(f'lift-{index}', poses[a]['p'], .01, poses[b]['p'], .01))
+    assert all(field([0, 0, 0], tool) > .05 for tool in lift_tools)
+    bench = []
+    for subject in ('guardian', 'robot'):
+        for row in rows:
+            for representation in ('raw', 'segmented'):
+                poses = row['poses']; center = edit.CUT_CENTERS[subject]
+                pairs = list(zip(range(len(poses)-1), range(1, len(poses)))) if representation == 'raw' else row['spans']
+                tools = [segment(f'sample-{i}', [x+y for x, y in zip(poses[a]['p'], center)], poses[a]['r'],
+                                 [x+y for x, y in zip(poses[b]['p'], center)], poses[b]['r'],
+                                 edit.subject_scene(subject)['materials'][0]['name']) for i, (a, b) in enumerate(pairs)]
+                base = edit.subject_scene(subject); cases = []
+                for offset in range(0, len(tools), 8):
+                    c = stroke.stroke_case(f'{row["name"]}-{offset}', base, tools[offset:offset+8], True)
+                    cases.append(c); base = c['scene']
+                inp = args.output / f'{subject}-{row["name"]}-{representation}.json'
+                save(inp, edit.manifest(cases))
+                bench.append(dict(subject=subject, path=row['name'], representation=representation,
+                                  input=str(inp), tools=len(tools), batches=len(cases)))
+    save(args.output/'sampling.json', dict(identity(args), rows=rows, benchmark=bench,
+        recorded_combined_tolerance=tolerance, scripted_combined_tolerance=H/2,
+        lift_restart_no_bridge=True, complete=True))
+    print([(r['name'], r['raw_segments'], r['accepted_segments']) for r in rows], flush=True)
+
+
+def sampling_work(args):
+    source = json.loads(args.inputs.read_text()); receipt = dict(identity(args), runs=[], complete=False)
+    rows = source['benchmark']
+    for repeat in range(3):
+        for row in rows if repeat % 2 == 0 else reversed(rows):
+            out = args.output/f'{row["subject"]}-{row["path"]}-{row["representation"]}-{repeat}.json'
+            flags = ['--edit-rounded-segments', '--edit-cache-qualify', '--edit-commit-builder', 'local-dom',
+                     '--edit-cache-no-dump', '--edit-cache-chain']
+            result = local.run(edit.native(args, Path(row['input']), out, extra=flags), out)
+            assert result['native']['cache_passed']
+            receipt['runs'].append(dict(case=row, repeat=repeat, **result)); save(args.output/'sampling-work.json', receipt)
+            print(out.stem, 'PASS', flush=True)
+    receipt['complete'] = True; save(args.output/'sampling-work.json', receipt)
+
+
+def selected(args):
+    return [r for r in json.loads(args.inputs.read_text())['rows'] if r['count'] == 8 or r['count'] == 0 and r['operation'] == 'add']
+
+
+def captures(args):
+    receipt = dict(identity(args), runs=[], complete=False)
+    for row in selected(args):
+        for view in ('preset', 'close'):
+            for phase in (['preview'] if row['count'] == 0 else ['base', 'preview', 'committed']):
+                prefix = args.output/f'{row["subject"]}-{row["operation"]}-{row["count"]}-{view}-{phase}'
+                flags = ['--edit-rounded-segments', '--frames', '1', '--output', str(prefix.with_suffix('.png'))]
+                if phase == 'committed': flags += ['--edit-commit-builder', 'local-dom']
+                result = local.run(edit.native(args, Path(row['input']), prefix.with_suffix('.json'), phase,
+                    flags, row['subject'], view, (960, 540)), prefix.with_suffix('.json'))
+                image_hash = digest(prefix.with_suffix('.png'))
+                entry = dict(case=row, view=view, phase=phase, image=str(prefix.with_suffix('.png')),
+                             image_sha256=image_hash, **result)
+                if phase == 'committed' or row['count'] == 0:
+                    reference = prefix.with_suffix('.original.png')
+                    cmd = edit.public_command(args.public_binary, row['subject'],
+                        row['base'] if row['count'] == 0 else row['scene'], reference, view=view)
+                    ref = local.run(cmd, prefix.with_suffix('.public.json'))
+                    assert digest(reference) == image_hash, prefix
+                    entry.update(original_cached=str(reference), original_cached_byte_identical=True, reference=ref)
+                receipt['runs'].append(entry); save(args.output/'captures.json', receipt)
+                print(prefix.stem, 'PASS', flush=True)
+    receipt['complete'] = True; save(args.output/'captures.json', receipt)
+
+
+def replay(args):
+    receipt = dict(identity(args), runs=[], complete=False)
+    for row in selected(args):
+        if not row['count']: continue
+        cfg = json.loads((ROOT/f'projects/sdf/presets/{PRESETS[row["subject"]]}.json').read_text())
+        for view in ('preset', 'close'):
+            camera = dict(cfg)
+            if view == 'close': camera['distance'] = .8
+            data = json.loads(Path(row['input']).read_text())
+            data['cases'][0]['queries'] = camera_queries(camera, 160, 90)
+            control = copy.deepcopy(data['cases'][0]); control['name'] += '-zero-control'; control['scene'] = copy.deepcopy(control['base'])
+            data['cases'].append(control)
+            prefix = args.output/f'{row["subject"]}-{row["operation"]}-{view}'
+            inp, out = prefix.with_suffix('.input.json'), prefix.with_suffix('.json'); save(inp, data)
+            result = local.run(edit.native(args, inp, out, extra=['--edit-rounded-segments', '--edit-queries']), out)
+            actual, baseline = [c['results'] for c in result['native']['queries']['cases']]
+            assert not any(r['status'] == 2 for r in actual)
+            changed = sum(a['status'] != b['status'] or a['status'] == 1 and abs(a['t']-b['t']) > H for a, b in zip(actual, baseline))
+            assert changed >= 10, (row, view, changed)
+            elevation, azimuth = math.radians(cfg['sun-elevation']), math.radians(cfg['sun-azimuth'])
+            light = [math.cos(elevation)*math.sin(azimuth), math.sin(elevation), -math.cos(elevation)*math.cos(azimuth)]
+            shadows = [dict(kind='ray', origin=[q['origin'][i]+q['direction'][i]*r['t']+r['normal'][i]*2*H for i in range(3)], direction=light)
+                       for q, r in zip(data['cases'][0]['queries'], actual) if r['status'] == 1]
+            data['cases'] = data['cases'][:1]; data['cases'][0]['queries'] = shadows
+            sinp, sout = prefix.with_suffix('.shadow-input.json'), prefix.with_suffix('.shadow.json'); save(sinp, data)
+            shadow = local.run(edit.native(args, sinp, sout, extra=['--edit-rounded-segments', '--edit-queries']), sout)
+            assert not any(r['status'] == 2 for r in shadow['native']['queries']['cases'][0]['results'])
+            receipt['runs'].append(dict(case=row, view=view, camera_rays=len(actual), shadow_rays=len(shadows),
+                exhausted=0, changed_cached_rays=changed, camera=result, shadow=shadow))
+            save(args.output/'replay.json', receipt); print(prefix.stem, 'PASS', flush=True)
+    receipt['complete'] = True; save(args.output/'replay.json', receipt)
+
+
+def timing(args):
+    rows = selected(args); cases = []
+    for row in rows:
+        for view in ('preset', 'close'):
+            cases.append((row, view, 'rounded'))
+            if not row['count']: cases.append((row, view, 'original'))
+    frames, warmup = (36, 6) if args.pilot else (120, 20)
+    receipt = dict(identity(args), runs=[], complete=False, frames=frames, warmup=warmup)
+    for repeat in range(1 if args.pilot else 3):
+        for row, view, route in cases if repeat % 2 == 0 else reversed(cases):
+            prefix = args.output/f'{row["subject"]}-{row["operation"]}-{row["count"]}-{view}-{route}-{repeat}'
+            flags = ['--headless-render-only', '--frames', str(frames), '--profile-warmup-frames', str(warmup), '--profile-output', str(prefix)]
+            if route == 'original':
+                cmd = edit.public_command(args.public_binary, row['subject'], row['base'], None, size=(1920, 1080), view=view)+flags
+            else:
+                cmd = edit.native(args, Path(row['input']), prefix.with_suffix('.json'), 'preview',
+                    flags+['--edit-rounded-segments'], row['subject'], view, (1920, 1080))
+            result = local.run(cmd, prefix.with_suffix('.json'))
+            passes, metrics = profile(prefix, frames, warmup); values = passes['sdf.whole_scene']['values_ms']
+            receipt['runs'].append(dict(case=row, view=view, route=route, repeat=repeat, **result,
+                passes=passes, metrics=metrics, stats=dict(median_ms=statistics.median(values),
+                    p95_ms=percentile(values, .95), max_ms=max(values), over_16_67=sum(v > 16.67 for v in values), over_11_11=sum(v > 11.11 for v in values))))
+            save(args.output/'timing.json', receipt); print(prefix.stem, round(statistics.median(values), 3), flush=True)
+    receipt['complete'] = True; save(args.output/'timing.json', receipt)
+
+
+def prefixes(args):
+    receipt = dict(identity(args), runs=[], complete=False)
+    for row in selected(args):
+        if row['count'] != 8: continue
+        data = json.loads(Path(row['input']).read_text()); case = data['cases'][0]
+        prefix = copy.deepcopy(case['scene'])
+        for _ in range(4): prefix['root'] = prefix['root']['children'][0]
+        if prefix.get('history'): prefix['history'] = prefix['history'][:len(case['base'].get('history', []))+4]
+        case['prefix_scene'] = prefix
+        reference_input = args.output/f'{row["subject"]}-{row["operation"]}-tail-input.json'
+        save(reference_input, edit.manifest([dict(name='tail-reference', base=prefix, scene=case['scene'])]))
+        tail = reference_input.with_suffix('.png')
+        local.run(edit.native(args, reference_input, tail.with_suffix('.json'), 'preview',
+            ['--edit-rounded-segments', '--frames', '1', '--output', str(tail)], row['subject'], size=(320, 180)), tail.with_suffix('.json'))
+        settled = args.output/f'{row["subject"]}-{row["operation"]}-settled.png'
+        local.run(edit.public_command(args.public_binary, row['subject'], row['scene'], settled, size=(320, 180)), settled.with_suffix('.public.json'))
+        for fault in ('none', 'allocation', 'cancel-before-submit', 'stale', 'discard-after-submit', 'build-capacity', 'append-capacity'):
+            data['prefix_fault'] = fault
+            inp = args.output/f'{row["subject"]}-{row["operation"]}-{fault}-input.json'; save(inp, data)
+            out = inp.with_suffix('.result.json')
+            result = local.run(edit.native(args, inp, out, 'prefix', ['--edit-rounded-segments', '--edit-commit-builder', 'local-dom',
+                '--headless-render-only', '--frames', str(4 if fault == 'none' else 5)], row['subject'], size=(320, 180)), out)
+            native = result['native']; assert native['complete'] and native['drained']
+            for frame in native['frames'][1:]:
+                assert frame['baked_ids']+frame['render_pending_ids'] == list(range(1, 9))
+                assert frame['total_uncommitted_before_completion'] <= 8
+                assert frame['retired_after_completed_frame'] == frame['baked_prefix']
+            middle = next(f for f in native['frames'] if f['baked_prefix'] == 4)
+            assert digest(Path(middle['image'])) == digest(tail)
+            assert digest(Path(native['frames'][-1]['image'])) == digest(settled)
+            if fault != 'none':
+                assert not native['attempts'][0]['published']
+                assert digest(Path(native['frames'][1]['image'])) == digest(Path(native['frames'][2]['image']))
+            retained = Path(native['retained_source_file'])
+            assert json.loads(retained.read_text())['root'] == case['scene']['root']
+            if fault == 'none':
+                replay_image = retained.with_suffix('.replay.png')
+                local.run(edit.public_command(args.public_binary, row['subject'], retained, replay_image, size=(320, 180)), replay_image.with_suffix('.public.json'))
+                assert digest(replay_image) == digest(settled)
+            receipt['runs'].append(dict(case=row, fault=fault, intermediate_byte_identical=True,
+                settled_byte_identical=True, retained_source_matches=True, **result))
+            save(args.output/'prefixes.json', receipt); print(row['subject'], row['operation'], fault, 'PASS', flush=True)
+    receipt['complete'] = True; save(args.output/'prefixes.json', receipt)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase', choices=['inputs', 'geometry', 'caches', 'admission'])
+    p.add_argument('phase', choices=['inputs', 'geometry', 'caches', 'admission', 'sampling', 'sampling_work',
+                                   'captures', 'replay', 'timing', 'prefixes'])
     p.add_argument('--output', type=Path, required=True); p.add_argument('--inputs', type=Path)
     p.add_argument('--binary', type=Path, default=ROOT / 'build/release/projects/sdf/cubey_project_sdf_cached_stroke_study')
     p.add_argument('--fixtures', action='store_true'); p.add_argument('--dump', action='store_true')
     p.add_argument('--mode', choices=['local', 'local-dom'], default='local-dom')
     p.add_argument('--groups', type=int, default=0)
+    p.add_argument('--pilot', action='store_true')
+    p.add_argument('--public-binary', type=Path, default=RAW/'baseline-sdf')
     args = p.parse_args(); args.output = args.output.resolve(); args.output.mkdir(parents=True, exist_ok=False)
     globals()[args.phase](args)
 

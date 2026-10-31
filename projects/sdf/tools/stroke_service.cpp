@@ -157,6 +157,7 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
         unsigned published_frame = frames;
         std::optional<CommitBuildStats> stats;
         double worker_ready_ms = 0;
+        double replacement_completed_ms = 0;
         std::string blocked;
         auto stop = [&] {
             {
@@ -180,6 +181,8 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                     published_frame = frame;
                 }
                 const double draw_ms = draw(published ? settled : preview, frame);
+                if (published && replacement_completed_ms == 0)
+                    replacement_completed_ms = ms(received);
                 const auto window = Clock::now();
                 while (!published && ms(window) < budget) {
                     std::unique_lock lock(gate.mutex);
@@ -239,6 +242,8 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
         receipt["units"] = gate.units;
         receipt["worker_ready_observed_ms"] = worker_ready_ms;
         receipt["worker_preparation_ms"] = preparation_ms.load();
+        receipt["replacement_completed_ms"] =
+            published ? Json(replacement_completed_ms) : Json(nullptr);
         receipt["published_frame"] = published ? Json(published_frame) : Json(nullptr);
         receipt["cancelled_at_limit"] = failed;
         receipt["drained"] = published;
@@ -248,7 +253,8 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                         frame.at("scheduled_to_completion_ms").get<double>() <= 16.67 &&
                         !frame.at("unit_crossed_window").get<bool>();
         receipt["full_frame_and_unit_deadlines_passed"] = deadlines;
-        receipt["service_passed"] = published && published_frame <= 4 && deadlines;
+        receipt["service_passed"] =
+            published && replacement_completed_ms <= 4 * (1000.0 / 60) && deadlines;
         receipt["scope_boundary"] =
             "One completed draw at a time; no delayed/in-flight reader qualification";
         if (stats) {
@@ -256,6 +262,7 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                 {"admission_ms", stats->admission_ms}, {"builder_wall_ms", stats->wall_ms},
                 {"copy_gpu_ms", stats->copy.gpu_ms},   {"fallback_gpu_ms", stats->fallback_gpu_ms},
                 {"reuse_gpu_ms", stats->reuse_gpu_ms}, {"local_work", stats->local_work}};
+            receipt["build"]["classification_gpu_ms"] = candidate.stats().filter_gpu_ms;
         }
         preview.destroy();
         settled.destroy();
