@@ -1,0 +1,441 @@
+{
+  "scope": "CPU-only source admission and Boolean identities; no native eight-edit interval rendering or update performance",
+  "source_head": "79362e46f9f528f02b48b6fda91764f9dea25bd7",
+  "script_sha256": "a0e1d10a5c5250b43d7e16cea7fb39e6743cb85ae7811af3c7ff891c4d8caee6",
+  "binary_sha256": "c7e6bd52b00339f48e2bb4f1fce0cacc65cb52318319ffcdbd2277f0992bac86",
+  "edit_harness_sha256": "699e0fa605e8828e2ef6b1cfad1ef1c2d4d3fa999be7c8566df18f1055445381",
+  "admission_runs": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "requested": 12,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "outputs/sdf/local-edit-research-20261030/admission-final/guardian-add.json",
+        "--commit-output",
+        "outputs/sdf/local-edit-research-20261030/admission-final/guardian-add-result.json",
+        "--commit-validate-only"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "input_sha256": "33549c6e7fd2c33e8dce5af14e48df76cdd9fcb80999d0137aeb6807509497a1",
+      "native": {
+        "programs": [
+          {
+            "base_geometry_hash": 15419350890978506480,
+            "base_leaves": 1011,
+            "edited_geometry_hash": 11387020687829324324,
+            "edited_leaves": 1012
+          },
+          {
+            "base_geometry_hash": 11387020687829324324,
+            "base_leaves": 1012,
+            "edited_geometry_hash": 6811980899515339369,
+            "edited_leaves": 1013
+          },
+          {
+            "base_geometry_hash": 6811980899515339369,
+            "base_leaves": 1013,
+            "edited_geometry_hash": 6636533080300899271,
+            "edited_leaves": 1014
+          },
+          {
+            "base_geometry_hash": 6636533080300899271,
+            "base_leaves": 1014,
+            "edited_geometry_hash": 16830631085869693827,
+            "edited_leaves": 1015
+          },
+          {
+            "base_geometry_hash": 16830631085869693827,
+            "base_leaves": 1015,
+            "edited_geometry_hash": 15662280704456353786,
+            "edited_leaves": 1016
+          },
+          {
+            "base_geometry_hash": 15662280704456353786,
+            "base_leaves": 1016,
+            "edited_geometry_hash": 6392701380095677867,
+            "edited_leaves": 1017
+          },
+          {
+            "base_geometry_hash": 6392701380095677867,
+            "base_leaves": 1017,
+            "edited_geometry_hash": 11769723370453681554,
+            "edited_leaves": 1018
+          },
+          {
+            "base_geometry_hash": 11769723370453681554,
+            "base_leaves": 1018,
+            "edited_geometry_hash": 18020186342714964212,
+            "edited_leaves": 1019
+          },
+          {
+            "base_geometry_hash": 18020186342714964212,
+            "base_leaves": 1019,
+            "edited_geometry_hash": 11201184686687521511,
+            "edited_leaves": 1020
+          },
+          {
+            "base_geometry_hash": 11201184686687521511,
+            "base_leaves": 1020,
+            "edited_geometry_hash": 16479997332620612508,
+            "edited_leaves": 1021
+          },
+          {
+            "base_geometry_hash": 16479997332620612508,
+            "base_leaves": 1021,
+            "edited_geometry_hash": 12575855155874893605,
+            "edited_leaves": 1022
+          },
+          {
+            "base_geometry_hash": 12575855155874893605,
+            "base_leaves": 1022,
+            "edited_geometry_hash": 1468177477096403807,
+            "edited_leaves": 1023
+          }
+        ],
+        "validated_without_gpu": true
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "requested": 12,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "outputs/sdf/local-edit-research-20261030/admission-final/guardian-cut.json",
+        "--commit-output",
+        "outputs/sdf/local-edit-research-20261030/admission-final/guardian-cut-result.json",
+        "--commit-validate-only"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "input_sha256": "41d7198cba1919e694c98871ba805bc9f463fe2c4e3bbb7742456e1c9a594454",
+      "native": {
+        "programs": [
+          {
+            "base_geometry_hash": 15419350890978506480,
+            "base_leaves": 1011,
+            "edited_geometry_hash": 16244154314293976084,
+            "edited_leaves": 1012
+          },
+          {
+            "base_geometry_hash": 16244154314293976084,
+            "base_leaves": 1012,
+            "edited_geometry_hash": 138814899738609737,
+            "edited_leaves": 1013
+          },
+          {
+            "base_geometry_hash": 138814899738609737,
+            "base_leaves": 1013,
+            "edited_geometry_hash": 5427612745914433559,
+            "edited_leaves": 1014
+          },
+          {
+            "base_geometry_hash": 5427612745914433559,
+            "base_leaves": 1014,
+            "edited_geometry_hash": 16512936289107618947,
+            "edited_leaves": 1015
+          },
+          {
+            "base_geometry_hash": 16512936289107618947,
+            "base_leaves": 1015,
+            "edited_geometry_hash": 7318461640548776970,
+            "edited_leaves": 1016
+          },
+          {
+            "base_geometry_hash": 7318461640548776970,
+            "base_leaves": 1016,
+            "edited_geometry_hash": 14229168448115417291,
+            "edited_leaves": 1017
+          },
+          {
+            "base_geometry_hash": 14229168448115417291,
+            "base_leaves": 1017,
+            "edited_geometry_hash": 2569694967690573730,
+            "edited_leaves": 1018
+          },
+          {
+            "base_geometry_hash": 2569694967690573730,
+            "base_leaves": 1018,
+            "edited_geometry_hash": 9013910111429186964,
+            "edited_leaves": 1019
+          },
+          {
+            "base_geometry_hash": 9013910111429186964,
+            "base_leaves": 1019,
+            "edited_geometry_hash": 2008114212814724727,
+            "edited_leaves": 1020
+          },
+          {
+            "base_geometry_hash": 2008114212814724727,
+            "base_leaves": 1020,
+            "edited_geometry_hash": 10991633370104435932,
+            "edited_leaves": 1021
+          },
+          {
+            "base_geometry_hash": 10991633370104435932,
+            "base_leaves": 1021,
+            "edited_geometry_hash": 3963502722725270389,
+            "edited_leaves": 1022
+          },
+          {
+            "base_geometry_hash": 3963502722725270389,
+            "base_leaves": 1022,
+            "edited_geometry_hash": 7797641841668181503,
+            "edited_leaves": 1023
+          }
+        ],
+        "validated_without_gpu": true
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "requested": 16,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "outputs/sdf/local-edit-research-20261030/admission-final/robot-add.json",
+        "--commit-output",
+        "outputs/sdf/local-edit-research-20261030/admission-final/robot-add-result.json",
+        "--commit-validate-only"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "input_sha256": "4e91bcdac1e8a360b7394859b99283b951be5beb7e4741c86e6b9e86bd1be4ce",
+      "native": {
+        "programs": [
+          {
+            "base_geometry_hash": 15329115976364195548,
+            "base_leaves": 82,
+            "edited_geometry_hash": 1656876359464538019,
+            "edited_leaves": 83
+          },
+          {
+            "base_geometry_hash": 1656876359464538019,
+            "base_leaves": 83,
+            "edited_geometry_hash": 1058133811207970960,
+            "edited_leaves": 84
+          },
+          {
+            "base_geometry_hash": 1058133811207970960,
+            "base_leaves": 84,
+            "edited_geometry_hash": 10385322728053003757,
+            "edited_leaves": 85
+          },
+          {
+            "base_geometry_hash": 10385322728053003757,
+            "base_leaves": 85,
+            "edited_geometry_hash": 4523009087401452569,
+            "edited_leaves": 86
+          },
+          {
+            "base_geometry_hash": 4523009087401452569,
+            "base_leaves": 86,
+            "edited_geometry_hash": 15914750351971129542,
+            "edited_leaves": 87
+          },
+          {
+            "base_geometry_hash": 15914750351971129542,
+            "base_leaves": 87,
+            "edited_geometry_hash": 7936100946616307042,
+            "edited_leaves": 88
+          },
+          {
+            "base_geometry_hash": 7936100946616307042,
+            "base_leaves": 88,
+            "edited_geometry_hash": 814715035822164366,
+            "edited_leaves": 89
+          },
+          {
+            "base_geometry_hash": 814715035822164366,
+            "base_leaves": 89,
+            "edited_geometry_hash": 10587078521873423366,
+            "edited_leaves": 90
+          },
+          {
+            "base_geometry_hash": 10587078521873423366,
+            "base_leaves": 90,
+            "edited_geometry_hash": 3911765410864475482,
+            "edited_leaves": 91
+          },
+          {
+            "base_geometry_hash": 3911765410864475482,
+            "base_leaves": 91,
+            "edited_geometry_hash": 6227355743120689039,
+            "edited_leaves": 92
+          },
+          {
+            "base_geometry_hash": 6227355743120689039,
+            "base_leaves": 92,
+            "edited_geometry_hash": 12357871528427112474,
+            "edited_leaves": 93
+          },
+          {
+            "base_geometry_hash": 12357871528427112474,
+            "base_leaves": 93,
+            "edited_geometry_hash": 1184474273638198556,
+            "edited_leaves": 94
+          },
+          {
+            "base_geometry_hash": 1184474273638198556,
+            "base_leaves": 94,
+            "edited_geometry_hash": 14769045667415964582,
+            "edited_leaves": 95
+          },
+          {
+            "base_geometry_hash": 14769045667415964582,
+            "base_leaves": 95,
+            "edited_geometry_hash": 11959246376588623401,
+            "edited_leaves": 96
+          },
+          {
+            "base_geometry_hash": 11959246376588623401,
+            "base_leaves": 96,
+            "edited_geometry_hash": 1006144442766869604,
+            "edited_leaves": 97
+          },
+          {
+            "base_geometry_hash": 1006144442766869604,
+            "base_leaves": 97,
+            "edited_geometry_hash": 15173822270751880651,
+            "edited_leaves": 98
+          }
+        ],
+        "validated_without_gpu": true
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "requested": 16,
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/cubey_project_sdf_cached_commit_study",
+        "--commit-input",
+        "outputs/sdf/local-edit-research-20261030/admission-final/robot-cut.json",
+        "--commit-output",
+        "outputs/sdf/local-edit-research-20261030/admission-final/robot-cut-result.json",
+        "--commit-validate-only"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "input_sha256": "143a6557588fafeece51dbe77e9792b750e85cf85e27b069976abdb2252fac1d",
+      "native": {
+        "programs": [
+          {
+            "base_geometry_hash": 15329115976364195548,
+            "base_leaves": 82,
+            "edited_geometry_hash": 4120488131059770131,
+            "edited_leaves": 83
+          },
+          {
+            "base_geometry_hash": 4120488131059770131,
+            "base_leaves": 83,
+            "edited_geometry_hash": 7831898901096487472,
+            "edited_leaves": 84
+          },
+          {
+            "base_geometry_hash": 7831898901096487472,
+            "base_leaves": 84,
+            "edited_geometry_hash": 5407507381810925917,
+            "edited_leaves": 85
+          },
+          {
+            "base_geometry_hash": 5407507381810925917,
+            "base_leaves": 85,
+            "edited_geometry_hash": 8245372324609840281,
+            "edited_leaves": 86
+          },
+          {
+            "base_geometry_hash": 8245372324609840281,
+            "base_leaves": 86,
+            "edited_geometry_hash": 8416360376327374902,
+            "edited_leaves": 87
+          },
+          {
+            "base_geometry_hash": 8416360376327374902,
+            "base_leaves": 87,
+            "edited_geometry_hash": 3318615587811609506,
+            "edited_leaves": 88
+          },
+          {
+            "base_geometry_hash": 3318615587811609506,
+            "base_leaves": 88,
+            "edited_geometry_hash": 9452223056090670398,
+            "edited_leaves": 89
+          },
+          {
+            "base_geometry_hash": 9452223056090670398,
+            "base_leaves": 89,
+            "edited_geometry_hash": 17366516600700968998,
+            "edited_leaves": 90
+          },
+          {
+            "base_geometry_hash": 17366516600700968998,
+            "base_leaves": 90,
+            "edited_geometry_hash": 11701419143492838794,
+            "edited_leaves": 91
+          },
+          {
+            "base_geometry_hash": 11701419143492838794,
+            "base_leaves": 91,
+            "edited_geometry_hash": 17149361637336792271,
+            "edited_leaves": 92
+          },
+          {
+            "base_geometry_hash": 17149361637336792271,
+            "base_leaves": 92,
+            "edited_geometry_hash": 17222533283961081450,
+            "edited_leaves": 93
+          },
+          {
+            "base_geometry_hash": 17222533283961081450,
+            "base_leaves": 93,
+            "edited_geometry_hash": 7545744913860048028,
+            "edited_leaves": 94
+          },
+          {
+            "base_geometry_hash": 7545744913860048028,
+            "base_leaves": 94,
+            "edited_geometry_hash": 8386456962060829974,
+            "edited_leaves": 95
+          },
+          {
+            "base_geometry_hash": 8386456962060829974,
+            "base_leaves": 95,
+            "edited_geometry_hash": 10268980092803242153,
+            "edited_leaves": 96
+          },
+          {
+            "base_geometry_hash": 10268980092803242153,
+            "base_leaves": 96,
+            "edited_geometry_hash": 10365550462424735444,
+            "edited_leaves": 97
+          },
+          {
+            "base_geometry_hash": 10365550462424735444,
+            "base_leaves": 97,
+            "edited_geometry_hash": 7919588891646925291,
+            "edited_leaves": 98
+          }
+        ],
+        "validated_without_gpu": true
+      }
+    }
+  ],
+  "exhaustive_occupancy_cases": 174762,
+  "random_interval_points": 64000,
+  "queue_example": {
+    "total_uncommitted_cap": 8,
+    "frozen_prefix": 4,
+    "remaining_input_slots": 4,
+    "arrival_stamps_per_second": 60,
+    "maximum_steady_batch_seconds": 0.06666666666666667,
+    "gpu_work_target_ms_if_one_ms_per_frame": 4,
+    "note": "Arithmetic service constraint, not measured throughput"
+  },
+  "passed": true
+}

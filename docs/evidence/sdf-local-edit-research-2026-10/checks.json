@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "status": "Research and documentation checks pass",
+  "source_head": "79362e46f9f528f02b48b6fda91764f9dea25bd7",
+  "analysis": {
+    "unique_canonical_fields": 55,
+    "samples_scanned": 2767768064,
+    "adjacent_transitions": 22,
+    "diagnostic_band_plus_structural_closure_covers_observed_changes": true,
+    "raw_aabb_missed_changed_brick_occurrences": 386,
+    "outside_mask_structural_entry_changes": 2219,
+    "production_f32_guard_qualified": false
+  },
+  "pending": {
+    "occupancy_cases": 174762,
+    "interval_points": 64000,
+    "cpu_admitted_streams": 4,
+    "native_eight_edit_preview_qualified": false
+  },
+  "scope": {
+    "runtime_source_unchanged": 543,
+    "original_shaders_unchanged": 206,
+    "public_executable_unchanged": true,
+    "new_native_gpu_timings": false,
+    "local_updater_implemented": false,
+    "source_capacity_changed": false,
+    "public_defaults_changed": false,
+    "donor_code_copied": false,
+    "pushed": false,
+    "project_site_deployed": false
+  },
+  "documentation": {
+    "passed": 3,
+    "receipt": "ctest-research.log",
+    "scope": "documentation hygiene, media and rules"
+  },
+  "limits": [
+    "Diagnostic 1e-4 margin is not a universal F32 proof or implementation constant",
+    "Candidate-brick fractions are not GPU performance measurements",
+    "Saved 22 transitions do not qualify arbitrary future edits or full affected-tree work",
+    "CPU admission is not GPU preview, local-update or continuous service qualification",
+    "No physical display, input, stereo or XR acceptance"
+  ],
+  "packet_files": [
+    "README.md",
+    "analyze_locality.py",
+    "checks.json",
+    "ctest-research.log",
+    "locality.json",
+    "pending.json",
+    "probe_pending.py",
+    "references.json",
+    "source-audit.json"
+  ]
+}

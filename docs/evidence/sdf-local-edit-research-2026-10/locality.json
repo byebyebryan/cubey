@@ -1,0 +1,1505 @@
+{
+  "scope": "CPU reanalysis of saved native fields; no new native GPU timing or local-updater qualification",
+  "source_head": "79362e46f9f528f02b48b6fda91764f9dea25bd7",
+  "script_sha256": "092271bf79c61538e861b494fffdb81b3bd660145ece2945243b88866e30c772",
+  "numpy_version": "2.5.4",
+  "leaf_cell_radius": 0.0033829117335329633,
+  "classifier_epsilon": 2e-06,
+  "ideal_real_arithmetic_sample_bound": 0.006767823467065927,
+  "diagnostic_padding": 0.006867823467065927,
+  "padding_status": "Illustrative real bound plus 1e-4 diagnostic margin; not a proved universal F32 guard",
+  "scans": [
+    {
+      "case": "add-outside-base",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/add-outside-base.case-0-canonical.r16.bin",
+      "sha256": "f7f3371a21b08d2735a2393e64727413f4005a5ee3379bc0725f6e636ce76322",
+      "samples": 32983040,
+      "maximum_abs_stored": 0.006732940673828125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "cavity",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cavity.case-0-canonical.r16.bin",
+      "sha256": "85911ebe43bdfa72ecc9d6238a7a81afe7d4371a5cda1a04c20d89a42a13c872",
+      "samples": 32092160,
+      "maximum_abs_stored": 0.006732940673828125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "through-cut",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/through-cut.case-0-canonical.r16.bin",
+      "sha256": "c7167c8ce42d9d0cedfd330af3a9f39104d51c5db2f7c786c56de51af4db8e5d",
+      "samples": 24109056,
+      "maximum_abs_stored": 0.004840850830078125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "recessed-front",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/recessed-front.case-0-canonical.r16.bin",
+      "sha256": "42f4b4369ce36b55b505dd10ba304f6d1ec2dfa161e18912d408d5a76a2550b1",
+      "samples": 22794240,
+      "maximum_abs_stored": 0.00562286376953125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "cut-covers-body",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/cut-covers-body.case-0-canonical.r16.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "samples": 0,
+      "maximum_abs_stored": 0.0,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "union-covers-body",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/union-covers-body.case-0-canonical.r16.bin",
+      "sha256": "5fd25f1950f751454eefc478b3ca3c0615da6957725e9dc367647af394b0822a",
+      "samples": 65425408,
+      "maximum_abs_stored": 0.006744384765625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "invisible-inner-add",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/invisible-inner-add.case-0-canonical.r16.bin",
+      "sha256": "e481040b633f482c7ccfcb82e275d8f6b730d64700f1291aca7c53d58083600d",
+      "samples": 29433856,
+      "maximum_abs_stored": 0.006732940673828125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "rotated-box",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/rotated-box.case-0-canonical.r16.bin",
+      "sha256": "5929a1742ed75deeae4ceb1c270ccdbb82d35bdeffc088beadd426f606df90fa",
+      "samples": 6046720,
+      "maximum_abs_stored": 0.006580352783203125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "workspace-add",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-add.case-0-canonical.r16.bin",
+      "sha256": "fd0772eee48ac87da034e3f413d77a0b737afc647d027d11e073755cd2e2c824",
+      "samples": 3893248,
+      "maximum_abs_stored": 0.006671905517578125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "workspace-cut",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/workspace-cut.case-0-canonical.r16.bin",
+      "sha256": "d1a00d8f305d0dc980d11f7b8f7a7a80687f20e5af1828f5b36afb1191f4a3ab",
+      "samples": 8458240,
+      "maximum_abs_stored": 0.00675201416015625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "resume-to-second-body",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/resume-to-second-body.case-0-canonical.r16.bin",
+      "sha256": "22a907e209dffd2fee648dfc7d5c11475d0eec231d91ed4975512e9a4aa1379a",
+      "samples": 2656256,
+      "maximum_abs_stored": 0.0067596435546875,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "empty-base-add",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/empty-base-add.case-0-canonical.r16.bin",
+      "sha256": "4a6c680e1ee229e5c1cae766b817ae1d21e6f3fcc40b623f709e0771f4ab3c2b",
+      "samples": 7229440,
+      "maximum_abs_stored": 0.006656646728515625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "subgrid-cavity",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/subgrid-cavity.case-0-canonical.r16.bin",
+      "sha256": "b8db7133f590fc1db4493582d616da8597fe3b7fb727afeff27ba1b7873a842f",
+      "samples": 29437440,
+      "maximum_abs_stored": 0.006744384765625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "lattice-box-add",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-add.case-0-canonical.r16.bin",
+      "sha256": "846e3b9bd3a91d42c5c52ba7ba7a45f74c9d4a4f9a16a1f83f81c4467cccb453",
+      "samples": 27830272,
+      "maximum_abs_stored": 0.006763458251953125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "lattice-box-cut",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/lattice-box-cut.case-0-canonical.r16.bin",
+      "sha256": "01a58744f9cf2c783880d6cc7627933ada247c656b9944e5e7a12ebddbeab66c",
+      "samples": 31457280,
+      "maximum_abs_stored": 0.006763458251953125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "smooth-base-hard-add",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-add.case-0-canonical.r16.bin",
+      "sha256": "ff9f4ce2e625a1ec5f6cbc1e2357ef5722f728e37dec3d868f9cba4aa1e6a3d7",
+      "samples": 22886400,
+      "maximum_abs_stored": 0.006725311279296875,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "smooth-base-hard-cut",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/smooth-base-hard-cut.case-0-canonical.r16.bin",
+      "sha256": "24be56fb01c5688be2259b89cf0c7f539f2fcf0b4ef29cc9bae036848464299c",
+      "samples": 24133632,
+      "maximum_abs_stored": 0.006725311279296875,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "scaled-tool",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified/reuse/scaled-tool.case-0-canonical.r16.bin",
+      "sha256": "1f53c295a34a5082f0eb3b81b93a791a6a1641634a7098f17f34a86b6b371c42",
+      "samples": 26621952,
+      "maximum_abs_stored": 0.006763458251953125,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "thin-base",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/thin-base.case-0-canonical.r16.bin",
+      "sha256": "4524cec236594631564f8ee8725805ce69df60bb40f34394f5c5fbd6b9930568",
+      "samples": 5283840,
+      "maximum_abs_stored": 0.0067596435546875,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-add-0.02",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.02.case-0-canonical.r16.bin",
+      "sha256": "dfdf0c1e2a6b5cd631f77a99c292a9572a571e882e7f8db575c85c5a0485b232",
+      "samples": 55225856,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-add-0.065",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.065.case-0-canonical.r16.bin",
+      "sha256": "6649ac0d869705bbb01304e73fd352a5f73ea62c33b8bb462afc1c50595e3581",
+      "samples": 58034688,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-add-0.15",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-add-0.15.case-0-canonical.r16.bin",
+      "sha256": "0c2e3dd5c9d50da3515aeb117fa6005a5eb1f42b43dd63d45bfa01c48ce940d2",
+      "samples": 69467648,
+      "maximum_abs_stored": 0.0067596435546875,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-cut-0.02",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.02.case-0-canonical.r16.bin",
+      "sha256": "17f41c3e77d53fffab9fbdb6af57481c85c0976114676858a32b856c3296f472",
+      "samples": 55058944,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-cut-0.065",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.065.case-0-canonical.r16.bin",
+      "sha256": "efb300aa9d1b50149924cf2d6a12cca685afcccb97475182d7ae2a49ada3033d",
+      "samples": 55432192,
+      "maximum_abs_stored": 0.006755828857421875,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-cut-0.15",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/guardian-cut-0.15.case-0-canonical.r16.bin",
+      "sha256": "19b082f8db11d2c5010fe24fe07b25b1fa1ea097e7a1c7b14c5650f7b13a9a5d",
+      "samples": 52318720,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-add-0.02",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.02.case-0-canonical.r16.bin",
+      "sha256": "a3fc4b24948127777467a4e62d3b3ba33f0f79614b1ee8288a5d9d2db100b62f",
+      "samples": 71168000,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-add-0.065",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.065.case-0-canonical.r16.bin",
+      "sha256": "1faba4e41241183884608416b9b2cdd03b928bfa9fc14238452d4826397ff1d1",
+      "samples": 73874432,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-add-0.15",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-add-0.15.case-0-canonical.r16.bin",
+      "sha256": "a379a6dbe571fec04d462c8e69814d04c2d96bfe01c8e234295a70ce0ff0833d",
+      "samples": 75104768,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-cut-0.02",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.02.case-0-canonical.r16.bin",
+      "sha256": "566281176011f88581f866b58aefc57ea2e1e961a0b927f49f9ce5586700579e",
+      "samples": 70936576,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-cut-0.065",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.065.case-0-canonical.r16.bin",
+      "sha256": "ac632711fb46ce9147c1b14c55ceec24c1765ba60c334b5a8a8b0853ee2c079d",
+      "samples": 70994944,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-cut-0.15",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/reuse/robot-cut-0.15.case-0-canonical.r16.bin",
+      "sha256": "33da82ff996a46752ad995f67e70ca9ba264e88871f991e043b8454788fcbf2d",
+      "samples": 70891008,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-0",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-0-canonical.r16.bin",
+      "sha256": "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+      "samples": 54901760,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-1",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-1-canonical.r16.bin",
+      "sha256": "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+      "samples": 55195136,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-2",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-2-canonical.r16.bin",
+      "sha256": "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+      "samples": 55225344,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-3",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-3-canonical.r16.bin",
+      "sha256": "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+      "samples": 55326208,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-4",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-4-canonical.r16.bin",
+      "sha256": "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+      "samples": 55364096,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-5",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-5-canonical.r16.bin",
+      "sha256": "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+      "samples": 55457280,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-6",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-6-canonical.r16.bin",
+      "sha256": "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+      "samples": 55502336,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "guardian-chain-7",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/guardian-chain.case-7-canonical.r16.bin",
+      "sha256": "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405",
+      "samples": 55579136,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-0",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-0-canonical.r16.bin",
+      "sha256": "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+      "samples": 70893056,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-1",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-1-canonical.r16.bin",
+      "sha256": "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+      "samples": 71079936,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-2",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-2-canonical.r16.bin",
+      "sha256": "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+      "samples": 71139328,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-3",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-3-canonical.r16.bin",
+      "sha256": "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+      "samples": 71205888,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-4",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-4-canonical.r16.bin",
+      "sha256": "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+      "samples": 71268352,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-5",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-5-canonical.r16.bin",
+      "sha256": "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+      "samples": 71337472,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-6",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-6-canonical.r16.bin",
+      "sha256": "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+      "samples": 71389184,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-7",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-7-canonical.r16.bin",
+      "sha256": "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+      "samples": 71475712,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-8",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-8-canonical.r16.bin",
+      "sha256": "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+      "samples": 71513600,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-9",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-9-canonical.r16.bin",
+      "sha256": "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+      "samples": 71613440,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-10",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-10-canonical.r16.bin",
+      "sha256": "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+      "samples": 71650816,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-11",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-11-canonical.r16.bin",
+      "sha256": "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+      "samples": 71740928,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-12",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-12-canonical.r16.bin",
+      "sha256": "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+      "samples": 71801856,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-13",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-13-canonical.r16.bin",
+      "sha256": "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+      "samples": 71863296,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-14",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-14-canonical.r16.bin",
+      "sha256": "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+      "samples": 71954944,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    },
+    {
+      "case": "robot-chain-15",
+      "file": "/home/bryan/code/cubey/outputs/sdf/cached-commit-loop-20261030/qualified-v2/chains/robot-chain.case-15-canonical.r16.bin",
+      "sha256": "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e",
+      "samples": 72008704,
+      "maximum_abs_stored": 0.006748199462890625,
+      "nonfinite": 0,
+      "below_ideal_plus_diagnostic_margin": true
+    }
+  ],
+  "unique_canonical_fields": 55,
+  "samples_scanned": 2767768064,
+  "maximum_abs_stored": 0.006763458251953125,
+  "transitions": [
+    {
+      "subject": "guardian",
+      "step": 1,
+      "name": "guardian-chain-1",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-1",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.01379279792920114,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 107230,
+      "new_bricks": 107803,
+      "common_bricks": 107188,
+      "added_bricks": 615,
+      "removed_bricks": 42,
+      "changed_common_bricks": 285,
+      "changed_common_samples": 65941,
+      "changed_common_outside_raw_brush_aabb": 21,
+      "changed_common_outside_brush_cell_sphere": 44,
+      "old_bricks_in_diagnostic_band": 535,
+      "new_bricks_in_diagnostic_band": 1108,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 2065,
+      "changed_topology_outside_diagnostic_band": 377,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "a9b9453144f37a5f213057311fd9352340fd5ddc06f331814bb8387d2de65e59",
+        "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "guardian",
+      "step": 2,
+      "name": "guardian-chain-2",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-2",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.01779279792920114,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 107803,
+      "new_bricks": 107862,
+      "common_bricks": 107702,
+      "added_bricks": 160,
+      "removed_bricks": 101,
+      "changed_common_bricks": 686,
+      "changed_common_samples": 160669,
+      "changed_common_outside_raw_brush_aabb": 36,
+      "changed_common_outside_brush_cell_sphere": 74,
+      "old_bricks_in_diagnostic_band": 1113,
+      "new_bricks_in_diagnostic_band": 1172,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 875,
+      "changed_topology_outside_diagnostic_band": 45,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "74bb1cbd27aa51c96f12b9561f0eec6997a13010f01b156cd81c58226883d165",
+        "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "guardian",
+      "step": 3,
+      "name": "guardian-chain-3",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-3",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.021792797929201142,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 107862,
+      "new_bricks": 108059,
+      "common_bricks": 107770,
+      "added_bricks": 289,
+      "removed_bricks": 92,
+      "changed_common_bricks": 639,
+      "changed_common_samples": 173014,
+      "changed_common_outside_raw_brush_aabb": 40,
+      "changed_common_outside_brush_cell_sphere": 78,
+      "old_bricks_in_diagnostic_band": 1156,
+      "new_bricks_in_diagnostic_band": 1353,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 872,
+      "changed_topology_outside_diagnostic_band": 0,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "d4e0747ca467218eae47f9582fd53631523fec6cdb352baed069fbad61ec095f",
+        "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "guardian",
+      "step": 4,
+      "name": "guardian-chain-4",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-4",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.02579279792920114,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 108059,
+      "new_bricks": 108133,
+      "common_bricks": 107960,
+      "added_bricks": 173,
+      "removed_bricks": 99,
+      "changed_common_bricks": 683,
+      "changed_common_samples": 162794,
+      "changed_common_outside_raw_brush_aabb": 27,
+      "changed_common_outside_brush_cell_sphere": 74,
+      "old_bricks_in_diagnostic_band": 1278,
+      "new_bricks_in_diagnostic_band": 1352,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 821,
+      "changed_topology_outside_diagnostic_band": 52,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "dabc02d193bb723913bdc73a4ed8558749764ebf99143e4824baba493127cb02",
+        "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "guardian",
+      "step": 5,
+      "name": "guardian-chain-5",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-5",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.029792797929201142,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 108133,
+      "new_bricks": 108315,
+      "common_bricks": 108038,
+      "added_bricks": 277,
+      "removed_bricks": 95,
+      "changed_common_bricks": 659,
+      "changed_common_samples": 171782,
+      "changed_common_outside_raw_brush_aabb": 30,
+      "changed_common_outside_brush_cell_sphere": 99,
+      "old_bricks_in_diagnostic_band": 1246,
+      "new_bricks_in_diagnostic_band": 1428,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1172,
+      "changed_topology_outside_diagnostic_band": 161,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "420e27c90290d4885cc2c2a6fc3636336655e77bae25a32911b7ecdeccea68b2",
+        "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "guardian",
+      "step": 6,
+      "name": "guardian-chain-6",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-6",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.03379279792920114,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 108315,
+      "new_bricks": 108403,
+      "common_bricks": 108216,
+      "added_bricks": 187,
+      "removed_bricks": 99,
+      "changed_common_bricks": 683,
+      "changed_common_samples": 163830,
+      "changed_common_outside_raw_brush_aabb": 25,
+      "changed_common_outside_brush_cell_sphere": 83,
+      "old_bricks_in_diagnostic_band": 1304,
+      "new_bricks_in_diagnostic_band": 1392,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 901,
+      "changed_topology_outside_diagnostic_band": 45,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "04e9357580150231521f17040a4471f2b4f14659ae11e1af8cecca567e7706d4",
+        "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "guardian",
+      "step": 7,
+      "name": "guardian-chain-7",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-7",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.03779279792920114,
+          -0.053725909893786866,
+          0.15428923866744446
+        ]
+      },
+      "old_bricks": 108403,
+      "new_bricks": 108553,
+      "common_bricks": 108308,
+      "added_bricks": 245,
+      "removed_bricks": 95,
+      "changed_common_bricks": 666,
+      "changed_common_samples": 172326,
+      "changed_common_outside_raw_brush_aabb": 31,
+      "changed_common_outside_brush_cell_sphere": 94,
+      "old_bricks_in_diagnostic_band": 1262,
+      "new_bricks_in_diagnostic_band": 1412,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 827,
+      "changed_topology_outside_diagnostic_band": 0,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "5f35199f8054e41f4dab3e146c6c94c3d0a8ba440207f6bb4975b8d8ef9be1d3",
+        "e55cd0614e8615f69ed3728c21b7035d15e71fd80508aacad4440e04faadd405"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 1,
+      "name": "robot-chain-1",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-1",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.01105493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 138463,
+      "new_bricks": 138828,
+      "common_bricks": 138400,
+      "added_bricks": 428,
+      "removed_bricks": 63,
+      "changed_common_bricks": 454,
+      "changed_common_samples": 105893,
+      "changed_common_outside_raw_brush_aabb": 22,
+      "changed_common_outside_brush_cell_sphere": 70,
+      "old_bricks_in_diagnostic_band": 768,
+      "new_bricks_in_diagnostic_band": 1133,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1668,
+      "changed_topology_outside_diagnostic_band": 353,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "6fda6be88d81ffe806364b2a93ef41d2f9b6e10ab7527fb18582595f41d0c10e",
+        "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 2,
+      "name": "robot-chain-2",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-2",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.01505493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 138828,
+      "new_bricks": 138944,
+      "common_bricks": 138731,
+      "added_bricks": 213,
+      "removed_bricks": 97,
+      "changed_common_bricks": 661,
+      "changed_common_samples": 168123,
+      "changed_common_outside_raw_brush_aabb": 15,
+      "changed_common_outside_brush_cell_sphere": 76,
+      "old_bricks_in_diagnostic_band": 1140,
+      "new_bricks_in_diagnostic_band": 1256,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 994,
+      "changed_topology_outside_diagnostic_band": 90,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "90b6023a3f854915e65de6d3a0fffe6cf99a30a93a02a1cfc9c16e7c8f44bda0",
+        "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 3,
+      "name": "robot-chain-3",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-3",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.01905493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 138944,
+      "new_bricks": 139074,
+      "common_bricks": 138848,
+      "added_bricks": 226,
+      "removed_bricks": 96,
+      "changed_common_bricks": 667,
+      "changed_common_samples": 168392,
+      "changed_common_outside_raw_brush_aabb": 27,
+      "changed_common_outside_brush_cell_sphere": 85,
+      "old_bricks_in_diagnostic_band": 1244,
+      "new_bricks_in_diagnostic_band": 1374,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 876,
+      "changed_topology_outside_diagnostic_band": 39,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "75b78add0003ccd6f923f242e0bb74ec6d41df774af1abedfadff31405297167",
+        "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 4,
+      "name": "robot-chain-4",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-4",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.02305493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139074,
+      "new_bricks": 139196,
+      "common_bricks": 138978,
+      "added_bricks": 218,
+      "removed_bricks": 96,
+      "changed_common_bricks": 650,
+      "changed_common_samples": 166281,
+      "changed_common_outside_raw_brush_aabb": 9,
+      "changed_common_outside_brush_cell_sphere": 68,
+      "old_bricks_in_diagnostic_band": 1288,
+      "new_bricks_in_diagnostic_band": 1410,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 932,
+      "changed_topology_outside_diagnostic_band": 41,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "831ad5da1a2172b01ce17a1d1e80f4693dfd5cbc1dabe202e8652a2fcaed290d",
+        "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 5,
+      "name": "robot-chain-5",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-5",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.02705493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139196,
+      "new_bricks": 139331,
+      "common_bricks": 139099,
+      "added_bricks": 232,
+      "removed_bricks": 97,
+      "changed_common_bricks": 652,
+      "changed_common_samples": 166878,
+      "changed_common_outside_raw_brush_aabb": 18,
+      "changed_common_outside_brush_cell_sphere": 74,
+      "old_bricks_in_diagnostic_band": 1292,
+      "new_bricks_in_diagnostic_band": 1427,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1066,
+      "changed_topology_outside_diagnostic_band": 108,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "50498c25aa012df5abd75c9384fad4ea83b64cc7a5e94c855f608c23a2a06b95",
+        "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 6,
+      "name": "robot-chain-6",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-6",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.03105493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139331,
+      "new_bricks": 139432,
+      "common_bricks": 139234,
+      "added_bricks": 198,
+      "removed_bricks": 97,
+      "changed_common_bricks": 667,
+      "changed_common_samples": 169080,
+      "changed_common_outside_raw_brush_aabb": 7,
+      "changed_common_outside_brush_cell_sphere": 75,
+      "old_bricks_in_diagnostic_band": 1292,
+      "new_bricks_in_diagnostic_band": 1393,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 977,
+      "changed_topology_outside_diagnostic_band": 90,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "c9f498615a003f81eac71621a85f7be48775124baa339dbc2d0341889e0abfec",
+        "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 7,
+      "name": "robot-chain-7",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-7",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.035054936181693946,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139432,
+      "new_bricks": 139601,
+      "common_bricks": 139335,
+      "added_bricks": 266,
+      "removed_bricks": 97,
+      "changed_common_bricks": 632,
+      "changed_common_samples": 162304,
+      "changed_common_outside_raw_brush_aabb": 19,
+      "changed_common_outside_brush_cell_sphere": 73,
+      "old_bricks_in_diagnostic_band": 1251,
+      "new_bricks_in_diagnostic_band": 1420,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1041,
+      "changed_topology_outside_diagnostic_band": 85,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "c06d512bb30a8b4cb5af64da655cfdc9b62dd646c96e664215dfb08816580e64",
+        "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 8,
+      "name": "robot-chain-8",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-8",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.03905493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139601,
+      "new_bricks": 139675,
+      "common_bricks": 139504,
+      "added_bricks": 171,
+      "removed_bricks": 97,
+      "changed_common_bricks": 670,
+      "changed_common_samples": 171051,
+      "changed_common_outside_raw_brush_aabb": 7,
+      "changed_common_outside_brush_cell_sphere": 62,
+      "old_bricks_in_diagnostic_band": 1284,
+      "new_bricks_in_diagnostic_band": 1358,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 884,
+      "changed_topology_outside_diagnostic_band": 40,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "0a43c77253dfc6d1c78183fc5f00f6717e91246f206082306afebd0bb5f4c445",
+        "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 9,
+      "name": "robot-chain-9",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-9",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.043054936181693954,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139675,
+      "new_bricks": 139870,
+      "common_bricks": 139580,
+      "added_bricks": 290,
+      "removed_bricks": 95,
+      "changed_common_bricks": 615,
+      "changed_common_samples": 158541,
+      "changed_common_outside_raw_brush_aabb": 17,
+      "changed_common_outside_brush_cell_sphere": 68,
+      "old_bricks_in_diagnostic_band": 1229,
+      "new_bricks_in_diagnostic_band": 1424,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1000,
+      "changed_topology_outside_diagnostic_band": 39,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "6d603d032dbcc9dd6bbde77ce7d6a3343ecb1d8a6c509075f3c3ec90b1f2799b",
+        "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 10,
+      "name": "robot-chain-10",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-10",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.04705493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139870,
+      "new_bricks": 139943,
+      "common_bricks": 139771,
+      "added_bricks": 172,
+      "removed_bricks": 99,
+      "changed_common_bricks": 645,
+      "changed_common_samples": 166737,
+      "changed_common_outside_raw_brush_aabb": 3,
+      "changed_common_outside_brush_cell_sphere": 53,
+      "old_bricks_in_diagnostic_band": 1292,
+      "new_bricks_in_diagnostic_band": 1365,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1015,
+      "changed_topology_outside_diagnostic_band": 151,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "27488def4d9695c014c6eabb3826e5fd0d0237b3d85a2f5d6ee8347f4ac954e3",
+        "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 11,
+      "name": "robot-chain-11",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-11",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.05105493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 139943,
+      "new_bricks": 140119,
+      "common_bricks": 139849,
+      "added_bricks": 270,
+      "removed_bricks": 94,
+      "changed_common_bricks": 622,
+      "changed_common_samples": 160526,
+      "changed_common_outside_raw_brush_aabb": 8,
+      "changed_common_outside_brush_cell_sphere": 64,
+      "old_bricks_in_diagnostic_band": 1217,
+      "new_bricks_in_diagnostic_band": 1393,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1044,
+      "changed_topology_outside_diagnostic_band": 83,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "80df3cdc3f9695e634ccb3c8066bb714ee0c177880ecdd05ef4376e8e7cb9a13",
+        "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 12,
+      "name": "robot-chain-12",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-12",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.05505493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 140119,
+      "new_bricks": 140238,
+      "common_bricks": 140021,
+      "added_bricks": 217,
+      "removed_bricks": 98,
+      "changed_common_bricks": 637,
+      "changed_common_samples": 164664,
+      "changed_common_outside_raw_brush_aabb": 3,
+      "changed_common_outside_brush_cell_sphere": 54,
+      "old_bricks_in_diagnostic_band": 1244,
+      "new_bricks_in_diagnostic_band": 1363,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1121,
+      "changed_topology_outside_diagnostic_band": 186,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "8295e3e243e3924526bd92f950dba62dd77382b56ef64a6659ef10b4d39884d8",
+        "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 13,
+      "name": "robot-chain-13",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-13",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.059054936181693954,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 140238,
+      "new_bricks": 140358,
+      "common_bricks": 140139,
+      "added_bricks": 219,
+      "removed_bricks": 99,
+      "changed_common_bricks": 625,
+      "changed_common_samples": 165963,
+      "changed_common_outside_raw_brush_aabb": 7,
+      "changed_common_outside_brush_cell_sphere": 55,
+      "old_bricks_in_diagnostic_band": 1208,
+      "new_bricks_in_diagnostic_band": 1328,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 934,
+      "changed_topology_outside_diagnostic_band": 38,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "7218691532d05dcd23cc4d2c425c769d441a3f8f3b7287cb02d2feec708382eb",
+        "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 14,
+      "name": "robot-chain-14",
+      "operation": "union",
+      "tool": {
+        "name": "chain-tool-14",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.06305493618169394,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 140358,
+      "new_bricks": 140537,
+      "common_bricks": 140267,
+      "added_bricks": 270,
+      "removed_bricks": 91,
+      "changed_common_bricks": 597,
+      "changed_common_samples": 152071,
+      "changed_common_outside_raw_brush_aabb": 4,
+      "changed_common_outside_brush_cell_sphere": 52,
+      "old_bricks_in_diagnostic_band": 1172,
+      "new_bricks_in_diagnostic_band": 1351,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 1043,
+      "changed_topology_outside_diagnostic_band": 114,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "56712301cfbb602bdadf9e40335014bd8ee43577ef2a4b3da74d1f335ef8d4e0",
+        "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    },
+    {
+      "subject": "robot",
+      "step": 15,
+      "name": "robot-chain-15",
+      "operation": "subtract",
+      "tool": {
+        "name": "chain-tool-15",
+        "type": "sphere",
+        "radius": 0.025,
+        "position": [
+          0.06705493618169395,
+          -0.05578828362564217,
+          0.09989852874040706
+        ]
+      },
+      "old_bricks": 140537,
+      "new_bricks": 140642,
+      "common_bricks": 140441,
+      "added_bricks": 201,
+      "removed_bricks": 96,
+      "changed_common_bricks": 634,
+      "changed_common_samples": 164798,
+      "changed_common_outside_raw_brush_aabb": 10,
+      "changed_common_outside_brush_cell_sphere": 57,
+      "old_bricks_in_diagnostic_band": 1190,
+      "new_bricks_in_diagnostic_band": 1295,
+      "changed_common_outside_diagnostic_band": 0,
+      "added_outside_diagnostic_band": 0,
+      "removed_outside_diagnostic_band": 0,
+      "changed_topology_entries": 976,
+      "changed_topology_outside_diagnostic_band": 82,
+      "changed_existing_topology_flags_outside_diagnostic_band": 0,
+      "outside_topology_not_explained_by_changed_ancestor": 0,
+      "source_cache_hashes": [
+        "f8e7bd4cba1f31ea064ac1daf42deace3ffe90545aca71bc7d2beec3ebd51586",
+        "5a5b4a2906c34a36a7e6dfcd7362323de8b23716fb6f370761ce2c1837747c3e"
+      ],
+      "diagnostic_band_plus_structural_closure_covers_changes": true
+    }
+  ],
+  "subject_masks": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "radius": 0.02,
+      "total_bricks": 107863,
+      "bricks_in_diagnostic_band": 577,
+      "fraction": 0.00534937837812781
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "radius": 0.065,
+      "total_bricks": 113349,
+      "bricks_in_diagnostic_band": 6063,
+      "fraction": 0.05348966466400233
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "radius": 0.15,
+      "total_bricks": 135679,
+      "bricks_in_diagnostic_band": 31785,
+      "fraction": 0.23426617236270905
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "radius": 0.02,
+      "total_bricks": 107537,
+      "bricks_in_diagnostic_band": 687,
+      "fraction": 0.006388498842258943
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "radius": 0.065,
+      "total_bricks": 108266,
+      "bricks_in_diagnostic_band": 4488,
+      "fraction": 0.041453457225721836
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "radius": 0.15,
+      "total_bricks": 102185,
+      "bricks_in_diagnostic_band": 10319,
+      "fraction": 0.10098351029994618
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "radius": 0.02,
+      "total_bricks": 139000,
+      "bricks_in_diagnostic_band": 556,
+      "fraction": 0.004
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "radius": 0.065,
+      "total_bricks": 144286,
+      "bricks_in_diagnostic_band": 6450,
+      "fraction": 0.04470288177647173
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "radius": 0.15,
+      "total_bricks": 146689,
+      "bricks_in_diagnostic_band": 26446,
+      "fraction": 0.18028618369475558
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "radius": 0.02,
+      "total_bricks": 138548,
+      "bricks_in_diagnostic_band": 638,
+      "fraction": 0.0046049022721367325
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "radius": 0.065,
+      "total_bricks": 138662,
+      "bricks_in_diagnostic_band": 3961,
+      "fraction": 0.02856586519738645
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "radius": 0.15,
+      "total_bricks": 138459,
+      "bricks_in_diagnostic_band": 13512,
+      "fraction": 0.09758845578835612
+    }
+  ],
+  "counterexample": {
+    "base": -10.0,
+    "tool": 0.5,
+    "cut_result": -0.5,
+    "outside_tool": true,
+    "occupancy_changed": false,
+    "scalar_changed": true
+  },
+  "source_sha256": {
+    "projects/sdf/sdf_field.cpp": "ccf0e987a0c52ea2cca7c84348b5ee3ed37d99d7dcfe0bcb68435a22fe2df2c2",
+    "projects/sdf/sdf_cached_commit.cpp": "0d3d3ccfdbdd1b7dcff489ea124e76b360a9011b2c091679146ec1621cd87ebb",
+    "projects/sdf/shaders/authored_filter.comp": "6e9dcc6f4eff0997a093a0359ed19d2a52f3593fdd5fc4230c962c68c9ae2220",
+    "projects/sdf/shaders/authored_bricks.comp": "9f62a2a70257eafb505a5d0990d7b3be818b53d4998c5e27a793488870d05717",
+    "projects/sdf/shaders/commit_reuse_bricks.comp": "eda57c03ca20ab1569ba87ef7ee5e486de97a91654f6a5c9d325cf872896ce09",
+    "projects/sdf/shaders/trace.glsl": "3a641b9db15e43cf81277db19b36b2dead518d270fa075581b6bd4130468f79e",
+    "projects/sdf/shaders/cached_edit_trace.glsl": "b3f0d6c8ffe1c51a923322519ce90bd3d512f79ccee1042474fcc032ca68de67",
+    "projects/sdf/sdf_regions.cpp": "97effcc34643c04c93939401b0cd57ebbbf4e24304f1f9c1628f93aad7044ed2",
+    "projects/sdf/sdf_renderer.cpp": "274fde4309b00dd4420f13be0bd0f512cc7f5700179ae063d6f5ee5d3cfe9211",
+    "projects/sdf/sdf_cached_edit.cpp": "c45905634f5a22942f0435712d7b88c77f68a5ad4c9bf892aa249049f46639d9",
+    "src/cubey/vulkan/image.cpp": "15a0b47514e7dc0a9c203de77a7c8d1f5ef0e9bcd838bb9ed3949331010bb940",
+    "src/cubey/render/texture.cpp": "65382d11c40c93aee6d6896ddea8313f05c0a1cce1e2526b5718d9f8ce365ea0",
+    "include/cubey/engine/project_gpu_services.h": "dbe887577cad55f6c7ade3d550167ca06fb5f83d0103dbdf2c73e17bd7fc38e8",
+    "include/cubey/vulkan/gpu_runtime.h": "07a121b86ac4ace1f5527586d72c61954eb8183f266090bacedb95bd10f01d0f"
+  },
+  "previous_packet_sha256": {
+    "cache-pairs.json": "65ab42929ffa19e97fff5aae752d38c887b06e198f921e7ab0f4c3c4a2d1cd72",
+    "chains.json": "ab017d3fb2baa3f51e812903eb82aab88bf37527316eb5b5539aab18ed88c41d",
+    "summary.json": "8bd901c83f52f35378faf97c4d0d2340cdc0651d39649c586400ad76089a7fc5",
+    "baseline.json": "6c395330d1acf3f2258e18e85e5e4816727b5441c53e87499d75f038bc4c426c"
+  },
+  "projectr_head": "e2b80796d8f2f9478965a552342bf66fab0e4114",
+  "projectr_sha256": {
+    "Assets/Shaders/BrickEngineBuilder.compute": "2863a0493d7414e92862e5b04f7d422740fbbb73eef3a991cb5fa52c31e5f60b",
+    "Assets/Shaders/BrickEngineCompute.compute": "f45073b913835f057963f21ab84a6518e967ff136cd110fc352f033f7d2dcc30",
+    "Assets/Scripts/BrickEngine/BrickEngine.cs": "9538608a7a3a1a76ac276b960c2b3f5db5a01a20be6ecca4dec10f177b11ae5e"
+  }
+}

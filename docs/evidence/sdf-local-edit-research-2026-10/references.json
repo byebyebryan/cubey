@@ -1,0 +1,62 @@
+{
+  "checked_date_local": "2026-10-30 PDT",
+  "sources": [
+    {
+      "title": "Claybook GDC 2018",
+      "url": "https://media.gdcvault.com/gdc2018/presentations/Aaltonen_Sebastian_GPU_Based_Clay.pdf#page=20",
+      "locator": "Slides 20 and 21; PDF pages 19 and 20 zero-based",
+      "finding": "Limited-range multilevel fields permit sparse modification; previous data and temporary tiles are reused.",
+      "boundary": "Different field encoding and mip representation; no Cubey timings or direct code transfer."
+    },
+    {
+      "title": "FidelityFX Brixelizer 1.0 manual",
+      "url": "https://gpuopen.com/manuals/fidelityfx_sdk/techniques/brixelizer/",
+      "locator": "Acceleration Structure Construction, Low Level Updating a Cascade, persistent resources",
+      "finding": "Explicit invalidation jobs, stable brick IDs, bounded work resources and traversal rebuilding.",
+      "boundary": "Triangle-input unsigned distance generation; not an authored hard-CSG updater."
+    },
+    {
+      "title": "Lipschitz Pruning 2025 author manuscript",
+      "url": "https://wbrbr.org/publications/LipschitzPruning/documents/LipschitzPruning_submitted_to_EG25.pdf",
+      "locator": "Appendix A and conclusion",
+      "finding": "Regional operator dominance uses a 2R separation bound; partial pruning updates are future work.",
+      "boundary": "Cubey regional sampling failed raw cache identity. The new active-brick bound is our conditional derivation, not an implementation claim from the paper."
+    },
+    {
+      "title": "MIT Constructive Solid Geometry Methods",
+      "url": "https://groups.csail.mit.edu/graphics/classes/6.837/F98/talecture/",
+      "locator": "Implementation with ray casting",
+      "finding": "Ray intersection surface limits compose under Boolean operations.",
+      "boundary": "Does not establish native Cached epsilon, normals, shading or multi-edit cost."
+    },
+    {
+      "title": "Khronos Vulkan synchronization examples",
+      "url": "https://docs.vulkan.org/guide/latest/synchronization_examples.html",
+      "locator": "Compute dependencies and semaphore synchronization",
+      "finding": "Execution and memory dependencies must be explicit between producer and reader work.",
+      "boundary": "Correct synchronization does not imply a maximum GPU maintenance duration."
+    },
+    {
+      "title": "Khronos Vulkan queues",
+      "url": "https://docs.vulkan.org/guide/latest/queues.html",
+      "locator": "Queue ordering and hardware mapping",
+      "finding": "Different queues require synchronization and need not correspond to independently executing hardware.",
+      "boundary": "No async-compute speedup or preemption guarantee is assumed."
+    },
+    {
+      "title": "Khronos vkCmdCopyImage",
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdCopyImage.html",
+      "locator": "Description and valid usage",
+      "finding": "Explicit regions can copy between compatible images.",
+      "boundary": "Source/destination usage, layout, format and dependencies must be valid. No latency prediction."
+    },
+    {
+      "title": "Khronos vkCmdCopyBuffer",
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdCopyBuffer.html",
+      "locator": "Description and valid usage",
+      "finding": "Explicit byte regions can be copied with transfer usage and non-overlapping storage.",
+      "boundary": "Does not supply queue admission or runtime budget guarantees."
+    }
+  ],
+  "scope": "Primary sources; no donor benchmark reproduced and no donor code copied"
+}

@@ -103,6 +103,9 @@ the architecture and project guides remain current authority.
 - [Cached commit reuse results](sdf-cached-commit-results.md): identical raw
   Cached fields, matched commit speedups, rejected regional sampling and the
   measured case for local storage and bounded maintenance.
+- [Local cache updates and eight pending edits](sdf-local-edit-research-plan.md):
+  active-brick distance bounds, local tree changes, stable slots, copied candidates,
+  bounded pending prefixes and proposed scheduling/service-rate experiments.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and
