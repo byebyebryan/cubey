@@ -39,7 +39,10 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
         dst.atlas_axis != 64 || base.atlas_axis != 64 || !base.authored_hash_ ||
         *base.authored_hash_ != authored_geometry_hash(program.base))
         throw std::invalid_argument("stroke commit requires distinct matching local fields");
-    auto admitted = prepare_cached_stroke(program.base, program.edited);
+    if (program.controls.header[3] > 1U)
+        throw std::invalid_argument("unknown stroke admission contract");
+    auto admitted =
+        prepare_cached_stroke(program.base, program.edited, program.controls.header[3] == 1U);
     if (std::memcmp(&admitted.controls, &program.controls, sizeof(program.controls)) != 0)
         throw std::invalid_argument("stroke controls differ from source");
     const double admission = milliseconds(start), pipeline = prepare(mode);

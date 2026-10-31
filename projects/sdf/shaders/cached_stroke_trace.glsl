@@ -12,8 +12,10 @@ layout(std430,set=0,binding=21) readonly buffer StrokeControls {
 const uint STROKE_SURFACE=0xfffffff0u;
 // Kept for existing diagnostic entrypoints; stroke diagnostics test the range.
 const uint EDIT_SURFACE=STROKE_SURFACE;
+#include "rounded_stroke.glsl"
 vec2 strokeInterval(vec3 origin,vec3 direction,uint index) {
     SceneInstruction tool=strokeTools[index];
+    if(tool.center_code.w!=2.0)return strokeRoundedInterval(origin,direction,tool);
     vec3 offset=origin-tool.center_code.xyz;
     float radius=tool.parameters.x*tool.settings.x,along=dot(offset,direction);
     vec3 perpendicular=offset-direction*along;
@@ -77,6 +79,7 @@ vec3 hitNormal(vec3 p,Hit hit) {
     uint index=hit.pointer-STROKE_SURFACE;
     vec3 delta=p-strokeTools[index].center_code.xyz;
     vec3 n=length(delta)>1e-12?normalize(delta):vec3(0,1,0);
+    if(strokeTools[index].center_code.w!=2.0)n=strokeRoundedNormal(p,strokeTools[index]);
     if(strokeHeader.y==0u && boxDistance(p,vec3(.499))>
         authoredPrimitive(p,strokeTools[index])) {
         vec3 a=abs(p);int axis=a.x>a.y?(a.x>a.z?0:2):(a.y>a.z?1:2);

@@ -95,6 +95,7 @@ Json identity(const CachedStrokeProgram& p) {
             {"base_instructions", p.base.program.size()},
             {"edited_instructions", p.edited.program.size()},
             {"pending_operations", p.controls.header[0]},
+            {"rounded_segments", p.controls.header[3] == 1U},
             {"subtract", p.controls.header[1] != 0},
             {"retained_history_steps", p.edited.history.size()}};
 }
@@ -139,7 +140,7 @@ std::unique_ptr<vulkan::Buffer> controls(vulkan::Device& device, const CachedStr
 void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& input,
                const std::vector<CachedStrokeProgram>& programs,
                const std::filesystem::path& output, CommitBuilder mode, unsigned trials,
-               unsigned warmup, unsigned slice_groups, Json& receipt) {
+               unsigned warmup, unsigned slice_groups, bool dump, Json& receipt) {
     Field base(device, gpu), candidate(device, gpu);
     CachedCommitStudy builder(device, gpu);
     Json units;
@@ -185,8 +186,8 @@ void run_cache(vulkan::Device& device, ProjectGpuServices& gpu, const Json& inpu
         const auto expected = CachedCommitStudy::snapshot(device, gpu, base);
         auto prefix = output;
         prefix.replace_extension("case-" + std::to_string(i));
-        row["candidate"] = describe(actual, prefix.string() + "-candidate", true);
-        row["canonical"] = describe(expected, prefix.string() + "-canonical", true);
+        row["candidate"] = describe(actual, prefix.string() + "-candidate", dump);
+        row["canonical"] = describe(expected, prefix.string() + "-canonical", dump);
         row["comparison"] = compare(actual, expected);
         passed = passed && row["comparison"].at("passed").get<bool>();
         receipt["cache_runs"].push_back(std::move(row));
@@ -282,8 +283,9 @@ int run_prefix(SdfConfig config, const Json& input, const CachedStrokeProgram& w
                const std::filesystem::path& output, CommitBuilder mode) {
     const auto& c = input.at("cases").at(0);
     auto first =
-        prepare_cached_stroke(whole.base, parse_authored_scene(c.at("prefix_scene").dump()));
-    auto tail = prepare_cached_stroke(first.edited, whole.edited);
+        prepare_cached_stroke(whole.base, parse_authored_scene(c.at("prefix_scene").dump()),
+                              whole.controls.header[3] == 1U);
+    auto tail = prepare_cached_stroke(first.edited, whole.edited, whole.controls.header[3] == 1U);
     if (whole.controls.header[0] != 8 || first.controls.header[0] != 4 ||
         tail.controls.header[0] != 4 || first.controls.header[1] != whole.controls.header[1] ||
         tail.controls.header[1] != whole.controls.header[1])
@@ -469,7 +471,7 @@ int main(int argc, char** argv) {
         std::filesystem::path input_path, output_path;
         std::string phase = "preview";
         std::string builder_name = "full";
-        bool query = false, validate = false, cache_qualify = false;
+        bool query = false, validate = false, cache_qualify = false, rounded = false, dump = true;
         unsigned cache_trials = 1, cache_warmup = 0;
         unsigned slice_groups = 0;
         std::vector<char*> arguments{argv[0]};
@@ -500,6 +502,10 @@ int main(int argc, char** argv) {
                 cache_qualify = true;
             else if (flag == "--edit-validate-only")
                 validate = true;
+            else if (flag == "--edit-rounded-segments")
+                rounded = true;
+            else if (flag == "--edit-cache-no-dump")
+                dump = false;
             else
                 arguments.push_back(argv[i]);
         }
@@ -539,7 +545,8 @@ int main(int argc, char** argv) {
         std::vector<CachedStrokeProgram> programs;
         for (const auto& c : input.at("cases")) {
             programs.push_back(prepare_cached_stroke(parse_authored_scene(c.at("base").dump()),
-                                                     parse_authored_scene(c.at("scene").dump())));
+                                                     parse_authored_scene(c.at("scene").dump()),
+                                                     rounded));
             if (query)
                 static_cast<void>(queries(c));
         }
@@ -633,7 +640,7 @@ int main(int argc, char** argv) {
             runtime.attach_gpu_if_needed(ctx.gpu());
             if (cache_qualify) {
                 run_cache(ctx.device(), runtime.gpu(), input, programs, output_path, builder_mode,
-                          cache_trials, cache_warmup, slice_groups, receipt);
+                          cache_trials, cache_warmup, slice_groups, dump, receipt);
                 return;
             }
             if (query) {

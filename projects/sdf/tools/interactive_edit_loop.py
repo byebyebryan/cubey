@@ -24,7 +24,7 @@ def identity(args):
     shader_dir = args.binary.parent / 'shaders'
     assert digest(args.binary.parent / 'sdf') == baseline['binaries']['sdf']
     assert all(digest(shader_dir / n) == h for n, h in baseline['original_shaders'].items())
-    paths = subprocess.check_output(['git', 'ls-files', 'projects/sdf'], cwd=ROOT, text=True).splitlines()
+    paths = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard', 'projects/sdf'], cwd=ROOT, text=True).splitlines()
     return dict(source_head=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                 source_status=subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True),
                 source_files={p: digest(ROOT / p) for p in paths if (ROOT / p).is_file()},
