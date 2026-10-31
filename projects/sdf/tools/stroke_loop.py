@@ -288,6 +288,24 @@ def calibrate(args):
     receipt['complete']=True;save(args.output/'calibrate.json',receipt)
 
 
+def retention(args):
+    source=json.loads(args.inputs.read_text());receipt=dict(identity(args),runs=[],complete=False)
+    for run in source['runs']:
+        if run['fault']!='none':continue
+        row=run['case'];retained=Path(run['native']['retained_source_file'])
+        prefix=args.output/f"{row['subject']}-{row['operation']}-retained-replay"
+        image=prefix.with_suffix('.png')
+        cmd=e.public_command(args.public_binary,row['subject'],retained,image,size=(320,180))
+        record=local.run(cmd,prefix.with_suffix('.public.json'))
+        reference=Path(run['native']['frames'][-1]['image'])
+        assert digest(image)==digest(reference),'retained source consumer replay differs'
+        receipt['runs'].append(dict(subject=row['subject'],operation=row['operation'],
+            retained_source=str(retained),retained_source_sha256=digest(retained),
+            replay_image=str(image),replay_image_sha256=digest(image),
+            settled_reference=str(reference),settled_byte_identical=True,**record))
+    receipt['complete']=True;save(args.output/'retention.json',receipt)
+
+
 def timing(args):
     source=json.loads(args.inputs.read_text());rows=source['rows'];cases=[]
     for subject in ('guardian','robot'):
@@ -321,7 +339,7 @@ def timing(args):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase',choices=['inputs','geometry','replay','admission','caches','captures','prefixes','calibrate','timing'])
+    p.add_argument('phase',choices=['inputs','geometry','replay','admission','caches','captures','prefixes','calibrate','retention','timing'])
     p.add_argument('--inputs',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--pilot',action='store_true')
     p.add_argument('--binary',type=Path,default=ROOT/'build/release/projects/sdf/cubey_project_sdf_cached_stroke_study')
     p.add_argument('--public-binary',type=Path,default=RAW/'baseline-sdf')
