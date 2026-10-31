@@ -325,6 +325,37 @@ def admission(args):
     print(len(cases), 'admission/canonicalization checks passed', flush=True)
 
 
+def coverage_inputs(args):
+    cases = []
+    for count in (2, 4, 8):
+        for mixed in ([False, True] if count == 8 else [False]):
+            tools = []
+            centers = [[0, 0, .35-i*.1] for i in range(count)]
+            for i, p in enumerate(centers):
+                a, b = [p[0], -.01, p[2]], [p[0], .01, p[2]]
+                tool = round_cone(f'tool-{i}', a, b, .02, .025, 'blue')
+                if mixed and i % 3 == 1: tool = capsule(f'tool-{i}', a, b, .023, 'blue')
+                if mixed and i % 3 == 2: tool = dict(sphere(f'tool-{i}', .023, p), material='blue')
+                tools.append(tool)
+            for cut in (False, True):
+                bodies = [sphere(f'body-{i}', .014, p) for i, p in enumerate(centers)] if cut else [sphere('side-body', .03, [.25, 0, 0])]
+                if cut: bodies.append(sphere('surviving-tail', .012, [0, 0, centers[-1][2]-.1]))
+                base = document(dict(name='bodies', type='union', children=bodies)) if len(bodies) > 1 else document(bodies[0])
+                rays = [([0, 0, .7], [0, 0, -1]), (centers[0], [0, 0, -1]),
+                        ([0, 0, -.7], [0, 0, 1]), ([.08, 0, .7], [0, 0, -1])]
+                name = f'disjoint-{count}-mixed-{mixed}-cut-{cut}'
+                cases.append(stroke.stroke_case(name, base, tools, cut,
+                    [oracle(o, d, bodies, tools, cut) for o, d in rays]))
+    body = sphere('solid', .3)
+    tool = round_cone('buried-cavity', [0, -.08, 0], [0, .08, 0], .02, .04, 'blue')
+    cases.append(stroke.stroke_case('buried-tapered-cavity', document(body), [tool], True,
+        [oracle(o, d, [body], [tool], True) for o, d in [([0, 0, 0], [0, 1, 0]),
+            ([0, 0, 0], [1, 0, 0]), ([0, 0, .2], [0, 0, -1]), ([0, 0, .7], [0, 0, -1])]]))
+    inp = args.output/'geometry-input.json'; save(inp, edit.manifest(cases))
+    save(args.output/'inputs.json', dict(geometry_input=str(inp), fixture_cache_input=str(inp), rows=[], complete=True))
+    print(len(cases), 'disjoint/mixed/buried coverage cases', flush=True)
+
+
 def sampling(args):
     tolerance = H/4  # reserve the other quarter-spacing for scripted input interpolation
     rows = []
@@ -541,7 +572,7 @@ def prefixes(args):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('phase', choices=['inputs', 'geometry', 'caches', 'admission', 'sampling', 'sampling_work',
+    p.add_argument('phase', choices=['inputs', 'coverage_inputs', 'geometry', 'caches', 'admission', 'sampling', 'sampling_work',
                                    'captures', 'replay', 'timing', 'prefixes'])
     p.add_argument('--output', type=Path, required=True); p.add_argument('--inputs', type=Path)
     p.add_argument('--binary', type=Path, default=ROOT / 'build/release/projects/sdf/cubey_project_sdf_cached_stroke_study')
