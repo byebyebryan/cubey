@@ -166,6 +166,11 @@ reduction in per-sample cost. Robot's 240 Hz straight case similarly drops from
 
 ## Next decision
 
+The subsequent [edit-service results](sdf-edit-service-results.md) retain these
+historical misses and measure preparation/submission changes, an explicit 8 ms
+allowance and a finite simple-scene online-input prototype. They do not qualify
+unbounded Guardian editing.
+
 The later [solution research pass](sdf-interactive-edit-solution-research.md)
 validates and narrows these proposals. In particular, recorded cut-unit wall
 work already exceeds four 4 ms windows; preparation and packing alone are not a

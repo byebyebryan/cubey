@@ -123,6 +123,8 @@ the architecture and project guides remain current authority.
   exact-center validity and the proposed next experiment.
 - [Bounded edit-service execution](sdf-edit-service-execution-plan.md):
   validation controls, preparation/submission changes and gated finite strokes.
+- [Bounded edit-service results](sdf-edit-service-results.md): preparation and
+  dispatch savings, fixed-budget misses and the finite online-input prototype.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

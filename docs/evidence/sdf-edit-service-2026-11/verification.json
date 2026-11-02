@@ -1,0 +1,29 @@
+{
+  "source_head": "f49f8070c1772dde04c38fd73e6bd2958d92968f",
+  "source_status_scope": "Only result/evidence documentation remains pending; runtime and test sources committed.",
+  "ctest": {
+    "tests": [
+      "sdf_authored_tests",
+      "sdf_stroke_preparation_tests",
+      "sdf_stroke_sampling_tests"
+    ],
+    "passed": 3
+  },
+  "documentation": {
+    "pages": 419,
+    "passed": true,
+    "unit_tests": 11
+  },
+  "formatting_passed": true,
+  "deterministic_summary": true,
+  "independently_recomputed_finite_assessments": 18,
+  "protected_raw_files_verified": 1044,
+  "protected_raw_bytes": 313768206,
+  "retained_native_hashes_verified": 6,
+  "all_shaders_unchanged": 220,
+  "protected_public_shaders_unchanged": 211,
+  "public_executable_unchanged": true,
+  "python_syntax_passed": 4,
+  "no_push_or_publication": true,
+  "complete": true
+}
