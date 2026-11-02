@@ -123,10 +123,13 @@ int run_cached_stroke_stream(SdfConfig config, const Json& input,
     }
     StreamSampler preflight(tolerance);
     std::vector<Json> all_shapes;
-    for (const auto& pose : poses)
+    for (const auto& pose : poses) {
         for (const auto& segment : preflight.feed(pose))
             all_shapes.push_back(
                 primitive(segment, "stream-" + std::to_string(all_shapes.size() + 1), material));
+        if (const auto tip = preflight.tip())
+            static_cast<void>(primitive(*tip, "preflight-tip", material));
+    }
     if (preflight.down() || all_shapes.empty() || all_shapes.size() > 20)
         throw std::invalid_argument("stream must release and fit finite twenty-segment screen");
     const auto final_source = append(initial.base, all_shapes, cut, material);
