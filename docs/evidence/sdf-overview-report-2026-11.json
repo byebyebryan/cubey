@@ -1,0 +1,50 @@
+{
+  "report_id": "86a38771f62a2ea2a958ddca9e1880265017826405a58c66c14d900ac5cd9136",
+  "title": "Cubey SDF — A practical renderer and a working edit loop",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-02T16:30:18.911552+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "published",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/86a38771f62a2ea2a958ddca9e1880265017826405a58c66c14d900ac5cd9136",
+  "file_count": 14,
+  "byte_count": 808389,
+  "url": "http://starship:8787/reports/86a38771f62a2ea2a958ddca9e1880265017826405a58c66c14d900ac5cd9136/",
+  "catalog": {
+    "state": "unchecked"
+  },
+  "delivery": {
+    "checked_at": "2026-11-02T16:32:01.614002+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 169233,
+    "verified_url": "http://starship:8787/reports/86a38771f62a2ea2a958ddca9e1880265017826405a58c66c14d900ac5cd9136/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "reviewed_source_head": "cf403241",
+  "authoring": {
+    "generator": "projects/sdf/tools/sdf_overview_report.py",
+    "template": "projects/sdf/tools/sdf_overview_report.html",
+    "export": "outputs/sdf/overview-report-20261102/final"
+  },
+  "scope": "Overview and static report only; retained measurements; no new native/GPU study, runtime change, site deployment or Git push.",
+  "browser_acceptance": {
+    "state": "passed",
+    "browser": "Chrome",
+    "width": 1585,
+    "horizontal_overflow": false,
+    "images_loaded": 3,
+    "console_errors": 0,
+    "controls_checked": [
+      "Guardian add/cut comparison",
+      "historical render view and supersampling selectors",
+      "120 Hz add trace to final frame: 35 poses, 15 committed, zero pending",
+      "published 240 Hz cut trace: 67 poses, 14 committed, zero pending"
+    ],
+    "screenshot": "outputs/sdf/overview-report-20261102/published-report.png"
+  }
+}
