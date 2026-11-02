@@ -16,7 +16,7 @@ struct StrokeServiceGate {
     std::string kind;
     unsigned frame = 0;
     Clock::time_point received;
-    double ready_ms = 0, grant_ms = 0;
+    double ready_ms = 0, grant_ms = 0, latest_available_ms = 0;
     nlohmann::json units = nlohmann::json::array();
     double elapsed() const {
         return std::chrono::duration<double, std::milli>(Clock::now() - received).count();
@@ -49,6 +49,8 @@ struct StrokeServiceGate {
                          {"grant_ms", grant_ms},
                          {"submit_ms", (u.submit_ns - origin) / 1e6},
                          {"gpu_complete_ms", (u.complete_ns - origin) / 1e6}});
+        latest_available_ms = elapsed();
+        units.back()["available_ms"] = latest_available_ms;
         active = false;
         cv.notify_all();
     }

@@ -348,6 +348,7 @@ int run_cached_stroke_stream(SdfConfig config, const Json& input,
                     });
                 }
                 const auto window = Clock::now();
+                const double window_begin_ms = ms(received);
                 while (worker.valid() && ms(window) < budget) {
                     if (worker.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
                         break;
@@ -369,9 +370,12 @@ int run_cached_stroke_stream(SdfConfig config, const Json& input,
                 }
                 const double maintenance_ms = ms(window);
                 bool crossed;
+                double unit_overrun_ms;
                 {
                     std::lock_guard lock(gate.mutex);
-                    crossed = gate.active || gate.permit;
+                    unit_overrun_ms =
+                        std::max(0.0, gate.latest_available_ms - window_begin_ms - budget);
+                    crossed = gate.active || gate.permit || unit_overrun_ms > 0;
                 }
                 std::vector<std::uint64_t> publishing;
                 if (worker.valid() &&
@@ -415,6 +419,8 @@ int run_cached_stroke_stream(SdfConfig config, const Json& input,
                                              {"completed_ms", completed},
                                              {"scheduled_to_completion_ms", ms(scheduled)},
                                              {"service_wall_ms", ms(start)},
+                                             {"maintenance_begin_ms", window_begin_ms},
+                                             {"unit_overrun_ms", unit_overrun_ms},
                                              {"maintenance_wall_ms", maintenance_ms},
                                              {"draw_complete_wall_ms", draw_ms},
                                              {"pending", controls.header[0]},

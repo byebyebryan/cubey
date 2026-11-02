@@ -208,6 +208,7 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                 if (!maintenance_first && published && replacement_completed_ms == 0)
                     replacement_completed_ms = ms(received);
                 const auto window = Clock::now();
+                const double window_begin_ms = ms(received);
                 while (!published && ms(window) < budget) {
                     std::unique_lock lock(gate.mutex);
                     if (gate.waiting && !gate.active && !gate.permit) {
@@ -238,14 +239,19 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                         replacement_completed_ms = ms(received);
                 }
                 bool active;
+                double unit_overrun_ms;
                 {
                     std::lock_guard lock(gate.mutex);
-                    active = gate.active || gate.permit;
+                    unit_overrun_ms =
+                        std::max(0.0, gate.latest_available_ms - window_begin_ms - budget);
+                    active = gate.active || gate.permit || unit_overrun_ms > 0;
                 }
                 receipt["frames"].push_back({{"frame", frame},
                                              {"draw_complete_wall_ms", draw_ms},
                                              {"service_wall_ms", ms(start)},
                                              {"maintenance_wall_ms", maintenance_ms},
+                                             {"maintenance_begin_ms", window_begin_ms},
+                                             {"unit_overrun_ms", unit_overrun_ms},
                                              {"job_age_ms", ms(received)},
                                              {"scheduled_to_completion_ms", ms(scheduled)},
                                              {"published", published},

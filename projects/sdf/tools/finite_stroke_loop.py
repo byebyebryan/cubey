@@ -46,11 +46,13 @@ def assess(native, recorded):
         if not pose['end']: continue
         spans = [(a['first']-first, a['last']-first) for a in accepted
                  if first <= a['first'] <= a['last'] <= last]
-        independent.append(stroke_sampling.validate(recorded[first:last+1], spans, native['tolerance']))
+        if native['drained']:
+            independent.append(stroke_sampling.validate(recorded[first:last+1], spans, native['tolerance']))
         first = last+1
     frames = [f['scheduled_to_completion_ms'] for f in native['frames']]
     checks = dict(drained=native['drained'], canonical_cache=native.get('canonical_cache_equal', False),
                   faithful_source=native.get('canonical_source_equal', False), all_ids=identity_ok,
+                  complete_reconstruction=native['drained'] and len(independent) == sum(p['end'] for p in recorded),
                   all_poses=native['consumed_poses'] == len(recorded) == len(previews),
                   bounded=native['max_pending_including_tip'] <= 8 and native['max_input_queue'] <= 64,
                   frames=max(frames) <= 16.67 and not any(f['unit_crossed_window'] for f in native['frames']),
