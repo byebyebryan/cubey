@@ -1,6 +1,7 @@
 #include "stroke_service.h"
 #include "../sdf_cached_commit.h"
 #include "../sdf_renderer.h"
+#include "stroke_service_gate.h"
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -27,63 +28,14 @@ Json serialization(const AuthoredSerializationStats& s) {
             {"hash_ms", s.hash_ms},
             {"dump_ms", s.dump_ms}};
 }
-struct StopService {};
-// One worker, one waiting/submitted unit. The frame thread only grants work
-// that fits the frozen calibration bound; it never joins a construction job.
-struct Gate {
-    std::mutex mutex;
-    std::condition_variable cv;
-    bool stop = false, waiting = false, active = false, permit = false;
-    std::string kind;
-    unsigned level = 0, groups = 0;
-    Clock::time_point received;
-    double ready_ms = 0, grant_ms = 0;
-    unsigned frame = 0;
-    Json units = Json::array();
-    void before(const CommitUnit& next) {
-        std::unique_lock lock(mutex);
-        kind = next.kind;
-        level = next.level;
-        groups = next.groups;
-        ready_ms = ms(received);
-        waiting = true;
-        cv.notify_all();
-        cv.wait(lock, [&] { return stop || permit; });
-        if (stop)
-            throw StopService{};
-        permit = false;
-        waiting = false;
-        active = true;
-    }
-    void after(const CommitUnit& unit) {
-        std::lock_guard lock(mutex);
-        units.push_back(
-            {{"frame", frame},
-             {"kind", unit.kind},
-             {"groups", unit.groups},
-             {"level", unit.level},
-             {"gpu_ms", unit.gpu_ms},
-             {"wall_ms", unit.wall_ms},
-             {"ready_ms", ready_ms},
-             {"grant_ms", grant_ms},
-             {"submit_ms", (unit.submit_ns - std::chrono::duration_cast<std::chrono::nanoseconds>(
-                                                 received.time_since_epoch())
-                                                 .count()) /
-                               1e6},
-             {"gpu_complete_ms",
-              (unit.complete_ns -
-               std::chrono::duration_cast<std::chrono::nanoseconds>(received.time_since_epoch())
-                   .count()) /
-                  1e6}});
-        active = false;
-        cv.notify_all();
-    }
-};
+using Gate = StrokeServiceGate;
 } // namespace
 
 int run_cached_stroke_service(SdfConfig config, const Json& input,
                               const CachedStrokeProgram& program,
                               const std::filesystem::path& output) {
+    if (input.contains("stream"))
+        return run_cached_stroke_stream(config, input, program, output);
     const double budget = input.at("service").at("budget_ms").get<double>();
     const unsigned groups = input.at("service").value("groups", 512U);
     const unsigned frames = input.at("service").value("frames", 60U);

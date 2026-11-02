@@ -1,4 +1,5 @@
 #include "sdf_cached_stroke.h"
+#include "tools/stroke_stream_sampling.h"
 #include <cstring>
 #include <cubey/asset/material_recipe.h>
 #include <nlohmann/json.hpp>
@@ -130,4 +131,27 @@ int main() {
     bad = version;
     bad.session = 0;
     rejects([&] { (void)seal_cached_stroke(legacy.base, legacy.edited, bad); });
+    StreamSampler sampler(.0001);
+    StreamPose a{0, .01, {0, 0, 0}, 0, true}, b{.01, .01, {.01, 0, 0}, 1},
+        c{.02, .01, {.02, 0, 0}, 2, false, true};
+    require(sampler.feed(a).empty() && sampler.tip().has_value(), "initial tip missing");
+    require(sampler.feed(b).empty(), "straight span accepted prematurely");
+    const auto straight = sampler.feed(c);
+    require(straight.size() == 1 && straight[0].first.index == 0 && straight[0].last.index == 2 &&
+                straight[0].error < 1e-12 && !sampler.tip(),
+            "straight release failed");
+    StreamPose restart{.2, .01, {1, 0, 0}, 3, true, true};
+    const auto independent = sampler.feed(restart);
+    require(independent.size() == 1 && independent[0].first.index == 3 &&
+                independent[0].last.index == 3,
+            "geometry bridged across release/restart");
+    require(straight[0].last.point == c.point, "accepted span mutated");
+    rejects([&] { (void)sampler.feed(restart); });
+    StreamSampler bulge(.0001);
+    b.radius = .02;
+    (void)bulge.feed(a);
+    (void)bulge.feed(b);
+    const auto extrema = bulge.feed(c);
+    require(extrema.size() == 2 && extrema[0].last.index == 1 && extrema[1].first.index == 1,
+            "radius extremum lost");
 }
