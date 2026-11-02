@@ -23,11 +23,13 @@ struct CommitUnit {
     std::string kind;
     unsigned level = 0, groups = 0;
     double gpu_ms = 0, wall_ms = 0;
+    std::uint64_t submit_ns = 0, complete_ns = 0;
 };
 struct CommitSlicing {
     unsigned groups = 0, copy_slab_bytes = 0;
-    std::function<void(std::string_view)> before;
+    std::function<void(const CommitUnit&)> before;
     std::function<void(const CommitUnit&)> after;
+    bool pooled = false;
 };
 struct CommitBuildStats {
     double admission_ms = 0, pipeline_prepare_ms = 0, region_prepare_ms = 0, wall_ms = 0;
@@ -61,7 +63,9 @@ class CachedCommitStudy {
   public:
     CachedCommitStudy(vulkan::Device& device, ProjectGpuServices& gpu,
                       std::uint32_t fallback_limit = 2U * 1024U * 1024U);
+    ~CachedCommitStudy();
     double prepare(CommitBuilder mode);
+    double prepare_submission();
     // Private cooperative scheduling. Callbacks run on the caller/worker, never
     // while holding the GPU owner. They may defer the next bounded submission.
     void set_slicing(CommitSlicing slicing) {
@@ -110,5 +114,11 @@ class CachedCommitStudy {
     std::unordered_map<const Field*, LocalFieldState> local_fields_;
     CommitSlicing slicing_;
     std::array<std::optional<vulkan::ComputePipeline>, 5> sliced_pipelines_;
+    struct LocalCommands;
+    std::shared_ptr<LocalCommands> local_commands_;
+    vulkan::GpuRuntimeOwnerCleanup local_commands_cleanup_;
+    void submit_local(vulkan::GpuOwnerContext& owner,
+                      const std::function<void(VkCommandBuffer)>& record, std::uint64_t& submit_ns,
+                      std::uint64_t& complete_ns);
 };
 } // namespace cubey::projects::sdf

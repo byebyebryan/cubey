@@ -35,11 +35,17 @@ struct Gate {
     std::condition_variable cv;
     bool stop = false, waiting = false, active = false, permit = false;
     std::string kind;
+    unsigned level = 0, groups = 0;
+    Clock::time_point received;
+    double ready_ms = 0, grant_ms = 0;
     unsigned frame = 0;
     Json units = Json::array();
-    void before(std::string_view next) {
+    void before(const CommitUnit& next) {
         std::unique_lock lock(mutex);
-        kind = next;
+        kind = next.kind;
+        level = next.level;
+        groups = next.groups;
+        ready_ms = ms(received);
         waiting = true;
         cv.notify_all();
         cv.wait(lock, [&] { return stop || permit; });
@@ -51,12 +57,24 @@ struct Gate {
     }
     void after(const CommitUnit& unit) {
         std::lock_guard lock(mutex);
-        units.push_back({{"frame", frame},
-                         {"kind", unit.kind},
-                         {"groups", unit.groups},
-                         {"level", unit.level},
-                         {"gpu_ms", unit.gpu_ms},
-                         {"wall_ms", unit.wall_ms}});
+        units.push_back(
+            {{"frame", frame},
+             {"kind", unit.kind},
+             {"groups", unit.groups},
+             {"level", unit.level},
+             {"gpu_ms", unit.gpu_ms},
+             {"wall_ms", unit.wall_ms},
+             {"ready_ms", ready_ms},
+             {"grant_ms", grant_ms},
+             {"submit_ms", (unit.submit_ns - std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                                 received.time_since_epoch())
+                                                 .count()) /
+                               1e6},
+             {"gpu_complete_ms",
+              (unit.complete_ns -
+               std::chrono::duration_cast<std::chrono::nanoseconds>(received.time_since_epoch())
+                   .count()) /
+                  1e6}});
         active = false;
         cv.notify_all();
     }
@@ -70,6 +88,8 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
     const unsigned groups = input.at("service").value("groups", 512U);
     const unsigned frames = input.at("service").value("frames", 60U);
     const auto preparation = input.at("service").value("preparation", std::string("legacy"));
+    const bool pooled = input.at("service").value("pooled", false);
+    const bool maintenance_first = input.at("service").value("maintenance_first", false);
     if (preparation != "legacy" && preparation != "palette" && preparation != "sealed")
         throw std::invalid_argument("unknown service preparation control");
     const auto palette_mode =
@@ -88,6 +108,8 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                  {"budget_ms", budget},
                  {"groups", groups},
                  {"preparation", preparation},
+                 {"pooled", pooled},
+                 {"maintenance_first", maintenance_first},
                  {"frame_period_ms", 1000.0 / 60},
                  {"demand", "four accepted edits completed within four frames"},
                  {"frames", Json::array()},
@@ -110,12 +132,17 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
         builder.set_slicing({.groups = groups,
                              .copy_slab_bytes = 16U * 1024 * 1024,
                              .before = {},
-                             .after = [&](const CommitUnit& u) {
-                                 bounds[u.kind] = std::max(bounds[u.kind], u.wall_ms);
-                                 receipt["calibration"].push_back({{"kind", u.kind},
-                                                                   {"gpu_ms", u.gpu_ms},
-                                                                   {"wall_ms", u.wall_ms}});
-                             }});
+                             .after =
+                                 [&](const CommitUnit& u) {
+                                     bounds[u.kind] = std::max(bounds[u.kind], u.wall_ms);
+                                     receipt["calibration"].push_back({{"kind", u.kind},
+                                                                       {"gpu_ms", u.gpu_ms},
+                                                                       {"wall_ms", u.wall_ms},
+                                                                       {"level", u.level},
+                                                                       {"groups", u.groups}});
+                                 },
+                             .pooled = pooled});
+        receipt["submission_prepare_ms"] = builder.prepare_submission();
         for (unsigned i = 0; i < 4; ++i)
             static_cast<void>(
                 builder.build(candidate, base, program, CommitBuilder::LocalDominance));
@@ -154,9 +181,11 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
         Gate gate;
         builder.set_slicing({.groups = groups,
                              .copy_slab_bytes = 16U * 1024 * 1024,
-                             .before = [&](std::string_view kind) { gate.before(kind); },
-                             .after = [&](const CommitUnit& unit) { gate.after(unit); }});
+                             .before = [&](const CommitUnit& unit) { gate.before(unit); },
+                             .after = [&](const CommitUnit& unit) { gate.after(unit); },
+                             .pooled = pooled});
         const auto received = Clock::now();
+        gate.received = received;
         std::atomic<double> preparation_ms{0};
         double copy_ms = 0, palette_ms = 0, validation_ms = 0;
         AuthoredSerializationStats worker_serialization;
@@ -204,24 +233,27 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
             }
             gate.cv.notify_all();
         };
+        auto publish_ready = [&](unsigned frame) {
+            if (!published && worker.valid() &&
+                worker.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                stats = worker.get();
+                worker_ready_ms = ms(received);
+                if (sealed)
+                    sealed->require_version(live_version);
+                // All prior draws and builder units completed. No pending GPU
+                // reader uses any binding rewritten by this all-slot update.
+                settled.update_field(ctx.device(), candidate);
+                published = true;
+                published_frame = frame;
+            }
+        };
         try {
             for (unsigned frame = 0; frame < frames; ++frame) {
                 const auto start = Clock::now();
                 const auto scheduled = received + std::chrono::microseconds(16667ULL * frame);
-                if (!published && worker.valid() &&
-                    worker.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                    stats = worker.get();
-                    worker_ready_ms = ms(received);
-                    if (sealed)
-                        sealed->require_version(live_version);
-                    // Every prior draw completed. The all-slot descriptor update
-                    // is used only under this explicit single-reader boundary.
-                    settled.update_field(ctx.device(), candidate);
-                    published = true;
-                    published_frame = frame;
-                }
-                const double draw_ms = draw(published ? settled : preview, frame);
-                if (published && replacement_completed_ms == 0)
+                publish_ready(frame);
+                double draw_ms = maintenance_first ? 0 : draw(published ? settled : preview, frame);
+                if (!maintenance_first && published && replacement_completed_ms == 0)
                     replacement_completed_ms = ms(received);
                 const auto window = Clock::now();
                 while (!published && ms(window) < budget) {
@@ -236,11 +268,22 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                         }
                         if (ms(window) + it->second <= budget) {
                             gate.frame = frame;
+                            gate.grant_ms = ms(received);
                             gate.permit = true;
                             gate.cv.notify_all();
                         }
                     }
                     gate.cv.wait_for(lock, std::chrono::microseconds(50));
+                    if (maintenance_first &&
+                        worker.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+                        break;
+                }
+                const double maintenance_ms = ms(window);
+                if (maintenance_first) {
+                    publish_ready(frame);
+                    draw_ms = draw(published ? settled : preview, frame);
+                    if (published && replacement_completed_ms == 0)
+                        replacement_completed_ms = ms(received);
                 }
                 bool active;
                 {
@@ -250,6 +293,7 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                 receipt["frames"].push_back({{"frame", frame},
                                              {"draw_complete_wall_ms", draw_ms},
                                              {"service_wall_ms", ms(start)},
+                                             {"maintenance_wall_ms", maintenance_ms},
                                              {"job_age_ms", ms(received)},
                                              {"scheduled_to_completion_ms", ms(scheduled)},
                                              {"published", published},

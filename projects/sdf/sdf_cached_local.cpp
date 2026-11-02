@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cubey/vulkan/command_recorder.h>
 #include <cubey/vulkan/immediate_commands.h>
+#include <cubey/vulkan/vk_check.h>
 #include <limits>
 
 namespace cubey::projects::sdf {
@@ -12,6 +13,10 @@ namespace {
 using Clock = std::chrono::steady_clock;
 double milliseconds(Clock::time_point t) {
     return std::chrono::duration<double, std::milli>(Clock::now() - t).count();
+}
+std::uint64_t now_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now().time_since_epoch())
+        .count();
 }
 void local_barrier(VkCommandBuffer c) {
     const VkMemoryBarrier b{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -29,6 +34,69 @@ struct alignas(16) LocalControls {
 };
 static_assert(sizeof(LocalControls) == 544);
 } // namespace
+
+struct CachedCommitStudy::LocalCommands {
+    VkDevice device;
+    vulkan::CommandPool pool;
+    VkCommandBuffer command;
+    VkFence fence = VK_NULL_HANDLE;
+    explicit LocalCommands(vulkan::GpuOwnerContext& owner)
+        : device(owner.device().handle()),
+          pool(owner.device(), {.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT}),
+          command(pool.allocate_primary()) {
+        const VkFenceCreateInfo info{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+        vulkan::check(vkCreateFence(device, &info, nullptr, &fence), "create local unit fence");
+    }
+    ~LocalCommands() {
+        if (fence)
+            vkDestroyFence(device, fence, nullptr);
+    }
+};
+CachedCommitStudy::~CachedCommitStudy() {
+    // The runtime holds the last reference until its owner cleanup barrier.
+    local_commands_.reset();
+    local_commands_cleanup_.request();
+}
+double CachedCommitStudy::prepare_submission() {
+    if (!slicing_.pooled || local_commands_)
+        return 0;
+    const auto start = Clock::now();
+    static_cast<void>(gpu_.submit_and_wait(
+        {.label = "prepare local command pool", .work = [&](auto& owner) {
+             auto commands = std::make_shared<LocalCommands>(owner);
+             local_commands_cleanup_ = owner.runtime().register_owner_cleanup(
+                 "retire local command pool", [commands](auto&) mutable { commands.reset(); });
+             local_commands_ = std::move(commands);
+         }}));
+    return milliseconds(start);
+}
+void CachedCommitStudy::submit_local(vulkan::GpuOwnerContext& owner,
+                                     const std::function<void(VkCommandBuffer)>& record,
+                                     std::uint64_t& submit_ns, std::uint64_t& complete_ns) {
+    if (!slicing_.pooled) {
+        vulkan::ImmediateCommands commands(owner);
+        record(commands.command_buffer());
+        submit_ns = now_ns();
+        commands.submit_and_wait();
+    } else {
+        if (!local_commands_)
+            throw std::logic_error("pooled commands were not prepared");
+        const auto& r = *local_commands_;
+        // Every prior unit completed its fence; no command buffer is pending.
+        vulkan::check(vkResetCommandPool(r.device, r.pool.handle(), 0), "reset local command pool");
+        vulkan::check(vkResetFences(r.device, 1, &r.fence), "reset local unit fence");
+        vulkan::begin_command_buffer(r.command, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+        record(r.command);
+        vulkan::end_command_buffer(r.command, "end local unit");
+        submit_ns = now_ns();
+        const auto ticket = owner.submission().submit(
+            {.command_buffers = {r.command}, .fence = r.fence}, "submit local pooled unit");
+        vulkan::check(vkWaitForFences(r.device, 1, &r.fence, VK_TRUE, UINT64_MAX),
+                      "wait local unit fence");
+        owner.complete_submission(ticket);
+    }
+    complete_ns = now_ns();
+}
 
 CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
                                           const CachedStrokeProgram& program, CommitBuilder mode,
@@ -113,19 +181,22 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
     };
     const auto submit = [&](auto record) {
         if (slicing_.before)
-            slicing_.before("copy");
+            slicing_.before({"copy"});
         const auto unit_started = Clock::now();
+        std::uint64_t submit_ns = 0, complete_ns = 0;
         static_cast<void>(gpu_.submit_and_wait(
             {.label = "local clone chunk", .work = [&](vulkan::GpuOwnerContext& owner) {
-                 vulkan::ImmediateCommands commands(owner);
-                 auto c = commands.command_buffer();
-                 local_barrier(c);
-                 profiler_->begin_frame(c, 0);
-                 profiler_->begin_pass(c, 0, "local.copy");
-                 record(c);
-                 profiler_->end_pass(c, 0);
-                 local_barrier(c);
-                 commands.submit_and_wait();
+                 submit_local(
+                     owner,
+                     [&](auto c) {
+                         local_barrier(c);
+                         profiler_->begin_frame(c, 0);
+                         profiler_->begin_pass(c, 0, "local.copy");
+                         record(c);
+                         profiler_->end_pass(c, 0);
+                         local_barrier(c);
+                     },
+                     submit_ns, complete_ns);
              }}));
         profiler_->collect(0);
         double cost = 0;
@@ -135,7 +206,8 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
         result.max_chunk_gpu_ms = std::max(result.max_chunk_gpu_ms, cost);
         ++result.chunks;
         if (slicing_.after)
-            slicing_.after({"copy", 0, 0, cost, milliseconds(unit_started)});
+            slicing_.after(
+                {"copy", 0, 0, cost, milliseconds(unit_started), submit_ns, complete_ns});
     };
     if (!slab_bytes)
         submit([&](VkCommandBuffer c) {
@@ -212,28 +284,32 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
     result.copy = clone(dst, base, slicing_.copy_slab_bytes);
     const auto program = authored_program_bytes(&edited_scene);
     if (slicing_.before)
-        slicing_.before("initialize");
+        slicing_.before({"initialize"});
     const auto init_started = Clock::now();
+    std::uint64_t init_submit_ns = 0, init_complete_ns = 0;
     static_cast<void>(gpu_.submit_and_wait(
         {.label = "local initialize", .work = [&](vulkan::GpuOwnerContext& owner) {
              local_controls_->upload(&controls, sizeof(controls));
              local_counts_->upload(counts.data(), 64);
              dst.authored_program_->upload(program.data(), program.size());
-             vulkan::ImmediateCommands commands(owner);
-             auto c = commands.command_buffer();
-             profiler_->begin_frame(c, 0);
-             profiler_->begin_pass(c, 0, "local.initialize");
-             vkCmdFillBuffer(c, dst.frontiers_[0]->handle(), 0, 4, 0);
-             local_barrier(c);
-             profiler_->end_pass(c, 0);
-             commands.submit_and_wait();
+             submit_local(
+                 owner,
+                 [&](auto c) {
+                     profiler_->begin_frame(c, 0);
+                     profiler_->begin_pass(c, 0, "local.initialize");
+                     vkCmdFillBuffer(c, dst.frontiers_[0]->handle(), 0, 4, 0);
+                     local_barrier(c);
+                     profiler_->end_pass(c, 0);
+                 },
+                 init_submit_ns, init_complete_ns);
          }}));
     profiler_->collect(0);
     double init_gpu = 0;
     for (const auto& t : profiler_->latest_timings())
         init_gpu += t.milliseconds;
     if (slicing_.after)
-        slicing_.after({"initialize", 0, 0, init_gpu, milliseconds(init_started)});
+        slicing_.after({"initialize", 0, 0, init_gpu, milliseconds(init_started), init_submit_ns,
+                        init_complete_ns});
     const auto dispatch = [&](unsigned kind, unsigned level, unsigned count, unsigned input,
                               unsigned new_texels = 0) {
         vulkan::DescriptorWriteBatch writes;
@@ -264,45 +340,58 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
         double cost = 0;
         for (unsigned offset = 0; offset < groups;) {
             const unsigned chunk =
-                slicing_.groups
-                    ? std::min({slicing_.groups, groups - offset, stride - offset % stride})
-                    : groups;
+                slicing_.groups ? std::min(slicing_.groups, groups - offset) : groups;
             const std::string kind_name = kind == 0   ? "classify"
                                           : kind == 1 ? "samples"
                                                       : "canonical";
             if (slicing_.before)
-                slicing_.before(kind_name);
+                slicing_.before({kind_name, level, chunk});
             const auto unit_started = Clock::now();
+            std::uint64_t submit_ns = 0, complete_ns = 0;
             static_cast<void>(gpu_.submit_and_wait(
                 {.label = "local dispatch", .work = [&](vulkan::GpuOwnerContext& owner) {
-                     vulkan::ImmediateCommands commands(owner);
-                     auto c = commands.command_buffer();
-                     local_barrier(c);
-                     if (kind == 0 && offset == 0)
-                         vkCmdFillBuffer(c, dst.counters_->handle(), 0, 4, 0);
-                     local_barrier(c);
-                     profiler_->begin_frame(c, 0);
-                     profiler_->begin_pass(c, 0, "local.work");
-                     vulkan::CommandRecorder recorder(c);
-                     recorder.bind_pipeline(VK_PIPELINE_BIND_POINT_COMPUTE,
-                                            slicing_.groups
-                                                ? sliced_pipelines_[pipeline_index]->handle()
-                                                : pipeline.pipeline());
-                     recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.layout(),
-                                                  0, set);
-                     recorder.push_constants(
-                         pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                         std::array<std::uint32_t, 5>{level, count,
-                                                      kind == 2 ? new_texels : dst.capacity,
-                                                      fallback_limit_, dst.atlas_axis});
-                     if (slicing_.groups)
-                         vkCmdDispatchBase(c, offset % stride, offset / stride, 0, chunk, 1, 1);
-                     else
-                         recorder.dispatch(std::min(groups, stride), (groups + stride - 1) / stride,
-                                           1);
-                     profiler_->end_pass(c, 0);
-                     local_barrier(c);
-                     commands.submit_and_wait();
+                     submit_local(
+                         owner,
+                         [&](auto c) {
+                             local_barrier(c);
+                             if (kind == 0 && offset == 0)
+                                 vkCmdFillBuffer(c, dst.counters_->handle(), 0, 4, 0);
+                             local_barrier(c);
+                             profiler_->begin_frame(c, 0);
+                             profiler_->begin_pass(c, 0, "local.work");
+                             vulkan::CommandRecorder recorder(c);
+                             recorder.bind_pipeline(
+                                 VK_PIPELINE_BIND_POINT_COMPUTE,
+                                 slicing_.groups ? sliced_pipelines_[pipeline_index]->handle()
+                                                 : pipeline.pipeline());
+                             recorder.bind_descriptor_set(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                                          pipeline.layout(), 0, set);
+                             recorder.push_constants(
+                                 pipeline.layout(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                                 std::array<std::uint32_t, 5>{level, count,
+                                                              kind == 2 ? new_texels : dst.capacity,
+                                                              fallback_limit_, dst.atlas_axis});
+                             if (slicing_.groups) {
+                                 // A bounded unit may cover several complete dispatch rows.
+                                 // Preserve the shader's absolute workgroup index mapping.
+                                 unsigned at = offset, left = chunk;
+                                 while (left) {
+                                     const unsigned x = at % stride;
+                                     const unsigned rows = x == 0 ? left / stride : 0;
+                                     const unsigned width =
+                                         rows ? stride : std::min(left, stride - x);
+                                     const unsigned height = rows ? rows : 1;
+                                     vkCmdDispatchBase(c, x, at / stride, 0, width, height, 1);
+                                     at += width * height;
+                                     left -= width * height;
+                                 }
+                             } else
+                                 recorder.dispatch(std::min(groups, stride),
+                                                   (groups + stride - 1) / stride, 1);
+                             profiler_->end_pass(c, 0);
+                             local_barrier(c);
+                         },
+                         submit_ns, complete_ns);
                  }}));
             profiler_->collect(0);
             double unit_gpu = 0;
@@ -317,7 +406,8 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
             }
             cost += unit_gpu;
             if (slicing_.after)
-                slicing_.after({kind_name, level, chunk, unit_gpu, milliseconds(unit_started)});
+                slicing_.after({kind_name, level, chunk, unit_gpu, milliseconds(unit_started),
+                                submit_ns, complete_ns});
             offset += chunk;
         }
         return cost;

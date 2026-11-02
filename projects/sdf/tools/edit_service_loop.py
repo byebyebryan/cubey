@@ -65,6 +65,7 @@ def main():
     p.add_argument('--validation', choices=['paired', 'on', 'off'], default='paired')
     p.add_argument('--preparation', choices=['legacy', 'palette', 'sealed'], default='legacy')
     p.add_argument('--pooled', action='store_true')
+    p.add_argument('--maintenance-first', action='store_true')
     p.add_argument('--view', choices=['preset', 'close'], default='preset')
     p.add_argument('--subjects', nargs='+', choices=['guardian', 'robot'], default=['guardian', 'robot'])
     args = p.parse_args()
@@ -74,7 +75,8 @@ def main():
     templates = {(r['subject'], r['operation']): r for r in original['runs'] if r['budget_ms'] == 4}
     receipt = dict(format='cubey.sdf.edit-service-cohort', version=1, identity=identity(args.binary),
                    controls=dict(groups=args.groups, budget_ms=args.budget, preparation=args.preparation,
-                                 pooled=args.pooled, validation=args.validation, view=args.view),
+                                 pooled=args.pooled, maintenance_first=args.maintenance_first,
+                                 validation=args.validation, view=args.view),
                    runs=[], complete=False)
     save(args.output / 'cohort.json', receipt)
     for repeat in range(args.repeats):
@@ -85,7 +87,8 @@ def main():
                 source_input = Path(old_command[old_command.index('--edit-input') + 1])
                 data = json.loads(source_input.read_text())
                 data['service'].update(groups=args.groups, budget_ms=args.budget,
-                                       preparation=args.preparation, pooled=args.pooled)
+                                       preparation=args.preparation, pooled=args.pooled,
+                                       maintenance_first=args.maintenance_first)
                 modes = ([True, False] if repeat % 2 == 0 else [False, True]) if args.validation == 'paired' else [args.validation == 'on']
                 for validation in modes:
                     name = f'{subject}-{operation}-{repeat}-validation-{int(validation)}'
