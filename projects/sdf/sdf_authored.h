@@ -66,7 +66,15 @@ struct SurfaceSample {
 };
 [[nodiscard]] AuthoredScene parse_authored_scene(std::string_view text);
 [[nodiscard]] AuthoredScene load_authored_scene(const std::filesystem::path& path);
-[[nodiscard]] std::string serialize_authored_scene(const AuthoredScene& scene);
+struct AuthoredSerializationStats {
+    double parse_ms = 0, palette_ms = 0, hash_ms = 0, dump_ms = 0;
+};
+[[nodiscard]] std::string serialize_authored_scene(const AuthoredScene& scene,
+                                                   AuthoredSerializationStats* stats = nullptr);
+// Same material array as faithful persistence, without scene hashes or a
+// geometry/history pretty-print round trip. Native workshop values win.
+[[nodiscard]] std::string serialize_authored_palette(const AuthoredScene& scene,
+                                                     AuthoredSerializationStats* stats = nullptr);
 void save_authored_scene(const std::filesystem::path& path, const AuthoredScene& scene);
 [[nodiscard]] std::uint64_t authored_geometry_hash(const AuthoredScene& scene);
 [[nodiscard]] std::uint64_t authored_appearance_hash(const AuthoredScene& scene);

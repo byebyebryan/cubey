@@ -1,16 +1,30 @@
 #include "sdf_cached_stroke.h"
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
 namespace cubey::projects::sdf {
 CachedStrokeProgram prepare_cached_stroke(AuthoredScene base, AuthoredScene edited,
-                                          bool rounded_segments) {
+                                          bool rounded_segments, StrokePreparation preparation) {
     using Json = nlohmann::json;
-    if (Json::parse(serialize_authored_scene(base)).at("materials") !=
-        Json::parse(serialize_authored_scene(edited)).at("materials"))
+    using Clock = std::chrono::steady_clock;
+    const auto start = Clock::now();
+    AuthoredSerializationStats serialization;
+    double reparse_ms = 0;
+    const auto palette = [&](const auto& scene) {
+        const auto text = preparation == StrokePreparation::Legacy
+                              ? serialize_authored_scene(scene, &serialization)
+                              : serialize_authored_palette(scene, &serialization);
+        const auto parse_start = Clock::now();
+        auto parsed = Json::parse(text);
+        reparse_ms += std::chrono::duration<double, std::milli>(Clock::now() - parse_start).count();
+        return preparation == StrokePreparation::Legacy ? parsed.at("materials") : parsed;
+    };
+    if (palette(base) != palette(edited))
         throw std::invalid_argument("stroke requires an unchanged material palette");
+    const auto validated_palette = Clock::now();
     if (base.environment_only_gallery || edited.environment_only_gallery ||
         std::any_of(edited.optics.begin(), edited.optics.end(),
                     [](const auto& o) { return !default_optics(o); }))
@@ -58,6 +72,34 @@ CachedStrokeProgram prepare_cached_stroke(AuthoredScene base, AuthoredScene edit
     result.controls.header[1] = operation == 11 ? 1U : 0U;
     result.base = std::move(base);
     result.edited = std::move(edited);
+    result.palette_ms =
+        std::chrono::duration<double, std::milli>(validated_palette - start).count();
+    result.validation_ms =
+        std::chrono::duration<double, std::milli>(Clock::now() - validated_palette).count();
+    result.serialization = serialization;
+    result.palette_reparse_ms = reparse_ms;
     return result;
+}
+PreparedCachedStroke::PreparedCachedStroke(CachedStrokeProgram program, StrokeVersion version)
+    : program_(std::make_shared<const CachedStrokeProgram>(std::move(program))),
+      version_(std::move(version)) {}
+void PreparedCachedStroke::require_version(const StrokeVersion& current) const {
+    if (current != version_)
+        throw std::invalid_argument("stale prepared stroke version or accepted prefix");
+}
+PreparedCachedStroke seal_cached_stroke(AuthoredScene base, AuthoredScene edited,
+                                        StrokeVersion version, bool rounded_segments,
+                                        StrokePreparation preparation) {
+    auto admitted =
+        prepare_cached_stroke(std::move(base), std::move(edited), rounded_segments, preparation);
+    if (!version.session || !version.base || !version.palette ||
+        version.pending_ids.size() != admitted.controls.header[0] ||
+        std::any_of(version.pending_ids.begin(), version.pending_ids.end(),
+                    [](auto id) { return !id; }) ||
+        std::adjacent_find(version.pending_ids.begin(), version.pending_ids.end(),
+                           [](auto a, auto b) { return a >= b; }) != version.pending_ids.end())
+        throw std::invalid_argument(
+            "prepared stroke needs a live version and ordered accepted IDs");
+    return PreparedCachedStroke(std::move(admitted), std::move(version));
 }
 } // namespace cubey::projects::sdf

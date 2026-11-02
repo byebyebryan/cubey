@@ -3,6 +3,7 @@
 #include "sdf_material.h"
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <cubey/asset/material_recipe.h>
@@ -612,8 +613,8 @@ SurfaceSample authored_surface(math::Vec3 point, const AuthoredScene& scene, flo
 float authored_distance(math::Vec3 point, const AuthoredScene& scene) {
     return evaluate_surface(point, scene, 0, false).distance;
 }
-std::string serialize_authored_scene(const AuthoredScene& scene) {
-    auto json = Json::parse(scene.document);
+namespace {
+void update_authored_palette(Json& json, const AuthoredScene& scene) {
     for (std::size_t i = 0; i < scene.materials.size(); ++i) {
         const auto domain =
             scene.material_domains.empty() ? math::Mat4{1} : scene.material_domains.at(i);
@@ -683,9 +684,43 @@ std::string serialize_authored_scene(const AuthoredScene& scene) {
                 {"offset", {p.offset.x, p.offset.y, p.offset.z}}};
         }
     }
+}
+} // namespace
+std::string serialize_authored_palette(const AuthoredScene& scene,
+                                       AuthoredSerializationStats* stats) {
+    using Clock = std::chrono::steady_clock;
+    const auto start = Clock::now();
+    auto json = Json::parse(scene.document);
+    const auto parsed = Clock::now();
+    update_authored_palette(json, scene);
+    const auto palette = Clock::now();
+    auto text = json.at("materials").dump();
+    if (stats) {
+        stats->parse_ms += std::chrono::duration<double, std::milli>(parsed - start).count();
+        stats->palette_ms += std::chrono::duration<double, std::milli>(palette - parsed).count();
+        stats->dump_ms += std::chrono::duration<double, std::milli>(Clock::now() - palette).count();
+    }
+    return text;
+}
+std::string serialize_authored_scene(const AuthoredScene& scene,
+                                     AuthoredSerializationStats* stats) {
+    using Clock = std::chrono::steady_clock;
+    const auto start = Clock::now();
+    auto json = Json::parse(scene.document);
+    const auto parsed = Clock::now();
+    update_authored_palette(json, scene);
+    const auto palette = Clock::now();
     json["geometry_hash"] = hex(authored_geometry_hash(scene));
     json["appearance_hash"] = hex(authored_appearance_hash(scene));
-    return json.dump(2) + '\n';
+    const auto hashed = Clock::now();
+    auto text = json.dump(2) + '\n';
+    if (stats) {
+        stats->parse_ms += std::chrono::duration<double, std::milli>(parsed - start).count();
+        stats->palette_ms += std::chrono::duration<double, std::milli>(palette - parsed).count();
+        stats->hash_ms += std::chrono::duration<double, std::milli>(hashed - palette).count();
+        stats->dump_ms += std::chrono::duration<double, std::milli>(Clock::now() - hashed).count();
+    }
+    return text;
 }
 AuthoredScene load_authored_scene(const std::filesystem::path& path) {
     const auto bytes = read_binary_file(path);

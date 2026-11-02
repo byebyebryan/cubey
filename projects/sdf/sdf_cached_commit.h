@@ -31,6 +31,9 @@ struct CommitSlicing {
 };
 struct CommitBuildStats {
     double admission_ms = 0, pipeline_prepare_ms = 0, region_prepare_ms = 0, wall_ms = 0;
+    double palette_ms = 0, validation_ms = 0;
+    AuthoredSerializationStats serialization;
+    double palette_reparse_ms = 0;
     std::uint64_t region_bytes = 0, region_scratch_bytes = 0;
     std::size_t region_references = 0;
     double reuse_gpu_ms = 0, fallback_gpu_ms = 0;
@@ -72,7 +75,11 @@ class CachedCommitStudy {
                            CommitBuilder mode, std::uint32_t region_axis = 4);
     CommitBuildStats build(Field& destination, const Field& base,
                            const CachedStrokeProgram& program, CommitBuilder mode,
-                           std::uint32_t region_axis = 4);
+                           std::uint32_t region_axis = 4,
+                           StrokePreparation preparation = StrokePreparation::Legacy);
+    CommitBuildStats build(Field& destination, const Field& base,
+                           const PreparedCachedStroke& program, const StrokeVersion& current,
+                           CommitBuilder mode);
     static CommitSnapshot snapshot(vulkan::Device& device, ProjectGpuServices& gpu,
                                    const Field& field);
     CommitCopyStats clone(Field& destination, const Field& base, std::uint32_t slab_bytes = 0,
@@ -89,7 +96,8 @@ class CachedCommitStudy {
         pruned_filter_;
     std::optional<vulkan::GpuTimestampProfiler> profiler_;
     CommitBuildStats build_local(Field& destination, const Field& base,
-                                 const CachedEditProgram& program,
+                                 const AuthoredScene& base_scene, const AuthoredScene& edited_scene,
+                                 const CachedEditControls& edit_controls,
                                  std::span<const SceneInstruction> tools = {},
                                  bool dominance = false);
     std::unique_ptr<vulkan::Buffer> local_controls_, local_counts_, local_entries_;

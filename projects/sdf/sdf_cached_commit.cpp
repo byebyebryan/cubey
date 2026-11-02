@@ -143,7 +143,8 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base, const C
     result.admission_ms = elapsed(start);
     result.pipeline_prepare_ms = prepare(mode);
     if (mode == CommitBuilder::Local || mode == CommitBuilder::LocalDominance) {
-        auto local = build_local(dst, base, p, {}, mode == CommitBuilder::LocalDominance);
+        auto local = build_local(dst, base, p.base, p.edited, p.controls, {},
+                                 mode == CommitBuilder::LocalDominance);
         local.admission_ms = result.admission_ms;
         local.pipeline_prepare_ms = result.pipeline_prepare_ms;
         local.wall_ms = elapsed(start);

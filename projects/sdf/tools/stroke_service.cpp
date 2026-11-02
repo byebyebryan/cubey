@@ -21,6 +21,12 @@ using Clock = std::chrono::steady_clock;
 double ms(Clock::time_point t) {
     return std::chrono::duration<double, std::milli>(Clock::now() - t).count();
 }
+Json serialization(const AuthoredSerializationStats& s) {
+    return {{"document_parse_ms", s.parse_ms},
+            {"palette_update_ms", s.palette_ms},
+            {"hash_ms", s.hash_ms},
+            {"dump_ms", s.dump_ms}};
+}
 struct StopService {};
 // One worker, one waiting/submitted unit. The frame thread only grants work
 // that fits the frozen calibration bound; it never joins a construction job.
@@ -63,10 +69,15 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
     const double budget = input.at("service").at("budget_ms").get<double>();
     const unsigned groups = input.at("service").value("groups", 512U);
     const unsigned frames = input.at("service").value("frames", 60U);
-    if ((budget != 2 && budget != 4) || !groups || frames < 8 || frames > 240 ||
-        program.controls.header[0] != 4)
+    const auto preparation = input.at("service").value("preparation", std::string("legacy"));
+    if (preparation != "legacy" && preparation != "palette" && preparation != "sealed")
+        throw std::invalid_argument("unknown service preparation control");
+    const auto palette_mode =
+        preparation == "legacy" ? StrokePreparation::Legacy : StrokePreparation::Palette;
+    if ((budget != 2 && budget != 4 && budget != 6 && budget != 8) || !groups || frames < 8 ||
+        frames > 240 || program.controls.header[0] != 4)
         throw std::invalid_argument(
-            "service requires four tools, a fixed 2/4 ms budget and 8..240 frames");
+            "service requires four tools, a fixed 2/4/6/8 ms budget and 8..240 frames");
     for (unsigned i = 0; i < 4; ++i)
         if (program.controls.tools[i].center_code.w != 2.F)
             throw std::invalid_argument("service control remains spheres only");
@@ -76,6 +87,7 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                            "worker admission and bounded GPU units; no live input or XR"},
                  {"budget_ms", budget},
                  {"groups", groups},
+                 {"preparation", preparation},
                  {"frame_period_ms", 1000.0 / 60},
                  {"demand", "four accepted edits completed within four frames"},
                  {"frames", Json::array()},
@@ -146,12 +158,38 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                              .after = [&](const CommitUnit& unit) { gate.after(unit); }});
         const auto received = Clock::now();
         std::atomic<double> preparation_ms{0};
+        double copy_ms = 0, palette_ms = 0, validation_ms = 0;
+        AuthoredSerializationStats worker_serialization;
+        double worker_reparse_ms = 0;
+        StrokeVersion live_version{1, 1, 1, {1, 2, 3, 4}};
+        const auto submitted_version = live_version;
+        std::optional<PreparedCachedStroke> sealed;
         auto worker = std::async(std::launch::async, [&] {
             // Immutable retained parsed snapshots. Copy/validation happens on
             // the worker and remains in total received-to-publication age.
-            auto prepared = prepare_cached_stroke(program.base, program.edited);
+            const auto copy_start = Clock::now();
+            auto base_source = program.base, edited_source = program.edited;
+            copy_ms = ms(copy_start);
+            if (preparation == "sealed") {
+                sealed.emplace(seal_cached_stroke(std::move(base_source), std::move(edited_source),
+                                                  submitted_version, false, palette_mode));
+                palette_ms = sealed->program().palette_ms;
+                validation_ms = sealed->program().validation_ms;
+                worker_serialization = sealed->program().serialization;
+                worker_reparse_ms = sealed->program().palette_reparse_ms;
+                preparation_ms = ms(received);
+                return builder.build(candidate, base, *sealed, submitted_version,
+                                     CommitBuilder::LocalDominance);
+            }
+            auto prepared = prepare_cached_stroke(std::move(base_source), std::move(edited_source),
+                                                  false, palette_mode);
+            palette_ms = prepared.palette_ms;
+            validation_ms = prepared.validation_ms;
+            worker_serialization = prepared.serialization;
+            worker_reparse_ms = prepared.palette_reparse_ms;
             preparation_ms = ms(received);
-            return builder.build(candidate, base, prepared, CommitBuilder::LocalDominance);
+            return builder.build(candidate, base, prepared, CommitBuilder::LocalDominance, 4,
+                                 palette_mode);
         });
         bool published = false, failed = false;
         unsigned published_frame = frames;
@@ -174,6 +212,8 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                     worker.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                     stats = worker.get();
                     worker_ready_ms = ms(received);
+                    if (sealed)
+                        sealed->require_version(live_version);
                     // Every prior draw completed. The all-slot descriptor update
                     // is used only under this explicit single-reader boundary.
                     settled.update_field(ctx.device(), candidate);
@@ -242,6 +282,11 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
         receipt["units"] = gate.units;
         receipt["worker_ready_observed_ms"] = worker_ready_ms;
         receipt["worker_preparation_ms"] = preparation_ms.load();
+        receipt["worker_copy_ms"] = copy_ms;
+        receipt["worker_palette_ms"] = palette_ms;
+        receipt["worker_validation_ms"] = validation_ms;
+        receipt["worker_serialization"] = serialization(worker_serialization);
+        receipt["worker_palette_reparse_ms"] = worker_reparse_ms;
         receipt["replacement_completed_ms"] =
             published ? Json(replacement_completed_ms) : Json(nullptr);
         receipt["published_frame"] = published ? Json(published_frame) : Json(nullptr);
@@ -263,6 +308,10 @@ int run_cached_stroke_service(SdfConfig config, const Json& input,
                 {"copy_gpu_ms", stats->copy.gpu_ms},   {"fallback_gpu_ms", stats->fallback_gpu_ms},
                 {"reuse_gpu_ms", stats->reuse_gpu_ms}, {"local_work", stats->local_work}};
             receipt["build"]["classification_gpu_ms"] = candidate.stats().filter_gpu_ms;
+            receipt["build"]["palette_ms"] = stats->palette_ms;
+            receipt["build"]["validation_ms"] = stats->validation_ms;
+            receipt["build"]["serialization"] = serialization(stats->serialization);
+            receipt["build"]["palette_reparse_ms"] = stats->palette_reparse_ms;
         }
         preview.destroy();
         settled.destroy();

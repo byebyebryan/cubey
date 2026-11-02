@@ -32,7 +32,8 @@ static_assert(sizeof(LocalControls) == 544);
 
 CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
                                           const CachedStrokeProgram& program, CommitBuilder mode,
-                                          std::uint32_t region_axis) {
+                                          std::uint32_t region_axis,
+                                          StrokePreparation preparation) {
     static_cast<void>(region_axis);
     const auto start = Clock::now();
     if ((mode != CommitBuilder::Local && mode != CommitBuilder::LocalDominance) || &dst == &base ||
@@ -41,15 +42,43 @@ CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
         throw std::invalid_argument("stroke commit requires distinct matching local fields");
     if (program.controls.header[3] > 1U)
         throw std::invalid_argument("unknown stroke admission contract");
-    auto admitted =
-        prepare_cached_stroke(program.base, program.edited, program.controls.header[3] == 1U);
+    auto admitted = prepare_cached_stroke(program.base, program.edited,
+                                          program.controls.header[3] == 1U, preparation);
     if (std::memcmp(&admitted.controls, &program.controls, sizeof(program.controls)) != 0)
         throw std::invalid_argument("stroke controls differ from source");
     const double admission = milliseconds(start), pipeline = prepare(mode);
     CachedEditProgram p{std::move(admitted.base), std::move(admitted.edited), {}};
     p.controls.header = program.controls.header;
     p.controls.primitive = program.controls.tools[0];
-    auto result = build_local(dst, base, p,
+    auto result = build_local(dst, base, p.base, p.edited, p.controls,
+                              std::span(program.controls.tools).first(program.controls.header[0]),
+                              mode == CommitBuilder::LocalDominance);
+    result.admission_ms = admission;
+    result.palette_ms = admitted.palette_ms;
+    result.validation_ms = admitted.validation_ms;
+    result.serialization = admitted.serialization;
+    result.palette_reparse_ms = admitted.palette_reparse_ms;
+    result.pipeline_prepare_ms = pipeline;
+    result.wall_ms = milliseconds(start);
+    dst.stats_.build_ms = result.wall_ms;
+    return result;
+}
+
+CommitBuildStats CachedCommitStudy::build(Field& dst, const Field& base,
+                                          const PreparedCachedStroke& prepared,
+                                          const StrokeVersion& current, CommitBuilder mode) {
+    const auto start = Clock::now();
+    prepared.require_version(current);
+    const auto& program = prepared.program();
+    if ((mode != CommitBuilder::Local && mode != CommitBuilder::LocalDominance) || &dst == &base ||
+        dst.atlas_axis != 64 || base.atlas_axis != 64 || !base.authored_hash_ ||
+        *base.authored_hash_ != authored_geometry_hash(program.base))
+        throw std::invalid_argument("prepared stroke requires distinct matching local fields");
+    CachedEditControls controls{};
+    controls.header = program.controls.header;
+    controls.primitive = program.controls.tools[0];
+    const double admission = milliseconds(start), pipeline = prepare(mode);
+    auto result = build_local(dst, base, program.base, program.edited, controls,
                               std::span(program.controls.tools).first(program.controls.header[0]),
                               mode == CommitBuilder::LocalDominance);
     result.admission_ms = admission;
@@ -145,15 +174,17 @@ CommitCopyStats CachedCommitStudy::clone(Field& dst, const Field& base, std::uin
 }
 
 CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
-                                                const CachedEditProgram& p,
+                                                const AuthoredScene& base_scene,
+                                                const AuthoredScene& edited_scene,
+                                                const CachedEditControls& edit_controls,
                                                 std::span<const SceneInstruction> tools,
                                                 bool dominance) {
     const auto start = Clock::now();
     CommitBuildStats result;
     const auto target = 1U - dst.displayed_;
     LocalControls controls;
-    controls.header = p.controls.header;
-    controls.tools[0] = p.controls.primitive;
+    controls.header = edit_controls.header;
+    controls.tools[0] = edit_controls.primitive;
     if (!tools.empty())
         std::copy(tools.begin(), tools.end(), controls.tools.begin());
     // Real active-brick enclosure plus both evaluation budgets and a conservative
@@ -161,7 +192,7 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
     // the lower-bound evaluation. Strict native topology/raw-bit qualification is
     // required; this is never substituted for arbitrary modifier semantics.
     const float evaluation =
-        std::max(authored_evaluation_guard(p.base), authored_evaluation_guard(p.edited));
+        std::max(authored_evaluation_guard(base_scene), authored_evaluation_guard(edited_scene));
     const float r = .866025404F / 256.F;
     const float bound = 2 * r + 2e-6F + 2 * evaluation;
     controls.info[0] = std::nextafter(bound + std::max(bound / 512.F, 0x1p-23F),
@@ -179,7 +210,7 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
                     : base.stats_.brick_count;
     counts[1] = base.stats_.brick_count;
     result.copy = clone(dst, base, slicing_.copy_slab_bytes);
-    const auto program = authored_program_bytes(&p.edited);
+    const auto program = authored_program_bytes(&edited_scene);
     if (slicing_.before)
         slicing_.before("initialize");
     const auto init_started = Clock::now();
@@ -328,8 +359,8 @@ CommitBuildStats CachedCommitStudy::build_local(Field& dst, const Field& base,
     dst.displayed_ = dst.committed_ = target;
     dst.authored_committed_ = true;
     dst.authored_dispatch_ = true;
-    dst.authored_hash_ = authored_geometry_hash(p.edited);
-    dst.displayed_edit_count_ = p.edited.program.size();
+    dst.authored_hash_ = authored_geometry_hash(edited_scene);
+    dst.displayed_edit_count_ = edited_scene.program.size();
     dst.base_brick_count_ = counts[1];
     dst.committed_edits_.clear();
     dst.last_requested_.clear();
