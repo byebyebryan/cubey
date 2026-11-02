@@ -166,6 +166,12 @@ reduction in per-sample cost. Robot's 240 Hz straight case similarly drops from
 
 ## Next decision
 
+The later [solution research pass](sdf-interactive-edit-solution-research.md)
+validates and narrows these proposals. In particular, recorded cut-unit wall
+work already exceeds four 4 ms windows; preparation and packing alone are not a
+demonstrated sufficient fix. It also identifies exact-center cache invalidation
+and multi-frame publication requirements before implementation.
+
 Keep rounded tapered segments as the general brush representation, with the
 sphere/equal-radius controls. The bounded geometry route is accepted; a public
 brush tool and complete interactive service remain unqualified.

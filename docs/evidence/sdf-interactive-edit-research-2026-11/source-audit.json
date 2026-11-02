@@ -1,0 +1,23 @@
+{
+  "source_head": "6e9bce4e",
+  "files": {
+    "projects/sdf/sdf_cached_stroke.cpp": "4fd3c653a42567e30fcb9f04453ccd904af70f8b6938786bad12aaa7b38fffff",
+    "projects/sdf/sdf_cached_local.cpp": "724d258d8fe830e5e37861cb36cf8fb2d13bbdfa664a2a71c5dcddc2f5178266",
+    "projects/sdf/sdf_authored.cpp": "3e72b7e818a6e0aeebb36b2c64d07d76a6b1c2b816bcc69c048eadc27154440d",
+    "projects/sdf/sdf_authored.h": "ed2f9e7323e9c01ceb231172345da54c7de0fa012bd2c7b992411063df02d8c9",
+    "projects/sdf/sdf_renderer.cpp": "2f58ae3eac415894650ccb6b044650ddb4e2c711fb677db42e186455adfd5298",
+    "projects/sdf/tools/stroke_service.cpp": "6fe6f40f831ebfb704698c13c7eee2a9736dd2ea583ccb895a917349b9fa6fff",
+    "projects/sdf/sdf_field.cpp": "ccf0e987a0c52ea2cca7c84348b5ee3ed37d99d7dcfe0bcb68435a22fe2df2c2",
+    "include/cubey/vulkan/gpu_runtime.h": "07a121b86ac4ace1f5527586d72c61954eb8183f266090bacedb95bd10f01d0f",
+    "include/cubey/vulkan/submission_tickets.h": "d9ec7a78d2f81435a40f435ec207b0944bb2a4c27487f505d7e9d0acb7c0b4a1",
+    "src/cubey/host/common_config.cpp": "cdacdcf9251894053f55ff189019243aa2464e5856e978807bfedadb766add5a",
+    "src/cubey/host/headless_png_host.cpp": "6710c3c13ca428dbdcc81d6206dd044859473c5c8e1188200909dbf3c2a9a88b",
+    "src/cubey/vulkan/instance.cpp": "e73d2e5e466cefa3edeee12ef98b7c28c5ba46102753dacbeefc050472c5c062",
+    "projects/sdf/tools/cached_edit_loop.py": "699e0fa605e8828e2ef6b1cfad1ef1c2d4d3fa999be7c8566df18f1055445381",
+    "projects/sdf/shaders/local_controls.glsl": "3c343897d2c1b090ebcd7072005193a8f8d256d9abf1544133ab0dd4a17174b0",
+    "projects/sdf/shaders/local_filter.comp": "561682993575fd395cfb15b9f4624ae03288950a5b765834de2ff1b500be2a35"
+  },
+  "runtime_changes": [],
+  "new_gpu_runs": 0,
+  "complete": true
+}

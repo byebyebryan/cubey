@@ -1,0 +1,829 @@
+{
+  "format": "cubey.sdf.interactive-edit-solution-research",
+  "version": 1,
+  "source_head": "6e9bce4e",
+  "analysis_sha256": "2f1dc6307480c96e72c3c8a62bc999d3a6d99f2fb47bec3caa381b59f9c50acf",
+  "retained_service_requires_validation": true,
+  "inputs": [
+    {
+      "path": "outputs/sdf/interactive-edit-loop-20261031/qualified-v1/service/service.json",
+      "sha256": "8cfbe7ffb1ad12065628f500631aa8ef5d941ca19405f9a3fc5142f0d157538c"
+    },
+    {
+      "path": "outputs/sdf/interactive-edit-loop-20261031/qualified-v1/post-controls/controls.json",
+      "sha256": "796ea1e1d14a12da204d8038a82e511c0bede412a5258462525965634515ca28"
+    }
+  ],
+  "assumptions": [
+    "No new GPU timing or implementation.",
+    "Recorded unit wall costs belong to the sequential submit-and-wait protocol.",
+    "Offline packing omits readiness gaps, callback/profiling costs, drawing, publication, and scheduling noise.",
+    "Held-out prediction uses two repetitions of the same subject/operation; it is not a worst-case duration proof."
+  ],
+  "records": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "budget_ms": 4,
+      "repeat": 0,
+      "complete_unit_wall_ms": 10.432089,
+      "complete_unit_gpu_ms": 7.0359039999999995,
+      "preparation_ms": 21.467364,
+      "admission_ms": 16.518504,
+      "replacement_completed_ms": 136.476072,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 6,
+      "perfect_cost_next_fit": {
+        "windows": 4,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 5,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 4,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 1
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "budget_ms": 4,
+      "repeat": 0,
+      "complete_unit_wall_ms": 20.135958,
+      "complete_unit_gpu_ms": 16.039071999999997,
+      "preparation_ms": 18.993094,
+      "admission_ms": 16.259124,
+      "replacement_completed_ms": 202.71592,
+      "minimum_windows_from_total_wall": 6,
+      "actual_work_windows": 10,
+      "perfect_cost_next_fit": {
+        "windows": 6,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 10,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 9,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 2,
+      "repeat": 0,
+      "complete_unit_wall_ms": 4.519618,
+      "complete_unit_gpu_ms": 1.555968,
+      "preparation_ms": 1.787987,
+      "admission_ms": 1.227004,
+      "replacement_completed_ms": 54.877343,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 3,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 4,
+      "repeat": 0,
+      "complete_unit_wall_ms": 4.5851880000000005,
+      "complete_unit_gpu_ms": 1.550176,
+      "preparation_ms": 1.885677,
+      "admission_ms": 1.222785,
+      "replacement_completed_ms": 38.490319,
+      "minimum_windows_from_total_wall": 2,
+      "actual_work_windows": 2,
+      "perfect_cost_next_fit": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 1
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 2,
+      "repeat": 0,
+      "complete_unit_wall_ms": 4.826247,
+      "complete_unit_gpu_ms": 1.79424,
+      "preparation_ms": 1.646487,
+      "admission_ms": 1.229335,
+      "replacement_completed_ms": 71.9166,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 4,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 4,
+      "repeat": 0,
+      "complete_unit_wall_ms": 4.539585,
+      "complete_unit_gpu_ms": 1.792608,
+      "preparation_ms": 1.901737,
+      "admission_ms": 1.224865,
+      "replacement_completed_ms": 38.165769,
+      "minimum_windows_from_total_wall": 2,
+      "actual_work_windows": 2,
+      "perfect_cost_next_fit": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "budget_ms": 4,
+      "repeat": 1,
+      "complete_unit_wall_ms": 10.27906,
+      "complete_unit_gpu_ms": 7.064031999999999,
+      "preparation_ms": 19.680626,
+      "admission_ms": 15.989732,
+      "replacement_completed_ms": 119.631465,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 5,
+      "perfect_cost_next_fit": {
+        "windows": 4,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 5,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 4,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "budget_ms": 4,
+      "repeat": 1,
+      "complete_unit_wall_ms": 19.835449,
+      "complete_unit_gpu_ms": 15.953119999999998,
+      "preparation_ms": 20.192818,
+      "admission_ms": 15.998822,
+      "replacement_completed_ms": 202.939989,
+      "minimum_windows_from_total_wall": 5,
+      "actual_work_windows": 10,
+      "perfect_cost_next_fit": {
+        "windows": 6,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 10,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 9,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 4,
+      "repeat": 1,
+      "complete_unit_wall_ms": 4.254615,
+      "complete_unit_gpu_ms": 1.546816,
+      "preparation_ms": 1.813918,
+      "admission_ms": 1.670456,
+      "replacement_completed_ms": 38.233539,
+      "minimum_windows_from_total_wall": 2,
+      "actual_work_windows": 2,
+      "perfect_cost_next_fit": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 2,
+      "repeat": 1,
+      "complete_unit_wall_ms": 4.477188,
+      "complete_unit_gpu_ms": 1.558368,
+      "preparation_ms": 1.780357,
+      "admission_ms": 1.232925,
+      "replacement_completed_ms": 54.778613,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 3,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 4,
+      "repeat": 1,
+      "complete_unit_wall_ms": 4.412436,
+      "complete_unit_gpu_ms": 1.787232,
+      "preparation_ms": 1.861307,
+      "admission_ms": 1.254575,
+      "replacement_completed_ms": 38.196528,
+      "minimum_windows_from_total_wall": 2,
+      "actual_work_windows": 2,
+      "perfect_cost_next_fit": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 2,
+      "repeat": 1,
+      "complete_unit_wall_ms": 4.642998,
+      "complete_unit_gpu_ms": 1.810336,
+      "preparation_ms": 2.44809,
+      "admission_ms": 1.213554,
+      "replacement_completed_ms": 71.93195,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 4,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 1
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 1
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "budget_ms": 4,
+      "repeat": 2,
+      "complete_unit_wall_ms": 10.248241,
+      "complete_unit_gpu_ms": 7.053856,
+      "preparation_ms": 19.266084,
+      "admission_ms": 16.150833,
+      "replacement_completed_ms": 119.897416,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 5,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 5,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 4,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "budget_ms": 4,
+      "repeat": 2,
+      "complete_unit_wall_ms": 19.966695,
+      "complete_unit_gpu_ms": 16.092959999999998,
+      "preparation_ms": 19.197455,
+      "admission_ms": 16.376183,
+      "replacement_completed_ms": 202.899329,
+      "minimum_windows_from_total_wall": 5,
+      "actual_work_windows": 10,
+      "perfect_cost_next_fit": {
+        "windows": 7,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 10,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 9,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 2,
+      "repeat": 2,
+      "complete_unit_wall_ms": 4.504416,
+      "complete_unit_gpu_ms": 1.5539839999999998,
+      "preparation_ms": 1.991608,
+      "admission_ms": 1.396195,
+      "replacement_completed_ms": 54.761403,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 3,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 4,
+      "repeat": 2,
+      "complete_unit_wall_ms": 4.475458,
+      "complete_unit_gpu_ms": 1.550848,
+      "preparation_ms": 1.606486,
+      "admission_ms": 1.183885,
+      "replacement_completed_ms": 38.160038,
+      "minimum_windows_from_total_wall": 2,
+      "actual_work_windows": 2,
+      "perfect_cost_next_fit": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 2,
+      "repeat": 2,
+      "complete_unit_wall_ms": 5.034047,
+      "complete_unit_gpu_ms": 1.789312,
+      "preparation_ms": 1.936707,
+      "admission_ms": 1.213105,
+      "replacement_completed_ms": 71.362537,
+      "minimum_windows_from_total_wall": 3,
+      "actual_work_windows": 4,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 4,
+      "repeat": 2,
+      "complete_unit_wall_ms": 4.74508,
+      "complete_unit_gpu_ms": 1.786784,
+      "preparation_ms": 2.174589,
+      "admission_ms": 1.232734,
+      "replacement_completed_ms": 38.401899,
+      "minimum_windows_from_total_wall": 2,
+      "actual_work_windows": 2,
+      "perfect_cost_next_fit": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "same_kind_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "held_out_detailed_estimator_no_gap_replay": {
+        "windows": 2,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      }
+    }
+  ],
+  "cohorts": [
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "budget_ms": 4,
+      "median_unit_wall_ms": 10.27906,
+      "median_unit_gpu_ms": 7.053856,
+      "median_preparation_ms": 19.680626,
+      "median_admission_ms": 16.150833,
+      "median_replacement_ms": 119.897416,
+      "all_complete_wall_exceeds_four_windows": false,
+      "minimum_windows": [
+        3,
+        3,
+        3
+      ],
+      "perfect_next_fit_windows": [
+        4,
+        4,
+        3
+      ],
+      "observed_work_windows": [
+        6,
+        5,
+        5
+      ]
+    },
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "budget_ms": 4,
+      "median_unit_wall_ms": 19.966695,
+      "median_unit_gpu_ms": 16.039071999999997,
+      "median_preparation_ms": 19.197455,
+      "median_admission_ms": 16.259124,
+      "median_replacement_ms": 202.899329,
+      "all_complete_wall_exceeds_four_windows": true,
+      "minimum_windows": [
+        6,
+        5,
+        5
+      ],
+      "perfect_next_fit_windows": [
+        6,
+        6,
+        7
+      ],
+      "observed_work_windows": [
+        10,
+        10,
+        10
+      ]
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 2,
+      "median_unit_wall_ms": 4.504416,
+      "median_unit_gpu_ms": 1.555968,
+      "median_preparation_ms": 1.787987,
+      "median_admission_ms": 1.232925,
+      "median_replacement_ms": 54.778613,
+      "all_complete_wall_exceeds_four_windows": false,
+      "minimum_windows": [
+        3,
+        3,
+        3
+      ],
+      "perfect_next_fit_windows": [
+        3,
+        3,
+        3
+      ],
+      "observed_work_windows": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "subject": "robot",
+      "operation": "add",
+      "budget_ms": 4,
+      "median_unit_wall_ms": 4.475458,
+      "median_unit_gpu_ms": 1.550176,
+      "median_preparation_ms": 1.813918,
+      "median_admission_ms": 1.222785,
+      "median_replacement_ms": 38.233539,
+      "all_complete_wall_exceeds_four_windows": false,
+      "minimum_windows": [
+        2,
+        2,
+        2
+      ],
+      "perfect_next_fit_windows": [
+        2,
+        2,
+        2
+      ],
+      "observed_work_windows": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 2,
+      "median_unit_wall_ms": 4.826247,
+      "median_unit_gpu_ms": 1.79424,
+      "median_preparation_ms": 1.936707,
+      "median_admission_ms": 1.213554,
+      "median_replacement_ms": 71.9166,
+      "all_complete_wall_exceeds_four_windows": false,
+      "minimum_windows": [
+        3,
+        3,
+        3
+      ],
+      "perfect_next_fit_windows": [
+        3,
+        3,
+        3
+      ],
+      "observed_work_windows": [
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "subject": "robot",
+      "operation": "cut",
+      "budget_ms": 4,
+      "median_unit_wall_ms": 4.539585,
+      "median_unit_gpu_ms": 1.787232,
+      "median_preparation_ms": 1.901737,
+      "median_admission_ms": 1.232734,
+      "median_replacement_ms": 38.196528,
+      "all_complete_wall_exceeds_four_windows": false,
+      "minimum_windows": [
+        2,
+        2,
+        2
+      ],
+      "perfect_next_fit_windows": [
+        2,
+        2,
+        2
+      ],
+      "observed_work_windows": [
+        2,
+        2,
+        2
+      ]
+    }
+  ],
+  "alternate_granularity": [
+    {
+      "subject": "guardian",
+      "operation": "cut",
+      "groups": 1024,
+      "budget_ms": 4.0,
+      "unit_wall_ms": 16.348912,
+      "unit_gpu_ms": 12.135712,
+      "minimum_windows_from_total_wall": 5,
+      "perfect_cost_next_fit": {
+        "windows": 6,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "replacement_completed_ms": 169.655512
+    },
+    {
+      "subject": "guardian",
+      "operation": "add",
+      "groups": 1024,
+      "budget_ms": 4.0,
+      "unit_wall_ms": 9.946287,
+      "unit_gpu_ms": 7.032095999999999,
+      "minimum_windows_from_total_wall": 3,
+      "perfect_cost_next_fit": {
+        "windows": 3,
+        "blocked": false,
+        "overrun": false,
+        "underestimated_units": 0
+      },
+      "replacement_completed_ms": 136.145257
+    }
+  ],
+  "global_scalar_validity_counterexample": {
+    "kind": "ideal arithmetic, not an existing native bug",
+    "point": [
+      0.400390625,
+      0.001953125,
+      0.001953125
+    ],
+    "old_sphere": {
+      "center": [
+        0.0,
+        0.001953125,
+        0.001953125
+      ],
+      "radius": 0.1
+    },
+    "added_sphere": {
+      "center": [
+        0.300390625,
+        0.001953125,
+        0.001953125
+      ],
+      "radius": 0.01
+    },
+    "old_scalar": 0.300390625,
+    "new_scalar": 0.08999999999999998,
+    "node_radius": 0.0033829117335329633,
+    "old_and_new_classification": "empty",
+    "consequence": "Unchanged topology does not establish validity of an exact scalar at the new source version."
+  },
+  "center_cache_memory_screen": {
+    "classification_centers": 17043520,
+    "bytes_per_field_values_and_validity": 70304520,
+    "two_field_increment_bytes": 140609040,
+    "baseline_geometry_bytes": 1837530180,
+    "largest_existing_diagnostic_bytes": 76695844,
+    "analytic_total_bytes": 2054835064,
+    "remaining_below_two_gib_bytes": 92648584,
+    "dense_u32_epoch_increment_bytes": 136348160,
+    "analytic_total_with_dense_epochs_bytes": 2191183224,
+    "limitation": "Arithmetic screen only; value-plus-validity estimate excludes epochs. Both estimates exclude work lists, extra copies, renderer and driver allocation. Not a native memory result.",
+    "classification_only_candidate": {
+      "coarse_dense_entries": 266304,
+      "finest_entries_indexed_by_existing_brick_slot": 262144,
+      "scalar_and_validity_bytes_per_field": 2179848,
+      "limitation": "Proposed SUBDIVIDED-only center state, not arbitrary exact scalars. Requires initialization, locality-dominance and exposed-child/F32 proofs. Not implemented or measured."
+    }
+  },
+  "structural_preparation_traversals": {
+    "timed_prepare_calls": 2,
+    "full_document_parse_traversals": 8,
+    "full_document_pretty_print_traversals": 4,
+    "scope": "Source audit of the measured preparation calls; startup parsing is additional. No substage CPU profile measured."
+  },
+  "complete": true
+}

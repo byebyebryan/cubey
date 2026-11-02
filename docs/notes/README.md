@@ -118,6 +118,11 @@ the architecture and project guides remain current authority.
 - [Interactive editing results](sdf-interactive-edit-results.md): qualified
   tapered preview/local commits, bounded worker service, path/width sampling
   work and the retained Guardian throughput miss.
+- [Interactive editing solution research](sdf-interactive-edit-solution-research.md):
+  source-preparation audit, offline scheduling bounds, safe publication,
+  exact-center validity and the proposed next experiment.
+- [Bounded edit-service execution](sdf-edit-service-execution-plan.md):
+  validation controls, preparation/submission changes and gated finite strokes.
 - [SDF quality/speed execution](sdf-quality-speed-progress.md): matched endpoint,
   native quality-diagnostic, candidate and final-decision checkpoints.
 - [SDF source shader selection scope](sdf-shader-selection-loop.md) and

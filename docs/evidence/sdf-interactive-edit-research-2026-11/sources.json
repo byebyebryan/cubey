@@ -1,0 +1,86 @@
+{
+  "references": [
+    {
+      "id": "json-dump",
+      "url": "https://json.nlohmann.me/api/basic_json/dump/#complexity",
+      "title": "nlohmann JSON dump API",
+      "accessed": "2026-11-01",
+      "supports": "Serialization is linear in input size.",
+      "does_not_establish": "Not a profile of Cubey or evidence for upgrading the JSON library."
+    },
+    {
+      "id": "descriptor-updates",
+      "url": "https://docs.vulkan.org/refpages/latest/refpages/source/vkUpdateDescriptorSets.html",
+      "title": "Khronos descriptor update reference",
+      "accessed": "2026-11-01",
+      "supports": "Ordinary bindings used by pending commands cannot be rewritten.",
+      "does_not_establish": "Does not supply Cubey versioned binding or retirement implementation."
+    },
+    {
+      "id": "wait-idle",
+      "url": "https://docs.vulkan.org/samples/latest/samples/performance/wait_idle/README.html",
+      "title": "Khronos CPU/GPU synchronization sample",
+      "accessed": "2026-11-01",
+      "supports": "Granular frame completion avoids unnecessary pipeline drains.",
+      "does_not_establish": "Sample performance is not a Cubey timing or permission to drop dependencies."
+    },
+    {
+      "id": "command-buffers",
+      "url": "https://docs.vulkan.org/samples/latest/samples/performance/command_buffer_usage/README.html",
+      "title": "Khronos command-buffer management sample",
+      "accessed": "2026-11-01",
+      "supports": "Release measurements without validation layers, pool recycling and reasonable command-buffer granularity avoid measurement and allocation overhead.",
+      "does_not_establish": "Draw-call sample does not explain Cubey compute granularity penalties."
+    },
+    {
+      "id": "timeline",
+      "url": "https://docs.vulkan.org/samples/latest/samples/extensions/timeline_semaphore/README.html",
+      "title": "Khronos timeline semaphore sample",
+      "accessed": "2026-11-01",
+      "supports": "Completion counters support lifetime synchronization; excessive queued work raises latency.",
+      "does_not_establish": "A new timeline API is not required by the proposed one-owner experiment."
+    },
+    {
+      "id": "queue-priority",
+      "url": "https://docs.vulkan.org/spec/latest/chapters/devsandqueues.html#devsandqueues-priority",
+      "title": "Khronos queue scheduling specification",
+      "accessed": "2026-11-01",
+      "supports": "Queue priority does not promise scheduling or quality-of-service guarantees.",
+      "does_not_establish": "Does not identify the fastest queue arrangement for this workload."
+    },
+    {
+      "id": "mpr",
+      "url": "https://www.mattkeeter.com/research/mpr/",
+      "title": "Keeter 2020 MPR research page",
+      "accessed": "2026-11-01",
+      "supports": "GPU interval evaluation and local expression reduction support a spatial-program direction.",
+      "does_not_establish": "No Cubey raw-F32/R16 equivalence or drop-in evaluator performance is established."
+    },
+    {
+      "id": "fidget-gpu",
+      "url": "https://github.com/mkeeter/fidget/blob/25528e0c2c5251f3b7538b2d43968a0fe5d718c8/fidget-wgpu/src/lib.rs",
+      "title": "Pinned Fidget GPU source",
+      "accessed": "2026-11-01",
+      "supports": "WebGPU rendering includes tape interpretation and simplification, separately from native CPU JIT.",
+      "does_not_establish": "No library integration, CSG adapter or benchmark was performed."
+    },
+    {
+      "id": "claybook",
+      "url": "https://media.gdcvault.com/gdc2018/presentations/Aaltonen_Sebastian_GPU_Based_Clay.pdf#page=20",
+      "title": "Aaltonen GDC 2018 Claybook slides, pages 20-21",
+      "accessed": "2026-11-01",
+      "supports": "A limited-range sampled field is modified using previous volume values and new modifications.",
+      "does_not_establish": "Different storage, error and history contracts from Cubey; no copied implementation."
+    },
+    {
+      "id": "adf",
+      "url": "https://www.merl.com/publications/docs/TR2000-15.pdf",
+      "title": "Frisken et al. 2000 adaptively sampled distance fields",
+      "accessed": "2026-11-01",
+      "supports": "Adaptive reconstruction accuracy is an explicit representation choice.",
+      "does_not_establish": "Not an undo design or proof of Cubey cache identity."
+    }
+  ],
+  "primary_sources_only": true,
+  "complete": true
+}
