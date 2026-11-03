@@ -1,0 +1,18 @@
+{
+  "authored-scene": "projects/sdf/scenes/content-audition-2026-11/oculus-pavilion-intact.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "duration": 12,
+  "orbit-turns": 1,
+  "yaw": 0.48,
+  "pitch": 0.36,
+  "distance": 1.27,
+  "target-y": 0.015,
+  "sun-elevation": 45,
+  "sun-azimuth": 150,
+  "shadows": 1,
+  "ground": false,
+  "ao": false,
+  "exposure": 0.6,
+  "supersample": 1
+}

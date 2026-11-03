@@ -1,0 +1,545 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Oculus pavilion / intact",
+  "materials": [
+    {
+      "name": "stone",
+      "base_color": [
+        0.5906188409193369,
+        0.4851499400560704,
+        0.3277780980565422
+      ],
+      "roughness": 0.82,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "tower",
+      "base_color": [
+        0.14126329114027164,
+        0.20155625379439707,
+        0.184474994500441
+      ],
+      "roughness": 0.75,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "union",
+    "name": "pavilion-display",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "cylinder",
+        "name": "terrace",
+        "position": [
+          0,
+          -0.255,
+          0
+        ],
+        "radius": 0.335,
+        "half_length": 0.028,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "step-0",
+        "position": [
+          0,
+          -0.252,
+          0.285
+        ],
+        "half_extent": [
+          0.105,
+          0.012,
+          0.028
+        ],
+        "rounding": 0.004,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "step-1",
+        "position": [
+          0,
+          -0.269,
+          0.31
+        ],
+        "half_extent": [
+          0.105,
+          0.012,
+          0.028
+        ],
+        "rounding": 0.004,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "step-2",
+        "position": [
+          0,
+          -0.28600000000000003,
+          0.33499999999999996
+        ],
+        "half_extent": [
+          0.105,
+          0.012,
+          0.028
+        ],
+        "rounding": 0.004,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "step-3",
+        "position": [
+          0,
+          -0.303,
+          0.36
+        ],
+        "half_extent": [
+          0.105,
+          0.012,
+          0.028
+        ],
+        "rounding": 0.004,
+        "material": "stone"
+      },
+      {
+        "type": "subtract",
+        "name": "opened-pavilion",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "hollow-pavilion",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "union",
+                "name": "pavilion-mass",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "cylinder",
+                    "name": "drum",
+                    "position": [
+                      0,
+                      -0.055,
+                      0
+                    ],
+                    "radius": 0.218,
+                    "half_length": 0.155,
+                    "material": "stone"
+                  },
+                  {
+                    "type": "sphere",
+                    "name": "dome",
+                    "position": [
+                      0,
+                      0.098,
+                      0
+                    ],
+                    "radius": 0.218,
+                    "material": "stone"
+                  }
+                ]
+              },
+              {
+                "type": "union",
+                "name": "interior-volume",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "cylinder",
+                    "name": "room",
+                    "position": [
+                      0,
+                      -0.055,
+                      0
+                    ],
+                    "radius": 0.171,
+                    "half_length": 0.18,
+                    "material": "stone"
+                  },
+                  {
+                    "type": "sphere",
+                    "name": "inner-dome",
+                    "position": [
+                      0,
+                      0.098,
+                      0
+                    ],
+                    "radius": 0.171,
+                    "material": "stone"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "union",
+            "name": "opening-tools",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "union",
+                "name": "arch-tool-0",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "portal-bottom-0",
+                    "position": [
+                      0,
+                      -0.12,
+                      0.205
+                    ],
+                    "half_extent": [
+                      0.061,
+                      0.078,
+                      0.17
+                    ],
+                    "rounding": 0.002,
+                    "material": "stone"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "portal-crown-0",
+                    "position": [
+                      0,
+                      -0.042,
+                      0.205
+                    ],
+                    "radius": 0.061,
+                    "half_length": 0.17,
+                    "material": "stone",
+                    "rotation_xyzw": [
+                      0.7071067811865475,
+                      0.0,
+                      0.0,
+                      0.7071067811865476
+                    ]
+                  }
+                ],
+                "rotation_xyzw": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              {
+                "type": "union",
+                "name": "arch-tool-1",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "portal-bottom-1",
+                    "position": [
+                      0,
+                      -0.12,
+                      0.205
+                    ],
+                    "half_extent": [
+                      0.061,
+                      0.078,
+                      0.17
+                    ],
+                    "rounding": 0.002,
+                    "material": "stone"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "portal-crown-1",
+                    "position": [
+                      0,
+                      -0.042,
+                      0.205
+                    ],
+                    "radius": 0.061,
+                    "half_length": 0.17,
+                    "material": "stone",
+                    "rotation_xyzw": [
+                      0.7071067811865475,
+                      0.0,
+                      0.0,
+                      0.7071067811865476
+                    ]
+                  }
+                ],
+                "rotation_xyzw": [
+                  0.0,
+                  0.7071067811865475,
+                  0.0,
+                  0.7071067811865476
+                ]
+              },
+              {
+                "type": "union",
+                "name": "arch-tool-2",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "portal-bottom-2",
+                    "position": [
+                      0,
+                      -0.12,
+                      0.205
+                    ],
+                    "half_extent": [
+                      0.061,
+                      0.078,
+                      0.17
+                    ],
+                    "rounding": 0.002,
+                    "material": "stone"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "portal-crown-2",
+                    "position": [
+                      0,
+                      -0.042,
+                      0.205
+                    ],
+                    "radius": 0.061,
+                    "half_length": 0.17,
+                    "material": "stone",
+                    "rotation_xyzw": [
+                      0.7071067811865475,
+                      0.0,
+                      0.0,
+                      0.7071067811865476
+                    ]
+                  }
+                ],
+                "rotation_xyzw": [
+                  -0.0,
+                  -0.7071067811865475,
+                  -0.0,
+                  0.7071067811865476
+                ]
+              },
+              {
+                "type": "cylinder",
+                "name": "oculus",
+                "position": [
+                  0,
+                  0.3,
+                  0
+                ],
+                "radius": 0.064,
+                "half_length": 0.16,
+                "material": "stone"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "subtract",
+        "name": "open-tower",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "tower",
+            "position": [
+              -0.267,
+              0.095,
+              -0.075
+            ],
+            "half_extent": [
+              0.042,
+              0.305,
+              0.058
+            ],
+            "rounding": 0.006,
+            "material": "tower"
+          },
+          {
+            "type": "union",
+            "name": "tower-tools",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "bell-opening",
+                "position": [
+                  -0.267,
+                  0.292,
+                  -0.075
+                ],
+                "half_extent": [
+                  0.025,
+                  0.058,
+                  0.11
+                ],
+                "rounding": 0.014,
+                "material": "tower"
+              },
+              {
+                "type": "cylinder",
+                "name": "tower-eye",
+                "position": [
+                  -0.267,
+                  0.17,
+                  -0.075
+                ],
+                "radius": 0.021,
+                "half_length": 0.11,
+                "material": "tower",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "box",
+        "name": "tower-cap",
+        "position": [
+          -0.267,
+          0.402,
+          -0.075
+        ],
+        "half_extent": [
+          0.055,
+          0.014,
+          0.071
+        ],
+        "rounding": 0.005,
+        "material": "stone"
+      }
+    ],
+    "scale": 0.82
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "nodes": [
+        "terrace",
+        "step-0",
+        "step-1",
+        "step-2",
+        "step-3"
+      ],
+      "label": "Establish the terrace and approach steps",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "drum",
+        "dome"
+      ],
+      "label": "Raise the drum and dome",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "room",
+        "inner-dome"
+      ],
+      "label": "Hollow the room and dome",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "portal-bottom-0",
+        "portal-crown-0",
+        "portal-bottom-1",
+        "portal-crown-1",
+        "portal-bottom-2",
+        "portal-crown-2",
+        "oculus"
+      ],
+      "label": "Open three arched passages and the roof oculus",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "tower"
+      ],
+      "label": "Raise the separate narrow tower",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "bell-opening",
+        "tower-eye"
+      ],
+      "label": "Cut the tower openings",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "tower-cap"
+      ],
+      "label": "Cap the tower",
+      "seconds": 1.1
+    }
+  ]
+}

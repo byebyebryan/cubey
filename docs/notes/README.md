@@ -275,6 +275,9 @@ Each record's status and evidence link identifies what is implemented.
   robot, early native blockout review, grouped composition and plain materials;
   implemented and positively reviewed, with later detail and joint revisions
   complete; current behavior is in the [SDF guide](../../projects/sdf/README.md).
+- [Three authored SDF content directions](sdf-content-audition-2026-11.md): native
+  shell, pavilion and manifold blockouts, intact/section views, source recipes
+  and early visual recommendations awaiting selection.
 - [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;

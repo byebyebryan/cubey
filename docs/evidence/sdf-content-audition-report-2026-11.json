@@ -1,0 +1,54 @@
+{
+  "report_id": "798838517a2a99b40238b58c8c7834508d9429570f919b7a0647c76aac1d9311",
+  "title": "Cubey SDF \u2014 Three authored content directions",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-03T21:52:27.469192+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/798838517a2a99b40238b58c8c7834508d9429570f919b7a0647c76aac1d9311",
+  "file_count": 24,
+  "byte_count": 1721350,
+  "url": "http://starship:8787/reports/798838517a2a99b40238b58c8c7834508d9429570f919b7a0647c76aac1d9311/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-03T21:52:27.927323+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 75738,
+    "verified_url": "http://starship:8787/reports/798838517a2a99b40238b58c8c7834508d9429570f919b7a0647c76aac1d9311/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "reviewed_source_head": "bab73c5d",
+  "authoring": {
+    "generator": "projects/sdf/tools/author_content_audition.py",
+    "report_generator": "projects/sdf/tools/content_audition_report.py",
+    "export": "outputs/sdf/content-audition-20261103/final-report"
+  },
+  "scope": "Three authored content blockouts and static native captures. No renderer change, new performance measurement, construction-film qualification, site deployment or Git push.",
+  "browser_acceptance": {
+    "state": "unavailable",
+    "reason": "Browser runtime initialized but no browser was available; connected browser list was empty. Native images inspected separately.",
+    "static_checks": "Passed embedded JSON, JavaScript syntax, local links, selected image/input hashes, all nine view mappings and immutable bundle fingerprints."
+  },
+  "asset_delivery": {
+    "state": "verified",
+    "manifest_listed_files": 23,
+    "method": "HTTP 200 with matching SHA256 per bundled source manifest"
+  }
+}

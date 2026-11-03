@@ -1,0 +1,783 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "Cutaway manifold / section",
+  "materials": [
+    {
+      "name": "housing",
+      "base_color": [
+        0.5711248294648731,
+        0.5457244613701866,
+        0.41254261348390375
+      ],
+      "roughness": 0.64,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "teal",
+      "base_color": [
+        0.07227185068231748,
+        0.2874408377269175,
+        0.29177064981753587
+      ],
+      "roughness": 0.55,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "dark",
+      "base_color": [
+        0.033104766570885055,
+        0.05780543019106723,
+        0.06301001765316767
+      ],
+      "roughness": 0.76,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "accent",
+      "base_color": [
+        0.5647115057049292,
+        0.3005437944157765,
+        0.09084171118340768
+      ],
+      "roughness": 0.48,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "union",
+    "name": "manifold-display",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "box",
+        "name": "foot",
+        "position": [
+          0,
+          -0.245,
+          0
+        ],
+        "half_extent": [
+          0.25,
+          0.024,
+          0.19
+        ],
+        "rounding": 0.012,
+        "material": "dark"
+      },
+      {
+        "type": "box",
+        "name": "pad--1",
+        "position": [
+          -0.16,
+          -0.205,
+          0
+        ],
+        "half_extent": [
+          0.038,
+          0.025,
+          0.12
+        ],
+        "rounding": 0.009,
+        "material": "housing"
+      },
+      {
+        "type": "box",
+        "name": "pad-1",
+        "position": [
+          0.16,
+          -0.205,
+          0
+        ],
+        "half_extent": [
+          0.038,
+          0.025,
+          0.12
+        ],
+        "rounding": 0.009,
+        "material": "housing"
+      },
+      {
+        "type": "subtract",
+        "name": "housing-section",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "machined-housing",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "union",
+                "name": "casting",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "housing",
+                    "position": [
+                      0,
+                      -0.025,
+                      0
+                    ],
+                    "half_extent": [
+                      0.205,
+                      0.15,
+                      0.145
+                    ],
+                    "rounding": 0.035,
+                    "material": "housing"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "neck",
+                    "position": [
+                      0,
+                      0.205,
+                      0
+                    ],
+                    "radius": 0.062,
+                    "half_length": 0.13,
+                    "material": "housing"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "upper-flange",
+                    "position": [
+                      0,
+                      0.287,
+                      0
+                    ],
+                    "radius": 0.103,
+                    "half_length": 0.019,
+                    "material": "housing"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "port--1",
+                    "position": [
+                      -0.251,
+                      -0.025,
+                      0
+                    ],
+                    "radius": 0.07,
+                    "half_length": 0.07,
+                    "material": "housing",
+                    "rotation_xyzw": [
+                      0.0,
+                      0.0,
+                      0.7071067811865475,
+                      0.7071067811865476
+                    ]
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "flange--1",
+                    "position": [
+                      -0.308,
+                      -0.025,
+                      0
+                    ],
+                    "radius": 0.103,
+                    "half_length": 0.019,
+                    "material": "teal",
+                    "rotation_xyzw": [
+                      0.0,
+                      0.0,
+                      0.7071067811865475,
+                      0.7071067811865476
+                    ]
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "port-1",
+                    "position": [
+                      0.251,
+                      -0.025,
+                      0
+                    ],
+                    "radius": 0.07,
+                    "half_length": 0.07,
+                    "material": "housing",
+                    "rotation_xyzw": [
+                      0.0,
+                      0.0,
+                      0.7071067811865475,
+                      0.7071067811865476
+                    ]
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "flange-1",
+                    "position": [
+                      0.308,
+                      -0.025,
+                      0
+                    ],
+                    "radius": 0.103,
+                    "half_length": 0.019,
+                    "material": "teal",
+                    "rotation_xyzw": [
+                      0.0,
+                      0.0,
+                      0.7071067811865475,
+                      0.7071067811865476
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "union",
+                "name": "bore-tools",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "cylinder",
+                    "name": "cross-bore",
+                    "position": [
+                      0,
+                      -0.025,
+                      0
+                    ],
+                    "radius": 0.046,
+                    "half_length": 0.43,
+                    "material": "housing",
+                    "rotation_xyzw": [
+                      0.0,
+                      0.0,
+                      0.7071067811865475,
+                      0.7071067811865476
+                    ]
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "shaft-chamber",
+                    "position": [
+                      0,
+                      -0.025,
+                      0
+                    ],
+                    "radius": 0.099,
+                    "half_length": 0.13,
+                    "material": "housing"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "neck-bore",
+                    "position": [
+                      0,
+                      0.235,
+                      0
+                    ],
+                    "radius": 0.043,
+                    "half_length": 0.18,
+                    "material": "housing"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "name": "section-tool",
+            "position": [
+              0.245,
+              0.04,
+              0.19
+            ],
+            "half_extent": [
+              0.245,
+              0.38,
+              0.19
+            ],
+            "rounding": 0.001,
+            "material": "housing"
+          }
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "shaft",
+        "position": [
+          0,
+          0.06,
+          0
+        ],
+        "radius": 0.022,
+        "half_length": 0.255,
+        "material": "accent"
+      },
+      {
+        "type": "torus",
+        "name": "rotor-ring",
+        "position": [
+          0,
+          -0.025,
+          0
+        ],
+        "major_radius": 0.071,
+        "minor_radius": 0.012,
+        "material": "teal"
+      },
+      {
+        "type": "capsule",
+        "name": "vane-0",
+        "position": [
+          0.039,
+          -0.025,
+          0.0
+        ],
+        "radius": 0.012,
+        "half_length": 0.039,
+        "material": "teal",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.7071067811865475,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "vane-1",
+        "position": [
+          0.019500000000000003,
+          -0.025,
+          0.0337749907475931
+        ],
+        "radius": 0.012,
+        "half_length": 0.039,
+        "material": "teal",
+        "rotation_xyzw": [
+          0.6123724356957945,
+          0.0,
+          -0.35355339059327384,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "vane-2",
+        "position": [
+          -0.019499999999999993,
+          -0.025,
+          0.03377499074759311
+        ],
+        "radius": 0.012,
+        "half_length": 0.039,
+        "material": "teal",
+        "rotation_xyzw": [
+          0.6123724356957945,
+          0.0,
+          0.3535533905932736,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "vane-3",
+        "position": [
+          -0.039,
+          -0.025,
+          4.776122516674678e-18
+        ],
+        "radius": 0.012,
+        "half_length": 0.039,
+        "material": "teal",
+        "rotation_xyzw": [
+          8.659560562354933e-17,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "vane-4",
+        "position": [
+          -0.019500000000000017,
+          -0.025,
+          -0.033774990747593096
+        ],
+        "radius": 0.012,
+        "half_length": 0.039,
+        "material": "teal",
+        "rotation_xyzw": [
+          -0.6123724356957942,
+          0.0,
+          0.35355339059327406,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "vane-5",
+        "position": [
+          0.019500000000000003,
+          -0.025,
+          -0.0337749907475931
+        ],
+        "radius": 0.012,
+        "half_length": 0.039,
+        "material": "teal",
+        "rotation_xyzw": [
+          -0.6123724356957945,
+          0.0,
+          -0.35355339059327384,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "box",
+        "name": "handle",
+        "position": [
+          0,
+          0.33,
+          0
+        ],
+        "half_extent": [
+          0.115,
+          0.016,
+          0.026
+        ],
+        "rounding": 0.011,
+        "material": "teal"
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt--1-0",
+        "position": [
+          -0.331,
+          0.056,
+          0.0
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt--1-1",
+        "position": [
+          -0.331,
+          0.015500000000000007,
+          0.07014805770653953
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt--1-2",
+        "position": [
+          -0.331,
+          -0.06549999999999997,
+          0.07014805770653953
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt--1-3",
+        "position": [
+          -0.331,
+          -0.10600000000000001,
+          9.91963907309356e-18
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt--1-4",
+        "position": [
+          -0.331,
+          -0.06550000000000003,
+          -0.07014805770653951
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt--1-5",
+        "position": [
+          -0.331,
+          0.015500000000000007,
+          -0.07014805770653953
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt-1-0",
+        "position": [
+          0.331,
+          0.056,
+          0.0
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt-1-1",
+        "position": [
+          0.331,
+          0.015500000000000007,
+          0.07014805770653953
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt-1-2",
+        "position": [
+          0.331,
+          -0.06549999999999997,
+          0.07014805770653953
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt-1-3",
+        "position": [
+          0.331,
+          -0.10600000000000001,
+          9.91963907309356e-18
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt-1-4",
+        "position": [
+          0.331,
+          -0.06550000000000003,
+          -0.07014805770653951
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "bolt-1-5",
+        "position": [
+          0.331,
+          0.015500000000000007,
+          -0.07014805770653953
+        ],
+        "radius": 0.01,
+        "half_length": 0.01,
+        "material": "accent",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.7071067811865475,
+          0.7071067811865476
+        ]
+      }
+    ]
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "nodes": [
+        "foot",
+        "pad--1",
+        "pad-1"
+      ],
+      "label": "Mount the manifold on two short feet",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "housing",
+        "neck",
+        "upper-flange",
+        "port--1",
+        "flange--1",
+        "port-1",
+        "flange-1"
+      ],
+      "label": "Cast the rounded body, neck and opposing flanges",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "cross-bore",
+        "shaft-chamber",
+        "neck-bore"
+      ],
+      "label": "Bore the connected horizontal and vertical passages",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "section-tool"
+      ],
+      "label": "Remove a quarter of the housing",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "shaft",
+        "rotor-ring",
+        "vane-0",
+        "vane-1",
+        "vane-2",
+        "vane-3",
+        "vane-4",
+        "vane-5"
+      ],
+      "label": "Fit the shaft and simple internal rotor",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "handle"
+      ],
+      "label": "Fit the cross handle",
+      "seconds": 1.1
+    },
+    {
+      "nodes": [
+        "bolt--1-0",
+        "bolt--1-1",
+        "bolt--1-2",
+        "bolt--1-3",
+        "bolt--1-4",
+        "bolt--1-5",
+        "bolt-1-0",
+        "bolt-1-1",
+        "bolt-1-2",
+        "bolt-1-3",
+        "bolt-1-4",
+        "bolt-1-5"
+      ],
+      "label": "Add the restrained flange fasteners",
+      "seconds": 1.1
+    }
+  ]
+}

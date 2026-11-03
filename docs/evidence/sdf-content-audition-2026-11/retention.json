@@ -1,0 +1,555 @@
+{
+  "format": "cubey.sdf.content-audition-retention",
+  "version": 1,
+  "policy": "Keep all three small raw rounds, including initial capacity failure and superseded content, plus both report exports. No cleanup performed or authorized.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/cutaway-manifold-intact-hero.png",
+      "bytes": 107414,
+      "sha256": "00264eb01508b3d405bc49f0e3a80e13d8723f8c6f2a5dd85b1087778c53c3ef"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/cutaway-manifold-section-hero.png",
+      "bytes": 111840,
+      "sha256": "72affa59e72b5ad0ec50369010bc889475134f9f9da3c80fddedfa620be153a4"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/cutaway-manifold-section-side.png",
+      "bytes": 129282,
+      "sha256": "50440bc575752d2b3657c75192e2b72e9af47dbd00e5aad2372c22e47f574d56"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/oculus-pavilion-intact-hero.png",
+      "bytes": 112281,
+      "sha256": "d6c56454b39165fa41d1d7049e941cfa771e546c395d39ff80bd62274f786c2a"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/oculus-pavilion-section-hero.png",
+      "bytes": 110521,
+      "sha256": "2d6ff7bc0328295ba5d10932ef4c4d6fd503881fe915c91390657a2fef7cda50"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/oculus-pavilion-section-side.png",
+      "bytes": 122118,
+      "sha256": "798bb5db57fd34372985474877b0e2a361475ebf9c3b63de6e7e7ca5c6f31283"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/spiral-shell-intact-hero.png",
+      "bytes": 161365,
+      "sha256": "8ef56826cdfa3ef308b320d0da8e11de78ccc8ab49f20ef740897decbd8a2d30"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/spiral-shell-section-hero.png",
+      "bytes": 138895,
+      "sha256": "ab7097c62c8e123b2ee08cd27ebf84e8c6bba98de4932ef85c78009fa2919973"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/assets/spiral-shell-section-side.png",
+      "bytes": 153237,
+      "sha256": "b6df814fbc4dc80c5609fe95f6218a03ab29dfb05f7c46c3aebad3a212caf93b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/audition-data.json",
+      "bytes": 72975,
+      "sha256": "0c492631aad18b332239ae8ee6b39343755d526b0291969e5b99e66572426789"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/index.html",
+      "bytes": 75738,
+      "sha256": "bea3d4765c222ae74b41f9c1dbe125a87db20cb5fb15478f57ad9e4d53f2b835"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/presets/cutaway-manifold-intact.json",
+      "bytes": 386,
+      "sha256": "57ce3172a205e410847e5ada6501f19b3e9bff3264a4292ab933c596fceb9690"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/presets/cutaway-manifold-section.json",
+      "bytes": 387,
+      "sha256": "5f06026fe4390ef0ff7f4013ef11e45ab96cffbdd6d5e5398d0d74bc6806be6f"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/presets/oculus-pavilion-intact.json",
+      "bytes": 386,
+      "sha256": "5f4085194dc39619ec5e9daeff46b3e7c794cfce2f26fdccc70d7f2e038a1aec"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/presets/oculus-pavilion-section.json",
+      "bytes": 387,
+      "sha256": "6f3df7198954d6f9314cb7f59103a595559c349e543852d1015dce11cedc25e5"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/presets/spiral-shell-intact.json",
+      "bytes": 381,
+      "sha256": "08400ac7bf715d15d2aded01dfb71900943d127c00a5d21db2688c62a3978bc0"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/presets/spiral-shell-section.json",
+      "bytes": 382,
+      "sha256": "a122e79bed8a9ffe5db809d330b81c4a8cce24ad56987bc759b2d1c129822633"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/scenes/cutaway-manifold-intact.json",
+      "bytes": 16260,
+      "sha256": "92aef0a4ab81484bedf9936c4c07719e11e2e8e3a99645e9015f969fa1ab4185"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/scenes/cutaway-manifold-section.json",
+      "bytes": 17682,
+      "sha256": "9280860ecd810330bb6843eb004d3d0dd7fe39677dfc7fbd7e752fe41a04ff3e"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/scenes/oculus-pavilion-intact.json",
+      "bytes": 12800,
+      "sha256": "064bd0f99e5f4a84e2ecfc91a5493a748f1a4f3e7370738d004f10cb342d14b7"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/scenes/oculus-pavilion-section.json",
+      "bytes": 14548,
+      "sha256": "bf46aaa8a7d9e472d02e45cc3149e5820a36b50df68451b7cb09cfabbab33f0e"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/scenes/spiral-shell-intact.json",
+      "bytes": 168862,
+      "sha256": "9a91ef2f07937b85d51783d674bc082edf4952932c1f972ba1e3db1e9ed2a77f"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/scenes/spiral-shell-section.json",
+      "bytes": 189200,
+      "sha256": "7efb1f7ba1531fa31b3e03c248f026933b2afc713907870e3e70da67668d124b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/final-report/source-manifest.json",
+      "bytes": 4023,
+      "sha256": "646b5d41f84f2a6022ed66f5bf22ca999a5347dc450c9114464efc42ef791c08"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/cutaway-manifold-intact-hero.png",
+      "bytes": 107414,
+      "sha256": "00264eb01508b3d405bc49f0e3a80e13d8723f8c6f2a5dd85b1087778c53c3ef"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/cutaway-manifold-section-hero.png",
+      "bytes": 111840,
+      "sha256": "72affa59e72b5ad0ec50369010bc889475134f9f9da3c80fddedfa620be153a4"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/cutaway-manifold-section-side.png",
+      "bytes": 129282,
+      "sha256": "50440bc575752d2b3657c75192e2b72e9af47dbd00e5aad2372c22e47f574d56"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/oculus-pavilion-intact-hero.png",
+      "bytes": 112281,
+      "sha256": "d6c56454b39165fa41d1d7049e941cfa771e546c395d39ff80bd62274f786c2a"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/oculus-pavilion-section-hero.png",
+      "bytes": 110521,
+      "sha256": "2d6ff7bc0328295ba5d10932ef4c4d6fd503881fe915c91390657a2fef7cda50"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/oculus-pavilion-section-side.png",
+      "bytes": 122118,
+      "sha256": "798bb5db57fd34372985474877b0e2a361475ebf9c3b63de6e7e7ca5c6f31283"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/spiral-shell-intact-hero.png",
+      "bytes": 161365,
+      "sha256": "8ef56826cdfa3ef308b320d0da8e11de78ccc8ab49f20ef740897decbd8a2d30"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/spiral-shell-section-hero.png",
+      "bytes": 138895,
+      "sha256": "ab7097c62c8e123b2ee08cd27ebf84e8c6bba98de4932ef85c78009fa2919973"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/assets/spiral-shell-section-side.png",
+      "bytes": 153237,
+      "sha256": "b6df814fbc4dc80c5609fe95f6218a03ab29dfb05f7c46c3aebad3a212caf93b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/audition-data.json",
+      "bytes": 71322,
+      "sha256": "4dc2d03572c0df669cae71e69aaaa6e6bbf6ce3586009008daf69cd585b01abe"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/index.html",
+      "bytes": 74175,
+      "sha256": "5ab955ba91b9379e3a325fdf03b71792d7a5c78fd2d472f206df41701bbe97aa"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/presets/cutaway-manifold-intact.json",
+      "bytes": 386,
+      "sha256": "57ce3172a205e410847e5ada6501f19b3e9bff3264a4292ab933c596fceb9690"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/presets/cutaway-manifold-section.json",
+      "bytes": 387,
+      "sha256": "5f06026fe4390ef0ff7f4013ef11e45ab96cffbdd6d5e5398d0d74bc6806be6f"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/presets/oculus-pavilion-intact.json",
+      "bytes": 386,
+      "sha256": "5f4085194dc39619ec5e9daeff46b3e7c794cfce2f26fdccc70d7f2e038a1aec"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/presets/oculus-pavilion-section.json",
+      "bytes": 387,
+      "sha256": "6f3df7198954d6f9314cb7f59103a595559c349e543852d1015dce11cedc25e5"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/presets/spiral-shell-intact.json",
+      "bytes": 381,
+      "sha256": "08400ac7bf715d15d2aded01dfb71900943d127c00a5d21db2688c62a3978bc0"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/presets/spiral-shell-section.json",
+      "bytes": 382,
+      "sha256": "a122e79bed8a9ffe5db809d330b81c4a8cce24ad56987bc759b2d1c129822633"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/scenes/cutaway-manifold-intact.json",
+      "bytes": 16260,
+      "sha256": "92aef0a4ab81484bedf9936c4c07719e11e2e8e3a99645e9015f969fa1ab4185"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/scenes/cutaway-manifold-section.json",
+      "bytes": 17682,
+      "sha256": "9280860ecd810330bb6843eb004d3d0dd7fe39677dfc7fbd7e752fe41a04ff3e"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/scenes/oculus-pavilion-intact.json",
+      "bytes": 12800,
+      "sha256": "064bd0f99e5f4a84e2ecfc91a5493a748f1a4f3e7370738d004f10cb342d14b7"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/scenes/oculus-pavilion-section.json",
+      "bytes": 14548,
+      "sha256": "bf46aaa8a7d9e472d02e45cc3149e5820a36b50df68451b7cb09cfabbab33f0e"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/scenes/spiral-shell-intact.json",
+      "bytes": 168862,
+      "sha256": "9a91ef2f07937b85d51783d674bc082edf4952932c1f972ba1e3db1e9ed2a77f"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/scenes/spiral-shell-section.json",
+      "bytes": 189200,
+      "sha256": "7efb1f7ba1531fa31b3e03c248f026933b2afc713907870e3e70da67668d124b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/report/source-manifest.json",
+      "bytes": 4023,
+      "sha256": "d268424227d6fcc440154d2eae1330fb2bf1c9e6e8a8ac2db254cb32d6f56dfa"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/audition.json",
+      "bytes": 32942,
+      "sha256": "f96e357445aa1c07d6a2b51207e8ca67429653e0c5fb8f3c312c783a23385320"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/author_content_audition.py",
+      "bytes": 12412,
+      "sha256": "e4cd45c4fbdc29229cffd0c0cb65fa9ec67e5dd1e114ba9996b3d590400c5464"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/inputs/oculus-pavilion-intact-config.json",
+      "bytes": 422,
+      "sha256": "ce7ada3d1fd8adb34d5622f7688ddfe8778c8b9560dcc6f71fa9f1ad802aeefe"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/inputs/oculus-pavilion-intact-scene.json",
+      "bytes": 12781,
+      "sha256": "413f9959e9da526c27550664f336e5a803392c8c8f8230f9c48c3080672305fd"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/inputs/spiral-shell-intact-config.json",
+      "bytes": 417,
+      "sha256": "ad2447931252693fa389a76d5f2975eb6b883169963ee095b6f45bbeebad4ed3"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/inputs/spiral-shell-intact-scene.json",
+      "bytes": 85824,
+      "sha256": "7dd7353da82fc42754f9ab8d0807584acc16bc06ec17a61f21a171e9f9252f15"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/inputs/spiral-shell-section-config.json",
+      "bytes": 418,
+      "sha256": "4946d82c0fb8653429b2ffc666d944018478e2316ac6174cffeb685efaa4f10b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/inputs/spiral-shell-section-scene.json",
+      "bytes": 96434,
+      "sha256": "a6eaff27ee39d1cecf0be2852f6f8dda56314c7f3c565731d14b102ced95250c"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/oculus-pavilion-intact-hero.log",
+      "bytes": 76,
+      "sha256": "2120063b4b4a45c61b2fee92c5893a533ca972f78a9bb259c1e0de6d6ce448c2"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/spiral-shell-intact-hero.log",
+      "bytes": 698,
+      "sha256": "a13544c70c1463edc526c5eb4823e68514be2d46db6cdff4b3addbdf3771bfcb"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/spiral-shell-intact-hero.png",
+      "bytes": 159266,
+      "sha256": "c1d3d04bf5081d83e8f500dfbca678977d4f7c83cceefd9ba53a9ba7e148149e"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/spiral-shell-section-hero.log",
+      "bytes": 698,
+      "sha256": "e0caa22ab8da34971d8bafbaee147b5aa5bf9935483ecb4ff8a2127ad2c20ef2"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/spiral-shell-section-hero.png",
+      "bytes": 136788,
+      "sha256": "a0979ed57f8b6a6cf629c64367021ff1769d015600534774d621aeb446e65935"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/spiral-shell-section-side.log",
+      "bytes": 698,
+      "sha256": "3f2e58fd2c00d84ac1dd841c474f7808dd3deed7c793788325bf8b07bb98ebde"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round1/spiral-shell-section-side.png",
+      "bytes": 151266,
+      "sha256": "e52db0351307df3dba0435d7a8ec5405fb111b325af213760120d021bdebe90a"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/audition.json",
+      "bytes": 46140,
+      "sha256": "d608716df833bdf1968fdd1661978d56ac56bf9f7239c065a7831884aed2cb62"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/author_content_audition.py",
+      "bytes": 12572,
+      "sha256": "459a464021757e463998395b6d89dcd18c1891ca80265b81b8f40b62f39ff902"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/cutaway-manifold-intact-hero.log",
+      "bytes": 700,
+      "sha256": "12691739036817c0cfd797b41bbd1af26cc49a43fcced9c86bf0bda7d373ecba"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/cutaway-manifold-intact-hero.png",
+      "bytes": 108306,
+      "sha256": "bb905ff95b18bf8e8a2ac457596967ab8722714778af359d8fb8f24c95ddaef9"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/cutaway-manifold-section-hero.log",
+      "bytes": 703,
+      "sha256": "39a50ea0e2a5002a1968eba0da66dd6ebd127702b56e74048481406da3391cf7"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/cutaway-manifold-section-hero.png",
+      "bytes": 112433,
+      "sha256": "776f78a96b03cd91a08ba4d8f33fa29d9a160a433ccfe2826f15183dda8f5dd6"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/cutaway-manifold-section-side.log",
+      "bytes": 702,
+      "sha256": "20b5d09556fe068719588821e8155efa03d72f8e76841df5acb72f813df6a4a4"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/cutaway-manifold-section-side.png",
+      "bytes": 130225,
+      "sha256": "8d595e87866be1137004b20615cfae76cbcd4d2e12bf5f267ff94e0155ca00d3"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/cutaway-manifold-intact-config.json",
+      "bytes": 422,
+      "sha256": "00f07fa4b381a7771f729fcaea97d873c58fc300aec9bda8cf5fb66cf0e9177d"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/cutaway-manifold-intact-scene.json",
+      "bytes": 16258,
+      "sha256": "aa915f77d6b7eabe628974b798014d705a7900ef0d77e59a6471312c57032d8b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/cutaway-manifold-section-config.json",
+      "bytes": 423,
+      "sha256": "175a8df44fcec2be1fa9a67d5c9a41226bf2f970aa5f214f45f7431a8e4eb7fd"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/cutaway-manifold-section-scene.json",
+      "bytes": 17680,
+      "sha256": "2a9b387084a83c2d47adbeddabb5d3561590a0015da38960654c0236a54f655f"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/oculus-pavilion-intact-config.json",
+      "bytes": 422,
+      "sha256": "f33ed0ddf45eefc2fdd0b3e12823a71a2523a31b984856952039bdf4828717e6"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/oculus-pavilion-intact-scene.json",
+      "bytes": 12800,
+      "sha256": "064bd0f99e5f4a84e2ecfc91a5493a748f1a4f3e7370738d004f10cb342d14b7"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/oculus-pavilion-section-config.json",
+      "bytes": 423,
+      "sha256": "5a22a0d7bf211a84454358d08f0790f7545e11af59b29db627bddd3c598a6755"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/oculus-pavilion-section-scene.json",
+      "bytes": 14548,
+      "sha256": "bf46aaa8a7d9e472d02e45cc3149e5820a36b50df68451b7cb09cfabbab33f0e"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/spiral-shell-intact-config.json",
+      "bytes": 417,
+      "sha256": "87e0f7f5cc8d172eec94f53061cf494dad5f592df81821fe0c239419c6531328"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/spiral-shell-intact-scene.json",
+      "bytes": 168862,
+      "sha256": "9a91ef2f07937b85d51783d674bc082edf4952932c1f972ba1e3db1e9ed2a77f"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/spiral-shell-section-config.json",
+      "bytes": 418,
+      "sha256": "3b033c2a571068879a2c369a898bf7e59f5823e1e694b506c30b55202ca78c30"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/inputs/spiral-shell-section-scene.json",
+      "bytes": 189200,
+      "sha256": "7efb1f7ba1531fa31b3e03c248f026933b2afc713907870e3e70da67668d124b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/oculus-pavilion-intact-hero.log",
+      "bytes": 700,
+      "sha256": "98ad44d96f520ad7b540eb85f22fd8b608f5c3cd70e1a6f546150429480ce561"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/oculus-pavilion-intact-hero.png",
+      "bytes": 112281,
+      "sha256": "d6c56454b39165fa41d1d7049e941cfa771e546c395d39ff80bd62274f786c2a"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/oculus-pavilion-section-hero.log",
+      "bytes": 702,
+      "sha256": "450d568b66133d2d3ecc89a3405ee86babc2270733e4c336f824291ad98d026a"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/oculus-pavilion-section-hero.png",
+      "bytes": 110521,
+      "sha256": "2d6ff7bc0328295ba5d10932ef4c4d6fd503881fe915c91390657a2fef7cda50"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/oculus-pavilion-section-side.log",
+      "bytes": 701,
+      "sha256": "a03662931cb6dce43f91dd55532149cf27eae8938c118a9daa3bb46389016ff0"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/oculus-pavilion-section-side.png",
+      "bytes": 122118,
+      "sha256": "798bb5db57fd34372985474877b0e2a361475ebf9c3b63de6e7e7ca5c6f31283"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/spiral-shell-intact-hero.log",
+      "bytes": 698,
+      "sha256": "6068647202d2bed59dd5064bade33a5ddae068e778110c34ea7b3e23ed4a6cc5"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/spiral-shell-intact-hero.png",
+      "bytes": 161365,
+      "sha256": "8ef56826cdfa3ef308b320d0da8e11de78ccc8ab49f20ef740897decbd8a2d30"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/spiral-shell-section-hero.log",
+      "bytes": 699,
+      "sha256": "3c5f24506d763f85c5ceada6fcdc253c0b5a4d26843c99148b659b575e131dc0"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/spiral-shell-section-hero.png",
+      "bytes": 138895,
+      "sha256": "ab7097c62c8e123b2ee08cd27ebf84e8c6bba98de4932ef85c78009fa2919973"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/spiral-shell-section-side.log",
+      "bytes": 700,
+      "sha256": "06f2b9d7c75d291cc2a039a6d786bf6d7d94b5647842dffce1cc4247c3b9e363"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round2/spiral-shell-section-side.png",
+      "bytes": 153237,
+      "sha256": "b6df814fbc4dc80c5609fe95f6218a03ab29dfb05f7c46c3aebad3a212caf93b"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/audition.json",
+      "bytes": 32717,
+      "sha256": "f6eba87b5e7b9625252412d9a93a75b3226e35e566a5e5312fc9e3df53e866aa"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/author_content_audition.py",
+      "bytes": 12709,
+      "sha256": "dd72431774a0dc9b8e294469dce45f9340c778361b1acd0fbdd7fdefae23a08a"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/cutaway-manifold-intact-hero.log",
+      "bytes": 700,
+      "sha256": "adacea1dc5661ad6379ec9fea789fae606b712a41cf8cc59622c80a897cb5345"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/cutaway-manifold-intact-hero.png",
+      "bytes": 107414,
+      "sha256": "00264eb01508b3d405bc49f0e3a80e13d8723f8c6f2a5dd85b1087778c53c3ef"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/cutaway-manifold-section-hero.log",
+      "bytes": 702,
+      "sha256": "fe1668fd4d8575b1f4ebcfe3af36cc825f98baf4f95c4e6e342daa13f5a775d4"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/cutaway-manifold-section-hero.png",
+      "bytes": 111840,
+      "sha256": "72affa59e72b5ad0ec50369010bc889475134f9f9da3c80fddedfa620be153a4"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/cutaway-manifold-section-side.log",
+      "bytes": 702,
+      "sha256": "f51edab3c6434f5ee7e9026c0070e34e9590fd22eb947d3f588672d92b8b6ba1"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/cutaway-manifold-section-side.png",
+      "bytes": 129282,
+      "sha256": "50440bc575752d2b3657c75192e2b72e9af47dbd00e5aad2372c22e47f574d56"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/inputs/cutaway-manifold-intact-config.json",
+      "bytes": 422,
+      "sha256": "7135012fa2ca9c4817c069a4b0c2a4ec6fc44da0ea5cfc0ad4d90666202ef8e7"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/inputs/cutaway-manifold-intact-scene.json",
+      "bytes": 16260,
+      "sha256": "92aef0a4ab81484bedf9936c4c07719e11e2e8e3a99645e9015f969fa1ab4185"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/inputs/cutaway-manifold-section-config.json",
+      "bytes": 423,
+      "sha256": "fb54461f47120bfff9367f80bacc1ea46430ddf0a49e0fa60f2388e585a092a5"
+    },
+    {
+      "path": "outputs/sdf/content-audition-20261103/round3/inputs/cutaway-manifold-section-scene.json",
+      "bytes": 17682,
+      "sha256": "9280860ecd810330bb6843eb004d3d0dd7fe39677dfc7fbd7e752fe41a04ff3e"
+    }
+  ],
+  "protected_bytes": 6197748,
+  "external_dependencies": {
+    "binary": {
+      "path": "build/release/projects/sdf/sdf",
+      "bytes": 5196376,
+      "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+    },
+    "shader_directory": "build/release/projects/sdf/shaders",
+    "shader_hashes": "docs/evidence/sdf-content-audition-2026-11/summary.json#shaders",
+    "published_report": "docs/evidence/sdf-content-audition-report-2026-11.json"
+  },
+  "ownership": "New SDF content-audition artifacts only; no authority over unrelated outputs/build/cache or previous SDF evidence.",
+  "complete": true
+}
