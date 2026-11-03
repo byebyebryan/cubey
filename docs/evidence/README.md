@@ -7,6 +7,9 @@ packs; they are not golden-image tests.
 - [Authored SDF content audition](../notes/sdf-content-audition-2026-11.md): three
   early subjects, nine selected native stills, retained source/input fingerprints
   and explicit static-capture and visual-acceptance boundaries.
+- [Architectural SDF diorama drafts](../notes/sdf-diorama-drafts-2026-11.md): the
+  subsequent mill, observatory and courtyard, six selected native views and
+  retained authoring/visual corrections; user visual selection remains pending.
 
 - [Terrain backdrop foundation](terrain-backdrop-foundation/README.md): the
   isolated terrain and glTF proof-consumer captures, source provenance, image

@@ -1,0 +1,434 @@
+{
+  "format": "cubey.sdf.diorama-draft-retention",
+  "version": 1,
+  "policy": "Keep all six small raw rounds, including failed authoring inputs and superseded visual drafts, plus the report export and verification. No cleanup performed or authorized.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/assets/canal-mill-alternate.png",
+      "bytes": 401863,
+      "sha256": "c34c8376193613c345162d20d6a878b56b6572407d53d9583198216596e21d22"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/assets/canal-mill-hero.png",
+      "bytes": 326151,
+      "sha256": "aeac2256c6c7e4cc51d0b00e94c660f0c42e5aa9575ea96f7936b799a3019379"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/assets/hill-observatory-alternate.png",
+      "bytes": 381080,
+      "sha256": "bf511401a9411ef6476e1ff5ab9d9f65660e9292a87b9e28120306340751da45"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/assets/hill-observatory-hero.png",
+      "bytes": 292232,
+      "sha256": "ef5d4c7a939127ac6f0ef6da290f68b48e36b92e0f8ce54150f0af4d1071b21e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/assets/terraced-courtyard-alternate.png",
+      "bytes": 430170,
+      "sha256": "4caa2d24ab61d6985f2f3a25f3306e7a1aa6e5822e4cf70e3947cb5792c4fdfd"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/assets/terraced-courtyard-hero.png",
+      "bytes": 373004,
+      "sha256": "bb3ceb1c7c2a881dfc65375b9d43e2ceada64fd95c98eadcdfb5aace20cd1b5f"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/draft-data.json",
+      "bytes": 44097,
+      "sha256": "635a6b53a5e548b5f486755347bfccbeef20dfe051408a10b490aaa8f16f8c39"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/index.html",
+      "bytes": 52726,
+      "sha256": "8e675ed8fa9c96117c3b6321b113c35472bf429c97edff6da82a0b053541ea5a"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/presets/canal-mill.json",
+      "bytes": 334,
+      "sha256": "8b957da80334e961cc64e0a759f7e04e4d517248436ded77805ff432188e9ab0"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/presets/hill-observatory.json",
+      "bytes": 339,
+      "sha256": "f1b0bd850c3e7d6c5666fa2bc6b521ae57a27cc6a1bb6b6896548e22fbcd8d9a"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/presets/terraced-courtyard.json",
+      "bytes": 342,
+      "sha256": "9c38320f9a0df51ab9ec24792ea8f37edecd56122e24ce30306e8149f86421bd"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/scenes/canal-mill.json",
+      "bytes": 111228,
+      "sha256": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/scenes/hill-observatory.json",
+      "bytes": 83681,
+      "sha256": "3a32e5883d90228a0700f69f97843423d8c4e40d885fd765cd936a3a29111381"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/scenes/terraced-courtyard.json",
+      "bytes": 136711,
+      "sha256": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/report/source-manifest.json",
+      "bytes": 2333,
+      "sha256": "8042f90fd3126249543b2f94afee68c36167bcf4a8f32734f72413c8ea2cc17a"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round1/author_diorama_drafts.py",
+      "bytes": 32412,
+      "sha256": "6bcfc19eb5dcb61aa4a9b6ba28d61f1d77f92298d4ee4cf1da039b85b73f5650"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round1/canal-mill-hero.log",
+      "bytes": 41,
+      "sha256": "98b8a6abedb2f8e0097cf3a14c0e5ada9784911e09bbc94e533fcbb51707b606"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round1/drafts.json",
+      "bytes": 26310,
+      "sha256": "af23ea8ebce3ff1c77ffc20113e6a16688f46049f2d92aa596c18a0c1d6f3f8e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round1/inputs/canal-mill-config.json",
+      "bytes": 370,
+      "sha256": "dd01c25740f33513ae514a867a10dd997ad31da70578d7a032aab7cfa4a7dc6e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round1/inputs/canal-mill-scene.json",
+      "bytes": 109163,
+      "sha256": "696c8dcf866da8a98ce2341ce60148d5afee2191c15377058c9fe535e3301e07"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round2/author_diorama_drafts.py",
+      "bytes": 32848,
+      "sha256": "9dd3f2b8d32ef1802a58c3acd651e9afb40bebe1c45e40714ffd011774d815fc"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round2/canal-mill-hero.log",
+      "bytes": 61,
+      "sha256": "27c8c46ad8df2086cfc3eb0d0a757974cdc470b7aabe67362c66e830e994d5e9"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round2/drafts.json",
+      "bytes": 26310,
+      "sha256": "5786c17fc9c297ba3166fa97096e36b07db555f0ab5ce8b150c8b6435c6a5b4f"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round2/inputs/canal-mill-config.json",
+      "bytes": 370,
+      "sha256": "f41f1e5fa84c0e683ee2e0715a60eb9e5bc6f5088adc7a60fa8106eab70694d3"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round2/inputs/canal-mill-scene.json",
+      "bytes": 107241,
+      "sha256": "839d6237c7d518d29982f0810112bc79b17c0d23cd36200bab97fa35a631db75"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round3/author_diorama_drafts.py",
+      "bytes": 33594,
+      "sha256": "1cfeb6ced6b5c9dd8887efb049fac3983cf994134c7be00cd89417bd49a0e582"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round3/canal-mill-hero.log",
+      "bytes": 703,
+      "sha256": "8aeb32b13c27467c5396c3a92899bb1c9fbff922a871d7cdbf93dea9fdd80467"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round3/canal-mill-hero.png",
+      "bytes": 324511,
+      "sha256": "f274d5f6f4827c64e539e76c5d13d90ffeb8f0cd063a992b651c815620e58b0f"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round3/drafts.json",
+      "bytes": 28262,
+      "sha256": "2a25e7b7e3a6178504a8fd431a92a4c606bef3a04f50897fb0345332c4ca98d7"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round3/inputs/canal-mill-config.json",
+      "bytes": 370,
+      "sha256": "dd9e82e03f82c81cebb5dba711befd5b780ffd76d6d67e2aa414f1e5ed64a4d6"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round3/inputs/canal-mill-scene.json",
+      "bytes": 107495,
+      "sha256": "13acf50567b27ab24aacbd4c43a5d98c91105ffc8f2f829a8307d3074b4f2051"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/author_diorama_drafts.py",
+      "bytes": 33594,
+      "sha256": "1cfeb6ced6b5c9dd8887efb049fac3983cf994134c7be00cd89417bd49a0e582"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/drafts.json",
+      "bytes": 30487,
+      "sha256": "0e0a768526f982974bf491d08c02f9b5907c2a8d68a20cddf48696c6ca868a23"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/hill-observatory-hero.log",
+      "bytes": 710,
+      "sha256": "8d866a9e89b3dc491f6c73b6d73721da7ace7aa8f13a25189e6d21e714627a2d"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/hill-observatory-hero.png",
+      "bytes": 298366,
+      "sha256": "ba22940a8b58c7551ef7d429b84a538790c0cbd26b2d235f131706275df13e68"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/inputs/hill-observatory-config.json",
+      "bytes": 375,
+      "sha256": "2a260d5a4f8c212b235d8c80be477e4ac6dbc70e63d76b6d71ee78ca1abbb543"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/inputs/hill-observatory-scene.json",
+      "bytes": 83590,
+      "sha256": "c7373b8dd6f859db9bf35c8a52710fcadbd29e3c24c9384adc1bc4690b4c3d28"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/inputs/terraced-courtyard-config.json",
+      "bytes": 378,
+      "sha256": "d7bcfb2f82ecd61b27a5f9292aab40a6271dde48e1de09e4b91d14234358ba4a"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/inputs/terraced-courtyard-scene.json",
+      "bytes": 132786,
+      "sha256": "302458bd8ad48879309b5e5db4738f16d391cdf3511cc7e22b58a75b652a504d"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/terraced-courtyard-hero.log",
+      "bytes": 712,
+      "sha256": "73c2330cca683d7ce15ba9f245c8f40b283f943fb3779f90c7ce6b4c7fadc565"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round4/terraced-courtyard-hero.png",
+      "bytes": 359947,
+      "sha256": "c7b06fb0c67aaa27dec86cfbdf87b5991ea1d61ac49bfa393041c5367c3244c5"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/author_diorama_drafts.py",
+      "bytes": 33980,
+      "sha256": "459098e1eca6b3ded947540dfdf1c5f380c5bb51d335bea94531fd6139774688"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/canal-mill-alternate.log",
+      "bytes": 707,
+      "sha256": "c2c4c6b10ce2234d0b9edc16d12685f2b82c9f342b912ea1be3c36e51f715030"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/canal-mill-alternate.png",
+      "bytes": 409237,
+      "sha256": "8f1a03fe999aee9f9189ee254d86c0817aad86376a49b1f87c74b536cee0dab1"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/canal-mill-hero.log",
+      "bytes": 704,
+      "sha256": "0cae7c8e1a8bc7945ad58a5ad35dfc4e760887172d5ce394dbf9949cca3e34d1"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/canal-mill-hero.png",
+      "bytes": 328835,
+      "sha256": "8a11533805b263c47294f040632090bf846affe8e9b727db930f12a012e2e4b0"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/drafts.json",
+      "bytes": 39288,
+      "sha256": "c49760c84f98a449b6fd3a9dd8041e229d16e905329b892ce1505f43fbc754cb"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/hill-observatory-alternate.log",
+      "bytes": 715,
+      "sha256": "bd1222cf816a1d0fd5049e35a1532b65cd0600c34e1257e9f4febe5b87a8da50"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/hill-observatory-alternate.png",
+      "bytes": 381080,
+      "sha256": "bf511401a9411ef6476e1ff5ab9d9f65660e9292a87b9e28120306340751da45"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/hill-observatory-hero.log",
+      "bytes": 709,
+      "sha256": "3d8a57a9bb42c1aef8b20eb6e0f2a265f2d640c952cf241918efe7f95231c8a6"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/hill-observatory-hero.png",
+      "bytes": 292232,
+      "sha256": "ef5d4c7a939127ac6f0ef6da290f68b48e36b92e0f8ce54150f0af4d1071b21e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/inputs/canal-mill-config.json",
+      "bytes": 370,
+      "sha256": "5c5710bd3e6053422a249fa936e4517c2337ac7a05f8f7342f65b926c48cad9b"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/inputs/canal-mill-scene.json",
+      "bytes": 110461,
+      "sha256": "81b87a0050464bab4f6c597a338e3b104cf9a4e72b0d8982a61498be46453e52"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/inputs/hill-observatory-config.json",
+      "bytes": 375,
+      "sha256": "cbb1853c75c47d58f6be27a9b53109b58918d54850b68cfe70e7d1884ea32781"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/inputs/hill-observatory-scene.json",
+      "bytes": 83681,
+      "sha256": "3a32e5883d90228a0700f69f97843423d8c4e40d885fd765cd936a3a29111381"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/inputs/terraced-courtyard-config.json",
+      "bytes": 378,
+      "sha256": "d4fefdc85bd6409a3acdf2831ed220b824dd247f2ce981e7e1e364cedcd28594"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/inputs/terraced-courtyard-scene.json",
+      "bytes": 132650,
+      "sha256": "89ec5eac5b8914816f9c0627799d732512e87a366415a4953982998a8d9ec273"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/terraced-courtyard-alternate.log",
+      "bytes": 716,
+      "sha256": "d804a8915b92749837422a6eb465acd52b4c5c6fc0ceb82d7314996bd63ec823"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/terraced-courtyard-alternate.png",
+      "bytes": 426931,
+      "sha256": "a575bd3fab52c8b690fdb94a39b4053559fa369b4c138d8c3adfeb3199fa3315"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/terraced-courtyard-hero.log",
+      "bytes": 711,
+      "sha256": "77e37fea4bc16623915c139a0a8a7dbd86c8c73726a0136473ff8c5791c37164"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round5/terraced-courtyard-hero.png",
+      "bytes": 367225,
+      "sha256": "9cd0871f6d0a6f35a049deb3f3bac4218f3da936236299da2b0496c6e68fe992"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/canal-mill-alternate.log",
+      "bytes": 709,
+      "sha256": "ce517792fd7ae8896e442739b56987c6b0c28081ef4c296708737b6aeaa7ab8e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/canal-mill-alternate.png",
+      "bytes": 401863,
+      "sha256": "c34c8376193613c345162d20d6a878b56b6572407d53d9583198216596e21d22"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/canal-mill-hero.log",
+      "bytes": 704,
+      "sha256": "be9d47f9ba8d33fbcf0e288853bda5da9c1e51f09cb55007f346ae358f3870a3"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/canal-mill-hero.png",
+      "bytes": 326151,
+      "sha256": "aeac2256c6c7e4cc51d0b00e94c660f0c42e5aa9575ea96f7936b799a3019379"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/drafts.json",
+      "bytes": 39291,
+      "sha256": "e1d1e3f5a9e3cfb5ba3e5997270767a0c73d4c17f1d418454becac2f2ec42539"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/hill-observatory-alternate.log",
+      "bytes": 715,
+      "sha256": "f9f62204b4825d4b6ffd5da798d23e59db056eb8f8cdbb3703f9b5073d46ec0e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/hill-observatory-alternate.png",
+      "bytes": 381080,
+      "sha256": "bf511401a9411ef6476e1ff5ab9d9f65660e9292a87b9e28120306340751da45"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/hill-observatory-hero.log",
+      "bytes": 710,
+      "sha256": "022f68c2bbec819515615f98324850a0e3629fb58de109a531c45a4512235be8"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/hill-observatory-hero.png",
+      "bytes": 292232,
+      "sha256": "ef5d4c7a939127ac6f0ef6da290f68b48e36b92e0f8ce54150f0af4d1071b21e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/inputs/canal-mill-config.json",
+      "bytes": 370,
+      "sha256": "a60a0fbd0e47d8ba44b407bea410cf161753582953845873d8a7561c7b40b103"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/inputs/canal-mill-scene.json",
+      "bytes": 111228,
+      "sha256": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/inputs/hill-observatory-config.json",
+      "bytes": 375,
+      "sha256": "c20f6c5991369ccd45cd0ac00041fc18e17fbf80c72d9d7f02669cfa945bbf3e"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/inputs/hill-observatory-scene.json",
+      "bytes": 83681,
+      "sha256": "3a32e5883d90228a0700f69f97843423d8c4e40d885fd765cd936a3a29111381"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/inputs/terraced-courtyard-config.json",
+      "bytes": 378,
+      "sha256": "3782f13e471d1ebfffcd5f04b8775906f4eaad448d70654baa234c053bbb5540"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/inputs/terraced-courtyard-scene.json",
+      "bytes": 136711,
+      "sha256": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/terraced-courtyard-alternate.log",
+      "bytes": 717,
+      "sha256": "0ef192132c9bcc3da320bd180ec78aa6d4108b357f1442b791db6fb81765bf42"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/terraced-courtyard-alternate.png",
+      "bytes": 430170,
+      "sha256": "4caa2d24ab61d6985f2f3a25f3306e7a1aa6e5822e4cf70e3947cb5792c4fdfd"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/terraced-courtyard-hero.log",
+      "bytes": 710,
+      "sha256": "791d26bf107f1ccc7f29bbf1bf4fc2848f4a29e21bcce6e5707f40d17893c84b"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/terraced-courtyard-hero.png",
+      "bytes": 373004,
+      "sha256": "bb3ceb1c7c2a881dfc65375b9d43e2ceada64fd95c98eadcdfb5aace20cd1b5f"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/verification.json",
+      "bytes": 322,
+      "sha256": "69f029a87aeda73833bddfa6ed701f4aa4095116dcad2fac93317d1f4347f176"
+    }
+  ],
+  "protected_bytes": 9633565,
+  "external_runtime": {
+    "binary": {
+      "path": "build/release/projects/sdf/sdf",
+      "bytes": 5196376,
+      "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+    },
+    "shader_directory": "build/release/projects/sdf/shaders",
+    "shader_fingerprints": {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/drafts.json",
+      "bytes": 39291,
+      "sha256": "e1d1e3f5a9e3cfb5ba3e5997270767a0c73d4c17f1d418454becac2f2ec42539"
+    }
+  },
+  "report_receipt": "docs/evidence/sdf-diorama-drafts-report-2026-11.json",
+  "ownership": "This new SDF draft packet only; prior SDF and unrelated build/cache/output retention is independent.",
+  "complete": true
+}

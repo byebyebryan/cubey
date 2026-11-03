@@ -277,7 +277,10 @@ Each record's status and evidence link identifies what is implemented.
   complete; current behavior is in the [SDF guide](../../projects/sdf/README.md).
 - [Three authored SDF content directions](sdf-content-audition-2026-11.md): native
   shell, pavilion and manifold blockouts, intact/section views, source recipes
-  and early visual recommendations awaiting selection.
+  and the first sparse audition; the user requested a more detailed architectural direction.
+- [Architectural SDF diorama drafts](sdf-diorama-drafts-2026-11.md): canal mill,
+  hill observatory and terraced courtyard with complete settings, more detailed
+  native models and two captured views each, awaiting visual direction.
 - [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;

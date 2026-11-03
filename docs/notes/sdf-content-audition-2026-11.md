@@ -2,7 +2,9 @@
 
 Date: 2026-11-03
 
-Status: three early native blockouts, awaiting the user's visual selection.
+Status: retained first audition. The user found these subjects uninteresting in
+their current state and requested more detailed architecture or a diorama;
+see the [architectural drafts](sdf-diorama-drafts-2026-11.md).
 The direction is authored graphics experiments, with scripted scenes and focused
 presentation controls. A general desktop modeler or renewed VR target is not
 part of this audition.

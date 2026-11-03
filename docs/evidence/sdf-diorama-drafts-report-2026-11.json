@@ -1,0 +1,56 @@
+{
+  "report_id": "8350ac7de254e88fb29720586bb9401eb84eea7d1a8ac42e71fcc76c110c4a68",
+  "title": "Cubey SDF \u2014 Three small places: architectural diorama drafts",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-03T23:33:31.361978+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/8350ac7de254e88fb29720586bb9401eb84eea7d1a8ac42e71fcc76c110c4a68",
+  "file_count": 15,
+  "byte_count": 2636291,
+  "url": "http://starship:8787/reports/8350ac7de254e88fb29720586bb9401eb84eea7d1a8ac42e71fcc76c110c4a68/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-03T23:33:31.787376+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 52726,
+    "verified_url": "http://starship:8787/reports/8350ac7de254e88fb29720586bb9401eb84eea7d1a8ac42e71fcc76c110c4a68/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "reviewed_source_head": "67a90ebe",
+  "authoring": {
+    "generator": "projects/sdf/tools/author_diorama_drafts.py",
+    "report_generator": "projects/sdf/tools/diorama_drafts_report.py",
+    "template": "projects/sdf/tools/diorama_drafts_report.html",
+    "selected_capture": "outputs/sdf/diorama-drafts-20261103/round6",
+    "export": "outputs/sdf/diorama-drafts-20261103/report"
+  },
+  "scope": "Architectural content drafts and six static native renders; user visual selection pending. No engine changes, new performance claim, site deployment or Git push.",
+  "browser_acceptance": {
+    "state": "unavailable",
+    "reason": "Browser runtime returned no browser; connected browser list was empty.",
+    "native_image_inspection": "All six selected images inspected directly.",
+    "source_checks": "JavaScript syntax, embedded JSON, all six view mappings, local links and all manifest-listed fingerprints passed."
+  },
+  "asset_delivery": {
+    "state": "verified",
+    "http_sha256_files": 14
+  }
+}

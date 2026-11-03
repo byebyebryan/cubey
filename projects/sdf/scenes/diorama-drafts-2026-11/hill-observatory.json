@@ -1,0 +1,3679 @@
+{
+  "format": "cubey.sdf.scene",
+  "version": 2,
+  "name": "The hill observatory",
+  "materials": [
+    {
+      "name": "plaster",
+      "base_color": [
+        0.7912979403326302,
+        0.6104955708078648,
+        0.33245153634617935
+      ],
+      "roughness": 0.86,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "stone",
+      "base_color": [
+        0.39675523072562685,
+        0.33245153634617935,
+        0.2195261997292692
+      ],
+      "roughness": 0.92,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "light-stone",
+      "base_color": [
+        0.6583748172794485,
+        0.5149176653765214,
+        0.2831487404299921
+      ],
+      "roughness": 0.88,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "roof",
+      "base_color": [
+        0.39675523072562685,
+        0.07618538148130785,
+        0.03954623527673284
+      ],
+      "roughness": 0.78,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "tile-edge",
+      "base_color": [
+        0.5711248294648731,
+        0.184474994500441,
+        0.08021982031446832
+      ],
+      "roughness": 0.75,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "wood",
+      "base_color": [
+        0.11953842798834562,
+        0.0595112381629812,
+        0.03433980680868217
+      ],
+      "roughness": 0.83,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "dark",
+      "base_color": [
+        0.021219010376003555,
+        0.04518620438567554,
+        0.05126945837404324
+      ],
+      "roughness": 0.75,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "teal",
+      "base_color": [
+        0.06662593864377289,
+        0.20863687014525575,
+        0.19120168274079138
+      ],
+      "roughness": 0.69,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "brass",
+      "base_color": [
+        0.6307571363461468,
+        0.3712376804741491,
+        0.09305896284668745
+      ],
+      "roughness": 0.56,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "water",
+      "base_color": [
+        0.0822827071298148,
+        0.27467731206038465,
+        0.32314320911295075
+      ],
+      "roughness": 0.35,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "leaf",
+      "base_color": [
+        0.1301364766903643,
+        0.19120168274079138,
+        0.0822827071298148
+      ],
+      "roughness": 0.87,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "leaf-light",
+      "base_color": [
+        0.25415209433082675,
+        0.31854677812509186,
+        0.11953842798834562
+      ],
+      "roughness": 0.88,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "earth",
+      "base_color": [
+        0.1589608350608804,
+        0.13843161503245183,
+        0.09305896284668745
+      ],
+      "roughness": 0.96,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "linen",
+      "base_color": [
+        0.7454042095403874,
+        0.6724431569576875,
+        0.47353149614800955
+      ],
+      "roughness": 0.9,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "glow",
+      "base_color": [
+        0.8713671191987972,
+        0.5209955732043543,
+        0.162029375639111
+      ],
+      "roughness": 0.6,
+      "emission": [
+        0.10456405430385565,
+        0.06251946878452251,
+        0.019443525076693318
+      ]
+    },
+    {
+      "name": "blue",
+      "base_color": [
+        0.07421356838014963,
+        0.13286832155381798,
+        0.21223075741405523
+      ],
+      "roughness": 0.85,
+      "emission": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "root": {
+    "type": "union",
+    "name": "hill-observatory-0196",
+    "position": [
+      0,
+      0,
+      0
+    ],
+    "children": [
+      {
+        "type": "cylinder",
+        "name": "island-0001",
+        "position": [
+          0,
+          -0.306,
+          0
+        ],
+        "radius": 0.34,
+        "half_length": 0.035,
+        "material": "earth"
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0002",
+        "position": [
+          0.232,
+          -0.242,
+          0.0
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "earth",
+        "rotation_xyzw": [
+          -0.0,
+          -0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0003",
+        "position": [
+          0.23774223305883482,
+          -0.22699999999999998,
+          0.08653109626139419
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.17364817766693033,
+          -0.0,
+          0.984807753012208
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0004",
+        "position": [
+          0.19380924410910144,
+          -0.212,
+          0.16262526525069443
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.3420201433256687,
+          -0.0,
+          0.9396926207859084
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0005",
+        "position": [
+          0.11600000000000003,
+          -0.242,
+          0.20091789367798976
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "earth",
+        "rotation_xyzw": [
+          -0.0,
+          -0.49999999999999994,
+          -0.0,
+          0.8660254037844387
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0006",
+        "position": [
+          0.043932988949733395,
+          -0.22699999999999998,
+          0.24915636151208864
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.6427876096865393,
+          -0.0,
+          0.766044443118978
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0007",
+        "position": [
+          -0.04393298894973337,
+          -0.212,
+          0.24915636151208864
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.766044443118978,
+          -0.0,
+          0.6427876096865394
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0008",
+        "position": [
+          -0.11599999999999995,
+          -0.242,
+          0.2009178936779898
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "earth",
+        "rotation_xyzw": [
+          -0.0,
+          -0.8660254037844386,
+          -0.0,
+          0.5000000000000001
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0009",
+        "position": [
+          -0.19380924410910141,
+          -0.22699999999999998,
+          0.16262526525069448
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.9396926207859083,
+          -0.0,
+          0.3420201433256688
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0010",
+        "position": [
+          -0.2377422330588348,
+          -0.212,
+          0.08653109626139423
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.984807753012208,
+          -0.0,
+          0.17364817766693041
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0011",
+        "position": [
+          -0.232,
+          -0.242,
+          2.8411805740218593e-17
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "earth",
+        "rotation_xyzw": [
+          -0.0,
+          -1.0,
+          -0.0,
+          6.123233995736766e-17
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0012",
+        "position": [
+          -0.23774223305883482,
+          -0.22699999999999998,
+          -0.08653109626139417
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.984807753012208,
+          -0.0,
+          -0.1736481776669303
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0013",
+        "position": [
+          -0.19380924410910152,
+          -0.212,
+          -0.16262526525069435
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.9396926207859084,
+          -0.0,
+          -0.3420201433256685
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0014",
+        "position": [
+          -0.1160000000000001,
+          -0.242,
+          -0.2009178936779897
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "earth",
+        "rotation_xyzw": [
+          -0.0,
+          -0.8660254037844387,
+          -0.0,
+          -0.4999999999999998
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0015",
+        "position": [
+          -0.043932988949733374,
+          -0.22699999999999998,
+          -0.24915636151208864
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.766044443118978,
+          -0.0,
+          -0.6427876096865394
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0016",
+        "position": [
+          0.043932988949733284,
+          -0.212,
+          -0.24915636151208867
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.6427876096865395,
+          -0.0,
+          -0.7660444431189779
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0017",
+        "position": [
+          0.11599999999999985,
+          -0.242,
+          -0.20091789367798987
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "earth",
+        "rotation_xyzw": [
+          -0.0,
+          -0.5000000000000003,
+          -0.0,
+          -0.8660254037844385
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0018",
+        "position": [
+          0.1938092441091014,
+          -0.22699999999999998,
+          -0.1626252652506945
+        ],
+        "half_extent": [
+          0.063,
+          0.057,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.3420201433256689,
+          -0.0,
+          -0.9396926207859083
+        ]
+      },
+      {
+        "type": "box",
+        "name": "cliff-block-0019",
+        "position": [
+          0.23774223305883482,
+          -0.212,
+          -0.08653109626139416
+        ],
+        "half_extent": [
+          0.063,
+          0.075,
+          0.046
+        ],
+        "rounding": 0.012,
+        "material": "stone",
+        "rotation_xyzw": [
+          -0.0,
+          -0.17364817766693028,
+          -0.0,
+          -0.984807753012208
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "lower-terrace-0020",
+        "position": [
+          0,
+          -0.209,
+          0
+        ],
+        "radius": 0.288,
+        "half_length": 0.018,
+        "material": "light-stone"
+      },
+      {
+        "type": "cylinder",
+        "name": "upper-terrace-0021",
+        "position": [
+          -0.045,
+          -0.116,
+          -0.07
+        ],
+        "radius": 0.215,
+        "half_length": 0.024,
+        "material": "stone"
+      },
+      {
+        "type": "cylinder",
+        "name": "upper-coping-0022",
+        "position": [
+          -0.045,
+          -0.09,
+          -0.07
+        ],
+        "radius": 0.22,
+        "half_length": 0.006,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0023",
+        "position": [
+          0.17,
+          -0.207,
+          0.255
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0024",
+        "position": [
+          0.17,
+          -0.19499999999999998,
+          0.234
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0025",
+        "position": [
+          0.17,
+          -0.183,
+          0.213
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0026",
+        "position": [
+          0.17,
+          -0.17099999999999999,
+          0.192
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0027",
+        "position": [
+          0.17,
+          -0.15899999999999997,
+          0.17099999999999999
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0028",
+        "position": [
+          0.17,
+          -0.147,
+          0.15
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0029",
+        "position": [
+          0.17,
+          -0.13499999999999998,
+          0.129
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0030",
+        "position": [
+          0.17,
+          -0.12299999999999998,
+          0.10799999999999998
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0031",
+        "position": [
+          0.17,
+          -0.11099999999999999,
+          0.087
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "approach-step-0032",
+        "position": [
+          0.17,
+          -0.09899999999999999,
+          0.066
+        ],
+        "half_extent": [
+          0.045,
+          0.01,
+          0.014
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "box",
+        "name": "landing-0033",
+        "position": [
+          0.17,
+          -0.092,
+          0.043
+        ],
+        "half_extent": [
+          0.057,
+          0.009,
+          0.027
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "capsule",
+        "name": "stair-rail-0034",
+        "position": [
+          0.22,
+          -0.082,
+          0.162
+        ],
+        "radius": 0.005,
+        "half_length": 0.113017697729161,
+        "material": "dark",
+        "rotation_xyzw": [
+          -0.4933589153205412,
+          0.0,
+          -0.0,
+          0.8698258335286088
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "rail-post-0035",
+        "position": [
+          0.22,
+          -0.16,
+          0.25
+        ],
+        "radius": 0.005,
+        "half_length": 0.03,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "rail-post-0036",
+        "position": [
+          0.22,
+          -0.0625,
+          0.075
+        ],
+        "radius": 0.005,
+        "half_length": 0.037500000000000006,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0037",
+        "position": [
+          -0.13,
+          -0.188,
+          0.215
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0038",
+        "position": [
+          -0.08700000000000001,
+          -0.188,
+          0.228
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0039",
+        "position": [
+          -0.04400000000000001,
+          -0.188,
+          0.215
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0040",
+        "position": [
+          -0.0010000000000000009,
+          -0.188,
+          0.228
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0041",
+        "position": [
+          0.04199999999999998,
+          -0.188,
+          0.215
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0042",
+        "position": [
+          0.08499999999999996,
+          -0.188,
+          0.228
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "flagstone-0043",
+        "position": [
+          0.128,
+          -0.188,
+          0.215
+        ],
+        "half_extent": [
+          0.019,
+          0.004,
+          0.02
+        ],
+        "rounding": 0.0018000000000000002,
+        "material": "stone"
+      },
+      {
+        "type": "subtract",
+        "name": "open-drum-0051",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "cylinder",
+            "name": "observatory-drum-0044",
+            "position": [
+              -0.075,
+              0.036,
+              -0.075
+            ],
+            "radius": 0.129,
+            "half_length": 0.126,
+            "material": "plaster"
+          },
+          {
+            "type": "union",
+            "name": "tools-0052",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "cylinder",
+                "name": "drum-interior-0045",
+                "position": [
+                  -0.075,
+                  0.053,
+                  -0.075
+                ],
+                "radius": 0.105,
+                "half_length": 0.128,
+                "material": "plaster"
+              },
+              {
+                "type": "union",
+                "name": "arch-0048",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "box",
+                    "name": "arch-rect-0046",
+                    "position": [
+                      -0.075,
+                      -0.031,
+                      0.049
+                    ],
+                    "half_extent": [
+                      0.036,
+                      0.056999999999999995,
+                      0.04
+                    ],
+                    "rounding": 0.003,
+                    "material": "plaster"
+                  },
+                  {
+                    "type": "cylinder",
+                    "name": "arch-round-0047",
+                    "position": [
+                      -0.075,
+                      0.026000000000000002,
+                      0.049
+                    ],
+                    "radius": 0.036,
+                    "half_length": 0.04,
+                    "material": "plaster",
+                    "rotation_xyzw": [
+                      0.7071067811865475,
+                      0.0,
+                      0.0,
+                      0.7071067811865476
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "name": "drum-window-cut-0049",
+                "position": [
+                  -0.188,
+                  0.07,
+                  -0.016
+                ],
+                "half_extent": [
+                  0.022,
+                  0.039,
+                  0.032
+                ],
+                "rounding": 0.003,
+                "material": "plaster"
+              },
+              {
+                "type": "box",
+                "name": "drum-window-cut-0050",
+                "position": [
+                  0.038000000000000006,
+                  0.07,
+                  -0.016
+                ],
+                "half_extent": [
+                  0.022,
+                  0.039,
+                  0.032
+                ],
+                "rounding": 0.003,
+                "material": "plaster"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "subtract",
+        "name": "arch-surround-0059",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "union",
+            "name": "arch-0055",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "arch-rect-0053",
+                "position": [
+                  -0.075,
+                  -0.03450000000000001,
+                  0.06
+                ],
+                "half_extent": [
+                  0.045,
+                  0.06049999999999999,
+                  0.009
+                ],
+                "rounding": 0.003,
+                "material": "light-stone"
+              },
+              {
+                "type": "cylinder",
+                "name": "arch-round-0054",
+                "position": [
+                  -0.075,
+                  0.02599999999999998,
+                  0.06
+                ],
+                "radius": 0.045,
+                "half_length": 0.009,
+                "material": "light-stone",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ]
+          },
+          {
+            "type": "union",
+            "name": "arch-0058",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "arch-rect-0056",
+                "position": [
+                  -0.075,
+                  -0.031,
+                  0.064
+                ],
+                "half_extent": [
+                  0.036,
+                  0.056999999999999995,
+                  0.025
+                ],
+                "rounding": 0.003,
+                "material": "light-stone"
+              },
+              {
+                "type": "cylinder",
+                "name": "arch-round-0057",
+                "position": [
+                  -0.075,
+                  0.026000000000000002,
+                  0.064
+                ],
+                "radius": 0.036,
+                "half_length": 0.025,
+                "material": "light-stone",
+                "rotation_xyzw": [
+                  0.7071067811865475,
+                  0.0,
+                  0.0,
+                  0.7071067811865476
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "torus",
+        "name": "drum-foundation-0060",
+        "position": [
+          -0.075,
+          -0.08,
+          -0.075
+        ],
+        "major_radius": 0.13,
+        "minor_radius": 0.008,
+        "material": "light-stone"
+      },
+      {
+        "type": "torus",
+        "name": "drum-frieze-0061",
+        "position": [
+          -0.075,
+          0.151,
+          -0.075
+        ],
+        "major_radius": 0.131,
+        "minor_radius": 0.009,
+        "material": "light-stone"
+      },
+      {
+        "type": "subtract",
+        "name": "hollow-dome-0066",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "sphere",
+            "name": "dome-0062",
+            "position": [
+              -0.075,
+              0.16,
+              -0.075
+            ],
+            "radius": 0.144,
+            "material": "teal"
+          },
+          {
+            "type": "union",
+            "name": "tools-0067",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "sphere",
+                "name": "dome-inner-0063",
+                "position": [
+                  -0.075,
+                  0.16,
+                  -0.075
+                ],
+                "radius": 0.13,
+                "material": "teal"
+              },
+              {
+                "type": "box",
+                "name": "dome-bottom-trim-0064",
+                "position": [
+                  -0.075,
+                  -0.1,
+                  -0.075
+                ],
+                "half_extent": [
+                  0.22,
+                  0.26,
+                  0.22
+                ],
+                "rounding": 0.003,
+                "material": "teal"
+              },
+              {
+                "type": "box",
+                "name": "dome-slit-0065",
+                "position": [
+                  -0.075,
+                  0.267,
+                  0.010000000000000009
+                ],
+                "half_extent": [
+                  0.031,
+                  0.118,
+                  0.12
+                ],
+                "rounding": 0.003,
+                "material": "teal"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "torus",
+        "name": "dome-base-ring-0068",
+        "position": [
+          -0.075,
+          0.165,
+          -0.075
+        ],
+        "major_radius": 0.144,
+        "minor_radius": 0.007,
+        "material": "brass"
+      },
+      {
+        "type": "capsule",
+        "name": "slit-rim-0069",
+        "position": [
+          -0.11,
+          0.212,
+          0.04950000000000001
+        ],
+        "radius": 0.005,
+        "half_length": 0.03645888094826829,
+        "material": "brass",
+        "rotation_xyzw": [
+          -0.21779662321302576,
+          0.0,
+          -0.0,
+          0.9759941756573157
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "slit-rim-0070",
+        "position": [
+          -0.11,
+          0.268,
+          0.0030000000000000027
+        ],
+        "radius": 0.005,
+        "half_length": 0.03860051813123756,
+        "material": "brass",
+        "rotation_xyzw": [
+          -0.44952924033177993,
+          0.0,
+          -0.0,
+          0.8932656167606211
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "slit-rim-0071",
+        "position": [
+          -0.11,
+          0.2955,
+          -0.0515
+        ],
+        "radius": 0.005,
+        "half_length": 0.0239269722280108,
+        "material": "brass",
+        "rotation_xyzw": [
+          -0.637152936590636,
+          0.0,
+          -0.0,
+          0.7707373971684058
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "slit-rim-0072",
+        "position": [
+          -0.039999999999999994,
+          0.212,
+          0.04950000000000001
+        ],
+        "radius": 0.005,
+        "half_length": 0.03645888094826829,
+        "material": "brass",
+        "rotation_xyzw": [
+          -0.21779662321302576,
+          0.0,
+          -0.0,
+          0.9759941756573157
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "slit-rim-0073",
+        "position": [
+          -0.039999999999999994,
+          0.268,
+          0.0030000000000000027
+        ],
+        "radius": 0.005,
+        "half_length": 0.03860051813123756,
+        "material": "brass",
+        "rotation_xyzw": [
+          -0.44952924033177993,
+          0.0,
+          -0.0,
+          0.8932656167606211
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "slit-rim-0074",
+        "position": [
+          -0.039999999999999994,
+          0.2955,
+          -0.0515
+        ],
+        "radius": 0.005,
+        "half_length": 0.0239269722280108,
+        "material": "brass",
+        "rotation_xyzw": [
+          -0.637152936590636,
+          0.0,
+          -0.0,
+          0.7707373971684058
+        ]
+      },
+      {
+        "type": "cylinder",
+        "name": "telescope-pedestal-0075",
+        "position": [
+          -0.075,
+          0.061,
+          -0.075
+        ],
+        "radius": 0.016,
+        "half_length": 0.09,
+        "material": "dark"
+      },
+      {
+        "type": "capsule",
+        "name": "telescope-barrel-0076",
+        "position": [
+          -0.075,
+          0.21600000000000003,
+          -0.027499999999999997
+        ],
+        "radius": 0.026,
+        "half_length": 0.09494867034350718,
+        "material": "brass",
+        "rotation_xyzw": [
+          0.5024916422419499,
+          0.0,
+          -0.0,
+          0.8645820663632737
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "telescope-collar-0077",
+        "position": [
+          -0.075,
+          0.249,
+          0.0295
+        ],
+        "radius": 0.033,
+        "half_length": 0.020155644370746382,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.5019268181932331,
+          0.0,
+          -0.0,
+          0.8649100931185952
+        ]
+      },
+      {
+        "type": "sphere",
+        "name": "telescope-lens-0078",
+        "position": [
+          -0.075,
+          0.265,
+          0.06100000000000001
+        ],
+        "radius": 0.022,
+        "material": "blue"
+      },
+      {
+        "type": "cylinder",
+        "name": "balcony-platform-0079",
+        "position": [
+          -0.075,
+          -0.08,
+          -0.075
+        ],
+        "radius": 0.178,
+        "half_length": 0.009,
+        "material": "light-stone"
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0080",
+        "position": [
+          -0.2366796077701761,
+          -0.0455,
+          -0.12753288904374105
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0081",
+        "position": [
+          -0.24499941741951742,
+          -0.0455,
+          -0.07544505845086105
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0082",
+        "position": [
+          -0.23695245181310964,
+          -0.0455,
+          -0.023314379642666617
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0083",
+        "position": [
+          -0.21331343641513378,
+          -0.0455,
+          0.023840241334371223
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0084",
+        "position": [
+          -0.1763582287441547,
+          -0.0455,
+          0.0614789707824895
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0085",
+        "position": [
+          -0.12964470910153747,
+          -0.0455,
+          0.08597812201416798
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0086",
+        "position": [
+          -0.02543869977117283,
+          -0.0455,
+          0.08761512082099888
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0087",
+        "position": [
+          0.022021306506353394,
+          -0.0455,
+          0.0645953655527297
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0088",
+        "position": [
+          0.06014054007587673,
+          -0.0455,
+          0.028135999670339973
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0089",
+        "position": [
+          0.08524905348567031,
+          -0.0455,
+          -0.0182528339302589
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0090",
+        "position": [
+          0.09492951259293576,
+          -0.0455,
+          -0.0701050280973952
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "baluster-0091",
+        "position": [
+          0.08824992656508034,
+          -0.0455,
+          -0.12242848802666896
+        ],
+        "radius": 0.004,
+        "half_length": 0.027499999999999997,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0092",
+        "position": [
+          -0.24083951259484676,
+          -0.018,
+          -0.10148897374730105
+        ],
+        "radius": 0.005,
+        "half_length": 0.026374046563211715,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.6982557291928198,
+          0.0,
+          0.11152998094415496,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0093",
+        "position": [
+          -0.24097593461631353,
+          -0.018,
+          -0.04937971904676383
+        ],
+        "radius": 0.005,
+        "half_length": 0.02637404656321173,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.6988301246223936,
+          0.0,
+          -0.10787241037563675,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0094",
+        "position": [
+          -0.2251329441141217,
+          -0.018,
+          0.0002629308458523029
+        ],
+        "radius": 0.005,
+        "half_length": 0.026374046563211708,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.6321243154179919,
+          0.0,
+          -0.31688933377022205,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0095",
+        "position": [
+          -0.19483583257964424,
+          -0.018,
+          0.04265960605843036
+        ],
+        "radius": 0.005,
+        "half_length": 0.02637404656321171,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.504560435279091,
+          0.0,
+          -0.4953975849264651,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0096",
+        "position": [
+          -0.15300146892284608,
+          -0.018,
+          0.07372854639832874
+        ],
+        "radius": 0.005,
+        "half_length": 0.02637404656321171,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.3284197578046027,
+          0.0,
+          -0.6262111965491882,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0097",
+        "position": [
+          -0.0017086966324097175,
+          -0.018,
+          0.07610524318686429
+        ],
+        "radius": 0.005,
+        "half_length": 0.0263740465632117,
+        "material": "dark",
+        "rotation_xyzw": [
+          -0.30858793345259244,
+          0.0,
+          -0.6362181130142857,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0098",
+        "position": [
+          0.04108092329111506,
+          -0.018,
+          0.046365682611534835
+        ],
+        "radius": 0.005,
+        "half_length": 0.026374046563211715,
+        "material": "dark",
+        "rotation_xyzw": [
+          -0.4887506509744285,
+          0.0,
+          -0.5110017623962488,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0099",
+        "position": [
+          0.07269479678077352,
+          -0.018,
+          0.004941582870040536
+        ],
+        "radius": 0.005,
+        "half_length": 0.0263740465632117,
+        "material": "dark",
+        "rotation_xyzw": [
+          -0.6218586657094949,
+          0.0,
+          -0.3365884725922841,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0100",
+        "position": [
+          0.09008928303930304,
+          -0.018,
+          -0.044178931013827055
+        ],
+        "radius": 0.005,
+        "half_length": 0.026374046563211736,
+        "material": "dark",
+        "rotation_xyzw": [
+          -0.6950969398477981,
+          0.0,
+          -0.12976996653396553,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "balcony-rail-0101",
+        "position": [
+          0.09158971957900805,
+          -0.018,
+          -0.09626675806203208
+        ],
+        "radius": 0.005,
+        "half_length": 0.02637404656321171,
+        "material": "dark",
+        "rotation_xyzw": [
+          -0.7014144235026061,
+          0.0,
+          0.08954220514654919,
+          0.7071067811865475
+        ]
+      },
+      {
+        "type": "subtract",
+        "name": "shaped-gable-0105",
+        "position": [
+          0.165,
+          0,
+          -0.144
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "gable-mass-0102",
+            "position": [
+              0,
+              0.040499999999999994,
+              0
+            ],
+            "half_extent": [
+              0.067,
+              0.1305,
+              0.078
+            ],
+            "rounding": 0.003,
+            "material": "plaster"
+          },
+          {
+            "type": "union",
+            "name": "tools-0106",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "roof-trim-0103",
+                "position": [
+                  -0.34536619715014755,
+                  0.5325552376415607,
+                  0
+                ],
+                "half_extent": [
+                  0.7,
+                  0.5,
+                  0.6
+                ],
+                "rounding": 0.003,
+                "material": "plaster",
+                "rotation_xyzw": [
+                  0.0,
+                  0.0,
+                  0.37208166087357664,
+                  0.9281999987295629
+                ]
+              },
+              {
+                "type": "box",
+                "name": "roof-trim-0104",
+                "position": [
+                  0.34536619715014755,
+                  0.5325552376415607,
+                  0
+                ],
+                "half_extent": [
+                  0.7,
+                  0.5,
+                  0.6
+                ],
+                "rounding": 0.003,
+                "material": "plaster",
+                "rotation_xyzw": [
+                  -0.0,
+                  -0.0,
+                  -0.37208166087357664,
+                  0.9281999987295629
+                ]
+              }
+            ]
+          }
+        ],
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "union",
+        "name": "tiled-roof-0138",
+        "position": [
+          0.165,
+          0,
+          -0.144
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "roof-plane-0107",
+            "position": [
+              -0.04,
+              0.1435,
+              0
+            ],
+            "half_extent": [
+              0.06348130514488216,
+              0.009,
+              0.091
+            ],
+            "rounding": 0.003,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.3550176730139068,
+              0.9348595893757472
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-course-0108",
+            "position": [
+              -0.02,
+              0.17225000000000001,
+              0.0
+            ],
+            "radius": 0.004,
+            "half_length": 0.091,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-course-0109",
+            "position": [
+              -0.04,
+              0.1545,
+              0.0
+            ],
+            "radius": 0.004,
+            "half_length": 0.091,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-course-0110",
+            "position": [
+              -0.06,
+              0.13675,
+              0.0
+            ],
+            "radius": 0.004,
+            "half_length": 0.091,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0111",
+            "position": [
+              -0.044,
+              0.1545,
+              -0.0819
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0112",
+            "position": [
+              -0.044,
+              0.1545,
+              -0.06369999999999999
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0113",
+            "position": [
+              -0.044,
+              0.1545,
+              -0.0455
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0114",
+            "position": [
+              -0.044,
+              0.1545,
+              -0.02729999999999999
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0115",
+            "position": [
+              -0.044,
+              0.1545,
+              -0.009099999999999997
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0116",
+            "position": [
+              -0.044,
+              0.1545,
+              0.009099999999999997
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0117",
+            "position": [
+              -0.044,
+              0.1545,
+              0.027300000000000005
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0118",
+            "position": [
+              -0.044,
+              0.1545,
+              0.04550000000000001
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0119",
+            "position": [
+              -0.044,
+              0.1545,
+              0.0637
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0120",
+            "position": [
+              -0.044,
+              0.1545,
+              0.0819
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "eave-0121",
+            "position": [
+              -0.08,
+              0.103,
+              0.0
+            ],
+            "radius": 0.007,
+            "half_length": 0.091,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "box",
+            "name": "roof-plane-0122",
+            "position": [
+              0.04,
+              0.1435,
+              0
+            ],
+            "half_extent": [
+              0.06348130514488216,
+              0.009,
+              0.091
+            ],
+            "rounding": 0.003,
+            "material": "teal",
+            "rotation_xyzw": [
+              -0.0,
+              -0.0,
+              -0.3550176730139068,
+              0.9348595893757472
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-course-0123",
+            "position": [
+              0.02,
+              0.17225000000000001,
+              0.0
+            ],
+            "radius": 0.004,
+            "half_length": 0.091,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-course-0124",
+            "position": [
+              0.04,
+              0.1545,
+              0.0
+            ],
+            "radius": 0.004,
+            "half_length": 0.091,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-course-0125",
+            "position": [
+              0.06,
+              0.13675,
+              0.0
+            ],
+            "radius": 0.004,
+            "half_length": 0.091,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0126",
+            "position": [
+              0.044,
+              0.1545,
+              -0.0819
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0127",
+            "position": [
+              0.044,
+              0.1545,
+              -0.06369999999999999
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0128",
+            "position": [
+              0.044,
+              0.1545,
+              -0.0455
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0129",
+            "position": [
+              0.044,
+              0.1545,
+              -0.02729999999999999
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0130",
+            "position": [
+              0.044,
+              0.1545,
+              -0.009099999999999997
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0131",
+            "position": [
+              0.044,
+              0.1545,
+              0.009099999999999997
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0132",
+            "position": [
+              0.044,
+              0.1545,
+              0.027300000000000005
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0133",
+            "position": [
+              0.044,
+              0.1545,
+              0.04550000000000001
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0134",
+            "position": [
+              0.044,
+              0.1545,
+              0.0637
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "tile-rib-0135",
+            "position": [
+              0.044,
+              0.1545,
+              0.0819
+            ],
+            "radius": 0.003,
+            "half_length": 0.05055937104039172,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.9225358558171306,
+              0.3859113819670966
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "eave-0136",
+            "position": [
+              0.08,
+              0.103,
+              0.0
+            ],
+            "radius": 0.007,
+            "half_length": 0.091,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "ridge-cap-0137",
+            "position": [
+              0.0,
+              0.196,
+              0.0
+            ],
+            "radius": 0.009,
+            "half_length": 0.097,
+            "material": "brass",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          }
+        ],
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "union",
+        "name": "window-0146",
+        "position": [
+          0.165,
+          0.042,
+          -0.06
+        ],
+        "children": [
+          {
+            "type": "subtract",
+            "name": "window-frame-0141",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "children": [
+              {
+                "type": "box",
+                "name": "frame-0139",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "half_extent": [
+                  0.027000000000000003,
+                  0.035,
+                  0.008
+                ],
+                "rounding": 0.003,
+                "material": "wood"
+              },
+              {
+                "type": "box",
+                "name": "frame-inset-0140",
+                "position": [
+                  0,
+                  0,
+                  0.005
+                ],
+                "half_extent": [
+                  0.021,
+                  0.029,
+                  0.018
+                ],
+                "rounding": 0.003,
+                "material": "wood"
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "name": "window-dark-0142",
+            "position": [
+              0,
+              0,
+              -0.005
+            ],
+            "half_extent": [
+              0.021,
+              0.029,
+              0.003
+            ],
+            "rounding": 0.00135,
+            "material": "dark"
+          },
+          {
+            "type": "box",
+            "name": "window-mullion-0143",
+            "position": [
+              0,
+              0,
+              0.009
+            ],
+            "half_extent": [
+              0.003,
+              0.029,
+              0.004
+            ],
+            "rounding": 0.00135,
+            "material": "linen"
+          },
+          {
+            "type": "box",
+            "name": "window-crossbar-0144",
+            "position": [
+              0,
+              -0.005,
+              0.009
+            ],
+            "half_extent": [
+              0.021,
+              0.003,
+              0.004
+            ],
+            "rounding": 0.00135,
+            "material": "linen"
+          },
+          {
+            "type": "box",
+            "name": "sill-0145",
+            "position": [
+              0,
+              -0.037000000000000005,
+              0.009
+            ],
+            "half_extent": [
+              0.033,
+              0.006,
+              0.015
+            ],
+            "rounding": 0.0027,
+            "material": "light-stone"
+          }
+        ],
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "box",
+        "name": "annex-sill-0147",
+        "position": [
+          0.165,
+          -0.083,
+          -0.144
+        ],
+        "half_extent": [
+          0.075,
+          0.009,
+          0.085
+        ],
+        "rounding": 0.003,
+        "material": "light-stone"
+      },
+      {
+        "type": "cylinder",
+        "name": "instrument-pier-0148",
+        "position": [
+          -0.15,
+          -0.143,
+          0.156
+        ],
+        "radius": 0.027,
+        "half_length": 0.049,
+        "material": "light-stone"
+      },
+      {
+        "type": "torus",
+        "name": "armillary-0149",
+        "position": [
+          -0.15,
+          -0.037,
+          0.156
+        ],
+        "major_radius": 0.047,
+        "minor_radius": 0.004,
+        "material": "brass"
+      },
+      {
+        "type": "torus",
+        "name": "armillary-meridian-0150",
+        "position": [
+          -0.15,
+          -0.037,
+          0.156
+        ],
+        "major_radius": 0.047,
+        "minor_radius": 0.004,
+        "material": "brass",
+        "rotation_xyzw": [
+          0.5591929034707469,
+          0.0,
+          0.0,
+          0.8290375725550416
+        ]
+      },
+      {
+        "type": "torus",
+        "name": "armillary-meridian-0151",
+        "position": [
+          -0.15,
+          -0.037,
+          0.156
+        ],
+        "major_radius": 0.047,
+        "minor_radius": 0.004,
+        "material": "brass",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          0.5877852522924731,
+          0.8090169943749475
+        ]
+      },
+      {
+        "type": "sphere",
+        "name": "armillary-center-0152",
+        "position": [
+          -0.15,
+          -0.037,
+          0.156
+        ],
+        "radius": 0.014,
+        "material": "blue"
+      },
+      {
+        "type": "capsule",
+        "name": "tripod-leg-0153",
+        "position": [
+          0.12000000000000001,
+          -0.133,
+          0.15500000000000003
+        ],
+        "radius": 0.005,
+        "half_length": 0.058600341295934444,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.13115758974580233,
+          0.0,
+          -0.17487678632773646,
+          0.9758154519455793
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "tripod-leg-0154",
+        "position": [
+          0.16,
+          -0.133,
+          0.15500000000000003
+        ],
+        "radius": 0.005,
+        "half_length": 0.058600341295934444,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.13115758974580233,
+          0.0,
+          0.17487678632773632,
+          0.9758154519455793
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "tripod-leg-0155",
+        "position": [
+          0.14,
+          -0.133,
+          0.19
+        ],
+        "radius": 0.005,
+        "half_length": 0.056648036153074184,
+        "material": "wood",
+        "rotation_xyzw": [
+          -0.17944118959878985,
+          0.0,
+          -0.0,
+          0.9837687022239379
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "survey-tube-0156",
+        "position": [
+          0.13949999999999999,
+          -0.06,
+          0.17
+        ],
+        "radius": 0.012,
+        "half_length": 0.04811704479703632,
+        "material": "brass",
+        "rotation_xyzw": [
+          0.3849315029460805,
+          0.0,
+          -0.4426712283879925,
+          0.809857963841276
+        ]
+      },
+      {
+        "type": "sphere",
+        "name": "survey-lens-0157",
+        "position": [
+          0.177,
+          -0.044,
+          0.203
+        ],
+        "radius": 0.013,
+        "material": "dark"
+      },
+      {
+        "type": "cylinder",
+        "name": "clock-face-0158",
+        "position": [
+          0.165,
+          0.126,
+          -0.061
+        ],
+        "radius": 0.023,
+        "half_length": 0.005,
+        "material": "linen",
+        "rotation_xyzw": [
+          0.7071067811865475,
+          0.0,
+          0.0,
+          0.7071067811865476
+        ]
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0159",
+        "position": [
+          0.183,
+          0.126,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0160",
+        "position": [
+          0.17772792206135787,
+          0.13872792206135787,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0161",
+        "position": [
+          0.165,
+          0.144,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0162",
+        "position": [
+          0.15227207793864214,
+          0.13872792206135787,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0163",
+        "position": [
+          0.14700000000000002,
+          0.126,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0164",
+        "position": [
+          0.15227207793864214,
+          0.11327207793864215,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0165",
+        "position": [
+          0.165,
+          0.108,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "sphere",
+        "name": "clock-mark-0166",
+        "position": [
+          0.17772792206135785,
+          0.11327207793864215,
+          -0.054
+        ],
+        "radius": 0.0025,
+        "material": "dark"
+      },
+      {
+        "type": "capsule",
+        "name": "clock-hand-0167",
+        "position": [
+          0.165,
+          0.134,
+          -0.05
+        ],
+        "radius": 0.0025,
+        "half_length": 0.007999999999999993,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "clock-hand-0168",
+        "position": [
+          0.17099999999999999,
+          0.123,
+          -0.05
+        ],
+        "radius": 0.0025,
+        "half_length": 0.006708203932499363,
+        "material": "dark",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.8506508083520401,
+          0.5257311121191331
+        ]
+      },
+      {
+        "type": "union",
+        "name": "cypress-0172",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "cylinder",
+            "name": "trunk-0169",
+            "position": [
+              -0.27,
+              -0.121,
+              -0.08
+            ],
+            "radius": 0.007,
+            "half_length": 0.066,
+            "material": "wood"
+          },
+          {
+            "type": "capped-cone",
+            "name": "lower-crown-0170",
+            "position": [
+              -0.27,
+              -0.06599999999999999,
+              -0.08
+            ],
+            "bottom_radius": 0.027,
+            "top_radius": 0.014,
+            "half_length": 0.066,
+            "material": "leaf"
+          },
+          {
+            "type": "capped-cone",
+            "name": "upper-crown-0171",
+            "position": [
+              -0.27,
+              -0.010999999999999982,
+              -0.08
+            ],
+            "bottom_radius": 0.02,
+            "top_radius": 0.002,
+            "half_length": 0.0572,
+            "material": "leaf-light"
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "cypress-0176",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "cylinder",
+            "name": "trunk-0173",
+            "position": [
+              0.243,
+              -0.136,
+              -0.105
+            ],
+            "radius": 0.007,
+            "half_length": 0.051000000000000004,
+            "material": "wood"
+          },
+          {
+            "type": "capped-cone",
+            "name": "lower-crown-0174",
+            "position": [
+              0.243,
+              -0.09349999999999999,
+              -0.105
+            ],
+            "bottom_radius": 0.027,
+            "top_radius": 0.014,
+            "half_length": 0.051000000000000004,
+            "material": "leaf"
+          },
+          {
+            "type": "capped-cone",
+            "name": "upper-crown-0175",
+            "position": [
+              0.243,
+              -0.05099999999999999,
+              -0.105
+            ],
+            "bottom_radius": 0.02,
+            "top_radius": 0.002,
+            "half_length": 0.0442,
+            "material": "leaf-light"
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "garden-pot-0183",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capped-cone",
+            "name": "pot-0177",
+            "position": [
+              -0.22,
+              -0.168,
+              0.08
+            ],
+            "bottom_radius": 0.0147,
+            "top_radius": 0.021,
+            "half_length": 0.019,
+            "material": "roof"
+          },
+          {
+            "type": "torus",
+            "name": "pot-rim-0178",
+            "position": [
+              -0.22,
+              -0.149,
+              0.08
+            ],
+            "major_radius": 0.021,
+            "minor_radius": 0.004,
+            "material": "tile-edge"
+          },
+          {
+            "type": "cylinder",
+            "name": "pot-soil-0179",
+            "position": [
+              -0.22,
+              -0.15,
+              0.08
+            ],
+            "radius": 0.01722,
+            "half_length": 0.003,
+            "material": "earth"
+          },
+          {
+            "type": "capsule",
+            "name": "plant-0180",
+            "position": [
+              -0.213,
+              -0.132,
+              0.08
+            ],
+            "radius": 0.014,
+            "half_length": 0.016552945357246853,
+            "material": "leaf-light",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.2165835404696473,
+              0.9762640882454053
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "plant-0181",
+            "position": [
+              -0.2235,
+              -0.132,
+              0.08606217782649107
+            ],
+            "radius": 0.014,
+            "half_length": 0.01655294535724685,
+            "material": "leaf",
+            "rotation_xyzw": [
+              0.18756684808828952,
+              0.0,
+              0.10829177023482367,
+              0.9762640882454054
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "plant-0182",
+            "position": [
+              -0.2235,
+              -0.132,
+              0.07393782217350894
+            ],
+            "radius": 0.014,
+            "half_length": 0.016552945357246846,
+            "material": "leaf-light",
+            "rotation_xyzw": [
+              -0.18756684808828933,
+              0.0,
+              0.10829177023482368,
+              0.9762640882454054
+            ]
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "garden-pot-0190",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "capped-cone",
+            "name": "pot-0184",
+            "position": [
+              0.04,
+              -0.168,
+              0.22
+            ],
+            "bottom_radius": 0.0147,
+            "top_radius": 0.021,
+            "half_length": 0.019,
+            "material": "roof"
+          },
+          {
+            "type": "torus",
+            "name": "pot-rim-0185",
+            "position": [
+              0.04,
+              -0.149,
+              0.22
+            ],
+            "major_radius": 0.021,
+            "minor_radius": 0.004,
+            "material": "tile-edge"
+          },
+          {
+            "type": "cylinder",
+            "name": "pot-soil-0186",
+            "position": [
+              0.04,
+              -0.15,
+              0.22
+            ],
+            "radius": 0.01722,
+            "half_length": 0.003,
+            "material": "earth"
+          },
+          {
+            "type": "capsule",
+            "name": "plant-0187",
+            "position": [
+              0.047,
+              -0.132,
+              0.22
+            ],
+            "radius": 0.014,
+            "half_length": 0.01655294535724685,
+            "material": "leaf-light",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.21658354046964715,
+              0.9762640882454054
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "plant-0188",
+            "position": [
+              0.036500000000000005,
+              -0.132,
+              0.22606217782649107
+            ],
+            "radius": 0.014,
+            "half_length": 0.01655294535724685,
+            "material": "leaf",
+            "rotation_xyzw": [
+              0.18756684808828952,
+              0.0,
+              0.10829177023482357,
+              0.9762640882454054
+            ]
+          },
+          {
+            "type": "capsule",
+            "name": "plant-0189",
+            "position": [
+              0.0365,
+              -0.132,
+              0.21393782217350893
+            ],
+            "radius": 0.014,
+            "half_length": 0.01655294535724685,
+            "material": "leaf-light",
+            "rotation_xyzw": [
+              -0.18756684808828952,
+              0.0,
+              0.10829177023482367,
+              0.9762640882454054
+            ]
+          }
+        ]
+      },
+      {
+        "type": "union",
+        "name": "wall-lantern-0195",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "children": [
+          {
+            "type": "box",
+            "name": "lantern-back-0191",
+            "position": [
+              -0.139,
+              0.0009999999999999974,
+              0.063
+            ],
+            "half_extent": [
+              0.005,
+              0.026,
+              0.006
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "dark"
+          },
+          {
+            "type": "box",
+            "name": "lantern-glow-0192",
+            "position": [
+              -0.139,
+              -0.017,
+              0.079
+            ],
+            "half_extent": [
+              0.01,
+              0.016,
+              0.01
+            ],
+            "rounding": 0.003,
+            "material": "glow"
+          },
+          {
+            "type": "box",
+            "name": "lantern-cap-0193",
+            "position": [
+              -0.139,
+              0.0019999999999999983,
+              0.079
+            ],
+            "half_extent": [
+              0.015,
+              0.004,
+              0.014
+            ],
+            "rounding": 0.0018000000000000002,
+            "material": "dark"
+          },
+          {
+            "type": "box",
+            "name": "lantern-foot-0194",
+            "position": [
+              -0.139,
+              -0.036000000000000004,
+              0.079
+            ],
+            "half_extent": [
+              0.013,
+              0.003,
+              0.013
+            ],
+            "rounding": 0.00135,
+            "material": "dark"
+          }
+        ]
+      }
+    ],
+    "scale": 0.68
+  },
+  "authoring": {
+    "generator": "cubey-python-author-v1",
+    "units": "workspace"
+  },
+  "history": [
+    {
+      "nodes": [
+        "island-0001",
+        "cliff-block-0002",
+        "cliff-block-0003",
+        "cliff-block-0004",
+        "cliff-block-0005",
+        "cliff-block-0006",
+        "cliff-block-0007",
+        "cliff-block-0008",
+        "cliff-block-0009",
+        "cliff-block-0010",
+        "cliff-block-0011",
+        "cliff-block-0012",
+        "cliff-block-0013",
+        "cliff-block-0014",
+        "cliff-block-0015",
+        "cliff-block-0016",
+        "cliff-block-0017",
+        "cliff-block-0018",
+        "cliff-block-0019",
+        "lower-terrace-0020",
+        "upper-terrace-0021",
+        "upper-coping-0022"
+      ],
+      "label": "Build the rocky hill and two retained terraces",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "approach-step-0023",
+        "approach-step-0024",
+        "approach-step-0025",
+        "approach-step-0026",
+        "approach-step-0027",
+        "approach-step-0028",
+        "approach-step-0029",
+        "approach-step-0030",
+        "approach-step-0031",
+        "approach-step-0032",
+        "landing-0033",
+        "stair-rail-0034",
+        "rail-post-0035",
+        "rail-post-0036",
+        "flagstone-0037",
+        "flagstone-0038",
+        "flagstone-0039",
+        "flagstone-0040",
+        "flagstone-0041",
+        "flagstone-0042",
+        "flagstone-0043"
+      ],
+      "label": "Climb from the path onto the upper terrace",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "observatory-drum-0044",
+        "arch-rect-0053",
+        "arch-round-0054",
+        "drum-foundation-0060",
+        "drum-frieze-0061"
+      ],
+      "label": "Hollow the observatory and open its arched entrance",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "drum-interior-0045",
+        "arch-rect-0046",
+        "arch-round-0047",
+        "drum-window-cut-0049",
+        "drum-window-cut-0050",
+        "arch-rect-0056",
+        "arch-round-0057"
+      ],
+      "label": "Hollow the observatory and open its arched entrance / carve",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "dome-0062",
+        "dome-base-ring-0068",
+        "slit-rim-0069",
+        "slit-rim-0070",
+        "slit-rim-0071",
+        "slit-rim-0072",
+        "slit-rim-0073",
+        "slit-rim-0074"
+      ],
+      "label": "Fit the split dome, brass ring and slit edges",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "dome-inner-0063",
+        "dome-bottom-trim-0064",
+        "dome-slit-0065"
+      ],
+      "label": "Fit the split dome, brass ring and slit edges / carve",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "telescope-pedestal-0075",
+        "telescope-barrel-0076",
+        "telescope-collar-0077",
+        "telescope-lens-0078"
+      ],
+      "label": "Aim the telescope through the dome opening",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "balcony-platform-0079",
+        "baluster-0080",
+        "baluster-0081",
+        "baluster-0082",
+        "baluster-0083",
+        "baluster-0084",
+        "baluster-0085",
+        "baluster-0086",
+        "baluster-0087",
+        "baluster-0088",
+        "baluster-0089",
+        "baluster-0090",
+        "baluster-0091",
+        "balcony-rail-0092",
+        "balcony-rail-0093",
+        "balcony-rail-0094",
+        "balcony-rail-0095",
+        "balcony-rail-0096",
+        "balcony-rail-0097",
+        "balcony-rail-0098",
+        "balcony-rail-0099",
+        "balcony-rail-0100",
+        "balcony-rail-0101"
+      ],
+      "label": "Wrap the drum with an entrance balcony",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "gable-mass-0102",
+        "roof-plane-0107",
+        "tile-course-0108",
+        "tile-course-0109",
+        "tile-course-0110",
+        "tile-rib-0111",
+        "tile-rib-0112",
+        "tile-rib-0113",
+        "tile-rib-0114",
+        "tile-rib-0115",
+        "tile-rib-0116",
+        "tile-rib-0117",
+        "tile-rib-0118",
+        "tile-rib-0119",
+        "tile-rib-0120",
+        "eave-0121",
+        "roof-plane-0122",
+        "tile-course-0123",
+        "tile-course-0124",
+        "tile-course-0125",
+        "tile-rib-0126",
+        "tile-rib-0127",
+        "tile-rib-0128",
+        "tile-rib-0129",
+        "tile-rib-0130",
+        "tile-rib-0131",
+        "tile-rib-0132",
+        "tile-rib-0133",
+        "tile-rib-0134",
+        "tile-rib-0135",
+        "eave-0136",
+        "ridge-cap-0137",
+        "frame-0139",
+        "window-dark-0142",
+        "window-mullion-0143",
+        "window-crossbar-0144",
+        "sill-0145",
+        "annex-sill-0147"
+      ],
+      "label": "Attach the keeper annex and tiled roof",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "roof-trim-0103",
+        "roof-trim-0104",
+        "frame-inset-0140"
+      ],
+      "label": "Attach the keeper annex and tiled roof / carve",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "instrument-pier-0148",
+        "armillary-0149",
+        "armillary-meridian-0150",
+        "armillary-meridian-0151",
+        "armillary-center-0152",
+        "tripod-leg-0153",
+        "tripod-leg-0154",
+        "tripod-leg-0155",
+        "survey-tube-0156",
+        "survey-lens-0157"
+      ],
+      "label": "Set out the armillary and tripod instrument",
+      "seconds": 1.3
+    },
+    {
+      "nodes": [
+        "clock-face-0158",
+        "clock-mark-0159",
+        "clock-mark-0160",
+        "clock-mark-0161",
+        "clock-mark-0162",
+        "clock-mark-0163",
+        "clock-mark-0164",
+        "clock-mark-0165",
+        "clock-mark-0166",
+        "clock-hand-0167",
+        "clock-hand-0168",
+        "trunk-0169",
+        "lower-crown-0170",
+        "upper-crown-0171",
+        "trunk-0173",
+        "lower-crown-0174",
+        "upper-crown-0175",
+        "pot-0177",
+        "pot-rim-0178",
+        "pot-soil-0179",
+        "plant-0180",
+        "plant-0181",
+        "plant-0182",
+        "pot-0184",
+        "pot-rim-0185",
+        "pot-soil-0186",
+        "plant-0187",
+        "plant-0188",
+        "plant-0189",
+        "lantern-back-0191",
+        "lantern-glow-0192",
+        "lantern-cap-0193",
+        "lantern-foot-0194"
+      ],
+      "label": "Add the annex clock and terrace planting",
+      "seconds": 1.3
+    }
+  ]
+}
