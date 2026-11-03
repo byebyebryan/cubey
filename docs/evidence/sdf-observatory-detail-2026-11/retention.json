@@ -1,0 +1,581 @@
+{
+  "format": "cubey.sdf.observatory-detail-retention",
+  "version": 1,
+  "policy": "Keep all small detail rounds, including the obscured-objective and section-fixture corrections, final-v2 captures, report export and verification. No cleanup performed or authorized.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/author_observatory.py",
+      "bytes": 29429,
+      "sha256": "bdb417259c994aa2d507d7d6014355868dbe2e168ae097c8a58f4a00854cc916"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/captures.json",
+      "bytes": 42487,
+      "sha256": "8cea822321691003a39bfe2a47ee9e976839a3fa6537e3481f5fac10cc4977eb"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/furnished-alternate.log",
+      "bytes": 713,
+      "sha256": "c7490dc0f5b1d732c672fe3bdd82defd6784ecf5b00a94effaa8e1fc7bf1048f"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/furnished-alternate.png",
+      "bytes": 614846,
+      "sha256": "bf7a3e66a58741aca235982128d5e5684e1ce7661795cadfced6387063e4888d"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/furnished-dome-close.log",
+      "bytes": 714,
+      "sha256": "a438c2f5d513ad08ccbaf3595779c246cb2d9944ac8defdd2738d1edb59b08cf"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/furnished-dome-close.png",
+      "bytes": 701688,
+      "sha256": "862582918d8bd20fb72eb35823263a3b6bb27411cd5ad632e5f91bb9e72cf9cb"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/furnished-hero.log",
+      "bytes": 708,
+      "sha256": "e60b41052e961f32f0d46d4c164dd22264b0a3d64976cfd92814e932c0987394"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/furnished-hero.png",
+      "bytes": 509873,
+      "sha256": "a3e7dc09b364b3c458b77edda5cf9a93751d1ce08215696032f0d44b5a01e37d"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/furnished-config.json",
+      "bytes": 371,
+      "sha256": "91cb6ca1e46445331a0bbbaa47977e7359344791ce530adc79159dea4f0c7166"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/furnished-scene.json",
+      "bytes": 253876,
+      "sha256": "b7c00b8573643ad4a4a507705ad51657f575dd278036467707fa346bddbe846e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/instrument-config.json",
+      "bytes": 372,
+      "sha256": "1eec5ce62c37f1872be090b8e14eebb392491e51c78c4dae298bc838bae59977"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/instrument-scene.json",
+      "bytes": 228163,
+      "sha256": "449e12c34376733199ac02b49e1b6c16e81213f874d4c784862eb16aefd0a192"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/section-config.json",
+      "bytes": 369,
+      "sha256": "ca1c38c088addf4f48e634432a682a3735631557a5c79a64d99f413f13eb233c"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/section-scene.json",
+      "bytes": 299052,
+      "sha256": "6bff0e171a1701f438b0771e74472a056d00eca1f7ad00e1a1216706dce42f2a"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/site-config.json",
+      "bytes": 366,
+      "sha256": "957572265c7d2291c531bfa2e54c88b9e09bbd8f044952b2d3671a3e8a0b3877"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/inputs/site-scene.json",
+      "bytes": 183487,
+      "sha256": "39d78a99b807364083673d4cf68ccdb7da013d3154da6398d41724ef911c7cc6"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/instrument-hero.log",
+      "bytes": 707,
+      "sha256": "438eb34f80088aecda2b082a39aa6fbda294e5322cc5b25e69d37c7decbaac57"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/instrument-hero.png",
+      "bytes": 502658,
+      "sha256": "df4d4629b5e4665acdaa089f49a336cacea8558a45f7223520b2dcba3c644897"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/section-alternate.log",
+      "bytes": 711,
+      "sha256": "e403111c5b2846cb6edb9c98e44fe7ffc2e25b8af112d3176244e97986e9f6a0"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/section-alternate.png",
+      "bytes": 556870,
+      "sha256": "3a623bb184dbed22b9f1d20235459f6586356d92526e81b5d9d8d08cbe4d91bf"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/section-hero.log",
+      "bytes": 706,
+      "sha256": "139a265abcac851cb42a5dbaa4e12eaad6e8917196a64a583f8fe8e1d4d06c12"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/section-hero.png",
+      "bytes": 452921,
+      "sha256": "296318c51c62a38ace84dd92b38e5a694ef36700b8365cb6c6a4ae7e95a77b20"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/section-interior-close.log",
+      "bytes": 714,
+      "sha256": "9519c01d79878695542baa91b21ac103446910ae065486dacd48e73d4b0690f1"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/section-interior-close.png",
+      "bytes": 698358,
+      "sha256": "bbe0f1c9b439711868771484e1152d49775c5a2dc52c1183e5e75757d5a04721"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/site-hero.log",
+      "bytes": 702,
+      "sha256": "a548a71243380d96de7035345675092c0e92d30c61883f39b4a373d01e48c291"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final/site-hero.png",
+      "bytes": 486834,
+      "sha256": "1446efc498b95b43c11289e1080363df018e4155da0c975eb2809fe8cb3d3e75"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/author_observatory.py",
+      "bytes": 29582,
+      "sha256": "6b055ee9023441359c9dd0991b7f4c655309274d3b161d0375c4ee695292a0b5"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/captures.json",
+      "bytes": 42608,
+      "sha256": "8c0ab8fbee01708ab05b5eed36bbdb208936e075c17ab0af292530d7b9ef53cf"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/furnished-alternate.log",
+      "bytes": 716,
+      "sha256": "eed233a4b7bab3e3fcabd362e811ebd62c253afbe42a9835ccca9841b6002b71"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/furnished-alternate.png",
+      "bytes": 614461,
+      "sha256": "e6a627cb09ec744117f2813e4eea2b6aa8ad9178fcf4ecb6cdd9054f8f9aea7e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/furnished-dome-close.log",
+      "bytes": 717,
+      "sha256": "053c557432d9bc49f5f5df27f0fbcedc918efe3202838f3ed0ed5b00fb194fda"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/furnished-dome-close.png",
+      "bytes": 700334,
+      "sha256": "79888f4d284fa232e4234a686fb3a1621ec50cc88254e0e07337ddd53b161982"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/furnished-hero.log",
+      "bytes": 711,
+      "sha256": "73a154b3a55dee732daf594fa833b01d83ae09b86d3cf5336b1849547a9557d0"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/furnished-hero.png",
+      "bytes": 509796,
+      "sha256": "5fc6c278efe564d46799795c8d459cf54d333f71e38af03536a0cd6ac3bdcbb7"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/furnished-config.json",
+      "bytes": 374,
+      "sha256": "24ad5a15756782f1f44567ba40556454a7a37c43566b8523c6c22c7ddbe370db"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/furnished-scene.json",
+      "bytes": 254280,
+      "sha256": "4a53a49d8ab8b06539076ac9ee8db4e3b75bcfaa163b2af2ebcb22075263adc4"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/instrument-config.json",
+      "bytes": 375,
+      "sha256": "c6776a9773677b2e5f6b36a47300c2e04b5fa2d525cc42748bfbc017ecd236ab"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/instrument-scene.json",
+      "bytes": 228567,
+      "sha256": "80b5769c1295e1b9f028974a1eed9bc8129657633706f47d64d6cba87f648ede"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/section-config.json",
+      "bytes": 372,
+      "sha256": "3267a18c8d82711e6069e7a569532583933b8e52ba13040c88c5e776264cab9c"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/section-scene.json",
+      "bytes": 300656,
+      "sha256": "b2f9fe6f3bf39c5eea0a57be6d9ddba56665d5082f0b8c2fe857cd95df0e90ca"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/site-config.json",
+      "bytes": 369,
+      "sha256": "2a59614e787e903e269328b1cd5b0dfba5f40878ff52d2bef7b8e5998a251d26"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/inputs/site-scene.json",
+      "bytes": 183891,
+      "sha256": "9c0042e50e5fdca448381087b358af23716ec9cd10e8518f2da9debb00060fbc"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/instrument-hero.log",
+      "bytes": 710,
+      "sha256": "c129aca736d718da700bc2d5ce0f3c085e792fc2dd2cca5a83a565013f70a49b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/instrument-hero.png",
+      "bytes": 502598,
+      "sha256": "dbec360ed5bb646139799127f6064e2bd6e6d8aef3a5b93846fb1060683172b4"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/section-alternate.log",
+      "bytes": 714,
+      "sha256": "dff32c920894bf19af8eb58173f877a9b2763c69ee0269b0c0f9f609fe06c6a5"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/section-alternate.png",
+      "bytes": 553099,
+      "sha256": "d23c62b52cee4e40fcc27a592449713c6a52f0a39a06027f9bf606a9dd520c9d"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/section-hero.log",
+      "bytes": 708,
+      "sha256": "40e179b8f51fab3be9df16bea9be280678647226b08e651035754a01f27781c0"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/section-hero.png",
+      "bytes": 449649,
+      "sha256": "131af220765966eed6bd57abe9769f65582b9dc9e16e13b556255c70ed4e85ec"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/section-interior-close.log",
+      "bytes": 719,
+      "sha256": "cfa7190da3e68228db541addf7a656a1e03af7bed65a8b23a08decd5602dc1a2"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/section-interior-close.png",
+      "bytes": 691796,
+      "sha256": "1bea076b5a04094af46b40a6972ffeed0f11347ce2d6581f3b1ec2f71d7d0e71"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/site-hero.log",
+      "bytes": 705,
+      "sha256": "2952540ddcda14fef99982881801bdbd9306c7fc2360378d6a7fffb81d757d3a"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/site-hero.png",
+      "bytes": 487053,
+      "sha256": "39cd4dccbda367fa5ee0c7b741e510ded7616291e6213719ebbc65870b00590b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/furnished-alternate.png",
+      "bytes": 614461,
+      "sha256": "e6a627cb09ec744117f2813e4eea2b6aa8ad9178fcf4ecb6cdd9054f8f9aea7e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/furnished-dome-close.png",
+      "bytes": 700334,
+      "sha256": "79888f4d284fa232e4234a686fb3a1621ec50cc88254e0e07337ddd53b161982"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/furnished-hero.png",
+      "bytes": 509796,
+      "sha256": "5fc6c278efe564d46799795c8d459cf54d333f71e38af03536a0cd6ac3bdcbb7"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/instrument-hero.png",
+      "bytes": 502598,
+      "sha256": "dbec360ed5bb646139799127f6064e2bd6e6d8aef3a5b93846fb1060683172b4"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/original-draft.png",
+      "bytes": 292232,
+      "sha256": "ef5d4c7a939127ac6f0ef6da290f68b48e36b92e0f8ce54150f0af4d1071b21e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/section-alternate.png",
+      "bytes": 553099,
+      "sha256": "d23c62b52cee4e40fcc27a592449713c6a52f0a39a06027f9bf606a9dd520c9d"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/section-hero.png",
+      "bytes": 449649,
+      "sha256": "131af220765966eed6bd57abe9769f65582b9dc9e16e13b556255c70ed4e85ec"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/section-interior-close.png",
+      "bytes": 691796,
+      "sha256": "1bea076b5a04094af46b40a6972ffeed0f11347ce2d6581f3b1ec2f71d7d0e71"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/assets/site-hero.png",
+      "bytes": 487053,
+      "sha256": "39cd4dccbda367fa5ee0c7b741e510ded7616291e6213719ebbc65870b00590b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/index.html",
+      "bytes": 29516,
+      "sha256": "fea759ec6506261cadc6fd0d44cab3a4de03506e7f445ca09e1833b1d7529a1d"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/presets/furnished.json",
+      "bytes": 329,
+      "sha256": "d58e8b01e2abf8393e99196bb43415730d92e767728f87ac911ab9896bbcbe3d"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/presets/instrument.json",
+      "bytes": 330,
+      "sha256": "d6360716c4c396534b7fcb01fcc2b933ab79980d7d6a952d1613a89ec5fe7583"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/presets/section.json",
+      "bytes": 327,
+      "sha256": "1fe3d9eb6d0f7584bce6982623ca07690a9cbc33c80f0186800114371630a2cc"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/presets/site.json",
+      "bytes": 324,
+      "sha256": "06298404bb8e068a6b2057405db714f30f8d078419c41ae5df8c145553d25ba8"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/review-data.json",
+      "bytes": 22040,
+      "sha256": "94a796c1d54a82eaa088b1538ae422375c37fe132d286c50236999972faf608e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/scenes/furnished.json",
+      "bytes": 254280,
+      "sha256": "4a53a49d8ab8b06539076ac9ee8db4e3b75bcfaa163b2af2ebcb22075263adc4"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/scenes/instrument.json",
+      "bytes": 228567,
+      "sha256": "80b5769c1295e1b9f028974a1eed9bc8129657633706f47d64d6cba87f648ede"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/scenes/section.json",
+      "bytes": 300656,
+      "sha256": "b2f9fe6f3bf39c5eea0a57be6d9ddba56665d5082f0b8c2fe857cd95df0e90ca"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/scenes/site.json",
+      "bytes": 183891,
+      "sha256": "9c0042e50e5fdca448381087b358af23716ec9cd10e8518f2da9debb00060fbc"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/report/source-manifest.json",
+      "bytes": 3056,
+      "sha256": "4d69061bca6e47e80129998338bf0f78cf8b8c94d07753c61053510a0de32c01"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/author_observatory.py",
+      "bytes": 29218,
+      "sha256": "642fa69e976f83667b157aa959d0cfbb8779dd3b67acc947f761ed20812f4bec"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/captures.json",
+      "bytes": 29070,
+      "sha256": "95b3d9b885d6c1a16f31f0e6bd63b9216468b2494b3daba0d4e887d18a4e6be0"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/inputs/instrument-config.json",
+      "bytes": 373,
+      "sha256": "2d4ab6587f894bbdac948f4e64d43aa7f3e1837f9038a7c767764b0d627cedbc"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/inputs/instrument-scene.json",
+      "bytes": 227271,
+      "sha256": "337e49f654a58ded1c14d64befb1721a0a93a6188cd15db95e8065c11512bffe"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/inputs/site-config.json",
+      "bytes": 367,
+      "sha256": "1931c15f3258455f8c862106bb6b3f71a317209858f1173b199f98ef9c8f1bcc"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/inputs/site-scene.json",
+      "bytes": 183487,
+      "sha256": "94e9cd71c1bb565e1bc66be0fc78c8a86fac95bdff1307bcf0bd4d0a30cae1ad"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/instrument-hero.log",
+      "bytes": 709,
+      "sha256": "d96f16145dcafdd0492626ded6c4f79b237329a9f9113c1262b5fe20ce4bba78"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/instrument-hero.png",
+      "bytes": 490525,
+      "sha256": "d399ada118dced76fcaef57d5928679b59ffa783cbce89af64d55f66147f184a"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/site-hero.log",
+      "bytes": 702,
+      "sha256": "27604664e57e48db75c8ab7dc1c190588eb800ae0919bf91a4424e1f04578597"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round1/site-hero.png",
+      "bytes": 477020,
+      "sha256": "f9175cdba4d53aefec2d2f2b773917482cb4af35e008e104462f12148285db59"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/author_observatory.py",
+      "bytes": 29218,
+      "sha256": "642fa69e976f83667b157aa959d0cfbb8779dd3b67acc947f761ed20812f4bec"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/captures.json",
+      "bytes": 38217,
+      "sha256": "1a117a809ce445f0eba7317d156b7a80da64df5c7ad5977d0ccef244da8b0e0e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/furnished-alternate.log",
+      "bytes": 710,
+      "sha256": "3c1a2804eb1ad9fae8c0be9f999ac0bd98b1c63f961fde8abf9164956ac240c5"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/furnished-alternate.png",
+      "bytes": 610409,
+      "sha256": "181aec53d9789d4a7ffec989770d9e1c4375e4d65afc1a71c6941fbff8bd1c92"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/furnished-dome-close.log",
+      "bytes": 710,
+      "sha256": "580ee2b1c7d7fa91b46afa9aceb89c8f372f9022ed16dbeee70c2e30d888fa87"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/furnished-dome-close.png",
+      "bytes": 679791,
+      "sha256": "b87723c91e4a1d3212ad6b24fd142a1a09e352ac02521359bf4196c8ac15885e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/furnished-hero.log",
+      "bytes": 706,
+      "sha256": "5970778c690fd5c3c12d15733b76621687c26bdb6558b2a018b6d8ac3e35fad2"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/furnished-hero.png",
+      "bytes": 497806,
+      "sha256": "5d94072507c0bf6e4d4c3df95735531cbde8f1e78b1b1afec46cf9c0dda6c240"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/inputs/furnished-config.json",
+      "bytes": 372,
+      "sha256": "8205febe8137fa394ae6b97a748b341a7d7c7b7519f335fd01d7f3b46ddb137f"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/inputs/furnished-scene.json",
+      "bytes": 252984,
+      "sha256": "a7d80aaabb3622cac8b9ba8c581f5871b63cdc04063451e3023c2e2e8c08a61e"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/inputs/section-config.json",
+      "bytes": 370,
+      "sha256": "c12336093ed6200348a058358c6534daf261c472b1d8b25f03c67cee4bb17d96"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/inputs/section-scene.json",
+      "bytes": 298160,
+      "sha256": "ae36a3883daca8e75e733d7a7e997b53802f8b57f1285e8c96211ee71de0fb10"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/section-alternate.log",
+      "bytes": 712,
+      "sha256": "b8fa059ef4eb2d00b8389407e55317d2877ac91dfdb0e9a4d45591ee80d2a450"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/section-alternate.png",
+      "bytes": 551672,
+      "sha256": "245c8f0790ecc8382e1df45cb2f5f33c5c2e262a2697f0a9a44b0f422d8a6363"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/section-hero.log",
+      "bytes": 707,
+      "sha256": "f4fef84295878c0028240508565b610ea4642deb2f577e10a328454ccb174f6a"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/section-hero.png",
+      "bytes": 444796,
+      "sha256": "4b9c263249c952f0fdef45807aed2c87e914cc6bc24ac67c92e0e6420af5c622"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/section-interior-close.log",
+      "bytes": 717,
+      "sha256": "816630837eb898628bab1d276e2ff2666b8cfa0df1757f72115ea014472aef35"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/round2/section-interior-close.png",
+      "bytes": 683997,
+      "sha256": "b6cd3cff8b8b4307f6188b59fa0714f64f038fcc1fcce018a8823daa5a1e52cb"
+    },
+    {
+      "path": "outputs/sdf/observatory-detail-20261103/verification.json",
+      "bytes": 695,
+      "sha256": "c87ce55d735f592561d2a175cb2c476d8950e5a57ffad5afabf59d1fece3fd33"
+    }
+  ],
+  "protected_bytes": 22631972,
+  "external_baseline": [
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/drafts.json",
+      "bytes": 39291,
+      "sha256": "e1d1e3f5a9e3cfb5ba3e5997270767a0c73d4c17f1d418454becac2f2ec42539"
+    },
+    {
+      "path": "outputs/sdf/diorama-drafts-20261103/round6/hill-observatory-hero.png",
+      "bytes": 292232,
+      "sha256": "ef5d4c7a939127ac6f0ef6da290f68b48e36b92e0f8ce54150f0af4d1071b21e"
+    }
+  ],
+  "external_runtime": {
+    "binary": {
+      "path": "build/release/projects/sdf/sdf",
+      "bytes": 5196376,
+      "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+    },
+    "shader_directory": "build/release/projects/sdf/shaders",
+    "shader_fingerprints": {
+      "path": "outputs/sdf/observatory-detail-20261103/final-v2/captures.json",
+      "bytes": 42608,
+      "sha256": "8c0ab8fbee01708ab05b5eed36bbdb208936e075c17ab0af292530d7b9ef53cf"
+    }
+  },
+  "report_receipt": "docs/evidence/sdf-observatory-detail-report-2026-11.json",
+  "ownership": "This selected SDF observatory packet only; previous SDF and unrelated build/cache/output retention remains independent.",
+  "complete": true
+}

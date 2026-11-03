@@ -9,7 +9,10 @@ packs; they are not golden-image tests.
   and explicit static-capture and visual-acceptance boundaries.
 - [Architectural SDF diorama drafts](../notes/sdf-diorama-drafts-2026-11.md): the
   subsequent mill, observatory and courtyard, six selected native views and
-  retained authoring/visual corrections; user visual selection remains pending.
+  retained authoring/visual corrections; the user selected the observatory.
+- [Selected observatory detail passes](../notes/sdf-observatory-detail-2026-11.md):
+  eight new native stills, original-draft comparison, local section scope and
+  retained modeling corrections; the new appearance awaits visual review.
 
 - [Terrain backdrop foundation](terrain-backdrop-foundation/README.md): the
   isolated terrain and glTF proof-consumer captures, source provenance, image

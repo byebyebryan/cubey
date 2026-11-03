@@ -280,7 +280,10 @@ Each record's status and evidence link identifies what is implemented.
   and the first sparse audition; the user requested a more detailed architectural direction.
 - [Architectural SDF diorama drafts](sdf-diorama-drafts-2026-11.md): canal mill,
   hill observatory and terraced courtyard with complete settings, more detailed
-  native models and two captured views each, awaiting visual direction.
+  native models and two captured views each; the observatory was selected.
+- [Selected observatory detail passes](sdf-observatory-detail-2026-11.md): richer
+  site/facade, dome mechanism, telescope and furnished interior, with a scoped
+  native architectural section and original-draft comparison.
 - [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;

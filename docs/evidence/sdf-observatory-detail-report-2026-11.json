@@ -1,0 +1,55 @@
+{
+  "report_id": "fc82736d322eebefa504777f8e2e4fb3ad7e4860655da61cb89bc056198317c4",
+  "title": "Cubey SDF \u2014 The observatory, developed: three detail passes and a cutaway",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-03T23:57:25.504818+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/fc82736d322eebefa504777f8e2e4fb3ad7e4860655da61cb89bc056198317c4",
+  "file_count": 20,
+  "byte_count": 5824334,
+  "url": "http://starship:8787/reports/fc82736d322eebefa504777f8e2e4fb3ad7e4860655da61cb89bc056198317c4/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-03T23:57:25.939056+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 29516,
+    "verified_url": "http://starship:8787/reports/fc82736d322eebefa504777f8e2e4fb3ad7e4860655da61cb89bc056198317c4/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "reviewed_source_head": "79a71245",
+  "authoring": {
+    "generator": "projects/sdf/tools/author_observatory.py",
+    "report_generator": "projects/sdf/tools/observatory_detail_report.py",
+    "template": "projects/sdf/tools/observatory_detail_report.html",
+    "selected_capture": "outputs/sdf/observatory-detail-20261103/final-v2",
+    "export": "outputs/sdf/observatory-detail-20261103/report"
+  },
+  "scope": "Three modeling passes on the selected observatory, eight new native stills, original-draft comparison and local CSG section. Visual review pending. No runtime change, animation qualification, new performance claim, site deployment or Git push.",
+  "browser_acceptance": {
+    "state": "unavailable",
+    "reason": "Connected browser list empty.",
+    "source_checks": "Embedded JSON, JavaScript syntax, ten view mappings, local links and asset fingerprints passed."
+  },
+  "asset_delivery": {
+    "state": "verified",
+    "http_sha256_files": 19
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "authored-scene": "projects/sdf/scenes/observatory-2026-11/furnished.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "yaw": 0.53,
+  "pitch": 0.43,
+  "distance": 1.2,
+  "target-y": -0.015,
+  "sun-elevation": 43,
+  "sun-azimuth": 135,
+  "shadows": 1,
+  "ao": true,
+  "ground": false,
+  "exposure": 0.4,
+  "supersample": 2
+}

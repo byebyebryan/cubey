@@ -2,10 +2,12 @@
 
 Date: 2026-11-03
 
-Status: three native drafts awaiting visual direction. The user found the first
+Status: the user liked all three drafts aesthetically and selected the
+observatory for further development; see the [three detail passes](sdf-observatory-detail-2026-11.md).
+The user found the first
 shell/pavilion/manifold audition uninteresting in its current state and asked
 for architecture or a small diorama with substantially more detail. This pass
-develops complete little settings. It does not select a final scene.
+develops complete little settings. The initial comparison remains below.
 
 [View the draft sheet](http://starship:8787/reports/8350ac7de254e88fb29720586bb9401eb84eea7d1a8ac42e71fcc76c110c4a68/).
 Each scene has a large main image and a second angle, with direct full-size
