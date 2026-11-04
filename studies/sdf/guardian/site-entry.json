@@ -1,0 +1,38 @@
+{
+  "status": "Retired from public catalog 2026-11-04; historical editorial entry",
+  "entry": {
+    "id": "guardian",
+    "family": "sdf",
+    "title": "Guardian",
+    "owner": "projects/sdf",
+    "dimension": "3D",
+    "summary": "An authored horned sculpture rendered in limestone and restrained marble.",
+    "cues": [
+      "Authored CSG",
+      "Mirrored strokes",
+      "Stone surfaces"
+    ],
+    "variants": [
+      "Marble",
+      "Limestone",
+      "Detail"
+    ],
+    "source": "projects/sdf/README.md",
+    "media": null,
+    "poster": "outputs/sdf/marble-regions-comparison/subtle/captures/hero.png",
+    "related": [
+      "robot",
+      "sdf-materials"
+    ],
+    "kind": "demo",
+    "boundary": "Accepted sculpture and subtle marble. Current stills suffice; old complete construction film has an earlier marble appearance.",
+    "extensions": [],
+    "asset_status": "selected-native-web-media",
+    "planned_route": "/demos/sdf/guardian/",
+    "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+    "selected_media": {
+      "manifest": "site/media/manifest.json",
+      "poster": "guardian"
+    }
+  }
+}

@@ -17,9 +17,9 @@ def main():
     args=parser.parse_args();root=Path(__file__).resolve().parents[3]
     out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
     binary=(root/args.binary).resolve();sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-    source=root/'projects/sdf/scenes/sculpture-guardian-marble.json'
+    source=root/'studies/sdf/guardian/scenes/sculpture-guardian-marble.json'
     material=json.loads(source.read_text())['materials'][0]
-    base=json.loads((root/'projects/sdf/presets/sculpture-guardian-marble.json').read_text())
+    base=json.loads((root/'studies/sdf/guardian/presets/sculpture-guardian-marble.json').read_text())
     views=[dict(name='unlit',label='Flat base color',options=['--debug',6]),
            dict(name='lit',label='Shaded slab',options=['--debug',0,'--yaw',.16,'--pitch',.12]),
            dict(name='close',label='Close base color',options=['--debug',6,'--distance',.72]),

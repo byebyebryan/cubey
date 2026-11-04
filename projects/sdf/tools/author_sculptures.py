@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 from sdf_probe import front_surface
 
 from sdf_author import (box, capsule, capped_cone, cylinder, material, rotation,
@@ -286,12 +287,12 @@ def main():
     for subject in args.subject or SUBJECTS:
         for variant in (range(2) if args.stage == 'blockout' else [0]):
             suffix = f'sculpture-blockouts/{subject}-{"ab"[variant]}' if args.stage == 'blockout' else f'sculpture-{subject}'
-            scene = Path(f'projects/sdf/scenes/{suffix}.json')
+            scene = Path(str(resolve_sdf_path(f'projects/sdf/scenes/{suffix}.json')))
             tree, history = make(subject, variant, args.stage == 'final')
             color, roughness = PALETTES[subject]
             write_scene(root/scene, TITLES[subject], [material('body', color, roughness)], tree, history)
             for build in (False, True) if args.stage == 'final' else (False,):
-                path = root/f'projects/sdf/presets/{suffix}{"-build" if build else ""}.json'
+                path = root/str(resolve_sdf_path(f'projects/sdf/presets/{suffix}{"-build" if build else ""}.json'))
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(json.dumps(preset(scene, subject, build), indent=2)+'\n')
             print(subject, variant, len(history), 'leaves')

@@ -58,11 +58,11 @@
     {
       "id": "sdf",
       "title": "SDF forms",
-      "subtitle": "Authored shapes, sculpture and construction.",
+      "subtitle": "A robot assembled from continuous solids and cuts.",
       "question": "What can be built from continuous solids and cuts?",
       "order": 6,
-      "page_model": "Authored-form collection with sculpture and construction scene pages",
-      "display_title": "Forms from fields.",
+      "page_model": "Authored CSG construction with one featured robot scene",
+      "display_title": "Build from solids.",
       "prominence": "primary"
     },
     {
@@ -658,7 +658,6 @@
       "poster": "site/public/media/sdf-materials.webp",
       "related": [
         "mesh-materials",
-        "guardian",
         "atmosphere-light"
       ],
       "kind": "demo",
@@ -678,41 +677,6 @@
         "manifest": "site/media/manifest.json",
         "poster": "sdf-materials",
         "film": "sdf-materials-film"
-      }
-    },
-    {
-      "id": "guardian",
-      "family": "sdf",
-      "title": "Guardian",
-      "owner": "projects/sdf",
-      "dimension": "3D",
-      "summary": "An authored horned sculpture rendered in limestone and restrained marble.",
-      "cues": [
-        "Authored CSG",
-        "Mirrored strokes",
-        "Stone surfaces"
-      ],
-      "variants": [
-        "Marble",
-        "Limestone",
-        "Detail"
-      ],
-      "source": "projects/sdf/README.md",
-      "media": null,
-      "poster": "outputs/sdf/marble-regions-comparison/subtle/captures/hero.png",
-      "related": [
-        "robot",
-        "sdf-materials"
-      ],
-      "kind": "demo",
-      "boundary": "Accepted sculpture and subtle marble. Current stills suffice; old complete construction film has an earlier marble appearance.",
-      "extensions": [],
-      "asset_status": "selected-native-web-media",
-      "planned_route": "/demos/sdf/guardian/",
-      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
-      "selected_media": {
-        "manifest": "site/media/manifest.json",
-        "poster": "guardian"
       }
     },
     {
@@ -736,7 +700,6 @@
       "media": "outputs/sdf/robot-joints-qualified/history/presentation.mp4",
       "poster": "outputs/sdf/robot-joints-qualified/captures/detail-hero.png",
       "related": [
-        "guardian",
         "sdf-materials"
       ],
       "kind": "demo",

@@ -5,6 +5,7 @@ import copy
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import random
 import stroke_sampling
 import statistics
@@ -13,7 +14,7 @@ import cached_edit_loop as edit
 import local_edit_loop as local
 import stroke_loop as stroke
 from interactive_edit_loop import identity, save, RAW
-from investigate_guardian import ROOT, digest, PRESETS, camera_queries
+from query_study import ROOT, digest, PRESETS, camera_queries
 from quality_speed_loop import profile
 from benchmark_tracing import percentile
 from sdf_author import capsule, round_cone
@@ -470,7 +471,7 @@ def replay(args):
     receipt = dict(identity(args), runs=[], complete=False)
     for row in selected(args):
         if not row['count']: continue
-        cfg = json.loads((ROOT/f'projects/sdf/presets/{PRESETS[row["subject"]]}.json').read_text())
+        cfg = json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[row["subject"]]}.json'))).read_text())
         for view in ('preset', 'close'):
             camera = dict(cfg)
             if view == 'close': camera['distance'] = .8

@@ -1,5 +1,10 @@
 # SDF thread closeout
 
+Current scope (2026-11-04): the [CSG milestone closeout](sdf-csg-closeout.md)
+features the robot and material workshop. [Guardian](../../studies/sdf/guardian/README.md)
+is retired; the earlier sculpture selection recorded below is historical.
+Later private edit-service results have their own bounded acceptance record.
+
 Date: 2026-10-24
 
 Status at the 2026-10-24 closeout: implementation and evidence were captured and

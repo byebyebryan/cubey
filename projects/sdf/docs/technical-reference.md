@@ -3,6 +3,9 @@
 This companion keeps the detailed native recipes, authored-scene notes,
 diagnostics and dated study history formerly collected in the project README.
 Start with the [current SDF guide](../README.md) for runnable modes and limits.
+Guardian content is now an explicit [retired study](../../../studies/sdf/guardian/README.md).
+Historical code-block commands below retain their original revision paths;
+use the study's current recipes and relocation index for present-day replay.
 The [public SDF forms](https://dev.byebyebryan.com/cubey/demos/sdf/) and
 [material workshop](https://dev.byebyebryan.com/cubey/demos/materials/) pages
 own the visual presentation. Dated review and qualification statements below
@@ -362,16 +365,16 @@ revised build; previous shader timings retain their earlier receipt scope.
 
 | Sculpture | Static preset | Construction/orbit preset | Leaves |
 | --- | --- | --- | ---: |
-| Guardian | [Static](../presets/sculpture-guardian.json) | [Build](../presets/sculpture-guardian-build.json) | 76 |
+| Guardian | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-build.json) | 76 |
 | Ceramic vessel | [Static](../presets/sculpture-vessel.json) | [Build](../presets/sculpture-vessel-build.json) | 10 |
 | Rock arch | [Static](../presets/sculpture-arch.json) | [Build](../presets/sculpture-arch-build.json) | 51 |
 | Driftwood (retained experiment) | [Static](../presets/sculpture-driftwood.json) | [Build](../presets/sculpture-driftwood-build.json) | 94 |
-| Guardian, refined / chips removed | [Static](../presets/sculpture-guardian-refined.json) | [Build](../presets/sculpture-guardian-refined-build.json) | 106 |
-| Guardian, organic form | [Static](../presets/sculpture-guardian-organic-form.json) | [Build](../presets/sculpture-guardian-organic-form-build.json) | 197 |
-| Guardian, organic detail | [Static](../presets/sculpture-guardian-organic.json) | [Build](../presets/sculpture-guardian-organic-build.json) | 1,011 |
-| Guardian, mirrored strokes / 65 operations | [Static](../presets/sculpture-guardian-mirrored.json) | [Build](../presets/sculpture-guardian-mirrored-build.json) | 1,011 |
-| Guardian, procedural limestone | [Static](../presets/sculpture-guardian-limestone.json) | [Build](../presets/sculpture-guardian-limestone-build.json) | 1,011 |
-| Guardian, honed marble | [Static](../presets/sculpture-guardian-marble.json) | [Build](../presets/sculpture-guardian-marble-build.json) | 1,011 |
+| Guardian, refined / chips removed | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian-refined.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-refined-build.json) | 106 |
+| Guardian, organic form | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian-organic-form.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-organic-form-build.json) | 197 |
+| Guardian, organic detail | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian-organic.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-organic-build.json) | 1,011 |
+| Guardian, mirrored strokes / 65 operations | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian-mirrored.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-mirrored-build.json) | 1,011 |
+| Guardian, procedural limestone | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian-limestone.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-limestone-build.json) | 1,011 |
+| Guardian, honed marble | [Static](../../../studies/sdf/guardian/presets/sculpture-guardian-marble.json) | [Build](../../../studies/sdf/guardian/presets/sculpture-guardian-marble-build.json) | 1,011 |
 | Driftwood, refined (retained experiment) | [Static](../presets/sculpture-driftwood-refined.json) | [Build](../presets/sculpture-driftwood-refined-build.json) | 100 |
 
 ```sh

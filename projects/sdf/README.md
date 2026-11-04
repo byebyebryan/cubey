@@ -13,11 +13,10 @@ recipes, diagnostics, evidence and historical anchors.
 
 Build prerequisites and the development preset are in
 [Build and run Cubey](../../docs/getting-started.md#configure-build-and-test).
-Run the authored robot or the settled guardian directly:
+Run the authored robot directly:
 
 ```sh
 build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json
-build/dev/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-limestone.json
 ```
 
 Use `--headless`, `--time`, and `--output` for a saved still; `--config` selects
@@ -50,14 +49,14 @@ adaptive stepping studies retain their separate admission rules.
 
 **Supersampling is independent.** The native selector and `--supersample 1|2`
 change sampling without changing mode or rebuilding geometry. Existing presets
-retain their sample settings, including SS2 on Guardian and Robot. SS2 has a
+retain their sample settings, including SS2 on the robot. SS2 has a
 substantial cost; use SS1 for a lower frame budget. Mode changes preserve
 camera, playback position and material edits. Cached-to-cached mode changes
 reuse the field. Analytical-only releases it; returning to cached rendering
 can incur a full rebuild.
 
 ```sh
-build/release/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-limestone.json --render-mode balanced --supersample 1
+build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode balanced --supersample 1
 build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode analytic
 build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode cached
 ```
@@ -129,13 +128,11 @@ material recipes do not promise identical mesh and SDF light transport.
 
 ## Authored scenes
 
-The saved robot and Guardian are native authored-scene examples. The Guardian
-retains its accepted organic mirrored form, limestone and subtle Balanced
-marble. Its 1,011 explicit primitive leaves make up 65 grouped history
-operations; the leaf count includes sampled stroke segments, not independent
-artistic actions. The
-[Guardian closeout](../../docs/notes/sdf-guardian-closeout.md) records the
-accepted appearance, review limits and source-pinned measurements.
+The field-kit robot is the featured authored CSG example. Its finished assembly
+and saved construction history show how primitives, additive/subtractive
+operations and materials compose a solid. The
+[CSG milestone closeout](../../docs/notes/sdf-csg-closeout.md) records the
+supported scope, retained research and deferred editing questions.
 
 The authored vocabulary includes boxes, spheres, capsules, cylinders, tori,
 capped cones and rounded cones with union, subtraction and smooth variants.
@@ -148,22 +145,16 @@ the assembly, history and current material values.
 
 ```sh
 build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit-build.json
-build/dev/projects/sdf/sdf --config projects/sdf/presets/sculpture-guardian-mirrored-build.json
 ```
 
-### Procedural stone surfaces
+### Retained sculpture studies
 
-The current accepted limestone and restrained Balanced marble are summarized
-in the [Guardian closeout](../../docs/notes/sdf-guardian-closeout.md). Earlier
-material comparisons and technical detail remain in the
-[study record](docs/technical-reference.md#procedural-stone-surfaces).
-
-### Sphere and guardian material set
-
-Current presets and appearance decisions are recorded in the
-[Guardian closeout](../../docs/notes/sdf-guardian-closeout.md); older material
-auditions are mapped in the
-[technical reference](docs/technical-reference.md#sphere-and-guardian-material-set).
+[Guardian](../../studies/sdf/guardian/README.md) is retired from the active demo
+collection after renewed visual review. Its scenes, presets and dedicated tools
+live in studies; it remains an explicit stress fixture for the recorded tracing,
+materials and edit-service work. Earlier sculpture/content auditions remain
+experiments rather than additional selected demos. Dated results and captures
+retain their historical scope and identities.
 
 ### Shared environment presentation
 
@@ -181,18 +172,22 @@ presentation of committed edits, not an interactive brush editor.
 
 ## Limits and deferred work
 
-Cached-mode geometry edits rebuild the complete distance field synchronously. Material
-edits reuse the geometry cache, but this does not make geometry editing
-incremental. The accepted Guardian field allocation is about 871 MiB, and its
-authored limits are 1,024 leaves, 2,048 instructions and sixteen materials;
-these figures retain their original closeout scope. Replay can skip saved
+Public Cached-mode geometry edits rebuild the complete distance field synchronously.
+Material edits reuse the geometry cache. The default field allocation is about
+871 MiB, with authored limits of 1,024 leaves, 2,048 instructions and sixteen
+materials. Replay can skip saved
 actions while rebuilding and is not evidence of responsive continuous editing.
 
-Desktop/VR brush sculpting, incremental field updates, global illumination,
-terrain coupling, deeper rough-refraction work and AI-generated SDF content are
-separate deferred choices. The settled Guardian geometry and limestone/subtle
-marble appearance are closed to further realism work unless a new goal is
-selected.
+The separate [bounded edit-service research](../../docs/notes/sdf-edit-service-results.md)
+qualifies private local updates and finite timestamped input on a simple scene.
+It does not supply a public brush editor or sustained complex-scene editing.
+Source growth, grouped live-stroke undo, general editing controls and broader
+reader lifetime remain deferred research. VR is not a current target.
+
+Global illumination, terrain coupling, deeper rough refraction and native
+mesh-to-field integration are separate choices. The authored CSG milestone is
+closed around the robot and workshop; shared rendering improvements can still
+benefit those examples.
 
 ## Procedural recipes
 
@@ -213,8 +208,9 @@ include the bounded query, undo and native inspection tools.
 The opt-in source paths now use [automatic shader selection](../../docs/notes/sdf-shader-selection-results.md):
 prebuilt lit/debug and eligible one-material pipelines follow published material
 state and current view settings. `--source-shaders general` selects the original
-source shader for comparison. Guardian improves substantially but remains above
-the 1080p GPU target; startup compilation can be expensive. Current defaults
+source shader for comparison. The retired Guardian benchmark improved
+substantially but remained above its dated 1080p GPU target; startup compilation
+can be expensive. Current defaults
 and explicit rendering choices are listed above.
 
 Source-query controls are documented in the
@@ -235,7 +231,8 @@ automatic behavior above.
 
 - [Shared material and optical contract](../../docs/architecture/material-recipes.md)
 - [SDF thread closeout and evidence map](../../docs/notes/sdf-thread-closeout.md)
-- [Accepted Guardian closeout](../../docs/notes/sdf-guardian-closeout.md)
+- [Authored CSG milestone closeout](../../docs/notes/sdf-csg-closeout.md)
+- [Retired Guardian study](../../studies/sdf/guardian/README.md)
 - [Material library evidence](../../docs/notes/material-library-evidence.md)
 - [Material presentation evidence and archive links](../../docs/notes/material-presentation-evidence.md)
 - [Detailed technical reference and study record](docs/technical-reference.md)

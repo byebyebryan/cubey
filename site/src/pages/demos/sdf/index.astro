@@ -7,4 +7,8 @@ import {familyEntries} from '../../../data/catalog';
 import {url} from '../../../lib/urls';
 const path='/demos/sdf/';
 ---
-<Layout title="SDF forms" description="A sculpture and a robot, shaped by combining and cutting simple solids, then rendered from signed-distance fields." path={path}><PageTitle subject="SDF forms" title="Sculpture and construction." intro="A sculpture and a robot, shaped by combining and cutting simple solids. Their surfaces are rendered directly from signed-distance fields." path={path}/><section class="section"><div class="grid two">{familyEntries('sdf').map(e=><Card entry={e} path={path}/>)}</div><p class="note">See what happens inside these solids in the <a href={url('/demos/materials/#sdf-materials',path)}>material cut study ↗</a>.</p></section><SdfStoryLink path={path}/></Layout>
+<Layout title="SDF forms" description="A robot assembled through additive and subtractive CSG operations, then rendered from signed-distance fields." path={path}><PageTitle subject="SDF forms" title="Build a robot." intro="Follow a robot from its first simple solids to the finished assembly. Additions and cuts form a surface rendered directly from a signed-distance field." path={path}/><section class="section"><div class="sdf-feature">{familyEntries('sdf').map(e=><Card entry={e} path={path}/>)}</div><p class="note">See what happens inside these solids in the <a href={url('/demos/materials/#sdf-materials',path)}>material cut study ↗</a>.</p></section><SdfStoryLink path={path}/></Layout>
+
+<style>
+  .sdf-feature { max-width: 56rem; }
+</style>

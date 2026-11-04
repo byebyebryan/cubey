@@ -1,0 +1,300 @@
+{
+  "format": "cubey.sdf.csg-wrapup-retention",
+  "version": 1,
+  "policy": "Retain this wrap-up baseline, smoke images/logs, validation receipts and exact move fingerprints. No deletion or deduplication is authorized or performed. Earlier SDF, fluid, prepared cases, qualified native dependencies and published reports remain separately protected.",
+  "files": [
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/LastTest.log",
+      "bytes": 11394,
+      "sha256": "24eb9c393b66ab2b43e50802161d85010b5727e90104db7523421c5aa6cf8b41"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/LastTestsFailed.log",
+      "bytes": 29,
+      "sha256": "f5f2d29a5c34af8e43e33cacb6ac96cec783ebf548463fb3d22b9ae0e6bb0cab"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/baseline.json",
+      "bytes": 128719,
+      "sha256": "005278ce31817b9fb5f955d0877bd6200673cc5a83a4d2a79481b76f4fcaf6ef"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/ctest-final-tail.log",
+      "bytes": 1511,
+      "sha256": "b53f7581b041fd670317236850ed29f57e6279e446f81b2695a35c771c6b2ca9"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/guardian-retired.log",
+      "bytes": 685,
+      "sha256": "fc6d7ce2fdd5c77208f417b74d9d1932dbda6d7915799870ef835710b7c07e9f"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/guardian-retired.png",
+      "bytes": 98300,
+      "sha256": "488029a7e9ea3c5cc3e152e2476ee265b6d1681180ca4d0f66e52f41c16fd387"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/receipts.json",
+      "bytes": 1873,
+      "sha256": "bf2c50aa5805406c45b12ddb348ea4dc74d54f5e4044900d3cc1c4b079a6dcde"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/robot.log",
+      "bytes": 671,
+      "sha256": "dad4abfd0651300e992bf0257c630fb0abb0b0da224aaed8c2d46d0f306e796c"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/robot.png",
+      "bytes": 78352,
+      "sha256": "405dec26baa89d25e2a5721e65919d3ce646de387ca622ffa09235529ccf1e9a"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/workshop.log",
+      "bytes": 702,
+      "sha256": "bfcbad4f27d6208d96f53f5e6ec338b23a58c43881231c15f5e7ffe6c4676cec"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/native/workshop.png",
+      "bytes": 114642,
+      "sha256": "eb04b5a77a6aafe638b948b6d38048fada76bcf38041262735ace99165844088"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/navigation-updates.json",
+      "bytes": 90,
+      "sha256": "45b6315eaa9aee98af4bdaf54add8e749743aafde32a0b33d331036daf210da8"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/preset-parsing.json",
+      "bytes": 18410,
+      "sha256": "e0b685492b9b5588482f82855325e3c2cb6d38ddb2164fcc9ec2d3d50b3170ed"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/runtime-before.json",
+      "bytes": 24556,
+      "sha256": "c04dd8a5f9cab2b4a5532c0dcf6834837883f9886873821fd0957e1d9bd9553f"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/sdf-app.json",
+      "bytes": 144,
+      "sha256": "0485dbeebb18f736f1f64c0904dbd32763718618e477523ded6c3f57ce3ea191"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/site-final.log",
+      "bytes": 5759,
+      "sha256": "3094e634e63708cb0f233d7e55ce44fdfc9b1d66b7762cd7f6ae736a58dee777"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-bronze-clouds.json",
+      "bytes": 2646,
+      "sha256": "e62f4652f6c8e753a6e57bb15acb812c1e7d4022f04c251e492e88f281327faa"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-bronze-reference.json",
+      "bytes": 2641,
+      "sha256": "cf2b4556bc15b8f4005bf4d5f40ed28c4a57ce773cc1254f4a047f50da875ddf"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-bronze-sunset.json",
+      "bytes": 2647,
+      "sha256": "b2c974b2652de8349cc4769ffde0d0e95ad39a542ea1e03513a4f11113757afb"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-clay-clouds.json",
+      "bytes": 2644,
+      "sha256": "58f289c9b0dcbbc5acd3d3167f029d6e42176cee1db9cac4a933ddb6b1be56cd"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-clay-reference.json",
+      "bytes": 2639,
+      "sha256": "3791d2b38348cc01f7c471eb35f025812b9fdf56167ed87332e6e5e702624761"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-clay-sunset.json",
+      "bytes": 2645,
+      "sha256": "70c23c4a1d5efdfac470bcd9c51ae50d8916af5807b4aaca5789054bc75d36b3"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-glass-clouds.json",
+      "bytes": 2645,
+      "sha256": "f4254aa9ab015390fc7961ecbc19e905e4a6ae65f63969b5e3035945d1eed89c"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-glass-reference.json",
+      "bytes": 2640,
+      "sha256": "df8c057ea8c0f066f2c086a40dd63a7ad69fdede7a6f7687331bc0444e18c623"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-glass-sunset.json",
+      "bytes": 2646,
+      "sha256": "c031b9d09e86589d379ebbc573fe3fec92d0cbf2226a19517a0ce236db8aff27"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-marble-clouds.json",
+      "bytes": 2646,
+      "sha256": "f71c3de82f2f9bdc247f874344e45137deb0c549029944841e8ca4339f2db3f4"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-marble-reference.json",
+      "bytes": 2641,
+      "sha256": "522c5fed6b53db390a6bf1e6f1e1a2249527f3e6879bef6f3856f097459e5f51"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-marble-sunset.json",
+      "bytes": 2647,
+      "sha256": "887aa2b6b0e1042bb4c49afd51e08394fa3bfa994fe9a15f44aa0c953c650261"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-plain-clouds.json",
+      "bytes": 2645,
+      "sha256": "6b7be378d1b0602e7225e467f3960ac85517a51e5e0da31649880e3276507528"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-plain-reference.json",
+      "bytes": 2640,
+      "sha256": "07a93db57b7f9a09b83e27146cfdbdec185e61ac15a8a695533da17e261348ac"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-plain-sunset.json",
+      "bytes": 2646,
+      "sha256": "6d17751c13a1815e232aa78c2217fac9e8ef9141fea43305e54ca076358748b8"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-bronze.json",
+      "bytes": 2641,
+      "sha256": "6310c928a15d6475d5cdc0ab91fcbb0f8b11eea9b140633583724ccd9ada9346"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-ceramic.json",
+      "bytes": 2642,
+      "sha256": "85c6929c6352f70a3d73f178be751b5b8c574195c137a9030c51e88581811af9"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-clay.json",
+      "bytes": 2639,
+      "sha256": "683af62acbeae3fefb791fdbc1634335b1acd0498de0f79cd6c3f28f625487b7"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-glass.json",
+      "bytes": 2640,
+      "sha256": "dc406aef84310691c1dd6eecd60470df3bfc744913ec42259ab6d67ee81569dc"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-limestone.json",
+      "bytes": 2644,
+      "sha256": "6d9626ad770f45ca9b181cdb8110980f989c3952f743bccbc8eda8fc40ba4e06"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-marble.json",
+      "bytes": 2641,
+      "sha256": "87c35b8250a1e7ca2e0325520cba8359fde0cab0dae232fcc9454319522ddf02"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-plain.json",
+      "bytes": 2640,
+      "sha256": "a51c352eaa881214aa211f53a7cef78b4593b6c3ee40fe052fe58033dc1c1e57"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/refinement-auditions/guardian-form-a.json",
+      "bytes": 2643,
+      "sha256": "aa94dd97dbe4118ea3fac0444f235606fb0de35b8de4b9fd05e0f3ddab7f319e"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/refinement-auditions/guardian-form-b.json",
+      "bytes": 2643,
+      "sha256": "d24b6b41e61476bd32d691fcc0a06fb224607637001a6aecabd910508f143695"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-blockouts/guardian-a.json",
+      "bytes": 2637,
+      "sha256": "8bae9c91ad524fee91a70a9bbd2fac87228822c5fbfcb44d2b336e356ad6ea1d"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-blockouts/guardian-b.json",
+      "bytes": 2637,
+      "sha256": "3207c9407a893e3fa422d9b77e77c875f6290418f3b6bcc4d4ebea8b95459c39"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-build.json",
+      "bytes": 2632,
+      "sha256": "42095dc0c177a94bb352f896c3e35f0922a02683afe535daa399b3d49535fd0b"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-limestone-build.json",
+      "bytes": 2642,
+      "sha256": "aa2e50b311f76de28df957d64d9ad923482ed9b76136b40f6d39033c49b81748"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-limestone.json",
+      "bytes": 2635,
+      "sha256": "772bb9827895ddbf8a31f8537ac9a5458d80e60a156797608475b9730a7b44ae"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-marble-build.json",
+      "bytes": 2639,
+      "sha256": "2f4dd5e72193d167a51e137470bb3b2e9c581baf79aab6ce896c6ed2057bf532"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-marble.json",
+      "bytes": 2632,
+      "sha256": "02103d040fb408e6da814d2c3fe8d55b10099dc4142304fa553516d0a54e7bde"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-mirrored-build.json",
+      "bytes": 2641,
+      "sha256": "109a2e4466f921fdbc09208eb0b37c724f3292fa124655dfb949843e0de168c0"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-mirrored.json",
+      "bytes": 2634,
+      "sha256": "a7916bb954fd3c501685a58d89cad4a2c271c6c9fb534e3e11e69f34541558b0"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic-build.json",
+      "bytes": 2642,
+      "sha256": "b967f1dbe49ebbf529a5a03b53df8c0ae225af040750b54d3a5b4492d2717c3e"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic-form-build.json",
+      "bytes": 2647,
+      "sha256": "da75bba02834510d045ca347cfd0839d72c8f9b8a8bda9679ffbaf34917b0ab3"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic-form.json",
+      "bytes": 2638,
+      "sha256": "7452bcbfc4d01539f576af474790dd02724d9fd2b03918fecf7ec422d8288bfd"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic.json",
+      "bytes": 2633,
+      "sha256": "a48c9d10b97c087784265d082d0ea600332c0c2d568704b4fef5097690672d95"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-refined-build.json",
+      "bytes": 2640,
+      "sha256": "bfa9de6cc0ddba15059de8d814a81ead3c7094561e375c2f42a3bfeab0f32256"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-refined.json",
+      "bytes": 2633,
+      "sha256": "3e7a81a6950227553d7820bf669e9b513877ce6abd438986d0b67b6dc3af6cd0"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian.json",
+      "bytes": 2625,
+      "sha256": "a887182b7097141684607b5713f2ae6a9ecbf096ef650489d274c9983347f6da"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/tool-cli-checks.json",
+      "bytes": 823,
+      "sha256": "0d54e9be567f1254815e739c97fba3fc0c8edd54af7d785546c9f580b70dcff9"
+    },
+    {
+      "path": "outputs/sdf/csg-wrapup-20261104/tool-updates.json",
+      "bytes": 2438,
+      "sha256": "72d719a2fec8094438ea8b570a627d1d9102be5fc7a897aa7913a3a1fa5263bc"
+    }
+  ],
+  "protected_bytes": 594716,
+  "native_binary_unchanged": true,
+  "public_site_deployment_unchanged": true
+}

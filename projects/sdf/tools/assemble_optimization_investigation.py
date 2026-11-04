@@ -7,7 +7,7 @@ import re
 import shutil
 import subprocess
 from acceleration_loop import save
-from investigate_guardian import ROOT,digest
+from query_study import ROOT,digest
 
 
 def ranges(data):

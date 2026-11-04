@@ -9,7 +9,7 @@ from pathlib import Path
 import statistics
 import subprocess
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, digest
+from query_study import ROOT, digest
 
 
 def main():

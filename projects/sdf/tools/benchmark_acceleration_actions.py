@@ -3,8 +3,9 @@
 import argparse
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 from acceleration_loop import PRESETS, base, flags, gpu_state, save, study_metadata
-from investigate_guardian import ROOT, invoke, digest
+from query_study import ROOT, invoke, digest
 from benchmark_tracing import percentile
 
 
@@ -17,7 +18,7 @@ def main():
     receipt=dict(study_metadata(args.binary),action_runner_sha256=digest(Path(__file__)),runs=[])
     inputs={}
     for scene,preset in PRESETS.items():
-        source=json.loads((ROOT/f'projects/sdf/scenes/{preset}.json').read_text())
+        source=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/scenes/{preset}.json'))).read_text())
         total=len(source['history'])
         selected=[1,total//4,total//2,3*total//4,total-1,total,total-1,total,total//2,1]
         actions=[dict(label=f'{"backward" if i and n<selected[i-1] else "forward"} prefix {n}/{total}',
@@ -28,7 +29,7 @@ def main():
     for repeat in range(1,4):
         for scene,name,variant in cases if repeat%2 else reversed(cases):
             prefix=args.output/f'{scene}-{name}-r{repeat}'
-            command=base(args)+['--config',f'projects/sdf/presets/{PRESETS[scene]}.json',
+            command=base(args)+['--config',str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json')),
                 '--headless-render-only','--frames','10','--width','320','--height','180',
                 *flags('analytic',variant),'--comparison-actions',str(inputs[scene]),
                 '--comparison-output',str(prefix.with_suffix('.json'))]

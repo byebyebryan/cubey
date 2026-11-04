@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import shutil
 import subprocess
 from qualify_authored import check_video
@@ -28,7 +29,7 @@ def main():
         for subject in ['sphere','guardian']:
             for material in ['bronze','glass','marble','clay']:
                 if a.audition and (subject,material) not in [('guardian','bronze'),('guardian','glass'),('sphere','clay')]:continue
-                key=f'{subject}-{material}-{environment}';preset=root/f'projects/sdf/presets/environment-study/{key}.json'
+                key=f'{subject}-{material}-{environment}';preset=root/str(resolve_sdf_path(f'projects/sdf/presets/environment-study/{key}.json'))
                 local=out/(key+'.json');shutil.copy2(preset,local);scene=root/read(preset)['authored-scene'];shutil.copy2(scene,out/(key+'-scene.json'))
                 row=dict(preset=local.name,scene=key+'-scene.json',scene_sha256=sha(scene),views={})
                 for view in ['hero'] if a.audition else ['hero','detail']:
@@ -45,7 +46,7 @@ def main():
                     row['orbit']=dict(command=cmd,capture=video.name,sha256=sha(video),frames=240)
                 receipt['cases'][key]=row;save();print(key,'passed',flush=True)
         if not a.audition:
-            preset=root/f'projects/sdf/presets/environment-study/sphere-plain-{environment}.json'
+            preset=root/str(resolve_sdf_path(f'projects/sdf/presets/environment-study/sphere-plain-{environment}.json'))
             receipt['backgrounds'][environment]=run('background-'+environment,preset,['--motion','construction','--time',0])
             receipt['backgrounds'][environment]['calibration']=run('calibration-'+environment,preset,['--exposure',.6])
     receipt['passed']=True;save()

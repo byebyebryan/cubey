@@ -6,12 +6,13 @@ import copy
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import statistics
 import struct
 import subprocess
 from acceleration_loop import gpu_state, save
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, digest, invoke, metadata
+from query_study import ROOT, digest, invoke, metadata
 from qualify_shader_selection import Study, route_flags, ROUTES
 from check_tracing_images import pixels
 from tracing_comparison import check
@@ -59,9 +60,9 @@ def timing(args):
     for repeat in range(1, 4):
         for scene, preset, view, offset, mode in cases if repeat % 2 else reversed(cases):
             prefix = args.output / f"{scene}-{view}-{mode}-r{repeat}"
-            config = json.loads((ROOT / f"projects/sdf/presets/{preset}.json").read_text())
+            config = json.loads((ROOT / str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json"))).read_text())
             command = [str(args.binary), "--headless", "--headless-render-only", "--require-validation",
-                       "--supersample", "1", "--config", f"projects/sdf/presets/{preset}.json",
+                       "--supersample", "1", "--config", str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")),
                        "--width", "1920", "--height", "1080", "--surface-trace", "analytic",
                        "--csg-evaluation", "pruned", "--region-axis", "64",
                        "--acceleration-variant", "root-far", "--source-optimization", mode,
@@ -117,9 +118,9 @@ def cones(args):
     study.receipt["fixtures"] = score
     study.receipt["image_comparisons"] = []
     for scene, preset in (("guardian", "sculpture-guardian-limestone"), ("robot", "survey-robot-fieldkit")):
-        config = json.loads((ROOT / f"projects/sdf/presets/{preset}.json").read_text())
+        config = json.loads((ROOT / str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json"))).read_text())
         for view, offset in (("preset", 0), ("side", math.pi / 2), ("rear", math.pi)):
-            flags = ["--config", f"projects/sdf/presets/{preset}.json", "--supersample", "1",
+            flags = ["--config", str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")), "--supersample", "1",
                      "--width", "1920", "--height", "1080", *common, "--yaw", str(config["yaw"] + offset)]
             args.source_optimization = "reference"
             a = study.run(scene + "-" + view + "-reference", flags)
@@ -237,7 +238,7 @@ def cones(args):
 
 def publication(args):
     study = Study(args)
-    initial = json.loads((ROOT / "projects/sdf/scenes/sculpture-guardian-limestone.json").read_text())
+    initial = json.loads((ROOT / "studies/sdf/guardian/scenes/sculpture-guardian-limestone.json").read_text())
     edited = copy.deepcopy(initial)
     def edit_cone(node):
         if node.get("type") == "round-cone":

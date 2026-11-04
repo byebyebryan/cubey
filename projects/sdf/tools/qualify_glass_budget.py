@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 
 
@@ -32,7 +33,7 @@ def main():
         receipt['runs'][name]=row;return image,row
     for budget in sorted(set(a.budgets)):
         for subject in ['sphere','guardian']:
-            cfg=read(root/f'projects/sdf/presets/material-study/{subject}-glass.json');cfg['glass-crossings']=budget
+            cfg=read(root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{subject}-glass.json')));cfg['glass-crossings']=budget
             for view,extra in [('hero',[]),('detail',['--distance',.72 if subject=='sphere' else .85,'--target-y',0 if subject=='sphere' else .09])]:
                 image,_=run(f'{subject}-{budget}-{view}',cfg,extra+(['--validate-field'] if view=='hero' else []))
                 if subject=='sphere' and budget>4 and 4 in a.budgets:assert image.read_bytes()==(out/f'sphere-4-{view}.png').read_bytes()

@@ -5,10 +5,13 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import re
 import subprocess
 
 from sdf_author import capsule, material, rotation, smooth_union, sphere, subtract, union, write_scene
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "studies/sdf/guardian/tools"))
 from author_guardian_materials import MARBLE_DETAILS
 
 
@@ -19,7 +22,7 @@ def main():
     a=p.parse_args();root=Path(__file__).resolve().parents[3];out=a.output.resolve()
     for folder in ('captures','logs','scenes'):(out/folder).mkdir(parents=True,exist_ok=False)
     binary=(root/a.binary).resolve();sha=lambda f:hashlib.sha256(f.read_bytes()).hexdigest()
-    configs={name:root/f'projects/sdf/presets/sculpture-guardian-{suffix}.json'
+    configs={name:root/str(resolve_sdf_path(f'projects/sdf/presets/sculpture-guardian-{suffix}.json'))
              for name,suffix in (('plain','mirrored'),('limestone','limestone'),('marble','marble'))}
     sources={name:root/json.loads(config.read_text())['authored-scene'] for name,config in configs.items()}
     documents={name:json.loads(scene.read_text()) for name,scene in sources.items()}

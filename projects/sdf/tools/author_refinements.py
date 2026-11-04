@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 
 from author_sculptures import PALETTES, preset
 from refinement_author import Refinement, verify
@@ -153,13 +154,13 @@ def main():
         s,tree=globals()[subject](args.variant,args.stage);n=verify(s,tree)
         suffix=(f'refinement-auditions/{subject}-{args.stage}-{"ab"[args.variant]}' if args.audition
                 else f'sculpture-{subject}-refined')
-        scene=Path(f'projects/sdf/scenes/{suffix}.json')
+        scene=Path(str(resolve_sdf_path(f'projects/sdf/scenes/{suffix}.json')))
         color,roughness=PALETTES[subject]
         write_scene(root/scene,f'{subject.capitalize()} / refined',
                     [material('body',color,roughness)],tree,s.history)
         for build in ((False,) if args.audition else (False,True)):
             config=preset(scene,subject,build)
-            path=root/f'projects/sdf/presets/{suffix}{"-build" if build else ""}.json'
+            path=root/str(resolve_sdf_path(f'projects/sdf/presets/{suffix}{"-build" if build else ""}.json'))
             path.parent.mkdir(parents=True,exist_ok=True)
             path.write_text(json.dumps(config,indent=2)+'\n')
         print(subject,args.stage,args.variant,n,'leaves')

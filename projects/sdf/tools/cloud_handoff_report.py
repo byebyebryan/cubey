@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import shutil
 import subprocess
 from qualify import distribution
@@ -62,7 +63,7 @@ def main():
              'shaders/cubey/cloud/cloud_common.glsl', 'shaders/cubey/cloud/cloud_composite_background.frag',
              'shaders/cubey/cloud/cloud_composite_background_depth.frag',
              'tests/cubey/render_cloud_layer_tests.cpp', 'docs/notes/sdf-environment-presentation-evidence.md']
-    paths += [f'projects/sdf/scenes/material-study/{name}.json' for name in
+    paths += [str(resolve_sdf_path(f'projects/sdf/scenes/material-study/{name}.json')) for name in
               ['sphere-plain', 'sphere-bronze', 'guardian-bronze', 'guardian-glass']]
     data['source_sha256'] = {}
     for name in paths:

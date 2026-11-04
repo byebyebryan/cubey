@@ -5,11 +5,12 @@ import csv
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import re
 import statistics
 import struct
 import subprocess
-from investigate_guardian import PRESETS, ROOT, camera_queries, digest, invoke, metadata
+from query_study import PRESETS, ROOT, camera_queries, digest, invoke, metadata
 from benchmark_tracing import percentile
 from tracing_comparison import EPS, check, dot
 from check_tracing_images import pixels
@@ -98,7 +99,7 @@ def timing(args):
     for width, height, threshold in [(320, 180, 12), (960, 540, 50), (1920, 1080, None)]:
         cases = []
         for scene, preset in PRESETS.items():
-            config = json.loads((ROOT/f'projects/sdf/presets/{preset}.json').read_text())
+            config = json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json'))).read_text())
             for view, offset in VIEWS:
                 for name, mode, variant in VARIANTS:
                     previous = [r for r in receipt['runs'] if r['scene'] == scene and r['view'] == view and r['name'] == name and r['width'] == (320 if width == 960 else 960)]
@@ -110,7 +111,7 @@ def timing(args):
         for repeat in range(1, 4):
             for scene, preset, view, yaw, name, mode, variant in cases if repeat % 2 else reversed(cases):
                 prefix = args.output/f'{scene}-{view}-{name}-{width}-r{repeat}'
-                command = base(args)+['--config', f'projects/sdf/presets/{preset}.json', '--headless-render-only',
+                command = base(args)+['--config', str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json')), '--headless-render-only',
                     '--frames', '180', '--profile-warmup-frames', '30', '--profile-output', str(prefix),
                     '--width', str(width), '--height', str(height), '--yaw', str(yaw), *flags(mode, variant)]
                 environment_before = gpu_state()
@@ -174,7 +175,7 @@ def analyze(case):
 def workload(args):
     receipt = dict(study_metadata(args.binary), runs=[], differential=[])
     for scene, preset in PRESETS.items():
-        config = json.loads((ROOT/f'projects/sdf/presets/{preset}.json').read_text())
+        config = json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json'))).read_text())
         elevation, azimuth = math.radians(config['sun-elevation']), math.radians(config['sun-azimuth'])
         light = [math.cos(elevation)*math.sin(azimuth), math.sin(elevation), -math.cos(elevation)*math.cos(azimuth)]
         for view, offset in VIEWS:

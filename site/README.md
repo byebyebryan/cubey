@@ -31,7 +31,7 @@ with `npm run preview -- --allowed-hosts your-hostname`.
 The implementation uses authored Astro components and plain CSS/JavaScript.
 Films play directly in home, subject-directory, simulation and SDF overview
 cards as well as scene pages. Navigation links stay outside native player
-controls; starting a native film pauses the others. Guardian and Robot use the common
+controls; starting a native film pauses the others. The robot uses the common
 16:9 native landscape recaptures. Native images and videos fit without cropping the
 subjects or changing their proportions.
 
@@ -114,6 +114,10 @@ image selection and lazy loading reduce the actual image load. Films use
 `preload="none"` and begin on request; they are excluded from that image-page bound.
 Third-party YouTube player resources are also outside this local-file bound.
 
+Guardian is retired to [the SDF study](../studies/sdf/guardian/README.md). It is
+unlisted in the public catalog; its old route is a retirement notice. Retained
+media credits and capture identities remain unchanged.
+
 ## Content and assets
 
 - `src/pages/`, `src/components/`, `src/layouts/`: presentation and canonical routes.
@@ -122,7 +126,7 @@ Third-party YouTube player resources are also outside this local-file bound.
   native owners, supported extension groups and editorial connections. Its
   variant lists remain editorial possibilities, not automatically generated UI.
 - `media/manifest.json`: selected media, byte hashes, parent identities,
-  attribution and capture references. All twenty-one entries need native posters.
+  attribution and capture references. All twenty active entries need native posters. Guardian media remains in the ledger as historical capture evidence.
 - `media/receipts/`, `media/sources/`, `media/licenses/`: pinned current/historical
   capture inputs, model downloads and exact imported-asset notices.
 - [Selected media and attribution](media/README.md): ledger semantics and the

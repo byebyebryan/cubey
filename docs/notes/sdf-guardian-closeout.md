@@ -1,8 +1,14 @@
 # Guardian sculpture closeout
 
+Current status (2026-11-04): **retired from active presentation** after renewed
+visual review. Content and dedicated tools now live in the
+[Guardian study](../../studies/sdf/guardian/README.md). The
+[CSG closeout](sdf-csg-closeout.md) supersedes the presentation decision below;
+the original dated review and measurements remain historical evidence.
+
 Date: 2026-10-22
 
-Status: settled by user review. Retain the current organic, mirrored guardian,
+Original review status: settled by user review. Retain the organic, mirrored guardian,
 limestone and subtle marble as the completed content experiment. Further
 modeling and material realism are deferred; this closeout changes documentation
 only. It does not refresh published captures or construction films.
@@ -18,9 +24,9 @@ decorative stone treatment.
 
 | Variant | Retained static preset | Construction preset |
 | --- | --- | --- |
-| Plain mirrored guardian | [Static](../../projects/sdf/presets/sculpture-guardian-mirrored.json) | [Build](../../projects/sdf/presets/sculpture-guardian-mirrored-build.json) |
-| Limestone | [Static](../../projects/sdf/presets/sculpture-guardian-limestone.json) | [Build](../../projects/sdf/presets/sculpture-guardian-limestone-build.json) |
-| Stylized honed marble | [Static](../../projects/sdf/presets/sculpture-guardian-marble.json) | [Build](../../projects/sdf/presets/sculpture-guardian-marble-build.json) |
+| Plain mirrored guardian | [Static](../../studies/sdf/guardian/presets/sculpture-guardian-mirrored.json) | [Build](../../studies/sdf/guardian/presets/sculpture-guardian-mirrored-build.json) |
+| Limestone | [Static](../../studies/sdf/guardian/presets/sculpture-guardian-limestone.json) | [Build](../../studies/sdf/guardian/presets/sculpture-guardian-limestone-build.json) |
+| Stylized honed marble | [Static](../../studies/sdf/guardian/presets/sculpture-guardian-marble.json) | [Build](../../studies/sdf/guardian/presets/sculpture-guardian-marble-build.json) |
 
 Marble retains Balanced detail: scale 6, vein frequency 7.25, width 0.07,
 warp 5.5 and grain scale 280. The accepted palette is the original pale stone

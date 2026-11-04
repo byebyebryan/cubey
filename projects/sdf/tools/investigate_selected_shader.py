@@ -9,7 +9,7 @@ import statistics
 import subprocess
 from acceleration_loop import gpu_state, save
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, digest, invoke, metadata
+from query_study import ROOT, digest, invoke, metadata
 
 CASES=[("selected",[],"lit_root_far_sdf_analytic_pruned.frag.spv@single")]
 CASES += [(stage,["--frame-profile","opt-"+stage],"profile_opt-"+stage+".frag.spv")
@@ -23,7 +23,7 @@ VIEWS=[("preset",0),("side",math.pi/2),("rear",math.pi)]
 def base(args,view,width=1920,height=1080):
     offset=dict(VIEWS)[view]
     return [str(args.binary),"--headless","--require-validation","--supersample","1",
-        "--config","projects/sdf/presets/sculpture-guardian-limestone.json",
+        "--config","studies/sdf/guardian/presets/sculpture-guardian-limestone.json",
         "--surface-trace","analytic","--csg-evaluation","pruned","--region-axis","64",
         "--acceleration-variant","root-far","--width",str(width),"--height",str(height),
         "--yaw",str(.4+offset)]

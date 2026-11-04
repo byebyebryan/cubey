@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import shutil
 import subprocess
 
@@ -21,7 +22,7 @@ def main():
         binary_sha256=sha(binary),shader_sha256={p.name:sha(p) for p in (binary.parent/'shaders').glob('*.spv')},runs={})
     for subject in ('guardian','driftwood'):
         for variant in 'ab':
-            config=root/f'projects/sdf/presets/refinement-auditions/{subject}-form-{variant}.json'
+            config=root/str(resolve_sdf_path(f'projects/sdf/presets/refinement-auditions/{subject}-form-{variant}.json'))
             scene=root/json.loads(config.read_text())['authored-scene']
             shutil.copy2(config,out/'configs'/config.name);shutil.copy2(scene,out/'scenes'/scene.name)
             for view,opts in dict(hero=[],front=['--yaw',0,'--pitch',.02],

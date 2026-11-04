@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import shutil
 import subprocess
 
@@ -33,7 +34,7 @@ def main():
         for subject,versions in manifest['subjects'].items():
             for version,row in versions.items():
                 folder=out/subject/version
-                cfg=root/(f'projects/sdf/presets/sculpture-{subject}.json' if version=='baseline' else metadata[subject]['config'])
+                cfg=root/(str(resolve_sdf_path(f'projects/sdf/presets/sculpture-{subject}.json')) if version=='baseline' else metadata[subject]['config'])
                 scene=root/json.loads(cfg.read_text())['authored-scene']
                 assert sha(cfg)==row['config_sha256'] and sha(scene)==row['scene_sha256']
                 assert sha(folder/'preset.json')==row['config_sha256'] and sha(folder/'source.json')==row['scene_sha256']
@@ -43,7 +44,7 @@ def main():
         if args.finish_existing:continue
         rows={};manifest['subjects'][subject]=rows
         for version in ('baseline','refined'):
-            cfg=root/(f'projects/sdf/presets/sculpture-{subject}.json' if version=='baseline' else meta['config'])
+            cfg=root/(str(resolve_sdf_path(f'projects/sdf/presets/sculpture-{subject}.json')) if version=='baseline' else meta['config'])
             scene=root/json.loads(cfg.read_text())['authored-scene']
             folder=out/subject/version;folder.mkdir(parents=True)
             shutil.copy2(cfg,folder/'preset.json');shutil.copy2(scene,folder/'source.json')

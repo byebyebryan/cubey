@@ -5,6 +5,7 @@ import csv
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import statistics
 import subprocess
 import time
@@ -21,7 +22,7 @@ def run(binary, output, scene, mode, csg, axis, extent, frames, warmup, repeat):
     name = f"{scene}-{mode}-{csg}-{axis}-{extent[0]}-r{repeat}"
     prefix = output/name
     preset = {"robot": "survey-robot-fieldkit", "guardian": "sculpture-guardian-limestone"}[scene]
-    command = [str(binary), "--config", f"projects/sdf/presets/{preset}.json", "--headless",
+    command = [str(binary), "--config", str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")), "--headless",
                "--headless-render-only", "--require-validation", "--frames", str(frames),
                "--width", str(extent[0]), "--height", str(extent[1]), "--supersample", "1",
                "--shadows", "1", "--surface-trace", mode, "--csg-evaluation", csg,

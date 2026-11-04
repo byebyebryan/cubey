@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 from benchmark_tracing import percentile
 
@@ -42,7 +43,7 @@ def main():
         for scene, mode, csg, axis in (matrix if repeat % 2 else list(reversed(matrix))):
             name = f"{scene}-{mode}-{axis}-r{repeat}"
             receipt = args.output/f"{name}.json"
-            command = [str(args.binary), "--config", f"projects/sdf/presets/{scenes[scene]}.json",
+            command = [str(args.binary), "--config", str(resolve_sdf_path(f"projects/sdf/presets/{scenes[scene]}.json")),
                        "--headless", "--headless-render-only", "--require-validation", "--frames", "10",
                        "--width", "320", "--height", "180", "--supersample", "1", "--surface-trace", mode,
                        "--csg-evaluation", csg, "--region-axis", str(axis), "--comparison-actions", str(inputs[scene]),

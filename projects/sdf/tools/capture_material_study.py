@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import re
 import shutil
 import subprocess
@@ -27,7 +28,7 @@ def main():
         for kind in receipt['materials']:
             key=f'{subject}-{kind}';directory=out/key
             for f in ['captures','configs','source','logs']:(directory/f).mkdir(parents=True)
-            cfg=root/f'projects/sdf/presets/material-study/{key}.json';scene=root/read(cfg)['authored-scene']
+            cfg=root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{key}.json'));scene=root/read(cfg)['authored-scene']
             shutil.copy2(cfg,directory/'source/preset.json');shutil.copy2(scene,directory/'source/scene.json')
             row=dict(scene_sha256=sha(scene),config_sha256=sha(cfg),runs={});receipt['cases'][key]=row
             for view in ['hero','detail']:
@@ -45,7 +46,7 @@ def main():
         if subject=='guardian':options += [(f'orbit-{i}',['--yaw',.4+i*6.28318530718/8]) for i in range(8)]
         for view,extra in options:
             image=out/f'{subject}-glass/captures/{view}-diagnostics.png'
-            cmd=[str(binary),'--headless','--require-validation','--config',str(root/f'projects/sdf/presets/material-study/{subject}-glass.json'),'--width','960','--height','960','--debug','9',*map(str,extra),'--output',str(image)]
+            cmd=[str(binary),'--headless','--require-validation','--config',str(root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{subject}-glass.json'))),'--width','960','--height','960','--debug','9',*map(str,extra),'--output',str(image)]
             r=subprocess.run(cmd,cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT);assert r.returncode==0,r.stdout
             (out/f'{subject}-glass/logs/{view}-diagnostics.log').write_text(r.stdout)
             rgb=subprocess.check_output(['ffmpeg','-v','error','-i',str(image),'-f','rawvideo','-pix_fmt','rgb24','-'])
@@ -57,7 +58,7 @@ def main():
     receipt['glass_verdict']=dict(sphere='qualified',guardian='qualified' if worst<=.01 else 'experimental',worst_guardian_cap_fraction=worst,guardian_cap_limit=.01)
     for kind in receipt['materials']:
         subject='sphere' if kind=='glass' and worst>.01 else 'guardian';key=f'{subject}-{kind}';directory=out/key;video=directory/'orbit.mp4'
-        cmd=[str(binary),'--headless','--require-validation','--config',str(root/f'projects/sdf/presets/material-study/{key}.json'),'--motion','orbit','--duration','8','--construction-seconds','4','--capture','video','--fps','30','--frames','240','--width','1280','--height','960','--output',str(video)]
+        cmd=[str(binary),'--headless','--require-validation','--config',str(root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{key}.json'))),'--motion','orbit','--duration','8','--construction-seconds','4','--capture','video','--fps','30','--frames','240','--width','1280','--height','960','--output',str(video)]
         r=subprocess.run(cmd,cwd=root,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT);(directory/'logs/orbit.log').write_text(r.stdout)
         assert r.returncode==0 and r.stdout.count('sdf: authored instructions=')==1,r.stdout
         check_video(video,expected_frames=240)

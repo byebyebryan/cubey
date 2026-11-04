@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 from sdf_author import material, sphere, smooth_union, subtract, union
 
@@ -48,7 +49,7 @@ def main():
 
     config = read(root/'projects/sdf/presets/material-study/sphere-bronze.json')
     for kind in ['plain','limestone','marble','clay','ceramic','bronze']:
-        cfg = read(root/f'projects/sdf/presets/material-study/sphere-{kind}.json')
+        cfg = read(root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/sphere-{kind}.json')))
         direct = run(kind, cfg)
         full = run(kind+'-full', cfg, ['--no-material-fast-path'], validate=False)
         assert direct.read_bytes() == full.read_bytes(), kind
@@ -73,7 +74,7 @@ def main():
             excess = sum(r>180 and g<90 and b>180 for r,g,b in zip(rgb[::3],rgb[1::3],rgb[2::3]))
             assert excess == 0, ('white furnace energy exceeded 1.02', metal, rough, excess)
     for subject in ['sphere', 'guardian']:
-        cfg = read(root/f'projects/sdf/presets/material-study/{subject}-glass.json')
+        cfg = read(root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{subject}-glass.json')))
         run(subject+'-glass', cfg)
         run(subject+'-glass-diagnostics', cfg, ['--debug',9], validate=False)
     cfg = read(root/'projects/sdf/presets/material-study/sphere-glass.json')

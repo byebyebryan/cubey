@@ -1,0 +1,67 @@
+[
+  {
+    "case": "robot",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--headless",
+      "--require-validation",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--supersample",
+      "1",
+      "--config",
+      "projects/sdf/presets/survey-robot-fieldkit.json",
+      "--output",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/native/robot.png"
+    ],
+    "exit_code": 0,
+    "log": "outputs/sdf/csg-wrapup-20261104/native/robot.log",
+    "image_sha256": "405dec26baa89d25e2a5721e65919d3ce646de387ca622ffa09235529ccf1e9a"
+  },
+  {
+    "case": "guardian-retired",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--headless",
+      "--require-validation",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--supersample",
+      "1",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-limestone.json",
+      "--output",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/native/guardian-retired.png"
+    ],
+    "exit_code": 0,
+    "log": "outputs/sdf/csg-wrapup-20261104/native/guardian-retired.log",
+    "image_sha256": "488029a7e9ea3c5cc3e152e2476ee265b6d1681180ca4d0f66e52f41c16fd387"
+  },
+  {
+    "case": "workshop",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--headless",
+      "--require-validation",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--supersample",
+      "1",
+      "--workshop",
+      "cut-block",
+      "--material",
+      "wood",
+      "--output",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/native/workshop.png"
+    ],
+    "exit_code": 0,
+    "log": "outputs/sdf/csg-wrapup-20261104/native/workshop.log",
+    "image_sha256": "eb04b5a77a6aafe638b948b6d38048fada76bcf38041262735ace99165844088"
+  }
+]

@@ -5,12 +5,13 @@ import copy
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import statistics
 import subprocess
 
 from acceleration_loop import gpu_state
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, PRESETS, digest, invoke, metadata, camera_queries
+from query_study import ROOT, PRESETS, digest, invoke, metadata, camera_queries
 from quality_speed_loop import profile
 from tracing_comparison import document, sphere, ray, H, unit, dot
 
@@ -84,7 +85,7 @@ def manifest(cases):
 
 def native(args,inp,out,phase='preview',extra=(),subject=None,view='preset',size=(16,16)):
     flags=[str(args.binary)]
-    if subject:flags+=['--config',str(ROOT/f'projects/sdf/presets/{PRESETS[subject]}.json')]
+    if subject:flags+=['--config',str(ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[subject]}.json')))]
     flags+=['--edit-input',str(inp),'--edit-output',str(out),'--edit-phase',phase,'--headless','--require-validation',
         '--motion','static','--supersample','1','--width',str(size[0]),'--height',str(size[1]),
         '--shadows','1','--no-ao','--no-ground','--no-clouds','--no-occluder']
@@ -93,7 +94,7 @@ def native(args,inp,out,phase='preview',extra=(),subject=None,view='preset',size
 
 
 def subject_scene(subject):
-    cfg=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[subject]}.json').read_text())
+    cfg=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[subject]}.json'))).read_text())
     data=json.loads((ROOT/cfg['authored-scene']).read_text())
     for key in ('geometry_hash','appearance_hash'):data.pop(key,None)
     return data
@@ -173,7 +174,7 @@ def geometry(args):
 
 def public_command(binary,subject,scene,out,size=(960,540),view='preset',samples=1,mode='cached'):
     flags=[str(binary)]
-    if subject:flags+=['--config',str(ROOT/f'projects/sdf/presets/{PRESETS[subject]}.json')]
+    if subject:flags+=['--config',str(ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[subject]}.json')))]
     flags+=['--authored-scene',str(scene),
         '--headless','--require-validation','--motion','static','--supersample',str(samples),'--width',str(size[0]),'--height',str(size[1]),
         '--shadows','1','--no-ao','--no-ground','--no-clouds','--no-occluder']
@@ -276,7 +277,7 @@ def replay(args):
     receipt=dict(info(args),runs=[],complete=False)
     for row in json.loads(args.inputs.read_text())['cases']:
         if row['operation']=='none':continue
-        cfg=json.loads((ROOT/f"projects/sdf/presets/{PRESETS[row['subject']]}.json").read_text())
+        cfg=json.loads((ROOT/str(resolve_sdf_path(f"projects/sdf/presets/{PRESETS[row['subject']]}.json"))).read_text())
         for view in ('preset','close'):
             camera=dict(cfg)
             if view=='close':camera['distance']=.8

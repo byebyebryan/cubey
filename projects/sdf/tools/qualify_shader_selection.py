@@ -6,12 +6,13 @@ import csv
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import re
 import statistics
 from check_tracing_images import pixels
 from acceleration_loop import gpu_state, save
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, digest, invoke, metadata
+from query_study import ROOT, digest, invoke, metadata
 from tracing_comparison import check
 
 ROUTES = [("analytic-full", "analytic", "full", "off"),
@@ -165,9 +166,9 @@ def qualify(args):
             study.pair(route[0]+"-"+lighting+"-multi", small[:-1]+[str(args.output/"selection-multi.json")]+route_flags(route)+["--lighting",lighting], 1)
     # Real multi-material surfaces, procedural/bump appearance, all three fixed views.
     for scene, preset in (("guardian", "sculpture-guardian-limestone"), ("robot", "survey-robot-fieldkit")):
-        config = json.loads((ROOT/f"projects/sdf/presets/{preset}.json").read_text())
+        config = json.loads((ROOT/str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json"))).read_text())
         for view, offset in (("preset", 0), ("side", math.pi/2), ("rear", math.pi)):
-            study.pair(scene+"-"+view, ["--config", f"projects/sdf/presets/{preset}.json",
+            study.pair(scene+"-"+view, ["--config", str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")),
                 "--width", "1920", "--height", "1080", "--surface-trace", "analytic",
                 "--csg-evaluation", "pruned", "--region-axis", "64", "--acceleration-variant", "root-far",
                 "--yaw", str(config["yaw"]+offset)], 2 if scene == "guardian" else 1)
@@ -176,7 +177,7 @@ def qualify(args):
                    "environment-study/sphere-glass-sunset", "material-study/sphere-marble"):
         for debug in (0, 9) if "glass" in preset else (0, 10, 11, 12):
             name = preset.replace("/", "-")+"-debug"+str(debug)
-            study.pair(name, ["--config", f"projects/sdf/presets/{preset}.json", "--width", "320", "--height", "180",
+            study.pair(name, ["--config", str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")), "--width", "320", "--height", "180",
                 *route_flags(ROUTES[-1]), "--debug", str(debug)], 2 if debug == 0 else 0)
             if debug == 9:
                 w,h,c,rows=pixels(args.output/(name+"-automatic.png"))
@@ -284,9 +285,9 @@ def timing(args):
     for repeat in range(1,4):
         for scene,preset,view,offset,control in cases if repeat%2 else reversed(cases):
             prefix=args.output/f"{scene}-{view}-{control}-r{repeat}"
-            config=json.loads((ROOT/f"projects/sdf/presets/{preset}.json").read_text())
+            config=json.loads((ROOT/str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json"))).read_text())
             command=[str(args.binary),"--headless","--headless-render-only","--require-validation","--supersample","1",
-                     "--config",f"projects/sdf/presets/{preset}.json","--width","1920","--height","1080",
+                     "--config",str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")),"--width","1920","--height","1080",
                      "--surface-trace","analytic","--csg-evaluation","pruned","--region-axis","64",
                      "--acceleration-variant","root-far","--source-shaders",control,"--yaw",str(config["yaw"]+offset),
                      "--frames","180","--profile-warmup-frames","30","--profile-output",str(prefix)]

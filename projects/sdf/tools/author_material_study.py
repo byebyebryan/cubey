@@ -4,12 +4,13 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 from sdf_author import material, sphere
 
 
 def catalog(root):
     def body(suffix):
-        return json.loads((root / f'projects/sdf/scenes/sculpture-guardian-{suffix}.json').read_text())['materials'][0]
+        return json.loads((root / str(resolve_sdf_path(f'projects/sdf/scenes/sculpture-guardian-{suffix}.json'))).read_text())['materials'][0]
     rows = dict(plain=material('body', '777777', .76), limestone=body('limestone'), marble=body('marble'))
     rows['clay'] = material('body', 'B87453', 1.0)
     rows['clay']['optics'] = dict(diffuse_roughness=.6)
@@ -30,12 +31,12 @@ def catalog(root):
 
 def main():
     root = Path(__file__).resolve().parents[3]
-    source = root / 'projects/sdf/scenes/sculpture-guardian-mirrored.json'
+    source = root / 'studies/sdf/guardian/scenes/sculpture-guardian-mirrored.json'
     guardian = json.loads(source.read_text())
     sphere_scene = dict(format='cubey.sdf.scene', version=2, name='Material sphere',
         materials=[], root=sphere('material-sphere', [0, 0, 0], .25, 'body'),
         history=[dict(node='material-sphere', label='Establish the material sphere', seconds=1)])
-    plain_config = json.loads((root / 'projects/sdf/presets/sculpture-guardian-mirrored.json').read_text())
+    plain_config = json.loads((root / 'studies/sdf/guardian/presets/sculpture-guardian-mirrored.json').read_text())
     rows = catalog(root)
     for subject, template in [('sphere', sphere_scene), ('guardian', guardian)]:
         for name, appearance in rows.items():
@@ -46,13 +47,13 @@ def main():
                 material=name, shared_material_sha256=hashlib.sha256(json.dumps(appearance,sort_keys=True).encode()).hexdigest())
             if subject == 'guardian':
                 assert scene['root'] == guardian['root'] and scene['history'] == guardian['history']
-            path = Path(f'projects/sdf/scenes/material-study/{subject}-{name}.json')
+            path = Path(str(resolve_sdf_path(f'projects/sdf/scenes/material-study/{subject}-{name}.json')))
             config = copy.deepcopy(plain_config)
             config.update({'authored-scene':str(path), 'lighting':'material-study',
                            'exposure':.6, 'motion':'static', 'ao':False, 'ground':False})
             if subject == 'sphere': config.update({'distance':1.05,'target-y':0,'pitch':.15})
             for target, document in [(root/path, scene),
-                    (root/f'projects/sdf/presets/material-study/{subject}-{name}.json', config)]:
+                    (root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{subject}-{name}.json')), config)]:
                 target.parent.mkdir(parents=True,exist_ok=True)
                 target.write_text(json.dumps(document,indent=2)+'\n')
     print('Authored seven shared material records on both fixed subjects.')

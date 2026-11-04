@@ -122,8 +122,9 @@ Active projects:
 - [PBR materials](../projects/pbr_materials/README.md): shared mesh material
   gallery and parameter workshop, with a matched SDF workshop.
 - [SDF](../projects/sdf/README.md): native procedural and authored scenes,
-  saved construction history, the settled Guardian and shared material
-  workshop. Older sculpture studies and technical chronology stay in its
+  the robot's saved construction history and shared material workshop.
+  [Guardian is a retired study](../studies/sdf/guardian/README.md), with current
+  scope in the [CSG closeout](notes/sdf-csg-closeout.md). Technical chronology stays in its
   [technical reference](../projects/sdf/docs/technical-reference.md).
 
 Internal validation:

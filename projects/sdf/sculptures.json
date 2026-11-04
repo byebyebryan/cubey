@@ -1,8 +1,8 @@
 {
   "guardian": {
-    "config": "projects/sdf/presets/sculpture-guardian.json",
-    "build_config": "projects/sdf/presets/sculpture-guardian-build.json",
-    "blockout_config": "projects/sdf/presets/sculpture-blockouts/guardian-a.json",
+    "config": "studies/sdf/guardian/presets/sculpture-guardian.json",
+    "build_config": "studies/sdf/guardian/presets/sculpture-guardian-build.json",
+    "blockout_config": "studies/sdf/guardian/presets/sculpture-blockouts/guardian-a.json",
     "views": [
       {
         "name": "hero",

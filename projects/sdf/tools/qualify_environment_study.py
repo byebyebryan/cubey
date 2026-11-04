@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 
 
@@ -26,10 +27,10 @@ def main():
     for environment in ['reference','sunset','clouds']:
         for subject in ['sphere','guardian']:
             for material in ['clay','glass']:
-                preset=root/f'projects/sdf/presets/environment-study/{subject}-{material}-{environment}.json'
+                preset=root/str(resolve_sdf_path(f'projects/sdf/presets/environment-study/{subject}-{material}-{environment}.json'))
                 run(f'{subject}-{material}-{environment}',preset,['--validate-field'])
     for material in ['bronze','glass']:
-        preset=root/f'projects/sdf/presets/environment-study/guardian-{material}-clouds.json'
+        preset=root/str(resolve_sdf_path(f'projects/sdf/presets/environment-study/guardian-{material}-clouds.json'))
         on=run(material+'-composite',preset)
         off=run(material+'-no-composite',preset,['--no-cloud-backdrop'])
         again=run(material+'-repeat',preset,['--frames',3])
@@ -53,7 +54,7 @@ def main():
         assert image.read_bytes()==(root/f'outputs/sdf/material-study-final-legacy/{name}.png').read_bytes(),name
     for subject in ['sphere','guardian']:
         for material in ['clay','glass','bronze']:
-            image=run('fixed-'+subject+'-'+material,root/f'projects/sdf/presets/material-study/{subject}-{material}.json',size=960)
+            image=run('fixed-'+subject+'-'+material,root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{subject}-{material}.json')),size=960)
             old=root/f'outputs/sdf/material-contrast-comparison/{subject}-{material}/captures/hero.png'
             assert image.read_bytes()==old.read_bytes(),(subject,material)
     preset=root/'projects/sdf/presets/environment-study/sphere-glass-clouds.json'

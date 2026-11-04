@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 
 
@@ -22,7 +23,7 @@ def main():
         for mode, csg in [("sampled", "full"), ("analytic", "pruned"), ("hybrid", "pruned")]:
             name = f"{subject}-{mode}"; image = args.output/f"{name}.png"
             extent = ["320", "180"] if subject == "guardian" else ["640", "360"]
-            command = base+["--config", f"projects/sdf/presets/{preset}.json", "--width", extent[0], "--height", extent[1],
+            command = base+["--config", str(resolve_sdf_path(f"projects/sdf/presets/{preset}.json")), "--width", extent[0], "--height", extent[1],
                             "--surface-trace", mode, "--csg-evaluation", csg, "--region-axis", "64", "--output", str(image)]
             run = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
             (args.output/f"{name}.log").write_text(run.stdout)

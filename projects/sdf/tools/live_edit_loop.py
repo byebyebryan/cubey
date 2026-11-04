@@ -9,11 +9,12 @@ import copy
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import statistics
 import subprocess
 
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, PRESETS, digest, invoke, metadata, camera_queries
+from query_study import ROOT, PRESETS, digest, invoke, metadata, camera_queries
 from quality_speed_loop import profile
 from acceleration_loop import gpu_state
 from tracing_comparison import fixtures, document, sphere, ray, H, EPS, check
@@ -80,7 +81,7 @@ def pending_cases():
 
 def native(args, inp, out, policy, extra=(), size=(16,16), preset=None):
     flags=[str(args.binary)]
-    if preset: flags+=['--config',str(ROOT/f'projects/sdf/presets/{PRESETS[preset]}.json')]
+    if preset: flags+=['--config',str(ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[preset]}.json')))]
     flags+=['--live-input',str(inp),'--live-output',str(out),'--live-policy',policy,
         '--headless','--require-validation','--motion','static','--supersample','1',
         '--width',str(size[0]),'--height',str(size[1]),'--no-ao','--no-ground','--no-clouds','--no-occluder']
@@ -143,7 +144,7 @@ def clean_scene(scene):
 
 
 def subject(name):
-    cfg=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[name]}.json').read_text())
+    cfg=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[name]}.json'))).read_text())
     return clean_scene(json.loads((ROOT/cfg['authored-scene']).read_text()))
 
 
@@ -207,7 +208,7 @@ def timing(args):
             if policy.startswith('fresh-'):
                 scene_path=args.output/f"{row['name']}-{row['count']}-scene.json"
                 save(scene_path,json.loads(Path(row['input']).read_text())['cases'][0]['scene'])
-                flags=[str(args.public_binary),'--config',str(ROOT/f"projects/sdf/presets/{PRESETS[row['name']]}.json"),
+                flags=[str(args.public_binary),'--config',str(ROOT/str(resolve_sdf_path(f"projects/sdf/presets/{PRESETS[row['name']]}.json"))),
                     '--authored-scene',str(scene_path),'--headless','--headless-render-only','--require-validation',
                     '--motion','static','--supersample','1','--width','1920','--height','1080',
                     '--no-ao','--no-ground','--no-clouds','--no-occluder','--frames','180',
@@ -250,7 +251,7 @@ def captures(args):
                     ['--frames','1','--output',str(prefix.with_suffix('.png'))],(960,540),preset)
             else:
                 flags=[str(args.public_binary)]
-                if preset:flags+=['--config',str(ROOT/f'projects/sdf/presets/{PRESETS[preset]}.json')]
+                if preset:flags+=['--config',str(ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[preset]}.json')))]
                 flags+=['--authored-scene',str(scene_path),'--headless','--require-validation',
                     '--motion','static','--supersample','1','--width','960','--height','540',
                     '--no-ao','--no-ground','--no-clouds','--no-occluder','--frames','1',
@@ -261,7 +262,7 @@ def captures(args):
     # Frozen field/regions while poses AND pending source change. Serial captures.
     for name in PRESETS:
         base=subject(name)
-        cfg=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[name]}.json').read_text())
+        cfg=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[name]}.json'))).read_text())
         data=manifest([dict(name=name,base=base,scene=appended(base,1))])
         data['states']=[dict(scene=appended(base,1+i//2),yaw=cfg['yaw']+.12*i,pitch=cfg['pitch'],distance=cfg['distance']) for i in range(16)]
         inp=args.output/f'{name}-motion-input.json';save(inp,data)
@@ -281,7 +282,7 @@ def qualify(args):
     receipt=dict(study_metadata(args),runs=[],complete=False)
     for name in PRESETS:
         base=subject(name);scene=appended(base,8)
-        cfg=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[name]}.json').read_text())
+        cfg=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[name]}.json'))).read_text())
         rays=camera_queries(cfg,160,90)
         points=[dict(kind='point',position=[-.499+.998*((i*f)%509)/508 for f in (1,137,311)]) for i in range(509)]
         case=dict(name=name,base=base,scene=scene,queries=rays+points)

@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
-from investigate_guardian import ROOT, digest
+from query_study import ROOT, digest
 from acceleration_loop import save
 
 

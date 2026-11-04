@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 
 
@@ -50,7 +51,7 @@ def main():
     for variant, options in VARIANTS.items():
         for case in ['background', 'sphere-bronze', 'guardian-bronze', 'guardian-glass']:
             source = 'sphere-plain' if case == 'background' else case
-            config = json.loads((root / f'projects/sdf/presets/environment-study/{source}-clouds.json').read_text())
+            config = json.loads((root / str(resolve_sdf_path(f'projects/sdf/presets/environment-study/{source}-clouds.json'))).read_text())
             config.update({'cloud-distance-mode': 'auto', 'cloud-quality': 'half',
                            'cloud-resolve-mode': 'terrain-post', 'cloud-view-samples': 1,
                            'cloud-debug-view': 'final', 'cloud-sky-only': False, **options})

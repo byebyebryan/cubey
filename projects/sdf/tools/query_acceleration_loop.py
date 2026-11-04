@@ -5,12 +5,13 @@ import csv
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import statistics
 import struct
 import subprocess
 from acceleration_loop import save, gpu_state
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, digest, invoke, metadata
+from query_study import ROOT, digest, invoke, metadata
 from check_tracing_images import pixels
 from tracing_comparison import check, document, ray, unit
 
@@ -60,12 +61,12 @@ def summarize(path):
 def workload(args):
     receipt=dict(metadata(args.binary),runner_sha256=digest(Path(__file__)),runs=[])
     for scene,preset in [('guardian','sculpture-guardian-limestone'),('robot','survey-robot-fieldkit')]:
-        config=json.loads((ROOT/f'projects/sdf/presets/{preset}.json').read_text())
+        config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json'))).read_text())
         for view,offset in [('preset',0),('side',math.pi/2),('rear',math.pi)]:
             for mode in ['shadow','combined']:
                 prefix=args.output/f'{scene}-{view}-{mode}'
                 base=[str(args.binary),'--headless','--require-validation','--supersample','1',
-                    '--config',f'projects/sdf/presets/{preset}.json','--width','1920','--height','1080',
+                    '--config',str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json')),'--width','1920','--height','1080',
                     '--surface-trace','analytic','--csg-evaluation','pruned','--region-axis','64',
                     '--acceleration-variant','root-far','--source-optimization',mode,
                     '--yaw',str(config['yaw']+offset),'--frames','1','--query-stepping',args.query_stepping]
@@ -138,10 +139,10 @@ STEPS=['ordinary','relaxed-1.2','relaxed-1.5','adaptive-0.5']
 
 def native_command(args,scene,view,mode,step):
     preset='sculpture-guardian-limestone' if scene=='guardian' else 'survey-robot-fieldkit'
-    config=json.loads((ROOT/f'projects/sdf/presets/{preset}.json').read_text())
+    config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json'))).read_text())
     offset=dict(preset=0,side=math.pi/2,rear=math.pi)[view]
     return [str(args.binary),'--headless','--require-validation','--supersample','1',
-        '--config',f'projects/sdf/presets/{preset}.json','--width','1920','--height','1080',
+        '--config',str(resolve_sdf_path(f'projects/sdf/presets/{preset}.json')),'--width','1920','--height','1080',
         '--surface-trace','analytic','--csg-evaluation','pruned','--region-axis','64',
         '--acceleration-variant','root-far','--source-optimization',mode,'--query-stepping',step,
         '--yaw',str(config['yaw']+offset)]

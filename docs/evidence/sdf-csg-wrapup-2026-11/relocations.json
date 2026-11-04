@@ -1,0 +1,510 @@
+{
+  "format": "cubey.sdf.guardian-retirement",
+  "version": 1,
+  "files": [
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-bronze-clouds.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-bronze-clouds.json",
+      "original_sha256": "c9d134a7b879969f52c20c38416bad6c93725b82559b348ec5a48cca7d2e56c8",
+      "current_sha256": "a777573994361179bb7d16a30e7221f3e6e49e2643cd2d93bd8934abdac4a841",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-bronze-reference.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-bronze-reference.json",
+      "original_sha256": "e99d3c7c4fb3e87904d212d68d178644fbb14fdad9507d133e2ffeaa1e99e5d6",
+      "current_sha256": "df3346709766cbfc5f347025a2beff2c72b4fbd16a400b389309a0e214d9e688",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-bronze-sunset.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-bronze-sunset.json",
+      "original_sha256": "144ec785e6346dab35e5e10e364da80018ba3c65c0ab7a29b52ba5c28f6e742f",
+      "current_sha256": "44ba1272346c68795231fccd2932305881c6b4e5af2004653d43690aeaf26f76",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-clay-clouds.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-clay-clouds.json",
+      "original_sha256": "b6c424c8f891e9327d57c1fed5fc22106c05013ca5532da17f7dc63f93c6a929",
+      "current_sha256": "7a26f3177af95cc89db5fc7ee312018a803b6cddadb510f6a70bdd01efe2d27f",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-clay-reference.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-clay-reference.json",
+      "original_sha256": "774c3a57e3118d3aa692cd671de8c8539b90257578325a910309bcc8f2799214",
+      "current_sha256": "8eb19ed6328a0d4fc13c70dc81b845886703594986db177e077a931667a30cd1",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-clay-sunset.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-clay-sunset.json",
+      "original_sha256": "38d662a7069292c8b148efa18e05bd6c1375e6a2c91d9d04ada4c02d460b2cd3",
+      "current_sha256": "59ee8c8ae0cd81923895ca41fc7b2619745920d396134311c9e439767f25e324",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-glass-clouds.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-glass-clouds.json",
+      "original_sha256": "6b0fdc7c825dc504b73ecb7a61dd6ed6889b89192df67f0c11341f86ca1ad9f8",
+      "current_sha256": "39bf96bfefb596ed3cfd550c7ea2819d5b73230a97ad96fd5f69c820a6e910b7",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-glass-reference.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-glass-reference.json",
+      "original_sha256": "2c3c3036dbc956fac2a39c60900c5fcf81ec20f6578a630d22167d8dab481fac",
+      "current_sha256": "7348b4d817e5f9cfa4d4397c06a135ed2e852d649d99abf56f5d91b60ed797b5",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-glass-sunset.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-glass-sunset.json",
+      "original_sha256": "8cfc26767a1b7dfdb13368cc2bd060966402f266e87d6ba3b6d352e16245142d",
+      "current_sha256": "c8c6fd4020a2f74342f5be86bd5e8221a73845d8e8629b9a55c8d0a143c7afe9",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-marble-clouds.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-marble-clouds.json",
+      "original_sha256": "0a498f43e481f5c11b1a504e2aece73b717e3abc9bb6dd7fb4dee8221f5af2f3",
+      "current_sha256": "48999cdae6fbb47e994e60ecd367d268acbb4b01a9a84216d931b8dfaa1ee052",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-marble-reference.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-marble-reference.json",
+      "original_sha256": "11c3f3661323dd2aae43d3354c98436d0bf0d5a1d572ff4fbdc56ad8500e9ba6",
+      "current_sha256": "d2d021e6466133d5c814b2375bb5f6fdd596819c41c74f3cfe70f8008c01ee48",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-marble-sunset.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-marble-sunset.json",
+      "original_sha256": "103039b86a0db789bce8dd1010a772037eaf2ac070f16791f564ada9bbbfe53a",
+      "current_sha256": "2f2560bad9efc71c0f7ca3f6c5fd707d5fd7c72e81c339c7a0102b59ae2b7e99",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-plain-clouds.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-plain-clouds.json",
+      "original_sha256": "7aa6bb2d75a23a73cb3f264ee82961bad727372098428b8a9f8b72a1489ffee1",
+      "current_sha256": "9187149871142af248db1d3aca4de7ea8251c325fad3272546d9dcdfaa9e5c35",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-plain-reference.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-plain-reference.json",
+      "original_sha256": "f8e633c17601182ff658485f7a5f3b77fcabc112faf1849e975f6fd136e13171",
+      "current_sha256": "3a352e77c383590b9c676f3a8b1032afabde72bcad0c1e2d05eeea8072713bab",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/environment-study/guardian-plain-sunset.json",
+      "current": "studies/sdf/guardian/presets/environment-study/guardian-plain-sunset.json",
+      "original_sha256": "cd36ef04448590f1c5d8a1d5d1c169a72839a870f310b3897361d8ac5d7e0f88",
+      "current_sha256": "68b2165af63e10ff8b3c25372774387e70971ee0ceb09e4f0dea5a23b618ee02",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-bronze.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-bronze.json",
+      "original_sha256": "1ef82133ca6d8956e5fd3c3c25c73b14f358b5e83af01b46f2b53284e2021a9d",
+      "current_sha256": "2df0a2f99e0ffb1a234f6438b110eb5957e955a14422d4d71deaf2b69ff1d431",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-ceramic.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-ceramic.json",
+      "original_sha256": "b8c29078a147836952001cfc025f9996294ef37788ca73819419970752f23970",
+      "current_sha256": "2e4d3e6cdfe14dcddc04a5baa2e5f9ab276a079fe43007fd0bc29fefda7e591f",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-clay.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-clay.json",
+      "original_sha256": "87830d206e3124b294c73b6cd0a0fa83fd11c3dcb6aa63d9e5773be7ccb43e73",
+      "current_sha256": "5482199fdf318c77508311d5ae519a94a810b7d0c75f8bc72445fb9bf81d2337",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-glass.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-glass.json",
+      "original_sha256": "b9bde7304f36fc1363090220abb93423633a2590268e4b0ae916a77945dc80c9",
+      "current_sha256": "877d036af194fc771023ac52e794aae4872d9a83fcdd3b846bcd07b4c1dcfc38",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-limestone.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-limestone.json",
+      "original_sha256": "e27091f5f6a0216e9d2d5c2c39f02ce74044af85facf19791a6972a5a9a70d6e",
+      "current_sha256": "5f06b9c381794b26d96e0677bd3c9e9eb87ae181e34dd1d2c9a11fcadeaaa833",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-marble.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-marble.json",
+      "original_sha256": "79d33ea00a6ca0b1ba612da2d2472275b25ae4fb9e6b5049f737754b0365174d",
+      "current_sha256": "b83a4edc955154e8b2a6378c1210d5052b8ef5b222933146cc528e820ad1737c",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/material-study/guardian-plain.json",
+      "current": "studies/sdf/guardian/presets/material-study/guardian-plain.json",
+      "original_sha256": "434441335b4d04a5a5b78c2ec66172b26e91ea36f2ace51ae18d1e69cb25c009",
+      "current_sha256": "b354e517c422c45c47655079e6406bd4aa57143959982263715afd0e6041b170",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/refinement-auditions/guardian-form-a.json",
+      "current": "studies/sdf/guardian/presets/refinement-auditions/guardian-form-a.json",
+      "original_sha256": "c79bfefcd6557cbf55de43e73ecaf1dc4d394549cf2ba4869dfee9c05e55b799",
+      "current_sha256": "4cec71d145c57143cd44a952ec6b132643a79e5775f5334c852652554fa476e8",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/refinement-auditions/guardian-form-b.json",
+      "current": "studies/sdf/guardian/presets/refinement-auditions/guardian-form-b.json",
+      "original_sha256": "237185942b6503bb232674d6b72b61fe048db1a80ff1b0bec24e96877e2e1a63",
+      "current_sha256": "02696afb33b7fb77e25c7336ee5cf3daa59a5f0015504fc82be26f241903e4f9",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-blockouts/guardian-a.json",
+      "current": "studies/sdf/guardian/presets/sculpture-blockouts/guardian-a.json",
+      "original_sha256": "f96bd453cc7ecab45945a9b9eb27e7d3c1bdde444fd9234a1171dda8de0c673e",
+      "current_sha256": "3e870a74a517e0ab2bde6510eb0430c2709f06674a7735e942a51baf80da3dee",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-blockouts/guardian-b.json",
+      "current": "studies/sdf/guardian/presets/sculpture-blockouts/guardian-b.json",
+      "original_sha256": "2a2e4e53de663d05e2a47cbd0180cfdb0c2efc8639709e991debe927b7c880d0",
+      "current_sha256": "5770da5a70abeef6ac65df0277f554888abe32208d9e7b221e50825e2dd38466",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-build.json",
+      "original_sha256": "80b81c90d0d7541d3258b6c31177240498aa8567dabc70d7171a35ac5d48fcf0",
+      "current_sha256": "ff1b6380e659e3a5b0e630058646a2242b3404f399cf868899447d7fd6e43da6",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-limestone-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-limestone-build.json",
+      "original_sha256": "3978074745585316b1c18f6172331ceebb09f39104c45332a034c19a4f72d7b9",
+      "current_sha256": "12575c950a62b8a488123c6095aa7e10bbd782dff0703c5b8732ad3114839216",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-limestone.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-limestone.json",
+      "original_sha256": "55e07578aaa17fda60c48dde20572d17e6cd16fd5bfc0abe5b81159208d80990",
+      "current_sha256": "23667bd11a025dc593fbffce073ebcf5771f351af6454709076a381252e985ad",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-marble-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-marble-build.json",
+      "original_sha256": "bb48c103e7e91a1217fed001758e955175f6f121021e43d8108ef0e60c71bca5",
+      "current_sha256": "de3ea345455574b99122da1ba90a2e28f41b92cecf05decadbb02d1f1df928f0",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-marble.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-marble.json",
+      "original_sha256": "a14573288c26a0531dc34423abf1efc6dab10bea929286a45f57e33e25c8c428",
+      "current_sha256": "2dec2fe1ef7e957df0efa840c44585e241d980dfc36e5a18b60b6684580c3972",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-mirrored-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-mirrored-build.json",
+      "original_sha256": "fe2d445f1ce5483a3ade1a239291c6500deedb9c5f2bb32ed661449bd7d3eb43",
+      "current_sha256": "8c78294132515f38a53145221263b95cdebeeb831a887de45fb2b95d35611344",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-mirrored.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-mirrored.json",
+      "original_sha256": "03b912d34f6cc19defbdd71f3616e6215bce2b47e8d444f566187421edfa2998",
+      "current_sha256": "366ff8faa6773d2034794f91d4559e82b2793d34ed32a06cfe6a466abd9404a9",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-organic-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-organic-build.json",
+      "original_sha256": "0c239f3847312f920f0d9bd700f3e92173fafd2fcb1b4565fd7a7ab0ea63b5bd",
+      "current_sha256": "3e80c7ba040d93d2fd87b3a06bbf2a5751e1c3caa5b4d3577a900049900096e9",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-organic-form-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-organic-form-build.json",
+      "original_sha256": "c4f95b3221c3a99fe1fea2a1002b186b37087cc34b0ee234a30bf9ed54292b8d",
+      "current_sha256": "c25eb723adb179f0e258076869678831dfa64fc6966906f0c0296bcd4c1d89e7",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-organic-form.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-organic-form.json",
+      "original_sha256": "7f1b9e2da16672b72ae6ba640d46fb85f4169fc380efbeca7e4bb952dceba23a",
+      "current_sha256": "52d1a893877196a22856507a4901dbff463a0475f2d904c304c8589d3bebcfa9",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-organic.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-organic.json",
+      "original_sha256": "58bc569b7492970c5c0f681d9f23f4a2dac8be222a5f44fab340ba3e10870dc3",
+      "current_sha256": "1a3a17d5ec08c360334db39bfc7c6bbd748232dae5c24130237ecd22cea212b8",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-refined-build.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-refined-build.json",
+      "original_sha256": "1f504c672f9095cb61b85274e78ab671d97f59bb31a6986910ca4beb027ec9cb",
+      "current_sha256": "e8a728e867bac2560668f606fb55b8b9dc9d3528da31ca66e4f54601dde37c0d",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian-refined.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian-refined.json",
+      "original_sha256": "ded355a2b190b37db4f0620ea3fb589da4b2b7393c147e5d7dd07ac4f1f4e200",
+      "current_sha256": "f3d1fa721b2ef802462cb284cc0f1bf0600ce9f8b31d5370437b992a8c458a57",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/presets/sculpture-guardian.json",
+      "current": "studies/sdf/guardian/presets/sculpture-guardian.json",
+      "original_sha256": "b0656d491cc472afd8364813f06e28eaf85df3fb592f83101ef70f8a3b2c6bfb",
+      "current_sha256": "4d0d1b63d8a9f20a71a1dd7d7d23e317114e418a284e158c8df4fbc766cb9e03",
+      "class": "preset"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-bronze.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-bronze.json",
+      "original_sha256": "941de03309f514a82715c0fa6be931f1265b4bf54b356dbe53873fb7195ccca6",
+      "current_sha256": "941de03309f514a82715c0fa6be931f1265b4bf54b356dbe53873fb7195ccca6",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-ceramic.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-ceramic.json",
+      "original_sha256": "26b1eb085b17a5d0efda23802cf90a31bdcf7b27044e321571a64fece1a15b0d",
+      "current_sha256": "26b1eb085b17a5d0efda23802cf90a31bdcf7b27044e321571a64fece1a15b0d",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-clay.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-clay.json",
+      "original_sha256": "27e357b10ddf453193c049463b581610ef1905c29eb7a768c4bea0216d39a3cd",
+      "current_sha256": "27e357b10ddf453193c049463b581610ef1905c29eb7a768c4bea0216d39a3cd",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-glass.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-glass.json",
+      "original_sha256": "a5f56bd5e1260f6861553817527483221711b6e09e3cf98f39fd6667699cf12a",
+      "current_sha256": "a5f56bd5e1260f6861553817527483221711b6e09e3cf98f39fd6667699cf12a",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-limestone.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-limestone.json",
+      "original_sha256": "189751ee25a0d20736312bad4bd318d5c77828437c96a2d06eb5003c1d5c1927",
+      "current_sha256": "189751ee25a0d20736312bad4bd318d5c77828437c96a2d06eb5003c1d5c1927",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-marble.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-marble.json",
+      "original_sha256": "b94c9b1479826dc09256b5152a50242b05c8454f183cb386b1fc04112e05ab92",
+      "current_sha256": "b94c9b1479826dc09256b5152a50242b05c8454f183cb386b1fc04112e05ab92",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/material-study/guardian-plain.json",
+      "current": "studies/sdf/guardian/scenes/material-study/guardian-plain.json",
+      "original_sha256": "a5441da99ffe4ce068b90094ad7d0460bd3e375760517f2d17b79b91eb92a31d",
+      "current_sha256": "a5441da99ffe4ce068b90094ad7d0460bd3e375760517f2d17b79b91eb92a31d",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/refinement-auditions/guardian-form-a.json",
+      "current": "studies/sdf/guardian/scenes/refinement-auditions/guardian-form-a.json",
+      "original_sha256": "e43984441a8836b78f92e5f760d8b89219b2e82ef0fd20591e07aeda3e18ed04",
+      "current_sha256": "e43984441a8836b78f92e5f760d8b89219b2e82ef0fd20591e07aeda3e18ed04",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/refinement-auditions/guardian-form-b.json",
+      "current": "studies/sdf/guardian/scenes/refinement-auditions/guardian-form-b.json",
+      "original_sha256": "6bedfb003a900080b70fae26d457766ebf041a6dc65962b2322254f81f1ef1e1",
+      "current_sha256": "6bedfb003a900080b70fae26d457766ebf041a6dc65962b2322254f81f1ef1e1",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-blockouts/guardian-a.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-blockouts/guardian-a.json",
+      "original_sha256": "88d6e0a97aace9114384209a1fa5c7cd65b06edcfa61c9e346f95728dd5c3bee",
+      "current_sha256": "88d6e0a97aace9114384209a1fa5c7cd65b06edcfa61c9e346f95728dd5c3bee",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-blockouts/guardian-b.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-blockouts/guardian-b.json",
+      "original_sha256": "4ad2bf78ffa1209fcb7be055b7cbf306929c288e4544169a897c35a50551af6c",
+      "current_sha256": "4ad2bf78ffa1209fcb7be055b7cbf306929c288e4544169a897c35a50551af6c",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian-limestone.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian-limestone.json",
+      "original_sha256": "8798cc07330548c8aded5d267659e01d8a13720d5c7d0f3022fb4f06eab16fe5",
+      "current_sha256": "8798cc07330548c8aded5d267659e01d8a13720d5c7d0f3022fb4f06eab16fe5",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian-marble.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian-marble.json",
+      "original_sha256": "6e2c5224f9d81addea7a3b1e614e395d58b1266243baa84e5ce941078cae91fe",
+      "current_sha256": "6e2c5224f9d81addea7a3b1e614e395d58b1266243baa84e5ce941078cae91fe",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian-mirrored.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian-mirrored.json",
+      "original_sha256": "660e5f753673af84f958dcc218a060423cc2f26c234adb90120bbcda4b8cf0a1",
+      "current_sha256": "660e5f753673af84f958dcc218a060423cc2f26c234adb90120bbcda4b8cf0a1",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian-organic-form.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian-organic-form.json",
+      "original_sha256": "c7d511c2e0df14b1774c54e53aed2463f6728c7aaef80c7895a8a4f7f4554d97",
+      "current_sha256": "c7d511c2e0df14b1774c54e53aed2463f6728c7aaef80c7895a8a4f7f4554d97",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian-organic.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian-organic.json",
+      "original_sha256": "fcaf090c5c991a8a95f1ccd502e5deccb37ccca3fb9c27cad7e91d26275fb54e",
+      "current_sha256": "fcaf090c5c991a8a95f1ccd502e5deccb37ccca3fb9c27cad7e91d26275fb54e",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian-refined.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian-refined.json",
+      "original_sha256": "33095c94bc8ea7d52ab92fdf8ccc78319645946c558441adcc82fa9ae24b35b7",
+      "current_sha256": "33095c94bc8ea7d52ab92fdf8ccc78319645946c558441adcc82fa9ae24b35b7",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/scenes/sculpture-guardian.json",
+      "current": "studies/sdf/guardian/scenes/sculpture-guardian.json",
+      "original_sha256": "47dc3834d803c0a1816c0bb8e2a09b35ef32e5a8a5e9f7d8dc62434bfe8281c4",
+      "current_sha256": "47dc3834d803c0a1816c0bb8e2a09b35ef32e5a8a5e9f7d8dc62434bfe8281c4",
+      "class": "scene"
+    },
+    {
+      "old": "projects/sdf/tools/assemble_guardian_frame_profile.py",
+      "current": "studies/sdf/guardian/tools/assemble_guardian_frame_profile.py",
+      "original_sha256": "10df20a525374eef9429ba64725c5704518d41f709c1a2adee5b8677947d287c",
+      "current_sha256": "ffd7d7f7043bf952d9d4e351c957434fe1df50c6c97e5eb184a87314af5a35d8",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/author_guardian.py",
+      "current": "studies/sdf/guardian/tools/author_guardian.py",
+      "original_sha256": "97136fddb4c6a64b3bce98dd6e5963b2c583cccbec0e0c51e624d742838d1626",
+      "current_sha256": "0c9c4aa5ede02f62de1ac007abb16ae5c2e64e1e3c7b14cc67b347f27e4d3e92",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/author_guardian_materials.py",
+      "current": "studies/sdf/guardian/tools/author_guardian_materials.py",
+      "original_sha256": "689c04f0aa07d7d53f19f4e4be4a5406aef199e52cee686d864b095a6f366d09",
+      "current_sha256": "24863f1931df98d92de2198c1575f0714ed23b3038f50f4d23d77ab3f49f1adb",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/author_guardian_mirrored.py",
+      "current": "studies/sdf/guardian/tools/author_guardian_mirrored.py",
+      "original_sha256": "71a503134ab5ac0a14d0b88ed4cdfa99445d21e9718aa36d87758bdbe3646fc2",
+      "current_sha256": "131b3b94c9b66bd7a9cf5c0a3c9093e7f64a20618f5b5acf840f054393a087e6",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/capture_guardian.py",
+      "current": "studies/sdf/guardian/tools/capture_guardian.py",
+      "original_sha256": "2635745e533c0db83ea1120a9b41477a8c1118ec46aa0ec95bd56612574c13cc",
+      "current_sha256": "13d192149bb56e2e0ceeb889cc5013e1eea49d16979476d8c9283edaa33860b4",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/guardian_organic_report_template.html",
+      "current": "studies/sdf/guardian/tools/guardian_organic_report_template.html",
+      "original_sha256": "b461345094448beca0450970aa20c7e0967308a2c434bc1ebff32e36a0b22631",
+      "current_sha256": "b461345094448beca0450970aa20c7e0967308a2c434bc1ebff32e36a0b22631",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/guardian_review_report.py",
+      "current": "studies/sdf/guardian/tools/guardian_review_report.py",
+      "original_sha256": "065187dd2263e0d323a050a6e1aa306561c5762010086751b46c984c212c5489",
+      "current_sha256": "a888655ce1036bf1a939bfc48060873e215bca97d8d1f7a626dd112f4488be01",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/investigate_guardian.py",
+      "current": "projects/sdf/tools/query_study.py",
+      "original_sha256": "7717f00059405d90b1ba6bc9e427e5df74a1abcd0e27c2c7980cb6e9b004ea35",
+      "current_sha256": "79b008f57c3a7ddecff940cf783d0a8c8b638803e147d12334b38c766929da33",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/organic_guardian_report.py",
+      "current": "studies/sdf/guardian/tools/organic_guardian_report.py",
+      "original_sha256": "f18cde0e67f7bca5a35abf23637d3df1f033caea93bff1cd1a68a2212688a905",
+      "current_sha256": "f7b45b3c4e49188527685521592f6331cce5e9519baf6f81ad300dbde87f58f1",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/profile_guardian.py",
+      "current": "studies/sdf/guardian/tools/profile_guardian.py",
+      "original_sha256": "94c352d5796ef7226876fc3a6747a8a0c78a560ecef6e809c843ea0d75f907a7",
+      "current_sha256": "1b52246296bfb6cbddc0a71222b7812f87127681bee5e8e99bbc6b34cfd8efa4",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/profile_guardian_frame.py",
+      "current": "studies/sdf/guardian/tools/profile_guardian_frame.py",
+      "original_sha256": "987e63657f9457f53732bc48e57d66df2ce4803052390fccae1bac4d22e64bba",
+      "current_sha256": "859323ab3eb0012541b30bd5efa697330be3e51e343a47e1fb7b370a22d1aeca",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/tools/qualify_guardian_investigation.py",
+      "current": "projects/sdf/tools/qualify_query_study.py",
+      "original_sha256": "cf45e63a2401579ac4865f38a9863157613cae73a4c5d0a3a8f01f49fd8dea7b",
+      "current_sha256": "cef20540053230c1d2770c1ba5968969142ab6f9fee022ac89ee919ab9a0e754",
+      "class": "tool"
+    },
+    {
+      "old": "projects/sdf/guardian_materials.json",
+      "current": "studies/sdf/guardian/guardian_materials.json",
+      "original_sha256": "a00c6239f6e8a9551535f8801f86d10eb4363e712020fda16bdb5cdbf99c80a7",
+      "current_sha256": "28359b5da43f5a781663944f544a19add9f7e294088bca8ca4522d07af67f53b",
+      "class": "authoring metadata"
+    },
+    {
+      "old": "projects/sdf/guardian_organic.json",
+      "current": "studies/sdf/guardian/guardian_organic.json",
+      "original_sha256": "21b40316e5ab396ad07a3f6d0f21928c6a6394a50d26cc768febab746840c1cf",
+      "current_sha256": "e2072f01af77ae28657fa1805936e7db5f9e33e8d919be37851f7c7eed1f1ce5",
+      "class": "authoring metadata"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "tool": "studies/sdf/guardian/tools/author_guardian.py",
+    "exit_code": 0,
+    "help_only": true
+  },
+  {
+    "tool": "studies/sdf/guardian/tools/author_guardian_materials.py",
+    "exit_code": 0,
+    "help_only": true
+  },
+  {
+    "tool": "studies/sdf/guardian/tools/author_guardian_mirrored.py",
+    "exit_code": 0,
+    "help_only": true
+  },
+  {
+    "tool": "studies/sdf/guardian/tools/capture_guardian.py",
+    "exit_code": 0,
+    "help_only": true
+  },
+  {
+    "tool": "studies/sdf/guardian/tools/organic_guardian_report.py",
+    "exit_code": 0,
+    "help_only": true
+  },
+  {
+    "tool": "studies/sdf/guardian/tools/profile_guardian.py",
+    "exit_code": 0,
+    "help_only": true
+  },
+  {
+    "tool": "studies/sdf/guardian/tools/profile_guardian_frame.py",
+    "exit_code": 0,
+    "help_only": true
+  }
+]

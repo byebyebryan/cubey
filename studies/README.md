@@ -12,10 +12,12 @@ asset promise. No study runs as an implicit build/setup step.
   separate from the production atmosphere-hosted cloud layer.
 - [Planet](planet/README.md): paused orbital globe, retained design and review
   tooling behind the explicit `dev-planet-studies` build preset.
+- [Guardian CSG sculpture](sdf/guardian/README.md): retired authored content and
+  stress fixtures; the robot remains the featured CSG construction demo.
 - [Terrain hydrology](terrain/hydrology/README.md), [reference](terrain/reference/README.md)
   and [ShaderToy reference](terrain/shadertoy/README.md) remain distinct older labs.
 
-The [relocation map](relocations.json) records the 2026-10-15 cleanups, including
+The [relocation map](relocations.json) records dated source cleanups, including
 multiple former names that now resolve directly to one canonical study file.
 Historical media recipes and sealed narrative snapshots retain their original identifiers
 and bytes; old commands describe their original revision. Current front doors

@@ -9,7 +9,7 @@ import statistics
 
 import cached_edit_loop as edit
 import local_edit_loop as local
-from investigate_guardian import ROOT, digest
+from query_study import ROOT, digest
 
 RAW = ROOT / 'outputs/sdf/interactive-edit-loop-20261031'
 OLD = ROOT / 'outputs/sdf/local-edit-loop-20261030/stroke-inputs-v3'

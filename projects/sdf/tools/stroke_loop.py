@@ -11,7 +11,7 @@ import statistics
 
 import cached_edit_loop as e
 import local_edit_loop as local
-from investigate_guardian import ROOT, camera_queries, PRESETS, digest
+from query_study import ROOT, camera_queries, PRESETS, digest
 from quality_speed_loop import profile
 from benchmark_tracing import percentile
 from tracing_comparison import document, sphere, ray, dot, unit, H

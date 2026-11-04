@@ -6,13 +6,14 @@ import csv
 import json
 import math
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import statistics
 import subprocess
 import time
 
 from acceleration_loop import gpu_state, save
 from benchmark_tracing import percentile
-from investigate_guardian import ROOT, PRESETS, digest, invoke, metadata
+from query_study import ROOT, PRESETS, digest, invoke, metadata
 from tracing_comparison import check
 
 VIEWS = {'preset': 0, 'side': math.pi/2, 'rear': math.pi}
@@ -34,10 +35,10 @@ for _name,_mode in [('refine05','refine-0.05'),('refine03125','refine-0.03125'),
 
 
 def command(args, scene, view, route, width=1920, height=1080):
-    config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+    config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json'))).read_text())
     yaw=config['yaw']+VIEWS.get(view,0)
     distance={'close':.8,'distant':2.4}.get(view,config['distance'])
-    return [str(args.binary),'--config',f'projects/sdf/presets/{PRESETS[scene]}.json',
+    return [str(args.binary),'--config',str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json')),
         '--headless','--require-validation','--motion','static','--supersample','1',
         '--width',str(width),'--height',str(height),'--yaw',str(yaw),'--distance',str(distance),
         '--shadows',str(args.shadows),'--no-ao','--no-ground','--no-clouds','--no-occluder',*ROUTES[route]]
@@ -187,7 +188,7 @@ def sequence(args):
     receipt=dict(metadata(args.binary),tool_sha256=digest(Path(__file__)),runs=[],complete=False)
     original=json.loads((args.input/'sequences.json').read_text()) if args.probe else None
     for scene in args.scenes:
-        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json'))).read_text())
         document=json.loads((ROOT/config['authored-scene']).read_text())
         for movement in ('arc','dolly'):
             poses=[]
@@ -282,7 +283,7 @@ def history(args):
 def publication(args):
     receipt=dict(metadata(args.binary),tool_sha256=digest(Path(__file__)),runs=[],complete=False)
     for scene in args.scenes:
-        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json'))).read_text())
         original=json.loads((ROOT/config['authored-scene']).read_text());edited=copy.deepcopy(original)
         def alter(node):
             if node.get('type') in ('round-cone','box','sphere'):
@@ -421,7 +422,7 @@ def backgrounds(args):
     sequence_receipt=json.loads((args.input/'sequences.json').read_text())
     receipt=dict(metadata(args.binary),runs=[],complete=False)
     for scene in args.scenes:
-        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json'))).read_text())
         document=json.loads((ROOT/config['authored-scene']).read_text())
         groups={r['movement']:r['poses'] for r in sequence_receipt['runs'] if r['scene']==scene}
         groups['calibration']=[dict(yaw=config['yaw']+VIEWS.get(v,0),pitch=config['pitch'],

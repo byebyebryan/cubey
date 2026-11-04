@@ -11,7 +11,7 @@ import time
 
 import cached_edit_loop as edit
 from acceleration_loop import gpu_state
-from investigate_guardian import ROOT, digest
+from query_study import ROOT, digest
 from tracing_comparison import document, sphere
 
 RAW=ROOT/'outputs/sdf/local-edit-loop-20261030'

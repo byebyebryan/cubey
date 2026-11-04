@@ -51,7 +51,7 @@ nor this verdict constitute user artistic acceptance.
 
 `author_guardian_materials.py` reproduces both scenes and four presets byte for
 byte. The material vocabulary, parser bounds and runtime switches are in the
-[project guide](../../projects/sdf/README.md#procedural-stone-surfaces).
+[technical reference](../../projects/sdf/docs/technical-reference.md#procedural-stone-surfaces).
 
 ## Surface contracts
 

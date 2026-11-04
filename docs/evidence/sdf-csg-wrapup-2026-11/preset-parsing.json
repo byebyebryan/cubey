@@ -1,0 +1,482 @@
+[
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-bronze-clouds.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-bronze-clouds.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-bronze-clouds.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-bronze-reference.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-bronze-reference.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-bronze-reference.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-bronze-sunset.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-bronze-sunset.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-bronze-sunset.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-clay-clouds.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-clay-clouds.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-clay-clouds.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-clay-reference.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-clay-reference.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-clay-reference.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-clay-sunset.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-clay-sunset.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-clay-sunset.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-glass-clouds.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-glass-clouds.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-glass-clouds.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-glass-reference.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-glass-reference.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-glass-reference.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-glass-sunset.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-glass-sunset.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-glass-sunset.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-marble-clouds.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-marble-clouds.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-marble-clouds.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-marble-reference.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-marble-reference.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-marble-reference.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-marble-sunset.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-marble-sunset.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-marble-sunset.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-plain-clouds.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-plain-clouds.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-plain-clouds.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-plain-reference.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-plain-reference.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-plain-reference.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/environment-study/guardian-plain-sunset.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/environment-study/guardian-plain-sunset.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/environment-study/guardian-plain-sunset.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-bronze.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-bronze.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-bronze.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-ceramic.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-ceramic.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-ceramic.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-clay.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-clay.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-clay.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-glass.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-glass.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-glass.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-limestone.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-limestone.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-limestone.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-marble.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-marble.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-marble.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/material-study/guardian-plain.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/material-study/guardian-plain.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/material-study/guardian-plain.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/refinement-auditions/guardian-form-a.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/refinement-auditions/guardian-form-a.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/refinement-auditions/guardian-form-a.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/refinement-auditions/guardian-form-b.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/refinement-auditions/guardian-form-b.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/refinement-auditions/guardian-form-b.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-blockouts/guardian-a.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-blockouts/guardian-a.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-blockouts/guardian-a.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-blockouts/guardian-b.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-blockouts/guardian-b.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-blockouts/guardian-b.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-limestone-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-limestone-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-limestone-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-limestone.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-limestone.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-limestone.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-marble-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-marble-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-marble-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-marble.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-marble.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-marble.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-mirrored-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-mirrored-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-mirrored-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-mirrored.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-mirrored.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-mirrored.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-organic-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-organic-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-organic-form-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-organic-form-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic-form-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-organic-form.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-organic-form.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic-form.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-organic.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-organic.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-organic.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-refined-build.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-refined-build.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-refined-build.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian-refined.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian-refined.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian-refined.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "preset": "studies/sdf/guardian/presets/sculpture-guardian.json",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "studies/sdf/guardian/presets/sculpture-guardian.json",
+      "--write-config-template",
+      "/home/bryan/code/cubey/outputs/sdf/csg-wrapup-20261104/templates/sculpture-guardian.json"
+    ],
+    "exit_code": 0,
+    "output": ""
+  }
+]

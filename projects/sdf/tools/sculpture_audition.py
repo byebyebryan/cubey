@@ -5,6 +5,7 @@ import datetime as dt
 import hashlib
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 import subprocess
 
 from author_sculptures import SUBJECTS
@@ -27,8 +28,8 @@ def main():
         runs={})
     for subject in SUBJECTS:
         for variant in ('ab' if args.stage == 'blockout' else ['final']):
-            config = Path(f'projects/sdf/presets/sculpture-blockouts/{subject}-{variant}.json' if args.stage == 'blockout'
-                          else f'projects/sdf/presets/sculpture-{subject}.json')
+            config = Path(str(resolve_sdf_path(f'projects/sdf/presets/sculpture-blockouts/{subject}-{variant}.json')) if args.stage == 'blockout'
+                          else str(resolve_sdf_path(f'projects/sdf/presets/sculpture-{subject}.json')))
             for view, options in {'hero': [], 'front':['--yaw',0,'--pitch',.02],
                                   'profile':['--yaw',1.5707963,'--pitch',.06],
                                   'before-carve':[]}.items():

@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 
 
 def main():
@@ -11,7 +12,7 @@ def main():
     for subject in ['sphere','guardian']:
         for material in ['bronze','glass','marble','clay','plain']:
             for environment in ['reference','sunset','clouds']:
-                cfg=json.loads((root/f'projects/sdf/presets/material-study/{subject}-{material}.json').read_text())
+                cfg=json.loads((root/str(resolve_sdf_path(f'projects/sdf/presets/material-study/{subject}-{material}.json'))).read_text())
                 cfg['glass-crossings']=8
                 if environment!='reference':
                     cfg.update({'lighting':'material-atmosphere','environment-extent':128,

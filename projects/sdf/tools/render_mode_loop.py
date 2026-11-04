@@ -3,9 +3,10 @@
 import argparse
 import json
 from pathlib import Path
+from sdf_paths import resolve_sdf_path
 
 from acceleration_loop import gpu_state, save
-from investigate_guardian import digest, invoke, metadata
+from query_study import digest, invoke, metadata
 from quality_speed_loop import command, profile
 
 MODES=('cached','cached-refined','balanced','analytic','hybrid')
@@ -150,7 +151,7 @@ def features(args):
     import numpy as np
     from PIL import Image
     cases=[('ao',['--config','projects/sdf/presets/survey-robot-fieldkit.json','--ao']),
-        ('soft-shadow',['--config','projects/sdf/presets/sculpture-guardian-limestone.json','--shadows','2']),
+        ('soft-shadow',['--config','studies/sdf/guardian/presets/sculpture-guardian-limestone.json','--shadows','2']),
         ('ground-occluder',['--authored-scene','projects/sdf/comparison/initial.json','--ground','--occluder']),
         ('wood',['--workshop','cut-block','--material','wood']),
         ('metal',['--workshop','sphere','--material','rusted-steel','--lighting','material-atmosphere']),
@@ -160,7 +161,7 @@ def features(args):
         ('clouded-glass',['--workshop','sphere','--material','glass','--lighting','material-atmosphere','--clouds']),
         ('lighting-cycle',['--workshop','block','--material','marble','--lighting','material-atmosphere','--lighting-cycle','dawn','--time','5']),
         ('construction',['--config','projects/sdf/presets/survey-robot-fieldkit-build.json','--time','6']),
-        ('presentation',['--config','projects/sdf/presets/sculpture-guardian-mirrored-build.json','--time','30'])]
+        ('presentation',['--config','studies/sdf/guardian/presets/sculpture-guardian-mirrored-build.json','--time','30'])]
     cases += [('debug-'+str(i),['--authored-scene','projects/sdf/comparison/initial.json','--debug',str(i)]) for i in range(1,9)]
     receipt=dict(metadata(args.binary),runs=[],complete=False)
     for label,extra in cases:
@@ -228,10 +229,10 @@ def captures(args):
 
 def motion(args):
     import math
-    from investigate_guardian import ROOT, PRESETS
+    from query_study import ROOT, PRESETS
     receipt=dict(metadata(args.binary),runs=[],complete=False)
     for scene in ('guardian','robot'):
-        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json'))).read_text())
         document=json.loads((ROOT/config['authored-scene']).read_text())
         for mode,ss in [('cached',2),('balanced',1),('balanced',2)]:
             actions=[dict(label=f'arc-{i}',scene=document,visible_scene=document,geometry_unchanged=True,
@@ -252,10 +253,10 @@ def motion(args):
 
 
 def large_transitions(args):
-    from investigate_guardian import ROOT,PRESETS
+    from query_study import ROOT,PRESETS
     receipt=dict(metadata(args.binary),runs=[],complete=False)
     for scene in ('guardian','robot'):
-        config=json.loads((ROOT/f'projects/sdf/presets/{PRESETS[scene]}.json').read_text())
+        config=json.loads((ROOT/str(resolve_sdf_path(f'projects/sdf/presets/{PRESETS[scene]}.json'))).read_text())
         document=json.loads((ROOT/config['authored-scene']).read_text())
         modes=['cached','cached-refined','balanced','analytic','hybrid','cached','balanced']
         actions=[dict(label=f'{i}-{mode}',scene=document,visible_scene=document,geometry_unchanged=True,
