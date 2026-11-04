@@ -12,7 +12,10 @@ packs; they are not golden-image tests.
   retained authoring/visual corrections; the user selected the observatory.
 - [Selected observatory detail passes](../notes/sdf-observatory-detail-2026-11.md):
   eight new native stills, original-draft comparison, local section scope and
-  retained modeling corrections; the new appearance awaits visual review.
+  retained modeling corrections; later user placement findings led to cleanup.
+- [Observatory cleanup](../notes/sdf-observatory-cleanup-2026-11.md): nine native
+  comparison/inspection views, serialized-pose support checks and retained
+  enlarged-base candidates; rounded-square layout recommended for user review.
 
 - [Terrain backdrop foundation](terrain-backdrop-foundation/README.md): the
   isolated terrain and glTF proof-consumer captures, source provenance, image

@@ -1,0 +1,55 @@
+{
+  "report_id": "5c97f621008fe2a960d7ec5ae3fd52dce5bd0b15881be278abf6bf5a9a5d12e5",
+  "title": "Cubey SDF \u2014 Observatory cleanup: supported stairs, clear instruments and dome slit",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-04T01:31:07.121254+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/5c97f621008fe2a960d7ec5ae3fd52dce5bd0b15881be278abf6bf5a9a5d12e5",
+  "file_count": 20,
+  "byte_count": 5855084,
+  "url": "http://starship:8787/reports/5c97f621008fe2a960d7ec5ae3fd52dce5bd0b15881be278abf6bf5a9a5d12e5/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-04T01:31:07.560041+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 29989,
+    "verified_url": "http://starship:8787/reports/5c97f621008fe2a960d7ec5ae3fd52dce5bd0b15881be278abf6bf5a9a5d12e5/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "reviewed_source_head": "765b4bdc",
+  "authoring": {
+    "generator": "projects/sdf/tools/author_observatory_cleanup.py",
+    "report_generator": "projects/sdf/tools/observatory_cleanup_report.py",
+    "template": "projects/sdf/tools/observatory_cleanup_report.html",
+    "selected_capture": "outputs/sdf/observatory-cleanup-20261103/final",
+    "export": "outputs/sdf/observatory-cleanup-20261103/final-report"
+  },
+  "scope": "Local content cleanup, enlarged round/square comparison, supported circulation and corrected dome slit. Nine static native captures. Recommended square layout awaits user review.",
+  "browser_acceptance": {
+    "state": "unavailable",
+    "reason": "Chrome connected, but both documented navigation and AX navigation failed with Cannot read properties of undefined (reading timeoutMs). The tab remained blank; no browser rendering or interaction pass is claimed.",
+    "source_checks": "Embedded JSON, JS syntax, all nine view mappings, local links and bundle fingerprints passed."
+  },
+  "asset_delivery": {
+    "state": "verified",
+    "http_sha256_files": 19
+  }
+}

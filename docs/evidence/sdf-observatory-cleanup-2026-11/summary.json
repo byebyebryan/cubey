@@ -1,0 +1,642 @@
+{
+  "format": "cubey.sdf.observatory-cleanup-evidence",
+  "version": 1,
+  "source_head": "765b4bdcaa9d713889f6836f34a9a3cb45015580",
+  "generator_sha256": "dc8e402734196e4b61097d75c17e8674d4b5df7dddea73e58dcd0722cfafda8f",
+  "selected_receipt": {
+    "path": "outputs/sdf/observatory-cleanup-20261103/final/captures.json",
+    "bytes": 48028,
+    "sha256": "29ac90f39eb1479e596972c510544518f9fd257ccf98f301d9e26169d52700d7"
+  },
+  "selected_views": [
+    {
+      "variant": "before",
+      "scene": "projects/sdf/scenes/observatory-2026-11/furnished.json",
+      "preset": "projects/sdf/presets/observatory-2026-11/furnished.json",
+      "leaves": 569,
+      "history_actions": 26,
+      "layout_check": null,
+      "view": "hero",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/before-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/before-hero.png"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/before-hero.png",
+      "image_sha256": "67627690a71ed93447c926cb882998c1128ac68c44b37cb033bf9c01e0a17828",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/before-scene.json",
+      "scene_sha256": "4a53a49d8ab8b06539076ac9ee8db4e3b75bcfaa163b2af2ebcb22075263adc4",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/before-config.json",
+      "config_sha256": "3e7f368fb569e7bcfc2273ecf4c13ccac5bc17a7a91bcc0160530f36d58294ed",
+      "stats": [
+        "sdf: authored instructions=1137 leaves=569 bricks=175424/262144 allocated=912997552 build_ms=893.441 filter_gpu_ms=8.01626 brick_gpu_ms=884.138 builds=1",
+        "sdf: authored geometry=d956b1050c690c93 appearance=f948cd0fb601593f",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.7498 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5183164"
+      ]
+    },
+    {
+      "variant": "round",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/round.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/round.json",
+      "leaves": 538,
+      "history_actions": 27,
+      "layout_check": {
+        "base": "round",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "hero",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/round-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/round-hero.png"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/round-hero.png",
+      "image_sha256": "d4e20665f63e37f3d9eb9f6bed685857a505520e18dfffd66dc3ce49c5ead04b",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/round-scene.json",
+      "scene_sha256": "63ee62fc53c1b903e0b65b7c22d127c9c6d26618a33d5ca50d2c2fac01f9edcb",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/round-config.json",
+      "config_sha256": "223e31cbe168829d0d035f405997610c440e2525d3a30d572a5f1ed0c51357c1",
+      "stats": [
+        "sdf: authored instructions=1075 leaves=538 bricks=196860/262144 allocated=912997552 build_ms=895.708 filter_gpu_ms=8.56627 brick_gpu_ms=886.026 builds=1",
+        "sdf: authored geometry=5dea8408b9760037 appearance=a9b1ebe0414854c0",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.66988 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5171804"
+      ]
+    },
+    {
+      "variant": "square",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+      "leaves": 536,
+      "history_actions": 27,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "hero",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-hero.png"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-hero.png",
+      "image_sha256": "7b4e4dfb6fc95cc10ac1ff6574356341d166f977e59f9e43a39c0c42178b2ee3",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-scene.json",
+      "scene_sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+      "config_sha256": "502d012afdc510b16597bc742274a3cbb517b360988659fb3ca8e482d49bc219",
+      "stats": [
+        "sdf: authored instructions=1071 leaves=536 bricks=194886/262144 allocated=912997552 build_ms=871.76 filter_gpu_ms=8.10746 brick_gpu_ms=862.6 builds=1",
+        "sdf: authored geometry=520e73ad9acde8ba appearance=6fd36b30b2031c4e",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.68057 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5144084"
+      ]
+    },
+    {
+      "variant": "square",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+      "leaves": 536,
+      "history_actions": 27,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "alternate",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-alternate.png",
+        "--yaw",
+        "-.62",
+        "--pitch",
+        ".48"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-alternate.png",
+      "image_sha256": "90a0091084ce94785aff4cb8fb92fbd8face035a59a3ca8fd8bdd2d0a0e2db6b",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-scene.json",
+      "scene_sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+      "config_sha256": "502d012afdc510b16597bc742274a3cbb517b360988659fb3ca8e482d49bc219",
+      "stats": [
+        "sdf: authored instructions=1071 leaves=536 bricks=194886/262144 allocated=912997552 build_ms=866.933 filter_gpu_ms=8.10237 brick_gpu_ms=857.779 builds=1",
+        "sdf: authored geometry=520e73ad9acde8ba appearance=6fd36b30b2031c4e",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=5.02782 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5144084"
+      ]
+    },
+    {
+      "variant": "square",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+      "leaves": 536,
+      "history_actions": 27,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "plan",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-plan.png",
+        "--yaw",
+        ".15",
+        "--pitch",
+        "1.10",
+        "--distance",
+        "1.35",
+        "--target-y",
+        "-.06"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-plan.png",
+      "image_sha256": "2beee731864f9febf55170101cab043b12a31ab668db27856e468b9ae5fac53d",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-scene.json",
+      "scene_sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+      "config_sha256": "502d012afdc510b16597bc742274a3cbb517b360988659fb3ca8e482d49bc219",
+      "stats": [
+        "sdf: authored instructions=1071 leaves=536 bricks=194886/262144 allocated=912997552 build_ms=891.527 filter_gpu_ms=8.11981 brick_gpu_ms=881.659 builds=1",
+        "sdf: authored geometry=520e73ad9acde8ba appearance=6fd36b30b2031c4e",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=5.04031 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5144084"
+      ]
+    },
+    {
+      "variant": "square",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+      "leaves": 536,
+      "history_actions": 27,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "slit",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-slit.png",
+        "--yaw",
+        "0",
+        "--pitch",
+        ".35",
+        "--distance",
+        ".72",
+        "--target-y",
+        ".12"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-slit.png",
+      "image_sha256": "05fa839a8d8899ab1eaf113615cd8e559ada17cb1a36b8720bb60d08f6f220bf",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-scene.json",
+      "scene_sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+      "config_sha256": "502d012afdc510b16597bc742274a3cbb517b360988659fb3ca8e482d49bc219",
+      "stats": [
+        "sdf: authored instructions=1071 leaves=536 bricks=194886/262144 allocated=912997552 build_ms=865.644 filter_gpu_ms=8.11555 brick_gpu_ms=856.449 builds=1",
+        "sdf: authored geometry=520e73ad9acde8ba appearance=6fd36b30b2031c4e",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.74456 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5144084"
+      ]
+    },
+    {
+      "variant": "square",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+      "leaves": 536,
+      "history_actions": 27,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "slit_rear",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-slit_rear.png",
+        "--yaw",
+        "3.14",
+        "--pitch",
+        ".75",
+        "--distance",
+        ".82",
+        "--target-y",
+        ".10"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-slit_rear.png",
+      "image_sha256": "f390501d8107d8c0ede24285cb27858b40cc72cf86ff40eabea7d140d6a028ec",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-scene.json",
+      "scene_sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-config.json",
+      "config_sha256": "502d012afdc510b16597bc742274a3cbb517b360988659fb3ca8e482d49bc219",
+      "stats": [
+        "sdf: authored instructions=1071 leaves=536 bricks=194886/262144 allocated=912997552 build_ms=869.183 filter_gpu_ms=8.12781 brick_gpu_ms=859.932 builds=1",
+        "sdf: authored geometry=520e73ad9acde8ba appearance=6fd36b30b2031c4e",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.65843 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=5144084"
+      ]
+    },
+    {
+      "variant": "square-section",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square-section.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square-section.json",
+      "leaves": 537,
+      "history_actions": 28,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "hero",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-section-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-section-hero.png"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-section-hero.png",
+      "image_sha256": "fb78e4105294ba0ae4e05334b80842cb69e283e43a04a58f810730badfb4c0b2",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-section-scene.json",
+      "scene_sha256": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-section-config.json",
+      "config_sha256": "6766e0b687164da5b5edf5e1758ad2488e16be4dbcee39e266687379ccc1495d",
+      "stats": [
+        "sdf: authored instructions=1073 leaves=537 bricks=166817/262144 allocated=912997552 build_ms=759.411 filter_gpu_ms=7.54842 brick_gpu_ms=750.911 builds=1",
+        "sdf: authored geometry=f5ebe13cfa8a0e1 appearance=1040f0ae16df3918",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.61949 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=4962764"
+      ]
+    },
+    {
+      "variant": "square-section",
+      "scene": "projects/sdf/scenes/observatory-cleanup-2026-11/square-section.json",
+      "preset": "projects/sdf/presets/observatory-cleanup-2026-11/square-section.json",
+      "leaves": 537,
+      "history_actions": 28,
+      "layout_check": {
+        "base": "square",
+        "stair_corners_checked": 40,
+        "landing_corners_checked": 4,
+        "supported_with_margin": 0.01,
+        "survey_feet_checked": 3,
+        "survey_to_stair_horizontal_clearance": 0.3255,
+        "survey_center": [
+          -0.27,
+          0.07
+        ],
+        "round_radius": 0.37,
+        "square_half": [
+          0.351,
+          0.326
+        ]
+      },
+      "view": "interior",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-section-config.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1600",
+        "--height",
+        "1200",
+        "--render-mode",
+        "balanced",
+        "--supersample",
+        "2",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-section-interior.png",
+        "--yaw",
+        ".14",
+        "--pitch",
+        ".30",
+        "--distance",
+        ".78",
+        "--target-y",
+        ".035"
+      ],
+      "image": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/square-section-interior.png",
+      "image_sha256": "02fff8e6b979dbaa4c29cfcffd8b4b5af79b11a1948b7cbc3e338fdf8b2a90d8",
+      "scene_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-section-scene.json",
+      "scene_sha256": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75",
+      "config_input": "/home/bryan/code/cubey/outputs/sdf/observatory-cleanup-20261103/final/inputs/square-section-config.json",
+      "config_sha256": "6766e0b687164da5b5edf5e1758ad2488e16be4dbcee39e266687379ccc1495d",
+      "stats": [
+        "sdf: authored instructions=1073 leaves=537 bricks=166817/262144 allocated=912997552 build_ms=844.44 filter_gpu_ms=9.18352 brick_gpu_ms=834.21 builds=1",
+        "sdf: authored geometry=f5ebe13cfa8a0e1 appearance=1040f0ae16df3918",
+        "sdf: trace=sampled field_bytes=912997552",
+        "sdf: shader pipelines=1 setup_ms=4.59287 route=general",
+        "sdf: source optimization requested=automatic effective=reference",
+        "sdf: render-mode requested=balanced effective=balanced trace=sampled cached=refine-normal axis=64 ss=2 generation=0 field_generation=1 field_bytes=912997552 region_bytes=4962764"
+      ]
+    }
+  ],
+  "binary": {
+    "path": "build/release/projects/sdf/sdf",
+    "bytes": 5196376,
+    "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+  },
+  "shader_fingerprints": "outputs/sdf/observatory-cleanup-20261103/final/captures.json#shaders",
+  "verification": {
+    "state": "passed",
+    "native_views": 9,
+    "width": 1600,
+    "height": 1200,
+    "render_mode": "balanced",
+    "supersample": 2,
+    "reproduced_inputs": 6,
+    "binary_unchanged": true,
+    "shader_hashes": 220,
+    "square_leaves": 536,
+    "section_leaves": 537,
+    "shared_section_leaf_definitions_identical": true,
+    "static_view_controls": 9,
+    "bundle_files": 20,
+    "layout": "layout-verification.json",
+    "documentation": {
+      "passed": true,
+      "pages_checked": 424,
+      "errors": 0,
+      "unreachable": 0
+    }
+  },
+  "layout": {
+    "round": {
+      "tread_corners_supported": 40,
+      "landing_corners_supported": 4,
+      "support_margin": 0.01,
+      "actual_tripod_feet": [
+        [
+          -0.31000000000000005,
+          -0.185,
+          0.04000000000000002
+        ],
+        [
+          -0.23,
+          -0.185,
+          0.04000000000000002
+        ],
+        [
+          -0.27,
+          -0.185,
+          0.10999999999999999
+        ]
+      ],
+      "tripod_pad_contact": true,
+      "tripod_clear_of_stairs": true
+    },
+    "square": {
+      "tread_corners_supported": 40,
+      "landing_corners_supported": 4,
+      "support_margin": 0.01,
+      "actual_tripod_feet": [
+        [
+          -0.31000000000000005,
+          -0.185,
+          0.04000000000000002
+        ],
+        [
+          -0.23,
+          -0.185,
+          0.04000000000000002
+        ],
+        [
+          -0.27,
+          -0.185,
+          0.10999999999999999
+        ]
+      ],
+      "tripod_pad_contact": true,
+      "tripod_clear_of_stairs": true
+    },
+    "before": {
+      "tread_corners_outside_old_terrace": 9
+    }
+  },
+  "delivery": {
+    "state": "verified",
+    "http_sha256_files": 19
+  },
+  "scope": "Local content cleanup and base candidates; static native qualification; square recommendation awaits user review."
+}

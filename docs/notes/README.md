@@ -284,6 +284,9 @@ Each record's status and evidence link identifies what is implemented.
 - [Selected observatory detail passes](sdf-observatory-detail-2026-11.md): richer
   site/facade, dome mechanism, telescope and furnished interior, with a scoped
   native architectural section and original-draft comparison.
+- [Observatory layout and dome cleanup](sdf-observatory-cleanup-2026-11.md):
+  supported stairs and landings, a separate observing pad, coherent slit trim,
+  and enlarged round/square base candidates after user visual review.
 - [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;

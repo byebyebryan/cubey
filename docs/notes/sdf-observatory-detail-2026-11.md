@@ -3,8 +3,9 @@
 Date: 2026-11-03
 
 Status: the user liked all three dioramas aesthetically and selected the
-observatory as the next SDF subject. Three native modeling passes are complete;
-the new appearance and cutaway await visual review.
+observatory as the next SDF subject. Three native modeling passes are complete.
+The user's review identified stair support, instrument placement and dome-trim
+problems; see the subsequent [layout and dome cleanup](sdf-observatory-cleanup-2026-11.md).
 
 [Review the observatory](http://starship:8787/reports/fc82736d322eebefa504777f8e2e4fb3ad7e4860655da61cb89bc056198317c4/).
 The report contains the original draft, each modeling pass, alternate views,
