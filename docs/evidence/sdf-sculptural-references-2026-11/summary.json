@@ -1,0 +1,35 @@
+{
+  "format": "cubey.sdf.sculptural-reference-evidence",
+  "version": 1,
+  "source_head": "6d496a3c9125befc4f3a62ff0a31e3e5dfcb4021",
+  "reference_roster": {
+    "path": "docs/evidence/sdf-sculptural-references-2026-11/references.json",
+    "bytes": 14719,
+    "sha256": "2e6853d19bf45ae30e52fd8d2dd070fa431f0525947f732e6101d03cc7f455f8"
+  },
+  "selected_export": "outputs/sdf/sculptural-reference-research-20261103/report-final",
+  "publication_receipt": "docs/evidence/sdf-sculptural-references-report-2026-11.json",
+  "verification": {
+    "references": 5,
+    "reference_images": 11,
+    "source_assets_visually_inspected": true,
+    "local_links_and_anchors": "pass",
+    "view_mappings": "pass",
+    "embedded_json": "pass",
+    "javascript_syntax": "pass",
+    "bundle_manifest": "pass",
+    "bundle_files": 14,
+    "http_asset_bytes_verified": 14,
+    "new_native_runs": 0,
+    "model_or_runtime_changes": false,
+    "browser_acceptance": {
+      "state": "unavailable",
+      "attempted_url": "http://starship:8787/reports/708e30d1e61c3389221629dc75e9e494596d711f6f5f743e6819137214c81959/",
+      "error": "Cannot read properties of undefined (reading 'timeoutMs')",
+      "scope": "Navigation failed on the initial export in the existing connected Chrome session. No browser UI or responsive acceptance is claimed for either export. Reference images were inspected directly."
+    }
+  },
+  "decision_state": "Recommendation only: first faithful tiger study; no new model selected",
+  "correction": "Final museum view labels replace a mistaken underside label on the fifth tiger view.",
+  "scope": "External visual research only. Earlier native draft validation remains historical and does not qualify a new artwork."
+}

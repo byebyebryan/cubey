@@ -1,0 +1,247 @@
+{
+  "format": "cubey.sdf.sculptural-reference-retention",
+  "version": 1,
+  "policy": "Retain downloaded reference evidence, source/credit records, verification and both report exports. No cleanup performed or authorized.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/baku-back.jpg",
+      "bytes": 57963,
+      "sha256": "8a089a55767d6328bc4594f4419d39f7c34ee8d947350a995e38299f0f36d8d6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/baku-front.jpg",
+      "bytes": 64201,
+      "sha256": "2a2332e0bf87ee42671b77bba1808c4acd3d9e7b7879e65229558022cc5cf874"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/baku-side.jpg",
+      "bytes": 51888,
+      "sha256": "d8120039d8f3708d9fbb35b044b419344e2f8aea25a34a001bd4164e13c658ed"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/owl.jpg",
+      "bytes": 2893822,
+      "sha256": "8ca2a26a32ca8db6d794c03306a02476af383d14b29dbc3d4530f9f47689c47c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/snail.png",
+      "bytes": 3853942,
+      "sha256": "e057634758a8aec731b923a79e80c52eb1fe6cc496ebcc68a9e52c8eceef2075"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/tiger-back.jpg",
+      "bytes": 44167,
+      "sha256": "208804eebaafd07c3eb2da88d397d5a1a7aba3025415c03e7846adfcd048c50e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/tiger-bottom.jpg",
+      "bytes": 41876,
+      "sha256": "8cf48fd0afb70d2b4f2a346b6d3d22e31fb887f6b68d30e2222b37684cbedb68"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/tiger-front.jpg",
+      "bytes": 34253,
+      "sha256": "4cc76c708fd733be40af6c9060d5c90f6fb66d119349cbca10e7acf6927fb79b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/tiger-other.jpg",
+      "bytes": 39438,
+      "sha256": "6dea8c783644d441fe0f089e21524908ed2dffc24d8fc662b35222aab6afc61c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/tiger-side.jpg",
+      "bytes": 44898,
+      "sha256": "84d91c05736e408479a697cce0c0622841fa5ea36f2649a9512848d0e8c94ab9"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/assets/tomb-guardian.jpg",
+      "bytes": 564562,
+      "sha256": "f7a558da4ddd3a8323f991293dc9788fe164b2b74a37e82e6448517bbdbee0fe"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/baku-back.jpg",
+      "bytes": 57963,
+      "sha256": "8a089a55767d6328bc4594f4419d39f7c34ee8d947350a995e38299f0f36d8d6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/baku-front.jpg",
+      "bytes": 64201,
+      "sha256": "2a2332e0bf87ee42671b77bba1808c4acd3d9e7b7879e65229558022cc5cf874"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/baku-side.jpg",
+      "bytes": 51888,
+      "sha256": "d8120039d8f3708d9fbb35b044b419344e2f8aea25a34a001bd4164e13c658ed"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/owl.jpg",
+      "bytes": 2893822,
+      "sha256": "8ca2a26a32ca8db6d794c03306a02476af383d14b29dbc3d4530f9f47689c47c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/snail.png",
+      "bytes": 3853942,
+      "sha256": "e057634758a8aec731b923a79e80c52eb1fe6cc496ebcc68a9e52c8eceef2075"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/tiger-back.jpg",
+      "bytes": 44167,
+      "sha256": "208804eebaafd07c3eb2da88d397d5a1a7aba3025415c03e7846adfcd048c50e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/tiger-bottom.jpg",
+      "bytes": 41876,
+      "sha256": "8cf48fd0afb70d2b4f2a346b6d3d22e31fb887f6b68d30e2222b37684cbedb68"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/tiger-front.jpg",
+      "bytes": 34253,
+      "sha256": "4cc76c708fd733be40af6c9060d5c90f6fb66d119349cbca10e7acf6927fb79b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/tiger-other.jpg",
+      "bytes": 39438,
+      "sha256": "6dea8c783644d441fe0f089e21524908ed2dffc24d8fc662b35222aab6afc61c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/tiger-side.jpg",
+      "bytes": 44898,
+      "sha256": "84d91c05736e408479a697cce0c0622841fa5ea36f2649a9512848d0e8c94ab9"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/assets/tomb-guardian.jpg",
+      "bytes": 564562,
+      "sha256": "f7a558da4ddd3a8323f991293dc9788fe164b2b74a37e82e6448517bbdbee0fe"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/index.html",
+      "bytes": 40189,
+      "sha256": "83de8c7c22fc4eeeac3a8dd03036c680bfb7ce7d4939d460bd4a8b5f823c2a34"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/references.json",
+      "bytes": 14715,
+      "sha256": "e54258263af622540eac21d4d725077b02f0015dbb1d5f9798cb602c46042c84"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report/source-manifest.json",
+      "bytes": 2359,
+      "sha256": "dd1305395c837cb313c40d982ce6b0e5d28ade3859ad11dec21d637f2b10e3bc"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/baku-back.jpg",
+      "bytes": 57963,
+      "sha256": "8a089a55767d6328bc4594f4419d39f7c34ee8d947350a995e38299f0f36d8d6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/baku-front.jpg",
+      "bytes": 64201,
+      "sha256": "2a2332e0bf87ee42671b77bba1808c4acd3d9e7b7879e65229558022cc5cf874"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/baku-side.jpg",
+      "bytes": 51888,
+      "sha256": "d8120039d8f3708d9fbb35b044b419344e2f8aea25a34a001bd4164e13c658ed"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/owl.jpg",
+      "bytes": 2893822,
+      "sha256": "8ca2a26a32ca8db6d794c03306a02476af383d14b29dbc3d4530f9f47689c47c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/snail.png",
+      "bytes": 3853942,
+      "sha256": "e057634758a8aec731b923a79e80c52eb1fe6cc496ebcc68a9e52c8eceef2075"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/tiger-back.jpg",
+      "bytes": 44167,
+      "sha256": "208804eebaafd07c3eb2da88d397d5a1a7aba3025415c03e7846adfcd048c50e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/tiger-bottom.jpg",
+      "bytes": 41876,
+      "sha256": "8cf48fd0afb70d2b4f2a346b6d3d22e31fb887f6b68d30e2222b37684cbedb68"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/tiger-front.jpg",
+      "bytes": 34253,
+      "sha256": "4cc76c708fd733be40af6c9060d5c90f6fb66d119349cbca10e7acf6927fb79b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/tiger-other.jpg",
+      "bytes": 39438,
+      "sha256": "6dea8c783644d441fe0f089e21524908ed2dffc24d8fc662b35222aab6afc61c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/tiger-side.jpg",
+      "bytes": 44898,
+      "sha256": "84d91c05736e408479a697cce0c0622841fa5ea36f2649a9512848d0e8c94ab9"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/assets/tomb-guardian.jpg",
+      "bytes": 564562,
+      "sha256": "f7a558da4ddd3a8323f991293dc9788fe164b2b74a37e82e6448517bbdbee0fe"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/index.html",
+      "bytes": 40201,
+      "sha256": "e651146c8151f129ef78cfda4d0dba159784187abb40648a3fcf1c84a447e33e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/references.json",
+      "bytes": 14719,
+      "sha256": "2e6853d19bf45ae30e52fd8d2dd070fa431f0525947f732e6101d03cc7f455f8"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/report-final/source-manifest.json",
+      "bytes": 2359,
+      "sha256": "6378483a2d30e5cd0bbe75f0a3cf128fbc896500233c59e57522db9d2c7aa2e2"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/downloads-extra.json",
+      "bytes": 624,
+      "sha256": "8e64b08bddf463083fba6da92f212df86921d12401b4f0c47ac7f7520b6f11b7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/downloads.json",
+      "bytes": 1145,
+      "sha256": "2bfbd245381e711ca9172a3211e8789fcf7793550dbdc3f6c085675dfa2cb25e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/dreams-oembed.json",
+      "bytes": 804,
+      "sha256": "359d25bc8918308dd97c6f7de8bb769c1b361deede20af6b5dcf5b7544d6e123"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/references.json",
+      "bytes": 14719,
+      "sha256": "2e6853d19bf45ae30e52fd8d2dd070fa431f0525947f732e6101d03cc7f455f8"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/sculptural_reference_report.html",
+      "bytes": 8738,
+      "sha256": "0d67b00242b44da70f3f2424ecb4eae8ef8247f8f6290421e6a6c63f175e46c0"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/sculptural_reference_report.py",
+      "bytes": 4433,
+      "sha256": "03a3d9004c1baa7d8326bbccf3460e5b6192c23c331e0b3962fcc5bdb6c55017"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/source-records/snail-download.json",
+      "bytes": 398,
+      "sha256": "627846d9f72c6719f91b10b1039635546365615e7ee7ca30e43e2ecbb08463ab"
+    },
+    {
+      "path": "outputs/sdf/sculptural-reference-research-20261103/verification.json",
+      "bytes": 821,
+      "sha256": "54a2f501f34fc9c7e1cbae189976351c0d26a6433127eef1740dc364e2afcd2d"
+    }
+  ],
+  "protected_bytes": 23219254,
+  "report_receipt": "docs/evidence/sdf-sculptural-references-report-2026-11.json",
+  "runtime_dependencies": "None added by this research pass; qualified SDF/runtime/build/cache retention remains unchanged and independently owned.",
+  "ownership": "This SDF visual-reference research packet only. It does not authorize pruning any earlier SDF, fluid, build, cache or published report.",
+  "complete": true
+}

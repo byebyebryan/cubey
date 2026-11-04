@@ -2,8 +2,10 @@
 
 Date: 2026-11-03
 
-Status: three native clay candidates delivered for art-direction review. No
-subject is selected for a finished scene yet.
+Status: rejected by user review for undefined form. Retain the three native
+clay candidates and their evidence as an unsuccessful audition. The subsequent
+[reference research](sdf-sculptural-references-2026-11.md) proposes a more specific
+form study; none of these drafts is selected for further detail.
 
 [Compare the drafts](http://starship:8787/reports/18163705d047cc16342f756fe76b795f23f968e3b0dd69a4dc4ab05e61a0220e/).
 Each has a carved hero, another angle and a separate uncarved modeling state.

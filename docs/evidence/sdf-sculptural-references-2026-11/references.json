@@ -1,0 +1,147 @@
+{
+  "format": "cubey.sdf.sculptural-reference-research",
+  "version": 1,
+  "accessed_on": "2026-11-03",
+  "status": "Reference shortlist and proposed study; no modeling selected or implemented",
+  "scope": "Visual source research after the user rejected the three clay drafts for undefined form. Suitability judgments are editorial inferences, not native fidelity or performance validation.",
+  "recommendation": "Use the Met recumbent tiger as the first faithful native form study. Keep Zhelong Xu's Cute Tomb Guardian as the stronger fantasy art-direction reference; it is a substantially larger modeling target.",
+  "references": [
+    {
+      "id": "tiger",
+      "title": "Netsuke of Recumbent Tiger",
+      "creator": "Japan, 19th century; maker not named in museum record",
+      "identity": "The Metropolitan Museum of Art, 1974.356.71; boxwood",
+      "source": "https://www.metmuseum.org/art/collection/search/59635",
+      "role": "Recommended first native form study",
+      "images": ["tiger-front.jpg", "tiger-side.jpg", "tiger-back.jpg", "tiger-other.jpg", "tiger-bottom.jpg"],
+      "image_labels": ["Museum view 1", "Museum view 2", "Museum view 3", "Museum view 4", "Museum view 5"],
+      "image_credit": "The Metropolitan Museum of Art. The Lesley and Emma Sheafer Collection, Bequest of Emma A. Sheafer, 1973. Public Domain / Open Access. Images unchanged.",
+      "rights_url": "https://www.metmuseum.org/art/collection/search/59635",
+      "form": "A low compressed body with a distinct rounded haunch, broad head, paired muzzle pads and two planted forepaws. The head nestles into the body, while the tail follows the outside of the rear mass. Soft surfaces retain changes of direction at the brow, cheek, paw and hip.",
+      "why": "It directly addresses the sleeper's weak body structure. Five museum views constrain the pose and contact points. The broad head, paws and haunch give us specific forms to reproduce before fur or stripes.",
+      "follow": ["Low body proportions and the height relationship between head and haunch", "Two distinct forepaws supporting the head, with readable spaces between them", "Broad cheek and muzzle shapes, small ears, brow and eye placement", "Tail integrated into the outer body contour rather than a separate thick ring"],
+      "defer": "Fur stippling, stripes, wood grain, glossy material and decorative incisions. Keep eyes and the mouth because they define the face; omit the tiny surface markings.",
+      "risk": "The dark wood and eye inlays improve recognition in the photograph. A clay study still has to establish face planes and paw separation. Five photos are useful constraints, not a calibrated scan or orthographic turntable.",
+      "native_scope": "A moderate authored CSG study using local blends, tapered strokes and deliberate cuts. Existing tools are plausible, but the ability to match these proportions and surfaces remains unproven."
+    },
+    {
+      "id": "tomb-guardian",
+      "title": "The (CUTE!) Tomb Guardian",
+      "creator": "Zhelong Xu, 2022",
+      "identity": "Creator portfolio; Tang-inspired fantasy sculpture rendered with a gilt-copper treatment",
+      "source": "https://www.behance.net/gallery/144796807/The-%28CUTE%29-Tomb-Guardian",
+      "role": "Strongest fantasy art-direction reference",
+      "images": ["tomb-guardian.jpg"],
+      "image_labels": ["Creator's front view"],
+      "image_credit": "Artwork and image © Zhelong Xu. Reference reproduction for visual commentary; no asset or code license is inferred. Image unchanged.",
+      "rights_url": "https://www.behance.net/gallery/144796807/The-%28CUTE%29-Tomb-Guardian",
+      "form": "A wide, heavy brow and short divided muzzle sit above a narrow chest and two firmly planted paws. Tall horns and mane clumps frame the face. The readable expression comes from the relationship between brow, eyes, cheek pads, nose and mouth, as well as the fine carving.",
+      "why": "This provides the kind of sculpted fantasy character the previous spirit lacked. Its large facial masses have specific roles, and the contrast between the compact face, small body and tall crown gives the design a strong hierarchy.",
+      "follow": ["Face width, low eyelids and compressed muzzle", "Relationship between a large head, narrow chest and grounded front paws", "Horn roots growing from the skull and a few large mane clumps", "Clear negative spaces around the ears and between crown elements"],
+      "defer": "Most mane strands, gilt-copper patina, small horn marks and the pierced decorative base. A form study should preserve the big mane clumps rather than replace them with generic tubes.",
+      "risk": "High modeling difficulty. Only one front view was inspected; the full portfolio page was blocked to direct fetching. No side or rear reconstruction is established. Simplifying away the brow, muzzle and mane structure would recreate the current problem.",
+      "native_scope": "A larger future sculpture study, with separate face and crown checkpoints. This is not a quick variation of the current Guardian, and it does not establish a new engine requirement."
+    },
+    {
+      "id": "owl",
+      "title": "Grand duc",
+      "creator": "François Pompon, 1927–1930",
+      "identity": "Musée d'Orsay, RF 4047 / AM 527; bronze statuette",
+      "source": "https://www.musee-orsay.fr/fr/oeuvres/grand-duc-9335",
+      "role": "Compact alternative; strongest test of economical shape",
+      "images": ["owl.jpg"],
+      "image_labels": ["Museum photograph, three-quarter view"],
+      "image_credit": "Photo: Gautier Poupeau, 2015, via Wikimedia Commons, CC BY 2.0. Image unchanged. Sculpture: François Pompon.",
+      "rights_url": "https://commons.wikimedia.org/wiki/File:Grand-Duc,_Fran%C3%A7ois_Pompon,_1927-1930_(16845943759).jpg",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "form": "An upright body leans into a broad facial shield. Recessed eyes, a strong central beak ridge, a controlled transition from face to breast, wing boundaries and simple feet give the smooth mass its identity.",
+      "why": "It is an example of sparse detail with a very definite form. We can inspect whether face planes, concavities and the body profile are working without introducing fur, a complicated pose or a detailed setting.",
+      "follow": ["Facial shield and central beak ridge rather than eyes cut into an egg", "Face-to-breast transition and the tilt of the head", "Broad wing surfaces and their controlled edges", "Body taper, feet and stable support"],
+      "defer": "Bronze patina, photographic reflections and tiny inscriptions. The pedestal can remain a simple support.",
+      "risk": "Low part count does not make the form easy. Broad noncircular cross-sections and subtle surface transitions need more control than a chain of round capsules. Only one photograph was inspected; more profile evidence would be needed for a faithful full-round study.",
+      "native_scope": "A small focused CSG study. Useful if we want to test broad planes and recesses before another anatomically complex creature."
+    },
+    {
+      "id": "snail",
+      "title": "Snail",
+      "creator": "Inigo Quilez",
+      "identity": "Shadertoy ld3Gz2; original SDF artwork identified in primary graphics research",
+      "source": "https://www.shadertoy.com/view/ld3Gz2",
+      "role": "Direct SDF benchmark for later organic scene work",
+      "images": ["snail.png"],
+      "image_labels": ["Published artwork preview"],
+      "image_credit": "Artwork © Inigo Quilez. Preview obtained from procegen's credited reference page, reproduced for visual commentary. Image unchanged; no shader or asset license is inferred.",
+      "rights_url": "https://procegen.konstantinmagnus.de/inspiring-shadertoy-artists",
+      "corroborating_source": "https://diglib.eg.org/bitstreams/c32e0e2a-7c9d-4d3a-bd32-d694a1cb3126/download",
+      "form": "The shell has a nested spiral, a strong lip and a clear attachment to a soft body. The foot follows its supporting stem, while the neck and unequal tentacles carry the gesture. Shell, flesh and leaf use different shapes as well as different materials.",
+      "why": "It shows an organic SDF subject with precise structural landmarks. The hard shell against soft flesh is a useful lesson in shape contrast, and the supporting stem gives the animal a convincing action and scale.",
+      "follow": ["Distinct shell whorls and aperture lip", "Shell-to-body attachment rather than a ball resting on a tube", "Soft foot wrapping its support and a purposeful neck curve", "Separated large forms before skin cells, bands or droplets"],
+      "defer": "Translucency, water droplets, complex foliage, microrelief, depth of field and animation. These make the finished image compelling but are separate from the form question.",
+      "risk": "The live shader was inaccessible through the research tools. Its attribution and SDF use were corroborated by Appearance-Driven Automatic 3D Model Simplification, section 8. No shader execution or source audit was performed. Cubey has no authored spiral-shell primitive in its documented set; a segment approximation would need its own visual check.",
+      "native_scope": "A later experiment after a successful form study. The full image would combine substantial geometry, shading and composition work."
+    },
+    {
+      "id": "baku",
+      "title": "Seated Baku (Mythical Creature Devouring Nightmares)",
+      "creator": "Japan, 18th century; maker not named in museum record",
+      "identity": "The Metropolitan Museum of Art, 10.211.1105; ivory netsuke",
+      "source": "https://www.metmuseum.org/art/collection/search/59035",
+      "role": "Supporting reference for a compact mythical beast",
+      "images": ["baku-front.jpg", "baku-side.jpg", "baku-back.jpg"],
+      "image_labels": ["Museum view 1", "Museum view 2", "Museum view 3"],
+      "image_credit": "The Metropolitan Museum of Art. Gift of Mrs. Russell Sage, 1910. Public Domain / Open Access. Images unchanged.",
+      "rights_url": "https://www.metmuseum.org/art/collection/search/59035",
+      "form": "A seated rear mass and planted paws support an upturned head and trunk. Deep spaces around the beard and chest contrast with the compact body. Flowing hair and rounded relief are organized around the pose.",
+      "why": "A useful historical companion to the contemporary guardian reference. It demonstrates a fantastic creature with a particular seated posture rather than an arbitrary set of horns and tubes.",
+      "follow": ["Weight of the seated body and planted paws", "Upturned head gesture", "Organized large hair clumps and chest opening"],
+      "defer": "The dense ornamental incisions and repeated small curls.",
+      "risk": "Much of the appeal comes from ornament and stained contrast; the narrow body and dense carving make this a harder first form study than the tiger. Three photographs were inspected.",
+      "native_scope": "Supporting reference, not proposed as another immediate draft."
+    }
+  ],
+  "method_sources": [
+    {
+      "title": "Ours blanc — François Pompon",
+      "url": "https://www.musee-orsay.fr/fr/oeuvres/ours-blanc-15496",
+      "takeaway": "The museum describes an animal sculpt observed and developed before detail was progressively eliminated. Use reduction to preserve specific animal structure, rather than starting from generic smoothness."
+    },
+    {
+      "title": "Make A (Mossy!) Rock — Media Molecule",
+      "url": "https://docs.indreams.me/en/create/resources/videos/make/make-a-mossy-rock",
+      "takeaway": "The official sequence includes subtractive shaping of the rock before moss and finish. A reminder that the eroded-refuge direction needs deliberately cut rock structure; surface treatment cannot supply that structure."
+    },
+    {
+      "title": "Make an Alien Character — Media Molecule",
+      "url": "https://docs.indreams.me/en/create/resources/videos/starting-out/grumpy-alien/make-an-alien-character",
+      "takeaway": "Body, eye and mouth are developed as distinct authored elements and then grouped. A Dreams-inspired aesthetic does not require blending every feature into one undifferentiated mass."
+    },
+    {
+      "title": "Sculpting With Kareem — Media Molecule",
+      "url": "https://www.youtube.com/watch?v=v27LZivpffQ",
+      "takeaway": "Creator/channel/title verified through YouTube's public oEmbed metadata. Retained as a process reference; the video was not watched in this pass, so no timecoded workflow claims are made."
+    }
+  ],
+  "proposed_study": {
+    "primary_reference": "tiger",
+    "decision_state": "Recommendation for user review, not an adopted subject or implementation authorization",
+    "stages": [
+      "Mark broad proportions and landmarks on the reference views; settle a consistent pose before writing geometry.",
+      "Match body, haunch, skull and forepaws in plain clay; compare front, both sides and rear against the museum views.",
+      "Add form-defining brow, muzzle, ear folds, paw divisions and selective creases. Use local blends and cuts to preserve these boundaries.",
+      "Review a small contact sheet before materials, fur markings or further subjects. Return to proportions if the same broad forms cannot be identified."
+    ],
+    "acceptance": [
+      "Body reads as a grounded crouching animal at thumbnail size.",
+      "Head, muzzle, two forepaws and rear haunch remain distinguishable in plain clay.",
+      "Paw/head/body contact is coherent from multiple angles; no accidental jaw or detached tail reading.",
+      "Secondary forms define the same animal as the reference before surface texture is added."
+    ],
+    "capability_boundary": "The documented primitive set includes sphere, box, capsule, cylinder, torus, capped cone and round-cone, with union, subtraction and smooth variants and positive uniform scaling. This pass proposes authoring with those tools; it does not prove image fidelity or request ellipsoids, deformations, freehand tools or engine changes."
+  },
+  "access_limits": [
+    "Quilez's website and the original Shadertoy page were inaccessible through the research tools. The Snail image was inspected via a credited preview and its SDF attribution corroborated by primary research.",
+    "The Tomb Guardian portfolio was indexed, but direct page fetch returned 403; one creator-CDN image was visually inspected. No unseen portfolio views are claimed.",
+    "The searched Snail YouTube URL no longer yielded oEmbed metadata; it is not recommended as a working video link.",
+    "Museum photographs are perspective references, not measurements or calibrated multi-view reconstruction."
+  ]
+}

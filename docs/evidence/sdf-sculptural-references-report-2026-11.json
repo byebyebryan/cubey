@@ -1,0 +1,47 @@
+{
+  "report_id": "bd4a2384ab44d9e45e2d1f4fec906b7f8c129711dac91ad9e45659ced216b22d",
+  "title": "SDF reference research — defined forms to follow",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-04T02:53:32.863229+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/bd4a2384ab44d9e45e2d1f4fec906b7f8c129711dac91ad9e45659ced216b22d",
+  "file_count": 14,
+  "byte_count": 7748289,
+  "url": "http://starship:8787/reports/bd4a2384ab44d9e45e2d1f4fec906b7f8c129711dac91ad9e45659ced216b22d/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-04T02:53:33.274497+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 40201,
+    "verified_url": "http://starship:8787/reports/bd4a2384ab44d9e45e2d1f4fec906b7f8c129711dac91ad9e45659ced216b22d/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "browser_acceptance": {
+    "state": "unavailable",
+    "attempted_url": "http://starship:8787/reports/708e30d1e61c3389221629dc75e9e494596d711f6f5f743e6819137214c81959/",
+    "error": "Cannot read properties of undefined (reading 'timeoutMs')",
+    "scope": "Navigation failed on the initial export in the existing connected Chrome session. No browser UI or responsive acceptance is claimed for either export. Reference images were inspected directly."
+  },
+  "superseded_report": {
+    "id": "708e30d1e61c3389221629dc75e9e494596d711f6f5f743e6819137214c81959",
+    "reason": "The fifth tiger photograph was initially labeled Underside; direct inspection showed another perspective view. Final labels use Museum view 1 through 5."
+  }
+}

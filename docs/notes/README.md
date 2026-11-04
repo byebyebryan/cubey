@@ -289,7 +289,10 @@ Each record's status and evidence link identifies what is implemented.
   and enlarged round/square base candidates after user visual review.
 - [Sculptural SDF clay drafts](sdf-sculptural-drafts-2026-11.md): a coiled sleeper,
   forest spirit and eroded refuge, each with carved/uncarved states and another
-  angle; new organic art direction after reconsidering the mechanical dioramas.
+  angle; rejected for undefined form after reconsidering the mechanical dioramas.
+- [Sculptural SDF reference research](sdf-sculptural-references-2026-11.md): tiger
+  netsuke, Pompon owl, Zhelong Xu guardian and Quilez Snail; visual sources and a
+  proposed faithful tiger study before further authored content.
 - [SDF sculpture study plan](sdf-sculpture-study-plan.md): the four-subject
   goal loop for a guardian bust, pierced vessel, carved arch and driftwood,
   with shared authoring gaps, construction presentation and native review gates;

@@ -18,7 +18,10 @@ packs; they are not golden-image tests.
   enlarged-base candidates; retained after the shift to sculptural art direction.
 - [Sculptural clay drafts](../notes/sdf-sculptural-drafts-2026-11.md): nine native
   carved/uncarved/alternate views of sleeper, spirit and refuge; source-pinned
-  inputs, retained correction rounds and explicit early-draft limitations.
+  inputs and correction rounds; rejected by user review for undefined form.
+- [Sculptural reference research](../notes/sdf-sculptural-references-2026-11.md):
+  five external references, eleven inspected views, source/credit records and
+  a proposed form study; no new native model or runtime qualification.
 
 - [Terrain backdrop foundation](terrain-backdrop-foundation/README.md): the
   isolated terrain and glTF proof-consumer captures, source provenance, image
