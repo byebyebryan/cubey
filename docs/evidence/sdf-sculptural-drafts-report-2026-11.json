@@ -1,0 +1,44 @@
+{
+  "report_id": "18163705d047cc16342f756fe76b795f23f968e3b0dd69a4dc4ab05e61a0220e",
+  "title": "SDF sculptural drafts — sleeper, spirit and refuge",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-04T02:31:27.784145+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/18163705d047cc16342f756fe76b795f23f968e3b0dd69a4dc4ab05e61a0220e",
+  "file_count": 24,
+  "byte_count": 4258055,
+  "url": "http://starship:8787/reports/18163705d047cc16342f756fe76b795f23f968e3b0dd69a4dc4ab05e61a0220e/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-04T02:31:28.213832+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 32755,
+    "verified_url": "http://starship:8787/reports/18163705d047cc16342f756fe76b795f23f968e3b0dd69a4dc4ab05e61a0220e/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  },
+  "browser_acceptance": {
+    "state": "unavailable",
+    "browser": "Existing connected Chrome session",
+    "attempt": "New report tab and goto of the published URL",
+    "error": "Cannot read properties of undefined (reading 'timeoutMs')",
+    "scope": "Native images inspected directly; static checks and HTTP delivery verified. Browser controls and responsive layout were not accepted in-browser."
+  }
+}

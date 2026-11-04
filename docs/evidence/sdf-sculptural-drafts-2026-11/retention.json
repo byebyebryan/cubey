@@ -1,0 +1,624 @@
+{
+  "format": "cubey.sdf.sculptural-drafts-retention",
+  "version": 1,
+  "policy": "Keep all correction rounds, final native evidence, analytical control, verification and report export. No deletion performed or authorized.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/analytic-control.json",
+      "bytes": 1280,
+      "sha256": "ce161e80daa53381d82f956e2cc7fda5bfda9db01fcf1c32707d885320af0fac"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/author_sculptural_drafts.py",
+      "bytes": 15885,
+      "sha256": "679df7389bc4a5a7667d924f71fc65b72d52355e94705ec7a691dbb3350ec3c6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/author_sculptures.py",
+      "bytes": 17041,
+      "sha256": "7c81b6cfa7020fa65abf30858ed6623adb9422a81b229f7d99c4c58717a301c6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/captures.json",
+      "bytes": 46549,
+      "sha256": "445d897dcee3c96faa56fc4f16516663c2f20d43b52038764a403613e26f5d84"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/coiled-sleeper-carved-hero.log",
+      "bytes": 717,
+      "sha256": "e41df75afbd5ece05b27a5810de71274498493e3a5eb827176c0d2230638e415"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/coiled-sleeper-carved-hero.png",
+      "bytes": 376571,
+      "sha256": "da45b7e69e3395fba7e2312f621dfcefe3c64e8b4d964e584b660d2b14b7bb44"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/coiled-sleeper-carved-profile.log",
+      "bytes": 719,
+      "sha256": "0d6968eb938692e071f6fe8a76cdad1fd3f50e69c463f724fbbb956366a90b54"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/coiled-sleeper-carved-profile.png",
+      "bytes": 399023,
+      "sha256": "1f86f03b1257fdeb7ddf1dd24ccdfea7fccdfe17f6c369df500f0ef9edb3d971"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/coiled-sleeper-mass-hero.log",
+      "bytes": 714,
+      "sha256": "a2ea0d8de3c2f01c99f8dd568b131e2fe4e580c478aaed4a658e84afd2722204"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/coiled-sleeper-mass-hero.png",
+      "bytes": 372464,
+      "sha256": "fa73a40665a29054c0ed402661f2782029830dc16b73f27b145037437b4af0f7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/eroded-refuge-carved-hero.log",
+      "bytes": 716,
+      "sha256": "6d9cb96c47ab41202d1a101319f503c3a77b5c364b70a4538fada75b9db5e7f7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/eroded-refuge-carved-hero.png",
+      "bytes": 387554,
+      "sha256": "eb202bbe0f2b82ef8bf5bf6cdabb7b9b289c979008e27e53c2958357c2650b91"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/eroded-refuge-carved-profile.log",
+      "bytes": 719,
+      "sha256": "f799ff142e759f549c8bf61c57ad14ef7ba4c61c960716b384b4caaaf082e666"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/eroded-refuge-carved-profile.png",
+      "bytes": 385998,
+      "sha256": "1f64078e71865aff25dcb1aaedbe049b0a582c1368818719e5b9bc5cb3a7b920"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/eroded-refuge-mass-hero.log",
+      "bytes": 714,
+      "sha256": "d41a460adc291f5e24b6422199d89f6ffcd98f5cbf5f428d0bf3f7fa3c6317fb"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/eroded-refuge-mass-hero.png",
+      "bytes": 387550,
+      "sha256": "2c45af129fba753d0c89bcf798723fd48eb3f2f98c6e31d68743f8b70d601c29"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/forest-spirit-carved-hero.log",
+      "bytes": 716,
+      "sha256": "ef193023cf2de13417e822518ac44a4fc714cd31a472190c502ac00e8d62f947"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/forest-spirit-carved-hero.png",
+      "bytes": 341947,
+      "sha256": "14c83a2c4abc08b56e87af2041519b6a8d344e1105ab3bd0a39bf8229178615c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/forest-spirit-carved-profile.log",
+      "bytes": 718,
+      "sha256": "42c0c1c97d25f96a0db25987b1dd029c2155b2d411b488a0b5cc4478d8eda653"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/forest-spirit-carved-profile.png",
+      "bytes": 340917,
+      "sha256": "e2919ad2121baa68535bc9dcd041a2d75bd639346ffe01dce464072394f1d853"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/forest-spirit-mass-hero.log",
+      "bytes": 714,
+      "sha256": "e505bcf34ec8460a202d49693df19385968632de906ba97e1acd8862c6043ff4"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/forest-spirit-mass-hero.png",
+      "bytes": 328575,
+      "sha256": "1204b1e2ec8f64b6f73699b0956e2e310500e13d3c3ea10cc80aec1ad0480f0e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/coiled-sleeper-carved-config.json",
+      "bytes": 384,
+      "sha256": "84679418de063b22d17de76b8368c021edda9c7b6a7a7fe9fade316edfa9cd74"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/coiled-sleeper-carved-scene.json",
+      "bytes": 182042,
+      "sha256": "1f454fac117a4a53a1f812e961bfb4981e92cf04da6ee9b25b2edad619d88feb"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/coiled-sleeper-mass-config.json",
+      "bytes": 382,
+      "sha256": "61739b1d211406a69144229e056c14471ad70d0f5763be98dbdd4b6a2f97f731"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/coiled-sleeper-mass-scene.json",
+      "bytes": 126558,
+      "sha256": "e1b2a09194676e23d2ba6bb4f6367fcd5a1bbf5d5417125e05895b448ac8b059"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/eroded-refuge-carved-config.json",
+      "bytes": 381,
+      "sha256": "3c2cea096dadbb67cb804bf04de84cf6d24d438f5b3e350d65dc0c79d8103ce5"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/eroded-refuge-carved-scene.json",
+      "bytes": 116812,
+      "sha256": "788821682ba88c25411791f865d534714a95f39851764e64da089c1500079571"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/eroded-refuge-mass-config.json",
+      "bytes": 379,
+      "sha256": "42afeca0a28c5155fe2c76aed3e1c6c03e9f4b8755049f5b6b85ddd928b975a9"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/eroded-refuge-mass-scene.json",
+      "bytes": 72977,
+      "sha256": "afdae3aa4c51f96285a1bea66b5c733aff9f0b51e338de51ed89945368a1e43b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/forest-spirit-carved-config.json",
+      "bytes": 382,
+      "sha256": "189176a8ec118aa0fca2f05298daa7b7860ab72cca562eaa6be9fbd2020fec2f"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/forest-spirit-carved-scene.json",
+      "bytes": 227873,
+      "sha256": "da237418e50b78542c7193e4b924d765d5b191bb1a1d5c6471d4a52e48243000"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/forest-spirit-mass-config.json",
+      "bytes": 380,
+      "sha256": "b5893ba128d8afee2c8829ec24bc3e084cb9167273617a5f221ecbc313d7dd59"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/inputs/forest-spirit-mass-scene.json",
+      "bytes": 148284,
+      "sha256": "4cf08240e7acb2dd899cc11fd2e06fd9acf0fee18740b191aa67c884f9049a4e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/refinement_author.py",
+      "bytes": 4614,
+      "sha256": "6aa1791e47b588eeebc501eb00330c77d399f4b07b75c98f67e07ade401d26ec"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/sdf_probe.py",
+      "bytes": 3650,
+      "sha256": "7e030c165e02cd09fb73f9f86f323ed772f8517cf74905fee49dc4738c43c421"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/refuge-analytic-control.png",
+      "bytes": 387378,
+      "sha256": "e341af8116fd9dd0cd6a96910787fc75ac7afb150fb6cc430cd61f767c58eef3"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/coiled-sleeper-carved-hero.png",
+      "bytes": 376571,
+      "sha256": "da45b7e69e3395fba7e2312f621dfcefe3c64e8b4d964e584b660d2b14b7bb44"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/coiled-sleeper-carved-profile.png",
+      "bytes": 399023,
+      "sha256": "1f86f03b1257fdeb7ddf1dd24ccdfea7fccdfe17f6c369df500f0ef9edb3d971"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/coiled-sleeper-mass-hero.png",
+      "bytes": 372464,
+      "sha256": "fa73a40665a29054c0ed402661f2782029830dc16b73f27b145037437b4af0f7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/eroded-refuge-carved-hero.png",
+      "bytes": 387554,
+      "sha256": "eb202bbe0f2b82ef8bf5bf6cdabb7b9b289c979008e27e53c2958357c2650b91"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/eroded-refuge-carved-profile.png",
+      "bytes": 385998,
+      "sha256": "1f64078e71865aff25dcb1aaedbe049b0a582c1368818719e5b9bc5cb3a7b920"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/eroded-refuge-mass-hero.png",
+      "bytes": 387550,
+      "sha256": "2c45af129fba753d0c89bcf798723fd48eb3f2f98c6e31d68743f8b70d601c29"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/forest-spirit-carved-hero.png",
+      "bytes": 341947,
+      "sha256": "14c83a2c4abc08b56e87af2041519b6a8d344e1105ab3bd0a39bf8229178615c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/forest-spirit-carved-profile.png",
+      "bytes": 340917,
+      "sha256": "e2919ad2121baa68535bc9dcd041a2d75bd639346ffe01dce464072394f1d853"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/assets/forest-spirit-mass-hero.png",
+      "bytes": 328575,
+      "sha256": "1204b1e2ec8f64b6f73699b0956e2e310500e13d3c3ea10cc80aec1ad0480f0e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/index.html",
+      "bytes": 32755,
+      "sha256": "26811ca26efd15e5201e2b555267dab39cdcc00ed7a577c3a93c1bf32d3b5fca"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/presets/coiled-sleeper-carved.json",
+      "bytes": 349,
+      "sha256": "e54008e82f4ea610acf57fc627979d0b3f443e9aa2d4cefece696023a257efd5"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/presets/coiled-sleeper-mass.json",
+      "bytes": 347,
+      "sha256": "09426d4ec050e2b47031ac9d386339906f41ee6f66462a95e16ea95d10b7eaee"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/presets/eroded-refuge-carved.json",
+      "bytes": 346,
+      "sha256": "17f1c2d85f16dbe38cc34b7fce352147aa225bac0fc9de837a7dbd76346037f7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/presets/eroded-refuge-mass.json",
+      "bytes": 344,
+      "sha256": "4f8d26925e8d375cd038bd58a045efd2393b67b5dc0f2cd98e5624350d5a8c9a"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/presets/forest-spirit-carved.json",
+      "bytes": 347,
+      "sha256": "a12bd8b5fac6c9cf037872106f973fcefdd3777c24281ca4fe4a882e14f895ca"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/presets/forest-spirit-mass.json",
+      "bytes": 345,
+      "sha256": "8921efa9880bc641cefe56a5984614aefb4fffcacb91c16a6c9529a232752353"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/review-data.json",
+      "bytes": 24169,
+      "sha256": "3d9804df472adb1f472a894235d04fa13945415d8b566882481bd9a0504ad6c8"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/scenes/coiled-sleeper-carved.json",
+      "bytes": 182042,
+      "sha256": "1f454fac117a4a53a1f812e961bfb4981e92cf04da6ee9b25b2edad619d88feb"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/scenes/coiled-sleeper-mass.json",
+      "bytes": 126558,
+      "sha256": "e1b2a09194676e23d2ba6bb4f6367fcd5a1bbf5d5417125e05895b448ac8b059"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/scenes/eroded-refuge-carved.json",
+      "bytes": 116812,
+      "sha256": "788821682ba88c25411791f865d534714a95f39851764e64da089c1500079571"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/scenes/eroded-refuge-mass.json",
+      "bytes": 72977,
+      "sha256": "afdae3aa4c51f96285a1bea66b5c733aff9f0b51e338de51ed89945368a1e43b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/scenes/forest-spirit-carved.json",
+      "bytes": 227873,
+      "sha256": "da237418e50b78542c7193e4b924d765d5b191bb1a1d5c6471d4a52e48243000"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/scenes/forest-spirit-mass.json",
+      "bytes": 148284,
+      "sha256": "4cf08240e7acb2dd899cc11fd2e06fd9acf0fee18740b191aa67c884f9049a4e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/report/source-manifest.json",
+      "bytes": 3908,
+      "sha256": "0ae09c5b543ef72c44e1cc37b3f53f13fe25e6562558a0e551183526e862b84d"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/author_sculptural_drafts.py",
+      "bytes": 15236,
+      "sha256": "a4ee5c33842200a4c66a08573e7845cab710ac018cca2fe44552c2e96bc0b666"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/author_sculptures.py",
+      "bytes": 17041,
+      "sha256": "7c81b6cfa7020fa65abf30858ed6623adb9422a81b229f7d99c4c58717a301c6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/captures.json",
+      "bytes": 33020,
+      "sha256": "ceb4613ee82606e7786865272229ce2b9cceabce30f1bfe8c132f119c83c2276"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/coiled-sleeper-carved-hero.log",
+      "bytes": 718,
+      "sha256": "01e2dbb2250530585cc1a244ebd83889c1bd157e78cf022e171658b028896885"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/coiled-sleeper-carved-hero.png",
+      "bytes": 420681,
+      "sha256": "1b20f5003cc8ab16563ee6668cfba4cb1044b43ecf634bd72c48663dfc5d3afe"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/eroded-refuge-carved-hero.log",
+      "bytes": 717,
+      "sha256": "e1193c3d095c8611f983fcc3eec2e20f0a59cd7f2aa242d11df016d9cdf47c48"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/eroded-refuge-carved-hero.png",
+      "bytes": 431604,
+      "sha256": "1ca9c89b0a33bc656cc5205e02c4be965805829c9a2758bae860bf52bd687443"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/forest-spirit-carved-hero.log",
+      "bytes": 717,
+      "sha256": "3a16016ae92eef28bbfc9c5350678ec90160496f83d4b5c72971c86312404434"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/forest-spirit-carved-hero.png",
+      "bytes": 348429,
+      "sha256": "a1ca5b028562c807bf5436c9d593fed24d1107626122a621b03c25f73fb035e0"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/inputs/coiled-sleeper-carved-config.json",
+      "bytes": 385,
+      "sha256": "f92d9af09be39482675ef07c810783c0b58b6c194e0b172b64c7f9d6dc4055e3"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/inputs/coiled-sleeper-carved-scene.json",
+      "bytes": 108984,
+      "sha256": "23dc11ca1a938c93abcbde929392e7a938cc2bbf6af1c94d48d05b682f512f15"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/inputs/eroded-refuge-carved-config.json",
+      "bytes": 382,
+      "sha256": "2a08b0003a8d63611b90becd31f10dba96f7cc7a188833db3cfb9f590e347424"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/inputs/eroded-refuge-carved-scene.json",
+      "bytes": 66121,
+      "sha256": "649834132fa65515e64832acff417f510672dc6dfcba1a6be06ba0a887a862e8"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/inputs/forest-spirit-carved-config.json",
+      "bytes": 383,
+      "sha256": "7f2b358c1f6e6113a1ea97e96ff95b8d16c9f994e98071afdb946db74c82dab7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/inputs/forest-spirit-carved-scene.json",
+      "bytes": 118197,
+      "sha256": "7b41190a396925303b184a1344e98c886864f9c9b80ae3dc9a4f6729e48c8e8e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/refinement_author.py",
+      "bytes": 4614,
+      "sha256": "6aa1791e47b588eeebc501eb00330c77d399f4b07b75c98f67e07ade401d26ec"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round1/sdf_probe.py",
+      "bytes": 3650,
+      "sha256": "7e030c165e02cd09fb73f9f86f323ed772f8517cf74905fee49dc4738c43c421"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/author_diorama_drafts.py",
+      "bytes": 34162,
+      "sha256": "4dc36d8f8ac92656114ca5d2037db5a3bccc2246b98521b19022ee9cb2b8fbab"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/author_sculptural_drafts.py",
+      "bytes": 15870,
+      "sha256": "4e955d315090d395b0fcdf27e9931a40a0ce450c67d5f37eb7042d51ec8cecc2"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/author_sculptures.py",
+      "bytes": 17041,
+      "sha256": "7c81b6cfa7020fa65abf30858ed6623adb9422a81b229f7d99c4c58717a301c6"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/captures.json",
+      "bytes": 46597,
+      "sha256": "7fa6f92748b61bb6daaa125c2fe5c82f464d61e4a7aa7f93f5ea49b1cae99978"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/coiled-sleeper-carved-hero.log",
+      "bytes": 718,
+      "sha256": "c8866ecaff9597736f0428574a52cbefeafe2bb3e3dba9550f7ae7c5b5958c1e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/coiled-sleeper-carved-hero.png",
+      "bytes": 376571,
+      "sha256": "da45b7e69e3395fba7e2312f621dfcefe3c64e8b4d964e584b660d2b14b7bb44"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/coiled-sleeper-carved-profile.log",
+      "bytes": 721,
+      "sha256": "3c70405074d22902a88445d0b261088d554e6826cb5196f41d1c8296a98708d4"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/coiled-sleeper-carved-profile.png",
+      "bytes": 399023,
+      "sha256": "1f86f03b1257fdeb7ddf1dd24ccdfea7fccdfe17f6c369df500f0ef9edb3d971"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/coiled-sleeper-mass-hero.log",
+      "bytes": 716,
+      "sha256": "4a91817fdca9249b2200f1483e035cbc122e6720b101f32cc9a79777ae3d49ae"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/coiled-sleeper-mass-hero.png",
+      "bytes": 372464,
+      "sha256": "fa73a40665a29054c0ed402661f2782029830dc16b73f27b145037437b4af0f7"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/eroded-refuge-carved-hero.log",
+      "bytes": 718,
+      "sha256": "330732c85cd0c21254733dd1a25ff8276ea4ab0bec28745c7506b5c0c5c912aa"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/eroded-refuge-carved-hero.png",
+      "bytes": 387554,
+      "sha256": "eb202bbe0f2b82ef8bf5bf6cdabb7b9b289c979008e27e53c2958357c2650b91"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/eroded-refuge-carved-profile.log",
+      "bytes": 721,
+      "sha256": "a206e74dd0e897ccf7f13e7f48af1979bc4179ea88bbff3203f435318b9c27b1"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/eroded-refuge-carved-profile.png",
+      "bytes": 385998,
+      "sha256": "1f64078e71865aff25dcb1aaedbe049b0a582c1368818719e5b9bc5cb3a7b920"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/eroded-refuge-mass-hero.log",
+      "bytes": 714,
+      "sha256": "5ed4ba2703333e8cd2191c3b77062ad800c8f0462617bbe5f8b3f1fda1a7a2c0"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/eroded-refuge-mass-hero.png",
+      "bytes": 387550,
+      "sha256": "2c45af129fba753d0c89bcf798723fd48eb3f2f98c6e31d68743f8b70d601c29"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/forest-spirit-carved-hero.log",
+      "bytes": 717,
+      "sha256": "d321181a768a811e4f003b7e42016d0437c83fdc3a39dc77ea434ae3051f44ee"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/forest-spirit-carved-hero.png",
+      "bytes": 340048,
+      "sha256": "d725f795191b238eedcf2df9cd18c8babe7a6bb6c3e8a100d167d7347317f75c"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/forest-spirit-carved-profile.log",
+      "bytes": 719,
+      "sha256": "1c0d23a1af1b1a0d222b5c3c49ee4c149992c0003fac8e9f1fbc9c10a8f31fc1"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/forest-spirit-carved-profile.png",
+      "bytes": 339453,
+      "sha256": "ca14d118201c19cbe00dd68f417735638e39b9a87c3eb462261db7db2c9802fb"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/forest-spirit-mass-hero.log",
+      "bytes": 715,
+      "sha256": "1a28f8b20079664a4d9453fab11f4e7163984f108c3e0661e3964308ad03931d"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/forest-spirit-mass-hero.png",
+      "bytes": 328575,
+      "sha256": "1204b1e2ec8f64b6f73699b0956e2e310500e13d3c3ea10cc80aec1ad0480f0e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/coiled-sleeper-carved-config.json",
+      "bytes": 385,
+      "sha256": "4f57eae9314e464021c7c60ab487ed6319bf125d6f2193a3313c40ea9a759d2e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/coiled-sleeper-carved-scene.json",
+      "bytes": 182042,
+      "sha256": "1f454fac117a4a53a1f812e961bfb4981e92cf04da6ee9b25b2edad619d88feb"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/coiled-sleeper-mass-config.json",
+      "bytes": 383,
+      "sha256": "f78d1b58f369cf68921b33ea7126efb72168b5353fff5940858f69c9ba721b55"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/coiled-sleeper-mass-scene.json",
+      "bytes": 126558,
+      "sha256": "e1b2a09194676e23d2ba6bb4f6367fcd5a1bbf5d5417125e05895b448ac8b059"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/eroded-refuge-carved-config.json",
+      "bytes": 382,
+      "sha256": "99619bb6bb7182de1e595e03a656d800b2710eaaf3bf608d465035ed36bfdb5e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/eroded-refuge-carved-scene.json",
+      "bytes": 116812,
+      "sha256": "788821682ba88c25411791f865d534714a95f39851764e64da089c1500079571"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/eroded-refuge-mass-config.json",
+      "bytes": 380,
+      "sha256": "d89e70b5181a82730c828c7cb4113971c3a50eaa153c9f9a42c457dc60db4269"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/eroded-refuge-mass-scene.json",
+      "bytes": 72977,
+      "sha256": "afdae3aa4c51f96285a1bea66b5c733aff9f0b51e338de51ed89945368a1e43b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/forest-spirit-carved-config.json",
+      "bytes": 383,
+      "sha256": "54d2454b256a84316437580306b7111e999135578e68cc6dc343ed9c65f07fa9"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/forest-spirit-carved-scene.json",
+      "bytes": 244546,
+      "sha256": "631444087ee610ca7d904794b39d8358ab777ca95c023282d0e1328921a64583"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/forest-spirit-mass-config.json",
+      "bytes": 381,
+      "sha256": "582e3737d007dd10941dc70a89ef1b061c382afd621fc21f7899ac003ccefa1f"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/inputs/forest-spirit-mass-scene.json",
+      "bytes": 148284,
+      "sha256": "4cf08240e7acb2dd899cc11fd2e06fd9acf0fee18740b191aa67c884f9049a4e"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/refinement_author.py",
+      "bytes": 4614,
+      "sha256": "6aa1791e47b588eeebc501eb00330c77d399f4b07b75c98f67e07ade401d26ec"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/round2/sdf_probe.py",
+      "bytes": 3650,
+      "sha256": "7e030c165e02cd09fb73f9f86f323ed772f8517cf74905fee49dc4738c43c421"
+    },
+    {
+      "path": "outputs/sdf/sculptural-drafts-20261103/verification.json",
+      "bytes": 634,
+      "sha256": "2bf274a07d72b2e67484835d3ba0fbabcaf5090a4a746f54ec2eacebc5eae06b"
+    }
+  ],
+  "protected_bytes": 14929494,
+  "external_runtime": {
+    "binary": {
+      "path": "build/release/projects/sdf/sdf",
+      "bytes": 5196376,
+      "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+    },
+    "shader_directory": "build/release/projects/sdf/shaders",
+    "shader_fingerprints": {
+      "path": "outputs/sdf/sculptural-drafts-20261103/final/captures.json",
+      "bytes": 46549,
+      "sha256": "445d897dcee3c96faa56fc4f16516663c2f20d43b52038764a403613e26f5d84"
+    }
+  },
+  "report_receipt": "docs/evidence/sdf-sculptural-drafts-report-2026-11.json",
+  "ownership": "This SDF clay-draft evidence packet only. Earlier SDF, fluid, qualified runtimes and all other build/cache/output retention are independent.",
+  "complete": true
+}

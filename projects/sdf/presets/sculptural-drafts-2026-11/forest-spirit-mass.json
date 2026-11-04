@@ -1,0 +1,16 @@
+{
+  "authored-scene": "projects/sdf/scenes/sculptural-drafts-2026-11/forest-spirit-mass.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "yaw": 0.28,
+  "pitch": 0.23,
+  "distance": 1.18,
+  "target-y": 0.015,
+  "sun-elevation": 42,
+  "sun-azimuth": 140,
+  "shadows": 1,
+  "ao": true,
+  "ground": false,
+  "exposure": 0.45,
+  "supersample": 2
+}

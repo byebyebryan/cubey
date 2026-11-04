@@ -1,0 +1,16 @@
+{
+  "authored-scene": "projects/sdf/scenes/sculptural-drafts-2026-11/eroded-refuge-carved.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "yaw": 0.4,
+  "pitch": 0.28,
+  "distance": 1.16,
+  "target-y": -0.01,
+  "sun-elevation": 42,
+  "sun-azimuth": 140,
+  "shadows": 1,
+  "ao": true,
+  "ground": false,
+  "exposure": 0.45,
+  "supersample": 2
+}

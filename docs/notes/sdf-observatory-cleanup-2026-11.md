@@ -2,9 +2,11 @@
 
 Date: 2026-11-03
 
-Status: the user's placement/roof review is addressed in native candidates.
-The enlarged rounded-square base is recommended; both new base shapes remain
-available for visual comparison. The recommendation awaits user review.
+Status: retained mechanical/architectural study. The placement/roof review was
+addressed in native candidates, with enlarged round and rounded-square bases.
+The user subsequently reconsidered the overall diorama direction as too regular
+and mechanical; the next audition is [sculptural clay drafts](sdf-sculptural-drafts-2026-11.md).
+The base recommendation below belongs to this earlier layout study.
 
 [Review the cleanup](http://starship:8787/reports/5c97f621008fe2a960d7ec5ae3fd52dce5bd0b15881be278abf6bf5a9a5d12e5/).
 It includes the previous layout, enlarged round and square bases, a plan view,
