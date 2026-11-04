@@ -1,0 +1,58 @@
+{
+  "format": "cubey.sdf.showcase",
+  "version": 1,
+  "status": "Owner-approved models",
+  "approvedModelCommit": "cb9fc78d",
+  "entries": [
+    {
+      "id": "observatory",
+      "title": "Hill observatory",
+      "scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "approvedSceneSha256": "762f1f050d48cb15c6d16e3061a9e285f6985dfff55236bda7eac5a575e8fe48",
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+      "buildPreset": "projects/sdf/presets/csg-showcase-2026-11/observatory-build.json",
+      "filmPreset": "projects/sdf/presets/csg-showcase-2026-11/observatory-film.json",
+      "durationSeconds": 10,
+      "constructionSeconds": null
+    },
+    {
+      "id": "robot",
+      "title": "Field-kit robot",
+      "scene": "projects/sdf/scenes/csg-showcase-2026-11/robot.json",
+      "approvedSceneSha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/robot.json",
+      "buildPreset": "projects/sdf/presets/csg-showcase-2026-11/robot-build.json",
+      "filmPreset": "projects/sdf/presets/csg-showcase-2026-11/robot-film.json",
+      "durationSeconds": 16,
+      "constructionSeconds": 10
+    },
+    {
+      "id": "canal-mill",
+      "title": "Canal mill",
+      "scene": "projects/sdf/scenes/csg-showcase-2026-11/canal-mill.json",
+      "approvedSceneSha256": "3d08768f0d4a85b4611c08b8fc691de8f205b12ed7232cc3aff2abcb3a590d31",
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill.json",
+      "buildPreset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill-build.json",
+      "filmPreset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill-film.json",
+      "durationSeconds": 10,
+      "constructionSeconds": null
+    },
+    {
+      "id": "courtyard",
+      "title": "Terraced courtyard",
+      "scene": "projects/sdf/scenes/csg-showcase-2026-11/courtyard.json",
+      "approvedSceneSha256": "8eed0257e576e019f12018580a424003efaa0a9359e60f987f74075250879ba9",
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/courtyard.json",
+      "buildPreset": "projects/sdf/presets/csg-showcase-2026-11/courtyard-build.json",
+      "filmPreset": "projects/sdf/presets/csg-showcase-2026-11/courtyard-film.json",
+      "durationSeconds": 10,
+      "constructionSeconds": null
+    }
+  ],
+  "cutaway": {
+    "intactPreset": "projects/sdf/presets/csg-showcase-2026-11/observatory-cutaway-intact.json",
+    "sectionPreset": "projects/sdf/presets/csg-showcase-2026-11/observatory-cutaway-section.json",
+    "sectionScene": "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+    "approvedSectionSha256": "ba6a401c89a9501ad852a985f8d5837a784d7bc3ecd81069500937dbb1133308"
+  }
+}

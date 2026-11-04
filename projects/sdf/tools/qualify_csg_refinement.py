@@ -81,10 +81,11 @@ def support_audit(document):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--binary', type=Path, default=Path('build/release/projects/sdf/sdf'))
     args = parser.parse_args()
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
-    binary = ROOT/'build/release/projects/sdf/sdf'
+    binary = (ROOT/args.binary).resolve()
     shaders = {p.name:sha(p) for p in sorted((binary.parent/'shaders').glob('*.spv'))}
     receipt = dict(format='cubey.sdf.form-refinement-qualification', version=1,
                    captured_utc=dt.datetime.now(dt.timezone.utc).isoformat(),

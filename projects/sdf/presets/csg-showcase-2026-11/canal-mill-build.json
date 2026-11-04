@@ -1,0 +1,20 @@
+{
+  "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/canal-mill.json",
+  "atlas-axis": 64,
+  "motion": "presentation",
+  "yaw": 0.63,
+  "pitch": 0.36,
+  "distance": 1.1,
+  "target-y": -0.005,
+  "sun-elevation": 43,
+  "sun-azimuth": 135,
+  "shadows": 1,
+  "ao": true,
+  "ground": false,
+  "exposure": 0.4,
+  "supersample": 2,
+  "render-mode": "balanced",
+  "duration": 32,
+  "construction-seconds": 24,
+  "orbit-turns": 0.08
+}

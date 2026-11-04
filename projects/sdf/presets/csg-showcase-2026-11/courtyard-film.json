@@ -1,0 +1,19 @@
+{
+  "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/courtyard.json",
+  "atlas-axis": 64,
+  "motion": "orbit",
+  "yaw": 0.12300888156922485,
+  "pitch": 0.39,
+  "distance": 1.16,
+  "target-y": 0.015,
+  "sun-elevation": 43,
+  "sun-azimuth": 135,
+  "shadows": 1,
+  "ao": true,
+  "ground": false,
+  "exposure": 0.4,
+  "supersample": 2,
+  "render-mode": "balanced",
+  "duration": 10,
+  "orbit-turns": 0.12
+}
