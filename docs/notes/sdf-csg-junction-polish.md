@@ -108,3 +108,8 @@ native evidence, frozen inputs and delivered report are protected by its
 retention manifest. No cleanup or deduplication was performed. Guardian stays
 retired; the separate horse work remains untouched. Public media, push and
 deployment are unchanged.
+
+Follow-up: the observatory base trim now overlaps through all four corners in
+both the intact and section scenes. The [small native before/after report](http://starship:8787/reports/2df2e6008127e27d18d33e428f3778ff0076e95a8328b5baf7b6e8e2e732d20e/)
+and [verification receipt](../evidence/sdf-observatory-trim-2026-11.json) retain
+the three new captures. Histories, materials and all other primitives are unchanged.

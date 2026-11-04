@@ -49,6 +49,10 @@ def polish(document,subject):
                     if c is not replacement:visit(c)
         visit(doc['root'])
     if subject.startswith('observatory'):
+        # Overlap the border cores at each corner, beyond their rounded ends.
+        for border in groups['terrace-border']:
+            axis=0 if abs(border['position'][0])<1e-9 else 2
+            border['half_extent'][axis]=.359 if axis==0 else .334
         # A single landing overlaps the circular balcony at the same elevation.
         one('top-landing').update(position=[.133,-.081,.018],half_extent=[.096,.009,.027],rounding=.001)
         one('top-landing-support').update(position=[.137,-.145,.018],half_extent=[.091,.057,.029])

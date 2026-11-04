@@ -1,0 +1,327 @@
+{
+  "baseline_head": "b32d29110702e93b1d6361596bdbef042693cc25",
+  "generator_sha256": "fbed3a16639c1c46b4ab125f40f3e696b43b6bf537f18df75df7dbd49fc84e43",
+  "binary_sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+  "runs": [
+    {
+      "subject": "observatory",
+      "view": "hero",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1440",
+        "--height",
+        "1080",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-trim-20261104/report/images/observatory-hero-after.png"
+      ],
+      "image": "outputs/sdf/observatory-trim-20261104/report/images/observatory-hero-after.png",
+      "image_sha256": "4244aa9e6de4ff8849e31e160f086d76f257c9605b54ec40dc1ee587e77b8a29",
+      "before_source": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-hero.png",
+      "before_sha256": "752c2b7ba6cf3da326ab47af684e688a44e2cbf13c770c9327f330920311cb45",
+      "log_sha256": "e878502129ea067eb5d1b10bc0f7b3a5361c630859c546a395d4519207caed02"
+    },
+    {
+      "subject": "observatory",
+      "view": "junction",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1440",
+        "--height",
+        "1080",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-trim-20261104/report/images/observatory-junction-after.png",
+        "--yaw",
+        ".55",
+        "--pitch",
+        ".52",
+        "--distance",
+        ".72",
+        "--target-y",
+        "-.10"
+      ],
+      "image": "outputs/sdf/observatory-trim-20261104/report/images/observatory-junction-after.png",
+      "image_sha256": "4583130f70a995b2b0a5cb0dd60fdcfcffcccc86354336e9b17f8cc350d62dbc",
+      "before_source": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-junction.png",
+      "before_sha256": "2819fd18fa93e7b85e7dd1635a57ad169777d5a6bb3f4557cd5dd76def3dbfb1",
+      "log_sha256": "685ab70c7ff09b089084e03618a29006970457fafa713727ffff536798500a30"
+    },
+    {
+      "subject": "observatory-section",
+      "view": "hero",
+      "command": [
+        "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+        "--config",
+        "/home/bryan/code/cubey/projects/sdf/presets/csg-showcase-2026-11/observatory-section.json",
+        "--headless",
+        "--require-validation",
+        "--frames",
+        "1",
+        "--width",
+        "1440",
+        "--height",
+        "1080",
+        "--output",
+        "/home/bryan/code/cubey/outputs/sdf/observatory-trim-20261104/report/images/observatory-section-hero-after.png"
+      ],
+      "image": "outputs/sdf/observatory-trim-20261104/report/images/observatory-section-hero-after.png",
+      "image_sha256": "465ec4cdf8f25058ae93ee83e5114416ebcd51960768b8eb2060c7b5669cb3f3",
+      "before_source": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-section-after-hero.png",
+      "before_sha256": "5117d5a4b896cd321f92454d38a5ad03e70698e306837dfe43922824566d5da2",
+      "log_sha256": "52f156dad2df1f2286ffd0cee43f2830498dc1b95e25271316b842cc6e4e11c8"
+    }
+  ],
+  "checks": [
+    {
+      "subject": "observatory",
+      "structural": {
+        "leaves": 277,
+        "tree_nodes": 329,
+        "history_actions": 25,
+        "complete_history": true,
+        "unique_names": true,
+        "polarity": true
+      },
+      "corner_overlap": [
+        {
+          "point": [
+            -0.353,
+            -0.19,
+            -0.328
+          ],
+          "overlap_depth": 0.007
+        },
+        {
+          "point": [
+            -0.353,
+            -0.19,
+            0.328
+          ],
+          "overlap_depth": 0.007
+        },
+        {
+          "point": [
+            0.353,
+            -0.19,
+            -0.328
+          ],
+          "overlap_depth": 0.007
+        },
+        {
+          "point": [
+            0.353,
+            -0.19,
+            0.328
+          ],
+          "overlap_depth": 0.007
+        }
+      ],
+      "scene_sha256": "762f1f050d48cb15c6d16e3061a9e285f6985dfff55236bda7eac5a575e8fe48",
+      "changed_nodes": [
+        "terrace-border-0008",
+        "terrace-border-0009",
+        "terrace-border-0010",
+        "terrace-border-0011"
+      ],
+      "history_unchanged": true,
+      "materials_unchanged": true
+    },
+    {
+      "subject": "observatory-section",
+      "structural": {
+        "leaves": 278,
+        "tree_nodes": 332,
+        "history_actions": 26,
+        "complete_history": true,
+        "unique_names": true,
+        "polarity": true
+      },
+      "corner_overlap": [
+        {
+          "point": [
+            -0.353,
+            -0.19,
+            -0.328
+          ],
+          "overlap_depth": 0.007
+        },
+        {
+          "point": [
+            -0.353,
+            -0.19,
+            0.328
+          ],
+          "overlap_depth": 0.007
+        },
+        {
+          "point": [
+            0.353,
+            -0.19,
+            -0.328
+          ],
+          "overlap_depth": 0.007
+        },
+        {
+          "point": [
+            0.353,
+            -0.19,
+            0.328
+          ],
+          "overlap_depth": 0.007
+        }
+      ],
+      "scene_sha256": "ba6a401c89a9501ad852a985f8d5837a784d7bc3ecd81069500937dbb1133308",
+      "changed_nodes": [
+        "terrace-border-0008",
+        "terrace-border-0009",
+        "terrace-border-0010",
+        "terrace-border-0011"
+      ],
+      "history_unchanged": true,
+      "materials_unchanged": true
+    }
+  ],
+  "passed": true,
+  "runtime_unchanged": true,
+  "report": {
+    "report_id": "2df2e6008127e27d18d33e428f3778ff0076e95a8328b5baf7b6e8e2e732d20e",
+    "title": "Cubey SDF \u2014 Observatory corner trim fix",
+    "project": "cubey",
+    "entrypoint": "index.html",
+    "created_at": "2026-11-04T18:11:14.319588+00:00",
+    "state": "published",
+    "schema": 1,
+    "publication": "created",
+    "origin": "starship",
+    "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/2df2e6008127e27d18d33e428f3778ff0076e95a8328b5baf7b6e8e2e732d20e",
+    "file_count": 10,
+    "byte_count": 3326634,
+    "url": "http://starship:8787/reports/2df2e6008127e27d18d33e428f3778ff0076e95a8328b5baf7b6e8e2e732d20e/",
+    "catalog": {
+      "state": "updated"
+    },
+    "delivery": {
+      "checked_at": "2026-11-04T18:11:14.756751+00:00",
+      "checked_from": "starship",
+      "state": "verified",
+      "http_status": 200,
+      "bytes": 2605,
+      "verified_url": "http://starship:8787/reports/2df2e6008127e27d18d33e428f3778ff0076e95a8328b5baf7b6e8e2e732d20e/"
+    },
+    "catalog_url": "http://starship:8787/reports/",
+    "project_url": "http://starship:8787/reports/#project=cubey",
+    "server": {
+      "state": "running",
+      "session": "codex-report-server",
+      "session_id": "$0",
+      "pid": 23164,
+      "url": "http://starship:8787/reports/",
+      "version": "0.1.0-preview.10",
+      "reused": true
+    }
+  },
+  "http_files_verified": 10,
+  "compiled_shaders_unchanged": 220,
+  "scope": "Only four border half extents in each observatory variant; generator preserved. No new performance or browser acceptance claim.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/changes.json",
+      "sha256": "4cb0ee9fc49e62d78115c7ac61de0c7de79a16466df50ce2dbe7856f79b4ec36",
+      "bytes": 104831
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/capture.py",
+      "sha256": "c976b9f8e3abeaffc4993eb335778785a40bdf493a3ff8a1120c08b05fdcd74d",
+      "bytes": 5081
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/observatory-hero.log",
+      "sha256": "e878502129ea067eb5d1b10bc0f7b3a5361c630859c546a395d4519207caed02",
+      "bytes": 721
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/observatory-junction.log",
+      "sha256": "685ab70c7ff09b089084e03618a29006970457fafa713727ffff536798500a30",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/observatory-section-hero.log",
+      "sha256": "52f156dad2df1f2286ffd0cee43f2830498dc1b95e25271316b842cc6e4e11c8",
+      "bytes": 728
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/verification.json",
+      "sha256": "bd10d64e6b069771864c9cf2fcb44b706b385da9e2a751a775ccc374a8ef830e",
+      "bytes": 6009
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report-receipt.json",
+      "sha256": "468b115d4ad87d3eb8126cee54dfc2f0914fb3eaed5a9578643d63ece262287c",
+      "bytes": 1297
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/observatory.json",
+      "sha256": "762f1f050d48cb15c6d16e3061a9e285f6985dfff55236bda7eac5a575e8fe48",
+      "bytes": 134061
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/observatory-section.json",
+      "sha256": "ba6a401c89a9501ad852a985f8d5837a784d7bc3ecd81069500937dbb1133308",
+      "bytes": 158018
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/verification.json",
+      "sha256": "bd10d64e6b069771864c9cf2fcb44b706b385da9e2a751a775ccc374a8ef830e",
+      "bytes": 6009
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/index.html",
+      "sha256": "0fed9c25b4610ffda04cc13a3d3dcd74564be1f4043172a009a5b896481123b2",
+      "bytes": 2605
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/images/observatory-hero-before.png",
+      "sha256": "752c2b7ba6cf3da326ab47af684e688a44e2cbf13c770c9327f330920311cb45",
+      "bytes": 398737
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/images/observatory-hero-after.png",
+      "sha256": "4244aa9e6de4ff8849e31e160f086d76f257c9605b54ec40dc1ee587e77b8a29",
+      "bytes": 398104
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/images/observatory-junction-before.png",
+      "sha256": "2819fd18fa93e7b85e7dd1635a57ad169777d5a6bb3f4557cd5dd76def3dbfb1",
+      "bytes": 735422
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/images/observatory-junction-after.png",
+      "sha256": "4583130f70a995b2b0a5cb0dd60fdcfcffcccc86354336e9b17f8cc350d62dbc",
+      "bytes": 734210
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/images/observatory-section-hero-before.png",
+      "sha256": "5117d5a4b896cd321f92454d38a5ad03e70698e306837dfe43922824566d5da2",
+      "bytes": 380153
+    },
+    {
+      "path": "outputs/sdf/observatory-trim-20261104/report/images/observatory-section-hero-after.png",
+      "sha256": "465ec4cdf8f25058ae93ee83e5114416ebcd51960768b8eb2060c7b5669cb3f3",
+      "bytes": 379315
+    }
+  ],
+  "prior_retention": "docs/evidence/sdf-csg-junction-polish-2026-11/retention.json"
+}
