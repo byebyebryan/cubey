@@ -2,6 +2,11 @@
 
 Date: 2026-11-04. Status: complete locally; recommended art candidates.
 
+This note records checkpoint `2f87ec88`. The later
+[junction polish](sdf-csg-junction-polish.md) updates the current candidate JSONs;
+the original comparison remains reproducible from this checkpoint and its
+immutable report bundle.
+
 The [matched visual report](http://starship:8787/reports/53eb2e9ba92bca61323786057017a112611a79c05432ecdd71c4c53bef9a5aee/)
 compares the robot, canal mill, square observatory and terraced courtyard.
 The criterion is overall form, spatial clarity and purposeful detail. Repetition

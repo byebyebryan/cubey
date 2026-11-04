@@ -1,0 +1,2494 @@
+{
+  "format": "cubey.sdf.join-polish-retention",
+  "version": 1,
+  "complete": true,
+  "protected_files": [
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/baseline.json",
+      "sha256": "22a200ee11710fcf7682b055af272ba48eb507968800bfa2c5ca3756718b284d",
+      "bytes": 125182
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/presets/canal-mill.json",
+      "sha256": "34886e8c0591c45f768e5de868656808691aa5becc86709c5f32b3a1f7100be7",
+      "bytes": 360
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/presets/courtyard.json",
+      "sha256": "9c9763ac4dd1395ea8d42ec19da13377428d876178c5f87c63f1f3fbf3495e78",
+      "bytes": 358
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/presets/observatory-section.json",
+      "sha256": "763b83c06277f33f04a723922b4798f8730e69938689fec96bcc5500920cdfcb",
+      "bytes": 369
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/presets/observatory.json",
+      "sha256": "4ca45c78672b289f39295261ba91d72467d56614ed60985f4725a5871dea7f09",
+      "bytes": 362
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/presets/robot.json",
+      "sha256": "3b5fed7a96117cb20a0c37607f514dc5c7d3e1875b65f8b7c7cdb37b47fb7f75",
+      "bytes": 394
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/scenes/canal-mill.json",
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c",
+      "bytes": 79039
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/scenes/courtyard.json",
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2",
+      "bytes": 91706
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/scenes/observatory-section.json",
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58",
+      "bytes": 158554
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/scenes/observatory.json",
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142",
+      "bytes": 134453
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before/scenes/robot.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/before-observatory-joins.json",
+      "sha256": "1e16859424d37b79699715c4b86e5d431c65d77d4428b89ad1b8fd430098a456",
+      "bytes": 8861
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-config.json",
+      "sha256": "e54ebbb8dda9dbd5fd0c940e2adfa94813f38adf883476133474ec7104b2e844",
+      "bytes": 397
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-high.log",
+      "sha256": "f455491e5bbb0def04414e93e49e069783972fff4783f2cb1d4f8463eb145ed8",
+      "bytes": 703
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-high.png",
+      "sha256": "e62403adc61c91a23c45ae5d04ff62a1b24c829aea725a6a95ed2c7cb7d6c3de",
+      "bytes": 504543
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-junction.log",
+      "sha256": "7fe01d8eb72a46b1018d81d4ed7d2eadf2fc2dcdfb6e7557065648c53c9f2ec3",
+      "bytes": 707
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-junction.png",
+      "sha256": "8cdb2e4498a0897eb4c80a54c6ba7a3e9eacda6bc056c2ca0361d49ad9a480eb",
+      "bytes": 806482
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-rear.log",
+      "sha256": "4b2ac22559fae10bbef51e346dc29235a8a4af954b13f6ee8198c12bedcba9ed",
+      "bytes": 703
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/canal-mill-rear.png",
+      "sha256": "47941fb29df130421e8cc27cbb11e2cc94ee9bca9ccfa6ae6ced2466a4b9c74b",
+      "bytes": 438002
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/capture_inspection.py",
+      "sha256": "05e7ecd24a286be84a36d5d1f6dfa6411b10e13f2771b3b550060a701f5647d3",
+      "bytes": 2255
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/check-report.cjs",
+      "sha256": "64372cc5b3e4e401cc3dbc1c4b5eaccc5881c3eccd70737e456884748e4efdb7",
+      "bytes": 3279
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-config.json",
+      "sha256": "9827e3678da4131366ae99ec23ffc4596341d9633f43969ad81af60cc85fbc1d",
+      "bytes": 395
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-high.log",
+      "sha256": "2f8fa28023bec6f63c46c72a553f876e1c81b6048a79ae7474a0097fdf9e6c26",
+      "bytes": 702
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-high.png",
+      "sha256": "233eff19ad76d7887be0bcb48366cf75e1279b58b55e7eded659006e0d8d7f53",
+      "bytes": 522142
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-junction.log",
+      "sha256": "e215c2206e5426fbb6c9e6e74cdc812f635ef71d124c4fac5424178323ebd119",
+      "bytes": 705
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-junction.png",
+      "sha256": "204e017aef123634c32aace65b06d0c0e9e25a95cb17661df6dd40e2a9290c48",
+      "bytes": 781571
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-rear.log",
+      "sha256": "9070d454450e8aece94ea4713337332ff148b1a06d8c3189d90f1950c3aa58a8",
+      "bytes": 702
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/courtyard-rear.png",
+      "sha256": "82a2cbeac3a095162c33ed6a1563f63116fda7e63d3a2792533e89eda59606b7",
+      "bytes": 339432
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-changes.json",
+      "sha256": "4444d1360041d576cff81e513f5cfc9ec6627982bac8e2029225f36e5aaa74e9",
+      "bytes": 104831
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-alternate.log",
+      "sha256": "28ab8dc602d5cf9684d04e676206f55c125bac5b3886c1d9e1b62c2bbf85af46",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-alternate.png",
+      "sha256": "0652b6fa9c68909505c3c11fb4a6658c7a5347d569086d92a845787245cb8abc",
+      "bytes": 456324
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-hero.log",
+      "sha256": "749262ca90e1394f7339166850fee02ab3904833a992ad82f3bbb462fd835d08",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-hero.png",
+      "sha256": "f0dfd17fe4cb610cc9b02ef3183442a35f2692ddd9710710d707149bcf058e24",
+      "bytes": 389941
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-high.log",
+      "sha256": "9714f7dbb2d616c2e1d4c774608476dbdf14ebdc254fc1416900ebd5e99d1689",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-high.png",
+      "sha256": "f440c229ce011e7a1a24af214d5350f6f97232f07c0f8e2798dea711c3f92f5e",
+      "bytes": 429962
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-junction.log",
+      "sha256": "8c185f3cdc7f66a7f9222ef5b88889a556c451faaaf5578a85ca43c64b295047",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-junction.png",
+      "sha256": "63fc28dd2c6cf3d768c3fd2ae6133b9718e2983384f475a77d8e86c06c48a6f2",
+      "bytes": 684789
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-rear.log",
+      "sha256": "ff40ce32f66f815dd959577caa1936fd27c0d14e712e24344a7f238b9f0727a1",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-after-rear.png",
+      "sha256": "c1672c08a6acfae6e0e273b61411691a4a1ceba10236c72c5aebcfd34e981e6b",
+      "bytes": 377183
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-alternate.log",
+      "sha256": "032a9bd5c189e396f3ba80a6fc04c07b5328dd189f0ae91b304c9d542cc38a99",
+      "bytes": 737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-alternate.png",
+      "sha256": "a5112d2dcfba47dd8325f459b59dc245859d64afb84afc16bbcb2e4413f2bc32",
+      "bytes": 464692
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-hero.log",
+      "sha256": "0646203b7b45999b200c177507f728509e48d43c71444e6a13966ddb779ae545",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-hero.png",
+      "sha256": "e61ce609343cd0302cb6e0b19825b99437cb70265e00efa7ca9038089f05569c",
+      "bytes": 391208
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-high.log",
+      "sha256": "006a2747ef4e3834551463a720ab9713f30ad9d8c97a092a606277856e89117f",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-high.png",
+      "sha256": "3d2229d98cf9275402c2a3fcbbc4e43fc1d6ff3511131ce9a5c9d9833f6b2413",
+      "bytes": 434433
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-junction.log",
+      "sha256": "6b7b98ede104bc4a15994a51b8371cd2f816526fc43a67818e3c1e42bed1fc31",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-junction.png",
+      "sha256": "d5363206cfe3c83b3dde04668b8ee763ff2138f542d9373bfccfd0d8b0f2a7c5",
+      "bytes": 694278
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-rear.log",
+      "sha256": "da934198ea56a8bf76ebef6dfb0d9c8138f14d51d8104a27bb66139902b241a0",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/canal-mill-before-rear.png",
+      "sha256": "bc74e336a3db74fca62ed90344f7a11523c5f05acd9aa5699224c00221c35515",
+      "bytes": 379186
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/captures.json",
+      "sha256": "a92c4e28249d70ff9f4be06be7a13580c564b4f7697400b0faebf8b8fd952f40",
+      "bytes": 107939
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-alternate.log",
+      "sha256": "5bb8595df4056663c97549b6fe235bfe9a6488f1e035fafa4aa184581125df0f",
+      "bytes": 733
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-alternate.png",
+      "sha256": "4001ca8376515f7d8266fbc9867b8e1f7ecc6189d704b42e82d094a6ac98b4d4",
+      "bytes": 470372
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-hero.log",
+      "sha256": "2dc6be11e58a3f180dd83f2e48d9cb6b17785dca75d4072540acaf64e7779ab9",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-hero.png",
+      "sha256": "8a237583869ed93df83f379c3a2594258bfcaf76cb94ab8682d35cd60a4b1b50",
+      "bytes": 402394
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-high.log",
+      "sha256": "cb66f10a9480be83d1bdaefb9a0ae79cdcdb7a41e78a873b9bae5201c241d471",
+      "bytes": 728
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-high.png",
+      "sha256": "100648d822b114f3b255309f5c4015be0c791d258b116da17af0ab82d90e3168",
+      "bytes": 453865
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-junction.log",
+      "sha256": "de365e63f47429eef9c0b2381821a2f9bc69d7ebb8652003a52803a81b219b8a",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-junction.png",
+      "sha256": "88509a29e68753d0033c0420c3c518bba87c8eb7a60bf6a101c7e6135f9a4f48",
+      "bytes": 689536
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-rear.log",
+      "sha256": "99634397c7d86a447eaa7ba33f16047045a6fdc1652f48423a30db234acb4ddc",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-after-rear.png",
+      "sha256": "1a3a914c4174f2bcca3a3ed9f9e1fc807f79a19c57d877e128f4e14285b2f4a3",
+      "bytes": 298178
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-alternate.log",
+      "sha256": "090be1a4b6f5fb6951622309565d949369184389d25facccc5da24dc3bc3a6b5",
+      "bytes": 734
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-alternate.png",
+      "sha256": "0d3c59d62f6b6d5f81c61adad7cf33d03a7319178cb7ee5deacd920a5135a498",
+      "bytes": 466747
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-hero.log",
+      "sha256": "4fff0e8196d1d3dec1de7d64532a7bf7273e5dd8b84d89a0b49014664fd17f64",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-hero.png",
+      "sha256": "eea95032e7fd0f717d95b58f817a8226e0714d5c957933b53e6439f2b7ecb84f",
+      "bytes": 396883
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-high.log",
+      "sha256": "3640db5084bd949ff7de3ff6d652b6f133075818c81204e522b2669eeebdbbf7",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-high.png",
+      "sha256": "1eccd2fb618e6134f2d1b15e0a852c4331256a2290293143b420f8dfddc715e4",
+      "bytes": 449706
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-junction.log",
+      "sha256": "0dad2c8052922afe238af6c94dca96e13b7b49817c0b06f902bff77aa58fe3ac",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-junction.png",
+      "sha256": "126cded136bdfd1df2dbbf22c8305f8eb41ddced9a9f07741e7bb4b0e97d3f1f",
+      "bytes": 673416
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-rear.log",
+      "sha256": "e453fcd8a0fe0d3dd5e87a88b1359a29472017bb12a22d8c506e7d08b41fe33b",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/courtyard-before-rear.png",
+      "sha256": "7bdfc2d089a0acc95b47737bd1cc2136731e66d6c82660969be389d65f654b36",
+      "bytes": 293742
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/canal-mill-after-config.json",
+      "sha256": "743fb76c22ef17376a3b80534f863b53931acf2b92450e16dd9cac93ffe7f1c6",
+      "bytes": 418
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/canal-mill-after.json",
+      "sha256": "3d08768f0d4a85b4611c08b8fc691de8f205b12ed7232cc3aff2abcb3a590d31",
+      "bytes": 84665
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/canal-mill-before-config.json",
+      "sha256": "d062dce90a61dd933621abbfe779777e3fcb1cedd43cc029dd7c9648291d7937",
+      "bytes": 419
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/canal-mill-before.json",
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c",
+      "bytes": 79039
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/courtyard-after-config.json",
+      "sha256": "6f9183e7460d0c18c0038982995b00c96308bb7ce1f946e6d09320853eded60e",
+      "bytes": 416
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/courtyard-after.json",
+      "sha256": "8eed0257e576e019f12018580a424003efaa0a9359e60f987f74075250879ba9",
+      "bytes": 93834
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/courtyard-before-config.json",
+      "sha256": "b5b712467409d945a25da8b766dd73235914024a2e02f7f75838617c064fa40c",
+      "bytes": 417
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/courtyard-before.json",
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2",
+      "bytes": 91706
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-after-config.json",
+      "sha256": "188ae4ae5994091f365507728cfb0f1e22faa34c637213b364911b728a7dcc47",
+      "bytes": 420
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-after.json",
+      "sha256": "32126efc9d9b0cfd5001e8906c121ec5af806171d9fac4133c88b5b1b149481e",
+      "bytes": 134061
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-before-config.json",
+      "sha256": "f522331f1ba10d9816360f9ccce6c77b63e49c0c7f45c1f917c931d99770e223",
+      "bytes": 421
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-before.json",
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142",
+      "bytes": 134453
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-section-after-config.json",
+      "sha256": "bfeda504e1baaa332e6551d681c81efd7bf71224218cb4bc6077c517834e02a2",
+      "bytes": 427
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-section-after.json",
+      "sha256": "b4c6d291b52d5383d9a00567ed6621c95c92365f19d3d3000516b8321ec49ddd",
+      "bytes": 158018
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-section-before-config.json",
+      "sha256": "72a1541c30336e26372fa21fc0ecec806ad5cc15c9f4c1d4648f2e23c7091e8e",
+      "bytes": 428
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/observatory-section-before.json",
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58",
+      "bytes": 158554
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/robot-after-config.json",
+      "sha256": "2a0d55edc9c42fb0827fd835577f6be0564a2657f67f1594fa38a85ad316a841",
+      "bytes": 452
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/robot-after.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/robot-before-config.json",
+      "sha256": "1d8240a9e874bc742e8bce2292c55ec4b44538a9636cc16cb55c58b82ed4fef0",
+      "bytes": 453
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/inputs/robot-before.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-alternate.log",
+      "sha256": "0aee41bc730fca31e43c4c6e4edbf51fcbb964315ec8f72dd78b35e67b759570",
+      "bytes": 737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-alternate.png",
+      "sha256": "327206794313cb9d416f5e64d84a459357dcea0861f5ee22ea27bfd990631bf3",
+      "bytes": 488099
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-hero.log",
+      "sha256": "0f2a9d039ed2e8588a841d64883707676ad9b826261d921037045a41669b8275",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-hero.png",
+      "sha256": "752c2b7ba6cf3da326ab47af684e688a44e2cbf13c770c9327f330920311cb45",
+      "bytes": 398737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-high.log",
+      "sha256": "fe69787a115cf08bfe602b1828c6f97f036c6c973ea88fe3e4c1628372f031a4",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-high.png",
+      "sha256": "3a547f3ecdcc50664f6232ba6118b6bf71caffad866e0e9bd6e9286f5acd2c3f",
+      "bytes": 468664
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-junction.log",
+      "sha256": "8c00d53188e4eccd398d2966fbdd9ef0d5411231d56e23882c12084a946a6a2d",
+      "bytes": 736
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-junction.png",
+      "sha256": "2819fd18fa93e7b85e7dd1635a57ad169777d5a6bb3f4557cd5dd76def3dbfb1",
+      "bytes": 735422
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-rear.log",
+      "sha256": "9095117beca05211e7bd3911215c52d61b226530e6d96a551ed3d041eb1bd0db",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-after-rear.png",
+      "sha256": "a42fd0de484533d178f59360ad1864ae9bd9d805adf81ba95086b317efc8efaf",
+      "bytes": 366248
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-alternate.log",
+      "sha256": "2b0d30c534ec036c42496c28c466fe6a2ec8182edad28d9b230f21934e7b66c6",
+      "bytes": 738
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-alternate.png",
+      "sha256": "f21150ae2fa013fe42b21c238f6888c024eb0f80479f62ff028b6e1185fcd978",
+      "bytes": 489374
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-hero.log",
+      "sha256": "6de9c770a03524be5d3442a04bcaf78bb17943cc10684af6d161a62568af021e",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-hero.png",
+      "sha256": "4d74dfd294f4df750e16955b6c99de8efb6e0e7435b49dae9a40ae519e3eeec4",
+      "bytes": 399826
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-high.log",
+      "sha256": "960c297fef9fe800fe087e40c05a615ff4d123b6e17db3a6b07a52c4bbaba90d",
+      "bytes": 733
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-high.png",
+      "sha256": "9a632a1cc99b1900d21190140bd1c34ad8e25f60faec83899a32a2b6fc2b5cc7",
+      "bytes": 469592
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-junction.log",
+      "sha256": "4cf563de6e506604c2d512beeaa572f339b80ea25bfb53e443b6e6265b8d37b3",
+      "bytes": 736
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-junction.png",
+      "sha256": "2226495eae83fa60f25f1bb3208a4f94f5d8d17771cff0fb79f1fe00034d9f27",
+      "bytes": 737689
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-rear.log",
+      "sha256": "33a4514bfe6b1775ad143423094eb96f3375f668e80ef302256294a967414575",
+      "bytes": 733
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-before-rear.png",
+      "sha256": "79fa2bedc5b1574ae9514fa794690b1aa3d669c35b0c755c5031b6c637e85aec",
+      "bytes": 366270
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-section-after-hero.log",
+      "sha256": "4466faf374bccdc93cb369d8c71e3f696bb3f1a05703d96727089e8f855e5fdd",
+      "bytes": 740
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-section-after-hero.png",
+      "sha256": "5117d5a4b896cd321f92454d38a5ad03e70698e306837dfe43922824566d5da2",
+      "bytes": 380153
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-section-before-hero.log",
+      "sha256": "0c7e51a27fe225a491507467fec0e82266800bbf278f8f08137325c14eed2093",
+      "bytes": 741
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/observatory-section-before-hero.png",
+      "sha256": "978d2ebbf5831ef8e6c7238ea3533121549d0d97497f5584f5b64f942639fd73",
+      "bytes": 380857
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/polish_csg_showcase.py",
+      "sha256": "b6d439a1c02b89c7bea51051da3dec18ab41e55abe7b844833a24dd974952a4f",
+      "bytes": 15088
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/refine_csg_showcase.py",
+      "sha256": "36d4f9649f3dfcc5d2fb4a36e4346b1de3fbf60e4ae9ae84dfbd089aef497a9f",
+      "bytes": 16907
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-alternate.log",
+      "sha256": "33ef10f8062fe52709b2ba77f984f45b5b49246612268782d1a34d76ec0dd54a",
+      "bytes": 729
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-alternate.png",
+      "sha256": "66ab4037c457bd7bc9b94fd012453a0933f0e75f40ec5acb6838a703ef38755d",
+      "bytes": 278398
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-hero.log",
+      "sha256": "b625d78f11388aa94a278a13c121a09d03ba519b3bac773d128410998971bf34",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-hero.png",
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36",
+      "bytes": 303209
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-high.log",
+      "sha256": "1c0d15dbf224917fb104b0b024019f7f0a39175f49bd1327609b1b6a6f9f14b8",
+      "bytes": 724
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-high.png",
+      "sha256": "8ab365ad4a0fc8dc061afe14e485247ab949e9bed1ecc4f851078a4dc77c7070",
+      "bytes": 323828
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-rear.log",
+      "sha256": "c2e6481177db6fc1d377ac0d28ed32fba5bc667a972103098c3e686ea5dd1783",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-after-rear.png",
+      "sha256": "cc9fe49fef9293206dc609abdc432301d91af4af0609d26b6ce033962c62a1c7",
+      "bytes": 288867
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-alternate.log",
+      "sha256": "1bdd04cdcc2f441727098580d442dc3d807ed72b6be7073f3a3f5e1c78b907df",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-alternate.png",
+      "sha256": "66ab4037c457bd7bc9b94fd012453a0933f0e75f40ec5acb6838a703ef38755d",
+      "bytes": 278398
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-hero.log",
+      "sha256": "e9f25118ee37f8c11fd6163d9ff542d97563c243915c8e8346c5f201efc1ef84",
+      "bytes": 726
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-hero.png",
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36",
+      "bytes": 303209
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-high.log",
+      "sha256": "7c132de6a7988a98b87e263eff8b8c9e5f14d150b8d0772fef820cca85397c80",
+      "bytes": 726
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-high.png",
+      "sha256": "8ab365ad4a0fc8dc061afe14e485247ab949e9bed1ecc4f851078a4dc77c7070",
+      "bytes": 323828
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-rear.log",
+      "sha256": "c98102d220724dd6782e92b0ff4131e190cf540e376ad4456bb6e42bd2d6c6c7",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/final-review/captures/robot-before-rear.png",
+      "sha256": "cc9fe49fef9293206dc609abdc432301d91af4af0609d26b6ce033962c62a1c7",
+      "bytes": 288867
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/finalize.py",
+      "sha256": "2de6759628f54fd460380d29f963239aa97110ceee709d8ad481bb5ca3ecd860",
+      "bytes": 8120
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/inspection.json",
+      "sha256": "412bc7037e0d5672b1718a0bb2446343c583baa8eb3398b44f44564d5eec87ad",
+      "bytes": 9140
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/joins.json",
+      "sha256": "d2ac347574f94182aac7fca834cab5c79878ed8527f8f186563bfadd3ae50fa8",
+      "bytes": 31345
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-config.json",
+      "sha256": "2255978faa7a49cd89945b52fb5e8f5e74fcbca95c789532bbd47e76722ea184",
+      "bytes": 399
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-high.log",
+      "sha256": "89c6b494bbb97074cbb845e29b1c82b8816b38796fe9c5238360b8eb9f7f3ac3",
+      "bytes": 703
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-high.png",
+      "sha256": "6d466a181188532c921ffe89f9b96c7da0141446f3cfb769320eab12bb76d3b1",
+      "bytes": 547044
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-junction.log",
+      "sha256": "8d708e3e3d6432f2853b72ef0a8033a3a7cc5ce419125d99442922c75880d0b1",
+      "bytes": 708
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-junction.png",
+      "sha256": "825af280e6d628a1cbcadb5152600df9f897ac52167f31eb40b2ca56de284995",
+      "bytes": 860091
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-rear.log",
+      "sha256": "1e63528fa794ee03dd554a37297efb1578ada07a1383efcc0a6847f683ae19cb",
+      "bytes": 704
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/observatory-rear.png",
+      "sha256": "eeec19ea6bd5d481bcaab23ef605cc694c337c50d76044598d36122eb64dc942",
+      "bytes": 423360
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/canal-mill-oracle-config.json",
+      "sha256": "a8cca672b2cb3297d9d845627305a5ff72134eae0a38fa415e6cf1fe3701928d",
+      "bytes": 331
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/canal-mill.log",
+      "sha256": "3e7bf5d56c64d10c3cbd38df3d3023a2875973776405386a5bf2136003b1656c",
+      "bytes": 10168
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/canal-mill.png",
+      "sha256": "218ada996aaf67c784f1dee652ec606a1ead94ecbfd17fa5cf5580ecfdd5b7d5",
+      "bytes": 68808
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/courtyard-oracle-config.json",
+      "sha256": "93558e6831fc45b8d4450a0e935028aaccfabee1c7d7168e5913da1ab8d2b842",
+      "bytes": 329
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/courtyard.log",
+      "sha256": "e16f1b5630a753ca16586afd294d20e55729f283a1becbef976230aae3a967fe",
+      "bytes": 8548
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/courtyard.png",
+      "sha256": "dfeab2d339a93f8e68d5b0876d282f6c576935242f2ff8e25329b4ddf465ea7d",
+      "bytes": 73518
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/observatory-oracle-config.json",
+      "sha256": "c6c12e6dabf5b6d269aa458fcefc4eb73e4a71e85c1fade47d11cfedabba798b",
+      "bytes": 333
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/observatory-section-oracle-config.json",
+      "sha256": "3b457d29e2484f9779f8b8a8aadeab24f00b4631b67bce5012c38e14f258f421",
+      "bytes": 340
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/observatory-section.log",
+      "sha256": "07ff7dc884f53a12b21a576cb7c53811b7611900ab5ac09dadd193e3d7925f39",
+      "bytes": 17295
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/observatory-section.png",
+      "sha256": "c5e8f808c2d86dcaee7960135d01156cd96619932d323215ed6719a184871025",
+      "bytes": 75319
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/observatory.log",
+      "sha256": "884aa7c3e7aef3ad55e9c2478b415d7331fbf7e6e171049817e0cb3394d25965",
+      "bytes": 16737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/observatory.png",
+      "sha256": "51b71a04f1161995432b32f8cce9141f3668c15fc560b3d7036f2b39f739139f",
+      "bytes": 71436
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/qualification.json",
+      "sha256": "81292dbe83f7305e64609447c1f5e41a9683c7a9e6598d4a6eb50a9b11f2a409",
+      "bytes": 156854
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/robot-oracle-config.json",
+      "sha256": "9eed70c890b8ede31ceb02f50ab91e644a94c50e4ab6dc8a5af387dbfd8c30fa",
+      "bytes": 365
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/robot.log",
+      "sha256": "112f3fcdfb08b8503069a9c85375f004d512a243bac2bdeddcd42883320d9573",
+      "bytes": 43812
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/qualification-final/robot.png",
+      "sha256": "6cfba4778a5c8e3ac65ad72bd9bfd79924c972010f84daed5a938be687e38cbc",
+      "bytes": 56424
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/presets/canal-mill.json",
+      "sha256": "34886e8c0591c45f768e5de868656808691aa5becc86709c5f32b3a1f7100be7",
+      "bytes": 360
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/presets/courtyard.json",
+      "sha256": "9c9763ac4dd1395ea8d42ec19da13377428d876178c5f87c63f1f3fbf3495e78",
+      "bytes": 358
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/presets/observatory-section.json",
+      "sha256": "763b83c06277f33f04a723922b4798f8730e69938689fec96bcc5500920cdfcb",
+      "bytes": 369
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/presets/observatory.json",
+      "sha256": "4ca45c78672b289f39295261ba91d72467d56614ed60985f4725a5871dea7f09",
+      "bytes": 362
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/presets/robot.json",
+      "sha256": "3b5fed7a96117cb20a0c37607f514dc5c7d3e1875b65f8b7c7cdb37b47fb7f75",
+      "bytes": 394
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/scenes/canal-mill.json",
+      "sha256": "3d08768f0d4a85b4611c08b8fc691de8f205b12ed7232cc3aff2abcb3a590d31",
+      "bytes": 84665
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/scenes/courtyard.json",
+      "sha256": "8eed0257e576e019f12018580a424003efaa0a9359e60f987f74075250879ba9",
+      "bytes": 93834
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/scenes/observatory-section.json",
+      "sha256": "b4c6d291b52d5383d9a00567ed6621c95c92365f19d3d3000516b8321ec49ddd",
+      "bytes": 158018
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/scenes/observatory.json",
+      "sha256": "32126efc9d9b0cfd5001e8906c121ec5af806171d9fac4133c88b5b1b149481e",
+      "bytes": 134061
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/after/scenes/robot.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/presets/canal-mill.json",
+      "sha256": "34886e8c0591c45f768e5de868656808691aa5becc86709c5f32b3a1f7100be7",
+      "bytes": 360
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/presets/courtyard.json",
+      "sha256": "9c9763ac4dd1395ea8d42ec19da13377428d876178c5f87c63f1f3fbf3495e78",
+      "bytes": 358
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/presets/observatory-section.json",
+      "sha256": "763b83c06277f33f04a723922b4798f8730e69938689fec96bcc5500920cdfcb",
+      "bytes": 369
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/presets/observatory.json",
+      "sha256": "4ca45c78672b289f39295261ba91d72467d56614ed60985f4725a5871dea7f09",
+      "bytes": 362
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/presets/robot.json",
+      "sha256": "3b5fed7a96117cb20a0c37607f514dc5c7d3e1875b65f8b7c7cdb37b47fb7f75",
+      "bytes": 394
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/scenes/canal-mill.json",
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c",
+      "bytes": 79039
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/scenes/courtyard.json",
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2",
+      "bytes": 91706
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/scenes/observatory-section.json",
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58",
+      "bytes": 158554
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/scenes/observatory.json",
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142",
+      "bytes": 134453
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/before/scenes/robot.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/before-observatory-joins.json",
+      "sha256": "1e16859424d37b79699715c4b86e5d431c65d77d4428b89ad1b8fd430098a456",
+      "bytes": 8861
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-after-alternate.log",
+      "sha256": "28ab8dc602d5cf9684d04e676206f55c125bac5b3886c1d9e1b62c2bbf85af46",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-after-hero.log",
+      "sha256": "749262ca90e1394f7339166850fee02ab3904833a992ad82f3bbb462fd835d08",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-after-high.log",
+      "sha256": "9714f7dbb2d616c2e1d4c774608476dbdf14ebdc254fc1416900ebd5e99d1689",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-after-junction.log",
+      "sha256": "8c185f3cdc7f66a7f9222ef5b88889a556c451faaaf5578a85ca43c64b295047",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-after-rear.log",
+      "sha256": "ff40ce32f66f815dd959577caa1936fd27c0d14e712e24344a7f238b9f0727a1",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-before-alternate.log",
+      "sha256": "032a9bd5c189e396f3ba80a6fc04c07b5328dd189f0ae91b304c9d542cc38a99",
+      "bytes": 737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-before-hero.log",
+      "sha256": "0646203b7b45999b200c177507f728509e48d43c71444e6a13966ddb779ae545",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-before-high.log",
+      "sha256": "006a2747ef4e3834551463a720ab9713f30ad9d8c97a092a606277856e89117f",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-before-junction.log",
+      "sha256": "6b7b98ede104bc4a15994a51b8371cd2f816526fc43a67818e3c1e42bed1fc31",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/canal-mill-before-rear.log",
+      "sha256": "da934198ea56a8bf76ebef6dfb0d9c8138f14d51d8104a27bb66139902b241a0",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/canal-mill-after-config.json",
+      "sha256": "743fb76c22ef17376a3b80534f863b53931acf2b92450e16dd9cac93ffe7f1c6",
+      "bytes": 418
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/canal-mill-after.json",
+      "sha256": "3d08768f0d4a85b4611c08b8fc691de8f205b12ed7232cc3aff2abcb3a590d31",
+      "bytes": 84665
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/canal-mill-before-config.json",
+      "sha256": "d062dce90a61dd933621abbfe779777e3fcb1cedd43cc029dd7c9648291d7937",
+      "bytes": 419
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/canal-mill-before.json",
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c",
+      "bytes": 79039
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/courtyard-after-config.json",
+      "sha256": "6f9183e7460d0c18c0038982995b00c96308bb7ce1f946e6d09320853eded60e",
+      "bytes": 416
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/courtyard-after.json",
+      "sha256": "8eed0257e576e019f12018580a424003efaa0a9359e60f987f74075250879ba9",
+      "bytes": 93834
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/courtyard-before-config.json",
+      "sha256": "b5b712467409d945a25da8b766dd73235914024a2e02f7f75838617c064fa40c",
+      "bytes": 417
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/courtyard-before.json",
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2",
+      "bytes": 91706
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-after-config.json",
+      "sha256": "188ae4ae5994091f365507728cfb0f1e22faa34c637213b364911b728a7dcc47",
+      "bytes": 420
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-after.json",
+      "sha256": "32126efc9d9b0cfd5001e8906c121ec5af806171d9fac4133c88b5b1b149481e",
+      "bytes": 134061
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-before-config.json",
+      "sha256": "f522331f1ba10d9816360f9ccce6c77b63e49c0c7f45c1f917c931d99770e223",
+      "bytes": 421
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-before.json",
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142",
+      "bytes": 134453
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-section-after-config.json",
+      "sha256": "bfeda504e1baaa332e6551d681c81efd7bf71224218cb4bc6077c517834e02a2",
+      "bytes": 427
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-section-after.json",
+      "sha256": "b4c6d291b52d5383d9a00567ed6621c95c92365f19d3d3000516b8321ec49ddd",
+      "bytes": 158018
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-section-before-config.json",
+      "sha256": "72a1541c30336e26372fa21fc0ecec806ad5cc15c9f4c1d4648f2e23c7091e8e",
+      "bytes": 428
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/observatory-section-before.json",
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58",
+      "bytes": 158554
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/robot-after-config.json",
+      "sha256": "2a0d55edc9c42fb0827fd835577f6be0564a2657f67f1594fa38a85ad316a841",
+      "bytes": 452
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/robot-after.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/robot-before-config.json",
+      "sha256": "1d8240a9e874bc742e8bce2292c55ec4b44538a9636cc16cb55c58b82ed4fef0",
+      "bytes": 453
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/capture-inputs/robot-before.json",
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+      "bytes": 47752
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/captures.json",
+      "sha256": "a92c4e28249d70ff9f4be06be7a13580c564b4f7697400b0faebf8b8fd952f40",
+      "bytes": 107939
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-after-alternate.log",
+      "sha256": "5bb8595df4056663c97549b6fe235bfe9a6488f1e035fafa4aa184581125df0f",
+      "bytes": 733
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-after-hero.log",
+      "sha256": "2dc6be11e58a3f180dd83f2e48d9cb6b17785dca75d4072540acaf64e7779ab9",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-after-high.log",
+      "sha256": "cb66f10a9480be83d1bdaefb9a0ae79cdcdb7a41e78a873b9bae5201c241d471",
+      "bytes": 728
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-after-junction.log",
+      "sha256": "de365e63f47429eef9c0b2381821a2f9bc69d7ebb8652003a52803a81b219b8a",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-after-rear.log",
+      "sha256": "99634397c7d86a447eaa7ba33f16047045a6fdc1652f48423a30db234acb4ddc",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-before-alternate.log",
+      "sha256": "090be1a4b6f5fb6951622309565d949369184389d25facccc5da24dc3bc3a6b5",
+      "bytes": 734
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-before-hero.log",
+      "sha256": "4fff0e8196d1d3dec1de7d64532a7bf7273e5dd8b84d89a0b49014664fd17f64",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-before-high.log",
+      "sha256": "3640db5084bd949ff7de3ff6d652b6f133075818c81204e522b2669eeebdbbf7",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-before-junction.log",
+      "sha256": "0dad2c8052922afe238af6c94dca96e13b7b49817c0b06f902bff77aa58fe3ac",
+      "bytes": 735
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/courtyard-before-rear.log",
+      "sha256": "e453fcd8a0fe0d3dd5e87a88b1359a29472017bb12a22d8c506e7d08b41fe33b",
+      "bytes": 730
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/final-changes.json",
+      "sha256": "4444d1360041d576cff81e513f5cfc9ec6627982bac8e2029225f36e5aaa74e9",
+      "bytes": 104831
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/inspection.json",
+      "sha256": "412bc7037e0d5672b1718a0bb2446343c583baa8eb3398b44f44564d5eec87ad",
+      "bytes": 9140
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/joins.json",
+      "sha256": "d2ac347574f94182aac7fca834cab5c79878ed8527f8f186563bfadd3ae50fa8",
+      "bytes": 31345
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/canal-mill-oracle-config.json",
+      "sha256": "a8cca672b2cb3297d9d845627305a5ff72134eae0a38fa415e6cf1fe3701928d",
+      "bytes": 331
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/canal-mill.log",
+      "sha256": "3e7bf5d56c64d10c3cbd38df3d3023a2875973776405386a5bf2136003b1656c",
+      "bytes": 10168
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/canal-mill.png",
+      "sha256": "218ada996aaf67c784f1dee652ec606a1ead94ecbfd17fa5cf5580ecfdd5b7d5",
+      "bytes": 68808
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/courtyard-oracle-config.json",
+      "sha256": "93558e6831fc45b8d4450a0e935028aaccfabee1c7d7168e5913da1ab8d2b842",
+      "bytes": 329
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/courtyard.log",
+      "sha256": "e16f1b5630a753ca16586afd294d20e55729f283a1becbef976230aae3a967fe",
+      "bytes": 8548
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/courtyard.png",
+      "sha256": "dfeab2d339a93f8e68d5b0876d282f6c576935242f2ff8e25329b4ddf465ea7d",
+      "bytes": 73518
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/observatory-oracle-config.json",
+      "sha256": "c6c12e6dabf5b6d269aa458fcefc4eb73e4a71e85c1fade47d11cfedabba798b",
+      "bytes": 333
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/observatory-section-oracle-config.json",
+      "sha256": "3b457d29e2484f9779f8b8a8aadeab24f00b4631b67bce5012c38e14f258f421",
+      "bytes": 340
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/observatory-section.log",
+      "sha256": "07ff7dc884f53a12b21a576cb7c53811b7611900ab5ac09dadd193e3d7925f39",
+      "bytes": 17295
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/observatory-section.png",
+      "sha256": "c5e8f808c2d86dcaee7960135d01156cd96619932d323215ed6719a184871025",
+      "bytes": 75319
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/observatory.log",
+      "sha256": "884aa7c3e7aef3ad55e9c2478b415d7331fbf7e6e171049817e0cb3394d25965",
+      "bytes": 16737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/observatory.png",
+      "sha256": "51b71a04f1161995432b32f8cce9141f3668c15fc560b3d7036f2b39f739139f",
+      "bytes": 71436
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/qualification.json",
+      "sha256": "81292dbe83f7305e64609447c1f5e41a9683c7a9e6598d4a6eb50a9b11f2a409",
+      "bytes": 156854
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/robot-oracle-config.json",
+      "sha256": "9eed70c890b8ede31ceb02f50ab91e644a94c50e4ab6dc8a5af387dbfd8c30fa",
+      "bytes": 365
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/robot.log",
+      "sha256": "112f3fcdfb08b8503069a9c85375f004d512a243bac2bdeddcd42883320d9573",
+      "bytes": 43812
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/native-qualification/robot.png",
+      "sha256": "6cfba4778a5c8e3ac65ad72bd9bfd79924c972010f84daed5a938be687e38cbc",
+      "bytes": 56424
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-after-alternate.log",
+      "sha256": "0aee41bc730fca31e43c4c6e4edbf51fcbb964315ec8f72dd78b35e67b759570",
+      "bytes": 737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-after-hero.log",
+      "sha256": "0f2a9d039ed2e8588a841d64883707676ad9b826261d921037045a41669b8275",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-after-high.log",
+      "sha256": "fe69787a115cf08bfe602b1828c6f97f036c6c973ea88fe3e4c1628372f031a4",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-after-junction.log",
+      "sha256": "8c00d53188e4eccd398d2966fbdd9ef0d5411231d56e23882c12084a946a6a2d",
+      "bytes": 736
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-after-rear.log",
+      "sha256": "9095117beca05211e7bd3911215c52d61b226530e6d96a551ed3d041eb1bd0db",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-before-alternate.log",
+      "sha256": "2b0d30c534ec036c42496c28c466fe6a2ec8182edad28d9b230f21934e7b66c6",
+      "bytes": 738
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-before-hero.log",
+      "sha256": "6de9c770a03524be5d3442a04bcaf78bb17943cc10684af6d161a62568af021e",
+      "bytes": 732
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-before-high.log",
+      "sha256": "960c297fef9fe800fe087e40c05a615ff4d123b6e17db3a6b07a52c4bbaba90d",
+      "bytes": 733
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-before-junction.log",
+      "sha256": "4cf563de6e506604c2d512beeaa572f339b80ea25bfb53e443b6e6265b8d37b3",
+      "bytes": 736
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-before-rear.log",
+      "sha256": "33a4514bfe6b1775ad143423094eb96f3375f668e80ef302256294a967414575",
+      "bytes": 733
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-section-after-hero.log",
+      "sha256": "4466faf374bccdc93cb369d8c71e3f696bb3f1a05703d96727089e8f855e5fdd",
+      "bytes": 740
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/observatory-section-before-hero.log",
+      "sha256": "0c7e51a27fe225a491507467fec0e82266800bbf278f8f08137325c14eed2093",
+      "bytes": 741
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-after-alternate.log",
+      "sha256": "33ef10f8062fe52709b2ba77f984f45b5b49246612268782d1a34d76ec0dd54a",
+      "bytes": 729
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-after-hero.log",
+      "sha256": "b625d78f11388aa94a278a13c121a09d03ba519b3bac773d128410998971bf34",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-after-high.log",
+      "sha256": "1c0d15dbf224917fb104b0b024019f7f0a39175f49bd1327609b1b6a6f9f14b8",
+      "bytes": 724
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-after-rear.log",
+      "sha256": "c2e6481177db6fc1d377ac0d28ed32fba5bc667a972103098c3e686ea5dd1783",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-before-alternate.log",
+      "sha256": "1bdd04cdcc2f441727098580d442dc3d807ed72b6be7073f3a3f5e1c78b907df",
+      "bytes": 731
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-before-hero.log",
+      "sha256": "e9f25118ee37f8c11fd6163d9ff542d97563c243915c8e8346c5f201efc1ef84",
+      "bytes": 726
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-before-high.log",
+      "sha256": "7c132de6a7988a98b87e263eff8b8c9e5f14d150b8d0772fef820cca85397c80",
+      "bytes": 726
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/evidence/robot-before-rear.log",
+      "sha256": "c98102d220724dd6782e92b0ff4131e190cf540e376ad4456bb6e42bd2d6c6c7",
+      "bytes": 725
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-after-alternate.png",
+      "sha256": "0652b6fa9c68909505c3c11fb4a6658c7a5347d569086d92a845787245cb8abc",
+      "bytes": 456324
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-after-hero.png",
+      "sha256": "f0dfd17fe4cb610cc9b02ef3183442a35f2692ddd9710710d707149bcf058e24",
+      "bytes": 389941
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-after-high.png",
+      "sha256": "f440c229ce011e7a1a24af214d5350f6f97232f07c0f8e2798dea711c3f92f5e",
+      "bytes": 429962
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-after-junction.png",
+      "sha256": "63fc28dd2c6cf3d768c3fd2ae6133b9718e2983384f475a77d8e86c06c48a6f2",
+      "bytes": 684789
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-after-rear.png",
+      "sha256": "c1672c08a6acfae6e0e273b61411691a4a1ceba10236c72c5aebcfd34e981e6b",
+      "bytes": 377183
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-before-alternate.png",
+      "sha256": "a5112d2dcfba47dd8325f459b59dc245859d64afb84afc16bbcb2e4413f2bc32",
+      "bytes": 464692
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-before-hero.png",
+      "sha256": "e61ce609343cd0302cb6e0b19825b99437cb70265e00efa7ca9038089f05569c",
+      "bytes": 391208
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-before-high.png",
+      "sha256": "3d2229d98cf9275402c2a3fcbbc4e43fc1d6ff3511131ce9a5c9d9833f6b2413",
+      "bytes": 434433
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-before-junction.png",
+      "sha256": "d5363206cfe3c83b3dde04668b8ee763ff2138f542d9373bfccfd0d8b0f2a7c5",
+      "bytes": 694278
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/canal-mill-before-rear.png",
+      "sha256": "bc74e336a3db74fca62ed90344f7a11523c5f05acd9aa5699224c00221c35515",
+      "bytes": 379186
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-after-alternate.png",
+      "sha256": "4001ca8376515f7d8266fbc9867b8e1f7ecc6189d704b42e82d094a6ac98b4d4",
+      "bytes": 470372
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-after-hero.png",
+      "sha256": "8a237583869ed93df83f379c3a2594258bfcaf76cb94ab8682d35cd60a4b1b50",
+      "bytes": 402394
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-after-high.png",
+      "sha256": "100648d822b114f3b255309f5c4015be0c791d258b116da17af0ab82d90e3168",
+      "bytes": 453865
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-after-junction.png",
+      "sha256": "88509a29e68753d0033c0420c3c518bba87c8eb7a60bf6a101c7e6135f9a4f48",
+      "bytes": 689536
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-after-rear.png",
+      "sha256": "1a3a914c4174f2bcca3a3ed9f9e1fc807f79a19c57d877e128f4e14285b2f4a3",
+      "bytes": 298178
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-before-alternate.png",
+      "sha256": "0d3c59d62f6b6d5f81c61adad7cf33d03a7319178cb7ee5deacd920a5135a498",
+      "bytes": 466747
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-before-hero.png",
+      "sha256": "eea95032e7fd0f717d95b58f817a8226e0714d5c957933b53e6439f2b7ecb84f",
+      "bytes": 396883
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-before-high.png",
+      "sha256": "1eccd2fb618e6134f2d1b15e0a852c4331256a2290293143b420f8dfddc715e4",
+      "bytes": 449706
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-before-junction.png",
+      "sha256": "126cded136bdfd1df2dbbf22c8305f8eb41ddced9a9f07741e7bb4b0e97d3f1f",
+      "bytes": 673416
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/courtyard-before-rear.png",
+      "sha256": "7bdfc2d089a0acc95b47737bd1cc2136731e66d6c82660969be389d65f654b36",
+      "bytes": 293742
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-after-alternate.png",
+      "sha256": "327206794313cb9d416f5e64d84a459357dcea0861f5ee22ea27bfd990631bf3",
+      "bytes": 488099
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-after-hero.png",
+      "sha256": "752c2b7ba6cf3da326ab47af684e688a44e2cbf13c770c9327f330920311cb45",
+      "bytes": 398737
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-after-high.png",
+      "sha256": "3a547f3ecdcc50664f6232ba6118b6bf71caffad866e0e9bd6e9286f5acd2c3f",
+      "bytes": 468664
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-after-junction.png",
+      "sha256": "2819fd18fa93e7b85e7dd1635a57ad169777d5a6bb3f4557cd5dd76def3dbfb1",
+      "bytes": 735422
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-after-rear.png",
+      "sha256": "a42fd0de484533d178f59360ad1864ae9bd9d805adf81ba95086b317efc8efaf",
+      "bytes": 366248
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-before-alternate.png",
+      "sha256": "f21150ae2fa013fe42b21c238f6888c024eb0f80479f62ff028b6e1185fcd978",
+      "bytes": 489374
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-before-hero.png",
+      "sha256": "4d74dfd294f4df750e16955b6c99de8efb6e0e7435b49dae9a40ae519e3eeec4",
+      "bytes": 399826
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-before-high.png",
+      "sha256": "9a632a1cc99b1900d21190140bd1c34ad8e25f60faec83899a32a2b6fc2b5cc7",
+      "bytes": 469592
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-before-junction.png",
+      "sha256": "2226495eae83fa60f25f1bb3208a4f94f5d8d17771cff0fb79f1fe00034d9f27",
+      "bytes": 737689
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-before-rear.png",
+      "sha256": "79fa2bedc5b1574ae9514fa794690b1aa3d669c35b0c755c5031b6c637e85aec",
+      "bytes": 366270
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-section-after-hero.png",
+      "sha256": "5117d5a4b896cd321f92454d38a5ad03e70698e306837dfe43922824566d5da2",
+      "bytes": 380153
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/observatory-section-before-hero.png",
+      "sha256": "978d2ebbf5831ef8e6c7238ea3533121549d0d97497f5584f5b64f942639fd73",
+      "bytes": 380857
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-after-alternate.png",
+      "sha256": "66ab4037c457bd7bc9b94fd012453a0933f0e75f40ec5acb6838a703ef38755d",
+      "bytes": 278398
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-after-hero.png",
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36",
+      "bytes": 303209
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-after-high.png",
+      "sha256": "8ab365ad4a0fc8dc061afe14e485247ab949e9bed1ecc4f851078a4dc77c7070",
+      "bytes": 323828
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-after-rear.png",
+      "sha256": "cc9fe49fef9293206dc609abdc432301d91af4af0609d26b6ce033962c62a1c7",
+      "bytes": 288867
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-before-alternate.png",
+      "sha256": "66ab4037c457bd7bc9b94fd012453a0933f0e75f40ec5acb6838a703ef38755d",
+      "bytes": 278398
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-before-hero.png",
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36",
+      "bytes": 303209
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-before-high.png",
+      "sha256": "8ab365ad4a0fc8dc061afe14e485247ab949e9bed1ecc4f851078a4dc77c7070",
+      "bytes": 323828
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/images/robot-before-rear.png",
+      "sha256": "cc9fe49fef9293206dc609abdc432301d91af4af0609d26b6ce033962c62a1c7",
+      "bytes": 288867
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/index.html",
+      "sha256": "91f9aada9bbd8d46e737dd5c677f2735dc7c975aff27ec195910dfd5d4e4141d",
+      "bytes": 19736
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/manifest.json",
+      "sha256": "21a5e094d540fe01341c7ccb8169bfff0d3774615be5e25fd400d2447b603243",
+      "bytes": 29446
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/check_csg_joins.py",
+      "sha256": "2c051f7a9a4a5cffab05a4a9328b46dc375560e3e5dea5ee4acb143cdd47481a",
+      "bytes": 9956
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/check_robot_joints.py",
+      "sha256": "285044c1c201cb102b3bf90690a963a52fd3040a7ac9084e096b0b2bd3544d5c",
+      "bytes": 7272
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/csg_form_refinement_report.html",
+      "sha256": "c5f459fc625af6ee0cf06675d34a86c688dd44a3bb19d9717deba65a401e701b",
+      "bytes": 18364
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/csg_join_report.html",
+      "sha256": "84a32943f9f7d4db1dfb1d7e52c429bc8064de9b85095b0e3d1c9035f3587ec2",
+      "bytes": 11240
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/csg_join_report.py",
+      "sha256": "ea7aaa49142a8738a044de15cb8bcffcce19134037503356eaa56af202cb4758",
+      "bytes": 6359
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/polish_csg_showcase.py",
+      "sha256": "b6d439a1c02b89c7bea51051da3dec18ab41e55abe7b844833a24dd974952a4f",
+      "bytes": 15088
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/qualify_csg_refinement.py",
+      "sha256": "45a60d2ec9b9906987434682eadaa9ea3ccab62ecaaaf8bdeac40e0c45dd29b0",
+      "bytes": 7454
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/refine_csg_showcase.py",
+      "sha256": "36d4f9649f3dfcc5d2fb4a36e4346b1de3fbf60e4ae9ae84dfbd089aef497a9f",
+      "bytes": 16907
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report/reproduce/sdf_author.py",
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b",
+      "bytes": 4061
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/report-controls.json",
+      "sha256": "0c9196e5178b65bd07b8c65260f40c7875016ea0f9acf4bad2d46c0b14a409dc",
+      "bytes": 2376
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/robot-config.json",
+      "sha256": "50826754db9657a40191297dbf234ca8fd1afe9632bc3e34e14a7bd13e5e22ad",
+      "bytes": 431
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/robot-high.log",
+      "sha256": "130454100f3abdaf135687e516f30b5410e7e5308c4d9c180af435d93d981317",
+      "bytes": 697
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/robot-high.png",
+      "sha256": "461d5e4eb650a6dcc0e1210b5928ebe7411cf46f9fb75f37f40e8caacc94cf95",
+      "bytes": 378657
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/robot-rear.log",
+      "sha256": "5787a8e8b3b5b46daec11528214da542ae09bbbe1129865e5576f400db024b4c",
+      "bytes": 697
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/robot-rear.png",
+      "sha256": "ffa06448278d9fff4988f9e78ad88c0537731ce40db13707d18b2ae427acf46d",
+      "bytes": 335537
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/ctest.log",
+      "sha256": "452e1d12fb38014f43f93e455e88f5a26ad39239be5f34e198089554943d2703",
+      "bytes": 2044
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/recipes.json",
+      "sha256": "64a0f2985f9c8dc6458c681f9151806850ae8c9294c5e285581ac769d9d922dc",
+      "bytes": 88
+    },
+    {
+      "path": "outputs/sdf/csg-junction-polish-20261104/sdf-app-manifest.json",
+      "sha256": "0485dbeebb18f736f1f64c0904dbd32763718618e477523ded6c3f57ce3ea191",
+      "bytes": 144
+    }
+  ],
+  "protected_bytes": 46399409,
+  "native_dependencies": [
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/authored_bricks.comp.spv",
+      "sha256": "6792b381fdac5bfb8ce3e9207bb8e5581e73cf1e662bbeb73f471aa58d726880"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/authored_filter.comp.spv",
+      "sha256": "def16143f1e0d4d008a6b58cec85d21053361fb14775040beb40a63ca1feb806"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/authored_validate.comp.spv",
+      "sha256": "28c8411c0781b07578de27bbc543bd0017895bc41ecf2c53f9545e63c462e921"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/bricks.comp.spv",
+      "sha256": "90a2ec847d648475fc93e400231c80c48ed444eb3274f687b88bb71ba8f2bb26"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/filter.comp.spv",
+      "sha256": "f3589f2ef32c4d06a9b30ec8b00e7ac2c5456cf359d026f8f4e0638b9ed19c6c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/forward_pbr_post.frag.spv",
+      "sha256": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/forward_pbr_post.vert.spv",
+      "sha256": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/occluder.vert.spv",
+      "sha256": "d20392e4249444cf65afbdad2cd01de9c703256d0c4fe912d6b2a309a92bfe3a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/occluder.frag.spv",
+      "sha256": "e592d45c44f430da47367715bd58068a78d914861e13e5d2df5bf0df55a5775e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf.frag.spv",
+      "sha256": "44dd5df203134bbbf1757309328400c68db96348a80f86ab48a40cb31cf3b3b6"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf.vert.spv",
+      "sha256": "ae9983b94db66576a2d02fb1e286ac642aca8252887cf39d4d9b82af48f1ebd0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_authored.frag.spv",
+      "sha256": "fc623a7a0b9e99aad040c47d34c0ddbd8b6a09a97dbc9d6663780f48626a9942"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/validate.comp.spv",
+      "sha256": "46f0591dac8a4cd15c8a7d8e398226b833ee9b2b3153de65f202842239eb7f26"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_study.frag.spv",
+      "sha256": "64dfd0bd1930162b843458332845c471a104b68098d098c174ba007249bea56c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/atmosphere_reflection_prefilter.frag.spv",
+      "sha256": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/atmosphere.vert.spv",
+      "sha256": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/atmosphere.frag.spv",
+      "sha256": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud.vert.spv",
+      "sha256": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_blue_noise.comp.spv",
+      "sha256": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_perlin_worley.comp.spv",
+      "sha256": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_composite_background_depth.frag.spv",
+      "sha256": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_environment_prefilter.frag.spv",
+      "sha256": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_march.comp.spv",
+      "sha256": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_planar_filter.frag.spv",
+      "sha256": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_weather.comp.spv",
+      "sha256": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_shadow.comp.spv",
+      "sha256": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_worley.comp.spv",
+      "sha256": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_temporal.comp.spv",
+      "sha256": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/surface_cloud_march.comp.spv",
+      "sha256": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_full.comp.spv",
+      "sha256": "daea996f3dbcadbb21b77484eb10adf69cf180072af6c8f1f284ef9487da99fe"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_analytic.frag.spv",
+      "sha256": "c7f78cbebee817494baae557ce2ae3abf34c06600dacc628ab4296fc51bd53d3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_analytic.frag.spv",
+      "sha256": "59e6e0492b9d69dc3dcd27690283514a86bf11a44cce64d1a64efa0eaa52a488"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_hybrid.frag.spv",
+      "sha256": "0e17938790ef37c80b4df95518eaf6f2f8f90e2801c9009245e5a8c670075094"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_hybrid.frag.spv",
+      "sha256": "170a291183916de591560b5d9cadf9431b1378e66785f4cc1f23b3a285ba269e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_sampled.comp.spv",
+      "sha256": "3e672b4043ec24922c7d89dc2cb836ea0f0b519e5b961a1fc5d075d873a9b963"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_hybrid.comp.spv",
+      "sha256": "4a1c9148a6d5a6368a3c37729850f37609d745f5dc9c24957e5022d03ac09524"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_donor.comp.spv",
+      "sha256": "3c7a06cf2483b5aba5e52fa47aa786ce11d416f632b5a86d16d8bde87bae79a4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_analytic_pruned.comp.spv",
+      "sha256": "a6ef22930872de54700d3162e558e2d9705f4ee470586da86de812715d946a0e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_hybrid_pruned.comp.spv",
+      "sha256": "fe6833a7739747f3a4b3de6e40150dce4d67b28328839a449f610c46553f5494"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_analytic_pruned.frag.spv",
+      "sha256": "ecd56b8565943ff503ed1f0682113f069caa4c43f3f714a1f84445c380100f5f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_analytic_pruned.frag.spv",
+      "sha256": "d8e150533dd2c208f12862fb8c4473537c32067aca9b182643986788cc790d21"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_hybrid_pruned.frag.spv",
+      "sha256": "2c039e4694063c847bfef3b0c1d96aaefe246157ec42d8b5a1aa10501036f667"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_hybrid_pruned.frag.spv",
+      "sha256": "9fd390b991970916764b1c9a8d5dd4bfe7980980c2cba0f8defd7160d47550f1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/investigate_sdf_analytic_pruned.frag.spv",
+      "sha256": "c3179e8a67e5b1c6d56bb0255d1a5338dd8681f132cd5a3806efdb53b56019d1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/investigate_sdf_authored.frag.spv",
+      "sha256": "e7635111f2cde0ae8f3abcc65f9aa2409bbfb89ec0dd927303aaa1cc09f5821c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/investigate_sdf_hybrid_pruned.frag.spv",
+      "sha256": "2053949e00178ded9503a92258a9459eb72875c2dd17507546e83d5232472c0f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/workload_analytic.comp.spv",
+      "sha256": "b80460dab415cb3a44e5b0ed5e87b4edee5218fd0db7d132285534b6c2e9fc92"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/workload_hybrid.comp.spv",
+      "sha256": "04ec54813ee39dcdb6c8d2d2bf18e51448141c86630aace1ab742e4a03d49b09"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_comparison_analytic_pruned.comp.spv",
+      "sha256": "b1e7782f17aef2295e4750313db264a0d934d7c350f7cb3502a1d65600f99c26"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_comparison_hybrid_pruned.comp.spv",
+      "sha256": "8011c6f714663918139950803c26667a20deb4bb39ce7a72ff0cf1a0b207faa3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_investigate_sdf_analytic_pruned.frag.spv",
+      "sha256": "32f55d747d6abbadf30c3f722584323aeade9eff08316ac2caecb1c21163f765"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_investigate_sdf_hybrid_pruned.frag.spv",
+      "sha256": "f8d7d9e399669473e9cdf93add95ac9246e535d55c3880a7d868318f19131d31"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_workload_analytic.comp.spv",
+      "sha256": "5c9fd8b6341103c63c2882ef82f85d99607ff01eabd3622a12e7095ce79dc03d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_workload_hybrid.comp.spv",
+      "sha256": "a2fe2323b52ac318304e4f619e1c5444bf7216d8e9d00bd96cb5a40319a5d2bc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_comparison_hybrid_pruned.comp.spv",
+      "sha256": "0a3c66409378a3b69722dddbe15602c7462d64224c5670920a0adbd40ce3f7cc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_comparison_analytic_pruned.comp.spv",
+      "sha256": "5b2c630d7a9c98132bb7f87972edd0920741a288571719b6cdbe57d5c912daa2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_sdf_analytic_pruned.frag.spv",
+      "sha256": "46d966049fb2105ce7ae63254a868adfbcb953c86acb0f420751078cb008f649"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_material_analytic_pruned.frag.spv",
+      "sha256": "08c5fb497f845d37dd3763540c706929a17e1dd0dae0d000878a0209470a381e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_material_hybrid_pruned.frag.spv",
+      "sha256": "46689d89a0088110be752470e413989ef06fc4d6725aafb777f2407e2ce07245"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_sdf_hybrid_pruned.frag.spv",
+      "sha256": "ff30f490fe054cfed17a7dbbca3f7fca35570363e0a45ef1155c6bd3948a00b1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_workload_analytic.comp.spv",
+      "sha256": "be735464d59818f55b2188439b98644b2a6cde360b1e57ff2842a5f11a58bd6f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_workload_hybrid.comp.spv",
+      "sha256": "54a9a5af8737daf962dbd6d8a07837664cd7fc12a34ded09df8c69874467c5aa"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_comparison_analytic_pruned.comp.spv",
+      "sha256": "838689b4e1ebec5f30d3b8a76da47b40ab94f11458808f9e91600a68f85a8d53"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_material_analytic_pruned.frag.spv",
+      "sha256": "2785d1029948c12de8081407af824bc52be71acc8a79eb5cb3f8e09b2b53cdd4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_sdf_analytic_pruned.frag.spv",
+      "sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_workload_analytic.comp.spv",
+      "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_comparison_analytic_pruned.comp.spv",
+      "sha256": "5b2c630d7a9c98132bb7f87972edd0920741a288571719b6cdbe57d5c912daa2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "838689b4e1ebec5f30d3b8a76da47b40ab94f11458808f9e91600a68f85a8d53"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_workload_analytic.comp.spv",
+      "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_material_analytic_pruned.frag.spv",
+      "sha256": "2785d1029948c12de8081407af824bc52be71acc8a79eb5cb3f8e09b2b53cdd4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_workload_analytic.comp.spv",
+      "sha256": "be735464d59818f55b2188439b98644b2a6cde360b1e57ff2842a5f11a58bd6f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_material_analytic_pruned.frag.spv",
+      "sha256": "08c5fb497f845d37dd3763540c706929a17e1dd0dae0d000878a0209470a381e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_sdf_analytic_pruned.frag.spv",
+      "sha256": "46d966049fb2105ce7ae63254a868adfbcb953c86acb0f420751078cb008f649"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_comparison_hybrid_pruned.comp.spv",
+      "sha256": "f988c5bcdbe54cf2cb80d73e8e6fef99a97f9fc7361fde5238f91ac5055cc546"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_material_hybrid_pruned.frag.spv",
+      "sha256": "5d0660994da05986b4a2e0d86be5d54d93ae6edd27a774c188c1b8f7cfea7cc0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_workload_hybrid.comp.spv",
+      "sha256": "772588f81e4aa4c31eca65dbe3c419bac84f78d17878bb5ed5d9960c550758f5"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_sdf_hybrid_pruned.frag.spv",
+      "sha256": "b51dd71e2a96eabe53c655c89db8ecf31f1cf93339f54f2f830a80096096ab74"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_full.frag.spv",
+      "sha256": "684f63d6a48200dbb44fcfca850e35d9a5128210ec35c5a21d4224a3a271fc12"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_material.frag.spv",
+      "sha256": "a63d7c9e85c1529cd97bca3e2c38fe80760eec4f48b6f97d0533b5d9e08f5f1e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_normal.frag.spv",
+      "sha256": "7805d21fbf80ad7e65eb08a1d118c3eb7c8415834c455258a07ced9fe70c99e7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_primary.frag.spv",
+      "sha256": "b1d20a7020c56257d86e8470222c0a0c9e0f8705925402bd34aae3604a1626db"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_shadow.frag.spv",
+      "sha256": "3e68a7ab59257a8854907bd93318fed89f6b8dd3c04b443a603601c7b18770ea"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_no-sky.frag.spv",
+      "sha256": "f87baae1822c5cd0d580a87bc9195a0efa5d5cbcf8d3b5ddfa291f62f1b25df6"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_single-material.frag.spv",
+      "sha256": "ed2261b95c4499c8941b261bf4f2e21c58f7d000b0f9e87b9e52946f8b866c72"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_nodebug.frag.spv",
+      "sha256": "8943b51e5b1bd154b271ba7b2859cc054b410d86ddf17a53f0786e95d9c9068f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_specialized.frag.spv",
+      "sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_material_analytic_pruned.frag.spv",
+      "sha256": "b60307670a79097700969567a1b6efc9b5116997a91ac3aa6c527194c1648336"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_material_hybrid_pruned.frag.spv",
+      "sha256": "b06eab628cb5678e066bee57db4e1fe91c057632fd5a17bd2b80dd5303bb5e19"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_sdf_analytic_pruned.frag.spv",
+      "sha256": "7c83e782e3971c4d41aa084052917fdcbef6874e183ec1fc3c49aa6bc9fa9d5c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_sdf_hybrid_pruned.frag.spv",
+      "sha256": "97c2f57a5b6e35aa0e47a5c3b83b8593709c186b719544f3a11ef393585569b5"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_far_material_analytic_pruned.frag.spv",
+      "sha256": "e0efe4f8c5c525f5fe572a47772c9862198baed83d20b2faebd83d672f81fb48"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_analytic.frag.spv",
+      "sha256": "5670749e0b2a83595f5fc3e56dcc0b37b0c8958a9714c7105611f7a906c232ae"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_analytic_pruned.frag.spv",
+      "sha256": "c196c46239bcb16deae5b18ace401a040041d18db37e8f2258c6618f3ef863e9"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_hybrid.frag.spv",
+      "sha256": "8f384d4899ac3f6d60456f325b569b8c7c3390cdb866a4f266f320276ca3e10c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_hybrid_pruned.frag.spv",
+      "sha256": "3cf53f454ab433a3daef8ba4aa2bc52974616c19cf43dee3c0cd482b87c282af"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_far_material_analytic_pruned.frag.spv",
+      "sha256": "e0efe4f8c5c525f5fe572a47772c9862198baed83d20b2faebd83d672f81fb48"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_sdf_analytic_pruned.frag.spv",
+      "sha256": "7c83e782e3971c4d41aa084052917fdcbef6874e183ec1fc3c49aa6bc9fa9d5c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_material_analytic_pruned.frag.spv",
+      "sha256": "b60307670a79097700969567a1b6efc9b5116997a91ac3aa6c527194c1648336"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_analytic.frag.spv",
+      "sha256": "ccb53c1c14bee22f2f5efb118579ed66fbf62578d35ed2dc2abc5571a00ac599"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_analytic_pruned.frag.spv",
+      "sha256": "953160367eec925f678de24efdf50cd0ab58b412c7debcc47b44d08ab7c0cfda"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_hybrid_pruned.frag.spv",
+      "sha256": "53466bc4cd4109b8935f5e9950b62d32266ba08b8e4d355a1e121aec017e8f66"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_hybrid.frag.spv",
+      "sha256": "866c7ea3bb148252144c1ff7f2ff18758b8ec3870e2bcac1ff07f061716ec994"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_unclamped_sdf_hybrid_pruned.frag.spv",
+      "sha256": "a503a648a3599233266d5d3c75aadd689284e1570fec7bb39a394f0a64518062"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_unclamped_material_hybrid_pruned.frag.spv",
+      "sha256": "ca1ca58d2d8cf8951defbbe147a4a34a8823d58037793f16d1e41934df952fcb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-primary.frag.spv",
+      "sha256": "c26025662006091e5b7040457da47b2a602db1e4ddeb96c78da06c6ae03c6612"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-no-sky.frag.spv",
+      "sha256": "038c44dccef4f3f4528c78fac35845bfaaa404dcc36f463c7a5da8bbfda0907a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-shadow.frag.spv",
+      "sha256": "a7e0b8d89added498ab84a5ed343166ac74fa26b26d20bc67ccbf12fdd8d5d49"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-material.frag.spv",
+      "sha256": "8ceac9b15bc65083fe834df2e675e5d2a91cb1447b552cbbb55de9c161917ed2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-normal.frag.spv",
+      "sha256": "eed43eb028081b023713f131ded26e55481a5535e38f80d3984349eb56399c9d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-full.frag.spv",
+      "sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-cull-dark-shadows.frag.spv",
+      "sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-reorder-shadow.frag.spv",
+      "sha256": "61755fe5ac4069686f859a7f505ac52e8d9bc2f1ef34663bda18c215c9c14b27"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_accel_sdf_analytic_pruned.frag.spv",
+      "sha256": "4b93e12947915b49adfb6fff451d83aac055c5a89584f4d673ef96e7d7d73388"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_accel_sdf_hybrid_pruned.frag.spv",
+      "sha256": "74a25878c5ea3b9a21fe4333bab338d7a654603c2b0221f3d4d9b3f430c9cba1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "86aa1ede87bc9c3bb238d78b6ab69f5e4defd9fc017f92921c3f3c9a65e7a3fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "86aa1ede87bc9c3bb238d78b6ab69f5e4defd9fc017f92921c3f3c9a65e7a3fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_root_sdf_analytic_pruned.frag.spv",
+      "sha256": "4b93e12947915b49adfb6fff451d83aac055c5a89584f4d673ef96e7d7d73388"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_analytic.frag.spv",
+      "sha256": "37e621b0e1a919fa78fda2818d23c259c17b8d250db6608fbfb43ee978aea449"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_hybrid.frag.spv",
+      "sha256": "c0fbf734a5f8dfa4cb15d11b271f6a4a9d11caad4d534d95d972f7a98c750a54"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_analytic_pruned.frag.spv",
+      "sha256": "f9a1ad92cea27ca4987be051add7e35d23ebd4e7c7d316baa7e195d6e3692230"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_hybrid_pruned.frag.spv",
+      "sha256": "82f106887677b3e430322e3efc7189e525e0033eca742d0c40dfe7d40705de97"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_unclamped_sdf_hybrid_pruned.frag.spv",
+      "sha256": "1009a93ba85e7e17e37391fda974a7e97a259ada8d884993c1bc2822978618a1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_contract_reference.comp.spv",
+      "sha256": "4e56955d7998d90dc5ae5e1308553077e09ab8b3b3c87d3cce30fef41519a116"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_contract_candidate.comp.spv",
+      "sha256": "56012b80e4967d5205bacefdff66ce7784068e49ca47e408fd24d2f0163269c7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/prepared_cone_probe.comp.spv",
+      "sha256": "ec07b62a155b52f090c4ae26117fd096cf10c8625d390113845423d4672f9c20"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "ebaf4c916e435a62c8f90baa76f8912569ba8ba83ba390ef7b1ffd40b1faba88"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/prepared_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "f0405c7be0820fd2646b7a960be887249d4766e448175fb915f9a1d64849cf3d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "da9748d2b011d5c48b8742e1d3d0d7841784ed7c09e7fa261d55f0529a34c22d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_validate_combined.frag.spv",
+      "sha256": "f8a0977a97570aa452de17637e56e7f63a42fd04679b2a72d439b070e4262cff"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_validate_reference.frag.spv",
+      "sha256": "839a7fd024036626bcc3c446294b4bd4647009debf78ac4687e93d63cb193b01"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_validate_shadow.frag.spv",
+      "sha256": "4328893cd1b0cf74f34ce225a0372388d37938c88be29ebea2cb5270002e550a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_workload_combined.comp.spv",
+      "sha256": "46ef7028f82e1fdc64c284a402646ff2c4fe59269113249519542a8189ac6e55"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_workload_reference.comp.spv",
+      "sha256": "8ad21df43b801d2b425b2452bc9cb32f6c4dca7dc6bf611c4fc5c6cb858a131c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_workload_shadow.comp.spv",
+      "sha256": "74c61ef1e82eaa82902710069c269e7f0076311901d7fbc1c22247423ac99f56"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_camera.frag.spv",
+      "sha256": "6223f8007b719e8b05a66d2cf588989d8c9b74c6b25e035fcb5f79cdae72096c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "2220ae880f4885496e9f229bdd11e6ddbe7850827ecb1e14a0a735375a302461"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "8448f8b4f729831244223103db5349598a8eef98e667533b491e8a31381103a9"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_validate_combined.frag.spv",
+      "sha256": "5a3e57ba3b5d2d8710672b5679bd965d053488a5d62a46488ff479394a71af79"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_validate_shadow.frag.spv",
+      "sha256": "04e0b6f83a73ff960af95625095d448cca17228271e8bd1109d7750d9da018a8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "26e212fed36830168ae12c14ce211b8db5bd1ac6861e974ec426bb68b161f5a2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_workload_combined.comp.spv",
+      "sha256": "dcdce0f34014c759b97ece218f56924f2637ddee37d5f7d80d8ac75a0db819f0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_workload_shadow.comp.spv",
+      "sha256": "5b847510b8bd6a355bcbaab5512b26d2293124492d91ba6688912b15df589fb2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "67c09ada1829a5ea3386518bee12661a0783f99ce02cfbca1a68f2b8bb2e13fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "5390493c6ebaef898f89aecea22dc9f72275b2364929070af62cf85ca8b5afff"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "18dfc53037da68fdb91c91736f21f1c34399b8d5683468f4e1257ec010772bc8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_validate_combined.frag.spv",
+      "sha256": "416396c7fba961eb13a1d5a4fa75d1b244c30075956b0bcc34ef9740a3b3df91"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_validate_shadow.frag.spv",
+      "sha256": "b96012a7c78fe2bc2c6dac011bc69302920c68235145b0754df791411064e4c0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_workload_combined.comp.spv",
+      "sha256": "d317d2a4dac98ab0e61df046df3a63b7855ca566b5599bb4eb3b6d93d344bccc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_workload_shadow.comp.spv",
+      "sha256": "46f518d99a81863e88dc848f69ab6716c385d5e982d0625ad001ebe30751e868"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "d58419b85d0e9d64986e528bad76ae64fe15ca089cd17a810b9ad0ca805f6419"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "8a90dd62080a299ec1cedeb9a55013714eb9cb5cb7dd64bbdb69d2b8f89b7cff"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "e2247c0a96719ee76f12714ed777986fc62c3e265fe2710cde637c10797ff893"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_workload_shadow.comp.spv",
+      "sha256": "efc3e4221474760dab636d3e60fa1d6687fab8fae3f5f107f0881a9cfdbafc9b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "7cbc551c5ac52a96817f842d8fd9a711520eb950cf794dae953efd430eeb82aa"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_validate_shadow.frag.spv",
+      "sha256": "cdac12d2a40cb191b1e0e18da20aa2ccb38742f14eb1ebc062effcd856f9ae6b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_workload_combined.comp.spv",
+      "sha256": "695605e6e847f9f75948f5c56dc3486f20beaf258c982f695a651f6614a52f06"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_validate_combined.frag.spv",
+      "sha256": "29a12ed3b549ad383af336319fb6cdc466e519cc9cad9d624dc93f0c05d3a296"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "ec7961fc8bc1aefcbaf2632d38cc378a7e53e3d61db4fc8b874e897cc6ff8743"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "db86c542a3eedabe7c8d27ff066c1304d9418e4269e0334b71c902a3fd33ea8c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_guarded_contract.comp.spv",
+      "sha256": "270c04a0d024da48f25e68e365bc174edf3b10864a26e77543cdb6cebbc27bc0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_guarded_contract.comp.spv",
+      "sha256": "cd380c12a0c3f415d6ba6edcf502085f84db178afbbdf51c6a0aeee5854d1054"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_guarded_contract.comp.spv",
+      "sha256": "c1a85db8fa03f62c06c5f4e1022bbc063ec687914f45e1430cc12f33eacb75d2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_quality_workload_combined.comp.spv",
+      "sha256": "5bf1ce19118323b8d368fe14d85d620926536c89bbf38bf0919b6799b03eae11"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "8bb6462dde68223d7e4cfde87c4d3e4f4e7725a9307ff0a8baf95970277906f7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "cc83fbed69c15c6991a315e4fefe78d7a762a9435de190f354a3314f8e68ab67"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "c5d81a3cf542d51bc307817a1746956eb530ba77d20a7c59bcd537f8f247a9b1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_workload_combined.comp.spv",
+      "sha256": "bde058256960fba19e6e040c0599255256aa0515cd56d14e0692314ca008678c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_sdf_authored.frag.spv",
+      "sha256": "aea801ebfa9d1cc19aa4edf4aac32f7bb8e747625d27a5988925d108304353e3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "94b6596fdaf6aeaa5dd3caf446a0f7fb7cbb28bf65049fe9bdc2e9930c9ba1a4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_workload_sampled.comp.spv",
+      "sha256": "a00cea5d5eefbd627bd334c6a33517a6abc2d389ea07ae24cd45b1c8e02d4904"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_workload_reference.comp.spv",
+      "sha256": "3d620654d0d885bb72c8c42d2bca97c2f178de2c3095be413efc9b9e30507c54"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_comparison_sampled.comp.spv",
+      "sha256": "4e8925e8caf596d66c390e273e81874c3bfdf54302a58c0a5d17ddfad8f80eab"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_quality_workload_sampled.comp.spv",
+      "sha256": "3cb9d913a9769eaabf8dd5982231d77b2b6f852f5aa6269b48736077cb56b4dd"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_sdf_authored.frag.spv",
+      "sha256": "7ce450cc97dab5ea1b7ab46afc5db76468b59a0b6b7db7577a048dc5a4bde4f9"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached05_comparison_sampled.comp.spv",
+      "sha256": "f182c3f6fe5c2bda11ac00f5b7d1059aeb700a652f1b3ef87165017f9df52847"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached05_quality_workload_sampled.comp.spv",
+      "sha256": "d052e44e645fb085f97f21a79b199a983bd6d603505ccae419407a62cc2972cb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachednormal_comparison_sampled.comp.spv",
+      "sha256": "6ab90832f44fcf5ec546321b0a07a0b57ad7896dab8b757908d231618f8eb726"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachednormal_quality_workload_sampled.comp.spv",
+      "sha256": "f3e455324f80fbdf5b4f1aa03c4fb7fc3e770a7ef6bf1acec268770aac950163"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached05_sdf_authored.frag.spv",
+      "sha256": "328eaaf80df492bf4d3f2ea79b6d44186069617ebfa5e5c1a475843794511356"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachednormal_sdf_authored.frag.spv",
+      "sha256": "f87ebc8b7efab127ba06df43fcc6432b2e1ffef5c7a9966cf686203991984395"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached03125_sdf_authored.frag.spv",
+      "sha256": "1cbb594cd558d3b258a4f987a8fc50745a91a6312a228c3f57c2dc853649cd32"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached05_sdf_authored.frag.spv",
+      "sha256": "0a5758db6a7fd18fec9537a264ed98e3eb82783510514c16e4fb81ebbfab3ff5"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cachednormal_sdf_authored.frag.spv",
+      "sha256": "d3e323b7a3f8154a27701e46e922bd7a8cfc20f43b50c01b243a951441f8a0cc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_cell_contract.comp.spv",
+      "sha256": "496607e84c7925961bcf6176212ccca4b70d27da350e6ee5320da76b48867103"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_comparison_sampled.comp.spv",
+      "sha256": "f5888637c78d0f715c243a2176fd288f0b5296c5479bb1c61ba7f0be7d00bf2e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_quality_workload_sampled.comp.spv",
+      "sha256": "52b5b2c845f6d391778a44b3321b21bf4534ee4e8b66f1757be51551a73993c1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_sdf_authored.frag.spv",
+      "sha256": "e024f8136e13a524c7df5d0dc0355b1997b386e71e325fb91f5729bff2348c41"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cachedrefinenormal_sdf_authored.frag.spv",
+      "sha256": "5f56c9f5b00296457444c826bf7680e44bb72880c3b50e9c5a5b665414853d4b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_material_study.frag.spv",
+      "sha256": "876b570344129e1086c432047643d4e642dd197bc0039df34ce32b3b1257ce54"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_material_study.frag.spv",
+      "sha256": "f67c8c57d6032ffa332fad12f00cee8ab9c61b6f2160e4cee043a56f1250ad23"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_live_edit_sdf.frag.spv",
+      "sha256": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/live_edit_quality_workload.comp.spv",
+      "sha256": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/live_edit_queries.comp.spv",
+      "sha256": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/live_edit_sdf.frag.spv",
+      "sha256": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_lit_live_edit_sdf.frag.spv",
+      "sha256": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_live_edit_sdf.frag.spv",
+      "sha256": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_shadow_lit_live_edit_sdf.frag.spv",
+      "sha256": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_live_edit_sdf.frag.spv",
+      "sha256": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_edit_quality_workload.comp.spv",
+      "sha256": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_edit_queries.comp.spv",
+      "sha256": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_edit_sdf.frag.spv",
+      "sha256": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached_edit_sdf.frag.spv",
+      "sha256": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_reuse_bricks.comp.spv",
+      "sha256": "d64fb0c80293faf97f6f03330c0780f692469b244e92d8146446ebb0c7729a48"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_pruned_bricks.comp.spv",
+      "sha256": "bc22aa5962ee905ad096d9274e8440b9b4c4ba3011b4578b6ca2a9ad52a7296c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_pruned_filter.comp.spv",
+      "sha256": "26f79b8d6f1ee8e83d73f5d31b6a2a9582d4b35645a38d2a8f78ac2a937888f3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_canonical_fallback.comp.spv",
+      "sha256": "6086287eef48a5fbef5140ffebe6e2f1a821b9b6c54397400bbaf875dae73f2b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_prune_probe.comp.spv",
+      "sha256": "ce2432e519b92830fcbcabd66d92bd9f3ca8bf461ca32afb4a64f3f77041e37a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_filter.comp.spv",
+      "sha256": "770f821a2dca049f597e5f2a1db3412ba39619a4b6de3ac99c744e7cfea7ac8d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_canonical.comp.spv",
+      "sha256": "4103fd5c3347d037bca6d0e5ab69564ccffabc6f4981ca1edde909afe7b6c7c3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_samples.comp.spv",
+      "sha256": "1514c9d765cfa4a74d3c83201fd4e30e4d0ef816fe38c58075d3163910f103a7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_stroke_quality_workload.comp.spv",
+      "sha256": "01a1a81065a553bcd97d19f98b5a3785ca34bca8e7733d87cbff324ea967a231"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_stroke_queries.comp.spv",
+      "sha256": "519f58e0a0cad9c6556328ff2cdab3a926bfacbf9b1a04a930268b04644fe302"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_stroke_sdf.frag.spv",
+      "sha256": "0312278505568ba27df7c6fb428af5c461212be473b8292b8e30d5d4a132afac"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached_stroke_sdf.frag.spv",
+      "sha256": "a1856e9c03554c87b027424a9b72622650b2619bf99740ea8ea283778a45ec8b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_dom_samples.comp.spv",
+      "sha256": "656c2d801601488bd7d8fdfda863c9c642eff27e3b86b44e34ce15f6a8bc9cc1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_dom_filter.comp.spv",
+      "sha256": "cfc9af42756fe995dc5de953585d6064e999a4f158440a4b909b01691e74c796"
+    }
+  ],
+  "snapshot": "/home/bryan/.local/share/codex-plus/reports/public/b7e544bd392b94abae79cdc829049050ab6b39fc59bef887d7df2c48926f88b5",
+  "report_receipt": "docs/evidence/sdf-csg-junction-polish-2026-11/report.json",
+  "policy": "Retain the frozen before source, final native comparisons/oracles, first inspection, source-pinned manifests and delivered report. Earlier intermediate iterations remain present; no cleanup or deduplication performed.",
+  "dependency_policy": "Keep qualified native artifacts and their absolute build/shader paths. Existing SDF/fluid/report/build/cache dependencies retain their separate policies.",
+  "ownership": "This polish packet only. No deletion authority over any prior or unrelated artifacts."
+}

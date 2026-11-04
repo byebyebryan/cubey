@@ -1,0 +1,47 @@
+{
+  "format": "cubey.sdf.join-polish-verification",
+  "version": 1,
+  "passed": true,
+  "baseline_head": "2f87ec8861140287e5d859dfde9ab0ba0953d4d8",
+  "native_frames": 40,
+  "native_history_seek_states": 169,
+  "geometry_assertions": 170,
+  "robot_joint_checks": 66,
+  "observatory_base_tripod_checks_each": 63,
+  "prior_observatory_access_failures_detected": 11,
+  "ctest": {
+    "command": [
+      "ctest",
+      "--test-dir",
+      "build/release",
+      "--output-on-failure",
+      "-R",
+      "^(project_layout_hygiene|project_layout_rules|documentation_hygiene|documentation_media|documentation_rules|sdf_.*tests)$"
+    ],
+    "passed": 16,
+    "exit_code": 0,
+    "log_sha256": "452e1d12fb38014f43f93e455e88f5a26ad39239be5f34e198089554943d2703"
+  },
+  "sdf_recipe_gate": {
+    "recipes_checked": 11,
+    "recipes_selected": 11,
+    "errors": [],
+    "passed": true
+  },
+  "report_controls": 68,
+  "http_files": 152,
+  "deterministic_scenes": 5,
+  "robot_and_presets_unchanged": true,
+  "native_binary_and_shaders_unchanged": true,
+  "browser": {
+    "accepted": false,
+    "error": "Cannot read properties of undefined (reading 'timeoutMs')"
+  },
+  "public_site_unchanged": true,
+  "horse_untouched": true,
+  "guardian_retired": true,
+  "no_performance_claim": true,
+  "no_cleanup": true,
+  "no_push": true,
+  "no_public_deployment": true
+}

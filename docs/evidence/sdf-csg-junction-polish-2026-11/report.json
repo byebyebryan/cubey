@@ -1,0 +1,37 @@
+{
+  "report_id": "b7e544bd392b94abae79cdc829049050ab6b39fc59bef887d7df2c48926f88b5",
+  "title": "Cubey SDF — Joined forms: landings, banks and quiet water",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-04T17:59:39.845091+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "created",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/b7e544bd392b94abae79cdc829049050ab6b39fc59bef887d7df2c48926f88b5",
+  "file_count": 152,
+  "byte_count": 20471884,
+  "url": "http://starship:8787/reports/b7e544bd392b94abae79cdc829049050ab6b39fc59bef887d7df2c48926f88b5/",
+  "catalog": {
+    "state": "updated"
+  },
+  "delivery": {
+    "checked_at": "2026-11-04T17:59:40.294492+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 19736,
+    "verified_url": "http://starship:8787/reports/b7e544bd392b94abae79cdc829049050ab6b39fc59bef887d7df2c48926f88b5/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey",
+  "server": {
+    "state": "running",
+    "session": "codex-report-server",
+    "session_id": "$0",
+    "pid": 23164,
+    "url": "http://starship:8787/reports/",
+    "version": "0.1.0-preview.10",
+    "reused": true
+  }
+}

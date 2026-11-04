@@ -1,7 +1,7 @@
 {
   "format": "cubey.sdf.scene",
   "version": 2,
-  "name": "Observatory section / form refinement",
+  "name": "Observatory section / joined forms",
   "materials": [
     {
       "name": "plaster",
@@ -2907,42 +2907,6 @@
               },
               {
                 "type": "capsule",
-                "name": "top-rail-0465",
-                "position": [
-                  0.05662185676573069,
-                  -0.012,
-                  0.03084894040120042
-                ],
-                "radius": 0.0045,
-                "half_length": 0.019279228135083593,
-                "material": "dark",
-                "rotation_xyzw": [
-                  -0.5510296679254563,
-                  0.0,
-                  -0.44313237871539174,
-                  0.7071067811865475
-                ]
-              },
-              {
-                "type": "capsule",
-                "name": "top-rail-0467",
-                "position": [
-                  0.07708941027423105,
-                  -0.012,
-                  -0.0015348882465150947
-                ],
-                "radius": 0.0045,
-                "half_length": 0.019279228135083613,
-                "material": "dark",
-                "rotation_xyzw": [
-                  -0.636716266566206,
-                  0.0,
-                  -0.30755876818909283,
-                  0.7071067811865475
-                ]
-              },
-              {
-                "type": "capsule",
                 "name": "top-rail-0469",
                 "position": [
                   0.08973275538402344,
@@ -3143,6 +3107,24 @@
                     "rounding": 0.00135,
                     "material": "dark"
                   }
+                ]
+              },
+              {
+                "type": "capsule",
+                "name": "polish-balcony-entry-post",
+                "position": [
+                  0.044539876433198095,
+                  -0.041999999999999996,
+                  0.045872734486879785
+                ],
+                "radius": 0.0045,
+                "half_length": 0.03,
+                "material": "dark",
+                "rotation_xyzw": [
+                  0.0,
+                  0.0,
+                  -0.0,
+                  1.0
                 ]
               }
             ]
@@ -3815,12 +3797,12 @@
         "type": "box",
         "name": "top-landing-support-0096",
         "position": [
-          0.17,
+          0.137,
           -0.145,
           0.018
         ],
         "half_extent": [
-          0.058,
+          0.091,
           0.057,
           0.029
         ],
@@ -3831,16 +3813,16 @@
         "type": "box",
         "name": "top-landing-0097",
         "position": [
-          0.17,
-          -0.082,
+          0.133,
+          -0.081,
           0.018
         ],
         "half_extent": [
-          0.057,
-          0.008,
+          0.096,
+          0.009,
           0.027
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "light-stone"
       },
       {
@@ -5464,7 +5446,8 @@
   "authoring": {
     "generator": "cubey-python-author-v1",
     "units": "workspace",
-    "refinement": "Form, spacing and purposeful detail; originals retained"
+    "refinement": "Form, spacing and purposeful detail; originals retained",
+    "polish": "Continuous landings, supported contacts and restrained water; 2026-11-04"
   },
   "history": [
     {
@@ -5763,11 +5746,10 @@
         "top-rail-0459",
         "top-rail-0461",
         "top-rail-0463",
-        "top-rail-0465",
-        "top-rail-0467",
         "top-rail-0469",
         "top-rail-0471",
-        "top-rail-0473"
+        "top-rail-0473",
+        "polish-balcony-entry-post"
       ],
       "label": "Frame the balcony with an open rail",
       "seconds": 1.3

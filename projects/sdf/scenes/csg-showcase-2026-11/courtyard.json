@@ -1,7 +1,7 @@
 {
   "format": "cubey.sdf.scene",
   "version": 2,
-  "name": "Terraced courtyard / form refinement",
+  "name": "Terraced courtyard / joined forms",
   "materials": [
     {
       "name": "plaster",
@@ -273,14 +273,14 @@
         "type": "box",
         "name": "paving-slab-0003",
         "position": [
-          -0.0225,
+          0,
           -0.231,
-          0.112
+          0.086
         ],
         "half_extent": [
-          0.1915,
+          0.317,
           0.004,
-          0.133
+          0.196
         ],
         "rounding": 0.0018000000000000002,
         "material": "stone"
@@ -295,20 +295,103 @@
         ],
         "children": [
           {
-            "type": "box",
-            "name": "rear-wing-0027",
+            "type": "subtract",
+            "name": "polish-rear-wing-passage",
             "position": [
-              -0.025,
-              -0.003,
-              -0.19
+              0,
+              0,
+              0
             ],
-            "half_extent": [
-              0.267,
-              0.231,
-              0.085
-            ],
-            "rounding": 0.003,
-            "material": "plaster"
+            "children": [
+              {
+                "type": "box",
+                "name": "rear-wing-0027",
+                "position": [
+                  -0.025,
+                  -0.003,
+                  -0.19
+                ],
+                "half_extent": [
+                  0.267,
+                  0.231,
+                  0.085
+                ],
+                "rounding": 0.003,
+                "material": "plaster"
+              },
+              {
+                "type": "union",
+                "name": "polish-passage-and-room",
+                "position": [
+                  0,
+                  0,
+                  0
+                ],
+                "children": [
+                  {
+                    "type": "union",
+                    "name": "polish-tower-passage",
+                    "position": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "children": [
+                      {
+                        "type": "box",
+                        "name": "polish-tower-passage-cut-0",
+                        "position": [
+                          0.224,
+                          0.047,
+                          -0.102
+                        ],
+                        "half_extent": [
+                          0.03,
+                          0.05,
+                          0.04
+                        ],
+                        "rounding": 0.003,
+                        "material": "plaster"
+                      },
+                      {
+                        "type": "cylinder",
+                        "name": "polish-tower-passage-cut-1",
+                        "position": [
+                          0.224,
+                          0.097,
+                          -0.102
+                        ],
+                        "radius": 0.03,
+                        "half_length": 0.04,
+                        "material": "plaster",
+                        "rotation_xyzw": [
+                          0.7071067811865475,
+                          0.0,
+                          0.0,
+                          0.7071067811865476
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "box",
+                    "name": "polish-wing-room-cut",
+                    "position": [
+                      0.224,
+                      0.078,
+                      -0.166
+                    ],
+                    "half_extent": [
+                      0.042,
+                      0.074,
+                      0.045
+                    ],
+                    "rounding": 0,
+                    "material": "plaster"
+                  }
+                ]
+              }
+            ]
           },
           {
             "type": "union",
@@ -1856,20 +1939,47 @@
         ],
         "children": [
           {
-            "type": "box",
-            "name": "bell-tower-0169",
+            "type": "subtract",
+            "name": "polish-hollow-tower",
             "position": [
-              0.224,
-              0.09,
-              -0.166
+              0,
+              0,
+              0
             ],
-            "half_extent": [
-              0.061,
-              0.324,
-              0.064
-            ],
-            "rounding": 0.003,
-            "material": "plaster"
+            "children": [
+              {
+                "type": "box",
+                "name": "bell-tower-0169",
+                "position": [
+                  0.224,
+                  0.09,
+                  -0.166
+                ],
+                "half_extent": [
+                  0.061,
+                  0.324,
+                  0.064
+                ],
+                "rounding": 0.003,
+                "material": "plaster"
+              },
+              {
+                "type": "box",
+                "name": "polish-tower-room-cut",
+                "position": [
+                  0.224,
+                  0.078,
+                  -0.166
+                ],
+                "half_extent": [
+                  0.042,
+                  0.074,
+                  0.045
+                ],
+                "rounding": 0,
+                "material": "plaster"
+              }
+            ]
           },
           {
             "type": "union",
@@ -2499,7 +2609,7 @@
         "name": "terrace-step-0237",
         "position": [
           0.177,
-          -0.223,
+          -0.2225692307692308,
           0.183
         ],
         "half_extent": [
@@ -2515,7 +2625,7 @@
         "name": "terrace-step-0238",
         "position": [
           0.177,
-          -0.20400000000000001,
+          -0.20493846153846157,
           0.161
         ],
         "half_extent": [
@@ -2531,7 +2641,7 @@
         "name": "terrace-step-0239",
         "position": [
           0.177,
-          -0.185,
+          -0.18730769230769234,
           0.139
         ],
         "half_extent": [
@@ -2547,7 +2657,7 @@
         "name": "terrace-step-0240",
         "position": [
           0.177,
-          -0.166,
+          -0.16967692307692311,
           0.11699999999999999
         ],
         "half_extent": [
@@ -2563,7 +2673,7 @@
         "name": "terrace-step-0241",
         "position": [
           0.177,
-          -0.14700000000000002,
+          -0.1520461538461539,
           0.095
         ],
         "half_extent": [
@@ -2579,7 +2689,7 @@
         "name": "terrace-step-0242",
         "position": [
           0.177,
-          -0.128,
+          -0.13441538461538463,
           0.07300000000000001
         ],
         "half_extent": [
@@ -2595,7 +2705,7 @@
         "name": "terrace-step-0243",
         "position": [
           0.177,
-          -0.10900000000000001,
+          -0.11678461538461539,
           0.05099999999999999
         ],
         "half_extent": [
@@ -2611,7 +2721,7 @@
         "name": "terrace-step-0244",
         "position": [
           0.177,
-          -0.09,
+          -0.09915384615384616,
           0.028999999999999998
         ],
         "half_extent": [
@@ -2627,7 +2737,7 @@
         "name": "terrace-step-0245",
         "position": [
           0.177,
-          -0.07100000000000001,
+          -0.08152307692307693,
           0.007000000000000006
         ],
         "half_extent": [
@@ -2643,7 +2753,7 @@
         "name": "terrace-step-0246",
         "position": [
           0.177,
-          -0.05200000000000002,
+          -0.0638923076923077,
           -0.014999999999999986
         ],
         "half_extent": [
@@ -2659,7 +2769,7 @@
         "name": "terrace-step-0247",
         "position": [
           0.177,
-          -0.033,
+          -0.04626153846153848,
           -0.03699999999999998
         ],
         "half_extent": [
@@ -2675,7 +2785,7 @@
         "name": "terrace-step-0248",
         "position": [
           0.177,
-          -0.014000000000000012,
+          -0.028630769230769224,
           -0.059
         ],
         "half_extent": [
@@ -2690,12 +2800,12 @@
         "type": "box",
         "name": "stair-landing-0249",
         "position": [
-          0.204,
-          0.003,
+          0.195,
+          -0.009,
           -0.086
         ],
         "half_extent": [
-          0.066,
+          0.075,
           0.01,
           0.028
         ],
@@ -2707,17 +2817,17 @@
         "name": "stair-rail-0250",
         "position": [
           0.222,
-          -0.05650000000000001,
-          0.0655
+          -0.05260000000000001,
+          0.07350000000000001
         ],
         "radius": 0.005,
-        "half_length": 0.16214962226289642,
+        "half_length": 0.15311852179268298,
         "material": "dark",
         "rotation_xyzw": [
-          -0.40673389511252633,
+          -0.4281966613331859,
           0.0,
           -0.0,
-          0.9135466811097245
+          0.9036855754205181
         ]
       },
       {
@@ -2725,17 +2835,17 @@
         "name": "stair-rail-0251",
         "position": [
           0.132,
-          -0.05650000000000001,
-          0.0655
+          -0.05260000000000001,
+          0.07350000000000001
         ],
         "radius": 0.005,
-        "half_length": 0.16214962226289642,
+        "half_length": 0.15311852179268298,
         "material": "dark",
         "rotation_xyzw": [
-          -0.40673389511252633,
+          -0.4281966613331859,
           0.0,
           -0.0,
-          0.9135466811097245
+          0.9036855754205181
         ]
       },
       {
@@ -2743,11 +2853,11 @@
         "name": "stair-baluster-0252",
         "position": [
           0.132,
-          -0.193,
+          -0.17538685491723466,
           0.183
         ],
         "radius": 0.004,
-        "half_length": 0.03,
+        "half_length": 0.03318237585199611,
         "material": "dark",
         "rotation_xyzw": [
           0.0,
@@ -2761,11 +2871,11 @@
         "name": "stair-baluster-0253",
         "position": [
           0.222,
-          -0.193,
+          -0.17538685491723466,
           0.183
         ],
         "radius": 0.004,
-        "half_length": 0.03,
+        "half_length": 0.03318237585199611,
         "material": "dark",
         "rotation_xyzw": [
           0.0,
@@ -2779,11 +2889,11 @@
         "name": "stair-baluster-0256",
         "position": [
           0.132,
-          -0.098,
+          -0.0863031158714703,
           0.073
         ],
         "radius": 0.004,
-        "half_length": 0.03,
+        "half_length": 0.03411226874391432,
         "material": "dark",
         "rotation_xyzw": [
           0.0,
@@ -2797,11 +2907,11 @@
         "name": "stair-baluster-0257",
         "position": [
           0.222,
-          -0.098,
+          -0.0863031158714703,
           0.073
         ],
         "radius": 0.004,
-        "half_length": 0.03,
+        "half_length": 0.03411226874391432,
         "material": "dark",
         "rotation_xyzw": [
           0.0,
@@ -2815,11 +2925,11 @@
         "name": "stair-baluster-0260",
         "position": [
           0.132,
-          -0.0030000000000000027,
+          0.0027806231742940613,
           -0.037000000000000005
         ],
         "radius": 0.004,
-        "half_length": 0.03,
+        "half_length": 0.03504216163583254,
         "material": "dark",
         "rotation_xyzw": [
           0.0,
@@ -2833,11 +2943,11 @@
         "name": "stair-baluster-0261",
         "position": [
           0.222,
-          -0.0030000000000000027,
+          0.0027806231742940613,
           -0.037000000000000005
         ],
         "radius": 0.004,
-        "half_length": 0.03,
+        "half_length": 0.03504216163583254,
         "material": "dark",
         "rotation_xyzw": [
           0.0,
@@ -2851,7 +2961,7 @@
         "name": "fountain-foot-0262",
         "position": [
           -0.035,
-          -0.221,
+          -0.2172,
           0.106
         ],
         "radius": 0.081,
@@ -2863,7 +2973,7 @@
         "name": "fountain-basin-0263",
         "position": [
           -0.035,
-          -0.204,
+          -0.2002,
           0.106
         ],
         "radius": 0.069,
@@ -2875,7 +2985,7 @@
         "name": "basin-rim-0264",
         "position": [
           -0.035,
-          -0.191,
+          -0.1872,
           0.106
         ],
         "major_radius": 0.065,
@@ -2887,7 +2997,7 @@
         "name": "basin-water-0265",
         "position": [
           -0.035,
-          -0.191,
+          -0.1872,
           0.106
         ],
         "radius": 0.058,
@@ -2899,7 +3009,7 @@
         "name": "fountain-stem-0266",
         "position": [
           -0.035,
-          -0.151,
+          -0.1472,
           0.106
         ],
         "bottom_radius": 0.022,
@@ -2912,7 +3022,7 @@
         "name": "upper-bowl-0267",
         "position": [
           -0.035,
-          -0.106,
+          -0.1022,
           0.106
         ],
         "radius": 0.037,
@@ -2924,7 +3034,7 @@
         "name": "upper-rim-0268",
         "position": [
           -0.035,
-          -0.098,
+          -0.0942,
           0.106
         ],
         "major_radius": 0.033,
@@ -2936,83 +3046,11 @@
         "name": "fountain-finial-0269",
         "position": [
           -0.035,
-          -0.08,
+          -0.0832,
           0.106
         ],
         "radius": 0.014,
         "material": "brass"
-      },
-      {
-        "type": "capsule",
-        "name": "water-thread-0270",
-        "position": [
-          0.001999999999999995,
-          -0.144,
-          0.106
-        ],
-        "radius": 0.003,
-        "half_length": 0.0396232255123179,
-        "material": "water",
-        "rotation_xyzw": [
-          0.0,
-          0.0,
-          -0.9960600401064899,
-          0.08868143268496521
-        ]
-      },
-      {
-        "type": "capsule",
-        "name": "water-thread-0271",
-        "position": [
-          -0.035,
-          -0.144,
-          0.14300000000000002
-        ],
-        "radius": 0.003,
-        "half_length": 0.039623225512317894,
-        "material": "water",
-        "rotation_xyzw": [
-          0.9960600401064899,
-          0.0,
-          -0.0,
-          0.08868143268496403
-        ]
-      },
-      {
-        "type": "capsule",
-        "name": "water-thread-0272",
-        "position": [
-          -0.07200000000000001,
-          -0.144,
-          0.106
-        ],
-        "radius": 0.003,
-        "half_length": 0.0396232255123179,
-        "material": "water",
-        "rotation_xyzw": [
-          0.0,
-          0.0,
-          0.9960600401064899,
-          0.08868143268496521
-        ]
-      },
-      {
-        "type": "capsule",
-        "name": "water-thread-0273",
-        "position": [
-          -0.03500000000000001,
-          -0.144,
-          0.069
-        ],
-        "radius": 0.003,
-        "half_length": 0.0396232255123179,
-        "material": "water",
-        "rotation_xyzw": [
-          -0.9960600401064899,
-          0.0,
-          -0.0,
-          0.08868143268496521
-        ]
       },
       {
         "type": "capsule",
@@ -3069,7 +3107,7 @@
         "name": "bench-seat-0280",
         "position": [
           -0.16,
-          -0.173,
+          -0.16319999999999998,
           0.246
         ],
         "half_extent": [
@@ -3085,7 +3123,7 @@
         "name": "bench-back-0281",
         "position": [
           -0.16,
-          -0.136,
+          -0.1262,
           0.269
         ],
         "half_extent": [
@@ -3101,7 +3139,7 @@
         "name": "bench-leg-0282",
         "position": [
           -0.21,
-          -0.203,
+          -0.1932,
           0.246
         ],
         "half_extent": [
@@ -3117,7 +3155,7 @@
         "name": "bench-leg-0283",
         "position": [
           -0.11,
-          -0.203,
+          -0.1932,
           0.246
         ],
         "half_extent": [
@@ -3133,7 +3171,7 @@
         "name": "garden-pot-0290",
         "position": [
           0,
-          0,
+          0.0048,
           0
         ],
         "children": [
@@ -3235,7 +3273,7 @@
         "name": "garden-pot-0304",
         "position": [
           0,
-          0,
+          0.0048,
           0
         ],
         "children": [
@@ -3337,7 +3375,7 @@
         "name": "garden-pot-0311",
         "position": [
           0,
-          0,
+          0.0048,
           0
         ],
         "children": [
@@ -3439,7 +3477,7 @@
         "name": "cypress-0315",
         "position": [
           0,
-          0,
+          0.0048,
           0
         ],
         "children": [
@@ -3714,7 +3752,8 @@
   "authoring": {
     "generator": "cubey-python-author-v1",
     "units": "workspace",
-    "refinement": "Form, spacing and purposeful detail; originals retained"
+    "refinement": "Form, spacing and purposeful detail; originals retained",
+    "polish": "Continuous landings, supported contacts and restrained water; 2026-11-04"
   },
   "history": [
     {
@@ -3860,7 +3899,11 @@
         "arch-round-0219",
         "arch-rect-0225",
         "arch-round-0226",
-        "frame-inset-0230"
+        "frame-inset-0230",
+        "polish-tower-passage-cut-0",
+        "polish-tower-passage-cut-1",
+        "polish-wing-room-cut",
+        "polish-tower-room-cut"
       ],
       "label": "Raise the bell tower and its open crown / carve",
       "seconds": 1.3
@@ -3901,11 +3944,7 @@
         "fountain-stem-0266",
         "upper-bowl-0267",
         "upper-rim-0268",
-        "fountain-finial-0269",
-        "water-thread-0270",
-        "water-thread-0271",
-        "water-thread-0272",
-        "water-thread-0273"
+        "fountain-finial-0269"
       ],
       "label": "Place the fountain in the paved square",
       "seconds": 1.3

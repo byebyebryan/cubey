@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "baseline_head": "2f87ec8861140287e5d859dfde9ab0ba0953d4d8",
+  "groups": {
+    "original_scene_sha256": {
+      "files": 5,
+      "unchanged": true
+    },
+    "protected": {
+      "files": 780,
+      "unchanged": true
+    },
+    "horse": {
+      "files": 10,
+      "unchanged": true
+    },
+    "prior_evidence_sha256": {
+      "files": 10,
+      "unchanged": true
+    }
+  },
+  "robot_unchanged": true,
+  "presets_unchanged": 5,
+  "deterministic_scenes": 5,
+  "deterministic_presets_except_binding": 5,
+  "binary_unchanged": true,
+  "shaders_unchanged": 220,
+  "original_candidate_sha256": {
+    "projects/sdf/scenes/csg-showcase-2026-11/robot.json": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+    "projects/sdf/presets/csg-showcase-2026-11/robot.json": "3b5fed7a96117cb20a0c37607f514dc5c7d3e1875b65f8b7c7cdb37b47fb7f75",
+    "projects/sdf/scenes/csg-showcase-2026-11/canal-mill.json": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c",
+    "projects/sdf/presets/csg-showcase-2026-11/canal-mill.json": "34886e8c0591c45f768e5de868656808691aa5becc86709c5f32b3a1f7100be7",
+    "projects/sdf/scenes/csg-showcase-2026-11/observatory.json": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142",
+    "projects/sdf/presets/csg-showcase-2026-11/observatory.json": "4ca45c78672b289f39295261ba91d72467d56614ed60985f4725a5871dea7f09",
+    "projects/sdf/scenes/csg-showcase-2026-11/courtyard.json": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2",
+    "projects/sdf/presets/csg-showcase-2026-11/courtyard.json": "9c9763ac4dd1395ea8d42ec19da13377428d876178c5f87c63f1f3fbf3495e78",
+    "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58",
+    "projects/sdf/presets/csg-showcase-2026-11/observatory-section.json": "763b83c06277f33f04a723922b4798f8730e69938689fec96bcc5500920cdfcb"
+  }
+}

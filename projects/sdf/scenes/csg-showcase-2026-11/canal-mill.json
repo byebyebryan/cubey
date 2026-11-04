@@ -1,7 +1,7 @@
 {
   "format": "cubey.sdf.scene",
   "version": 2,
-  "name": "Canal mill / form refinement",
+  "name": "Canal mill / joined forms",
   "materials": [
     {
       "name": "plaster",
@@ -247,20 +247,47 @@
         ],
         "children": [
           {
-            "type": "box",
-            "name": "island-0001",
+            "type": "subtract",
+            "name": "polish-open-race-island",
             "position": [
               0,
-              -0.28,
+              0,
               0
             ],
-            "half_extent": [
-              0.36,
-              0.035,
-              0.3
-            ],
-            "rounding": 0.012,
-            "material": "earth"
+            "children": [
+              {
+                "type": "box",
+                "name": "island-0001",
+                "position": [
+                  0,
+                  -0.28,
+                  0
+                ],
+                "half_extent": [
+                  0.36,
+                  0.035,
+                  0.3
+                ],
+                "rounding": 0.012,
+                "material": "earth"
+              },
+              {
+                "type": "box",
+                "name": "polish-millrace-cut-island",
+                "position": [
+                  0.083,
+                  -0.25,
+                  0.053
+                ],
+                "half_extent": [
+                  0.051,
+                  0.06,
+                  0.075
+                ],
+                "rounding": 0.004,
+                "material": "earth"
+              }
+            ]
           },
           {
             "type": "box",
@@ -281,20 +308,47 @@
         ]
       },
       {
-        "type": "box",
-        "name": "yard-0004",
+        "type": "subtract",
+        "name": "polish-open-race-yard",
         "position": [
           0,
-          -0.246,
-          -0.1
+          0,
+          0
         ],
-        "half_extent": [
-          0.36,
-          0.01,
-          0.19
-        ],
-        "rounding": 0.003,
-        "material": "stone"
+        "children": [
+          {
+            "type": "box",
+            "name": "yard-0004",
+            "position": [
+              0,
+              -0.246,
+              -0.1
+            ],
+            "half_extent": [
+              0.36,
+              0.01,
+              0.19
+            ],
+            "rounding": 0.003,
+            "material": "stone"
+          },
+          {
+            "type": "box",
+            "name": "polish-millrace-cut-yard",
+            "position": [
+              0.083,
+              -0.25,
+              0.053
+            ],
+            "half_extent": [
+              0.051,
+              0.06,
+              0.075
+            ],
+            "rounding": 0.004,
+            "material": "earth"
+          }
+        ]
       },
       {
         "type": "box",
@@ -317,32 +371,59 @@
         "name": "near-bank-0006",
         "position": [
           0,
-          -0.236,
+          -0.252,
           0.282
         ],
         "half_extent": [
           0.36,
-          0.017,
+          0.013,
           0.018
         ],
-        "rounding": 0.003,
+        "rounding": 0.002,
         "material": "light-stone"
       },
       {
-        "type": "box",
-        "name": "far-bank-0007",
+        "type": "subtract",
+        "name": "polish-open-race-far-bank",
         "position": [
           0,
-          -0.23,
-          0.083
+          0,
+          0
         ],
-        "half_extent": [
-          0.36,
-          0.021,
-          0.018
-        ],
-        "rounding": 0.003,
-        "material": "light-stone"
+        "children": [
+          {
+            "type": "box",
+            "name": "far-bank-0007",
+            "position": [
+              0,
+              -0.252,
+              0.083
+            ],
+            "half_extent": [
+              0.36,
+              0.013,
+              0.018
+            ],
+            "rounding": 0.002,
+            "material": "light-stone"
+          },
+          {
+            "type": "box",
+            "name": "polish-millrace-cut-far-bank",
+            "position": [
+              0.083,
+              -0.25,
+              0.053
+            ],
+            "half_extent": [
+              0.051,
+              0.06,
+              0.075
+            ],
+            "rounding": 0.004,
+            "material": "earth"
+          }
+        ]
       },
       {
         "type": "capsule",
@@ -385,11 +466,11 @@
         "name": "bank-cap-0013",
         "position": [
           -0.27,
-          -0.208,
+          -0.23325,
           0.083
         ],
         "half_extent": [
-          0.083,
+          0.08299999999999999,
           0.005,
           0.023
         ],
@@ -401,11 +482,11 @@
         "name": "bank-cap-0014",
         "position": [
           -0.27,
-          -0.216,
+          -0.23325,
           0.282
         ],
         "half_extent": [
-          0.083,
+          0.08299999999999999,
           0.005,
           0.023
         ],
@@ -416,12 +497,12 @@
         "type": "box",
         "name": "bank-cap-0015",
         "position": [
-          -0.09000000000000002,
-          -0.208,
+          -0.09,
+          -0.23325,
           0.083
         ],
         "half_extent": [
-          0.083,
+          0.08299999999999999,
           0.005,
           0.023
         ],
@@ -432,28 +513,12 @@
         "type": "box",
         "name": "bank-cap-0016",
         "position": [
-          -0.09000000000000002,
-          -0.216,
+          -0.09,
+          -0.23325,
           0.282
         ],
         "half_extent": [
-          0.083,
-          0.005,
-          0.023
-        ],
-        "rounding": 0.0022500000000000003,
-        "material": "stone"
-      },
-      {
-        "type": "box",
-        "name": "bank-cap-0017",
-        "position": [
-          0.08999999999999997,
-          -0.208,
-          0.083
-        ],
-        "half_extent": [
-          0.083,
+          0.08299999999999999,
           0.005,
           0.023
         ],
@@ -464,12 +529,12 @@
         "type": "box",
         "name": "bank-cap-0018",
         "position": [
-          0.08999999999999997,
-          -0.216,
+          0.0785,
+          -0.23325,
           0.282
         ],
         "half_extent": [
-          0.083,
+          0.0715,
           0.005,
           0.023
         ],
@@ -480,12 +545,12 @@
         "type": "box",
         "name": "bank-cap-0019",
         "position": [
-          0.27,
-          -0.208,
+          0.3335,
+          -0.23325,
           0.083
         ],
         "half_extent": [
-          0.083,
+          0.01949999999999999,
           0.005,
           0.023
         ],
@@ -496,12 +561,12 @@
         "type": "box",
         "name": "bank-cap-0020",
         "position": [
-          0.27,
-          -0.216,
+          0.3335,
+          -0.23325,
           0.282
         ],
         "half_extent": [
-          0.083,
+          0.01949999999999999,
           0.005,
           0.023
         ],
@@ -1692,7 +1757,7 @@
         "name": "wheel-rim-0153",
         "position": [
           0.06,
-          -0.082,
+          -0.10400000000000001,
           0.047
         ],
         "major_radius": 0.132,
@@ -1710,7 +1775,7 @@
         "name": "wheel-rim-0154",
         "position": [
           0.105,
-          -0.082,
+          -0.10400000000000001,
           0.047
         ],
         "major_radius": 0.132,
@@ -1728,7 +1793,7 @@
         "name": "wheel-axle-0155",
         "position": [
           0.055,
-          -0.082,
+          -0.10400000000000001,
           0.047
         ],
         "radius": 0.02,
@@ -1746,7 +1811,7 @@
         "name": "wheel-spoke-0156",
         "position": [
           0.083,
-          -0.013500000000000005,
+          -0.035500000000000004,
           0.047
         ],
         "radius": 0.007,
@@ -1764,7 +1829,7 @@
         "name": "paddle-0157",
         "position": [
           0.083,
-          0.05,
+          0.028000000000000004,
           0.047
         ],
         "half_extent": [
@@ -1786,7 +1851,7 @@
         "name": "wheel-spoke-0158",
         "position": [
           0.083,
-          -0.033563185488721496,
+          -0.055563185488721495,
           0.0954368145112785
         ],
         "radius": 0.007,
@@ -1804,7 +1869,7 @@
         "name": "paddle-0159",
         "position": [
           0.083,
-          0.011338095116624286,
+          -0.010661904883375713,
           0.14033809511662426
         ],
         "half_extent": [
@@ -1826,7 +1891,7 @@
         "name": "wheel-spoke-0160",
         "position": [
           0.083,
-          -0.08199999999999999,
+          -0.10399999999999998,
           0.11549999999999999
         ],
         "radius": 0.007,
@@ -1844,7 +1909,7 @@
         "name": "paddle-0161",
         "position": [
           0.083,
-          -0.08199999999999999,
+          -0.10399999999999998,
           0.179
         ],
         "half_extent": [
@@ -1866,7 +1931,7 @@
         "name": "wheel-spoke-0162",
         "position": [
           0.083,
-          -0.1304368145112785,
+          -0.1524368145112785,
           0.09543681451127851
         ],
         "radius": 0.007,
@@ -1884,7 +1949,7 @@
         "name": "paddle-0163",
         "position": [
           0.083,
-          -0.1753380951166243,
+          -0.19733809511662428,
           0.1403380951166243
         ],
         "half_extent": [
@@ -1906,7 +1971,7 @@
         "name": "wheel-spoke-0164",
         "position": [
           0.083,
-          -0.15050000000000002,
+          -0.17250000000000001,
           0.04700000000000001
         ],
         "radius": 0.007,
@@ -1924,7 +1989,7 @@
         "name": "paddle-0165",
         "position": [
           0.083,
-          -0.21400000000000002,
+          -0.23600000000000002,
           0.047000000000000014
         ],
         "half_extent": [
@@ -1946,7 +2011,7 @@
         "name": "wheel-spoke-0166",
         "position": [
           0.083,
-          -0.13043681451127853,
+          -0.15243681451127852,
           -0.0014368145112784968
         ],
         "radius": 0.007,
@@ -1964,7 +2029,7 @@
         "name": "paddle-0167",
         "position": [
           0.083,
-          -0.1753380951166243,
+          -0.19733809511662428,
           -0.046338095116624275
         ],
         "half_extent": [
@@ -1986,7 +2051,7 @@
         "name": "wheel-spoke-0168",
         "position": [
           0.083,
-          -0.08200000000000002,
+          -0.10400000000000001,
           -0.0215
         ],
         "radius": 0.007,
@@ -2004,7 +2069,7 @@
         "name": "paddle-0169",
         "position": [
           0.083,
-          -0.08200000000000003,
+          -0.10400000000000004,
           -0.085
         ],
         "half_extent": [
@@ -2026,7 +2091,7 @@
         "name": "wheel-spoke-0170",
         "position": [
           0.083,
-          -0.03356318548872151,
+          -0.05556318548872151,
           -0.0014368145112785141
         ],
         "radius": 0.007,
@@ -2044,7 +2109,7 @@
         "name": "paddle-0171",
         "position": [
           0.083,
-          0.011338095116624244,
+          -0.010661904883375754,
           -0.0463380951166243
         ],
         "half_extent": [
@@ -2066,15 +2131,15 @@
         "name": "bridge-plank-0180",
         "position": [
           0.232,
-          -0.207,
-          0.073
+          -0.232,
+          0.075
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2082,15 +2147,15 @@
         "name": "bridge-plank-0181",
         "position": [
           0.232,
-          -0.19673939570022994,
-          0.096
+          -0.22173939570022996,
+          0.098
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2098,15 +2163,15 @@
         "name": "bridge-plank-0182",
         "position": [
           0.232,
-          -0.1877163717094038,
-          0.119
+          -0.21271637170940383,
+          0.121
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2114,15 +2179,15 @@
         "name": "bridge-plank-0183",
         "position": [
           0.232,
-          -0.18101923788646684,
-          0.14200000000000002
+          -0.20601923788646687,
+          0.14400000000000002
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2130,15 +2195,15 @@
         "name": "bridge-plank-0184",
         "position": [
           0.232,
-          -0.17745576740963376,
-          0.16499999999999998
+          -0.20245576740963378,
+          0.16699999999999998
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2146,15 +2211,15 @@
         "name": "bridge-plank-0185",
         "position": [
           0.232,
-          -0.17745576740963376,
-          0.188
+          -0.20245576740963378,
+          0.19
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2162,15 +2227,15 @@
         "name": "bridge-plank-0186",
         "position": [
           0.232,
-          -0.18101923788646684,
-          0.21100000000000002
+          -0.20601923788646687,
+          0.21300000000000002
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2178,15 +2243,15 @@
         "name": "bridge-plank-0187",
         "position": [
           0.232,
-          -0.1877163717094038,
-          0.23399999999999999
+          -0.21271637170940383,
+          0.236
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2194,15 +2259,15 @@
         "name": "bridge-plank-0188",
         "position": [
           0.232,
-          -0.1967393957002299,
-          0.257
+          -0.22173939570022994,
+          0.259
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2210,15 +2275,15 @@
         "name": "bridge-plank-0189",
         "position": [
           0.232,
-          -0.207,
-          0.27999999999999997
+          -0.232,
+          0.282
         ],
         "half_extent": [
           0.066,
-          0.008,
+          0.005,
           0.01
         ],
-        "rounding": 0.003,
+        "rounding": 0.001,
         "material": "wood"
       },
       {
@@ -2226,11 +2291,11 @@
         "name": "bridge-post-0190",
         "position": [
           0.171,
-          -0.1765,
-          0.073
+          -0.1965,
+          0.075
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2244,11 +2309,11 @@
         "name": "bridge-post-0191",
         "position": [
           0.171,
-          -0.15051923788646684,
-          0.14200000000000002
+          -0.17051923788646683,
+          0.14400000000000002
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2262,11 +2327,11 @@
         "name": "bridge-post-0192",
         "position": [
           0.171,
-          -0.15051923788646684,
-          0.21100000000000002
+          -0.17051923788646686,
+          0.21300000000000002
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2280,11 +2345,11 @@
         "name": "bridge-post-0193",
         "position": [
           0.171,
-          -0.1765,
-          0.28
+          -0.1965,
+          0.28200000000000003
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2298,17 +2363,17 @@
         "name": "bridge-rail-0194",
         "position": [
           0.171,
-          -0.13300961894323343,
-          0.10750000000000001
+          -0.15200961894323342,
+          0.10950000000000001
         ],
         "radius": 0.005,
         "half_length": 0.03686461718233353,
         "material": "wood",
         "rotation_xyzw": [
-          0.5690427315671449,
+          0.5690427315671448,
           0.0,
           -0.0,
-          0.8223079530508033
+          0.8223079530508034
         ]
       },
       {
@@ -2316,17 +2381,17 @@
         "name": "bridge-rail-0195",
         "position": [
           0.171,
-          -0.12001923788646685,
-          0.17650000000000002
+          -0.13901923788646686,
+          0.17850000000000002
         ],
         "radius": 0.005,
         "half_length": 0.0345,
         "material": "wood",
         "rotation_xyzw": [
-          0.7071067811865475,
+          0.7071067811865477,
           0.0,
           -0.0,
-          0.7071067811865475
+          0.7071067811865474
         ]
       },
       {
@@ -2334,8 +2399,8 @@
         "name": "bridge-rail-0196",
         "position": [
           0.171,
-          -0.13300961894323343,
-          0.24550000000000002
+          -0.15200961894323345,
+          0.24750000000000003
         ],
         "radius": 0.005,
         "half_length": 0.036864617182333526,
@@ -2352,11 +2417,11 @@
         "name": "bridge-post-0197",
         "position": [
           0.29300000000000004,
-          -0.1765,
-          0.073
+          -0.1965,
+          0.075
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2370,11 +2435,11 @@
         "name": "bridge-post-0198",
         "position": [
           0.29300000000000004,
-          -0.15051923788646684,
-          0.14200000000000002
+          -0.17051923788646683,
+          0.14400000000000002
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2388,11 +2453,11 @@
         "name": "bridge-post-0199",
         "position": [
           0.29300000000000004,
-          -0.15051923788646684,
-          0.21100000000000002
+          -0.17051923788646686,
+          0.21300000000000002
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2406,11 +2471,11 @@
         "name": "bridge-post-0200",
         "position": [
           0.29300000000000004,
-          -0.1765,
-          0.28
+          -0.1965,
+          0.28200000000000003
         ],
         "radius": 0.005,
-        "half_length": 0.0305,
+        "half_length": 0.0315,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2424,17 +2489,17 @@
         "name": "bridge-rail-0201",
         "position": [
           0.29300000000000004,
-          -0.13300961894323343,
-          0.10750000000000001
+          -0.15200961894323342,
+          0.10950000000000001
         ],
         "radius": 0.005,
         "half_length": 0.03686461718233353,
         "material": "wood",
         "rotation_xyzw": [
-          0.5690427315671449,
+          0.5690427315671448,
           0.0,
           -0.0,
-          0.8223079530508033
+          0.8223079530508034
         ]
       },
       {
@@ -2442,17 +2507,17 @@
         "name": "bridge-rail-0202",
         "position": [
           0.29300000000000004,
-          -0.12001923788646685,
-          0.17650000000000002
+          -0.13901923788646686,
+          0.17850000000000002
         ],
         "radius": 0.005,
         "half_length": 0.0345,
         "material": "wood",
         "rotation_xyzw": [
-          0.7071067811865475,
+          0.7071067811865477,
           0.0,
           -0.0,
-          0.7071067811865475
+          0.7071067811865474
         ]
       },
       {
@@ -2460,8 +2525,8 @@
         "name": "bridge-rail-0203",
         "position": [
           0.29300000000000004,
-          -0.13300961894323343,
-          0.24550000000000002
+          -0.15200961894323345,
+          0.24750000000000003
         ],
         "radius": 0.005,
         "half_length": 0.036864617182333526,
@@ -2544,11 +2609,11 @@
         "name": "awning-post-0212",
         "position": [
           -0.255,
-          -0.14850000000000002,
-          0.13
+          -0.147,
+          0.098
         ],
         "radius": 0.005,
-        "half_length": 0.0815,
+        "half_length": 0.07500000000000001,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2562,11 +2627,11 @@
         "name": "awning-post-0213",
         "position": [
           -0.042,
-          -0.14850000000000002,
-          0.13
+          -0.147,
+          0.098
         ],
         "radius": 0.005,
-        "half_length": 0.0815,
+        "half_length": 0.07500000000000001,
         "material": "wood",
         "rotation_xyzw": [
           0.0,
@@ -2724,9 +2789,9 @@
         "type": "union",
         "name": "barrel-prop-0228",
         "position": [
-          0,
-          0,
-          0
+          -0.028999999999999998,
+          -0.001,
+          -0.035
         ],
         "children": [
           {
@@ -2799,9 +2864,9 @@
         "type": "union",
         "name": "barrel-prop-0234",
         "position": [
-          0,
-          0,
-          0
+          -0.07400000000000001,
+          -0.001,
+          -0.024999999999999994
         ],
         "children": [
           {
@@ -3078,9 +3143,9 @@
         "type": "capped-cone",
         "name": "grain-sack-0249",
         "position": [
-          -0.07,
-          -0.2,
-          0.063
+          -0.1,
+          -0.204,
+          0.022
         ],
         "bottom_radius": 0.021,
         "top_radius": 0.016,
@@ -3091,9 +3156,9 @@
         "type": "torus",
         "name": "sack-tie-0250",
         "position": [
-          -0.07,
-          -0.169,
-          0.063
+          -0.1,
+          -0.173,
+          0.022
         ],
         "major_radius": 0.012,
         "minor_radius": 0.003,
@@ -3103,9 +3168,9 @@
         "type": "capped-cone",
         "name": "grain-sack-0251",
         "position": [
-          -0.03,
-          -0.2,
-          0.033
+          -0.05,
+          -0.204,
+          0.022
         ],
         "bottom_radius": 0.021,
         "top_radius": 0.016,
@@ -3116,34 +3181,9 @@
         "type": "torus",
         "name": "sack-tie-0252",
         "position": [
-          -0.03,
-          -0.169,
-          0.033
-        ],
-        "major_radius": 0.012,
-        "minor_radius": 0.003,
-        "material": "wood"
-      },
-      {
-        "type": "capped-cone",
-        "name": "grain-sack-0253",
-        "position": [
-          -0.1,
-          -0.2,
-          0.091
-        ],
-        "bottom_radius": 0.021,
-        "top_radius": 0.016,
-        "half_length": 0.029,
-        "material": "linen"
-      },
-      {
-        "type": "torus",
-        "name": "sack-tie-0254",
-        "position": [
-          -0.1,
-          -0.169,
-          0.091
+          -0.05,
+          -0.173,
+          0.022
         ],
         "major_radius": 0.012,
         "minor_radius": 0.003,
@@ -3154,7 +3194,7 @@
         "name": "delivery-cart-0262",
         "position": [
           0.43,
-          0,
+          0.01225,
           -0.282
         ],
         "children": [
@@ -3334,6 +3374,180 @@
             "material": "leaf-light"
           }
         ]
+      },
+      {
+        "type": "box",
+        "name": "polish-millrace-water",
+        "position": [
+          0.083,
+          -0.258,
+          0.05
+        ],
+        "half_extent": [
+          0.048,
+          0.012,
+          0.08
+        ],
+        "rounding": 0.003,
+        "material": "water"
+      },
+      {
+        "type": "box",
+        "name": "polish-race-left-cheek",
+        "position": [
+          0.023,
+          -0.246,
+          0.045
+        ],
+        "half_extent": [
+          0.005,
+          0.013,
+          0.065
+        ],
+        "rounding": 0.002,
+        "material": "stone"
+      },
+      {
+        "type": "box",
+        "name": "polish-race-right-cheek",
+        "position": [
+          0.143,
+          -0.246,
+          0.045
+        ],
+        "half_extent": [
+          0.005,
+          0.013,
+          0.065
+        ],
+        "rounding": 0.002,
+        "material": "stone"
+      },
+      {
+        "type": "capsule",
+        "name": "polish-bridge-stringer-0-0",
+        "position": [
+          0.173,
+          -0.2300096189432334,
+          0.10950000000000001
+        ],
+        "radius": 0.01,
+        "half_length": 0.03686461718233353,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.5690427315671448,
+          0.0,
+          -0.0,
+          0.8223079530508034
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "polish-bridge-stringer-0-1",
+        "position": [
+          0.173,
+          -0.21701923788646685,
+          0.17850000000000002
+        ],
+        "radius": 0.01,
+        "half_length": 0.0345,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.7071067811865478,
+          0.0,
+          -0.0,
+          0.7071067811865472
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "polish-bridge-stringer-0-2",
+        "position": [
+          0.173,
+          -0.23000961894323343,
+          0.24750000000000003
+        ],
+        "radius": 0.01,
+        "half_length": 0.03686461718233352,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.8223079530508034,
+          0.0,
+          -0.0,
+          0.5690427315671451
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "polish-bridge-stringer-1-0",
+        "position": [
+          0.291,
+          -0.2300096189432334,
+          0.10950000000000001
+        ],
+        "radius": 0.01,
+        "half_length": 0.03686461718233353,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.5690427315671448,
+          0.0,
+          -0.0,
+          0.8223079530508034
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "polish-bridge-stringer-1-1",
+        "position": [
+          0.291,
+          -0.21701923788646685,
+          0.17850000000000002
+        ],
+        "radius": 0.01,
+        "half_length": 0.0345,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.7071067811865478,
+          0.0,
+          -0.0,
+          0.7071067811865472
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "polish-bridge-stringer-1-2",
+        "position": [
+          0.291,
+          -0.23000961894323343,
+          0.24750000000000003
+        ],
+        "radius": 0.01,
+        "half_length": 0.03686461718233352,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.8223079530508034,
+          0.0,
+          -0.0,
+          0.5690427315671451
+        ]
+      },
+      {
+        "type": "capsule",
+        "name": "polish-cart-rest",
+        "position": [
+          0.255,
+          -0.196875,
+          -0.035
+        ],
+        "radius": 0.004,
+        "half_length": 0.022875000000000006,
+        "material": "wood",
+        "rotation_xyzw": [
+          0.0,
+          0.0,
+          -0.0,
+          1.0
+        ]
       }
     ],
     "scale": 0.67
@@ -3341,7 +3555,8 @@
   "authoring": {
     "generator": "cubey-python-author-v1",
     "units": "workspace",
-    "refinement": "Form, spacing and purposeful detail; originals retained"
+    "refinement": "Form, spacing and purposeful detail; originals retained",
+    "polish": "Continuous landings, supported contacts and restrained water; 2026-11-04"
   },
   "history": [
     {
@@ -3357,7 +3572,10 @@
     },
     {
       "nodes": [
-        "channel-cut-0002"
+        "channel-cut-0002",
+        "polish-millrace-cut-island",
+        "polish-millrace-cut-yard",
+        "polish-millrace-cut-far-bank"
       ],
       "label": "Set the island, canal and stone banks / carve",
       "seconds": 1.3
@@ -3365,7 +3583,10 @@
     {
       "nodes": [
         "water-ripple-0008",
-        "water-ripple-0012"
+        "water-ripple-0012",
+        "polish-millrace-water",
+        "polish-race-left-cheek",
+        "polish-race-right-cheek"
       ],
       "label": "Indicate the canal current",
       "seconds": 1.3
@@ -3376,7 +3597,6 @@
         "bank-cap-0014",
         "bank-cap-0015",
         "bank-cap-0016",
-        "bank-cap-0017",
         "bank-cap-0018",
         "bank-cap-0019",
         "bank-cap-0020",
@@ -3523,7 +3743,13 @@
         "bridge-post-0200",
         "bridge-rail-0201",
         "bridge-rail-0202",
-        "bridge-rail-0203"
+        "bridge-rail-0203",
+        "polish-bridge-stringer-0-0",
+        "polish-bridge-stringer-0-1",
+        "polish-bridge-stringer-0-2",
+        "polish-bridge-stringer-1-0",
+        "polish-bridge-stringer-1-1",
+        "polish-bridge-stringer-1-2"
       ],
       "label": "Bridge the canal with planks and curved rails",
       "seconds": 1.3
@@ -3575,8 +3801,6 @@
         "sack-tie-0250",
         "grain-sack-0251",
         "sack-tie-0252",
-        "grain-sack-0253",
-        "sack-tie-0254",
         "cart-bed-0255",
         "cart-side-0256",
         "cart-side-0257",
@@ -3586,7 +3810,8 @@
         "cart-handle-0261",
         "trunk-0263",
         "lower-crown-0264",
-        "upper-crown-0265"
+        "upper-crown-0265",
+        "polish-cart-rest"
       ],
       "label": "Stock the yard with sacks, barrels, a cart and pots",
       "seconds": 1.3

@@ -148,6 +148,10 @@ The same folder contains `robot.json`, `canal-mill.json`, `courtyard.json` and
 and SS2; the application default remains Cached. Original scenes and presets
 are retained alongside the candidates.
 
+The subsequent [junction polish](../../docs/notes/sdf-csg-junction-polish.md)
+repairs landings, bank/bridge joins, prop seating and courtyard access, and
+retains a still fountain basin. It updates the same candidate presets.
+
 The authored vocabulary includes boxes, spheres, capsules, cylinders, tori,
 capped cones and rounded cones with union, subtraction and smooth variants.
 Scripts can build, mirror and save atomic history operations. The windowed
