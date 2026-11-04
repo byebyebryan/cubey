@@ -1,0 +1,46 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Cubey SDF — Four-model CSG presentation and closeout (created)\nhttp://starship:8787/reports/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6/\nProject reports: http://starship:8787/reports/#project=cubey\nReport ID: 2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6"
+    }
+  ],
+  "structuredContent": {
+    "report_id": "2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6",
+    "title": "Cubey SDF — Four-model CSG presentation and closeout",
+    "project": "cubey",
+    "entrypoint": "index.html",
+    "created_at": "2026-11-04T19:21:51.987952+00:00",
+    "state": "published",
+    "schema": 1,
+    "publication": "created",
+    "origin": "starship",
+    "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6",
+    "file_count": 212,
+    "byte_count": 34561977,
+    "url": "http://starship:8787/reports/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6/",
+    "catalog": {
+      "state": "updated"
+    },
+    "delivery": {
+      "checked_at": "2026-11-04T19:21:52.436857+00:00",
+      "checked_from": "starship",
+      "state": "verified",
+      "http_status": 200,
+      "bytes": 16371,
+      "verified_url": "http://starship:8787/reports/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6/"
+    },
+    "catalog_url": "http://starship:8787/reports/",
+    "project_url": "http://starship:8787/reports/#project=cubey",
+    "server": {
+      "state": "running",
+      "session": "codex-report-server",
+      "session_id": "$0",
+      "pid": 23164,
+      "url": "http://starship:8787/reports/",
+      "version": "0.1.0-preview.10",
+      "reused": true
+    }
+  },
+  "isError": false
+}

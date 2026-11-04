@@ -38,14 +38,18 @@ Previous robot captures and their receipts remain historical assets.
 
 Capture from the tracked native scenes using the
 [SDF guide](../../projects/sdf/README.md#capture-and-qualification). Prepare and
-select the web derivatives from a completed packet with:
+select the web derivatives from a completed packet. The initial quartet import
+used:
 
 ```sh
 python3 -B site/tools/import-csg-showcase.py --native outputs/sdf/my-csg-capture --output outputs/sdf/my-csg-web --import-media
 ```
 
-Use a fresh staging directory. Omitting `--import-media` prepares a candidate
-ledger and derivatives without changing local selections. This importer uses
+Use a fresh staging directory. The importer refuses reused asset IDs, including
+on this already-imported checkout; a future media refresh needs new identities
+and a reviewed receipt. Omitting `--import-media` prepares a candidate ledger
+and derivatives without changing local selections on an unimported source.
+This importer uses
 FFmpeg/ffprobe and the existing hover-preview policy. The site build itself
 needs neither native capture outputs nor FFmpeg. New identities preserve the
 older selected-media evidence rather than rewriting its receipts.

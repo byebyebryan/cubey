@@ -1,0 +1,27 @@
+{
+  "sourceHead": "f6eb74b22d5166c9e45207be49787b7f6560cbe6",
+  "steps": [
+    {
+      "label": "install",
+      "command": [
+        "npm",
+        "ci",
+        "--no-audit",
+        "--no-fund"
+      ],
+      "exitCode": 0,
+      "seconds": 1.541
+    },
+    {
+      "label": "verify",
+      "command": [
+        "npm",
+        "run",
+        "verify"
+      ],
+      "exitCode": 0,
+      "seconds": 3.244
+    }
+  ],
+  "passed": true
+}

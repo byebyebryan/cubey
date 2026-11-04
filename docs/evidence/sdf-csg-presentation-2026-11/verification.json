@@ -1,18 +1,86 @@
 {
   "format": "cubey.sdf.presentation-verification",
   "version": 1,
-  "status": "verification in progress",
-  "approvedModelCommit": "cb9fc78d",
+  "status": "complete locally; browser acceptance unavailable; no public deployment",
+  "createdUtc": "2026-11-04T19:18:41.688272+00:00",
+  "presentationSourceHead": "f6eb74b22d5166c9e45207be49787b7f6560cbe6",
+  "approvedModelCommit": "cb9fc78d9ab708cfe6fca504bad845578cf47bcc",
   "mediaSourceHead": "63edb712314c88cb0a1f51be5f756857d22955dc",
   "native": {
-    "complete": true,
+    "binarySha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c",
+    "shaderCount": 220,
+    "approvedScenesUnchanged": 5,
     "historySeekChecks": 169,
     "joinChecks": 170,
-    "masterFrames": 1380
+    "masterFrames": 1380,
+    "stills": 6,
+    "films": 4,
+    "presetParses": 15,
+    "robotSavedActionsVisited": 75,
+    "renderMode": "balanced",
+    "supersample": 2,
+    "appDefault": "cached",
+    "frameTimeClaim": false
   },
-  "browser": {
-    "accepted": false,
-    "reason": "Connected navigation adapter fails: Cannot read properties of undefined (reading timeoutMs)"
+  "site": {
+    "passed": true,
+    "astroErrors": 0,
+    "astroWarnings": 0,
+    "tests": 17,
+    "pages": 24,
+    "internalReferences": 942,
+    "maximumPageResourceBytes": 450639,
+    "pageBudgetBytes": 600000,
+    "content": "site-content.json",
+    "build": "site-build.json"
   },
-  "publicDeployment": false
+  "ctest": {
+    "passed": true,
+    "checks": 16,
+    "log": "ctest.log"
+  },
+  "documentationRecipes": {
+    "recipes_checked": 10,
+    "recipes_selected": 10,
+    "errors": [],
+    "passed": true
+  },
+  "freshCheckout": {
+    "sourceHead": "f6eb74b22d5166c9e45207be49787b7f6560cbe6",
+    "clean": true,
+    "site": "fresh-site.json",
+    "native": "fresh-native.json",
+    "stillsByteIdentical": 6,
+    "scope": "Tracked scene/preset/capture sources and site build; retained absolute qualified native executable, not a fresh C++ rebuild."
+  },
+  "preservation": {
+    "receipt": "preservation.json",
+    "historicalFiles": 799,
+    "oldPublicMediaFiles": 121,
+    "horseFiles": 10,
+    "nonSdfHeroPanels": 4
+  },
+  "visualReview": {
+    "nativePosters": true,
+    "decodedMasterFrames": true,
+    "readmeCollage": true,
+    "browserAccepted": false,
+    "browserFailure": "Connected browser navigation fails: Cannot read properties of undefined (reading 'timeoutMs')",
+    "limits": "Responsive layout, real browser interactions and physical video playback remain unverified."
+  },
+  "retention": "retention.json",
+  "reportPublication": "report-publication.json",
+  "push": false,
+  "merge": false,
+  "publicDeployment": false,
+  "report": {
+    "url": "http://starship:8787/reports/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6/",
+    "reportId": "2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6",
+    "files": 212,
+    "bytes": 34561977,
+    "allBytesMatch": true,
+    "videoRangeSupport": false,
+    "browserAccepted": false,
+    "delivery": "report-delivery.json"
+  }
 }

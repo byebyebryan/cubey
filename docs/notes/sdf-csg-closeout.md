@@ -2,6 +2,9 @@
 
 Date: 2026-11-04. Status: complete locally; public deployment unchanged.
 
+The [visual report and built-site preview](http://starship:8787/reports/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6/)
+present the collection, reproduction commands and acceptance boundaries.
+
 The accepted CSG collection is the **hill observatory**, **field-kit robot**,
 **canal mill** and **terraced courtyard**, alongside the shared material
 workshop. The observatory section is a second view of the same model.

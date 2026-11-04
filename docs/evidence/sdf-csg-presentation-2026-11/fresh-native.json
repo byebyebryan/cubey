@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "-B",
+    "projects/sdf/tools/capture_csg_showcase.py",
+    "--posters-only",
+    "--binary",
+    "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+    "--output",
+    "outputs/fresh-native"
+  ],
+  "checkout": "/home/bryan/code/cubey/outputs/sdf/csg-presentation-closeout-20261104/fresh-checkout",
+  "sourceHead": "f6eb74b22d5166c9e45207be49787b7f6560cbe6",
+  "checkoutStatus": [],
+  "exitCode": 0,
+  "seconds": 4.571,
+  "scope": "Clean tracked inputs with the retained qualified absolute native executable and its compiled shaders; not a new native rebuild.",
+  "passed": true,
+  "manifest": "/home/bryan/code/cubey/outputs/sdf/csg-presentation-closeout-20261104/fresh-checkout/outputs/fresh-native/manifest.json",
+  "runs": 6
+}

@@ -1,0 +1,25 @@
+{
+  "format": "cubey.sdf.presentation-handoff",
+  "version": 1,
+  "branch": "sdf-tracing-comparison",
+  "implementationCommits": [
+    "e3753f070aebe8cdba709568c4695611a73ba692",
+    "63edb712314c88cb0a1f51be5f756857d22955dc",
+    "f6eb74b22d5166c9e45207be49787b7f6560cbe6"
+  ],
+  "presentationSourceHead": "f6eb74b22d5166c9e45207be49787b7f6560cbe6",
+  "followingChanges": "Documentation clarifications, closeout/report link and verification/retention receipts only.",
+  "localMain": "d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a",
+  "localOriginMain": "d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a",
+  "remoteRefreshed": false,
+  "publicDeploymentPerformed": false,
+  "pushPerformed": false,
+  "mergePerformed": false,
+  "workflow": ".github/workflows/site.yml",
+  "futurePublication": "After separate authorization, refresh remote state, reconcile branch history and review the exact publication head. Main pushes affecting site paths build/verify and deploy Pages; PRs verify without deployment. Confirm metadata/deployment.json and served asset hashes afterward. No workflow was dispatched.",
+  "browserGate": "Connected browser navigation adapter fails before navigation; responsive layout, interactions, seeking and physical playback remain unverified.",
+  "separateWork": "The original horse README paragraph and ten horse source/evidence files remain unstaged and unchanged.",
+  "qualifiedDependencies": "retention.json",
+  "report": "report-publication.json",
+  "delivery": "report-delivery.json"
+}

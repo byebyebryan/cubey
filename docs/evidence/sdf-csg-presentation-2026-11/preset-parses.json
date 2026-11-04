@@ -1,0 +1,96 @@
+{
+  "passed": true,
+  "count": 15,
+  "results": [
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill-build.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill-film.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/courtyard-build.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/courtyard-film.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/courtyard.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory-build.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory-cutaway-intact.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory-cutaway-section.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory-film.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory-section.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/robot-build.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/robot-film.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    },
+    {
+      "preset": "projects/sdf/presets/csg-showcase-2026-11/robot.json",
+      "exitCode": 0,
+      "templateCreated": true,
+      "stderr": ""
+    }
+  ]
+}

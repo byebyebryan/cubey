@@ -1,0 +1,107 @@
+{
+  "passed": true,
+  "errors": [],
+  "pages": 24,
+  "internalReferences": 942,
+  "checkedMount": "/mounted/cubey/",
+  "maximumPageImageResourceBound": 450639,
+  "loadingBounds": [
+    {
+      "page": "404.html",
+      "bytes": 1282
+    },
+    {
+      "page": "index.html",
+      "bytes": 432011
+    },
+    {
+      "page": "about/index.html",
+      "bytes": 167065
+    },
+    {
+      "page": "credits/index.html",
+      "bytes": 65415
+    },
+    {
+      "page": "demos/index.html",
+      "bytes": 450639
+    },
+    {
+      "page": "demos/atmosphere/index.html",
+      "bytes": 155225
+    },
+    {
+      "page": "demos/gltf/index.html",
+      "bytes": 155433
+    },
+    {
+      "page": "demos/materials/index.html",
+      "bytes": 331849
+    },
+    {
+      "page": "demos/ocean/index.html",
+      "bytes": 130931
+    },
+    {
+      "page": "demos/sdf/index.html",
+      "bytes": 294189
+    },
+    {
+      "page": "demos/simulation/index.html",
+      "bytes": 159495
+    },
+    {
+      "page": "demos/terrain/index.html",
+      "bytes": 198538
+    },
+    {
+      "page": "demos/sdf/canal-mill/index.html",
+      "bytes": 213374
+    },
+    {
+      "page": "demos/sdf/courtyard/index.html",
+      "bytes": 213390
+    },
+    {
+      "page": "demos/sdf/guardian/index.html",
+      "bytes": 32342
+    },
+    {
+      "page": "demos/sdf/inside-a-solid/index.html",
+      "bytes": 364657
+    },
+    {
+      "page": "demos/sdf/observatory/index.html",
+      "bytes": 293176
+    },
+    {
+      "page": "demos/sdf/robot/index.html",
+      "bytes": 203203
+    },
+    {
+      "page": "demos/simulation/explosion-3d/index.html",
+      "bytes": 84021
+    },
+    {
+      "page": "demos/simulation/fire-3d/index.html",
+      "bytes": 84017
+    },
+    {
+      "page": "demos/simulation/shallow-water/index.html",
+      "bytes": 151081
+    },
+    {
+      "page": "demos/simulation/smoke-2d/index.html",
+      "bytes": 106076
+    },
+    {
+      "page": "demos/simulation/water-2d/index.html",
+      "bytes": 119451
+    },
+    {
+      "page": "demos/simulation/water-3d/index.html",
+      "bytes": 176087
+    }
+  ],
+  "scope": "Built HTML/asset/anchor and media policy audit; local resource bounds include full-size posters before responsive/lazy savings, exclude user-requested films and external YouTube player resources; browser and public deployment checks remain separate"
+}

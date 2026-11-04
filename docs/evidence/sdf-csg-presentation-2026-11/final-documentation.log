@@ -1,0 +1,12 @@
+Test project /home/bryan/code/cubey/build/release
+    Start 8: documentation_hygiene
+1/1 Test #8: documentation_hygiene ............   Passed    0.62 sec
+
+100% tests passed out of 1
+
+Label Time Summary:
+docs      =   0.62 sec*proc (1 test)
+policy    =   0.62 sec*proc (1 test)
+unit      =   0.62 sec*proc (1 test)
+
+Total Test time (real) =   0.63 sec

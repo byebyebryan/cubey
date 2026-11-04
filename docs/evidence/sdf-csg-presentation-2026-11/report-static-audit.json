@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "internalReferences": 989,
+  "comparisonMarkup": [
+    {
+      "page": "demos/sdf/index.html",
+      "initialView": "intact",
+      "semanticButtons": 2,
+      "noScriptFallback": true
+    },
+    {
+      "page": "demos/sdf/observatory/index.html",
+      "initialView": "intact",
+      "semanticButtons": 2,
+      "noScriptFallback": true
+    },
+    {
+      "page": "demos/sdf/inside-a-solid/index.html",
+      "initialView": "section",
+      "semanticButtons": 2,
+      "noScriptFallback": true
+    }
+  ],
+  "reportScriptSyntax": true,
+  "scope": "Static source and built HTML audit. Does not establish real browser interaction, layout or playback acceptance."
+}
