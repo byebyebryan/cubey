@@ -1,0 +1,19 @@
+{
+  "authored-scene": "projects/sdf/scenes/csg-showcase-2026-11/robot.json",
+  "atlas-axis": 64,
+  "motion": "static",
+  "duration": 16,
+  "orbit-turns": 1,
+  "pitch": 0.14,
+  "yaw": 0.45,
+  "distance": 1.25,
+  "target-y": 0.035,
+  "sun-elevation": 45,
+  "sun-azimuth": 160,
+  "shadows": 1,
+  "ground": false,
+  "ao": false,
+  "exposure": 0.6,
+  "supersample": 2,
+  "render-mode": "balanced"
+}

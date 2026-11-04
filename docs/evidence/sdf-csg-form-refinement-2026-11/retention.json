@@ -1,0 +1,1934 @@
+{
+  "format": "cubey.sdf.form-refinement-retention",
+  "version": 1,
+  "policy": "Retain final native evidence, first visual iteration, exact inputs/scripts, baseline protection roster and delivered report. No cleanup or deduplication was performed.",
+  "protected_files": [
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/canal-mill-after-hero.log",
+      "bytes": 724,
+      "sha256": "c13642c0928559a1860c8c73abc28e17b484e3460bf2466d810f8f3532753680"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/canal-mill-after-hero.png",
+      "bytes": 391208,
+      "sha256": "e61ce609343cd0302cb6e0b19825b99437cb70265e00efa7ca9038089f05569c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/captures.json",
+      "bytes": 34897,
+      "sha256": "53384aebdf295c297e5e69757cb48fa002f941b9a31fed1845b2a40615bdc8d6"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/courtyard-after-hero.log",
+      "bytes": 723,
+      "sha256": "180b9d8c07e2abfc61f2facceaab87c4a914b60e076ff895aa5210d6fde88613"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/courtyard-after-hero.png",
+      "bytes": 396883,
+      "sha256": "eea95032e7fd0f717d95b58f817a8226e0714d5c957933b53e6439f2b7ecb84f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/canal-mill-after-config.json",
+      "bytes": 411,
+      "sha256": "eb9a45fcc7dad88855f73830515059619d062f80abbcf7391a0c78c00a3ef60e"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/canal-mill-after.json",
+      "bytes": 79039,
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/courtyard-after-config.json",
+      "bytes": 409,
+      "sha256": "085df39e3c500dee14ad7bea900ae882385e0bcea8a48b149a35b30c53491591"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/courtyard-after.json",
+      "bytes": 91705,
+      "sha256": "2c84cfd2bfe7c1f7b6f49b915f922f086f22047324112c58c4dca2cba379185d"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/observatory-after-config.json",
+      "bytes": 413,
+      "sha256": "83f559dacabfb42e51aa2fea3f5a011dfc27574a398e498e6bc79e341e2702bf"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/observatory-after.json",
+      "bytes": 134465,
+      "sha256": "1f09d9871650676594a8043389c676e8eb0ccbf027a6d15b45cfa8c1fccf4661"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/observatory-section-after-config.json",
+      "bytes": 420,
+      "sha256": "119454ac6b5dd4fc3bdde17d3234f41990cdc36d15e1927b3c8a405810fa9528"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/observatory-section-after.json",
+      "bytes": 158566,
+      "sha256": "9edc0f4824860eefb70c5194dbce02e8922405bdab328b8339c1a91882d1d685"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/robot-after-config.json",
+      "bytes": 445,
+      "sha256": "e675e98af6a8e52e46141fcf8f3762dd82f70a61fa116d3a70d9df4a72ece1d7"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/inputs/robot-after.json",
+      "bytes": 47752,
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/observatory-after-hero.log",
+      "bytes": 724,
+      "sha256": "0bc3761cb4780ed33ff6b25ae299dfbc0551a16bb9830fad23af5c06a8706453"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/observatory-after-hero.png",
+      "bytes": 399826,
+      "sha256": "4d74dfd294f4df750e16955b6c99de8efb6e0e7435b49dae9a40ae519e3eeec4"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/observatory-section-after-hero.log",
+      "bytes": 732,
+      "sha256": "0507f390017d08d259a9dd75649a461b4feaf2499b3da780426a54538298641f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/observatory-section-after-hero.png",
+      "bytes": 380857,
+      "sha256": "978d2ebbf5831ef8e6c7238ea3533121549d0d97497f5584f5b64f942639fd73"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/refine_csg_showcase.py",
+      "bytes": 16235,
+      "sha256": "41d1e8c4952af7f7662537cfd4c5337ad22baebfbfaa29cdc9b4bf8e7a6550d9"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/robot-after-hero.log",
+      "bytes": 717,
+      "sha256": "f2557f6f4aa544e4bd42ed8f5b77015288c497933f5152a717c4bece6ab19fa3"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/pass1/captures/robot-after-hero.png",
+      "bytes": 303209,
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-after-alternate.log",
+      "bytes": 729,
+      "sha256": "27699079d60b4ddc2d56d373fbf84ba3164887f540ff1c83d822100e418a2a81"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-after-alternate.png",
+      "bytes": 464692,
+      "sha256": "a5112d2dcfba47dd8325f459b59dc245859d64afb84afc16bbcb2e4413f2bc32"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-after-hero.log",
+      "bytes": 723,
+      "sha256": "001d4eadf9bd06dbebcf76c3c598b3fd1fd362d97e9a9fcaa5942b7fc4bd3252"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-after-hero.png",
+      "bytes": 391208,
+      "sha256": "e61ce609343cd0302cb6e0b19825b99437cb70265e00efa7ca9038089f05569c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-before-alternate.log",
+      "bytes": 730,
+      "sha256": "eb17d3b365e058947716aaf2483cb60e29f0725dcf0ab430b86fc733d576f334"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-before-alternate.png",
+      "bytes": 502462,
+      "sha256": "e1aef8cca51a8ca817307312fbac5f89039a617e60325dfc07ede00facc2bf03"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-before-hero.log",
+      "bytes": 724,
+      "sha256": "83acbf6c301c98b0ec4ce54107ef4b5515d31855f6c49262d6b319be5af94b0c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/canal-mill-before-hero.png",
+      "bytes": 426276,
+      "sha256": "2f3b49657fa9de62f9db22e6e60961e28121eb24724ae1c620679dc3eb9ef991"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/captures.json",
+      "bytes": 61857,
+      "sha256": "b91ade6de315ab181ef5cd297d5bfece8845f2c482f019dd0c620666a6665b87"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-after-alternate.log",
+      "bytes": 727,
+      "sha256": "db9bdd9769ee9203f9bd2ab956a47a5b969c0eb54178cdfd5d392e876fe6cc08"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-after-alternate.png",
+      "bytes": 466747,
+      "sha256": "0d3c59d62f6b6d5f81c61adad7cf33d03a7319178cb7ee5deacd920a5135a498"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-after-hero.log",
+      "bytes": 722,
+      "sha256": "7152cfdfd9a9faa021400e4fb7f64dfac359afc3651dee0030822db23574efef"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-after-hero.png",
+      "bytes": 396883,
+      "sha256": "eea95032e7fd0f717d95b58f817a8226e0714d5c957933b53e6439f2b7ecb84f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-before-alternate.log",
+      "bytes": 729,
+      "sha256": "913c0b77528917013c80d186d4418c21a62e4c52db7143213fb4ca8dbd7f17da"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-before-alternate.png",
+      "bytes": 515906,
+      "sha256": "55b9f4eeb4d5c83daae165cccd7a20f2e03ecfe85d3e9efc7e1c120b124aa6c8"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-before-hero.log",
+      "bytes": 723,
+      "sha256": "077dadb5084414e2a6d3f2cd5df241e2d2c986464c2f47aca4475b8a1785bcb6"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/courtyard-before-hero.png",
+      "bytes": 446154,
+      "sha256": "d798effd6e44163edd5badf30e672b0c953764cba128047f6d32f747a7d52ad1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/canal-mill-after-config.json",
+      "bytes": 411,
+      "sha256": "5e4770d3b3ee009a912509ed968e3a28ef3828a055ab34bd3663aaf177728098"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/canal-mill-after.json",
+      "bytes": 79039,
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/canal-mill-before-config.json",
+      "bytes": 412,
+      "sha256": "55e2e6c87df57524613a575b5454a1e8a543f90bf770f3b381d58a12715e8d52"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/canal-mill-before.json",
+      "bytes": 111228,
+      "sha256": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/courtyard-after-config.json",
+      "bytes": 409,
+      "sha256": "383b5351c84f1eec30b1f4a13931a24991ac833637f5093218a0ff2aa1115009"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/courtyard-after.json",
+      "bytes": 91706,
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/courtyard-before-config.json",
+      "bytes": 410,
+      "sha256": "bdc151d4bd7dfb8c31090934f08dd08f46154b4946d463fe87d00ca9312452ee"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/courtyard-before.json",
+      "bytes": 136711,
+      "sha256": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-after-config.json",
+      "bytes": 413,
+      "sha256": "58d1aabceea529201ed773a9a2f7530d8e0ddd81d811bbd032007591b09d82be"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-after.json",
+      "bytes": 134453,
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-before-config.json",
+      "bytes": 414,
+      "sha256": "882f962ee2260d99c8b982d926d28082afce82f48a4958924098a828d3df8ffa"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-before.json",
+      "bytes": 244302,
+      "sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-section-after-config.json",
+      "bytes": 420,
+      "sha256": "462d87ede3decf2c83d05809b6d5889d04598f50cdaebdb548a1964c7cdfcbdf"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-section-after.json",
+      "bytes": 158554,
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-section-before-config.json",
+      "bytes": 421,
+      "sha256": "fcf5a1a9ff2591eed368a6281183b40561ae475fb7ec966856a16b4a2ba230f4"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/observatory-section-before.json",
+      "bytes": 291912,
+      "sha256": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/robot-after-config.json",
+      "bytes": 445,
+      "sha256": "564df00976bd28fde9c440f8132acd21c742bd32a6745d05b1b3ef76757bff0f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/robot-after.json",
+      "bytes": 47752,
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/robot-before-config.json",
+      "bytes": 446,
+      "sha256": "2b0e44793e1eb0ed6baeabc01f43b908cb2d31bdd1dfb815837280489f82fc7c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/inputs/robot-before.json",
+      "bytes": 54384,
+      "sha256": "1aceb1131170a0b750671a0126a5756e43a746e7164db16b9ad02c27622b6c44"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-after-alternate.log",
+      "bytes": 730,
+      "sha256": "96af5c00f066b4b4fcea4545a90903639e414f154afbf5a19d8f9bad06e66456"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-after-alternate.png",
+      "bytes": 489374,
+      "sha256": "f21150ae2fa013fe42b21c238f6888c024eb0f80479f62ff028b6e1185fcd978"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-after-hero.log",
+      "bytes": 725,
+      "sha256": "f18d3d9b83aae8ac7ff8171a2eb9d271af1c5a761461b21001eed83d9d44f2e5"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-after-hero.png",
+      "bytes": 399826,
+      "sha256": "4d74dfd294f4df750e16955b6c99de8efb6e0e7435b49dae9a40ae519e3eeec4"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-before-alternate.log",
+      "bytes": 732,
+      "sha256": "6d6cfd01d6ea15fff9b62623e9e37bb30297b309292952dc7e73fd0ffa71f7df"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-before-alternate.png",
+      "bytes": 532434,
+      "sha256": "2177a810b15eae2dc904d13fe130174ddd94c1ed8c681b8c86b5c1a3709abf59"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-before-hero.log",
+      "bytes": 727,
+      "sha256": "6548d7bca3abf66047db1f7256625649efbd156a99889ba498571e89f20985e6"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-before-hero.png",
+      "bytes": 441012,
+      "sha256": "438a9410e730748754bc5d5c7f32076502a8c4900e72ad358cf139f2f435b798"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-section-after-hero.log",
+      "bytes": 732,
+      "sha256": "a43b67302556ffa777d72b1cadece6b711d7a88f75b0afdadf25c0178deed977"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-section-after-hero.png",
+      "bytes": 380857,
+      "sha256": "978d2ebbf5831ef8e6c7238ea3533121549d0d97497f5584f5b64f942639fd73"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-section-before-hero.log",
+      "bytes": 733,
+      "sha256": "55d0b22db99251913cc795f4fff433f16eb7049ee750df58a243f0e7af8269e1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/observatory-section-before-hero.png",
+      "bytes": 402024,
+      "sha256": "e8fa34d88f12c15107fd2d40a9a904434c668b95bd668f0653ceaa6bc50913ff"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/refine_csg_showcase.py",
+      "bytes": 16907,
+      "sha256": "36d4f9649f3dfcc5d2fb4a36e4346b1de3fbf60e4ae9ae84dfbd089aef497a9f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-after-alternate.log",
+      "bytes": 722,
+      "sha256": "a6d08f9a7784856234ae198e716e4e5f1bb2580b443a013e615e2c952434cd19"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-after-alternate.png",
+      "bytes": 278398,
+      "sha256": "66ab4037c457bd7bc9b94fd012453a0933f0e75f40ec5acb6838a703ef38755d"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-after-hero.log",
+      "bytes": 717,
+      "sha256": "87fe368723009093510caf3fd146d8753471384e7a68925af91f3ba000e199ef"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-after-hero.png",
+      "bytes": 303209,
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-before-alternate.log",
+      "bytes": 724,
+      "sha256": "9989c56df7180352e002cf09666334f9c2749fedf6526fbf101260ccf005db42"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-before-alternate.png",
+      "bytes": 278385,
+      "sha256": "bdcefe71d4346959e389884d2c69ac229b74e1b54c33b4ab1cb4f41e1a64e33c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-before-hero.log",
+      "bytes": 718,
+      "sha256": "ce1442876087df71f5b6e68fd75c5bd57e7a0aa40e14661abcdad11146a0659f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/captures/robot-before-hero.png",
+      "bytes": 307416,
+      "sha256": "9fa894e78a87052614651a9ccf820b7c64fbf2b443d545d72aeb8684c85cf803"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification/qualification.json",
+      "bytes": 24809,
+      "sha256": "528821959c884aee2047d71165bffa0c1082df34aa296dfe6ae7c06598b15e28"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification/robot.log",
+      "bytes": 98,
+      "sha256": "abd789fbdb76d194cee1744231f9c584e60724bf44b9e87b9d49f988dd5abc54"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/canal-mill-oracle-config.json",
+      "bytes": 331,
+      "sha256": "a8cca672b2cb3297d9d845627305a5ff72134eae0a38fa415e6cf1fe3701928d"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/canal-mill.log",
+      "bytes": 10172,
+      "sha256": "ecebdbf94165f9cf4afe659890e2e00a9c1024f7c7705479513d309dfb257283"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/canal-mill.png",
+      "bytes": 68926,
+      "sha256": "077c3d6a9e3daa6887764ca7397921daeb0227350b16786332e9be5fcbae09e9"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/courtyard-oracle-config.json",
+      "bytes": 329,
+      "sha256": "93558e6831fc45b8d4450a0e935028aaccfabee1c7d7168e5913da1ab8d2b842"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/courtyard.log",
+      "bytes": 8547,
+      "sha256": "10050bcccb934d8becc369cc100e0ac4e2f1a56149e22f47dc52b4ff94238b91"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/courtyard.png",
+      "bytes": 72747,
+      "sha256": "fbda34cdfdd51962deefbe597ba4bafa2bd13923f572f6f451ba2b47c2904763"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/observatory-oracle-config.json",
+      "bytes": 333,
+      "sha256": "c6c12e6dabf5b6d269aa458fcefc4eb73e4a71e85c1fade47d11cfedabba798b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/observatory-section-oracle-config.json",
+      "bytes": 340,
+      "sha256": "3b457d29e2484f9779f8b8a8aadeab24f00b4631b67bce5012c38e14f258f421"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/observatory-section.log",
+      "bytes": 17294,
+      "sha256": "cad9fca20017d0fbd4a1f13eea0ffc52db27615953e0fc7a01e0fbadd7e98b2b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/observatory-section.png",
+      "bytes": 75353,
+      "sha256": "f9c0aa13b3d01d9cbe858341f9a24d0b47931323acbfde9b27ac03a46d035abd"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/observatory.log",
+      "bytes": 16736,
+      "sha256": "a5b3aa5b5ab60f604d2714242c33a7b390f0984c76be9cc08b268a3b10ee8f17"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/observatory.png",
+      "bytes": 71555,
+      "sha256": "eba02f6ba1ff7dffc6c6974e6b04f61273dc52e6d2f804ecf8340b8936c10376"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/qualification.json",
+      "bytes": 156932,
+      "sha256": "18c991bd3d2d092d28a1483f12ef7bd3dba69d8794f6592b1a16ab39ec68e3e2"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/robot-oracle-config.json",
+      "bytes": 365,
+      "sha256": "9eed70c890b8ede31ceb02f50ab91e644a94c50e4ab6dc8a5af387dbfd8c30fa"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/robot.log",
+      "bytes": 43824,
+      "sha256": "2d46767f5c70851bac13d06b531252171ac6e2d3888d928b347f306c903b30f8"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/final/qualification-v2/robot.png",
+      "bytes": 56424,
+      "sha256": "6cfba4778a5c8e3ac65ad72bd9bfd79924c972010f84daed5a938be687e38cbc"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/csg-showcase-2026-11/canal-mill.json",
+      "bytes": 360,
+      "sha256": "34886e8c0591c45f768e5de868656808691aa5becc86709c5f32b3a1f7100be7"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/csg-showcase-2026-11/courtyard.json",
+      "bytes": 358,
+      "sha256": "9c9763ac4dd1395ea8d42ec19da13377428d876178c5f87c63f1f3fbf3495e78"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/csg-showcase-2026-11/observatory-section.json",
+      "bytes": 369,
+      "sha256": "763b83c06277f33f04a723922b4798f8730e69938689fec96bcc5500920cdfcb"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+      "bytes": 362,
+      "sha256": "4ca45c78672b289f39295261ba91d72467d56614ed60985f4725a5871dea7f09"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/csg-showcase-2026-11/robot.json",
+      "bytes": 394,
+      "sha256": "3b5fed7a96117cb20a0c37607f514dc5c7d3e1875b65f8b7c7cdb37b47fb7f75"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/diorama-drafts-2026-11/canal-mill.json",
+      "bytes": 334,
+      "sha256": "8b957da80334e961cc64e0a759f7e04e4d517248436ded77805ff432188e9ab0"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/diorama-drafts-2026-11/terraced-courtyard.json",
+      "bytes": 342,
+      "sha256": "9c38320f9a0df51ab9ec24792ea8f37edecd56122e24ce30306e8149f86421bd"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/observatory-cleanup-2026-11/square-section.json",
+      "bytes": 343,
+      "sha256": "a2276beb8b89fa2a537037edcdccddb2ab1967d2846f89fca8b6f2829ed5ebfb"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+      "bytes": 335,
+      "sha256": "f95d3575c4e93aacabfce1346be0c1456c2d4967cda7f99545188f62fc14d3f9"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/presets/survey-robot-fieldkit.json",
+      "bytes": 359,
+      "sha256": "e612351b793ac1eec50d6e8a6efa3b0a78a5a6af5708fad80d16856c9f0a7cb7"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/csg-showcase-2026-11/canal-mill.json",
+      "bytes": 79039,
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/csg-showcase-2026-11/courtyard.json",
+      "bytes": 91706,
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+      "bytes": 158554,
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "bytes": 134453,
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/csg-showcase-2026-11/robot.json",
+      "bytes": 47752,
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/diorama-drafts-2026-11/canal-mill.json",
+      "bytes": 111228,
+      "sha256": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/diorama-drafts-2026-11/terraced-courtyard.json",
+      "bytes": 136711,
+      "sha256": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/observatory-cleanup-2026-11/square-section.json",
+      "bytes": 291912,
+      "sha256": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+      "bytes": 244302,
+      "sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/downloads/projects/sdf/scenes/survey-robot-fieldkit.json",
+      "bytes": 54384,
+      "sha256": "1aceb1131170a0b750671a0126a5756e43a746e7164db16b9ad02c27622b6c44"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/canal-mill-after-alternate.log",
+      "bytes": 729,
+      "sha256": "27699079d60b4ddc2d56d373fbf84ba3164887f540ff1c83d822100e418a2a81"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/canal-mill-after-hero.log",
+      "bytes": 723,
+      "sha256": "001d4eadf9bd06dbebcf76c3c598b3fd1fd362d97e9a9fcaa5942b7fc4bd3252"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/canal-mill-before-alternate.log",
+      "bytes": 730,
+      "sha256": "eb17d3b365e058947716aaf2483cb60e29f0725dcf0ab430b86fc733d576f334"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/canal-mill-before-hero.log",
+      "bytes": 724,
+      "sha256": "83acbf6c301c98b0ec4ce54107ef4b5515d31855f6c49262d6b319be5af94b0c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/captures.json",
+      "bytes": 61857,
+      "sha256": "b91ade6de315ab181ef5cd297d5bfece8845f2c482f019dd0c620666a6665b87"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/courtyard-after-alternate.log",
+      "bytes": 727,
+      "sha256": "db9bdd9769ee9203f9bd2ab956a47a5b969c0eb54178cdfd5d392e876fe6cc08"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/courtyard-after-hero.log",
+      "bytes": 722,
+      "sha256": "7152cfdfd9a9faa021400e4fb7f64dfac359afc3651dee0030822db23574efef"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/courtyard-before-alternate.log",
+      "bytes": 729,
+      "sha256": "913c0b77528917013c80d186d4418c21a62e4c52db7143213fb4ca8dbd7f17da"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/courtyard-before-hero.log",
+      "bytes": 723,
+      "sha256": "077dadb5084414e2a6d3f2cd5df241e2d2c986464c2f47aca4475b8a1785bcb6"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/canal-mill-after-config.json",
+      "bytes": 411,
+      "sha256": "5e4770d3b3ee009a912509ed968e3a28ef3828a055ab34bd3663aaf177728098"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/canal-mill-after.json",
+      "bytes": 79039,
+      "sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/canal-mill-before-config.json",
+      "bytes": 412,
+      "sha256": "55e2e6c87df57524613a575b5454a1e8a543f90bf770f3b381d58a12715e8d52"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/canal-mill-before.json",
+      "bytes": 111228,
+      "sha256": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/courtyard-after-config.json",
+      "bytes": 409,
+      "sha256": "383b5351c84f1eec30b1f4a13931a24991ac833637f5093218a0ff2aa1115009"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/courtyard-after.json",
+      "bytes": 91706,
+      "sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/courtyard-before-config.json",
+      "bytes": 410,
+      "sha256": "bdc151d4bd7dfb8c31090934f08dd08f46154b4946d463fe87d00ca9312452ee"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/courtyard-before.json",
+      "bytes": 136711,
+      "sha256": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-after-config.json",
+      "bytes": 413,
+      "sha256": "58d1aabceea529201ed773a9a2f7530d8e0ddd81d811bbd032007591b09d82be"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-after.json",
+      "bytes": 134453,
+      "sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-before-config.json",
+      "bytes": 414,
+      "sha256": "882f962ee2260d99c8b982d926d28082afce82f48a4958924098a828d3df8ffa"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-before.json",
+      "bytes": 244302,
+      "sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-section-after-config.json",
+      "bytes": 420,
+      "sha256": "462d87ede3decf2c83d05809b6d5889d04598f50cdaebdb548a1964c7cdfcbdf"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-section-after.json",
+      "bytes": 158554,
+      "sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-section-before-config.json",
+      "bytes": 421,
+      "sha256": "fcf5a1a9ff2591eed368a6281183b40561ae475fb7ec966856a16b4a2ba230f4"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/observatory-section-before.json",
+      "bytes": 291912,
+      "sha256": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/robot-after-config.json",
+      "bytes": 445,
+      "sha256": "564df00976bd28fde9c440f8132acd21c742bd32a6745d05b1b3ef76757bff0f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/robot-after.json",
+      "bytes": 47752,
+      "sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/robot-before-config.json",
+      "bytes": 446,
+      "sha256": "2b0e44793e1eb0ed6baeabc01f43b908cb2d31bdd1dfb815837280489f82fc7c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/inputs/robot-before.json",
+      "bytes": 54384,
+      "sha256": "1aceb1131170a0b750671a0126a5756e43a746e7164db16b9ad02c27622b6c44"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/observatory-after-alternate.log",
+      "bytes": 730,
+      "sha256": "96af5c00f066b4b4fcea4545a90903639e414f154afbf5a19d8f9bad06e66456"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/observatory-after-hero.log",
+      "bytes": 725,
+      "sha256": "f18d3d9b83aae8ac7ff8171a2eb9d271af1c5a761461b21001eed83d9d44f2e5"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/observatory-before-alternate.log",
+      "bytes": 732,
+      "sha256": "6d6cfd01d6ea15fff9b62623e9e37bb30297b309292952dc7e73fd0ffa71f7df"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/observatory-before-hero.log",
+      "bytes": 727,
+      "sha256": "6548d7bca3abf66047db1f7256625649efbd156a99889ba498571e89f20985e6"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/observatory-section-after-hero.log",
+      "bytes": 732,
+      "sha256": "a43b67302556ffa777d72b1cadece6b711d7a88f75b0afdadf25c0178deed977"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/observatory-section-before-hero.log",
+      "bytes": 733,
+      "sha256": "55d0b22db99251913cc795f4fff433f16eb7049ee750df58a243f0e7af8269e1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/canal-mill-oracle-config.json",
+      "bytes": 331,
+      "sha256": "a8cca672b2cb3297d9d845627305a5ff72134eae0a38fa415e6cf1fe3701928d"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/canal-mill.log",
+      "bytes": 10172,
+      "sha256": "ecebdbf94165f9cf4afe659890e2e00a9c1024f7c7705479513d309dfb257283"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/canal-mill.png",
+      "bytes": 68926,
+      "sha256": "077c3d6a9e3daa6887764ca7397921daeb0227350b16786332e9be5fcbae09e9"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/courtyard-oracle-config.json",
+      "bytes": 329,
+      "sha256": "93558e6831fc45b8d4450a0e935028aaccfabee1c7d7168e5913da1ab8d2b842"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/courtyard.log",
+      "bytes": 8547,
+      "sha256": "10050bcccb934d8becc369cc100e0ac4e2f1a56149e22f47dc52b4ff94238b91"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/courtyard.png",
+      "bytes": 72747,
+      "sha256": "fbda34cdfdd51962deefbe597ba4bafa2bd13923f572f6f451ba2b47c2904763"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/observatory-oracle-config.json",
+      "bytes": 333,
+      "sha256": "c6c12e6dabf5b6d269aa458fcefc4eb73e4a71e85c1fade47d11cfedabba798b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/observatory-section-oracle-config.json",
+      "bytes": 340,
+      "sha256": "3b457d29e2484f9779f8b8a8aadeab24f00b4631b67bce5012c38e14f258f421"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/observatory-section.log",
+      "bytes": 17294,
+      "sha256": "cad9fca20017d0fbd4a1f13eea0ffc52db27615953e0fc7a01e0fbadd7e98b2b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/observatory-section.png",
+      "bytes": 75353,
+      "sha256": "f9c0aa13b3d01d9cbe858341f9a24d0b47931323acbfde9b27ac03a46d035abd"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/observatory.log",
+      "bytes": 16736,
+      "sha256": "a5b3aa5b5ab60f604d2714242c33a7b390f0984c76be9cc08b268a3b10ee8f17"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/observatory.png",
+      "bytes": 71555,
+      "sha256": "eba02f6ba1ff7dffc6c6974e6b04f61273dc52e6d2f804ecf8340b8936c10376"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/qualification.json",
+      "bytes": 156932,
+      "sha256": "18c991bd3d2d092d28a1483f12ef7bd3dba69d8794f6592b1a16ab39ec68e3e2"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/robot-oracle-config.json",
+      "bytes": 365,
+      "sha256": "9eed70c890b8ede31ceb02f50ab91e644a94c50e4ab6dc8a5af387dbfd8c30fa"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/robot.log",
+      "bytes": 43824,
+      "sha256": "2d46767f5c70851bac13d06b531252171ac6e2d3888d928b347f306c903b30f8"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/qualification/robot.png",
+      "bytes": 56424,
+      "sha256": "6cfba4778a5c8e3ac65ad72bd9bfd79924c972010f84daed5a938be687e38cbc"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/refinement.json",
+      "bytes": 107649,
+      "sha256": "69d2472396be78692251272514c3382bfa32b9edcee1cf35c730d2095e8a6785"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/robot-after-alternate.log",
+      "bytes": 722,
+      "sha256": "a6d08f9a7784856234ae198e716e4e5f1bb2580b443a013e615e2c952434cd19"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/robot-after-hero.log",
+      "bytes": 717,
+      "sha256": "87fe368723009093510caf3fd146d8753471384e7a68925af91f3ba000e199ef"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/robot-before-alternate.log",
+      "bytes": 724,
+      "sha256": "9989c56df7180352e002cf09666334f9c2749fedf6526fbf101260ccf005db42"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/evidence/robot-before-hero.log",
+      "bytes": 718,
+      "sha256": "ce1442876087df71f5b6e68fd75c5bd57e7a0aa40e14661abcdad11146a0659f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/canal-mill-after-alternate.png",
+      "bytes": 464692,
+      "sha256": "a5112d2dcfba47dd8325f459b59dc245859d64afb84afc16bbcb2e4413f2bc32"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/canal-mill-after-hero.png",
+      "bytes": 391208,
+      "sha256": "e61ce609343cd0302cb6e0b19825b99437cb70265e00efa7ca9038089f05569c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/canal-mill-before-alternate.png",
+      "bytes": 502462,
+      "sha256": "e1aef8cca51a8ca817307312fbac5f89039a617e60325dfc07ede00facc2bf03"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/canal-mill-before-hero.png",
+      "bytes": 426276,
+      "sha256": "2f3b49657fa9de62f9db22e6e60961e28121eb24724ae1c620679dc3eb9ef991"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/courtyard-after-alternate.png",
+      "bytes": 466747,
+      "sha256": "0d3c59d62f6b6d5f81c61adad7cf33d03a7319178cb7ee5deacd920a5135a498"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/courtyard-after-hero.png",
+      "bytes": 396883,
+      "sha256": "eea95032e7fd0f717d95b58f817a8226e0714d5c957933b53e6439f2b7ecb84f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/courtyard-before-alternate.png",
+      "bytes": 515906,
+      "sha256": "55b9f4eeb4d5c83daae165cccd7a20f2e03ecfe85d3e9efc7e1c120b124aa6c8"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/courtyard-before-hero.png",
+      "bytes": 446154,
+      "sha256": "d798effd6e44163edd5badf30e672b0c953764cba128047f6d32f747a7d52ad1"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/observatory-after-alternate.png",
+      "bytes": 489374,
+      "sha256": "f21150ae2fa013fe42b21c238f6888c024eb0f80479f62ff028b6e1185fcd978"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/observatory-after-hero.png",
+      "bytes": 399826,
+      "sha256": "4d74dfd294f4df750e16955b6c99de8efb6e0e7435b49dae9a40ae519e3eeec4"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/observatory-before-alternate.png",
+      "bytes": 532434,
+      "sha256": "2177a810b15eae2dc904d13fe130174ddd94c1ed8c681b8c86b5c1a3709abf59"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/observatory-before-hero.png",
+      "bytes": 441012,
+      "sha256": "438a9410e730748754bc5d5c7f32076502a8c4900e72ad358cf139f2f435b798"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/observatory-section-after-hero.png",
+      "bytes": 380857,
+      "sha256": "978d2ebbf5831ef8e6c7238ea3533121549d0d97497f5584f5b64f942639fd73"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/observatory-section-before-hero.png",
+      "bytes": 402024,
+      "sha256": "e8fa34d88f12c15107fd2d40a9a904434c668b95bd668f0653ceaa6bc50913ff"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/robot-after-alternate.png",
+      "bytes": 278398,
+      "sha256": "66ab4037c457bd7bc9b94fd012453a0933f0e75f40ec5acb6838a703ef38755d"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/robot-after-hero.png",
+      "bytes": 303209,
+      "sha256": "7553a3513ce1098fb966223675a3802786412add9ceca7b51b61a89cf3446c36"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/robot-before-alternate.png",
+      "bytes": 278385,
+      "sha256": "bdcefe71d4346959e389884d2c69ac229b74e1b54c33b4ab1cb4f41e1a64e33c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/images/robot-before-hero.png",
+      "bytes": 307416,
+      "sha256": "9fa894e78a87052614651a9ccf820b7c64fbf2b443d545d72aeb8684c85cf803"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/index.html",
+      "bytes": 21633,
+      "sha256": "cf5e1213133d10ac315cbea654a52b510fdb011d21bd8b6ae9c9e1716f1871f5"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/manifest.json",
+      "bytes": 21947,
+      "sha256": "b4e70be44b061e920b7498ba3e205c101e3ba7554bb6d89f82844b058d1c14e6"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/reproduce/check_robot_joints.py",
+      "bytes": 7272,
+      "sha256": "285044c1c201cb102b3bf90690a963a52fd3040a7ac9084e096b0b2bd3544d5c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/reproduce/csg_form_refinement_report.html",
+      "bytes": 18364,
+      "sha256": "c5f459fc625af6ee0cf06675d34a86c688dd44a3bb19d9717deba65a401e701b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/reproduce/csg_form_refinement_report.py",
+      "bytes": 6101,
+      "sha256": "764cc01ac953b0ed9960665af6e91acce0ae7bb2648366b344906166772dd113"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/reproduce/qualify_csg_refinement.py",
+      "bytes": 7454,
+      "sha256": "45a60d2ec9b9906987434682eadaa9ea3ccab62ecaaaf8bdeac40e0c45dd29b0"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/reproduce/refine_csg_showcase.py",
+      "bytes": 16907,
+      "sha256": "36d4f9649f3dfcc5d2fb4a36e4346b1de3fbf60e4ae9ae84dfbd089aef497a9f"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report/reproduce/sdf_author.py",
+      "bytes": 4061,
+      "sha256": "a4ee213f0b306daf257e0483e433268fe90fca20b14d38d3a904332ea137fc6b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/baseline.json",
+      "bytes": 121733,
+      "sha256": "8fb3bace0c631e9685a97b9d82366b7e122c4c28e708c4c757289e8693a20465"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/preservation.json",
+      "bytes": 2448,
+      "sha256": "3772adf9957b590e974a39560293eedaaab1ad933f331d858f4bbd97d9b2d40c"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/report-controls.json",
+      "bytes": 1528,
+      "sha256": "ee6629976f882c9baabcf878814feaed6eb8fb6af75b90b109da8283fb93b162"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/delivery.json",
+      "bytes": 18542,
+      "sha256": "45e6689e7c9a9ea5acb2e3309b9d1c2727af45c9b72887d53680356b4218fc8a"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/check-report.cjs",
+      "bytes": 3329,
+      "sha256": "ce9d602e59864e59f5728f01cf9cd87ca7d69264a911ca1e99cf085cbdcef6ab"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/check-delivery.py",
+      "bytes": 1119,
+      "sha256": "7939621a42d919b1b6f5c33cfe50f5bfc2d46a7119fc0af797da1a5c8e769a6b"
+    },
+    {
+      "path": "outputs/sdf/csg-form-refinement-20261104/verify-final.py",
+      "bytes": 1699,
+      "sha256": "ce4c36582b3c78a44c3acd3367b94839ac15fc57082a96f791d82834d6f30c44"
+    }
+  ],
+  "protected_bytes": 23102831,
+  "native_dependencies": [
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "sha256": "899c6a87e5218b0082fe4a9721684b1462012e34302850c1687636b80249219c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/authored_bricks.comp.spv",
+      "sha256": "6792b381fdac5bfb8ce3e9207bb8e5581e73cf1e662bbeb73f471aa58d726880"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/authored_filter.comp.spv",
+      "sha256": "def16143f1e0d4d008a6b58cec85d21053361fb14775040beb40a63ca1feb806"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/authored_validate.comp.spv",
+      "sha256": "28c8411c0781b07578de27bbc543bd0017895bc41ecf2c53f9545e63c462e921"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/bricks.comp.spv",
+      "sha256": "90a2ec847d648475fc93e400231c80c48ed444eb3274f687b88bb71ba8f2bb26"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/filter.comp.spv",
+      "sha256": "f3589f2ef32c4d06a9b30ec8b00e7ac2c5456cf359d026f8f4e0638b9ed19c6c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/forward_pbr_post.frag.spv",
+      "sha256": "657087141c8047374e76a280e6adf6e5d833870db4cfa97240d62357e7a91526"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/forward_pbr_post.vert.spv",
+      "sha256": "3fbb90ece337376e65ad11bee0ab7b0bcbef348497289b5e598a2e09a9eb905c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/occluder.vert.spv",
+      "sha256": "d20392e4249444cf65afbdad2cd01de9c703256d0c4fe912d6b2a309a92bfe3a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/occluder.frag.spv",
+      "sha256": "e592d45c44f430da47367715bd58068a78d914861e13e5d2df5bf0df55a5775e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf.frag.spv",
+      "sha256": "44dd5df203134bbbf1757309328400c68db96348a80f86ab48a40cb31cf3b3b6"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf.vert.spv",
+      "sha256": "ae9983b94db66576a2d02fb1e286ac642aca8252887cf39d4d9b82af48f1ebd0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_authored.frag.spv",
+      "sha256": "fc623a7a0b9e99aad040c47d34c0ddbd8b6a09a97dbc9d6663780f48626a9942"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/validate.comp.spv",
+      "sha256": "46f0591dac8a4cd15c8a7d8e398226b833ee9b2b3153de65f202842239eb7f26"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_study.frag.spv",
+      "sha256": "64dfd0bd1930162b843458332845c471a104b68098d098c174ba007249bea56c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/atmosphere_reflection_prefilter.frag.spv",
+      "sha256": "9b68c1059e22d5f9676206644efda693c195cf179c34c6c6c107a8636965d10d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/atmosphere.vert.spv",
+      "sha256": "fee566ef6aacd7241a9ae2e3adf916d82650abf59c00074f5fbe7d989aae6b87"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/atmosphere.frag.spv",
+      "sha256": "401d45d1911126aaadda18b947a5945c0e945a2a1ecf8539875e5b71df31296b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud.vert.spv",
+      "sha256": "26c234ac7ec90b56ba819dc766e667a128794169fbb3fbacfda77deb2b303570"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_blue_noise.comp.spv",
+      "sha256": "146c2ff5ed518aed440bbcd0369138a3cd8dcac880f75948cd11a53c935421fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_perlin_worley.comp.spv",
+      "sha256": "deffea12880a2a5ea03092ebbc33b8d8dfec2f7698d0965d2e1c16dc4b8f7572"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_composite_background_depth.frag.spv",
+      "sha256": "8ce3af4e2ea8970c0033e260e244869c0125df2c1db7ce00bc16650feaf516f3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_environment_prefilter.frag.spv",
+      "sha256": "29543da30bf3e9f748e683b2177af42256d1b4139ae7c82a34d9555c8d822cbc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_march.comp.spv",
+      "sha256": "9a183a4151804d9599400313c1ab1730f45815f4b77c15f643712f3e0b3775b1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_planar_filter.frag.spv",
+      "sha256": "ac13147f666b0f46acf52eeaa3902628283e5771f6f6fac01b1fb9bbf16f6778"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_weather.comp.spv",
+      "sha256": "e6e398c73d09d8e09b1d1c8a6b556f881f59bd6696bfb5464291c60c5db92ef0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_shadow.comp.spv",
+      "sha256": "86b9266e22f12e9d2ce4d8fc4d38195cee683760cf6e2c9b14af771dfa4f22d1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_worley.comp.spv",
+      "sha256": "00e93d590387242acba1b386144e33a5395c5901ca9f5abaefb5b6823fcdfac0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cloud_temporal.comp.spv",
+      "sha256": "077dbccfc31d8cdc0baa5c52d6ca758d657c91c1ce32b5b090c3748017c47759"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/surface_cloud_march.comp.spv",
+      "sha256": "7e02f26b57e4e4997a99a544a85e9056e59dc2d828f44078433e9a1228ad11f3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_full.comp.spv",
+      "sha256": "daea996f3dbcadbb21b77484eb10adf69cf180072af6c8f1f284ef9487da99fe"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_analytic.frag.spv",
+      "sha256": "c7f78cbebee817494baae557ce2ae3abf34c06600dacc628ab4296fc51bd53d3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_analytic.frag.spv",
+      "sha256": "59e6e0492b9d69dc3dcd27690283514a86bf11a44cce64d1a64efa0eaa52a488"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_hybrid.frag.spv",
+      "sha256": "0e17938790ef37c80b4df95518eaf6f2f8f90e2801c9009245e5a8c670075094"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_hybrid.frag.spv",
+      "sha256": "170a291183916de591560b5d9cadf9431b1378e66785f4cc1f23b3a285ba269e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_sampled.comp.spv",
+      "sha256": "3e672b4043ec24922c7d89dc2cb836ea0f0b519e5b961a1fc5d075d873a9b963"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_hybrid.comp.spv",
+      "sha256": "4a1c9148a6d5a6368a3c37729850f37609d745f5dc9c24957e5022d03ac09524"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_donor.comp.spv",
+      "sha256": "3c7a06cf2483b5aba5e52fa47aa786ce11d416f632b5a86d16d8bde87bae79a4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_analytic_pruned.comp.spv",
+      "sha256": "a6ef22930872de54700d3162e558e2d9705f4ee470586da86de812715d946a0e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/comparison_hybrid_pruned.comp.spv",
+      "sha256": "fe6833a7739747f3a4b3de6e40150dce4d67b28328839a449f610c46553f5494"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_analytic_pruned.frag.spv",
+      "sha256": "ecd56b8565943ff503ed1f0682113f069caa4c43f3f714a1f84445c380100f5f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_analytic_pruned.frag.spv",
+      "sha256": "d8e150533dd2c208f12862fb8c4473537c32067aca9b182643986788cc790d21"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/sdf_hybrid_pruned.frag.spv",
+      "sha256": "2c039e4694063c847bfef3b0c1d96aaefe246157ec42d8b5a1aa10501036f667"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/material_hybrid_pruned.frag.spv",
+      "sha256": "9fd390b991970916764b1c9a8d5dd4bfe7980980c2cba0f8defd7160d47550f1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/investigate_sdf_analytic_pruned.frag.spv",
+      "sha256": "c3179e8a67e5b1c6d56bb0255d1a5338dd8681f132cd5a3806efdb53b56019d1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/investigate_sdf_authored.frag.spv",
+      "sha256": "e7635111f2cde0ae8f3abcc65f9aa2409bbfb89ec0dd927303aaa1cc09f5821c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/investigate_sdf_hybrid_pruned.frag.spv",
+      "sha256": "2053949e00178ded9503a92258a9459eb72875c2dd17507546e83d5232472c0f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/workload_analytic.comp.spv",
+      "sha256": "b80460dab415cb3a44e5b0ed5e87b4edee5218fd0db7d132285534b6c2e9fc92"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/workload_hybrid.comp.spv",
+      "sha256": "04ec54813ee39dcdb6c8d2d2bf18e51448141c86630aace1ab742e4a03d49b09"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_comparison_analytic_pruned.comp.spv",
+      "sha256": "b1e7782f17aef2295e4750313db264a0d934d7c350f7cb3502a1d65600f99c26"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_comparison_hybrid_pruned.comp.spv",
+      "sha256": "8011c6f714663918139950803c26667a20deb4bb39ce7a72ff0cf1a0b207faa3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_investigate_sdf_analytic_pruned.frag.spv",
+      "sha256": "32f55d747d6abbadf30c3f722584323aeade9eff08316ac2caecb1c21163f765"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_investigate_sdf_hybrid_pruned.frag.spv",
+      "sha256": "f8d7d9e399669473e9cdf93add95ac9246e535d55c3880a7d868318f19131d31"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_workload_analytic.comp.spv",
+      "sha256": "5c9fd8b6341103c63c2882ef82f85d99607ff01eabd3622a12e7095ce79dc03d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/tight_workload_hybrid.comp.spv",
+      "sha256": "a2fe2323b52ac318304e4f619e1c5444bf7216d8e9d00bd96cb5a40319a5d2bc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_comparison_hybrid_pruned.comp.spv",
+      "sha256": "0a3c66409378a3b69722dddbe15602c7462d64224c5670920a0adbd40ce3f7cc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_comparison_analytic_pruned.comp.spv",
+      "sha256": "5b2c630d7a9c98132bb7f87972edd0920741a288571719b6cdbe57d5c912daa2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_sdf_analytic_pruned.frag.spv",
+      "sha256": "46d966049fb2105ce7ae63254a868adfbcb953c86acb0f420751078cb008f649"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_material_analytic_pruned.frag.spv",
+      "sha256": "08c5fb497f845d37dd3763540c706929a17e1dd0dae0d000878a0209470a381e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_material_hybrid_pruned.frag.spv",
+      "sha256": "46689d89a0088110be752470e413989ef06fc4d6725aafb777f2407e2ce07245"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_sdf_hybrid_pruned.frag.spv",
+      "sha256": "ff30f490fe054cfed17a7dbbca3f7fca35570363e0a45ef1155c6bd3948a00b1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_workload_analytic.comp.spv",
+      "sha256": "be735464d59818f55b2188439b98644b2a6cde360b1e57ff2842a5f11a58bd6f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/accel_workload_hybrid.comp.spv",
+      "sha256": "54a9a5af8737daf962dbd6d8a07837664cd7fc12a34ded09df8c69874467c5aa"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_comparison_analytic_pruned.comp.spv",
+      "sha256": "838689b4e1ebec5f30d3b8a76da47b40ab94f11458808f9e91600a68f85a8d53"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_material_analytic_pruned.frag.spv",
+      "sha256": "2785d1029948c12de8081407af824bc52be71acc8a79eb5cb3f8e09b2b53cdd4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_sdf_analytic_pruned.frag.spv",
+      "sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/far_workload_analytic.comp.spv",
+      "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_comparison_analytic_pruned.comp.spv",
+      "sha256": "5b2c630d7a9c98132bb7f87972edd0920741a288571719b6cdbe57d5c912daa2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "838689b4e1ebec5f30d3b8a76da47b40ab94f11458808f9e91600a68f85a8d53"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_workload_analytic.comp.spv",
+      "sha256": "22c74355783bde2fb714dd68eff322e87d83d203caa35effa81c5811c8cc83fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_material_analytic_pruned.frag.spv",
+      "sha256": "2785d1029948c12de8081407af824bc52be71acc8a79eb5cb3f8e09b2b53cdd4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_workload_analytic.comp.spv",
+      "sha256": "be735464d59818f55b2188439b98644b2a6cde360b1e57ff2842a5f11a58bd6f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "7a1e1fffb73046c957f010a8d710ebc2aa9d14bcbfaf96e9a81181f2826d1293"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_material_analytic_pruned.frag.spv",
+      "sha256": "08c5fb497f845d37dd3763540c706929a17e1dd0dae0d000878a0209470a381e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_sdf_analytic_pruned.frag.spv",
+      "sha256": "46d966049fb2105ce7ae63254a868adfbcb953c86acb0f420751078cb008f649"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_comparison_hybrid_pruned.comp.spv",
+      "sha256": "f988c5bcdbe54cf2cb80d73e8e6fef99a97f9fc7361fde5238f91ac5055cc546"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_material_hybrid_pruned.frag.spv",
+      "sha256": "5d0660994da05986b4a2e0d86be5d54d93ae6edd27a774c188c1b8f7cfea7cc0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_workload_hybrid.comp.spv",
+      "sha256": "772588f81e4aa4c31eca65dbe3c419bac84f78d17878bb5ed5d9960c550758f5"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/unclamped_sdf_hybrid_pruned.frag.spv",
+      "sha256": "b51dd71e2a96eabe53c655c89db8ecf31f1cf93339f54f2f830a80096096ab74"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_full.frag.spv",
+      "sha256": "684f63d6a48200dbb44fcfca850e35d9a5128210ec35c5a21d4224a3a271fc12"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_material.frag.spv",
+      "sha256": "a63d7c9e85c1529cd97bca3e2c38fe80760eec4f48b6f97d0533b5d9e08f5f1e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_normal.frag.spv",
+      "sha256": "7805d21fbf80ad7e65eb08a1d118c3eb7c8415834c455258a07ced9fe70c99e7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_primary.frag.spv",
+      "sha256": "b1d20a7020c56257d86e8470222c0a0c9e0f8705925402bd34aae3604a1626db"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_fixed_shadow.frag.spv",
+      "sha256": "3e68a7ab59257a8854907bd93318fed89f6b8dd3c04b443a603601c7b18770ea"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_no-sky.frag.spv",
+      "sha256": "f87baae1822c5cd0d580a87bc9195a0efa5d5cbcf8d3b5ddfa291f62f1b25df6"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_single-material.frag.spv",
+      "sha256": "ed2261b95c4499c8941b261bf4f2e21c58f7d000b0f9e87b9e52946f8b866c72"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_nodebug.frag.spv",
+      "sha256": "8943b51e5b1bd154b271ba7b2859cc054b410d86ddf17a53f0786e95d9c9068f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_specialized.frag.spv",
+      "sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/root_far_investigate_sdf_analytic_pruned.frag.spv",
+      "sha256": "47205de1fe11e3cae0bfa09be6adf5690e4bd393d98de2791e9f74b969bb7a94"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_material_analytic_pruned.frag.spv",
+      "sha256": "b60307670a79097700969567a1b6efc9b5116997a91ac3aa6c527194c1648336"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_material_hybrid_pruned.frag.spv",
+      "sha256": "b06eab628cb5678e066bee57db4e1fe91c057632fd5a17bd2b80dd5303bb5e19"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_sdf_analytic_pruned.frag.spv",
+      "sha256": "7c83e782e3971c4d41aa084052917fdcbef6874e183ec1fc3c49aa6bc9fa9d5c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_accel_sdf_hybrid_pruned.frag.spv",
+      "sha256": "97c2f57a5b6e35aa0e47a5c3b83b8593709c186b719544f3a11ef393585569b5"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_far_material_analytic_pruned.frag.spv",
+      "sha256": "e0efe4f8c5c525f5fe572a47772c9862198baed83d20b2faebd83d672f81fb48"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_analytic.frag.spv",
+      "sha256": "5670749e0b2a83595f5fc3e56dcc0b37b0c8958a9714c7105611f7a906c232ae"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_analytic_pruned.frag.spv",
+      "sha256": "c196c46239bcb16deae5b18ace401a040041d18db37e8f2258c6618f3ef863e9"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_hybrid.frag.spv",
+      "sha256": "8f384d4899ac3f6d60456f325b569b8c7c3390cdb866a4f266f320276ca3e10c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_material_hybrid_pruned.frag.spv",
+      "sha256": "3cf53f454ab433a3daef8ba4aa2bc52974616c19cf43dee3c0cd482b87c282af"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "ac2c3e1ddf6ffeadd62ba0b080f153c440f5614bef0488deb06324dbaf4b2fda"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_far_material_analytic_pruned.frag.spv",
+      "sha256": "e0efe4f8c5c525f5fe572a47772c9862198baed83d20b2faebd83d672f81fb48"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_sdf_analytic_pruned.frag.spv",
+      "sha256": "7c83e782e3971c4d41aa084052917fdcbef6874e183ec1fc3c49aa6bc9fa9d5c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_root_material_analytic_pruned.frag.spv",
+      "sha256": "b60307670a79097700969567a1b6efc9b5116997a91ac3aa6c527194c1648336"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_analytic.frag.spv",
+      "sha256": "ccb53c1c14bee22f2f5efb118579ed66fbf62578d35ed2dc2abc5571a00ac599"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_analytic_pruned.frag.spv",
+      "sha256": "953160367eec925f678de24efdf50cd0ab58b412c7debcc47b44d08ab7c0cfda"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_hybrid_pruned.frag.spv",
+      "sha256": "53466bc4cd4109b8935f5e9950b62d32266ba08b8e4d355a1e121aec017e8f66"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_sdf_hybrid.frag.spv",
+      "sha256": "866c7ea3bb148252144c1ff7f2ff18758b8ec3870e2bcac1ff07f061716ec994"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_unclamped_sdf_hybrid_pruned.frag.spv",
+      "sha256": "a503a648a3599233266d5d3c75aadd689284e1570fec7bb39a394f0a64518062"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_unclamped_material_hybrid_pruned.frag.spv",
+      "sha256": "ca1ca58d2d8cf8951defbbe147a4a34a8823d58037793f16d1e41934df952fcb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-primary.frag.spv",
+      "sha256": "c26025662006091e5b7040457da47b2a602db1e4ddeb96c78da06c6ae03c6612"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-no-sky.frag.spv",
+      "sha256": "038c44dccef4f3f4528c78fac35845bfaaa404dcc36f463c7a5da8bbfda0907a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-shadow.frag.spv",
+      "sha256": "a7e0b8d89added498ab84a5ed343166ac74fa26b26d20bc67ccbf12fdd8d5d49"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-material.frag.spv",
+      "sha256": "8ceac9b15bc65083fe834df2e675e5d2a91cb1447b552cbbb55de9c161917ed2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-normal.frag.spv",
+      "sha256": "eed43eb028081b023713f131ded26e55481a5535e38f80d3984349eb56399c9d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-full.frag.spv",
+      "sha256": "037f311d85d57526309ce079cad793d6eef156247d726cfbed299ae33afe5cf8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-cull-dark-shadows.frag.spv",
+      "sha256": "465277b5b5a493fcc993d4b8e168a8068ce698e05241e6e2b4c0c77f831300ae"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/profile_opt-reorder-shadow.frag.spv",
+      "sha256": "61755fe5ac4069686f859a7f505ac52e8d9bc2f1ef34663bda18c215c9c14b27"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_accel_sdf_analytic_pruned.frag.spv",
+      "sha256": "4b93e12947915b49adfb6fff451d83aac055c5a89584f4d673ef96e7d7d73388"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_accel_sdf_hybrid_pruned.frag.spv",
+      "sha256": "74a25878c5ea3b9a21fe4333bab338d7a654603c2b0221f3d4d9b3f430c9cba1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "86aa1ede87bc9c3bb238d78b6ab69f5e4defd9fc017f92921c3f3c9a65e7a3fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "86aa1ede87bc9c3bb238d78b6ab69f5e4defd9fc017f92921c3f3c9a65e7a3fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_root_sdf_analytic_pruned.frag.spv",
+      "sha256": "4b93e12947915b49adfb6fff451d83aac055c5a89584f4d673ef96e7d7d73388"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_analytic.frag.spv",
+      "sha256": "37e621b0e1a919fa78fda2818d23c259c17b8d250db6608fbfb43ee978aea449"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_hybrid.frag.spv",
+      "sha256": "c0fbf734a5f8dfa4cb15d11b271f6a4a9d11caad4d534d95d972f7a98c750a54"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_analytic_pruned.frag.spv",
+      "sha256": "f9a1ad92cea27ca4987be051add7e35d23ebd4e7c7d316baa7e195d6e3692230"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_sdf_hybrid_pruned.frag.spv",
+      "sha256": "82f106887677b3e430322e3efc7189e525e0033eca742d0c40dfe7d40705de97"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_unclamped_sdf_hybrid_pruned.frag.spv",
+      "sha256": "1009a93ba85e7e17e37391fda974a7e97a259ada8d884993c1bc2822978618a1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_contract_reference.comp.spv",
+      "sha256": "4e56955d7998d90dc5ae5e1308553077e09ab8b3b3c87d3cce30fef41519a116"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_contract_candidate.comp.spv",
+      "sha256": "56012b80e4967d5205bacefdff66ce7784068e49ca47e408fd24d2f0163269c7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/prepared_cone_probe.comp.spv",
+      "sha256": "ec07b62a155b52f090c4ae26117fd096cf10c8625d390113845423d4672f9c20"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "ebaf4c916e435a62c8f90baa76f8912569ba8ba83ba390ef7b1ffd40b1faba88"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/prepared_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "f0405c7be0820fd2646b7a960be887249d4766e448175fb915f9a1d64849cf3d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "da9748d2b011d5c48b8742e1d3d0d7841784ed7c09e7fa261d55f0529a34c22d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_validate_combined.frag.spv",
+      "sha256": "f8a0977a97570aa452de17637e56e7f63a42fd04679b2a72d439b070e4262cff"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_validate_reference.frag.spv",
+      "sha256": "839a7fd024036626bcc3c446294b4bd4647009debf78ac4687e93d63cb193b01"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_validate_shadow.frag.spv",
+      "sha256": "4328893cd1b0cf74f34ce225a0372388d37938c88be29ebea2cb5270002e550a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_workload_combined.comp.spv",
+      "sha256": "46ef7028f82e1fdc64c284a402646ff2c4fe59269113249519542a8189ac6e55"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_workload_reference.comp.spv",
+      "sha256": "8ad21df43b801d2b425b2452bc9cb32f6c4dca7dc6bf611c4fc5c6cb858a131c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_workload_shadow.comp.spv",
+      "sha256": "74c61ef1e82eaa82902710069c269e7f0076311901d7fbc1c22247423ac99f56"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/query_camera.frag.spv",
+      "sha256": "6223f8007b719e8b05a66d2cf588989d8c9b74c6b25e035fcb5f79cdae72096c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "2220ae880f4885496e9f229bdd11e6ddbe7850827ecb1e14a0a735375a302461"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "8448f8b4f729831244223103db5349598a8eef98e667533b491e8a31381103a9"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_validate_combined.frag.spv",
+      "sha256": "5a3e57ba3b5d2d8710672b5679bd965d053488a5d62a46488ff479394a71af79"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_validate_shadow.frag.spv",
+      "sha256": "04e0b6f83a73ff960af95625095d448cca17228271e8bd1109d7750d9da018a8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "26e212fed36830168ae12c14ce211b8db5bd1ac6861e974ec426bb68b161f5a2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_workload_combined.comp.spv",
+      "sha256": "dcdce0f34014c759b97ece218f56924f2637ddee37d5f7d80d8ac75a0db819f0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_query_workload_shadow.comp.spv",
+      "sha256": "5b847510b8bd6a355bcbaab5512b26d2293124492d91ba6688912b15df589fb2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "67c09ada1829a5ea3386518bee12661a0783f99ce02cfbca1a68f2b8bb2e13fb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "5390493c6ebaef898f89aecea22dc9f72275b2364929070af62cf85ca8b5afff"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "18dfc53037da68fdb91c91736f21f1c34399b8d5683468f4e1257ec010772bc8"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_validate_combined.frag.spv",
+      "sha256": "416396c7fba961eb13a1d5a4fa75d1b244c30075956b0bcc34ef9740a3b3df91"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_validate_shadow.frag.spv",
+      "sha256": "b96012a7c78fe2bc2c6dac011bc69302920c68235145b0754df791411064e4c0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_workload_combined.comp.spv",
+      "sha256": "d317d2a4dac98ab0e61df046df3a63b7855ca566b5599bb4eb3b6d93d344bccc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_query_workload_shadow.comp.spv",
+      "sha256": "46f518d99a81863e88dc848f69ab6716c385d5e982d0625ad001ebe30751e868"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "d58419b85d0e9d64986e528bad76ae64fe15ca089cd17a810b9ad0ca805f6419"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "8a90dd62080a299ec1cedeb9a55013714eb9cb5cb7dd64bbdb69d2b8f89b7cff"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_prepared_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "e2247c0a96719ee76f12714ed777986fc62c3e265fe2710cde637c10797ff893"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_workload_shadow.comp.spv",
+      "sha256": "efc3e4221474760dab636d3e60fa1d6687fab8fae3f5f107f0881a9cfdbafc9b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "7cbc551c5ac52a96817f842d8fd9a711520eb950cf794dae953efd430eeb82aa"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_validate_shadow.frag.spv",
+      "sha256": "cdac12d2a40cb191b1e0e18da20aa2ccb38742f14eb1ebc062effcd856f9ae6b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_workload_combined.comp.spv",
+      "sha256": "695605e6e847f9f75948f5c56dc3486f20beaf258c982f695a651f6614a52f06"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_query_validate_combined.frag.spv",
+      "sha256": "29a12ed3b549ad383af336319fb6cdc466e519cc9cad9d624dc93f0c05d3a296"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_root_far_comparison_analytic_pruned.comp.spv",
+      "sha256": "ec7961fc8bc1aefcbaf2632d38cc378a7e53e3d61db4fc8b874e897cc6ff8743"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_shadow_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "db86c542a3eedabe7c8d27ff066c1304d9418e4269e0334b71c902a3fd33ea8c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_guarded_contract.comp.spv",
+      "sha256": "270c04a0d024da48f25e68e365bc174edf3b10864a26e77543cdb6cebbc27bc0"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed15_guarded_contract.comp.spv",
+      "sha256": "cd380c12a0c3f415d6ba6edcf502085f84db178afbbdf51c6a0aeee5854d1054"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/relaxed12_guarded_contract.comp.spv",
+      "sha256": "c1a85db8fa03f62c06c5f4e1022bbc063ec687914f45e1430cc12f33eacb75d2"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/adaptive50_quality_workload_combined.comp.spv",
+      "sha256": "5bf1ce19118323b8d368fe14d85d620926536c89bbf38bf0919b6799b03eae11"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_adaptive50_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "8bb6462dde68223d7e4cfde87c4d3e4f4e7725a9307ff0a8baf95970277906f7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_combined_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "cc83fbed69c15c6991a315e4fefe78d7a762a9435de190f354a3314f8e68ab67"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_lit_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "c5d81a3cf542d51bc307817a1746956eb530ba77d20a7c59bcd537f8f247a9b1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_workload_combined.comp.spv",
+      "sha256": "bde058256960fba19e6e040c0599255256aa0515cd56d14e0692314ca008678c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_sdf_authored.frag.spv",
+      "sha256": "aea801ebfa9d1cc19aa4edf4aac32f7bb8e747625d27a5988925d108304353e3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_root_far_sdf_analytic_pruned.frag.spv",
+      "sha256": "94b6596fdaf6aeaa5dd3caf446a0f7fb7cbb28bf65049fe9bdc2e9930c9ba1a4"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_workload_sampled.comp.spv",
+      "sha256": "a00cea5d5eefbd627bd334c6a33517a6abc2d389ea07ae24cd45b1c8e02d4904"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_workload_reference.comp.spv",
+      "sha256": "3d620654d0d885bb72c8c42d2bca97c2f178de2c3095be413efc9b9e30507c54"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_comparison_sampled.comp.spv",
+      "sha256": "4e8925e8caf596d66c390e273e81874c3bfdf54302a58c0a5d17ddfad8f80eab"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_quality_workload_sampled.comp.spv",
+      "sha256": "3cb9d913a9769eaabf8dd5982231d77b2b6f852f5aa6269b48736077cb56b4dd"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_sdf_authored.frag.spv",
+      "sha256": "7ce450cc97dab5ea1b7ab46afc5db76468b59a0b6b7db7577a048dc5a4bde4f9"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached05_comparison_sampled.comp.spv",
+      "sha256": "f182c3f6fe5c2bda11ac00f5b7d1059aeb700a652f1b3ef87165017f9df52847"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached05_quality_workload_sampled.comp.spv",
+      "sha256": "d052e44e645fb085f97f21a79b199a983bd6d603505ccae419407a62cc2972cb"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachednormal_comparison_sampled.comp.spv",
+      "sha256": "6ab90832f44fcf5ec546321b0a07a0b57ad7896dab8b757908d231618f8eb726"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachednormal_quality_workload_sampled.comp.spv",
+      "sha256": "f3e455324f80fbdf5b4f1aa03c4fb7fc3e770a7ef6bf1acec268770aac950163"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached05_sdf_authored.frag.spv",
+      "sha256": "328eaaf80df492bf4d3f2ea79b6d44186069617ebfa5e5c1a475843794511356"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachednormal_sdf_authored.frag.spv",
+      "sha256": "f87ebc8b7efab127ba06df43fcc6432b2e1ffef5c7a9966cf686203991984395"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached03125_sdf_authored.frag.spv",
+      "sha256": "1cbb594cd558d3b258a4f987a8fc50745a91a6312a228c3f57c2dc853649cd32"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached05_sdf_authored.frag.spv",
+      "sha256": "0a5758db6a7fd18fec9537a264ed98e3eb82783510514c16e4fb81ebbfab3ff5"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cachednormal_sdf_authored.frag.spv",
+      "sha256": "d3e323b7a3f8154a27701e46e922bd7a8cfc20f43b50c01b243a951441f8a0cc"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_cell_contract.comp.spv",
+      "sha256": "496607e84c7925961bcf6176212ccca4b70d27da350e6ee5320da76b48867103"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_comparison_sampled.comp.spv",
+      "sha256": "f5888637c78d0f715c243a2176fd288f0b5296c5479bb1c61ba7f0be7d00bf2e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_quality_workload_sampled.comp.spv",
+      "sha256": "52b5b2c845f6d391778a44b3321b21bf4534ee4e8b66f1757be51551a73993c1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_sdf_authored.frag.spv",
+      "sha256": "e024f8136e13a524c7df5d0dc0355b1997b386e71e325fb91f5729bff2348c41"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cachedrefinenormal_sdf_authored.frag.spv",
+      "sha256": "5f56c9f5b00296457444c826bf7680e44bb72880c3b50e9c5a5b665414853d4b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cachedrefinenormal_material_study.frag.spv",
+      "sha256": "876b570344129e1086c432047643d4e642dd197bc0039df34ce32b3b1257ce54"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached03125_material_study.frag.spv",
+      "sha256": "f67c8c57d6032ffa332fad12f00cee8ab9c61b6f2160e4cee043a56f1250ad23"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/lit_live_edit_sdf.frag.spv",
+      "sha256": "5dda6d9c1dab0a3b3cea80700ba95217a4afdcdb67e92c3c640c9a3a6281cb8e"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/live_edit_quality_workload.comp.spv",
+      "sha256": "d311f571460c38e8668078401a83a37c701e04bcd7f1cc94f10408a3c0aded9c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/live_edit_queries.comp.spv",
+      "sha256": "d0f3829baabbe13eb1cc224df185de83e657589bcc716492e859209a31889023"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/live_edit_sdf.frag.spv",
+      "sha256": "667e1c36a9f05d548b0a91d302f82fc965b5663ef8053f2ae0cc75853c05058b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_lit_live_edit_sdf.frag.spv",
+      "sha256": "072a344c2589e484dfc0ed4949c9a1a189da084b50463511d1dd44f60520bb7c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_live_edit_sdf.frag.spv",
+      "sha256": "84cd870e55d874b27239bb9fd0adb2da419259f2aa2443c4a8bb6f0294c87b08"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_shadow_lit_live_edit_sdf.frag.spv",
+      "sha256": "4559f74791d52eb2444920bfefb39b2d373e127c73e693b174bfa82993098113"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/shadow_lit_live_edit_sdf.frag.spv",
+      "sha256": "6cd130738ecd9bc7a686298c60f3720934b46f4d1958cc436ca5efbedfbe1b8c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_edit_quality_workload.comp.spv",
+      "sha256": "bbdd0597144e0610ff2588a93edea211dc9634ad8c3a27b625ae548baf6538f1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_edit_queries.comp.spv",
+      "sha256": "ce65f3c55857136c5fbf9dade42012d484de2de5ccec45621764dff5e61ea92f"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_edit_sdf.frag.spv",
+      "sha256": "ea05462e87cfd62772b8568ca40c708afcfb0b92184017e68b118b91c56b37d6"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached_edit_sdf.frag.spv",
+      "sha256": "b2d7221c2ad00061182527e9ceb395072c157dc7687019ee5a5557b857400011"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_reuse_bricks.comp.spv",
+      "sha256": "d64fb0c80293faf97f6f03330c0780f692469b244e92d8146446ebb0c7729a48"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_pruned_bricks.comp.spv",
+      "sha256": "bc22aa5962ee905ad096d9274e8440b9b4c4ba3011b4578b6ca2a9ad52a7296c"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_pruned_filter.comp.spv",
+      "sha256": "26f79b8d6f1ee8e83d73f5d31b6a2a9582d4b35645a38d2a8f78ac2a937888f3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_canonical_fallback.comp.spv",
+      "sha256": "6086287eef48a5fbef5140ffebe6e2f1a821b9b6c54397400bbaf875dae73f2b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/commit_prune_probe.comp.spv",
+      "sha256": "ce2432e519b92830fcbcabd66d92bd9f3ca8bf461ca32afb4a64f3f77041e37a"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_filter.comp.spv",
+      "sha256": "770f821a2dca049f597e5f2a1db3412ba39619a4b6de3ac99c744e7cfea7ac8d"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_canonical.comp.spv",
+      "sha256": "4103fd5c3347d037bca6d0e5ab69564ccffabc6f4981ca1edde909afe7b6c7c3"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_samples.comp.spv",
+      "sha256": "1514c9d765cfa4a74d3c83201fd4e30e4d0ef816fe38c58075d3163910f103a7"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_stroke_quality_workload.comp.spv",
+      "sha256": "01a1a81065a553bcd97d19f98b5a3785ca34bca8e7733d87cbff324ea967a231"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_stroke_queries.comp.spv",
+      "sha256": "519f58e0a0cad9c6556328ff2cdab3a926bfacbf9b1a04a930268b04644fe302"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/cached_stroke_sdf.frag.spv",
+      "sha256": "0312278505568ba27df7c6fb428af5c461212be473b8292b8e30d5d4a132afac"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/quality_cached_stroke_sdf.frag.spv",
+      "sha256": "a1856e9c03554c87b027424a9b72622650b2619bf99740ea8ea283778a45ec8b"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_dom_samples.comp.spv",
+      "sha256": "656c2d801601488bd7d8fdfda863c9c642eff27e3b86b44e34ce15f6a8bc9cc1"
+    },
+    {
+      "path": "/home/bryan/code/cubey/build/release/projects/sdf/shaders/local_dom_filter.comp.spv",
+      "sha256": "cfc9af42756fe995dc5de953585d6064e999a4f158440a4b909b01691e74c796"
+    }
+  ],
+  "report_receipt": "docs/evidence/sdf-csg-form-refinement-2026-11/report.json",
+  "report_snapshot": "/home/bryan/.local/share/codex-plus/reports/public/53eb2e9ba92bca61323786057017a112611a79c05432ecdd71c4c53bef9a5aee",
+  "dependency_policy": "Preserve the existing qualified native runtime and its absolute build/shader paths. No new build/cache disposal policy. Existing reports, SDF/fluid and shared runtime dependencies retain their separate ownership and retention policies.",
+  "ownership": "Only this refinement packet. Guardian remains in studies; horse files remain a separate work unit. No authority to prune other artifacts.",
+  "complete": true
+}

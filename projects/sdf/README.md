@@ -134,6 +134,20 @@ operations and materials compose a solid. The
 [CSG milestone closeout](../../docs/notes/sdf-csg-closeout.md) records the
 supported scope, retained research and deferred editing questions.
 
+The [form refinement pass](../../docs/notes/sdf-csg-form-refinement.md) adds
+review candidates for the robot, canal mill, square observatory and terraced
+courtyard. They simplify decorative grids and repeated ornament while keeping
+the saved construction histories. Try a candidate with:
+
+```sh
+build/release/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/observatory.json
+```
+
+The same folder contains `robot.json`, `canal-mill.json`, `courtyard.json` and
+`observatory-section.json`. These presentation presets explicitly use Balanced
+and SS2; the application default remains Cached. Original scenes and presets
+are retained alongside the candidates.
+
 The authored vocabulary includes boxes, spheres, capsules, cylinders, tori,
 capped cones and rounded cones with union, subtraction and smooth variants.
 Scripts can build, mirror and save atomic history operations. The windowed

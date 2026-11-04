@@ -1,0 +1,28 @@
+{
+  "report_id": "53eb2e9ba92bca61323786057017a112611a79c05432ecdd71c4c53bef9a5aee",
+  "title": "Cubey SDF — Forms first: four CSG refinements",
+  "project": "cubey",
+  "entrypoint": "index.html",
+  "created_at": "2026-11-04T17:01:40.085835+00:00",
+  "state": "published",
+  "schema": 1,
+  "publication": "published",
+  "origin": "starship",
+  "snapshot_path": "/home/bryan/.local/share/codex-plus/reports/public/53eb2e9ba92bca61323786057017a112611a79c05432ecdd71c4c53bef9a5aee",
+  "file_count": 102,
+  "byte_count": 11017622,
+  "url": "http://starship:8787/reports/53eb2e9ba92bca61323786057017a112611a79c05432ecdd71c4c53bef9a5aee/",
+  "catalog": {
+    "state": "unchecked"
+  },
+  "delivery": {
+    "checked_at": "2026-11-04T17:02:44.842104+00:00",
+    "checked_from": "starship",
+    "state": "verified",
+    "http_status": 200,
+    "bytes": 21633,
+    "verified_url": "http://starship:8787/reports/53eb2e9ba92bca61323786057017a112611a79c05432ecdd71c4c53bef9a5aee/"
+  },
+  "catalog_url": "http://starship:8787/reports/",
+  "project_url": "http://starship:8787/reports/#project=cubey"
+}

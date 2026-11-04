@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "baseline_head": "96bf29365583b59090802e4ea5e9985bce7abbcb",
+  "protected": {
+    "original_scene_sha256": {
+      "files": 5,
+      "unchanged": true
+    },
+    "protected": {
+      "files": 780,
+      "unchanged": true
+    },
+    "horse": {
+      "files": 10,
+      "unchanged": true
+    }
+  },
+  "original_scene_sha256": {
+    "projects/sdf/scenes/survey-robot-fieldkit.json": "1aceb1131170a0b750671a0126a5756e43a746e7164db16b9ad02c27622b6c44",
+    "projects/sdf/scenes/diorama-drafts-2026-11/canal-mill.json": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c",
+    "projects/sdf/scenes/diorama-drafts-2026-11/terraced-courtyard.json": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955",
+    "projects/sdf/scenes/observatory-cleanup-2026-11/square.json": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+    "projects/sdf/scenes/observatory-cleanup-2026-11/square-section.json": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75"
+  },
+  "horse_sha256": {
+    "docs/evidence/sdf-horse-field-study-2026-11/report.json": "038361b799759759715c1a792b3f9d2c44686ba4e1f34e49956ac2bb0c5db04e",
+    "docs/evidence/sdf-horse-field-study-2026-11/results.json": "974dc0579789907eb43c91de633da0c3887b16a14a5c64435bfa4110b8f5c20a",
+    "docs/evidence/sdf-horse-field-study-2026-11/verification.json": "b077ea8f72f98ac3e33b554c98107933dd08eda0348de21a65e2b2ad4665da88",
+    "docs/evidence/sdf-horse-field-study-2026-11/retention.json": "4b920014c9713b6bb50349d340d4cac2189c7055dc8ec28449c9fe4910fb74e0",
+    "projects/sdf/scenes/horse-field-study/source.json": "553c76ce210e04ad9c865b163675a14879e7a79e99942a462d99dc521e042258",
+    "docs/notes/sdf-horse-field-study.md": "714bd605be8b93b2f19403230ba3fa70766358d165f37a2cd4e5b2698b11093f",
+    "projects/sdf/tools/horse_field_study.py": "432561e4867ab3a7cf5b198be7d55171b3ed9ddb79a0f77d6529b8f8ebf749bc",
+    "projects/sdf/tools/test_horse_field_study.py": "65215d401178209946d978d8950ab8d05da67f36dcd4094c027a65c255277ecc",
+    "projects/sdf/tools/horse_field_report.py": "4acb75c89136c49560f960e339ee79690910e3931881608a7fb75b3f2b7f5b3d",
+    "projects/sdf/tools/horse_field_report.html": "f4da22041b58892a3a6d11a64081cc033e446c305f6a034f5b4e66191073e3e1"
+  },
+  "reproducible_scene_count": 5,
+  "reproducible_presets_except_output_binding": 5,
+  "native_binary_unchanged": true,
+  "compiled_shaders_unchanged": 220
+}

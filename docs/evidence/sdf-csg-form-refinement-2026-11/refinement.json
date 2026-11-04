@@ -1,0 +1,4206 @@
+[
+  {
+    "subject": "robot",
+    "title": "Survey robot",
+    "source": "projects/sdf/scenes/survey-robot-fieldkit.json",
+    "source_sha256": "1aceb1131170a0b750671a0126a5756e43a746e7164db16b9ad02c27622b6c44",
+    "old_preset": "projects/sdf/presets/survey-robot-fieldkit.json",
+    "scene": "projects/sdf/scenes/csg-showcase-2026-11/robot.json",
+    "scene_sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1",
+    "preset": "projects/sdf/presets/csg-showcase-2026-11/robot.json",
+    "checks": {
+      "leaves": 75,
+      "tree_nodes": 100,
+      "history_actions": 75,
+      "complete_history": true,
+      "unique_names": true,
+      "polarity": true,
+      "before_leaves": 82,
+      "removed": [
+        "abdomen-latch",
+        "backpack-vent-cut-1",
+        "head-left-fastener",
+        "head-left-fastener-cut",
+        "head-right-fastener",
+        "head-right-fastener-cut",
+        "head-vent-cut-1"
+      ],
+      "changed": [
+        {
+          "name": "head-shell",
+          "before": {
+            "type": "box",
+            "name": "head-shell",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.145,
+              0.082,
+              0.065
+            ],
+            "rounding": 0.03
+          },
+          "after": {
+            "type": "box",
+            "name": "head-shell",
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.136,
+              0.082,
+              0.065
+            ],
+            "rounding": 0.029
+          }
+        },
+        {
+          "name": "head-left-ear",
+          "before": {
+            "type": "box",
+            "name": "head-left-ear",
+            "position": [
+              -0.185,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          },
+          "after": {
+            "type": "box",
+            "name": "head-left-ear",
+            "position": [
+              -0.176,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          }
+        },
+        {
+          "name": "head-right-ear",
+          "before": {
+            "type": "box",
+            "name": "head-right-ear",
+            "position": [
+              0.185,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          },
+          "after": {
+            "type": "box",
+            "name": "head-right-ear",
+            "position": [
+              0.176,
+              0,
+              0
+            ],
+            "half_extent": [
+              0.012,
+              0.029,
+              0.034
+            ],
+            "rounding": 0.008,
+            "material": "teal"
+          }
+        },
+        {
+          "name": "head-vent-cut-0",
+          "before": {
+            "type": "box",
+            "name": "head-vent-cut-0",
+            "position": [
+              0.105,
+              -0.026,
+              0.087
+            ],
+            "half_extent": [
+              0.022,
+              0.0025,
+              0.018
+            ],
+            "rounding": 0.002
+          },
+          "after": {
+            "type": "box",
+            "name": "head-vent-cut-0",
+            "position": [
+              0.105,
+              -0.022,
+              0.087
+            ],
+            "half_extent": [
+              0.022,
+              0.0025,
+              0.018
+            ],
+            "rounding": 0.002
+          }
+        },
+        {
+          "name": "head-vent-cut-2",
+          "before": {
+            "type": "box",
+            "name": "head-vent-cut-2",
+            "position": [
+              0.105,
+              0.004,
+              0.087
+            ],
+            "half_extent": [
+              0.022,
+              0.0025,
+              0.018
+            ],
+            "rounding": 0.002
+          },
+          "after": {
+            "type": "box",
+            "name": "head-vent-cut-2",
+            "position": [
+              0.105,
+              0,
+              0.087
+            ],
+            "half_extent": [
+              0.022,
+              0.0025,
+              0.018
+            ],
+            "rounding": 0.002
+          }
+        },
+        {
+          "name": "backpack-vent-cut-0",
+          "before": {
+            "type": "box",
+            "name": "backpack-vent-cut-0",
+            "position": [
+              0.043,
+              0.012,
+              -0.153
+            ],
+            "half_extent": [
+              0.014,
+              0.003,
+              0.018
+            ],
+            "rounding": 0.002
+          },
+          "after": {
+            "type": "box",
+            "name": "backpack-vent-cut-0",
+            "position": [
+              0.043,
+              0.004,
+              -0.153
+            ],
+            "half_extent": [
+              0.014,
+              0.003,
+              0.018
+            ],
+            "rounding": 0.002
+          }
+        },
+        {
+          "name": "backpack-vent-cut-2",
+          "before": {
+            "type": "box",
+            "name": "backpack-vent-cut-2",
+            "position": [
+              0.043,
+              -0.036,
+              -0.153
+            ],
+            "half_extent": [
+              0.014,
+              0.003,
+              0.018
+            ],
+            "rounding": 0.002
+          },
+          "after": {
+            "type": "box",
+            "name": "backpack-vent-cut-2",
+            "position": [
+              0.043,
+              -0.028,
+              -0.153
+            ],
+            "half_extent": [
+              0.014,
+              0.003,
+              0.018
+            ],
+            "rounding": 0.002
+          }
+        }
+      ],
+      "joint_audit": {
+        "passed": true,
+        "checks": [
+          {
+            "name": "left: upper arm meets both pivots",
+            "passed": true,
+            "error": 3.189457310789543e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: forearm starts at elbow",
+            "passed": true,
+            "error": 2.8609792490763984e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: hand meets wrist",
+            "passed": true,
+            "error": 3.1031676915590914e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shoulder axis perpendicular to link 1",
+            "passed": true,
+            "error": 1.1777756750102543e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shoulder cap centered on pivot axis",
+            "passed": true,
+            "error": 1.492630756264343e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shoulder cap seats into bearing",
+            "passed": true,
+            "inner": 0.031000000000000003,
+            "bearing_radius": 0.038,
+            "outer": 0.041
+          },
+          {
+            "name": "left: elbow axis perpendicular to link 1",
+            "passed": true,
+            "error": 3.608224830031759e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: elbow axis perpendicular to link 2",
+            "passed": true,
+            "error": 1.942890293094024e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: elbow cap centered on pivot axis",
+            "passed": true,
+            "error": 8.845388854693243e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: elbow cap seats into bearing",
+            "passed": true,
+            "inner": 0.022000000000000013,
+            "bearing_radius": 0.027,
+            "outer": 0.030000000000000013
+          },
+          {
+            "name": "left: elbow rim shares cap axis",
+            "passed": true,
+            "error": 4.440892098500626e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: elbow rim centered on hinge",
+            "passed": true,
+            "error": 7.949501638480627e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: elbow rim seated on cap face",
+            "passed": true,
+            "error": 6.071532165918825e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: rim overlaps cap edge",
+            "passed": true
+          },
+          {
+            "name": "left: shoulder slot shares cap axis",
+            "passed": true,
+            "error": 2.220446049250313e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shoulder slot centered on bearing",
+            "passed": true,
+            "error": 9.34461643255151e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: wrist seal follows forearm",
+            "passed": true,
+            "error": 1.7763568394002505e-15,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: wrist seal centered on forearm",
+            "passed": true,
+            "error": 2.881939084222627e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: gripper cut follows hand frame",
+            "passed": true,
+            "error": 3.3306690738754696e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: knee on hip-ankle centerline",
+            "passed": true,
+            "error": 6.938893903907228e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shin center on hip-ankle centerline",
+            "passed": true,
+            "error": 2.6020852139652106e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: ankle seal on hip-ankle centerline",
+            "passed": true,
+            "error": 2.6020852139652106e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shin axis follows upper leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: ankle seal follows shin",
+            "passed": true,
+            "error": 1.1102230246251565e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: shin meets upper leg",
+            "passed": true,
+            "error": 3.469446951953614e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: foot centered beneath leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: sole centered beneath leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: toe-groove centered beneath leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: lower power-pod collar axis",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: lower power-pod collar centered",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: upper power-pod collar axis",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "left: upper power-pod collar centered",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: upper arm meets both pivots",
+            "passed": true,
+            "error": 8.673617379884035e-19,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: forearm starts at elbow",
+            "passed": true,
+            "error": 2.797157557069881e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: hand meets wrist",
+            "passed": true,
+            "error": 6.938893903907228e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shoulder axis perpendicular to link 1",
+            "passed": true,
+            "error": 8.56278570734094e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shoulder cap centered on pivot axis",
+            "passed": true,
+            "error": 9.852408369785923e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shoulder cap seats into bearing",
+            "passed": true,
+            "inner": 0.03100000000000001,
+            "bearing_radius": 0.038,
+            "outer": 0.04100000000000001
+          },
+          {
+            "name": "right: elbow axis perpendicular to link 1",
+            "passed": true,
+            "error": 2.220446049250313e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: elbow axis perpendicular to link 2",
+            "passed": true,
+            "error": 3.608224830031759e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: elbow cap centered on pivot axis",
+            "passed": true,
+            "error": 1.6273148661314594e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: elbow cap seats into bearing",
+            "passed": true,
+            "inner": 0.022000000000000016,
+            "bearing_radius": 0.027,
+            "outer": 0.030000000000000016
+          },
+          {
+            "name": "right: elbow rim shares cap axis",
+            "passed": true,
+            "error": 4.440892098500626e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: elbow rim centered on hinge",
+            "passed": true,
+            "error": 1.7018866238460528e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: elbow rim seated on cap face",
+            "passed": true,
+            "error": 8.673617379884035e-19,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: rim overlaps cap edge",
+            "passed": true
+          },
+          {
+            "name": "right: shoulder slot shares cap axis",
+            "passed": true,
+            "error": 4.440892098500626e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shoulder slot centered on bearing",
+            "passed": true,
+            "error": 1.1119356105359428e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: wrist seal follows forearm",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: wrist seal centered on forearm",
+            "passed": true,
+            "error": 1.8683543625880677e-17,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: gripper cut follows hand frame",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: knee on hip-ankle centerline",
+            "passed": true,
+            "error": 6.938893903907228e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shin center on hip-ankle centerline",
+            "passed": true,
+            "error": 2.6020852139652106e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: ankle seal on hip-ankle centerline",
+            "passed": true,
+            "error": 2.6020852139652106e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shin axis follows upper leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: ankle seal follows shin",
+            "passed": true,
+            "error": 1.1102230246251565e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: shin meets upper leg",
+            "passed": true,
+            "error": 3.469446951953614e-18,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: foot centered beneath leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: sole centered beneath leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: toe-groove centered beneath leg",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: lower power-pod collar axis",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: lower power-pod collar centered",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: upper power-pod collar axis",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "right: upper power-pod collar centered",
+            "passed": true,
+            "error": 0.0,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "neck: upper collar follows head tilt",
+            "passed": true,
+            "error": 1.1102230246251565e-16,
+            "tolerance": 1e-06
+          },
+          {
+            "name": "neck: head tilts about bearing",
+            "passed": true,
+            "error": 1.3877787807814457e-17,
+            "tolerance": 1e-06
+          }
+        ]
+      }
+    }
+  },
+  {
+    "subject": "canal-mill",
+    "title": "Canal mill",
+    "source": "projects/sdf/scenes/diorama-drafts-2026-11/canal-mill.json",
+    "source_sha256": "2c736dacf12253729114add03b7aed8482a0e7089598d8ddda0eb013a230a69c",
+    "old_preset": "projects/sdf/presets/diorama-drafts-2026-11/canal-mill.json",
+    "scene": "projects/sdf/scenes/csg-showcase-2026-11/canal-mill.json",
+    "scene_sha256": "274879e4f7cab0ecc6a74f1a2dbf96b8e14e15445b22b87143cbb1a25302e03c",
+    "preset": "projects/sdf/presets/csg-showcase-2026-11/canal-mill.json",
+    "checks": {
+      "leaves": 169,
+      "tree_nodes": 193,
+      "history_actions": 13,
+      "complete_history": true,
+      "unique_names": true,
+      "polarity": true,
+      "before_leaves": 243,
+      "removed": [
+        "awning-stripe-0207",
+        "awning-stripe-0208",
+        "awning-stripe-0209",
+        "awning-stripe-0210",
+        "awning-stripe-0211",
+        "bank-cap-0021",
+        "bank-cap-0022",
+        "bank-cap-0023",
+        "bank-cap-0024",
+        "bank-cap-0025",
+        "bank-cap-0026",
+        "bank-cap-0027",
+        "bank-cap-0028",
+        "bank-cap-0029",
+        "bank-cap-0030",
+        "bank-cap-0031",
+        "bank-cap-0032",
+        "bank-cap-0033",
+        "bank-cap-0034",
+        "chimney-course-0149",
+        "chimney-course-0150",
+        "chimney-course-0151",
+        "chimney-course-0152",
+        "door-plank-0061",
+        "door-plank-0062",
+        "door-plank-0063",
+        "door-plank-0064",
+        "paddle-0173",
+        "paddle-0175",
+        "paddle-0177",
+        "paddle-0179",
+        "shutter-strap-0084",
+        "shutter-strap-0085",
+        "shutter-strap-0087",
+        "shutter-strap-0088",
+        "shutter-strap-0098",
+        "shutter-strap-0099",
+        "shutter-strap-0101",
+        "shutter-strap-0102",
+        "tile-course-0113",
+        "tile-course-0114",
+        "tile-course-0115",
+        "tile-course-0116",
+        "tile-course-0129",
+        "tile-course-0130",
+        "tile-course-0131",
+        "tile-course-0132",
+        "tile-rib-0117",
+        "tile-rib-0118",
+        "tile-rib-0119",
+        "tile-rib-0120",
+        "tile-rib-0121",
+        "tile-rib-0122",
+        "tile-rib-0123",
+        "tile-rib-0124",
+        "tile-rib-0125",
+        "tile-rib-0126",
+        "tile-rib-0133",
+        "tile-rib-0134",
+        "tile-rib-0135",
+        "tile-rib-0136",
+        "tile-rib-0137",
+        "tile-rib-0138",
+        "tile-rib-0139",
+        "tile-rib-0140",
+        "tile-rib-0141",
+        "tile-rib-0142",
+        "water-ripple-0009",
+        "water-ripple-0010",
+        "water-ripple-0011",
+        "wheel-spoke-0172",
+        "wheel-spoke-0174",
+        "wheel-spoke-0176",
+        "wheel-spoke-0178"
+      ],
+      "changed": [
+        {
+          "name": "wheel-spoke-0156",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0156",
+            "position": [
+              0.083,
+              -0.013500000000000005,
+              0.047
+            ],
+            "radius": 0.006,
+            "half_length": 0.0535,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0156",
+            "position": [
+              0.083,
+              -0.013500000000000005,
+              0.047
+            ],
+            "radius": 0.007,
+            "half_length": 0.0535,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0158",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0158",
+            "position": [
+              0.083,
+              -0.022677259840765955,
+              0.08124999999999999
+            ],
+            "radius": 0.006,
+            "half_length": 0.0535,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.2588190451025207,
+              0.0,
+              -0.0,
+              0.9659258262890682
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0158",
+            "position": [
+              0.083,
+              -0.033563185488721496,
+              0.0954368145112785
+            ],
+            "radius": 0.007,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.3826834323650897,
+              0.0,
+              -0.0,
+              0.9238795325112867
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0160",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0160",
+            "position": [
+              0.083,
+              -0.047749999999999994,
+              0.10632274015923404
+            ],
+            "radius": 0.006,
+            "half_length": 0.0535,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.5000000000000001,
+              0.0,
+              -0.0,
+              0.8660254037844387
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0160",
+            "position": [
+              0.083,
+              -0.08199999999999999,
+              0.11549999999999999
+            ],
+            "radius": 0.007,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865477
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0162",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0162",
+            "position": [
+              0.083,
+              -0.08199999999999999,
+              0.11549999999999999
+            ],
+            "radius": 0.006,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              -0.0,
+              0.7071067811865477
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0162",
+            "position": [
+              0.083,
+              -0.1304368145112785,
+              0.09543681451127851
+            ],
+            "radius": 0.007,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.9238795325112868,
+              0.0,
+              -0.0,
+              0.3826834323650898
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0164",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0164",
+            "position": [
+              0.083,
+              -0.11624999999999998,
+              0.10632274015923404
+            ],
+            "radius": 0.006,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.8660254037844386,
+              0.0,
+              -0.0,
+              0.5000000000000001
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0164",
+            "position": [
+              0.083,
+              -0.15050000000000002,
+              0.04700000000000001
+            ],
+            "radius": 0.007,
+            "half_length": 0.053500000000000006,
+            "material": "wood",
+            "rotation_xyzw": [
+              1,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0166",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0166",
+            "position": [
+              0.083,
+              -0.14132274015923407,
+              0.08124999999999999
+            ],
+            "radius": 0.006,
+            "half_length": 0.05350000000000001,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.9659258262890682,
+              0.0,
+              -0.0,
+              0.2588190451025208
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0166",
+            "position": [
+              0.083,
+              -0.13043681451127853,
+              -0.0014368145112784968
+            ],
+            "radius": 0.007,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              -0.9238795325112867,
+              0.0,
+              -0.0,
+              0.3826834323650896
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0168",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0168",
+            "position": [
+              0.083,
+              -0.15050000000000002,
+              0.04700000000000001
+            ],
+            "radius": 0.006,
+            "half_length": 0.053500000000000006,
+            "material": "wood",
+            "rotation_xyzw": [
+              1,
+              0,
+              0,
+              0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0168",
+            "position": [
+              0.083,
+              -0.08200000000000002,
+              -0.0215
+            ],
+            "radius": 0.007,
+            "half_length": 0.0535,
+            "material": "wood",
+            "rotation_xyzw": [
+              -0.7071067811865476,
+              0.0,
+              -0.0,
+              0.7071067811865475
+            ]
+          }
+        },
+        {
+          "name": "wheel-spoke-0170",
+          "before": {
+            "type": "capsule",
+            "name": "wheel-spoke-0170",
+            "position": [
+              0.083,
+              -0.14132274015923407,
+              0.012750000000000022
+            ],
+            "radius": 0.006,
+            "half_length": 0.0535,
+            "material": "wood",
+            "rotation_xyzw": [
+              -0.9659258262890684,
+              0.0,
+              -0.0,
+              0.25881904510252063
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "wheel-spoke-0170",
+            "position": [
+              0.083,
+              -0.03356318548872151,
+              -0.0014368145112785141
+            ],
+            "radius": 0.007,
+            "half_length": 0.05349999999999999,
+            "material": "wood",
+            "rotation_xyzw": [
+              -0.3826834323650899,
+              0.0,
+              -0.0,
+              0.9238795325112867
+            ]
+          }
+        },
+        {
+          "name": "paddle-0157",
+          "before": {
+            "type": "box",
+            "name": "paddle-0157",
+            "position": [
+              0.083,
+              0.05,
+              0.047
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0157",
+            "position": [
+              0.083,
+              0.05,
+              0.047
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "paddle-0159",
+          "before": {
+            "type": "box",
+            "name": "paddle-0159",
+            "position": [
+              0.083,
+              0.03231535329954591,
+              0.11299999999999999
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.25881904510252074,
+              0.0,
+              0.0,
+              0.9659258262890683
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0159",
+            "position": [
+              0.083,
+              0.011338095116624286,
+              0.14033809511662426
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.3826834323650898,
+              0.0,
+              0.0,
+              0.9238795325112867
+            ]
+          }
+        },
+        {
+          "name": "paddle-0161",
+          "before": {
+            "type": "box",
+            "name": "paddle-0161",
+            "position": [
+              0.083,
+              -0.015999999999999986,
+              0.16131535329954588
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.49999999999999994,
+              0.0,
+              0.0,
+              0.8660254037844387
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0161",
+            "position": [
+              0.083,
+              -0.08199999999999999,
+              0.179
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          }
+        },
+        {
+          "name": "paddle-0163",
+          "before": {
+            "type": "box",
+            "name": "paddle-0163",
+            "position": [
+              0.083,
+              -0.08199999999999999,
+              0.179
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865475,
+              0.0,
+              0.0,
+              0.7071067811865476
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0163",
+            "position": [
+              0.083,
+              -0.1753380951166243,
+              0.1403380951166243
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.9238795325112867,
+              0.0,
+              0.0,
+              0.38268343236508984
+            ]
+          }
+        },
+        {
+          "name": "paddle-0165",
+          "before": {
+            "type": "box",
+            "name": "paddle-0165",
+            "position": [
+              0.083,
+              -0.14799999999999996,
+              0.1613153532995459
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.8660254037844386,
+              0.0,
+              0.0,
+              0.5000000000000001
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0165",
+            "position": [
+              0.083,
+              -0.21400000000000002,
+              0.047000000000000014
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              1.0,
+              0.0,
+              0.0,
+              6.123233995736766e-17
+            ]
+          }
+        },
+        {
+          "name": "paddle-0167",
+          "before": {
+            "type": "box",
+            "name": "paddle-0167",
+            "position": [
+              0.083,
+              -0.1963153532995459,
+              0.11299999999999999
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.9659258262890683,
+              0.0,
+              0.0,
+              0.25881904510252074
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0167",
+            "position": [
+              0.083,
+              -0.1753380951166243,
+              -0.046338095116624275
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.9238795325112867,
+              0.0,
+              0.0,
+              -0.3826834323650897
+            ]
+          }
+        },
+        {
+          "name": "paddle-0169",
+          "before": {
+            "type": "box",
+            "name": "paddle-0169",
+            "position": [
+              0.083,
+              -0.21400000000000002,
+              0.047000000000000014
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              1.0,
+              0.0,
+              0.0,
+              6.123233995736766e-17
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0169",
+            "position": [
+              0.083,
+              -0.08200000000000003,
+              -0.085
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.7071067811865476,
+              0.0,
+              0.0,
+              -0.7071067811865475
+            ]
+          }
+        },
+        {
+          "name": "paddle-0171",
+          "before": {
+            "type": "box",
+            "name": "paddle-0171",
+            "position": [
+              0.083,
+              -0.1963153532995459,
+              -0.01899999999999996
+            ],
+            "half_extent": [
+              0.031,
+              0.014,
+              0.022
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.9659258262890683,
+              0.0,
+              0.0,
+              -0.25881904510252085
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "paddle-0171",
+            "position": [
+              0.083,
+              0.011338095116624244,
+              -0.0463380951166243
+            ],
+            "half_extent": [
+              0.031,
+              0.011,
+              0.021
+            ],
+            "rounding": 0.003,
+            "material": "wood",
+            "rotation_xyzw": [
+              0.3826834323650899,
+              0.0,
+              0.0,
+              -0.9238795325112867
+            ]
+          }
+        },
+        {
+          "name": "bank-cap-0013",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0013",
+            "position": [
+              -0.33,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0013",
+            "position": [
+              -0.27,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0015",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0015",
+            "position": [
+              -0.264,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0015",
+            "position": [
+              -0.09000000000000002,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0017",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0017",
+            "position": [
+              -0.198,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0017",
+            "position": [
+              0.08999999999999997,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0019",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0019",
+            "position": [
+              -0.132,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0019",
+            "position": [
+              0.27,
+              -0.208,
+              0.083
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0014",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0014",
+            "position": [
+              -0.33,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0014",
+            "position": [
+              -0.27,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0016",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0016",
+            "position": [
+              -0.264,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0016",
+            "position": [
+              -0.09000000000000002,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0018",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0018",
+            "position": [
+              -0.198,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0018",
+            "position": [
+              0.08999999999999997,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "bank-cap-0020",
+          "before": {
+            "type": "box",
+            "name": "bank-cap-0020",
+            "position": [
+              -0.132,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.03,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "bank-cap-0020",
+            "position": [
+              0.27,
+              -0.216,
+              0.282
+            ],
+            "half_extent": [
+              0.083,
+              0.005,
+              0.023
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "door-plank-0060",
+          "before": {
+            "type": "box",
+            "name": "door-plank-0060",
+            "position": [
+              -0.184,
+              -0.169,
+              0.006
+            ],
+            "half_extent": [
+              0.005,
+              0.059,
+              0.006
+            ],
+            "rounding": 0.0022500000000000003,
+            "material": "wood"
+          },
+          "after": {
+            "type": "box",
+            "name": "door-plank-0060",
+            "position": [
+              -0.16,
+              -0.169,
+              0.006
+            ],
+            "half_extent": [
+              0.029,
+              0.059,
+              0.006
+            ],
+            "rounding": 0.003,
+            "material": "wood"
+          }
+        },
+        {
+          "name": "awning-stripe-0204",
+          "before": {
+            "type": "box",
+            "name": "awning-stripe-0204",
+            "position": [
+              -0.245,
+              -0.062,
+              0.081
+            ],
+            "half_extent": [
+              0.014,
+              0.007,
+              0.055
+            ],
+            "rounding": 0.003,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.07845909572784494,
+              0.0,
+              0.0,
+              0.996917333733128
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "awning-stripe-0204",
+            "position": [
+              -0.1505,
+              -0.062,
+              0.081
+            ],
+            "half_extent": [
+              0.109,
+              0.007,
+              0.055
+            ],
+            "rounding": 0.003,
+            "material": "linen",
+            "rotation_xyzw": [
+              0.07845909572784494,
+              0.0,
+              0.0,
+              0.996917333733128
+            ]
+          }
+        },
+        {
+          "name": "awning-stripe-0205",
+          "before": {
+            "type": "box",
+            "name": "awning-stripe-0205",
+            "position": [
+              -0.218,
+              -0.062,
+              0.081
+            ],
+            "half_extent": [
+              0.014,
+              0.007,
+              0.055
+            ],
+            "rounding": 0.003,
+            "material": "linen",
+            "rotation_xyzw": [
+              0.07845909572784494,
+              0.0,
+              0.0,
+              0.996917333733128
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "awning-stripe-0205",
+            "position": [
+              -0.247,
+              -0.061,
+              0.081
+            ],
+            "half_extent": [
+              0.012,
+              0.007,
+              0.055
+            ],
+            "rounding": 0.003,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.07845909572784494,
+              0.0,
+              0.0,
+              0.996917333733128
+            ]
+          }
+        },
+        {
+          "name": "awning-stripe-0206",
+          "before": {
+            "type": "box",
+            "name": "awning-stripe-0206",
+            "position": [
+              -0.191,
+              -0.062,
+              0.081
+            ],
+            "half_extent": [
+              0.014,
+              0.007,
+              0.055
+            ],
+            "rounding": 0.003,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.07845909572784494,
+              0.0,
+              0.0,
+              0.996917333733128
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "awning-stripe-0206",
+            "position": [
+              -0.054,
+              -0.061,
+              0.081
+            ],
+            "half_extent": [
+              0.012,
+              0.007,
+              0.055
+            ],
+            "rounding": 0.003,
+            "material": "teal",
+            "rotation_xyzw": [
+              0.07845909572784494,
+              0.0,
+              0.0,
+              0.996917333733128
+            ]
+          }
+        },
+        {
+          "name": "island-0001",
+          "before": {
+            "type": "box",
+            "name": "island-0001",
+            "position": [
+              0,
+              -0.29,
+              0
+            ],
+            "half_extent": [
+              0.36,
+              0.045,
+              0.3
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          },
+          "after": {
+            "type": "box",
+            "name": "island-0001",
+            "position": [
+              0,
+              -0.28,
+              0
+            ],
+            "half_extent": [
+              0.36,
+              0.035,
+              0.3
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "subject": "observatory",
+    "title": "Hill observatory",
+    "source": "projects/sdf/scenes/observatory-cleanup-2026-11/square.json",
+    "source_sha256": "0ba135fffd335b8c5c60c2e2e55d5232aaf88ca289a46d3ea0380c4ea0de6f11",
+    "old_preset": "projects/sdf/presets/observatory-cleanup-2026-11/square.json",
+    "scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+    "scene_sha256": "55f9d68e57a46ac2d2a36ac8a59f656c89f34d5c8fb65766e7b35f0e4bb1b142",
+    "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+    "checks": {
+      "leaves": 278,
+      "tree_nodes": 330,
+      "history_actions": 25,
+      "complete_history": true,
+      "unique_names": true,
+      "polarity": true,
+      "before_leaves": 536,
+      "removed": [
+        "annex-quoin-0370",
+        "annex-quoin-0371",
+        "annex-quoin-0372",
+        "annex-quoin-0373",
+        "annex-quoin-0374",
+        "annex-quoin-0375",
+        "annex-quoin-0376",
+        "annex-quoin-0377",
+        "annex-standing-seam-0356",
+        "annex-standing-seam-0357",
+        "annex-standing-seam-0359",
+        "annex-standing-seam-0360",
+        "annex-standing-seam-0363",
+        "annex-standing-seam-0364",
+        "annex-standing-seam-0366",
+        "annex-standing-seam-0367",
+        "approach-slab-0054",
+        "approach-slab-0055",
+        "approach-slab-0056",
+        "approach-slab-0057",
+        "approach-slab-0059",
+        "approach-slab-0060",
+        "approach-slab-0061",
+        "approach-slab-0062",
+        "arch-stone-joint-0174",
+        "arch-stone-joint-0175",
+        "arch-stone-joint-0176",
+        "arch-stone-joint-0177",
+        "arch-stone-joint-0178",
+        "arch-stone-joint-0179",
+        "arch-stone-joint-0180",
+        "armillary-mark-0483",
+        "armillary-mark-0484",
+        "armillary-mark-0485",
+        "armillary-mark-0486",
+        "armillary-mark-0487",
+        "armillary-mark-0488",
+        "armillary-mark-0489",
+        "armillary-mark-0490",
+        "armillary-mark-0491",
+        "armillary-mark-0492",
+        "armillary-mark-0493",
+        "armillary-mark-0494",
+        "baluster-0417",
+        "baluster-0419",
+        "baluster-0423",
+        "baluster-0425",
+        "baluster-0429",
+        "baluster-0431",
+        "baluster-0435",
+        "baluster-0437",
+        "baluster-0441",
+        "baluster-0443",
+        "book-spine-0574",
+        "book-spine-0575",
+        "book-spine-0577",
+        "book-spine-0578",
+        "book-spine-0580",
+        "book-spine-0581",
+        "book-spine-0583",
+        "book-spine-0584",
+        "book-spine-0586",
+        "book-spine-0587",
+        "book-spine-0589",
+        "book-spine-0590",
+        "book-spine-0592",
+        "book-spine-0593",
+        "book-spine-0595",
+        "book-spine-0596",
+        "bracket-0236",
+        "bracket-0241",
+        "bracket-0246",
+        "bracket-0251",
+        "bracket-0256",
+        "bracket-0261",
+        "bracket-0266",
+        "bracket-0271",
+        "bracket-0276",
+        "bracket-0281",
+        "bracket-0286",
+        "bracket-0291",
+        "bracket-stud-0237",
+        "bracket-stud-0242",
+        "bracket-stud-0247",
+        "bracket-stud-0252",
+        "bracket-stud-0257",
+        "bracket-stud-0262",
+        "bracket-stud-0267",
+        "bracket-stud-0272",
+        "bracket-stud-0277",
+        "bracket-stud-0282",
+        "bracket-stud-0287",
+        "bracket-stud-0292",
+        "clock-tick-0397",
+        "clock-tick-0398",
+        "clock-tick-0400",
+        "clock-tick-0401",
+        "clock-tick-0403",
+        "clock-tick-0404",
+        "clock-tick-0406",
+        "clock-tick-0407",
+        "compass-ray-0183",
+        "compass-ray-0185",
+        "compass-ray-0187",
+        "compass-ray-0189",
+        "dome-rivet-0295",
+        "dome-rivet-0296",
+        "dome-rivet-0297",
+        "dome-rivet-0298",
+        "dome-rivet-0299",
+        "dome-rivet-0300",
+        "dome-rivet-0301",
+        "dome-rivet-0302",
+        "dome-rivet-0303",
+        "dome-rivet-0304",
+        "dome-rivet-0305",
+        "dome-rivet-0306",
+        "dome-rivet-0307",
+        "dome-rivet-0308",
+        "dome-rivet-0309",
+        "dome-rivet-0310",
+        "dome-rivet-0311",
+        "dome-rivet-0312",
+        "dome-rivet-0313",
+        "dome-rivet-0314",
+        "dome-rivet-0315",
+        "dome-rivet-0316",
+        "dome-rivet-0317",
+        "dome-rivet-0318",
+        "dome-rivet-0319",
+        "dome-rivet-0320",
+        "lower-rail-0448",
+        "lower-rail-0450",
+        "lower-rail-0452",
+        "lower-rail-0454",
+        "lower-rail-0456",
+        "lower-rail-0458",
+        "lower-rail-0460",
+        "lower-rail-0462",
+        "lower-rail-0464",
+        "lower-rail-0466",
+        "lower-rail-0468",
+        "lower-rail-0470",
+        "lower-rail-0472",
+        "lower-rail-0474",
+        "rail-finial-0085",
+        "rail-finial-0087",
+        "rail-finial-0089",
+        "rail-finial-0091",
+        "rail-finial-0093",
+        "rail-stud-0416",
+        "rail-stud-0418",
+        "rail-stud-0420",
+        "rail-stud-0422",
+        "rail-stud-0424",
+        "rail-stud-0426",
+        "rail-stud-0428",
+        "rail-stud-0430",
+        "rail-stud-0432",
+        "rail-stud-0434",
+        "rail-stud-0436",
+        "rail-stud-0438",
+        "rail-stud-0440",
+        "rail-stud-0442",
+        "rail-stud-0444",
+        "rail-stud-0446",
+        "retaining-block-0016",
+        "retaining-block-0017",
+        "retaining-block-0018",
+        "retaining-block-0019",
+        "retaining-block-0020",
+        "retaining-block-0021",
+        "retaining-block-0022",
+        "retaining-block-0023",
+        "retaining-block-0024",
+        "retaining-block-0025",
+        "retaining-block-0026",
+        "retaining-block-0027",
+        "retaining-block-0028",
+        "retaining-block-0029",
+        "retaining-block-0030",
+        "retaining-block-0031",
+        "retaining-block-0032",
+        "retaining-block-0033",
+        "retaining-block-0034",
+        "retaining-block-0035",
+        "retaining-block-0036",
+        "retaining-block-0037",
+        "retaining-block-0038",
+        "retaining-block-0039",
+        "retaining-block-0040",
+        "retaining-block-0041",
+        "retaining-block-0042",
+        "retaining-block-0043",
+        "retaining-block-0044",
+        "retaining-block-0045",
+        "retaining-block-0046",
+        "retaining-block-0047",
+        "retaining-block-0048",
+        "retaining-block-0049",
+        "retaining-block-0050",
+        "retaining-block-0051",
+        "retaining-block-0052",
+        "rock-fracture-0003",
+        "rock-fracture-0004",
+        "rock-fracture-0005",
+        "rock-fracture-0006",
+        "room-floorboard-0558",
+        "room-floorboard-0559",
+        "room-floorboard-0560",
+        "room-floorboard-0561",
+        "room-floorboard-0562",
+        "room-floorboard-0563",
+        "room-floorboard-0564",
+        "room-floorboard-0565",
+        "room-floorboard-0566",
+        "room-floorboard-0567",
+        "standing-meridian-0207",
+        "standing-meridian-0208",
+        "standing-meridian-0210",
+        "standing-meridian-0211",
+        "stone-block-0163",
+        "stone-block-0164",
+        "stone-block-0165",
+        "stone-block-0166",
+        "stone-block-0167",
+        "stone-block-0168",
+        "stone-block-0169",
+        "stone-block-0170",
+        "stone-block-0171",
+        "stone-block-0172",
+        "stone-block-0173",
+        "tooth-0235",
+        "tooth-0239",
+        "tooth-0240",
+        "tooth-0244",
+        "tooth-0245",
+        "tooth-0249",
+        "tooth-0250",
+        "tooth-0254",
+        "tooth-0255",
+        "tooth-0259",
+        "tooth-0260",
+        "tooth-0264",
+        "tooth-0265",
+        "tooth-0269",
+        "tooth-0270",
+        "tooth-0274",
+        "tooth-0275",
+        "tooth-0279",
+        "tooth-0280",
+        "tooth-0284",
+        "tooth-0285",
+        "tooth-0289",
+        "tooth-0290",
+        "tooth-0294",
+        "tube-collar-0323",
+        "tube-collar-0324"
+      ],
+      "changed": [
+        {
+          "name": "baluster-0415",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0415",
+            "position": [
+              -0.23306200260100274,
+              -0.043,
+              -0.13758117395639524
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0415",
+            "position": [
+              -0.23306200260100274,
+              -0.043,
+              -0.13758117395639524
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0421",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0421",
+            "position": [
+              -0.2371581017957763,
+              -0.043,
+              -0.023963248320542023
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0421",
+            "position": [
+              -0.2371581017957763,
+              -0.043,
+              -0.023963248320542023
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0427",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0427",
+            "position": [
+              -0.16872738490910993,
+              -0.043,
+              0.06682798496100674
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0427",
+            "position": [
+              -0.16872738490910993,
+              -0.043,
+              0.06682798496100674
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0433",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0433",
+            "position": [
+              0.01422621143643285,
+              -0.043,
+              0.0697020497183816
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0433",
+            "position": [
+              0.01422621143643285,
+              -0.043,
+              0.0697020497183816
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0439",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0439",
+            "position": [
+              0.08547498345019881,
+              -0.043,
+              -0.01889492280855124
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0439",
+            "position": [
+              0.08547498345019881,
+              -0.043,
+              -0.01889492280855124
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0445",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0445",
+            "position": [
+              0.08494973072221833,
+              -0.043,
+              -0.13258544644169953
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0445",
+            "position": [
+              0.08494973072221833,
+              -0.043,
+              -0.13258544644169953
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "approach-slab-0053",
+          "before": {
+            "type": "box",
+            "name": "approach-slab-0053",
+            "position": [
+              -0.205,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.017,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              -0.0,
+              -0.13052619222005157,
+              -0.0,
+              0.9914448613738104
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "approach-slab-0053",
+            "position": [
+              -0.205,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.046,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              -0.0,
+              -0.13052619222005157,
+              -0.0,
+              0.9914448613738104
+            ]
+          }
+        },
+        {
+          "name": "approach-slab-0058",
+          "before": {
+            "type": "box",
+            "name": "approach-slab-0058",
+            "position": [
+              -0.022499999999999992,
+              -0.192,
+              0.29000000000000004
+            ],
+            "half_extent": [
+              0.017,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "approach-slab-0058",
+            "position": [
+              -0.022499999999999992,
+              -0.192,
+              0.29000000000000004
+            ],
+            "half_extent": [
+              0.046,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "approach-slab-0063",
+          "before": {
+            "type": "box",
+            "name": "approach-slab-0063",
+            "position": [
+              0.16,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.017,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.13052619222005157,
+              0.0,
+              0.9914448613738104
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "approach-slab-0063",
+            "position": [
+              0.16,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.046,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.13052619222005157,
+              0.0,
+              0.9914448613738104
+            ]
+          }
+        },
+        {
+          "name": "book-spine-0573",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0573",
+            "position": [
+              -0.137,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0573",
+            "position": [
+              -0.125,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          }
+        },
+        {
+          "name": "book-spine-0576",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0576",
+            "position": [
+              -0.10400000000000001,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0576",
+            "position": [
+              -0.092,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          }
+        },
+        {
+          "name": "book-spine-0579",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0579",
+            "position": [
+              -0.07100000000000001,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0579",
+            "position": [
+              -0.059,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          }
+        },
+        {
+          "name": "book-spine-0582",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0582",
+            "position": [
+              -0.03800000000000002,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0582",
+            "position": [
+              -0.025999999999999995,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          }
+        },
+        {
+          "name": "book-spine-0585",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0585",
+            "position": [
+              -0.137,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0585",
+            "position": [
+              -0.125,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          }
+        },
+        {
+          "name": "book-spine-0588",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0588",
+            "position": [
+              -0.10400000000000001,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0588",
+            "position": [
+              -0.092,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          }
+        },
+        {
+          "name": "book-spine-0591",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0591",
+            "position": [
+              -0.07100000000000001,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0591",
+            "position": [
+              -0.059,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          }
+        },
+        {
+          "name": "book-spine-0594",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0594",
+            "position": [
+              -0.03800000000000002,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0594",
+            "position": [
+              -0.025999999999999995,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          }
+        },
+        {
+          "name": "room-subfloor-0556",
+          "before": {
+            "type": "cylinder",
+            "name": "room-subfloor-0556",
+            "position": [
+              -0.075,
+              -0.078,
+              -0.075
+            ],
+            "radius": 0.104,
+            "half_length": 0.005,
+            "material": "wood"
+          },
+          "after": {
+            "type": "cylinder",
+            "name": "room-subfloor-0556",
+            "position": [
+              -0.075,
+              -0.0735,
+              -0.075
+            ],
+            "radius": 0.104,
+            "half_length": 0.005,
+            "material": "wood"
+          }
+        },
+        {
+          "name": "rock-core-0002",
+          "before": {
+            "type": "box",
+            "name": "rock-core-0002",
+            "position": [
+              0,
+              -0.267,
+              0
+            ],
+            "half_extent": [
+              0.355,
+              0.063,
+              0.33
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          },
+          "after": {
+            "type": "box",
+            "name": "rock-core-0002",
+            "position": [
+              0,
+              -0.244,
+              0
+            ],
+            "half_extent": [
+              0.355,
+              0.04,
+              0.33
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          }
+        },
+        {
+          "name": "display-foot-0001",
+          "before": {
+            "type": "box",
+            "name": "display-foot-0001",
+            "position": [
+              0,
+              -0.34,
+              0
+            ],
+            "half_extent": [
+              0.375,
+              0.01,
+              0.35
+            ],
+            "rounding": 0.0045000000000000005,
+            "material": "dark"
+          },
+          "after": {
+            "type": "box",
+            "name": "display-foot-0001",
+            "position": [
+              0,
+              -0.294,
+              0
+            ],
+            "half_extent": [
+              0.375,
+              0.01,
+              0.35
+            ],
+            "rounding": 0.0045000000000000005,
+            "material": "dark"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "subject": "courtyard",
+    "title": "Terraced courtyard",
+    "source": "projects/sdf/scenes/diorama-drafts-2026-11/terraced-courtyard.json",
+    "source_sha256": "7d3f1d77cef2da6466bee93f0fe189595b8b4e7d2f1510b94c468a8e42321955",
+    "old_preset": "projects/sdf/presets/diorama-drafts-2026-11/terraced-courtyard.json",
+    "scene": "projects/sdf/scenes/csg-showcase-2026-11/courtyard.json",
+    "scene_sha256": "ca2b510dea25316ed23dd52f4e8bd7f17190862b3695b2180709e711166b20a2",
+    "preset": "projects/sdf/presets/csg-showcase-2026-11/courtyard.json",
+    "checks": {
+      "leaves": 180,
+      "tree_nodes": 228,
+      "history_actions": 10,
+      "complete_history": true,
+      "unique_names": true,
+      "polarity": true,
+      "before_leaves": 283,
+      "removed": [
+        "banner-0278",
+        "banner-hem-0279",
+        "banner-rod-0277",
+        "cornice-block-0142",
+        "cornice-block-0143",
+        "cornice-block-0144",
+        "cornice-block-0145",
+        "cornice-block-0146",
+        "cornice-block-0147",
+        "cornice-block-0148",
+        "cornice-block-0149",
+        "cornice-block-0150",
+        "cornice-block-0151",
+        "cornice-block-0152",
+        "cornice-block-0153",
+        "cornice-block-0154",
+        "cornice-block-0155",
+        "cornice-block-0156",
+        "paving-slab-0004",
+        "paving-slab-0005",
+        "paving-slab-0006",
+        "paving-slab-0007",
+        "paving-slab-0008",
+        "paving-slab-0009",
+        "paving-slab-0010",
+        "paving-slab-0011",
+        "paving-slab-0012",
+        "paving-slab-0013",
+        "paving-slab-0014",
+        "paving-slab-0015",
+        "paving-slab-0016",
+        "paving-slab-0017",
+        "paving-slab-0018",
+        "paving-slab-0019",
+        "paving-slab-0020",
+        "paving-slab-0021",
+        "paving-slab-0022",
+        "paving-slab-0023",
+        "paving-slab-0024",
+        "paving-slab-0025",
+        "paving-slab-0026",
+        "plant-0294",
+        "plant-0295",
+        "plant-0296",
+        "pot-0291",
+        "pot-rim-0292",
+        "pot-soil-0293",
+        "stair-baluster-0254",
+        "stair-baluster-0255",
+        "stair-baluster-0258",
+        "stair-baluster-0259",
+        "tile-course-0110",
+        "tile-course-0111",
+        "tile-course-0112",
+        "tile-course-0125",
+        "tile-course-0126",
+        "tile-course-0127",
+        "tile-course-0184",
+        "tile-course-0185",
+        "tile-course-0186",
+        "tile-course-0199",
+        "tile-course-0200",
+        "tile-course-0201",
+        "tile-rib-0113",
+        "tile-rib-0114",
+        "tile-rib-0115",
+        "tile-rib-0116",
+        "tile-rib-0117",
+        "tile-rib-0118",
+        "tile-rib-0119",
+        "tile-rib-0120",
+        "tile-rib-0121",
+        "tile-rib-0122",
+        "tile-rib-0128",
+        "tile-rib-0129",
+        "tile-rib-0130",
+        "tile-rib-0131",
+        "tile-rib-0132",
+        "tile-rib-0133",
+        "tile-rib-0134",
+        "tile-rib-0135",
+        "tile-rib-0136",
+        "tile-rib-0137",
+        "tile-rib-0187",
+        "tile-rib-0188",
+        "tile-rib-0189",
+        "tile-rib-0190",
+        "tile-rib-0191",
+        "tile-rib-0192",
+        "tile-rib-0193",
+        "tile-rib-0194",
+        "tile-rib-0195",
+        "tile-rib-0196",
+        "tile-rib-0202",
+        "tile-rib-0203",
+        "tile-rib-0204",
+        "tile-rib-0205",
+        "tile-rib-0206",
+        "tile-rib-0207",
+        "tile-rib-0208",
+        "tile-rib-0209",
+        "tile-rib-0210",
+        "tile-rib-0211"
+      ],
+      "changed": [
+        {
+          "name": "paving-slab-0003",
+          "before": {
+            "type": "box",
+            "name": "paving-slab-0003",
+            "position": [
+              -0.185,
+              -0.231,
+              0.01
+            ],
+            "half_extent": [
+              0.029,
+              0.004,
+              0.031
+            ],
+            "rounding": 0.0018000000000000002,
+            "material": "light-stone"
+          },
+          "after": {
+            "type": "box",
+            "name": "paving-slab-0003",
+            "position": [
+              -0.0225,
+              -0.231,
+              0.112
+            ],
+            "half_extent": [
+              0.1915,
+              0.004,
+              0.133
+            ],
+            "rounding": 0.0018000000000000002,
+            "material": "stone"
+          }
+        },
+        {
+          "name": "island-0001",
+          "before": {
+            "type": "box",
+            "name": "island-0001",
+            "position": [
+              0,
+              -0.29,
+              0
+            ],
+            "half_extent": [
+              0.335,
+              0.046,
+              0.3
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          },
+          "after": {
+            "type": "box",
+            "name": "island-0001",
+            "position": [
+              0,
+              -0.276,
+              0
+            ],
+            "half_extent": [
+              0.335,
+              0.032,
+              0.3
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "subject": "observatory-section",
+    "title": "Observatory section",
+    "source": "projects/sdf/scenes/observatory-cleanup-2026-11/square-section.json",
+    "source_sha256": "d502ad03e3b4af5d91c8d838ed4124f41247cd3cc6135cd93771234291a25d75",
+    "old_preset": "projects/sdf/presets/observatory-cleanup-2026-11/square-section.json",
+    "scene": "projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+    "scene_sha256": "4a66180186892c2db40e45ba187427b5f9d74b7ee7acdbe4963151741fc34d58",
+    "preset": "projects/sdf/presets/csg-showcase-2026-11/observatory-section.json",
+    "checks": {
+      "leaves": 279,
+      "tree_nodes": 333,
+      "history_actions": 26,
+      "complete_history": true,
+      "unique_names": true,
+      "polarity": true,
+      "before_leaves": 537,
+      "removed": [
+        "annex-quoin-0370",
+        "annex-quoin-0371",
+        "annex-quoin-0372",
+        "annex-quoin-0373",
+        "annex-quoin-0374",
+        "annex-quoin-0375",
+        "annex-quoin-0376",
+        "annex-quoin-0377",
+        "annex-standing-seam-0356",
+        "annex-standing-seam-0357",
+        "annex-standing-seam-0359",
+        "annex-standing-seam-0360",
+        "annex-standing-seam-0363",
+        "annex-standing-seam-0364",
+        "annex-standing-seam-0366",
+        "annex-standing-seam-0367",
+        "approach-slab-0054",
+        "approach-slab-0055",
+        "approach-slab-0056",
+        "approach-slab-0057",
+        "approach-slab-0059",
+        "approach-slab-0060",
+        "approach-slab-0061",
+        "approach-slab-0062",
+        "arch-stone-joint-0174",
+        "arch-stone-joint-0175",
+        "arch-stone-joint-0176",
+        "arch-stone-joint-0177",
+        "arch-stone-joint-0178",
+        "arch-stone-joint-0179",
+        "arch-stone-joint-0180",
+        "armillary-mark-0483",
+        "armillary-mark-0484",
+        "armillary-mark-0485",
+        "armillary-mark-0486",
+        "armillary-mark-0487",
+        "armillary-mark-0488",
+        "armillary-mark-0489",
+        "armillary-mark-0490",
+        "armillary-mark-0491",
+        "armillary-mark-0492",
+        "armillary-mark-0493",
+        "armillary-mark-0494",
+        "baluster-0417",
+        "baluster-0419",
+        "baluster-0423",
+        "baluster-0425",
+        "baluster-0429",
+        "baluster-0431",
+        "baluster-0435",
+        "baluster-0437",
+        "baluster-0441",
+        "baluster-0443",
+        "book-spine-0574",
+        "book-spine-0575",
+        "book-spine-0577",
+        "book-spine-0578",
+        "book-spine-0580",
+        "book-spine-0581",
+        "book-spine-0583",
+        "book-spine-0584",
+        "book-spine-0586",
+        "book-spine-0587",
+        "book-spine-0589",
+        "book-spine-0590",
+        "book-spine-0592",
+        "book-spine-0593",
+        "book-spine-0595",
+        "book-spine-0596",
+        "bracket-0236",
+        "bracket-0241",
+        "bracket-0246",
+        "bracket-0251",
+        "bracket-0256",
+        "bracket-0261",
+        "bracket-0266",
+        "bracket-0271",
+        "bracket-0276",
+        "bracket-0281",
+        "bracket-0286",
+        "bracket-0291",
+        "bracket-stud-0237",
+        "bracket-stud-0242",
+        "bracket-stud-0247",
+        "bracket-stud-0252",
+        "bracket-stud-0257",
+        "bracket-stud-0262",
+        "bracket-stud-0267",
+        "bracket-stud-0272",
+        "bracket-stud-0277",
+        "bracket-stud-0282",
+        "bracket-stud-0287",
+        "bracket-stud-0292",
+        "clock-tick-0397",
+        "clock-tick-0398",
+        "clock-tick-0400",
+        "clock-tick-0401",
+        "clock-tick-0403",
+        "clock-tick-0404",
+        "clock-tick-0406",
+        "clock-tick-0407",
+        "compass-ray-0183",
+        "compass-ray-0185",
+        "compass-ray-0187",
+        "compass-ray-0189",
+        "dome-rivet-0295",
+        "dome-rivet-0296",
+        "dome-rivet-0297",
+        "dome-rivet-0298",
+        "dome-rivet-0299",
+        "dome-rivet-0300",
+        "dome-rivet-0301",
+        "dome-rivet-0302",
+        "dome-rivet-0303",
+        "dome-rivet-0304",
+        "dome-rivet-0305",
+        "dome-rivet-0306",
+        "dome-rivet-0307",
+        "dome-rivet-0308",
+        "dome-rivet-0309",
+        "dome-rivet-0310",
+        "dome-rivet-0311",
+        "dome-rivet-0312",
+        "dome-rivet-0313",
+        "dome-rivet-0314",
+        "dome-rivet-0315",
+        "dome-rivet-0316",
+        "dome-rivet-0317",
+        "dome-rivet-0318",
+        "dome-rivet-0319",
+        "dome-rivet-0320",
+        "lower-rail-0448",
+        "lower-rail-0450",
+        "lower-rail-0452",
+        "lower-rail-0454",
+        "lower-rail-0456",
+        "lower-rail-0458",
+        "lower-rail-0460",
+        "lower-rail-0462",
+        "lower-rail-0464",
+        "lower-rail-0466",
+        "lower-rail-0468",
+        "lower-rail-0470",
+        "lower-rail-0472",
+        "lower-rail-0474",
+        "rail-finial-0085",
+        "rail-finial-0087",
+        "rail-finial-0089",
+        "rail-finial-0091",
+        "rail-finial-0093",
+        "rail-stud-0416",
+        "rail-stud-0418",
+        "rail-stud-0420",
+        "rail-stud-0422",
+        "rail-stud-0424",
+        "rail-stud-0426",
+        "rail-stud-0428",
+        "rail-stud-0430",
+        "rail-stud-0432",
+        "rail-stud-0434",
+        "rail-stud-0436",
+        "rail-stud-0438",
+        "rail-stud-0440",
+        "rail-stud-0442",
+        "rail-stud-0444",
+        "rail-stud-0446",
+        "retaining-block-0016",
+        "retaining-block-0017",
+        "retaining-block-0018",
+        "retaining-block-0019",
+        "retaining-block-0020",
+        "retaining-block-0021",
+        "retaining-block-0022",
+        "retaining-block-0023",
+        "retaining-block-0024",
+        "retaining-block-0025",
+        "retaining-block-0026",
+        "retaining-block-0027",
+        "retaining-block-0028",
+        "retaining-block-0029",
+        "retaining-block-0030",
+        "retaining-block-0031",
+        "retaining-block-0032",
+        "retaining-block-0033",
+        "retaining-block-0034",
+        "retaining-block-0035",
+        "retaining-block-0036",
+        "retaining-block-0037",
+        "retaining-block-0038",
+        "retaining-block-0039",
+        "retaining-block-0040",
+        "retaining-block-0041",
+        "retaining-block-0042",
+        "retaining-block-0043",
+        "retaining-block-0044",
+        "retaining-block-0045",
+        "retaining-block-0046",
+        "retaining-block-0047",
+        "retaining-block-0048",
+        "retaining-block-0049",
+        "retaining-block-0050",
+        "retaining-block-0051",
+        "retaining-block-0052",
+        "rock-fracture-0003",
+        "rock-fracture-0004",
+        "rock-fracture-0005",
+        "rock-fracture-0006",
+        "room-floorboard-0558",
+        "room-floorboard-0559",
+        "room-floorboard-0560",
+        "room-floorboard-0561",
+        "room-floorboard-0562",
+        "room-floorboard-0563",
+        "room-floorboard-0564",
+        "room-floorboard-0565",
+        "room-floorboard-0566",
+        "room-floorboard-0567",
+        "standing-meridian-0207",
+        "standing-meridian-0208",
+        "standing-meridian-0210",
+        "standing-meridian-0211",
+        "stone-block-0163",
+        "stone-block-0164",
+        "stone-block-0165",
+        "stone-block-0166",
+        "stone-block-0167",
+        "stone-block-0168",
+        "stone-block-0169",
+        "stone-block-0170",
+        "stone-block-0171",
+        "stone-block-0172",
+        "stone-block-0173",
+        "tooth-0235",
+        "tooth-0239",
+        "tooth-0240",
+        "tooth-0244",
+        "tooth-0245",
+        "tooth-0249",
+        "tooth-0250",
+        "tooth-0254",
+        "tooth-0255",
+        "tooth-0259",
+        "tooth-0260",
+        "tooth-0264",
+        "tooth-0265",
+        "tooth-0269",
+        "tooth-0270",
+        "tooth-0274",
+        "tooth-0275",
+        "tooth-0279",
+        "tooth-0280",
+        "tooth-0284",
+        "tooth-0285",
+        "tooth-0289",
+        "tooth-0290",
+        "tooth-0294",
+        "tube-collar-0323",
+        "tube-collar-0324"
+      ],
+      "changed": [
+        {
+          "name": "baluster-0415",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0415",
+            "position": [
+              -0.23306200260100274,
+              -0.043,
+              -0.13758117395639524
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0415",
+            "position": [
+              -0.23306200260100274,
+              -0.043,
+              -0.13758117395639524
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0421",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0421",
+            "position": [
+              -0.2371581017957763,
+              -0.043,
+              -0.023963248320542023
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0421",
+            "position": [
+              -0.2371581017957763,
+              -0.043,
+              -0.023963248320542023
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0427",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0427",
+            "position": [
+              -0.16872738490910993,
+              -0.043,
+              0.06682798496100674
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0427",
+            "position": [
+              -0.16872738490910993,
+              -0.043,
+              0.06682798496100674
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0433",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0433",
+            "position": [
+              0.01422621143643285,
+              -0.043,
+              0.0697020497183816
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0433",
+            "position": [
+              0.01422621143643285,
+              -0.043,
+              0.0697020497183816
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0439",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0439",
+            "position": [
+              0.08547498345019881,
+              -0.043,
+              -0.01889492280855124
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0439",
+            "position": [
+              0.08547498345019881,
+              -0.043,
+              -0.01889492280855124
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "baluster-0445",
+          "before": {
+            "type": "capsule",
+            "name": "baluster-0445",
+            "position": [
+              0.08494973072221833,
+              -0.043,
+              -0.13258544644169953
+            ],
+            "radius": 0.0038,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "capsule",
+            "name": "baluster-0445",
+            "position": [
+              0.08494973072221833,
+              -0.043,
+              -0.13258544644169953
+            ],
+            "radius": 0.0045,
+            "half_length": 0.03,
+            "material": "dark",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              -0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "approach-slab-0053",
+          "before": {
+            "type": "box",
+            "name": "approach-slab-0053",
+            "position": [
+              -0.205,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.017,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              -0.0,
+              -0.13052619222005157,
+              -0.0,
+              0.9914448613738104
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "approach-slab-0053",
+            "position": [
+              -0.205,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.046,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              -0.0,
+              -0.13052619222005157,
+              -0.0,
+              0.9914448613738104
+            ]
+          }
+        },
+        {
+          "name": "approach-slab-0058",
+          "before": {
+            "type": "box",
+            "name": "approach-slab-0058",
+            "position": [
+              -0.022499999999999992,
+              -0.192,
+              0.29000000000000004
+            ],
+            "half_extent": [
+              0.017,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "approach-slab-0058",
+            "position": [
+              -0.022499999999999992,
+              -0.192,
+              0.29000000000000004
+            ],
+            "half_extent": [
+              0.046,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "name": "approach-slab-0063",
+          "before": {
+            "type": "box",
+            "name": "approach-slab-0063",
+            "position": [
+              0.16,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.017,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.13052619222005157,
+              0.0,
+              0.9914448613738104
+            ]
+          },
+          "after": {
+            "type": "box",
+            "name": "approach-slab-0063",
+            "position": [
+              0.16,
+              -0.192,
+              0.255
+            ],
+            "half_extent": [
+              0.046,
+              0.004,
+              0.018
+            ],
+            "rounding": 0.001,
+            "material": "light-stone",
+            "rotation_xyzw": [
+              0.0,
+              0.13052619222005157,
+              0.0,
+              0.9914448613738104
+            ]
+          }
+        },
+        {
+          "name": "book-spine-0573",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0573",
+            "position": [
+              -0.137,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0573",
+            "position": [
+              -0.125,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          }
+        },
+        {
+          "name": "book-spine-0576",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0576",
+            "position": [
+              -0.10400000000000001,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0576",
+            "position": [
+              -0.092,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          }
+        },
+        {
+          "name": "book-spine-0579",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0579",
+            "position": [
+              -0.07100000000000001,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0579",
+            "position": [
+              -0.059,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          }
+        },
+        {
+          "name": "book-spine-0582",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0582",
+            "position": [
+              -0.03800000000000002,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0582",
+            "position": [
+              -0.025999999999999995,
+              -0.043,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          }
+        },
+        {
+          "name": "book-spine-0585",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0585",
+            "position": [
+              -0.137,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0585",
+            "position": [
+              -0.125,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "linen"
+          }
+        },
+        {
+          "name": "book-spine-0588",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0588",
+            "position": [
+              -0.10400000000000001,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0588",
+            "position": [
+              -0.092,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "teal"
+          }
+        },
+        {
+          "name": "book-spine-0591",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0591",
+            "position": [
+              -0.07100000000000001,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0591",
+            "position": [
+              -0.059,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "roof"
+          }
+        },
+        {
+          "name": "book-spine-0594",
+          "before": {
+            "type": "box",
+            "name": "book-spine-0594",
+            "position": [
+              -0.03800000000000002,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0045,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          },
+          "after": {
+            "type": "box",
+            "name": "book-spine-0594",
+            "position": [
+              -0.025999999999999995,
+              -0.009999999999999998,
+              -0.155
+            ],
+            "half_extent": [
+              0.0105,
+              0.011,
+              0.01
+            ],
+            "rounding": 0.001,
+            "material": "blue"
+          }
+        },
+        {
+          "name": "room-subfloor-0556",
+          "before": {
+            "type": "cylinder",
+            "name": "room-subfloor-0556",
+            "position": [
+              -0.075,
+              -0.078,
+              -0.075
+            ],
+            "radius": 0.104,
+            "half_length": 0.005,
+            "material": "wood"
+          },
+          "after": {
+            "type": "cylinder",
+            "name": "room-subfloor-0556",
+            "position": [
+              -0.075,
+              -0.0735,
+              -0.075
+            ],
+            "radius": 0.104,
+            "half_length": 0.005,
+            "material": "wood"
+          }
+        },
+        {
+          "name": "rock-core-0002",
+          "before": {
+            "type": "box",
+            "name": "rock-core-0002",
+            "position": [
+              0,
+              -0.267,
+              0
+            ],
+            "half_extent": [
+              0.355,
+              0.063,
+              0.33
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          },
+          "after": {
+            "type": "box",
+            "name": "rock-core-0002",
+            "position": [
+              0,
+              -0.244,
+              0
+            ],
+            "half_extent": [
+              0.355,
+              0.04,
+              0.33
+            ],
+            "rounding": 0.012,
+            "material": "earth"
+          }
+        },
+        {
+          "name": "display-foot-0001",
+          "before": {
+            "type": "box",
+            "name": "display-foot-0001",
+            "position": [
+              0,
+              -0.34,
+              0
+            ],
+            "half_extent": [
+              0.375,
+              0.01,
+              0.35
+            ],
+            "rounding": 0.0045000000000000005,
+            "material": "dark"
+          },
+          "after": {
+            "type": "box",
+            "name": "display-foot-0001",
+            "position": [
+              0,
+              -0.294,
+              0
+            ],
+            "half_extent": [
+              0.375,
+              0.01,
+              0.35
+            ],
+            "rounding": 0.0045000000000000005,
+            "material": "dark"
+          }
+        }
+      ]
+    }
+  }
+]

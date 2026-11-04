@@ -8,6 +8,11 @@ playback, and the shared **material workshop**. Guardian is retired to
 supersedes the earlier selected-sculpture status. Earlier blockouts, dioramas
 and organic auditions remain experiments, not additional selected demos.
 
+A subsequent [four-scene form refinement](sdf-csg-form-refinement.md) prepares
+the robot and three architectural dioramas as showcase candidates, after the
+user reopened that art selection. It retains this closeout's original sources
+and evidence. Public media selection and deployment are unchanged.
+
 ## What remains supported
 
 The SDF project retains its authored primitive/operation vocabulary, named
