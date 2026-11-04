@@ -13,10 +13,10 @@ recipes, diagnostics, evidence and historical anchors.
 
 Build prerequisites and the development preset are in
 [Build and run Cubey](../../docs/getting-started.md#configure-build-and-test).
-Run the authored robot directly:
+Run the approved observatory directly:
 
 ```sh
-build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/observatory.json
 ```
 
 Use `--headless`, `--time`, and `--output` for a saved still; `--config` selects
@@ -56,9 +56,9 @@ reuse the field. Analytical-only releases it; returning to cached rendering
 can incur a full rebuild.
 
 ```sh
-build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode balanced --supersample 1
-build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode analytic
-build/release/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit.json --render-mode cached
+build/release/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/robot.json --render-mode balanced --supersample 1
+build/release/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/robot.json --render-mode analytic
+build/release/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/robot.json --render-mode cached
 ```
 
 Existing explicit low-level tracing flags retain their original behavior when
@@ -128,29 +128,29 @@ material recipes do not promise identical mesh and SDF light transport.
 
 ## Authored scenes
 
-The field-kit robot is the featured authored CSG example. Its finished assembly
-and saved construction history show how primitives, additive/subtractive
-operations and materials compose a solid. The
-[CSG milestone closeout](../../docs/notes/sdf-csg-closeout.md) records the
-supported scope, retained research and deferred editing questions.
+The approved CSG collection contains four models. Their explicit source JSONs
+live in [the showcase folder](scenes/csg-showcase-2026-11/); the
+[roster](tools/csg_showcase.json) pins their accepted identities. The
+[CSG milestone closeout](../../docs/notes/sdf-csg-closeout.md) owns current
+status, retained evidence and deferred research.
 
-The [form refinement pass](../../docs/notes/sdf-csg-form-refinement.md) adds
-review candidates for the robot, canal mill, square observatory and terraced
-courtyard. They simplify decorative grids and repeated ornament while keeping
-the saved construction histories. Try a candidate with:
+| Model | Static preset | What it shows |
+| --- | --- | --- |
+| Hill observatory | `observatory.json` | Hollow architecture, a dome slit and a matched cutaway |
+| Field-kit robot | `robot.json` | Assemblies, articulated joints and saved construction |
+| Canal mill | `canal-mill.json` | A wheel race, bridge and composed waterfront |
+| Terraced courtyard | `courtyard.json` | Open arches, a stair and a still basin |
 
-```sh
-build/release/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/observatory.json
-```
+All presets are under `projects/sdf/presets/csg-showcase-2026-11/`. Each model
+also has a `-build.json` saved replay and a `-film.json` presentation preset.
+`observatory-cutaway-intact.json` and `observatory-cutaway-section.json` hold
+camera and lighting identical for the section comparison. The older
+`observatory-section.json` view remains available.
 
-The same folder contains `robot.json`, `canal-mill.json`, `courtyard.json` and
-`observatory-section.json`. These presentation presets explicitly use Balanced
-and SS2; the application default remains Cached. Original scenes and presets
-are retained alongside the candidates.
-
-The subsequent [junction polish](../../docs/notes/sdf-csg-junction-polish.md)
-repairs landings, bank/bridge joins, prop seating and courtyard access, and
-retains a still fountain basin. It updates the same candidate presets.
+These presentation presets explicitly choose Balanced and SS2. The application
+default remains Cached. The mill wheel/water and courtyard basin are static;
+their films move the camera. Older models and presets retain their historical
+identities and are not additional featured demos.
 
 The authored vocabulary includes boxes, spheres, capsules, cylinders, tori,
 capped cones and rounded cones with union, subtraction and smooth variants.
@@ -162,8 +162,29 @@ the published field supplies normal geometry and shadow queries. Export saves
 the assembly, history and current material values.
 
 ```sh
-build/dev/projects/sdf/sdf --config projects/sdf/presets/survey-robot-fieldkit-build.json
+build/dev/projects/sdf/sdf --config projects/sdf/presets/csg-showcase-2026-11/robot-build.json
 ```
+
+### Capture and qualification
+
+From the repository root, capture the tracked collection into a fresh directory:
+
+```sh
+python3 -B projects/sdf/tools/capture_csg_showcase.py --binary build/release/projects/sdf/sdf --output outputs/sdf/my-csg-capture
+python3 -B projects/sdf/tools/qualify_csg_refinement.py --binary build/release/projects/sdf/sdf --output outputs/sdf/my-csg-qualification
+python3 -B projects/sdf/tools/check_csg_joins.py --output outputs/sdf/my-csg-joins.json
+```
+
+Use `--posters-only` for a framing pass. Capture reads tracked scene/preset JSONs;
+it does not regenerate drafts or require an earlier report's ignored outputs.
+The packet freezes inputs, native commands/logs, binary/shader identities, six
+landscape PNGs and four 1080p/30 recorded films. The robot film visits all 75
+saved actions. Encoded FPS does not establish interactive frame time.
+
+The [site media guide](../../site/media/README.md) owns web encoding, selection
+and attribution; the site build uses only tracked web assets. The
+[technical reference](docs/technical-reference.md) retains the original authoring
+generators and study recipes for historical reproduction.
 
 ### Retained sculpture studies
 
@@ -204,8 +225,8 @@ reader lifetime remain deferred research. VR is not a current target.
 
 Global illumination, terrain coupling, deeper rough refraction and native
 mesh-to-field integration are separate choices. The authored CSG milestone is
-closed around the robot and workshop; shared rendering improvements can still
-benefit those examples.
+closed around the approved quartet and shared workshop. Future rendering or
+representation work can reuse those fixed subjects.
 
 ## Procedural recipes
 
@@ -216,36 +237,9 @@ retains the full procedural CSG, capture and qualification command catalog.
 
 ## Supporting evidence
 
-An opt-in [tracing/cache comparison](../../docs/notes/sdf-tracing-comparison-results.md)
-adds authored `--surface-trace analytic|hybrid` and `--csg-evaluation pruned`
-with `--region-axis 4|16|64`. The original study retained `sampled` / `full`; these study
-routes have measured quality/memory benefits and content-dependent performance
-limits. [Commands and receipts](../../docs/evidence/sdf-tracing-comparison-2026-10/README.md)
-include the bounded query, undo and native inspection tools.
-
-The opt-in source paths now use [automatic shader selection](../../docs/notes/sdf-shader-selection-results.md):
-prebuilt lit/debug and eligible one-material pipelines follow published material
-state and current view settings. `--source-shaders general` selects the original
-source shader for comparison. The retired Guardian benchmark improved
-substantially but remained above its dated 1080p GPU target; startup compilation
-can be expensive. Current defaults
-and explicit rendering choices are listed above.
-
-Source-query controls are documented in the
-[optimization loop](../../docs/notes/sdf-source-query-optimization-progress.md).
-`--source-optimization automatic` now skips zero-contribution shadows on the
-eligible opaque one-material lit source path. `reference` retains the previous
-automatic shader, while `--source-shaders general` keeps the original complete
-shader. `prepared-cones` and `combined` are explicit static headless
-analytic/pruned A64 root-far studies; they preserve the source/history format
-and existing geometry tolerances. These advanced studies retain their private
-admission. The public Analytical atmosphere mode separately qualifies ordinary
-root-far rendering; explicit legacy tracing semantics remain unchanged.
-
-The [guarded-step investigation](../../docs/notes/sdf-query-acceleration-progress.md)
-retains further explicit headless query studies. Their numerical qualification,
-frame-time measurements and visual-adoption limits are separate from the
-automatic behavior above.
+Tracing, shader selection and source-query studies are indexed in the
+[technical reference](docs/technical-reference.md#retained-query-study-index).
+Their dated measurements do not establish current quartet frame times.
 
 - [Shared material and optical contract](../../docs/architecture/material-recipes.md)
 - [SDF thread closeout and evidence map](../../docs/notes/sdf-thread-closeout.md)

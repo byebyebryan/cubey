@@ -46,8 +46,13 @@ for(const [name,html] of pages){
   if(bound>600_000)errors.push(`${name}: HTML/styles/scripts/all maximum-size poster images exceed 600 KB budget`);
 }
 for(const name of ['index.html','demos/index.html','demos/simulation/index.html','demos/sdf/index.html'])if(!pages.get(name)?.includes('<video '))errors.push(`${name}: overview has no playable film`);
-for(const name of ['index.html','about/index.html','demos/index.html','demos/sdf/index.html','demos/sdf/robot/index.html','demos/sdf/inside-a-solid/index.html']){
+for(const name of ['index.html','about/index.html','demos/index.html','demos/sdf/index.html',...['observatory','robot','canal-mill','courtyard'].map(id=>`demos/sdf/${id}/index.html`),'demos/sdf/inside-a-solid/index.html']){
   if(/media\/guardian|sdf\/guardian\//i.test(pages.get(name)||''))errors.push(`${name}: retired Guardian returned to active presentation`);
+}
+for(const id of ['observatory','robot','canal-mill','courtyard'])if(!pages.get(`demos/sdf/${id}/index.html`)?.includes('<video '))errors.push(`Approved CSG scene lacks its native film: ${id}`);
+for(const name of ['demos/sdf/index.html','demos/sdf/observatory/index.html','demos/sdf/inside-a-solid/index.html']){
+  const page=pages.get(name)||'';
+  if(!page.includes('id="observatory-cutaway"')||!page.includes('csg-observatory-intact.webp')||!page.includes('csg-observatory-section.webp'))errors.push(`${name}: matched observatory section is missing`);
 }
 const retired=pages.get('demos/sdf/guardian/index.html');
 if(!retired?.includes('Guardian is retired.')||/media\/guardian/.test(retired))errors.push('Guardian old route must be an unfeatured retirement notice');

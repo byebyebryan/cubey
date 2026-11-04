@@ -12,7 +12,7 @@
     "file": "docs/media/readme-hero.png",
     "width": 1200,
     "height": 270,
-    "sha256": "6ecd71da5d390a673643fbec987ad337f48e8570d745988595fe3e8653c5a40a"
+    "sha256": "29773e520160ef39540ae926aec45f5a69dfb748672d81cd1c8829eb8acde768"
   },
   "panels": [
     {
@@ -29,7 +29,12 @@
       "asset": "water-3d",
       "sha256": "88e3f06f8526b040ac14ca392d703c74d5bfa09775da5078d80ddb39e6cfb080",
       "fitVolume": {
-        "bounds": {"left": 240, "top": 294, "right": 824, "bottom": 716},
+        "bounds": {
+          "left": 240,
+          "top": 294,
+          "right": 824,
+          "bottom": 716
+        },
         "scale": 0.44,
         "background": "Extend the empty lower background scanline; preserve the complete water volume."
       }
@@ -40,9 +45,9 @@
       "positionX": 0.5
     },
     {
-      "asset": "robot",
-      "sha256": "b0c42369627605a0ca1e18ff7389a9af02fd67c59cc4ee965071c106d571c07c",
-      "positionX": 0.52
+      "asset": "csg-observatory",
+      "sha256": "559812b29bad917acf077708a042d98995a9e6d51ff514a3dda2dbd593f238d9",
+      "positionX": 0.5
     }
   ]
 }

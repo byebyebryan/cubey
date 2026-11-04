@@ -27,6 +27,29 @@ The old Damaged Helmet composite is not included in the selected website media.
 
 ## Capture identities
 
+The approved CSG quartet has a dedicated
+[current-source capture receipt](receipts/csg-showcase.json). Six native landscape
+stills cover four models and an aligned intact/section pair; four native films
+show camera arcs and the robot's saved construction. The source JSON/preset
+digests, native executable/shaders and web derivative identities are recorded
+separately. Full-resolution masters remain in the retained capture packet;
+selected 720p films, WebP posters/thumbnails and hover excerpts are tracked here.
+Previous robot captures and their receipts remain historical assets.
+
+Capture from the tracked native scenes using the
+[SDF guide](../../projects/sdf/README.md#capture-and-qualification). Prepare and
+select the web derivatives from a completed packet with:
+
+```sh
+python3 -B site/tools/import-csg-showcase.py --native outputs/sdf/my-csg-capture --output outputs/sdf/my-csg-web --import-media
+```
+
+Use a fresh staging directory. Omitting `--import-media` prepares a candidate
+ledger and derivatives without changing local selections. This importer uses
+FFmpeg/ffprobe and the existing hover-preview policy. The site build itself
+needs neither native capture outputs nor FFmpeg. New identities preserve the
+older selected-media evidence rather than rewriting its receipts.
+
 About also embeds two author-selected recordings of the original OpenGL Cubey
 from YouTube. [Their source records](sources/legacy-youtube.json) retain the video
 IDs, original titles, author and verified upload dates. The 2018 upload dates do

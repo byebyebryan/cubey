@@ -62,6 +62,8 @@ regenerate it from the repository root with `node tools/prepare_readme_hero.mjs`
 The tool requires Node and the site's Sharp dependency; it needs no native
 renderer, GPU or private preview files. Changed source images or output fail
 the identity check so a future visual revision gets an explicit review.
+Use `--review-output /path/candidate.png` to inspect a new composition before
+recording its identity in the recipe; this leaves the recorded hero untouched.
 
 ## Documentation gate
 

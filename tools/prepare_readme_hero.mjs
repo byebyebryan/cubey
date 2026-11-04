@@ -2,6 +2,9 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {createRequire} from 'node:module';
+import {parseArgs} from 'node:util';
+const {values}=parseArgs({options:{'review-output':{type:'string'},help:{type:'boolean'}}});
+if(values.help){console.log('Usage: node tools/prepare_readme_hero.mjs [--review-output /path/candidate.png]\nReview writes a candidate without replacing the recorded hero; the normal command verifies its approved hash.');process.exit(0);}
 const sharp=createRequire(new URL('../site/package.json',import.meta.url))('sharp');
 const root=new URL('../',import.meta.url);
 const recipe=JSON.parse(readFileSync(new URL('docs/media/readme-hero.json',root),'utf8'));
@@ -50,7 +53,8 @@ for(const [i,panel] of recipe.panels.entries()){
 const svg=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs>${defs}</defs>${images}${dividers}</svg>`;
 const output=await sharp(Buffer.from(svg)).resize({width:recipe.output.width}).png().toBuffer();
 const metadata=await sharp(output).metadata();
-if(metadata.width!==recipe.output.width||metadata.height!==recipe.output.height||digest(output)!==recipe.output.sha256)
+if(metadata.width!==recipe.output.width||metadata.height!==recipe.output.height||(!values['review-output']&&digest(output)!==recipe.output.sha256))
   throw new Error('Output differs from the approved hero; review before updating its recorded identity.');
-writeFileSync(new URL(recipe.output.file,root),output);
-console.log(JSON.stringify({file:recipe.output.file,width:metadata.width,height:metadata.height,bytes:output.length,sha256:digest(output)}));
+const target=values['review-output']||new URL(recipe.output.file,root);
+writeFileSync(target,output);
+console.log(JSON.stringify({file:String(target),width:metadata.width,height:metadata.height,bytes:output.length,sha256:digest(output),reviewOnly:Boolean(values['review-output'])}));

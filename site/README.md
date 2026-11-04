@@ -31,12 +31,12 @@ with `npm run preview -- --allowed-hosts your-hostname`.
 The implementation uses authored Astro components and plain CSS/JavaScript.
 Films play directly in home, subject-directory, simulation and SDF overview
 cards as well as scene pages. Navigation links stay outside native player
-controls; starting a native film pauses the others. The robot uses the common
-16:9 native landscape recaptures. Native images and videos fit without cropping the
+controls; starting a native film pauses the others. The approved CSG quartet uses
+current-source 16:9 native captures. Native images and videos fit without cropping the
 subjects or changing their proportions.
 
 Every selected film has a small hover preview in browsing cards; still-only
-selections remain still. The current 15 film-backed selections each have a
+selections remain still. The current 18 film-backed selections each have a
 validated preview. A 350 ms dwell on a fine hover pointer requests a separate,
 silent 640x360 / 18 fps excerpt of up to 3.5 seconds. Each clip is H.264/yuv420p,
 fast-start and at most 400 KB. The encoder raises CRF through 36 when needed and
@@ -70,7 +70,9 @@ are built into the static HTML, then enhanced with manual, keyboard-accessible
 controls. The shared analytic model in `public/scripts/sdf-story.js` is used by
 the build, browser and model tests. It is an explanatory illustration, not a
 WebGL/native renderer or a live brush editor. The chapter reuses the native
-robot film and cut comparison, plus a labelled historical procedural still.
+robot film, matched observatory cutaway and material-cut comparison, plus a
+labelled historical procedural still. The SDF collection contains the observatory,
+robot, canal mill and courtyard; the section is a view within the observatory.
 
 Prepare all selected films automatically using a fresh staging directory. The
 script discovers film-backed selections from the manifest, reuses current
@@ -126,7 +128,7 @@ media credits and capture identities remain unchanged.
   native owners, supported extension groups and editorial connections. Its
   variant lists remain editorial possibilities, not automatically generated UI.
 - `media/manifest.json`: selected media, byte hashes, parent identities,
-  attribution and capture references. All twenty active entries need native posters. Guardian media remains in the ledger as historical capture evidence.
+  attribution and capture references. All 23 active entries need native posters. Guardian media remains in the ledger as historical capture evidence.
 - `media/receipts/`, `media/sources/`, `media/licenses/`: pinned current/historical
   capture inputs, model downloads and exact imported-asset notices.
 - [Selected media and attribution](media/README.md): ledger semantics and the

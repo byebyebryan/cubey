@@ -2,15 +2,20 @@
 import Layout from '../layouts/Layout.astro';
 import Media from './Media.astro';
 import Card from './Card.astro';
+import ObservatoryCutaway from './ObservatoryCutaway.astro';
+import SdfStoryLink from './SdfStoryLink.astro';
 import {subjects,byId,sourceURL,connections,type Entry} from '../data/catalog';
 import {url} from '../lib/urls';
 interface Props {entry:Entry;path:string}
 const {entry:e,path}=Astro.props;const family=subjects.find(f=>f.id===e.family)!;
 const connection=connections.find(c=>c.id==='water-to-terrain')!;
 const reasons=(e as Entry & {related_reasons?:Record<string,string>}).related_reasons;
+const csgCaptions:Record<string,string>={robot:'A saved construction, replayed from its first shapes to the finished robot.',observatory:'A camera arc around the finished observatory.', 'canal-mill':'A camera arc around the mill, wheel and canal.',courtyard:'A camera arc around the courtyard, stair and still basin.'};
 ---
 <Layout title={e.title} description={e.summary} path={path}>
-  <section class="page-title"><nav class="crumbs" aria-label="Breadcrumb"><a href={url('/demos/',path)}>Demos</a><span aria-hidden="true">/</span><a href={url(`/demos/${e.family}/`,path)}>{family.title}</a><span aria-hidden="true">/</span><span aria-current="page">{e.title}</span></nav><div class="scene-layout"><div><span class="eyebrow">{e.dimension==='2.5D'?'Surface flow':e.dimension} / {family.title}</span><h1>{e.title}</h1><p class="intro">{e.summary}</p></div><div class:list={['feature-panel',{'form-stage':e.family==='sdf'}]}><Media entry={e.id} path={path} title={e.title} eager caption={e.id==='robot'?'A saved construction, replayed from its first shapes to the finished robot.':undefined}/></div></div></section>
+  <section class="page-title"><nav class="crumbs" aria-label="Breadcrumb"><a href={url('/demos/',path)}>Demos</a><span aria-hidden="true">/</span><a href={url(`/demos/${e.family}/`,path)}>{family.title}</a><span aria-hidden="true">/</span><span aria-current="page">{e.title}</span></nav><div class="scene-layout"><div><span class="eyebrow">{e.dimension==='2.5D'?'Surface flow':e.dimension} / {family.title}</span><h1>{e.title}</h1><p class="intro">{e.summary}</p></div><div class:list={['feature-panel',{'form-stage':e.family==='sdf'}]}><Media entry={e.id} path={path} title={e.title} eager caption={csgCaptions[e.id]}/></div></div></section>
   <section class="section scene-detail"><div class="aside-label">In this scene</div><div><div class="cues">{e.cues.map(c=><span class="cue">{c}</span>)}</div><a class="source-link" href={sourceURL(e)}>Scene guide &amp; source ↗</a><details><summary>About this scene</summary><p class="note">{e.scope}</p></details></div></section>
+  {e.id==='observatory'&&<section class="section"><ObservatoryCutaway path={path}/></section>}
+  {e.family==='sdf'&&<SdfStoryLink path={path}/>}
   {e.related.length>0 && <section class="section"><div class="section-head"><h2>{e.id==='shallow-water'?'Where this led.':'Keep exploring.'}</h2></div>{e.id==='shallow-water'&&<div class="related-context" data-connection="water-to-terrain"><p>{connection.summary}</p><p class="note">{connection.public_boundary}</p></div>}<div class="grid cards">{e.related.map(id=><Card entry={byId[id]} path={path} reason={reasons?.[id]}/>)}</div></section>}
 </Layout>

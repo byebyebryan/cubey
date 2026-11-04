@@ -58,10 +58,10 @@
     {
       "id": "sdf",
       "title": "SDF forms",
-      "subtitle": "A robot assembled from continuous solids and cuts.",
+      "subtitle": "Four small scenes built from continuous solids and cuts.",
       "question": "What can be built from continuous solids and cuts?",
       "order": 6,
-      "page_model": "Authored CSG construction with one featured robot scene",
+      "page_model": "An observatory-led collection of four approved CSG scenes with saved construction and a matched architectural cutaway",
       "display_title": "Build from solids.",
       "prominence": "primary"
     },
@@ -680,16 +680,52 @@
       }
     },
     {
+      "id": "observatory",
+      "family": "sdf",
+      "title": "Hill observatory",
+      "owner": "projects/sdf",
+      "dimension": "3D",
+      "summary": "A hollow dome, an open slit and a telescope inside. Open the architecture to see how the parts fit.",
+      "cues": [
+        "Hollow forms",
+        "Architectural cutaway",
+        "Inside and outside"
+      ],
+      "variants": [
+        "Finished form",
+        "Section"
+      ],
+      "source": "projects/sdf/README.md",
+      "media": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-observatory-film.mp4",
+      "poster": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-observatory.png",
+      "related": [
+        "robot",
+        "canal-mill",
+        "courtyard"
+      ],
+      "kind": "demo",
+      "boundary": "Recorded camera motion and a saved architectural section of the same authored CSG assembly.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/sdf/observatory/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "csg-observatory",
+        "film": "csg-observatory-film"
+      }
+    },
+    {
       "id": "robot",
       "family": "sdf",
       "title": "Build a robot",
       "owner": "projects/sdf",
       "dimension": "3D",
-      "summary": "Mechanical assemblies appear through saved additive and subtractive operations.",
+      "summary": "A small robot takes shape through saved additions and cuts, from its first parts to the finished field kit.",
       "cues": [
-        "Authored primitives",
-        "CSG history",
-        "Construction playback"
+        "Saved construction",
+        "Articulated parts",
+        "CSG cuts"
       ],
       "variants": [
         "Finished form",
@@ -697,21 +733,92 @@
         "Cut previews"
       ],
       "source": "projects/sdf/README.md",
-      "media": "outputs/sdf/robot-joints-qualified/history/presentation.mp4",
-      "poster": "outputs/sdf/robot-joints-qualified/captures/detail-hero.png",
+      "media": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-robot-film.mp4",
+      "poster": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-robot.png",
       "related": [
+        "observatory",
         "sdf-materials"
       ],
       "kind": "demo",
-      "boundary": "Corrected field-kit pose and saved authored history. Construction playback is a result demo, separate from the later development journey.",
+      "boundary": "Playback of the approved saved construction. This recorded native film is separate from continuous brush editing.",
       "extensions": [],
       "asset_status": "selected-native-web-media",
       "planned_route": "/demos/sdf/robot/",
       "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
       "selected_media": {
         "manifest": "site/media/manifest.json",
-        "poster": "robot",
-        "film": "robot-film"
+        "poster": "csg-robot",
+        "film": "csg-robot-film"
+      }
+    },
+    {
+      "id": "canal-mill",
+      "family": "sdf",
+      "title": "Canal mill",
+      "owner": "projects/sdf",
+      "dimension": "3D",
+      "summary": "A timber mill, waterwheel and footbridge fit around a narrow canal.",
+      "cues": [
+        "Waterwheel",
+        "Bridge and banks",
+        "Saved CSG"
+      ],
+      "variants": [
+        "Finished form",
+        "Camera arc"
+      ],
+      "source": "projects/sdf/README.md",
+      "media": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-canal-mill-film.mp4",
+      "poster": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-canal-mill.png",
+      "related": [
+        "observatory",
+        "courtyard"
+      ],
+      "kind": "demo",
+      "boundary": "An authored CSG scene. The film moves the camera; the wheel and water are static geometry.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/sdf/canal-mill/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "csg-canal-mill",
+        "film": "csg-canal-mill-film"
+      }
+    },
+    {
+      "id": "courtyard",
+      "family": "sdf",
+      "title": "Terraced courtyard",
+      "owner": "projects/sdf",
+      "dimension": "3D",
+      "summary": "An open arcade, a stair and a still fountain form a small courtyard.",
+      "cues": [
+        "Open arches",
+        "Terraced access",
+        "Still basin"
+      ],
+      "variants": [
+        "Finished form",
+        "Camera arc"
+      ],
+      "source": "projects/sdf/README.md",
+      "media": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-courtyard-film.mp4",
+      "poster": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-courtyard.png",
+      "related": [
+        "observatory",
+        "canal-mill"
+      ],
+      "kind": "demo",
+      "boundary": "An authored CSG scene with static water in the basin. The film is recorded camera motion.",
+      "extensions": [],
+      "asset_status": "selected-native-web-media",
+      "planned_route": "/demos/sdf/courtyard/",
+      "variants_are": "Candidate capture/editorial views; expose only selected, useful native media in the public site",
+      "selected_media": {
+        "manifest": "site/media/manifest.json",
+        "poster": "csg-courtyard",
+        "film": "csg-courtyard-film"
       }
     },
     {

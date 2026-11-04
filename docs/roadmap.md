@@ -41,13 +41,13 @@ requalification. The [checkpoint archive](archive/foundation-checkpoints.md)
 retains the implementation narrative and original measurements; executable
 validation entry points are in [getting started](getting-started.md#configure-build-and-test).
 
-The separately scoped [SDF guardian checkpoint](notes/sdf-guardian-closeout.md)
-is settled by user review on 2026-10-22: organic mirrored geometry, limestone
-and subtle stylized marble are retained as an authored rendering/replay demo.
-Further modeling and material realism are deferred. A refreshed construction
-film is optional presentation work; continuous brush editing remains separate.
-Its native receipts do not extend the repository-wide runtime qualification
-above.
+The current [authored CSG closeout](notes/sdf-csg-closeout.md) selects the hill
+observatory, field-kit robot, canal mill and terraced courtyard. Their models
+are approved; native posters, films and a matched observatory section are
+prepared locally for the site. Guardian is a [retired study](../studies/sdf/guardian/README.md);
+its earlier checkpoint and stress measurements remain historical evidence.
+These native receipts do not extend the repository-wide runtime qualification
+above. Public deployment of the refreshed collection remains a separate action.
 
 The bounded SDF
 [tracing/cache/history comparison](notes/sdf-tracing-comparison-plan.md), following
@@ -55,7 +55,9 @@ the [representation review](notes/sdf-representation-design-review.md), now has
 implemented opt-in analytic/hybrid controls, exact region programs and scripted
 undo/publication evidence. The [decision report](notes/sdf-tracing-comparison-results.md)
 records Robot's quality/memory alternative and Guardian's failed scaling gate.
-The sampled default and accepted content stay fixed. The subsequent
+These are dated comparison results. Cached is the current authored-scene default;
+the [SDF guide](../projects/sdf/README.md#rendering-modes) describes the explicit
+alternatives. The subsequent
 [shader selection loop](notes/sdf-shader-selection-results.md) qualifies prebuilt
 lit/debug and published-material selection on the opt-in source paths. Guardian
 1080p rear GPU p95 improves from about 51 ms to 21 ms; its three measured views
@@ -101,10 +103,11 @@ The SDF web chapter, [Building and cutting a solid](https://dev.byebyebryan.com/
 was published on 2026-10-25. It connects existing native construction and
 material-cut captures with interactive 2D explanations and a short history; it
 does not claim live sculpting or new native runtime capabilities. This initial
-web chapter is published, while a broader native authored-content/Guardian-film
-package remains separately scoped. A Guardian construction-film refresh,
-continuous brush editing, incremental field updates, GI and deeper material
-realism remain deferred choices.
+web chapter is published. The current local presentation expands it with the
+approved quartet, robot construction and a matched observatory cutaway.
+Continuous brush editing, sustained complex-scene local updates, GI and deeper
+material realism remain deferred choices. Finite private local-update research
+is retained in the [edit-service record](notes/sdf-edit-service-results.md).
 
 The earlier five-film [showcase archive package](media/showcase/README.md),
 [manifest](media/showcase/manifest.json) and [storyboard](showcase.md) retain
@@ -125,9 +128,10 @@ consumer pressure:
 - Reopen glTF decode throughput, concurrency or streaming from product evidence.
   Single-asset upload responsiveness is closed. A specialized sheen environment
   needs a real directional-quality failure first.
-- Keep SDF desktop/VR brush sculpting, incremental field updates, GI, terrain
-  coupling, deeper rough refraction and AI-generated content deferred until a
-  concrete experiment is selected.
+- Keep general SDF desktop brush sculpting, sustained complex-scene editing,
+  GI, terrain coupling and deeper rough refraction deferred until a concrete
+  experiment is selected. VR is not a current target. Mesh-to-field conversion
+  remains a separate exploration from the closed authored CSG milestone.
 - Keep shoreline/bathymetry, shallow-water coupling, close terrain and
   planet-surface navigation as separately chosen products.
 - Keep timeline semaphores, split queues, parallel recording, graph aliasing,

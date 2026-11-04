@@ -36,6 +36,39 @@ on that same route, without AO, clouds or occluder overlays. Its counts are not
 GPU time attribution; its sampled buffer and raster-UV image total below 32 MiB
 at full HD. Unsupported configurations and larger payloads are rejected.
 
+## Retained query study index
+
+An opt-in [tracing/cache comparison](../../../docs/notes/sdf-tracing-comparison-results.md)
+adds authored `--surface-trace analytic|hybrid` and `--csg-evaluation pruned`
+with `--region-axis 4|16|64`. The original study retained `sampled` / `full`; these study
+routes have measured quality/memory benefits and content-dependent performance
+limits. [Commands and receipts](../../../docs/evidence/sdf-tracing-comparison-2026-10/README.md)
+include the bounded query, undo and native inspection tools.
+
+The opt-in source paths now use [automatic shader selection](../../../docs/notes/sdf-shader-selection-results.md):
+prebuilt lit/debug and eligible one-material pipelines follow published material
+state and current view settings. `--source-shaders general` selects the original
+source shader for comparison. The retired Guardian benchmark improved
+substantially but remained above its dated 1080p GPU target; startup compilation
+can be expensive. Current defaults
+and explicit rendering choices are listed above.
+
+Source-query controls are documented in the
+[optimization loop](../../../docs/notes/sdf-source-query-optimization-progress.md).
+`--source-optimization automatic` now skips zero-contribution shadows on the
+eligible opaque one-material lit source path. `reference` retains the previous
+automatic shader, while `--source-shaders general` keeps the original complete
+shader. `prepared-cones` and `combined` are explicit static headless
+analytic/pruned A64 root-far studies; they preserve the source/history format
+and existing geometry tolerances. These advanced studies retain their private
+admission. The public Analytical atmosphere mode separately qualifies ordinary
+root-far rendering; explicit legacy tracing semantics remain unchanged.
+
+The [guarded-step investigation](../../../docs/notes/sdf-query-acceleration-progress.md)
+retains further explicit headless query studies. Their numerical qualification,
+frame-time measurements and visual-adoption limits are separate from the
+automatic behavior above.
+
 ## Native material presentation recipes
 
 The [public material showcase](https://dev.byebyebryan.com/cubey/demos/materials/)

@@ -1,0 +1,18 @@
+{
+  "format": "cubey.sdf.presentation-verification",
+  "version": 1,
+  "status": "verification in progress",
+  "approvedModelCommit": "cb9fc78d",
+  "mediaSourceHead": "63edb712314c88cb0a1f51be5f756857d22955dc",
+  "native": {
+    "complete": true,
+    "historySeekChecks": 169,
+    "joinChecks": 170,
+    "masterFrames": 1380
+  },
+  "browser": {
+    "accepted": false,
+    "reason": "Connected navigation adapter fails: Cannot read properties of undefined (reading timeoutMs)"
+  },
+  "publicDeployment": false
+}

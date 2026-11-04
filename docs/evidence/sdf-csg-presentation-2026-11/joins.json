@@ -1,0 +1,1215 @@
+{
+  "passed": true,
+  "subjects": [
+    {
+      "subject": "robot",
+      "passed": true,
+      "checks": [
+        {
+          "name": "independent articulated joint audit",
+          "passed": true,
+          "checks": 66
+        }
+      ],
+      "scope": "Bounded serialized geometry contacts, access and support checks in object units; not a general collision or walkability solver.",
+      "scene": "/home/bryan/code/cubey/projects/sdf/scenes/csg-showcase-2026-11/robot.json",
+      "scene_sha256": "afa5038d5767da2ae96ba58fe35fc0430661aaa75a7100ec71d904a9e3ecfad1"
+    },
+    {
+      "subject": "canal-mill",
+      "passed": true,
+      "checks": [
+        {
+          "name": "bridge entry matches coping height",
+          "passed": true
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.34975000000000006
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.16975
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.012750000000000011
+        },
+        {
+          "name": "bridge entry matches coping height",
+          "passed": true
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.34975000000000006
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.16975
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.012750000000000025
+        },
+        {
+          "name": "bridge deck clears coping ends",
+          "passed": true,
+          "clearance": 0.012750000000000011
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.005320716362065853
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.005320716362065853
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.003823017802947376
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.003823017802947376
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0034835171018830473
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0034835171018830473
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.00500000000000005
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.00500000000000005
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0014365295231669444
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0014365295231669444
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0014365295231669305
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0014365295231669305
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.005000000000000003
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.005000000000000003
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0034835171018830335
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0034835171018830335
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0038230178029473334
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0038230178029473334
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0053207163620658604
+        },
+        {
+          "name": "bridge plank meets a stringer",
+          "passed": true,
+          "signed_gap": -0.0053207163620658604
+        },
+        {
+          "name": "sack rests in dry yard and clears bank",
+          "passed": true,
+          "signed_gap": 0.0,
+          "bank_clearance": 0.02
+        },
+        {
+          "name": "sack rests in dry yard and clears bank",
+          "passed": true,
+          "signed_gap": 0.0,
+          "bank_clearance": 0.02
+        },
+        {
+          "name": "awning post seats on coping",
+          "passed": true,
+          "surface_distance": 0.0009999999999999948
+        },
+        {
+          "name": "awning post seats on coping",
+          "passed": true,
+          "surface_distance": 0.0009999999999999948
+        },
+        {
+          "name": "wheel race water matches canal",
+          "passed": true
+        },
+        {
+          "name": "race cuts through island",
+          "passed": true
+        },
+        {
+          "name": "race cuts through yard",
+          "passed": true
+        },
+        {
+          "name": "race cuts through far-bank",
+          "passed": true
+        },
+        {
+          "name": "wheel paddles enter water without deep burial",
+          "passed": true,
+          "immersion": 0.007000000000000006
+        },
+        {
+          "name": "cart wheel rests on paving",
+          "passed": true,
+          "signed_gap": 0.0
+        },
+        {
+          "name": "cart wheel rests on paving",
+          "passed": true,
+          "signed_gap": 0.0
+        },
+        {
+          "name": "barrel clears delivery path",
+          "passed": true,
+          "clearance": 0.01075000000000001
+        },
+        {
+          "name": "barrel clears delivery path",
+          "passed": true,
+          "clearance": 0.01075000000000001
+        }
+      ],
+      "scope": "Bounded serialized geometry contacts, access and support checks in object units; not a general collision or walkability solver.",
+      "scene": "/home/bryan/code/cubey/projects/sdf/scenes/csg-showcase-2026-11/canal-mill.json",
+      "scene_sha256": "3d08768f0d4a85b4611c08b8fc691de8f205b12ed7232cc3aff2abcb3a590d31"
+    },
+    {
+      "subject": "observatory",
+      "passed": true,
+      "checks": [
+        {
+          "name": "landing is flush with balcony",
+          "passed": true,
+          "height_difference": 0.0
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.04,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.052000000000000005,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.064,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.07600000000000001,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.088,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.1,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.11200000000000002,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.124,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.136,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.148,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.16,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.17200000000000001,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.18400000000000002,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.04,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.052000000000000005,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.064,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.07600000000000001,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.088,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.1,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.11200000000000002,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.124,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.136,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.148,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.16,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.17200000000000001,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.18400000000000002,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.04,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.052000000000000005,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.064,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.07600000000000001,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.088,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.1,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.11200000000000002,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.124,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.136,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.148,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.16,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.17200000000000001,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.18400000000000002,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.02496011829807861
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.023376532091937553
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.02527085005183531
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.030076089775231966
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.03385310427241703
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.03239798013884929
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.03360460955478931
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.037242802976309164
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.04275422659736364
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.049569050873036535
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.05725728777486133
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.06553187077540526
+        },
+        {
+          "name": "landing meets last stair with a modest rise",
+          "passed": true
+        }
+      ],
+      "scope": "Bounded serialized geometry contacts, access and support checks in object units; not a general collision or walkability solver.",
+      "scene": "/home/bryan/code/cubey/projects/sdf/scenes/csg-showcase-2026-11/observatory.json",
+      "scene_sha256": "762f1f050d48cb15c6d16e3061a9e285f6985dfff55236bda7eac5a575e8fe48"
+    },
+    {
+      "subject": "courtyard",
+      "passed": true,
+      "checks": [
+        {
+          "name": "no falling water primitives",
+          "passed": true
+        },
+        {
+          "name": "bench foot seats on plaza",
+          "passed": true
+        },
+        {
+          "name": "bench foot seats on plaza",
+          "passed": true
+        },
+        {
+          "name": "plant pot seats on plaza",
+          "passed": true,
+          "signed_gap": 0.0
+        },
+        {
+          "name": "plant pot seats on plaza",
+          "passed": true,
+          "signed_gap": 0.0
+        },
+        {
+          "name": "plant pot seats on plaza",
+          "passed": true,
+          "signed_gap": 0.0
+        },
+        {
+          "name": "landing is flush with upper floor",
+          "passed": true
+        },
+        {
+          "name": "stair rises are uniform",
+          "passed": true,
+          "rise": 0.017630769230769228
+        },
+        {
+          "name": "baluster reaches handrail",
+          "passed": true
+        },
+        {
+          "name": "baluster reaches handrail",
+          "passed": true
+        },
+        {
+          "name": "baluster reaches handrail",
+          "passed": true
+        },
+        {
+          "name": "baluster reaches handrail",
+          "passed": true
+        },
+        {
+          "name": "baluster reaches handrail",
+          "passed": true
+        },
+        {
+          "name": "baluster reaches handrail",
+          "passed": true
+        },
+        {
+          "name": "tower passage is open through both walls",
+          "passed": true,
+          "point": [
+            0.224,
+            0.05,
+            -0.09
+          ]
+        },
+        {
+          "name": "tower passage is open through both walls",
+          "passed": true,
+          "point": [
+            0.224,
+            0.05,
+            -0.105
+          ]
+        },
+        {
+          "name": "tower passage is open through both walls",
+          "passed": true,
+          "point": [
+            0.224,
+            0.05,
+            -0.12
+          ]
+        },
+        {
+          "name": "tower passage is open through both walls",
+          "passed": true,
+          "point": [
+            0.224,
+            0.05,
+            -0.135
+          ]
+        },
+        {
+          "name": "tower passage is open through both walls",
+          "passed": true,
+          "point": [
+            0.224,
+            0.05,
+            -0.15
+          ]
+        },
+        {
+          "name": "finial seats on bowl",
+          "passed": true,
+          "signed_gap": -0.0010000000000000009
+        },
+        {
+          "name": "fountain base seats on plaza",
+          "passed": true
+        }
+      ],
+      "scope": "Bounded serialized geometry contacts, access and support checks in object units; not a general collision or walkability solver.",
+      "scene": "/home/bryan/code/cubey/projects/sdf/scenes/csg-showcase-2026-11/courtyard.json",
+      "scene_sha256": "8eed0257e576e019f12018580a424003efaa0a9359e60f987f74075250879ba9"
+    },
+    {
+      "subject": "observatory-section",
+      "passed": true,
+      "checks": [
+        {
+          "name": "landing is flush with balcony",
+          "passed": true,
+          "height_difference": 0.0
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.04,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.052000000000000005,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.064,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.07600000000000001,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.088,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.1,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.11200000000000002,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.124,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.136,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.148,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.16,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.17200000000000001,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.18400000000000002,
+            -0.07100000000000001,
+            0.0
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.04,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.052000000000000005,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.064,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.07600000000000001,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.088,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.1,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.11200000000000002,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.124,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.136,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.148,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.16,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.17200000000000001,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.18400000000000002,
+            -0.07100000000000001,
+            0.018
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.04,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.052000000000000005,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.064,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.07600000000000001,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.088,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.1,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.11200000000000002,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.124,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.136,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.148,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.16,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.17200000000000001,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "continuous landing-to-balcony surface",
+          "passed": true,
+          "point": [
+            0.18400000000000002,
+            -0.07100000000000001,
+            0.038
+          ]
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.02496011829807861
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.023376532091937553
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.02527085005183531
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.030076089775231966
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.03385310427241703
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.03239798013884929
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.03360460955478931
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.037242802976309164
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.04275422659736364
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.049569050873036535
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.05725728777486133
+        },
+        {
+          "name": "entry path clears balcony rail",
+          "passed": true,
+          "clearance": 0.06553187077540526
+        },
+        {
+          "name": "landing meets last stair with a modest rise",
+          "passed": true
+        }
+      ],
+      "scope": "Bounded serialized geometry contacts, access and support checks in object units; not a general collision or walkability solver.",
+      "scene": "/home/bryan/code/cubey/projects/sdf/scenes/csg-showcase-2026-11/observatory-section.json",
+      "scene_sha256": "ba6a401c89a9501ad852a985f8d5837a784d7bc3ecd81069500937dbb1133308"
+    }
+  ]
+}

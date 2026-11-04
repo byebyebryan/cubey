@@ -76,6 +76,254 @@
       }
     },
     {
+      "id": "csg-canal-mill",
+      "file": "/media/csg-canal-mill.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "2967484668b4fc49715cc98b84df2d925031e39eef9e31bf681b02b7501b09c8",
+      "bytes": 43586,
+      "caption": "Native CSG render: Canal mill.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-canal-mill.png",
+        "sourceSha256": "8e287e208a06fbd50aa8fa9f7ab7a33efd4d614e99ce04aac428de7bb91af67f",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      },
+      "thumbnail": "/media/csg-canal-mill-640.webp",
+      "thumbnailSha256": "2ae9f8a254b379992ffb10f10c259171b95bab6a6217c607682cb9e352d633df",
+      "thumbnailBytes": 12190
+    },
+    {
+      "id": "csg-canal-mill-film",
+      "file": "/media/csg-canal-mill-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "992cab6bdcb1a899efc179a10eb05b351f4f7d1067e17ac2ec4aa9ed90df79ad",
+      "bytes": 954290,
+      "caption": "Native camera arc around the canal mill.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-canal-mill-film.mp4",
+        "sourceSha256": "612187810d3129e01f5e0a6e09a82338c296684f191ec54f86d07996dbf9ea20",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      }
+    },
+    {
+      "id": "csg-courtyard",
+      "file": "/media/csg-courtyard.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "e5f5a385f875eff4c2db6829ae56c56ec98a527e67ba128dfbd24af9bdb45ca4",
+      "bytes": 45316,
+      "caption": "Native CSG render: Terraced courtyard.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-courtyard.png",
+        "sourceSha256": "36c37624e21cbffec8e6aebded6eac1483d29b03c781c9a9a7729cba38a86481",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      },
+      "thumbnail": "/media/csg-courtyard-640.webp",
+      "thumbnailSha256": "687948d78baeb1c310d6cbcdcbed33255e60ffd233934ed59ef608599edc3b06",
+      "thumbnailBytes": 12556
+    },
+    {
+      "id": "csg-courtyard-film",
+      "file": "/media/csg-courtyard-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "d61222bbbe938a97e39a15eeb41fb225056cb2345ca9202130b2147375367eab",
+      "bytes": 951425,
+      "caption": "Native camera arc around the terraced courtyard.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-courtyard-film.mp4",
+        "sourceSha256": "a08c99f5d01ca0782f5972e2e8b2e0f64a426fa105f9c92417968b54f0cf82ac",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      }
+    },
+    {
+      "id": "csg-observatory",
+      "file": "/media/csg-observatory.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "559812b29bad917acf077708a042d98995a9e6d51ff514a3dda2dbd593f238d9",
+      "bytes": 45130,
+      "caption": "Native CSG render: Hill observatory.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-observatory.png",
+        "sourceSha256": "1c072415dbcea306b4e7d2bfd49e06b1c00cbe2d97aa8e735aa504cc6b0013db",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      },
+      "thumbnail": "/media/csg-observatory-640.webp",
+      "thumbnailSha256": "4d33794b0047ea8cae78ff366bc449fdf0298ae42789263a0b117fa76312b297",
+      "thumbnailBytes": 12320
+    },
+    {
+      "id": "csg-observatory-film",
+      "file": "/media/csg-observatory-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "ed53d8f8fb2da8e1c5082162fe6ebc3fd7d441ed61385afb5f94984f8de27132",
+      "bytes": 955188,
+      "caption": "Native camera arc around the hill observatory.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-observatory-film.mp4",
+        "sourceSha256": "dd416a32d4cac99158eace9046c37b7686dc1053b0dc88c515454c32936a1747",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      }
+    },
+    {
+      "id": "csg-observatory-intact",
+      "file": "/media/csg-observatory-intact.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "cd9b3cdecf2390d126a0381c420ccb87c814257d86a887ab1b584571076d5376",
+      "bytes": 45554,
+      "caption": "The intact observatory, captured with the same camera and light as its architectural section.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-observatory-intact.png",
+        "sourceSha256": "fead74977903ae9f42fad478a31e5413fe7c1fdf38aea497b895eb86a9192342",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      },
+      "thumbnail": "/media/csg-observatory-intact-640.webp",
+      "thumbnailSha256": "27a347766580ba2e2e2a6f5313987dc52fc17e72c17508c3b5dfcbb4e2314bac",
+      "thumbnailBytes": 12696
+    },
+    {
+      "id": "csg-observatory-section",
+      "file": "/media/csg-observatory-section.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "f670748fbeed70ed458a191dd4d38a5c35dc190d4869d2f2eeed1541b66eb45d",
+      "bytes": 41908,
+      "caption": "A saved architectural cut reveals the observatory telescope, mount and keeper room; camera and light match the intact view.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-observatory-section.png",
+        "sourceSha256": "cff7551501f7966c458e2196866809cbbb9d2f149f6daac4cc6ebc52b62a0dd4",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      },
+      "thumbnail": "/media/csg-observatory-section-640.webp",
+      "thumbnailSha256": "64d1082829f9f30ae10d22070a58494475c9f71d58ad784f56a619c0b85b824e",
+      "thumbnailBytes": 11844
+    },
+    {
+      "id": "csg-robot",
+      "file": "/media/csg-robot.webp",
+      "kind": "image",
+      "width": 1600,
+      "height": 900,
+      "sha256": "4ad8f6332ee2bb7e3b713fcd1d601e13343183cd081081498c65ff1329b8719e",
+      "bytes": 30960,
+      "caption": "Native CSG render: Field-kit robot.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-robot.png",
+        "sourceSha256": "83356c049057cf3c0d4448016971865eb053548929d95c75a3833610e43ba061",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      },
+      "thumbnail": "/media/csg-robot-640.webp",
+      "thumbnailSha256": "2dd3a0dc5ef65d6cc82f83421298c255f019aa3f70ad1615fe0e6f96303d669b",
+      "thumbnailBytes": 9032
+    },
+    {
+      "id": "csg-robot-film",
+      "file": "/media/csg-robot-film.mp4",
+      "kind": "video",
+      "width": 1280,
+      "height": 720,
+      "sha256": "fd4b8af43686aa4fd5ce3ddc84ee52632c62d1eb9598ba554ec54a3a83caadeb",
+      "bytes": 503074,
+      "caption": "Saved native construction replay of the approved field-kit robot.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "outputs/sdf/csg-presentation-closeout-20261104/native/captures/csg-robot-film.mp4",
+        "sourceSha256": "b0fb4fa6d393b7adbc4bd0826e232d3041f7cde3b34c13146207cf24e610458e",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "recipe": "site/media/receipts/csg-showcase.json",
+        "webDeliveryReceipt": "site/media/receipts/csg-showcase.json",
+        "note": "Current approved CSG source. Native artifact identity and scene/preset hashes are recorded separately."
+      }
+    },
+    {
       "id": "cut-roster-cut",
       "file": "/media/cut-roster-cut.webp",
       "kind": "image",
@@ -1375,6 +1623,98 @@
       }
     },
     {
+      "id": "preview-csg-canal-mill",
+      "file": "/media/preview-csg-canal-mill.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "65de31302ba25cb030f06daaf934a87141f8a67aedfd89053ff7a30c6a348945",
+      "bytes": 60087,
+      "caption": "Short silent preview. Native camera arc around the canal mill.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/csg-canal-mill-film.mp4",
+        "sourceSha256": "992cab6bdcb1a899efc179a10eb05b351f4f7d1067e17ac2ec4aa9ed90df79ad",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "parentAsset": "csg-canal-mill-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-csg-courtyard",
+      "file": "/media/preview-csg-courtyard.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "7de0c4917031027f26d340896ea0e9bcb3dd9117b8492c74671430cc0a6978dd",
+      "bytes": 58111,
+      "caption": "Short silent preview. Native camera arc around the terraced courtyard.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/csg-courtyard-film.mp4",
+        "sourceSha256": "d61222bbbe938a97e39a15eeb41fb225056cb2345ca9202130b2147375367eab",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "parentAsset": "csg-courtyard-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-csg-observatory",
+      "file": "/media/preview-csg-observatory.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "f33ce7c245b3166edd3ac8adeedb1a3dd403a45ec1253603c59f0416ef5a4d7c",
+      "bytes": 62581,
+      "caption": "Short silent preview. Native camera arc around the hill observatory.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/csg-observatory-film.mp4",
+        "sourceSha256": "ed53d8f8fb2da8e1c5082162fe6ebc3fd7d441ed61385afb5f94984f8de27132",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "parentAsset": "csg-observatory-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
+      "id": "preview-csg-robot",
+      "file": "/media/preview-csg-robot.mp4",
+      "kind": "video",
+      "width": 640,
+      "height": 360,
+      "sha256": "ea378ce9d8ee1db212d957be2d211130c50123d08cfc42cadef5203b2608cc08",
+      "bytes": 42964,
+      "caption": "Short silent preview. Saved native construction replay of the approved field-kit robot.",
+      "credit": {
+        "label": "Cubey original media \u00b7 MIT",
+        "url": "https://github.com/byebyebryan/cubey/blob/main/LICENSE",
+        "author": "Bryan"
+      },
+      "provenance": {
+        "source": "site/public/media/csg-robot-film.mp4",
+        "sourceSha256": "fd4b8af43686aa4fd5ce3ddc84ee52632c62d1eb9598ba554ec54a3a83caadeb",
+        "sourceRevision": "63edb712314c88cb0a1f51be5f756857d22955dc",
+        "parentAsset": "csg-robot-film",
+        "recipe": "site/media/receipts/hover-previews.json",
+        "note": "Silent video derivative of the selected web film; no native capture or render was made."
+      }
+    },
+    {
       "id": "preview-day-night",
       "file": "/media/preview-day-night.mp4",
       "kind": "video",
@@ -2150,9 +2490,9 @@
       "poster": "guardian"
     },
     "robot": {
-      "poster": "robot",
-      "film": "robot-film",
-      "preview": "preview-robot"
+      "poster": "csg-robot",
+      "film": "csg-robot-film",
+      "preview": "preview-csg-robot"
     },
     "explosion-3d": {
       "poster": "explosion-3d",
@@ -2218,6 +2558,25 @@
     },
     "sdf-prototype-history": {
       "poster": "history-sdf-carved-sphere"
+    },
+    "observatory": {
+      "poster": "csg-observatory",
+      "film": "csg-observatory-film",
+      "preview": "preview-csg-observatory",
+      "gallery": [
+        "csg-observatory-intact",
+        "csg-observatory-section"
+      ]
+    },
+    "canal-mill": {
+      "poster": "csg-canal-mill",
+      "film": "csg-canal-mill-film",
+      "preview": "preview-csg-canal-mill"
+    },
+    "courtyard": {
+      "poster": "csg-courtyard",
+      "film": "csg-courtyard-film",
+      "preview": "preview-csg-courtyard"
     }
   }
 }

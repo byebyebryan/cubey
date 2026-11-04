@@ -3,12 +3,21 @@ import Layout from '../../../layouts/Layout.astro';
 import PageTitle from '../../../components/PageTitle.astro';
 import Card from '../../../components/Card.astro';
 import SdfStoryLink from '../../../components/SdfStoryLink.astro';
+import Preview from '../../../components/Preview.astro';
+import ObservatoryCutaway from '../../../components/ObservatoryCutaway.astro';
 import {familyEntries} from '../../../data/catalog';
 import {url} from '../../../lib/urls';
 const path='/demos/sdf/';
 ---
-<Layout title="SDF forms" description="A robot assembled through additive and subtractive CSG operations, then rendered from signed-distance fields." path={path}><PageTitle subject="SDF forms" title="Build a robot." intro="Follow a robot from its first simple solids to the finished assembly. Additions and cuts form a surface rendered directly from a signed-distance field." path={path}/><section class="section"><div class="sdf-feature">{familyEntries('sdf').map(e=><Card entry={e} path={path}/>)}</div><p class="note">See what happens inside these solids in the <a href={url('/demos/materials/#sdf-materials',path)}>material cut study ↗</a>.</p></section><SdfStoryLink path={path}/></Layout>
+<Layout title="SDF forms" description="Four small scenes built from simple solids and cuts, rendered directly from signed-distance fields." path={path}>
+  <PageTitle subject="SDF forms" title="Build from solids." intro="Four small scenes, built from simple shapes and cuts. Open an observatory, follow a robot’s construction, or explore a mill and courtyard." path={path}/>
+  <section class="section feature-grid"><div class="feature-copy"><p class="eyebrow">Hill observatory</p><h2>A dome, a slit,<br/>a telescope inside.</h2><p>The curved shell is only part of the building. A cut opens the architecture and reveals the instrument and keeper room within.</p><a class="text-link" href={url('/demos/sdf/observatory/',path)}>Explore the observatory ↗</a></div><div class="feature-panel"><Preview entry="observatory" path={path} title="Hill observatory" eager/></div></section>
+  <section class="section"><div class="section-head"><h2>Parts become places.</h2><p>Joints and mechanisms, open arches and a route up a stair. Each scene gives the solids something to do.</p></div><div class="grid cards">{familyEntries('sdf').filter(e=>e.id!=='observatory').map(e=><Card entry={e} path={path}/>)}</div></section>
+  <section class="section"><ObservatoryCutaway path={path}/></section>
+  <SdfStoryLink path={path}/>
+  <p class="note">Explore what happens inside a material in the <a href={url('/demos/materials/#sdf-materials',path)}>shared material workshop ↗</a>.</p>
+</Layout>
 
 <style>
-  .sdf-feature { max-width: 56rem; }
+  .feature-copy p { max-width:48ch; }
 </style>
