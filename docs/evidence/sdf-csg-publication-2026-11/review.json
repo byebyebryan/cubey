@@ -1,0 +1,78 @@
+{
+  "sourceHead": "16f155c0db28ca51b85c0bfdce2bef0ac65509f7",
+  "commits": 105,
+  "nativeChecksPassed": 16,
+  "reviewScope": [
+    "Public named render-mode resolution and Cached default",
+    "Source shader selection and private experiment admission guards",
+    "Resource preparation, activation and retirement on mode/scene changes",
+    "Current scene/media identities, attribution, quartet routes and cutaway controls",
+    "Preservation of Guardian studies, historical evidence, other native owners and dirty horse files"
+  ],
+  "secretPatternHits": [],
+  "largestNewBlobs": [
+    {
+      "bytes": 8505661,
+      "path": "docs/evidence/sdf-local-edit-2026-10/calibration.json"
+    },
+    {
+      "bytes": 3200358,
+      "path": "docs/evidence/sdf-local-edit-2026-10/render.json"
+    },
+    {
+      "bytes": 2564979,
+      "path": "docs/evidence/sdf-quality-speed-loop-2026-10/timing-core.json"
+    },
+    {
+      "bytes": 2324841,
+      "path": "docs/evidence/sdf-live-edit-2026-10/timing.json"
+    },
+    {
+      "bytes": 2197850,
+      "path": "docs/evidence/sdf-render-mode-promotion-2026-10/timing.json"
+    }
+  ],
+  "browser": {
+    "accepted": false,
+    "error": "Cannot read properties of undefined (reading timeoutMs)"
+  },
+  "limitations": [
+    "Publication review focuses on public integration and retained qualification boundaries; this is not a new performance study or complete requalification of every historical private experiment.",
+    "No fresh native C++ rebuild. Native checks use the retained qualified executable and compiled shaders."
+  ],
+  "reviewedUtc": "2026-11-04T21:23:16.779222+00:00",
+  "decision": "No blocking issue found within the reviewed scope; proceed with fast-forward source publication and Pages delivery verification.",
+  "authority": "User: okay, let's review + publish",
+  "baseMain": "d0ae6a74b96a4c0e02a1d9dc0600de0b6f7b278a",
+  "reviewedCommits": 105,
+  "site": {
+    "sourceHead": "16f155c0db28ca51b85c0bfdce2bef0ac65509f7",
+    "passed": true,
+    "steps": [
+      {
+        "name": "install",
+        "command": [
+          "npm",
+          "ci",
+          "--no-audit",
+          "--no-fund"
+        ],
+        "exitCode": 0,
+        "seconds": 1.478
+      },
+      {
+        "name": "verify",
+        "command": [
+          "npm",
+          "run",
+          "verify"
+        ],
+        "exitCode": 0,
+        "seconds": 3.231
+      }
+    ]
+  },
+  "historicalNativeEvidence": "docs/evidence/sdf-csg-presentation-2026-11/verification.json",
+  "followingChanges": "Publication status wording, this review receipt and its documentation links only.",
+  "deliveryReceipt": "Post-publication HTTP/CI results are retained separately under outputs/sdf/csg-publication-20261104; this is the pre-publication source review."
+}

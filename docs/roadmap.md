@@ -43,11 +43,12 @@ validation entry points are in [getting started](getting-started.md#configure-bu
 
 The current [authored CSG closeout](notes/sdf-csg-closeout.md) selects the hill
 observatory, field-kit robot, canal mill and terraced courtyard. Their models
-are approved; native posters, films and a matched observatory section are
-prepared locally for the site. Guardian is a [retired study](../studies/sdf/guardian/README.md);
+are approved; the site presents native posters, films and a matched observatory
+section. Guardian is a [retired study](../studies/sdf/guardian/README.md);
 its earlier checkpoint and stress measurements remain historical evidence.
 These native receipts do not extend the repository-wide runtime qualification
-above. Public deployment of the refreshed collection remains a separate action.
+above. The [deployment metadata](https://dev.byebyebryan.com/cubey/metadata/deployment.json)
+identifies the public site's served source revision.
 
 The bounded SDF
 [tracing/cache/history comparison](notes/sdf-tracing-comparison-plan.md), following
@@ -103,7 +104,7 @@ The SDF web chapter, [Building and cutting a solid](https://dev.byebyebryan.com/
 was published on 2026-10-25. It connects existing native construction and
 material-cut captures with interactive 2D explanations and a short history; it
 does not claim live sculpting or new native runtime capabilities. This initial
-web chapter is published. The current local presentation expands it with the
+web chapter is published. The current presentation expands it with the
 approved quartet, robot construction and a matched observatory cutaway.
 Continuous brush editing, sustained complex-scene local updates, GI and deeper
 material realism remain deferred choices. Finite private local-update research

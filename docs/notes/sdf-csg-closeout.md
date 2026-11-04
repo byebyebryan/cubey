@@ -1,6 +1,13 @@
 # Authored CSG milestone closeout
 
-Date: 2026-11-04. Status: complete locally; public deployment unchanged.
+Date: 2026-11-04. Status: authored CSG milestone complete.
+
+The public presentation is at [SDF forms](https://dev.byebyebryan.com/cubey/demos/sdf/).
+Its [deployment metadata](https://dev.byebyebryan.com/cubey/metadata/deployment.json)
+identifies the served source revision. The
+[publication review](../evidence/sdf-csg-publication-2026-11/review.json) records
+the reviewed scope and acceptance limits; the dated local evidence below
+retains its original pre-publication status.
 
 The [visual report and built-site preview](http://starship:8787/reports/2fd9b74b92cbfad1d84cebc9f4ed91acca33c0473025d9ed715285af38af66f6/)
 present the collection, reproduction commands and acceptance boundaries.
@@ -30,8 +37,8 @@ Balanced and SS2; the application default remains Cached. Recorded 30 FPS is
 an encoding choice, not an interactive frame-time or editing-latency result.
 
 The site build selects the quartet and retains historical media. Guardian's old
-route resolves to its retirement notice. This is a local publication candidate;
-the public site has not been redeployed.
+route resolves to its retirement notice. Publication is checked against the
+served revision and asset identities, separately from native qualification.
 
 ## Supported native surface
 
@@ -78,8 +85,8 @@ Native posters, decoded film frames and the README collage were inspected.
 The connected browser navigation adapter fails before navigation, so browser
 layout, responsive interaction and physical playback remain unverified. Site
 policy/model tests, built HTML/resource checks and HTTP delivery are separate
-evidence; they do not replace browser acceptance. Push, merge and public-site
-deployment have not been performed.
+evidence; they do not replace browser acceptance. Source publication and public
+delivery have separate receipts from these dated local checks.
 
 ## Research boundaries
 
