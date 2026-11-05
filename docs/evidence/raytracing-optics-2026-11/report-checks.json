@@ -1,0 +1,11 @@
+{
+  "local_references_checked": 39,
+  "external_references_not_in_local_check": 2,
+  "unique_ids": 18,
+  "javascript_syntax": "passed",
+  "interaction_state_checks": 54,
+  "interaction_scope": "DOM contract and asset resolution; no browser layout/render acceptance",
+  "browser_acceptance": "open: configured browser runtime failed before navigation in this session",
+  "javascript_sha256": "94f1b3d579079a6e5d4fdddb15cc9b37e5e4e846d9623c655b4bae1ec660fba0",
+  "native_visual_inspection": "three frozen scene PNGs, orbit endpoints, low-sun and sunset stills inspected"
+}

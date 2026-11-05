@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/reference/build/app/bin/Release/x86_64/vulkan_samples",
+    "sample",
+    "ray_tracing_reflection",
+    "--data-path",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/reference/source/",
+    "--width",
+    "640",
+    "--height",
+    "480",
+    "--hideui",
+    "--vsync",
+    "ON",
+    "--force-close"
+  ],
+  "exit": 0,
+  "validation_clean": true,
+  "source": "56a72bd1c43268781a75d73a520e4458b6cac766",
+  "method": "unmodified donor, external owned X11 capture"
+}

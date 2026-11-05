@@ -1,0 +1,53 @@
+{
+  "format": "cubey.raytracing.geometry-qualification",
+  "depth_tolerance": 2e-05,
+  "barycentric_tolerance": 2e-05,
+  "normal_tolerance_degrees": 0.1,
+  "cameras": [
+    {
+      "rays": 12288,
+      "hits": 6483,
+      "regular_hits": 6481,
+      "depth_error_max": 1.907573921933192e-06,
+      "barycentric_error_max": 8.627150522994009e-07,
+      "geometric_normal_error_max_degrees": 3.1945284701301985e-06,
+      "shading_normal_error_max_degrees": 1.2074182697257333e-06,
+      "shadow_rays_scored": 6483,
+      "shadow_errors": 0
+    },
+    {
+      "rays": 12288,
+      "hits": 7342,
+      "regular_hits": 7337,
+      "depth_error_max": 1.3379334768970352e-06,
+      "barycentric_error_max": 3.1032656250262747e-07,
+      "geometric_normal_error_max_degrees": 0.0,
+      "shading_normal_error_max_degrees": 0.0,
+      "shadow_rays_scored": 7342,
+      "shadow_errors": 0
+    },
+    {
+      "rays": 12288,
+      "hits": 5891,
+      "regular_hits": 5884,
+      "depth_error_max": 2.0582921731460146e-06,
+      "barycentric_error_max": 2.6082828092355292e-06,
+      "geometric_normal_error_max_degrees": 3.1945284701301985e-06,
+      "shading_normal_error_max_degrees": 3.1945284701301985e-06,
+      "shadow_rays_scored": 3440,
+      "shadow_errors": 0
+    },
+    {
+      "rays": 12288,
+      "hits": 4368,
+      "regular_hits": 4366,
+      "depth_error_max": 1.4081911388075241e-06,
+      "barycentric_error_max": 5.469017102521789e-07,
+      "geometric_normal_error_max_degrees": 3.1945284701301985e-06,
+      "shading_normal_error_max_degrees": 3.1945284701301985e-06,
+      "shadow_rays_scored": 4368,
+      "shadow_errors": 0
+    }
+  ],
+  "passed": true
+}

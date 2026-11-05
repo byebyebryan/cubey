@@ -1,0 +1,298 @@
+{
+  "binary_sha256": "febd9a70b936700debdc1172d3da60d5bbef146e9b928a7e7f169174ca5ec959",
+  "residuals": [
+    {
+      "view": "reflection",
+      "width": 480,
+      "height": 270,
+      "scope": "separate bounded diagnostic at lower resolution; throughput is not radiance",
+      "status_counts": {
+        "0": 129531,
+        "2": 69
+      },
+      "discarded_throughput_mean_rgb": [
+        0.00024735621004192917,
+        0.00028265829853437564,
+        0.0003507118906687807
+      ],
+      "discarded_throughput_max_rgb": [
+        0.46459949016571045,
+        0.5309060215950012,
+        0.6587284207344055
+      ],
+      "discarded_pixels": 69,
+      "max_total_calls": 10,
+      "max_stack": 1,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "480",
+        "--height",
+        "270",
+        "--require-validation",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/reflection/rays.bin",
+        "--scene-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/reflection/scene.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/reflection/frame.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/reflection/metrics.json",
+        "--config",
+        "projects/raytracing/presets/optics/reflection.json",
+        "--width",
+        "480",
+        "--height",
+        "270"
+      ]
+    },
+    {
+      "view": "curved-mirror",
+      "width": 480,
+      "height": 270,
+      "scope": "separate bounded diagnostic at lower resolution; throughput is not radiance",
+      "status_counts": {
+        "0": 129328,
+        "2": 272
+      },
+      "discarded_throughput_mean_rgb": [
+        0.0009750853497305034,
+        0.0011142472058166693,
+        0.001382516438578382
+      ],
+      "discarded_throughput_max_rgb": [
+        0.46459949016571045,
+        0.5309060215950012,
+        0.6587284207344055
+      ],
+      "discarded_pixels": 272,
+      "max_total_calls": 10,
+      "max_stack": 1,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "480",
+        "--height",
+        "270",
+        "--require-validation",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/curved-mirror/rays.bin",
+        "--scene-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/curved-mirror/scene.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/curved-mirror/frame.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/curved-mirror/metrics.json",
+        "--config",
+        "projects/raytracing/presets/optics/curved-mirror.json",
+        "--width",
+        "480",
+        "--height",
+        "270"
+      ]
+    },
+    {
+      "view": "refraction",
+      "width": 480,
+      "height": 270,
+      "scope": "separate bounded diagnostic at lower resolution; throughput is not radiance",
+      "status_counts": {
+        "0": 113213,
+        "8": 16386,
+        "16": 1
+      },
+      "discarded_throughput_mean_rgb": [
+        9.125397881455032e-06,
+        9.413858833444645e-06,
+        9.486365863992494e-06
+      ],
+      "discarded_throughput_max_rgb": [
+        0.4211043417453766,
+        0.4211043417453766,
+        0.4211043417453766
+      ],
+      "discarded_pixels": 16387,
+      "max_total_calls": 21,
+      "max_stack": 3,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "480",
+        "--height",
+        "270",
+        "--require-validation",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/refraction/rays.bin",
+        "--scene-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/refraction/scene.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/refraction/frame.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/refraction/metrics.json",
+        "--config",
+        "projects/raytracing/presets/optics/refraction.json",
+        "--width",
+        "480",
+        "--height",
+        "270"
+      ]
+    }
+  ],
+  "budgets": [
+    {
+      "name": "total",
+      "passed": true,
+      "terminated_mirror_pixels": 7621,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "128",
+        "--height",
+        "96",
+        "--require-validation",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-total/rays.bin",
+        "--scene-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-total/scene.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-total/frame.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-total/metrics.json",
+        "--scene",
+        "reflection-fixture",
+        "--target-y",
+        ".55",
+        "--distance",
+        "3",
+        "--max-total-rays",
+        "1"
+      ]
+    },
+    {
+      "name": "events",
+      "passed": true,
+      "terminated_mirror_pixels": 971,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "128",
+        "--height",
+        "96",
+        "--require-validation",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-events/rays.bin",
+        "--scene-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-events/scene.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-events/frame.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-events/metrics.json",
+        "--scene",
+        "reflection-fixture",
+        "--target-y",
+        ".55",
+        "--distance",
+        "3",
+        "--max-events",
+        "1"
+      ]
+    },
+    {
+      "name": "radiance",
+      "passed": true,
+      "terminated_mirror_pixels": 7621,
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--headless",
+        "--frames",
+        "1",
+        "--width",
+        "128",
+        "--height",
+        "96",
+        "--require-validation",
+        "--optics-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-radiance/rays.bin",
+        "--scene-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-radiance/scene.json",
+        "--output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-radiance/frame.png",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/residuals/budget-radiance/metrics.json",
+        "--scene",
+        "reflection-fixture",
+        "--target-y",
+        ".55",
+        "--distance",
+        "3",
+        "--max-path-rays",
+        "1"
+      ]
+    }
+  ],
+  "full_resolution_flags": [
+    {
+      "view": "reflection",
+      "medium_state_rejection_pixels_yx": [],
+      "scope": "observed status locations; cause of individual rejected paths is unclassified",
+      "max_absolute_rgb_error_at_rejections": 0
+    },
+    {
+      "view": "curved-mirror",
+      "medium_state_rejection_pixels_yx": [],
+      "scope": "observed status locations; cause of individual rejected paths is unclassified",
+      "max_absolute_rgb_error_at_rejections": 0
+    },
+    {
+      "view": "refraction",
+      "medium_state_rejection_pixels_yx": [
+        [
+          366,
+          796
+        ],
+        [
+          416,
+          821
+        ],
+        [
+          571,
+          926
+        ],
+        [
+          753,
+          1017
+        ],
+        [
+          793,
+          755
+        ],
+        [
+          892,
+          939
+        ],
+        [
+          893,
+          927
+        ]
+      ],
+      "scope": "observed status locations; cause of individual rejected paths is unclassified",
+      "max_absolute_rgb_error_at_rejections": 3.836303949356079e-05
+    }
+  ],
+  "passed": true
+}

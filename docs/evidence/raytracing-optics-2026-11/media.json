@@ -1,0 +1,82 @@
+[
+  {
+    "path": "outputs/raytracing/optics/low-sun.png",
+    "bytes": 790073,
+    "sha256": "148c711a37db90cd40eab5894fe21bff3c5221078246e7636faa63e0af7991b7"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/curved-mirror-environment.png",
+    "bytes": 858137,
+    "sha256": "e2ac675a8b570b2b1ca3a383a64f966e8d27657112b9fca711814be9d0ff80f2"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/curved-mirror-scene.png",
+    "bytes": 1268233,
+    "sha256": "78c50046537d6b8a98eac301d74011cc24c3d499e897522e61324b1bef26d6d6"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/curved-mirror-secondary-id.png",
+    "bytes": 89036,
+    "sha256": "f58ceb6a6f7825cbfe8a57cc42f765b8566e46b3b032b637043628894ea9a232"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/curved-mirror-transport-limit.png",
+    "bytes": 82612,
+    "sha256": "156b3f644634ad26bdf0caaa104f33aae05e87dd092ea84752eea9bf699f336d"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/reflection-environment.png",
+    "bytes": 488571,
+    "sha256": "efa96ca9cf1a2159a9f716b260dad2b964105702db942db691490e9d6d21975a"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/reflection-scene.png",
+    "bytes": 779221,
+    "sha256": "9ecd72f4bb165db2b084b3d69a673a9ef20d793229b99115e52dd04ce73ae7b3"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/reflection-secondary-id.png",
+    "bytes": 88417,
+    "sha256": "c809cbf67913fcaf0539af304f6ff20be120c160426bbdc34a91462a0e1082d1"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/reflection-transport-limit.png",
+    "bytes": 82532,
+    "sha256": "9242d8d8abce326f74d271bba81836cfdf0a938e49e3ea6e56908be51f6f9199"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/refraction-environment.png",
+    "bytes": 413346,
+    "sha256": "72bdf2d7263979c458b3d471a9e8c98192c17d78929c859ab8bcff0c1d9052c8"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/refraction-scene.png",
+    "bytes": 629171,
+    "sha256": "40814df45400e74c69db1fd6e2fbb42631749bab6ec7f8ddcee21208be2f5b6a"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/refraction-secondary-id.png",
+    "bytes": 84423,
+    "sha256": "f34c85bb0d5de676237f6510402f719e81a7d2c443c45f37f6b5ffb144ddf0a7"
+  },
+  {
+    "path": "outputs/raytracing/optics/quality-final/refraction-transport-limit.png",
+    "bytes": 83462,
+    "sha256": "9ae6e3e5d8a2b1311947b8b354b3c21d5556807b50ac8f359063d275829a5ba2"
+  },
+  {
+    "path": "outputs/raytracing/optics/reference/reflection.png",
+    "bytes": 18697,
+    "sha256": "0801d99d92a3442b3aeaf20226468e5fb252421b31d3c13bb9615bdab449aafa"
+  },
+  {
+    "path": "outputs/raytracing/optics/reflection-orbit.mp4",
+    "bytes": 1117550,
+    "sha256": "6519bcc01f9c9a362c5c18195be3dfc0ef600be1fce3bc6c86ad13a97fd782a3"
+  },
+  {
+    "path": "outputs/raytracing/optics/sunset.png",
+    "bytes": 535030,
+    "sha256": "89d1c425f4493e321cef870d54e4bc740186f3a80966088bc419a62d23cdbd4c"
+  }
+]

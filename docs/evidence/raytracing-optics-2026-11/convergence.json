@@ -1,0 +1,267 @@
+[
+  {
+    "view": "reflection",
+    "pixels": 2073600,
+    "edge_exclusions": 0,
+    "normalized_mean_absolute_error": 0.00011287069527688688,
+    "normalized_pixel_error_p99": 0.0,
+    "maximum_normalized_error": 0.6871682405471802,
+    "default_status_counts": {
+      "0": 2072496,
+      "2": 1104
+    },
+    "control_status_counts": {
+      "0": 2073408,
+      "2": 192
+    },
+    "commands": {
+      "default": {
+        "name": "reflection-default",
+        "view": "reflection",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/reflection.json",
+          "--headless",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/reflection-default.json",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/reflection-default.bin",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/reflection-default.png"
+        ],
+        "wall_seconds": 0.9642950859852135,
+        "before": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 872, 34",
+          "error": ""
+        },
+        "after": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 870, 35",
+          "error": ""
+        }
+      },
+      "control": {
+        "name": "reflection-control",
+        "view": "reflection",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/reflection.json",
+          "--headless",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/reflection-control.json",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/reflection-control.bin",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/reflection-control.png",
+          "--max-events",
+          "12",
+          "--max-path-rays",
+          "64",
+          "--max-total-rays",
+          "256",
+          "--throughput-cutoff",
+          "0"
+        ],
+        "wall_seconds": 0.9259134900057688,
+        "before": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 870, 35",
+          "error": ""
+        },
+        "after": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 870, 35",
+          "error": ""
+        }
+      }
+    },
+    "passed": true
+  },
+  {
+    "view": "curved-mirror",
+    "pixels": 2073600,
+    "edge_exclusions": 0,
+    "normalized_mean_absolute_error": 0.0003856088060128519,
+    "normalized_pixel_error_p99": 0.0,
+    "maximum_normalized_error": 0.6562260389328003,
+    "default_status_counts": {
+      "0": 2069192,
+      "2": 4408
+    },
+    "control_status_counts": {
+      "0": 2072443,
+      "2": 1157
+    },
+    "commands": {
+      "default": {
+        "name": "curved-mirror-default",
+        "view": "curved-mirror",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/curved-mirror.json",
+          "--headless",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/curved-mirror-default.json",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/curved-mirror-default.bin",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/curved-mirror-default.png"
+        ],
+        "wall_seconds": 0.9384538390440866,
+        "before": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 2, 0, 888, 36",
+          "error": ""
+        },
+        "after": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 888, 36",
+          "error": ""
+        }
+      },
+      "control": {
+        "name": "curved-mirror-control",
+        "view": "curved-mirror",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/curved-mirror.json",
+          "--headless",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/curved-mirror-control.json",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/curved-mirror-control.bin",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/curved-mirror-control.png",
+          "--max-events",
+          "12",
+          "--max-path-rays",
+          "64",
+          "--max-total-rays",
+          "256",
+          "--throughput-cutoff",
+          "0"
+        ],
+        "wall_seconds": 0.9439459429122508,
+        "before": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 888, 36",
+          "error": ""
+        },
+        "after": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 855, 36",
+          "error": ""
+        }
+      }
+    },
+    "passed": true
+  },
+  {
+    "view": "refraction",
+    "pixels": 2073600,
+    "edge_exclusions": 0,
+    "normalized_mean_absolute_error": 4.465460984842131e-06,
+    "normalized_pixel_error_p99": 0.00014221668243408203,
+    "maximum_normalized_error": 0.00021135807037353516,
+    "default_status_counts": {
+      "0": 1811422,
+      "8": 262171,
+      "16": 6,
+      "24": 1
+    },
+    "control_status_counts": {
+      "0": 1811436,
+      "2": 262145,
+      "16": 16,
+      "18": 3
+    },
+    "commands": {
+      "default": {
+        "name": "refraction-default",
+        "view": "refraction",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/refraction.json",
+          "--headless",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/refraction-default.json",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/refraction-default.bin",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/refraction-default.png"
+        ],
+        "wall_seconds": 0.910691850935109,
+        "before": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 8, 0, 855, 36",
+          "error": ""
+        },
+        "after": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 4, 0, 855, 36",
+          "error": ""
+        }
+      },
+      "control": {
+        "name": "refraction-control",
+        "view": "refraction",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--config",
+          "projects/raytracing/presets/optics/refraction.json",
+          "--headless",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/refraction-control.json",
+          "--require-validation",
+          "--frames",
+          "1",
+          "--hdr-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/refraction-control.bin",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/quality-final/refraction-control.png",
+          "--max-events",
+          "12",
+          "--max-path-rays",
+          "64",
+          "--max-total-rays",
+          "256",
+          "--throughput-cutoff",
+          "0"
+        ],
+        "wall_seconds": 0.9080036599189043,
+        "before": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 4, 0, 855, 36",
+          "error": ""
+        },
+        "after": {
+          "exit": 0,
+          "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 4, 0, 855, 36",
+          "error": ""
+        }
+      }
+    },
+    "passed": true
+  }
+]

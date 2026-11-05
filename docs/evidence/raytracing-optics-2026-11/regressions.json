@@ -1,0 +1,90 @@
+[
+  {
+    "name": "legacy-fixture",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/baseline/fixture.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/fixture.png",
+    "crop_left_pixels": 0,
+    "max_rgb8_difference": 0,
+    "mean_rgb8_difference": 0.0,
+    "passed": true,
+    "before_sha256": "eb0ba204105d76a14730d70d0d5be9857091247b8630108f860cf729e3e1f5c0",
+    "after_sha256": "eb0ba204105d76a14730d70d0d5be9857091247b8630108f860cf729e3e1f5c0"
+  },
+  {
+    "name": "legacy-triangle",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/baseline/triangle.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/triangle.png",
+    "crop_left_pixels": 0,
+    "max_rgb8_difference": 0,
+    "mean_rgb8_difference": 0.0,
+    "passed": true,
+    "before_sha256": "1d2e0c6dfd74348bbb37a01d615657801e809a16de54bcdde3de715cbf50c043",
+    "after_sha256": "1d2e0c6dfd74348bbb37a01d615657801e809a16de54bcdde3de715cbf50c043"
+  },
+  {
+    "name": "legacy-dragon",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/baseline/dragon.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/dragon.png",
+    "crop_left_pixels": 0,
+    "max_rgb8_difference": 0,
+    "mean_rgb8_difference": 0.0,
+    "passed": true,
+    "before_sha256": "8f434dfd3e4ad216459e9b902768e97e02ef53ad4dc5ae75c895b232e1cb2ca4",
+    "after_sha256": "8f434dfd3e4ad216459e9b902768e97e02ef53ad4dc5ae75c895b232e1cb2ca4"
+  },
+  {
+    "name": "sdf",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/sdf-before.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/sdf-after.png",
+    "crop_left_pixels": 0,
+    "max_rgb8_difference": 0,
+    "mean_rgb8_difference": 0.0,
+    "passed": true,
+    "before_sha256": "67234f35fd390614c9bb1d7a0064d9acb51eb44617e7d25e66ab96a86394eb97",
+    "after_sha256": "67234f35fd390614c9bb1d7a0064d9acb51eb44617e7d25e66ab96a86394eb97"
+  },
+  {
+    "name": "pbr_materials",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/pbr_materials-before.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/pbr_materials-after.png",
+    "crop_left_pixels": 0,
+    "max_rgb8_difference": 0,
+    "mean_rgb8_difference": 0.0,
+    "passed": true,
+    "before_sha256": "ef09bca76086f676ee9f86bfe2472d125b8cd3db7815801978ccf67d65a81b0c",
+    "after_sha256": "ef09bca76086f676ee9f86bfe2472d125b8cd3db7815801978ccf67d65a81b0c"
+  },
+  {
+    "name": "atmosphere",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/atmosphere-before.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/atmosphere-after.png",
+    "crop_left_pixels": 0,
+    "max_rgb8_difference": 0,
+    "mean_rgb8_difference": 0.0,
+    "passed": true,
+    "before_sha256": "33ab9563d2e9e353834ae4f364c5ce1c580721c5441abb674f9c4056e776e9cf",
+    "after_sha256": "33ab9563d2e9e353834ae4f364c5ce1c580721c5441abb674f9c4056e776e9cf"
+  },
+  {
+    "name": "window-optics",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/window-optics-final/optical-edits.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/window-optics.png",
+    "crop_left_pixels": 500,
+    "max_rgb8_difference": 1,
+    "mean_rgb8_difference": 0.0579,
+    "passed": true,
+    "before_sha256": "7b3295d806f467b2c13a5716797c45f2ea68e47f7ce9776c58c3b61c95f170db",
+    "after_sha256": "3c6bfe4432ae4bc2e40ace39731892119d0d9f3871492a68de8d98ac4573d50c"
+  },
+  {
+    "name": "window-legacy",
+    "before": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/window-legacy/restored.png",
+    "after": "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/optics/regressions/window-legacy.png",
+    "crop_left_pixels": 400,
+    "max_rgb8_difference": 1,
+    "mean_rgb8_difference": 0.029725146198830408,
+    "passed": true,
+    "before_sha256": "8b34187f7ee9d640676fce38c60a0e086fdda9dc7c41d0c5f15c5532f9416d0d",
+    "after_sha256": "866a3499a837a1e2fe3fc86dd0c57eda5eebbb14cc0faf03c962689366392295"
+  }
+]

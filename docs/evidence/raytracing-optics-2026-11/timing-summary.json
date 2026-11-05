@@ -1,0 +1,333 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "repetitions": 3,
+  "frames_per_process": 180,
+  "warmup_frames": 30,
+  "completed_samples_per_pass_per_process": 150,
+  "frozen": [
+    {
+      "view": "reflection",
+      "source": "environment",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.6561919999999999,
+            0.6869919999999999
+          ],
+          "p95_ms": [
+            0.6588816,
+            0.6910256
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.670048,
+            0.701024
+          ],
+          "p95_ms": [
+            0.672696,
+            0.7048352
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            0.000192,
+            0.00027359999999999944
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.671664,
+            0.702656
+          ],
+          "p95_ms": [
+            0.6745119999999999,
+            0.7066304
+          ]
+        }
+      }
+    },
+    {
+      "view": "reflection",
+      "source": "scene",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.7432639999999999,
+            0.751968
+          ],
+          "p95_ms": [
+            0.7463488,
+            0.7556991999999999
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.75808,
+            0.766528
+          ],
+          "p95_ms": [
+            0.7613008,
+            0.7702144
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            8.159999999999946e-05,
+            0.000224
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.759632,
+            0.7682559999999999
+          ],
+          "p95_ms": [
+            0.763072,
+            0.7718896
+          ]
+        }
+      }
+    },
+    {
+      "view": "curved-mirror",
+      "source": "environment",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.655776,
+            0.662736
+          ],
+          "p95_ms": [
+            0.6586656,
+            0.6702799999999999
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.669376,
+            0.6765599999999999
+          ],
+          "p95_ms": [
+            0.6722736,
+            0.6848175999999999
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            0.000128,
+            0.00027359999999999944
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.6712,
+            0.678368
+          ],
+          "p95_ms": [
+            0.6741008,
+            0.6865231999999999
+          ]
+        }
+      }
+    },
+    {
+      "view": "curved-mirror",
+      "source": "scene",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.7769919999999999,
+            0.7785759999999999
+          ],
+          "p95_ms": [
+            0.7813616,
+            1.0154591999999998
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.791168,
+            0.79328
+          ],
+          "p95_ms": [
+            0.7955935999999999,
+            1.0325583999999999
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            6.4e-05,
+            0.000224
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.7928959999999999,
+            0.794864
+          ],
+          "p95_ms": [
+            0.7973504,
+            1.0340943999999999
+          ]
+        }
+      }
+    },
+    {
+      "view": "refraction",
+      "source": "environment",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.799312,
+            0.8100639999999999
+          ],
+          "p95_ms": [
+            0.8080736,
+            0.9823775999999997
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.813888,
+            0.825888
+          ],
+          "p95_ms": [
+            0.8227407999999999,
+            0.9993999999999997
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            0.000192,
+            0.000224
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.815616,
+            0.8274239999999999
+          ],
+          "p95_ms": [
+            0.8244351999999999,
+            1.0009359999999998
+          ]
+        }
+      }
+    },
+    {
+      "view": "refraction",
+      "source": "scene",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.9343839999999999,
+            0.945552
+          ],
+          "p95_ms": [
+            0.9504703999999999,
+            1.1513807999999999
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.950272,
+            0.9612959999999999
+          ],
+          "p95_ms": [
+            0.9662976,
+            1.1788815999999995
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            0.00017759999999999944,
+            0.00027359999999999944
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.9519679999999999,
+            0.9629759999999999
+          ],
+          "p95_ms": [
+            0.9679487999999999,
+            1.1805199999999998
+          ]
+        }
+      }
+    }
+  ],
+  "refresh": [
+    {
+      "name": "refresh-0",
+      "sky_generations": 13,
+      "gpu": {
+        "raytracing.environment_update": {
+          "p50_ms": 3.2e-05,
+          "p95_ms": 0.8407935999999999
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 0.798448,
+          "p95_ms": 1.6530288
+        }
+      }
+    },
+    {
+      "name": "refresh-1",
+      "sky_generations": 13,
+      "gpu": {
+        "raytracing.environment_update": {
+          "p50_ms": 3.2e-05,
+          "p95_ms": 0.8433392
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 0.758624,
+          "p95_ms": 1.6158816
+        }
+      }
+    },
+    {
+      "name": "refresh-2",
+      "sky_generations": 13,
+      "gpu": {
+        "raytracing.environment_update": {
+          "p50_ms": 3.2e-05,
+          "p95_ms": 0.8417887999999999
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 0.79872,
+          "p95_ms": 1.6558879999999998
+        }
+      }
+    }
+  ],
+  "screen_total_frame_p95_ms": 16.7,
+  "screen_passed": true,
+  "scope": "project GPU span includes environment update, trace and HDR post; excludes host capture, encode, presentation latency and CPU startup; shared host boundary observations do not prove continuous exclusivity"
+}

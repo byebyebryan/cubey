@@ -102,7 +102,12 @@ seven medium-state rejections (including combined flags) among 2,073,600 pixels;
 the exact path-level cause is unclassified. Those flags remain visible and are
 not described as zero numerical failures. The deeper control also rejects a
 small number of paths. The status/cutoff counts and bounded diagnostic discarded
-throughput accompany the evidence. Human artistic acceptance remains separate.
+throughput accompany the evidence. Separate 480×270 diagnostic views record
+maximum discarded RGB throughput up to 0.659 in repeated mirrors and 0.421 in
+the prism; throughput is not an error in final radiance. Their largest pending
+stack is three and largest total trace count is 21. Deliberately reducing total,
+event and radiance budgets separately proves terminated mirror paths retain
+positive discarded throughput and zero acquired fallback radiance. Human artistic acceptance remains separate.
 
 ## Lifecycle and regression qualification
 
@@ -137,8 +142,35 @@ focused RT sync result is not presented as a clean global sync suite.
 
 ## Costs
 
-The final serial timing packet is being collected. Its receipts and scoped
-summary will be added before this goal is closed.
+The optimized build is RelWithDebInfo (`-O2 -g -DNDEBUG`, Clang 23.1.4), on an
+RTX 5070 Ti, driver 610.57.04. Each of six frozen configurations has three serial
+180-frame processes, with 30 warmup frames and 150 completed samples per pass.
+Validation and raw diagnostic output are disabled; necessary transport budget
+counters remain in the implementation. No other owned GPU job, capture or encode
+runs concurrently. Source, binary, shaders, presets and model hashes are retained;
+quality/timing binaries and all those inputs match exactly. GPU boundary readings
+do not prove continuous exclusivity on this shared host.
+
+Ranges below span the three repetition statistics, in milliseconds.
+
+| View / optical route | Trace p50 | Trace p95 | Total-frame p50 | Total-frame p95 |
+| --- | ---: | ---: | ---: | ---: |
+| reflection / environment | 0.656–0.687 | 0.659–0.691 | 0.672–0.703 | 0.675–0.707 |
+| reflection / scene | 0.743–0.752 | 0.746–0.756 | 0.760–0.768 | 0.763–0.772 |
+| curved-mirror / environment | 0.656–0.663 | 0.659–0.670 | 0.671–0.678 | 0.674–0.687 |
+| curved-mirror / scene | 0.777–0.779 | 0.781–1.015 | 0.793–0.795 | 0.797–1.034 |
+| refraction / environment | 0.799–0.810 | 0.808–0.982 | 0.816–0.827 | 0.824–1.001 |
+| refraction / scene | 0.934–0.946 | 0.950–1.151 | 0.952–0.963 | 0.968–1.181 |
+
+All frozen and moving-sun total-frame p95 values pass the 16.7 ms screen.
+Moving-sun reflection overview has 13 sky generations per process and total-frame
+p95 1.616–1.656 ms; the environment-update span p95 is 0.841–0.843 ms. Settled
+update spans contain only timestamp overhead. The original `whole_scene` scope
+still encloses trace and HDR post; the new `total_frame` also encloses environment
+updates. These project GPU spans exclude CPU startup, capture/encoding,
+presentation latency and physical interaction. Small outliers across repetitions
+are retained; no timing row was dropped or averaged into a single best result.
+
 
 Startup and allocation scopes remain distinct from completed steady GPU spans.
 The representative validated reflection still records 27.97 ms CPU scene

@@ -1,0 +1,63 @@
+{
+  "source": "725893256eaa57302623622ac96040a9103bfbb4",
+  "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "binary_sha256": "febd9a70b936700debdc1172d3da60d5bbef146e9b928a7e7f169174ca5ec959",
+  "shaders": {
+    "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+    "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+    "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+    "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+    "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+    "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+    "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+    "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+    "trace.rgen.spv": "fe6953de2d12bc95288d7eacf3b98718eb6a67ce005b72ee4770ee730c33809d"
+  },
+  "model_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "gpu": {
+    "exit": 0,
+    "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 899, 38",
+    "error": ""
+  },
+  "presets": {
+    "reflection": "53584e77ed2afae82c65d356529162625c224fcb733ede4983103b214ec6eb0d",
+    "curved-mirror": "2743f3776f935f2be5a0cfef6b54cc7631bd35309d451925c17a3462ed104e40",
+    "refraction": "ebdcfee044160ce6a5bc2a25ad61101ade449c009e018bdc5f9fb8c7b5e925a2"
+  },
+  "host_scope": "shared host; boundary observations do not prove continuous exclusivity",
+  "runtime_commit": "dd432598",
+  "quality_identity": {
+    "source": "dd43259882c010c4e2eb2762a969e7c74f4c6501",
+    "patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binary_sha256": "febd9a70b936700debdc1172d3da60d5bbef146e9b928a7e7f169174ca5ec959",
+    "shaders": {
+      "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+      "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+      "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+      "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+      "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+      "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+      "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+      "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+      "trace.rgen.spv": "fe6953de2d12bc95288d7eacf3b98718eb6a67ce005b72ee4770ee730c33809d"
+    },
+    "model_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+    "gpu": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 872, 34",
+      "error": ""
+    },
+    "presets": {
+      "reflection": "53584e77ed2afae82c65d356529162625c224fcb733ede4983103b214ec6eb0d",
+      "curved-mirror": "2743f3776f935f2be5a0cfef6b54cc7631bd35309d451925c17a3462ed104e40",
+      "refraction": "ebdcfee044160ce6a5bc2a25ad61101ade449c009e018bdc5f9fb8c7b5e925a2"
+    },
+    "host_scope": "shared host; boundary observations do not prove continuous exclusivity"
+  },
+  "quality_timing_inputs_match": {
+    "binary_sha256": true,
+    "shaders": true,
+    "model_sha256": true,
+    "presets": true
+  }
+}

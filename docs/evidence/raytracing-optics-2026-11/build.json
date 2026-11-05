@@ -1,0 +1,9 @@
+{
+  "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+  "CMAKE_CXX_COMPILER": "/usr/bin/clang++",
+  "CMAKE_CXX_FLAGS": "",
+  "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O2 -g -DNDEBUG",
+  "CUBEY_BUILD_CLOUD_STUDIES": "OFF",
+  "CUBEY_BUILD_PLANET_STUDIES": "OFF",
+  "compiler_version": "clang version 23.1.4"
+}

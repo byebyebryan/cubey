@@ -1,0 +1,87 @@
+{
+  "normal_dev": {
+    "passed": 279,
+    "selected": 279,
+    "command": [
+      "ctest",
+      "--preset",
+      "dev",
+      "--output-on-failure"
+    ],
+    "seconds": 350.80547553510405,
+    "log": "outputs/raytracing/optics/ctest-normal.log"
+  },
+  "focused_rt_sync": {
+    "passed": 10,
+    "selected": 10,
+    "log": "outputs/raytracing/optics/sun-adapter-tests.log"
+  },
+  "global_dev_sync": {
+    "passed": 275,
+    "selected": 279,
+    "failures": [
+      "headless_cube_render_only",
+      "headless_cube_writes_video",
+      "gltf_viewer_headless_profiles_scene",
+      "pbr_furnace_headless_writes_video"
+    ],
+    "baseline_reproduced_all_four": true,
+    "baseline_build": "/home/bryan/code/cubey/build/release",
+    "log": "outputs/raytracing/optics/ctest-all.log",
+    "baseline_log": "outputs/raytracing/optics/shared-sync-baseline.log",
+    "classification": "pre-existing reused-depth write hazards outside RT changes"
+  },
+  "source_checks": [
+    {
+      "name": "residuals",
+      "command": [
+        "uv",
+        "run",
+        "projects/raytracing/tools/inspect_optics.py",
+        "--output",
+        "outputs/raytracing/optics/residuals",
+        "--quality-packet",
+        "outputs/raytracing/optics/quality-final"
+      ],
+      "exit": 0,
+      "seconds": 7.598437275970355
+    },
+    {
+      "name": "geometry-qualified",
+      "command": [
+        "uv",
+        "run",
+        "projects/raytracing/tools/qualify_geometry.py",
+        "--output",
+        "outputs/raytracing/optics/geometry-qualified"
+      ],
+      "exit": 0,
+      "seconds": 1.7143964379793033
+    },
+    {
+      "name": "optics-qualified",
+      "command": [
+        "uv",
+        "run",
+        "projects/raytracing/tools/qualify_optics.py",
+        "--output",
+        "outputs/raytracing/optics/optics-qualified"
+      ],
+      "exit": 0,
+      "seconds": 8.322447201935574
+    }
+  ],
+  "final_docs": {
+    "passed": 7,
+    "selected": 7,
+    "command": [
+      "ctest",
+      "--test-dir",
+      "build/dev",
+      "-L",
+      "docs",
+      "--output-on-failure"
+    ],
+    "seconds": 3.61
+  }
+}
