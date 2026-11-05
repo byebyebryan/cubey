@@ -190,6 +190,14 @@ host targets, upload staging, padding, driver/pipeline/descriptor internals and
 shared probe internals; the environment image figure excludes its uniforms and
 is not a whole-process peak. Slot count changes per-slot material/uniform costs.
 
+## Report delivery
+
+[Native optics comparison report](http://starship:8787/reports/8739c7743495181c8fa17a3767c79171cbc7462a9970716b0b3be38d3f4d0a79/). The existing shared report server
+was reused and left running. All 43 published bundle files return HTTP 200 and
+match the authored SHA-256 bytes; JavaScript syntax, asset links and 54 DOM
+interaction states pass. The configured browser runtime failed before navigation
+in this session, so browser rendering remains an open acceptance boundary.
+
 ## Retention and next boundary
 
 The [evidence index](../evidence/raytracing-optics-2026-11/README.md) contains

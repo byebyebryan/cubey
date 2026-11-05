@@ -40,3 +40,7 @@ The native media is authored in `outputs/raytracing/optics/quality-final/`,
 Earlier failed/development packets remain retained and are not relabeled as
 final qualification. The original worktree stays on `sdf-tracing-comparison`;
 the isolated implementation branch holds local commits only.
+
+[Published native comparison report](http://starship:8787/reports/8739c7743495181c8fa17a3767c79171cbc7462a9970716b0b3be38d3f4d0a79/) · [delivery receipt](delivery.json).
+All 43 bundle files were fetched over HTTP and matched their authored SHA-256
+bytes. This establishes delivery; browser rendering remains unaccepted.
