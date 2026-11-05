@@ -1,4 +1,5 @@
 #include "raytracing_config.h"
+#include "raytracing_environment.h"
 #include "raytracing_layout.h"
 #include "raytracing_scene.h"
 #include <array>
@@ -39,6 +40,17 @@ int main() {
         rejects([] { (void)sbt_stride(32, 32, 64, 32); });
         rejects([] { (void)align_address(UINT64_MAX, 64); });
         require(parse({}).scene == "fixture", "default generated fixture");
+        for (float azimuth : {-3.F, -.6F, 0.F, .6F, 3.F}) {
+            for (float elevation : {-.1F, .3F, 1.2F}) {
+                const auto shared = cubey::render::atmosphere_environment_direction_from_alt_az(
+                    glm::degrees(elevation), shared_sun_azimuth_degrees(azimuth));
+                const auto legacy = cubey::math::Vec3(std::cos(elevation) * std::sin(azimuth),
+                                                     std::sin(elevation),
+                                                     std::cos(elevation) * std::cos(azimuth));
+                require(glm::length(shared - legacy) < 1e-6F,
+                        "shared atmosphere preserves legacy RT sun direction");
+            }
+        }
         rejects([] { (void)parse({"--scene", "dragon"}); });
         rejects([] { (void)parse({"--roughness", "0"}); });
         rejects([] { (void)parse({"--yaw", "nan"}); });

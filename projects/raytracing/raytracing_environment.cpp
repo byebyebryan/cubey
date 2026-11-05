@@ -13,7 +13,7 @@ auto shader(const char* p) {
 render::AtmosphereEnvironmentConfig state(const Config& c, float eye_y) {
     render::AtmosphereEnvironmentConfig e;
     e.sun_elevation_degrees = glm::degrees(c.sun_elevation);
-    e.sun_azimuth_degrees = glm::degrees(c.sun_azimuth);
+    e.sun_azimuth_degrees = shared_sun_azimuth_degrees(c.sun_azimuth);
     e.camera_altitude_km = std::max(eye_y, .05F) * .001F;
     e.moon.enabled = false;
     e.render_night_sky = false;

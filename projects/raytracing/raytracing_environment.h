@@ -3,8 +3,13 @@
 #include <chrono>
 #include <cubey/engine/atmosphere_environment_runtime.h>
 #include <cubey/render/generated_ibl.h>
+#include <glm/gtc/constants.hpp>
 
 namespace cubey::projects::raytracing {
+inline float shared_sun_azimuth_degrees(float legacy_radians) {
+    // Legacy RT measures azimuth from +Z; the shared atmosphere measures from -Z.
+    return glm::degrees(glm::pi<float>() - legacy_radians);
+}
 struct EnvironmentUniform {
     math::Vec4 direct_color{};
     std::array<math::Vec4, 9> irradiance{};

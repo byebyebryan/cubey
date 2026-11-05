@@ -36,6 +36,7 @@ def contract(binary,out,ior):
     maximum = dict(direction=0.,fresnel=0.,absorption=0.)
     encoded_ior=data["config"]["ior"]
     tir_count = 0
+    scored_inputs=0
     for row in actual:
         incident=normalize(row[4,:3]);inside=bool(row[4,3])
         reflected,transmitted,fresnel,tir=interface(incident,np.array([0.,0.,1.]),inside,encoded_ior)
@@ -43,6 +44,7 @@ def contract(binary,out,ior):
         sin2=(encoded_ior if inside else 1/encoded_ior)**2*max(0,1-incident[2]**2)
         if abs(sin2-1)<1e-4:
             continue
+        scored_inputs+=1
         assert bool(row[6,3])==tir, (ior,incident,row[6],tir)
         tir_count+=tir
         maximum['direction']=max(maximum['direction'],float(np.linalg.norm(reflected-row[5,:3])),float(np.linalg.norm(transmitted-row[6,:3])))
@@ -52,7 +54,7 @@ def contract(binary,out,ior):
     assert maximum['direction']<=DIRECTION_LIMIT,maximum
     assert maximum['fresnel']<=FRESNEL_LIMIT,maximum
     assert maximum['absorption']<=ABSORPTION_LIMIT,maximum
-    return dict(ior=ior,inputs=len(actual),tir_inputs=tir_count,maximum=maximum,command=cmd)
+    return dict(ior=ior,inputs=len(actual),scored_inputs=scored_inputs,guarded_inputs=len(actual)-scored_inputs,tir_inputs=tir_count,maximum=maximum,command=cmd)
 
 
 def geometry(binary,out,name,scene_name,extra):
@@ -90,7 +92,7 @@ def geometry(binary,out,name,scene_name,extra):
             errors['direction']=max(errors['direction'],float(np.linalg.norm(reflected-row[5,:3])))
             score_hit(scene.intersect(offset(surface,reflected),reflected),row[8])
             if surface['instance']==1:
-                virtual_eye=eye.copy();virtual_eye[1]=-eye[1]
+                virtual_eye=eye.copy();virtual_eye[1]=-eye[1]+max(.00002,2e-6*np.max(np.abs(surface["point"])))
                 virtual_direction=direction.copy();virtual_direction[1]=-direction[1]
                 score_hit(scene.intersect(virtual_eye,virtual_direction,skip_instance=1),row[8])
                 counts['virtual_camera']+=1
