@@ -26,9 +26,13 @@ current showcase. The
 window, convergence, regression and cost evidence, including visible transport
 limits. The [first-pass results](notes/raytracing-first-pass-results.md) remain
 the historical opaque baseline. Physical interaction and human artistic
-acceptance remain open. Rough/stochastic transport or diffuse GI is a later
-selection; full cloud composition and the matched mesh/SDF representation and
-traversal comparison remain separate. These receipts do not replace historical
+acceptance remain open. The next proposed
+[RT material workshop](notes/raytracing-material-workshop-plan.md) uses the shared
+twelve-recipe catalog and matched forward/SDF/RT specimens under clear atmosphere,
+with rough specular transport and per-material optics. It is a planning contract,
+not current workshop support. Cornell/local-area-light GI, full cloud composition
+and the matched mesh/SDF representation and traversal comparison remain separate.
+These receipts do not replace historical
 qualification of other renderers or authorize public-site promotion.
 
 ## Current Readiness Checkpoint

@@ -27,6 +27,9 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
+- [RT material workshop plan](raytracing-material-workshop-plan.md): proposed
+  shared twelve-recipe forward/SDF/RT workshop under matched clear atmosphere,
+  with rough specular transport, per-material optics and bounded sampling.
 - [Ray tracing reflective dragon](raytracing-reflective-dragon.md): separate primitive
   optical proofs, then a reflective dragon alone on a small base.
 - [Ray tracing contained scene](raytracing-contained-scene.md): a compact shaped
