@@ -142,6 +142,7 @@ class App {
         }
     }
     void ui() {
+        const bool solo = config_.scene == "reflection-dragon-solo";
         const bool optical = config_.scene.find("reflection-") == 0 ||
                              config_.scene.find("refraction-") == 0 || config_.scene == "slab";
         ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
@@ -166,12 +167,16 @@ class App {
                            config_.environment == "atmosphere" ? -.15F : .02F, 1.55F);
         ImGui::SliderFloat("Light intensity", &config_.intensity, 0, 10);
         float color[] = {config_.red, config_.green, config_.blue};
-        if (ImGui::ColorEdit3("Base color", color)) {
+        if (ImGui::ColorEdit3(solo && config_.subject_material == "mirror" ? "Reflectance"
+                                                                           : "Base color",
+                              color)) {
             config_.red = color[0];
             config_.green = color[1];
             config_.blue = color[2];
         }
+        ImGui::BeginDisabled(solo && config_.subject_material == "mirror");
         ImGui::SliderFloat("Roughness", &config_.roughness, .04F, 1);
+        ImGui::EndDisabled();
         ImGui::BeginDisabled(config_.environment == "atmosphere");
         ImGui::SliderFloat("Ambient fill", &config_.ambient, 0, .5F);
         ImGui::EndDisabled();
@@ -180,6 +185,12 @@ class App {
             orbit_.reset();
         if (!config_.save_config.empty() && ImGui::Button("Save view"))
             save();
+        if (solo) {
+            const char* surfaces[] = {"clay", "mirror"};
+            int surface = config_.subject_material == "mirror";
+            if (ImGui::Combo("Dragon surface", &surface, surfaces, 2))
+                config_.subject_material = surfaces[surface];
+        }
         if (config_.scene.find("reflection-") == 0 || config_.scene.find("refraction-") == 0 ||
             config_.scene == "slab") {
             const char* sources[] = {"environment", "scene"};
@@ -200,7 +211,9 @@ class App {
                     config_.attenuation_blue = std::max(attenuation[2], .001F);
                 }
                 ImGui::TextWrapped("Sharp optics; straight glass shadows; no caustics");
-            } else
+            } else if (solo)
+                ImGui::TextWrapped("Sharp reflective dragon; roughness applies to clay only");
+            else
                 ImGui::TextWrapped(
                     "Sharp scene reflections; rough materials use environment lighting");
         }

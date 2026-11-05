@@ -1,0 +1,17 @@
+{
+  "environment": "atmosphere",
+  "width": 1920,
+  "height": 1080,
+  "fov": 45,
+  "sun-azimuth": 0.6,
+  "sun-elevation": 0.65,
+  "intensity": 3,
+  "exposure": 0,
+  "reflection-source": "scene",
+  "transmission-source": "scene",
+  "scene": "reflection-fixture",
+  "yaw": 0.6,
+  "pitch": 0.25,
+  "distance": 3.1,
+  "target-y": 0.55
+}

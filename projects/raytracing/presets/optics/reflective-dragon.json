@@ -1,0 +1,23 @@
+{
+  "environment": "atmosphere",
+  "width": 1920,
+  "height": 1080,
+  "fov": 45,
+  "sun-azimuth": 0.6,
+  "sun-elevation": 0.65,
+  "intensity": 3,
+  "exposure": 0,
+  "reflection-source": "scene",
+  "transmission-source": "scene",
+  "scene": "reflection-dragon-solo",
+  "model": "cache/raytracing/stanford-dragon/dragon.glb",
+  "red": 0.94,
+  "green": 0.95,
+  "blue": 0.96,
+  "roughness": 0.55,
+  "yaw": 0.6,
+  "pitch": 0.22,
+  "distance": 1.9,
+  "target-y": 0.28,
+  "subject-material": "mirror"
+}

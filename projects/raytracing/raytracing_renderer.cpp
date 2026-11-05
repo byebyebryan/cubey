@@ -502,8 +502,13 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     environment_uniforms_.at(slot.index)->upload(&environment, sizeof(environment));
     auto materials = material_values_;
     for (auto& material : materials) {
-        if (material.optics.w > 0)
+        if (material.optics.w > 0) {
             material.base_roughness = {c.red, c.green, c.blue, c.roughness};
+            if (c.scene == "reflection-dragon-solo") {
+                material.optics.x = c.subject_material == "mirror" ? 1.F : 0.F;
+                material.reflectance = {c.red, c.green, c.blue, 1};
+            }
+        }
         if (material.optics.x == 2) {
             material.optics.y = c.ior;
             material.optics.z = c.attenuation_distance;

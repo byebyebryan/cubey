@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--optics",action="store_true")
     args = parser.parse_args()
     initial=json.loads(args.config.read_text()) if args.config else {}
+    solo = initial.get("scene") == "reflection-dragon-solo"
     home_yaw=initial.get("yaw",.6); home_distance=initial.get("distance",2.6)
     home_sun=initial.get("sun-azimuth",-.8)
     if os.environ.get("CUBEY_RT_PRIVATE_XVFB") != "1":
@@ -114,7 +115,27 @@ def main():
             x.XSync(display, 0)
             time.sleep(.3)
             capture("initial")
-            if not args.inspect:
+            if not args.inspect and solo:
+                click(140, 428); click(130, 458); click(60, 398)
+                wait_for(lambda: json.loads((out / "saved.json").read_text())["subject-material"] == "clay", "clay surface save")
+                capture("clay")
+                click(180, 279); click(60, 398)
+                wait_for(lambda: abs(json.loads((out / "saved.json").read_text())["roughness"] - initial["roughness"]) > .05, "clay roughness edit")
+                click(140, 428); click(130, 488); click(60, 398)
+                wait_for(lambda: json.loads((out / "saved.json").read_text())["subject-material"] == "mirror", "mirror surface save")
+                capture("mirror")
+                click(140, 458); click(130, 488); click(60, 398)
+                wait_for(lambda: json.loads((out / "saved.json").read_text())["reflection-source"] == "environment", "environment comparison save")
+                capture("environment")
+                click(140, 458); click(130, 518); click(60, 398)
+                wait_for(lambda: json.loads((out / "saved.json").read_text())["reflection-source"] == "scene", "scene reflection save")
+                x.XResizeWindow(display, window, 1100, 800)
+                x.XSync(display, 0); time.sleep(.4)
+                capture("resized")
+                x.XResizeWindow(display, window, 1000, 760)
+                x.XSync(display, 0); time.sleep(.4)
+                capture("restored")
+            elif not args.inspect:
                 t.XTestFakeMotionEvent(display, -1, 720, 440, 0)
                 t.XTestFakeButtonEvent(display, 1, 1, 0)
                 x.XSync(display, 0)
@@ -174,7 +195,7 @@ def main():
                 raise RuntimeError(text)
             metrics = json.loads((out / "metrics.json").read_text())
             if not args.inspect:
-                assert metrics["as_builds"] == (7 if args.config else 3)
+                assert metrics["as_builds"] == (3 if solo or not args.config else 7)
                 assert metrics["target_generations"] >= 3
             (out / "result.json").write_text(json.dumps({"passed": True, "command": command,
                 "as_builds": metrics["as_builds"], "target_generations": metrics["target_generations"],

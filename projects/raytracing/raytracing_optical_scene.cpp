@@ -116,6 +116,7 @@ Mesh plinth(bool glass) {
 } // namespace
 Scene make_optical_scene(const Config& config) {
     Scene scene;
+    const bool solo = config.scene == "reflection-dragon-solo";
     const bool presentation = config.scene.find("dragon") != std::string::npos;
     const bool glass = config.scene.find("refraction-") == 0 || config.scene == "slab";
     scene.materials = {{{.66F, .36F, .16F, .55F}, {0, 1.5F, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}},
@@ -152,9 +153,18 @@ Scene make_optical_scene(const Config& config) {
         float low = 0;
         for (const auto& v : dragon.meshes[0].vertices)
             low = std::min(low, v.position.y);
-        add(std::move(dragon.meshes[0]), {-.45F, -low + .001F, -.25F}, {1, 1, 1}, 0);
+        add(std::move(dragon.meshes[0]),
+            solo ? math::Vec3(0, -low + .001F, 0) : math::Vec3(-.45F, -low + .001F, -.25F),
+            {1, 1, 1}, 0);
     } else
         add(box(), {-.5F, .5F, -.5F}, {.5F, 1, .4F}, 0);
+    if (solo) {
+        scene.materials[0].optics.x = config.subject_material == "mirror" ? 1.F : 0.F;
+        scene.materials[0].reflectance = {config.red, config.green, config.blue, 1};
+        add(plinth(false), {0, 0, 0}, {.52F, .7F, .5F}, 1);
+        scene.materials.resize(2);
+        return scene;
+    }
     if (presentation)
         add(plinth(glass), {.1F, 0, glass ? -.08F : -.27F}, {1, 1, 1}, 1);
     else {

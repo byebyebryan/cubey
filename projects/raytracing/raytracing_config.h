@@ -9,6 +9,7 @@ struct Config {
     std::filesystem::path model, metrics, save_config, query_output;
     std::filesystem::path optics_output, hdr_output, scene_output;
     std::string environment = "legacy", reflection_source = "scene", transmission_source = "scene";
+    std::string subject_material = "mirror";
     float fov = 45.F;
     float yaw = .6F, pitch = .25F, distance = 2.6F, target_y = 0, target_x = 0, target_z = 0;
     float red = .55F, green = .34F, blue = .15F, roughness = .4F;
@@ -46,14 +47,9 @@ inline config::Schema schema(Config& c) {
                                   .enum_values = {}};
     };
     auto scene = opt("scene", ValueType::Enum);
-    scene.enum_values = {"triangle",
-                         "fixture",
-                         "dragon",
-                         "reflection-fixture",
-                         "reflection-dragon",
-                         "refraction-fixture",
-                         "refraction-dragon",
-                         "slab"};
+    scene.enum_values = {"triangle",           "fixture",           "dragon",
+                         "reflection-fixture", "reflection-dragon", "reflection-dragon-solo",
+                         "refraction-fixture", "refraction-dragon", "slab"};
     auto view = opt("view", ValueType::Enum);
     view.enum_values = {"final",       "geometric-normal", "shading-normal", "depth",
                         "instance-id", "barycentric",      "secondary-id",   "path-class",
@@ -70,6 +66,9 @@ inline config::Schema schema(Config& c) {
     b.bind(environment, c.environment)
         .bind(reflection, c.reflection_source)
         .bind(transmission, c.transmission_source);
+    auto subject = opt("subject-material", ValueType::Enum);
+    subject.enum_values = {"clay", "mirror"};
+    b.bind(subject, c.subject_material);
     b.bind(opt("model", ValueType::Path), c.model)
         .bind(opt("metrics", ValueType::Path), c.metrics)
         .bind(opt("save-config", ValueType::Path), c.save_config)
