@@ -27,6 +27,9 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
+- [Ray tracing reflections and refraction plan](raytracing-optics-plan.md): proposed
+  shared clear-sky lighting, sharp scene reflections and closed-prism refraction,
+  bounded optical transport and qualification; diffuse GI/cloud composition deferred.
 - [Ray tracing first pass results](raytracing-first-pass-results.md): implemented
   hardware dragon renderer, reference/numerical/window qualification, timing and
   memory scopes, preservation and remaining acceptance boundaries.

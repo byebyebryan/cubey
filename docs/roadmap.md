@@ -18,10 +18,13 @@ locally qualified first hardware pass: static Stanford dragon/floor geometry,
 direct lighting, hard shadows, native controls, diagnostics and reproducible
 headless output. The [results](notes/raytracing-first-pass-results.md) retain
 reference/numerical/window evidence and separately scoped frame/startup/memory
-costs. Physical interaction and human artistic acceptance remain open. The next
-stage is matched mesh/SDF representation and traversal, followed by progressive
-light transport. This project receipt does not replace historical qualification
-of the other renderers or authorize public-site promotion.
+costs. Physical interaction and human artistic acceptance remain open. The
+[next proposed pass](notes/raytracing-optics-plan.md) integrates shared clear-sky
+lighting, sharp scene reflections and clear-glass refraction. Diffuse GI and
+full cloud composition remain later choices; matched mesh/SDF representation
+and traversal follows as a dedicated comparison. The optics plan is not a
+runtime implementation or qualification. The first-pass receipt does not replace
+historical qualification of the other renderers or authorize public-site promotion.
 
 ## Current Readiness Checkpoint
 
