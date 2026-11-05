@@ -295,6 +295,7 @@ void WindowedHost::create_device() {
     device_config.require_present = true;
     device_config.require_dynamic_rendering = config_.require_dynamic_rendering;
     device_config.require_tessellation_shader = config_.require_tessellation_shader;
+    device_config.require_ray_tracing = config_.require_ray_tracing;
     device_.emplace(instance(), device_config);
 }
 

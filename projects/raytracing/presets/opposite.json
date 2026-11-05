@@ -1,0 +1,21 @@
+{
+  "scene": "dragon",
+  "model": "cache/raytracing/stanford-dragon/dragon.glb",
+  "width": 1920,
+  "height": 1080,
+  "fov": 45,
+  "red": 0.55,
+  "green": 0.34,
+  "blue": 0.15,
+  "roughness": 0.4,
+  "sun-azimuth": -0.8,
+  "sun-elevation": 0.8,
+  "intensity": 3,
+  "ambient": 0.12,
+  "exposure": 0,
+  "shadows": true,
+  "view": "final",
+  "yaw": -1.1,
+  "pitch": 0.25,
+  "distance": 1.6
+}

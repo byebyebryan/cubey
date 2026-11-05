@@ -46,6 +46,8 @@ class Buffer {
         return size_;
     }
 
+    [[nodiscard]] VkDeviceAddress device_address() const;
+
     void upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offset = 0) const;
     void download(void* data, VkDeviceSize byte_size, VkDeviceSize offset = 0) const;
     // Keeps host-visible coherent memory mapped until this buffer is destroyed.
@@ -65,6 +67,7 @@ class Buffer {
     std::byte* mapped_ = nullptr;
     VkDeviceSize size_ = 0;
     VkMemoryPropertyFlags memory_properties_ = 0;
+    bool addressable_ = false;
 };
 
 struct DeviceBufferUploadBatch {

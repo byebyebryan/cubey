@@ -43,6 +43,7 @@ class Contracts(unittest.TestCase):
             out = Path(tmp)
             with patch.object(review,"verify"), patch.object(review,"input_identity", return_value={"field":"pin"}), \
                     patch.object(review,"command", return_value=["owned-app"]), \
+                    patch.object(review.render,"runtime", return_value={"fixture":"synthetic-runtime"}), \
                     patch.object(review.render,"run", return_value={"exit_code":0}) as run, \
                     patch.object(Path,"read_text", return_value="NVIDIA GeForce RTX 5070 Ti headless_render_only_ready:"), \
                     patch.object(review.render,"timings", return_value={"whole_gpu_p95_ms":5,"cpu_service_p95_ms":.5}):

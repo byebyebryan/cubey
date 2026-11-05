@@ -1,6 +1,6 @@
 function(cubey_add_app_target target)
     set(options)
-    set(one_value_args OUTPUT_NAME SHADER_DEFINE WINDOWED_SMOKE_TEST WINDOWED_SMOKE_PATTERN)
+    set(one_value_args OUTPUT_NAME SHADER_DEFINE SHADER_TARGET_ENV WINDOWED_SMOKE_TEST WINDOWED_SMOKE_PATTERN)
     set(multi_value_args
         SOURCES SHADERS SHADER_DEFINES SHADER_INCLUDE_DIRS SHADER_DEPENDS WINDOWED_SMOKE_ARGS
     )
@@ -40,6 +40,7 @@ function(cubey_add_app_target target)
         cubey_add_glsl_shaders(
             ${target}
             OUTPUT_DIR "${shader_output_dir}"
+            TARGET_ENV "${CUBEY_APP_SHADER_TARGET_ENV}"
             DEFINES ${CUBEY_APP_SHADER_DEFINES}
             INCLUDE_DIRS ${CUBEY_APP_SHADER_INCLUDE_DIRS}
             DEPENDS ${CUBEY_APP_SHADER_DEPENDS}

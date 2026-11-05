@@ -13,6 +13,12 @@ new work from a concrete product need. The [design](DESIGN.md),
 [architecture index](architecture/README.md) and
 [project guides](README.md#project-docs) describe those ownership boundaries.
 
+The next selected rendering direction is a dedicated ray-tracing project. The
+[first-pass plan](notes/raytracing-first-pass-plan.md) proposes a native hardware
+triangle renderer around a static Stanford dragon, followed by a matched SDF
+comparison and later light-transport work. This is planning, not an implemented
+renderer or a new runtime qualification.
+
 ## Current Readiness Checkpoint
 
 Reviewed against runtime source `86885a4d` on 2026-10-17:

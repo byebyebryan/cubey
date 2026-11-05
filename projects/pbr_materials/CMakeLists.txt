@@ -39,7 +39,7 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
-    add_executable(cubey_workshop_config_tests workshop_config_tests.cpp ../sdf/sdf_timeline.cpp ../sdf/sdf_recipe.cpp)
+    add_executable(cubey_workshop_config_tests workshop_config_tests.cpp ../sdf/sdf_timeline.cpp ../sdf/sdf_recipe.cpp ../sdf/sdf_render_modes.cpp)
     target_link_libraries(cubey_workshop_config_tests PRIVATE cubey::host cubey::cubey cubey_project_options cubey_project_warnings)
     add_test(NAME workshop_config_tests COMMAND cubey_workshop_config_tests)
 endif()

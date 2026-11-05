@@ -1,0 +1,11 @@
+Ray tracing pipeline, acceleration structure and shader binding table setup
+adapted from KhronosGroup/Vulkan-Samples, ray_tracing_basic.
+Source revision: 56a72bd1c43268781a75d73a520e4458b6cac766
+Copyright (c) 2019-2026 Sascha Willems
+Licensed under the Apache License, Version 2.0.
+https://github.com/KhronosGroup/Vulkan-Samples
+
+Stanford Dragon model data is separately attributed to the Stanford Computer
+Graphics Laboratory and governed by the source repository's usage terms.
+https://graphics.stanford.edu/data/3Dscanrep/
+It is downloaded explicitly and is not included in this code package.

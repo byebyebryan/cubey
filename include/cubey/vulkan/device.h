@@ -14,6 +14,7 @@ struct DeviceConfig {
     bool require_present = true;
     bool require_dynamic_rendering = false;
     bool require_tessellation_shader = false;
+    bool require_ray_tracing = false;
 };
 
 struct DeviceMemoryBudgetInfo {
@@ -76,6 +77,9 @@ class Device {
     float timestamp_period_nanoseconds() const {
         return properties_.limits.timestampPeriod;
     }
+    bool ray_tracing_enabled() const {
+        return ray_tracing_enabled_;
+    }
     bool supports_memory_budget() const {
         return memory_budget_supported_;
     }
@@ -101,6 +105,7 @@ class Device {
     std::uint32_t queue_family_ = 0;
     std::uint32_t queue_timestamp_valid_bits_ = 0;
     bool memory_budget_supported_ = false;
+    bool ray_tracing_enabled_ = false;
 };
 
 } // namespace cubey::vulkan

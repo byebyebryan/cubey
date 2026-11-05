@@ -23,6 +23,7 @@ struct WindowedAppConfig {
     std::uint32_t frame_slot_count = 2;
     bool require_dynamic_rendering = true;
     bool require_tessellation_shader = false;
+    bool require_ray_tracing = false;
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
     std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};

@@ -47,6 +47,7 @@ int run_windowed_app(WindowedAppConfig config, WindowedAppCallbacks callbacks) {
             .frame_slot_count = config.frame_slot_count,
             .require_dynamic_rendering = config.require_dynamic_rendering,
             .require_tessellation_shader = config.require_tessellation_shader,
+            .require_ray_tracing = config.require_ray_tracing,
             .gpu_execution_mode = config.gpu_execution_mode,
             .staging_pool = config.staging_pool,
             .profile_pacing = config.profile_pacing,

@@ -8,6 +8,7 @@ import json
 import math
 from pathlib import Path
 import signal
+import sys
 import tempfile
 import time
 import unittest
@@ -115,6 +116,22 @@ def _write_call_status(session: LiveSession, *, running: bool, started: float = 
 
 
 class LiveSynxFlowSessionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # Synthetic publisher tests never launch SynxFlow. Give the admission
+        # check a real local executable without requiring a retained native venv.
+        interpreter = Path(sys.executable)
+        for target in (__name__ + ".PINNED_PYTHON", "live_synxflow_session_v1.PINNED_PYTHON"):
+            replacement = patch(target, interpreter)
+            replacement.start()
+            self.addCleanup(replacement.stop)
+        identity = patch("live_synxflow_session_v1._load_pinned_identity", return_value={
+            "native_backend_identity": {"fixture": "synthetic-synxflow"},
+            "installed_synxflow_payload_sha256": "0" * 64,
+            "pinned_protocol_sha256": "0" * 64,
+        })
+        identity.start()
+        self.addCleanup(identity.stop)
+
     def test_chunked_triples_atomic_prefix_converter_parity_and_final_withholding(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

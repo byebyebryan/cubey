@@ -1,0 +1,12 @@
+// RT dispatch follows Khronos Vulkan-Samples ray_tracing_basic.
+// Copyright (c) 2019-2026 Sascha Willems. SPDX-License-Identifier: Apache-2.0
+struct Hit { vec2 bary; float t; uint instance; uint primitive; };
+struct Vertex { vec4 position; vec4 normal; };
+struct Instance { mat4 world; mat4 normalWorld; uvec4 offsets; vec4 color; };
+layout(set=0,binding=0) uniform accelerationStructureEXT scene;
+layout(std140,set=0,binding=2) uniform Camera {
+    mat4 inverseView; vec4 eye; vec4 sun; vec4 light; vec4 base; vec4 options;
+} camera;
+layout(std430,set=0,binding=3) readonly buffer Vertices { Vertex vertices[]; };
+layout(std430,set=0,binding=4) readonly buffer Indices { uint indices[]; };
+layout(std430,set=0,binding=5) readonly buffer Instances { Instance instances[]; };

@@ -1,6 +1,6 @@
 function(cubey_add_glsl_shaders target)
     set(options)
-    set(one_value_args OUTPUT_DIR)
+    set(one_value_args OUTPUT_DIR TARGET_ENV)
     set(multi_value_args DEFINES DEPENDS INCLUDE_DIRS SOURCES)
     cmake_parse_arguments(CUBEY_SHADER "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
@@ -53,6 +53,11 @@ function(cubey_add_glsl_shaders target)
     endforeach()
     list(REMOVE_DUPLICATES shader_dependencies)
 
+    set(target_env_args)
+    if (CUBEY_SHADER_TARGET_ENV)
+        list(APPEND target_env_args --target-env "${CUBEY_SHADER_TARGET_ENV}")
+    endif()
+
     set(shader_outputs)
     foreach(shader IN LISTS CUBEY_SHADER_SOURCES)
         get_filename_component(shader_path "${shader}" ABSOLUTE)
@@ -66,7 +71,7 @@ function(cubey_add_glsl_shaders target)
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${CUBEY_SHADER_OUTPUT_DIR}"
             COMMAND
                 "${GLSLANG_VALIDATOR_EXE}" ${include_args} ${define_args}
-                -V "${shader_path}" -o "${shader_output}" --depfile "${shader_depfile}"
+                -V ${target_env_args} "${shader_path}" -o "${shader_output}" --depfile "${shader_depfile}"
             DEPENDS "${shader_path}" ${shader_dependencies}
             DEPFILE "${shader_depfile}"
             COMMENT "Compiling GLSL shader ${shader_name}"

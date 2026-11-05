@@ -88,6 +88,7 @@ struct HeadlessPngHostConfig {
     VkFormat output_format = VK_FORMAT_R8G8B8A8_SRGB;
     bool require_dynamic_rendering = true;
     bool require_tessellation_shader = false;
+    bool require_ray_tracing = false;
     cubey::vulkan::GpuRuntimeExecutionMode gpu_execution_mode =
         cubey::vulkan::GpuRuntimeExecutionMode::Threaded;
     std::optional<cubey::vulkan::GpuStagingPoolConfig> staging_pool{};

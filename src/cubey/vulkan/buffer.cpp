@@ -39,6 +39,8 @@ Buffer::Buffer(const Device& device, const BufferConfig& config)
         throw std::runtime_error("buffer creation requires a valid Vulkan device");
     }
 
+    if ((config.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) && !device.ray_tracing_enabled())
+        throw std::runtime_error("buffer device address was not enabled on this device");
     try {
         create(config);
     } catch (...) {
@@ -61,6 +63,15 @@ Buffer& Buffer::operator=(Buffer&& other) noexcept {
         move_from(other);
     }
     return *this;
+}
+
+VkDeviceAddress Buffer::device_address() const {
+    if (!addressable_ || buffer_ == VK_NULL_HANDLE)
+        throw std::runtime_error("buffer was not allocated for device addresses");
+    auto info = cubey::vulkan::vk_struct<VkBufferDeviceAddressInfo>(
+        VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO);
+    info.buffer = buffer_;
+    return vkGetBufferDeviceAddress(device_, &info);
 }
 
 void Buffer::upload(const void* data, VkDeviceSize byte_size, VkDeviceSize offset) const {
@@ -154,6 +165,13 @@ void Buffer::create(const BufferConfig& config) {
     auto alloc = vk_struct<VkMemoryAllocateInfo>(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
     alloc.allocationSize = requirements.size;
     alloc.memoryTypeIndex = memory_type_index;
+    auto address_flags = cubey::vulkan::vk_struct<VkMemoryAllocateFlagsInfo>(
+        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO);
+    addressable_ = (config.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) != 0;
+    if (addressable_) {
+        address_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        alloc.pNext = &address_flags;
+    }
     check(vkAllocateMemory(device_, &alloc, nullptr, &memory_), "vkAllocateMemory buffer");
     check(vkBindBufferMemory(device_, buffer_, memory_, 0), "vkBindBufferMemory");
 }
@@ -174,6 +192,7 @@ void Buffer::destroy() {
 }
 
 void Buffer::move_from(Buffer& other) noexcept {
+    addressable_ = std::exchange(other.addressable_, false);
     physical_device_ = other.physical_device_;
     device_ = other.device_;
     buffer_ = other.buffer_;

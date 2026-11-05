@@ -9,3 +9,4 @@ add_subdirectory(terrain)
 add_subdirectory(terrain_water)
 
 add_subdirectory(pbr_materials)
+add_subdirectory(raytracing)

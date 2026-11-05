@@ -1,0 +1,38 @@
+{
+  "vertices": 437645,
+  "triangles": 871414,
+  "source_bounds": [
+    [
+      -0.108324,
+      0.0527295,
+      -0.0504143
+    ],
+    [
+      0.0965662,
+      0.197173,
+      0.0412075
+    ]
+  ],
+  "normalization_center": [
+    -0.005878899999999999,
+    0.12495124999999999,
+    -0.0046034000000000005
+  ],
+  "normalization_scale": 4.880662911159245,
+  "float32_position_error_max": 1.4901030298553053e-08,
+  "normal_policy": "area-weighted shared-vertex normals; no welding or topology changes",
+  "fallback_normals": 0,
+  "zero_area_triangles": 108,
+  "index_connectivity_sha256": "f232d09a0d100099993eeb2ef33708a5c81883639742b7af7349a107a8f9f289",
+  "surface_operation": "uniform normalization and float32 encoding only",
+  "format": "cubey.raytracing.dragon-preparation",
+  "version": 1,
+  "source_url": "https://graphics.stanford.edu/pub/3Dscanrep/dragon/dragon_recon.tar.gz",
+  "terms_url": "https://graphics.stanford.edu/data/3Dscanrep/",
+  "attribution": "Stanford Computer Graphics Laboratory",
+  "archive_sha256": "74ac1d90989c9b1732edee82d57e9ce71452144cf4355f108d8c9c616d28d02f",
+  "member": "dragon_recon/dragon_vrip.ply",
+  "source_sha256": "fea87ff48f2aba22fb53e7b67c3ff3f7b8c2a3b3a0653af62c48bba67c6d5744",
+  "glb_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "glb_bytes": 20961384
+}
