@@ -564,7 +564,8 @@ nlohmann::json Renderer::metrics() const {
         {"target_bytes", std::uint64_t(extent_.width) * extent_.height * 8 * slots_},
         {"observed_device_local_usage_bytes",
          memory.available ? nlohmann::json(memory.device_local_usage) : nlohmann::json(nullptr)},
-        {"memory_usage_scope", "whole device, includes other processes"},
+        {"memory_usage_scope", "VK_EXT_memory_budget estimate of current-process device-local heap "
+                               "allocations at shutdown; not a peak"},
         {"query_bytes",
          diagnostic_ ? std::uint64_t(extent_.width) * extent_.height * 64 * slots_ : 64 * slots_},
         {"uniform_bytes", sizeof(CameraUniform) * slots_},

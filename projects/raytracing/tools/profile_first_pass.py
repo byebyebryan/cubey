@@ -87,7 +87,8 @@ def main():
             start = time.monotonic()
             process = subprocess.run(command, capture_output=True, text=True, timeout=60)
             (args.output / (name + "-capture.log")).write_text(process.stdout + process.stderr)
-            if process.returncode or "vulkan validation error" in process.stderr.lower():
+            log = (process.stdout + process.stderr).lower()
+            if process.returncode or any(token in log for token in ["vulkan validation error", "hazard detected", "vuid-"]):
                 raise RuntimeError(name + ": " + process.stdout + process.stderr)
             captures.append({"name": name, "command": command, "sha256": sha(image),
                              "process_to_completed_png_seconds": time.monotonic() - start})
