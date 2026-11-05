@@ -1,0 +1,16 @@
+{
+  "pixels": 2073600,
+  "edge_exclusions": 0,
+  "normalized_mean_error": 9.393947775194943e-06,
+  "pixel_error_p99": 0.0,
+  "maximum_error": 0.7262638807296753,
+  "default_status_counts": {
+    "0": 2073518,
+    "2": 82
+  },
+  "control_status_counts": {
+    "0": 2073594,
+    "2": 6
+  },
+  "passed": true
+}

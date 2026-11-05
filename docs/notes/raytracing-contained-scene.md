@@ -3,6 +3,11 @@
 Date: 2026-11-05. Runtime `01dd5396`, following the qualified optics source
 `dd432598` and delivery checkpoint `92aef33c`.
 
+The later [reflective-dragon follow-up](raytracing-reflective-dragon.md) supersedes
+this mixed dragon/prop presentation: primitives stay in optical proof scenes,
+then the dragon itself becomes reflective in a separate showcase. This page
+retains the dated base/layout experiment and its measurements.
+
 ## Result
 
 The dragon presentation no longer uses the broad ground plane. It sits in a

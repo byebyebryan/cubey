@@ -1,0 +1,146 @@
+{
+  "width": 1920,
+  "height": 1080,
+  "repetitions": 3,
+  "frames": 180,
+  "warmup": 30,
+  "completed_samples_per_pass": 150,
+  "rows": [
+    {
+      "mode": "clay",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.5659839999999999,
+            0.5664319999999999
+          ],
+          "p95_ms": [
+            0.5676656,
+            0.56816
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.58,
+            0.580416
+          ],
+          "p95_ms": [
+            0.5818416,
+            0.582336
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            6.4e-05,
+            0.000224
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.5816,
+            0.58216
+          ],
+          "p95_ms": [
+            0.5834239999999999,
+            0.5843552
+          ]
+        }
+      }
+    },
+    {
+      "mode": "mirror",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.601584,
+            0.614976
+          ],
+          "p95_ms": [
+            0.6044288,
+            0.6194832
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.616192,
+            0.6295839999999999
+          ],
+          "p95_ms": [
+            0.6192352,
+            0.6341936
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            6.4e-05,
+            0.00024159999999999945
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.617744,
+            0.63128
+          ],
+          "p95_ms": [
+            0.620856,
+            0.63596
+          ]
+        }
+      }
+    },
+    {
+      "mode": "environment",
+      "passes": {
+        "raytracing.trace": {
+          "p50_ms": [
+            0.558848,
+            0.567712
+          ],
+          "p95_ms": [
+            0.5599999999999999,
+            0.5695072
+          ]
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": [
+            0.572816,
+            0.581888
+          ],
+          "p95_ms": [
+            0.5741792,
+            0.583616
+          ]
+        },
+        "raytracing.environment_update": {
+          "p50_ms": [
+            3.2e-05,
+            3.2e-05
+          ],
+          "p95_ms": [
+            0.00017759999999999944,
+            0.000224
+          ]
+        },
+        "raytracing.total_frame": {
+          "p50_ms": [
+            0.57456,
+            0.583472
+          ],
+          "p95_ms": [
+            0.5761776,
+            0.5852336
+          ]
+        }
+      }
+    }
+  ],
+  "scope": "serial GPU timestamps; total includes environment update, trace, HDR post; excludes CPU startup, capture/encode, presentation latency; shared-host boundary observations are not continuous exclusivity proof"
+}

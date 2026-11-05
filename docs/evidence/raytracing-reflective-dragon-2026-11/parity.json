@@ -1,0 +1,17 @@
+[
+  {
+    "view": "proof-reflection",
+    "png_byte_identical": true,
+    "sha256": "c377a84cfea4ce3171054904a28ad893f5fd7de557eea7b626cf9af85e71254e"
+  },
+  {
+    "view": "proof-refraction",
+    "png_byte_identical": true,
+    "sha256": "db0158e29694ff64876279b07d545802aab104d322847aefd43283e5c7993674"
+  },
+  {
+    "view": "reflection",
+    "png_byte_identical": true,
+    "sha256": "68d96ff99f7b9e6ca966dc7eacd6f5298d615361d9f061aed1dd0ed2c1605fdb"
+  }
+]

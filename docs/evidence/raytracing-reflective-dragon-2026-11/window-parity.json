@@ -1,0 +1,5 @@
+{
+  "crop_left_pixels": 500,
+  "max_rgb8_error": 1,
+  "passed": true
+}

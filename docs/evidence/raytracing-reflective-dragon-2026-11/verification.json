@@ -1,0 +1,24 @@
+{
+  "runtime": "421708f9ebcd54bd91da222654be408b9798e171",
+  "shader_identity_unchanged": true,
+  "prepared_dragon_unchanged": true,
+  "showcase_meshes_and_instances": 2,
+  "as_builds": 3,
+  "focused_rt_sync_tests_passed": 10,
+  "docs_checks_passed": 7,
+  "original_protected_files_unchanged": 11,
+  "native_window": "clay/mirror/roughness/reflection-source/save/resize passed; three AS builds, three target generations",
+  "saved_view_reload_max_rgb8_error": 1,
+  "video": {
+    "frames": 120,
+    "fps": 30,
+    "duration_seconds": 4,
+    "width": 1280,
+    "height": 720
+  },
+  "full_dev_suite": "not rerun; earlier 279/279 remains scoped to the original optics checkpoint",
+  "secondary_observation_scope": "128x96; valid primary t >= 0 and instance 0, then first reflected hit identity",
+  "browser_and_physical_acceptance": "open",
+  "push": false,
+  "merge": false
+}

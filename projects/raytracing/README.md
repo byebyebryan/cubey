@@ -50,26 +50,41 @@ bundled into ordinary builds/tests. The input path is admitted as a normalized,
 single-node, single-primitive untextured static GLB; this is not a general glTF
 viewer. Missing dragon input reports the preparation command.
 
-## Shared sky, mirrors and glass
+## Optical proof, then a reflective dragon
 
-After preparing the dragon, run a frozen optical view from the repository root:
+Start with generated primitives; these views need no downloaded model:
 
 ```sh
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/reflection.json
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/curved-mirror.json
-rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/refraction.json
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/proof-reflection.json
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/proof-refraction.json
 ```
 
-`reflection-fixture`, `refraction-fixture` and `slab` are generated controls that
-need no downloaded model. Add `--environment atmosphere --target-y .55` for a
-shared-sky fixture. The dragon stays opaque; the separate prism is a consistently
-wound, closed dielectric. The dragon presentation scenes use a compact, matte,
-bevelled base with visible sides and sky around its complete outline. Colored
-props fit on the base; the curved mirror supplies scene reflection. Broad floor
-planes remain in generated diagnostic fixtures and the original opaque controls.
-One scene unit is one metre; support tops are y=0. The camera must remain outside
-the glass. See the [contained-scene follow-up](../../docs/notes/raytracing-contained-scene.md)
-for the revised composition and current captures.
+The first scene uses boxes and a mirror sphere; the second uses a closed glass
+prism. They expose reflected hits, neighboring geometry through glass and the
+transport diagnostics without mixing a scanned model into the proof scene.
+The existing slab and generated fixtures retain their numerical controls.
+
+Then prepare the pinned dragon and run the dedicated showcase:
+
+```sh
+rtk proxy uv run projects/raytracing/tools/prepare_dragon.py
+rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/presets/optics/reflective-dragon.json
+```
+
+`reflection-dragon-solo` contains exactly the dragon and a small matte base.
+The dragon itself uses the existing sharp reflection path and can reflect its
+own geometry and the base. There are no spheres, colored blocks or glass props
+beside it. The native **Dragon surface** selector and `--subject-material clay|mirror`
+compare shading on identical geometry without rebuilding AS resources. RGB
+controls are base color for clay and reflectance for the mirror. Roughness is
+inactive for the sharp mirror; rough scene reflections remain a later milestone.
+The dragon stays opaque; glass transport remains in the closed primitive study.
+
+One scene unit is one metre; support tops are y=0. The earlier mixed dragon/prop
+presets remain available for reproducing the
+[contained-scene experiment](../../docs/notes/raytracing-contained-scene.md).
+The current [proof-to-showcase follow-up](../../docs/notes/raytracing-reflective-dragon.md)
+records the revised direction, native captures and qualification.
 
 `--reflection-source environment|scene` and `--transmission-source environment|scene`
 select paired comparisons with identical geometry, light and camera. Scene rays

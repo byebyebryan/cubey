@@ -18,7 +18,10 @@ locally qualified opaque hardware baseline and a shared-sky optics pass.
 Sharp curved-mirror scene reflections and a closed clear-glass prism use
 Cubey's existing atmosphere, lighting and HDR postprocessing. The
 [contained-scene follow-up](notes/raytracing-contained-scene.md) replaces the
-presentation floor with a compact shaped base; planes remain diagnostic controls. The
+presentation floor with a compact shaped base; planes remain diagnostic controls.
+The [reflective-dragon follow-up](notes/raytracing-reflective-dragon.md) separates
+balls/boxes into proof views and makes the dragon itself the reflector in the
+current showcase. The
 [optics results](notes/raytracing-optics-results.md) retain reference/numerical,
 window, convergence, regression and cost evidence, including visible transport
 limits. The [first-pass results](notes/raytracing-first-pass-results.md) remain

@@ -27,6 +27,8 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
+- [Ray tracing reflective dragon](raytracing-reflective-dragon.md): separate primitive
+  optical proofs, then a reflective dragon alone on a small base.
 - [Ray tracing contained scene](raytracing-contained-scene.md): a compact shaped
   base and revised native composition replace the broad presentation floor.
 - [Ray tracing optics results](raytracing-optics-results.md): shared clear sky,

@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "command": [
+    "stdbuf",
+    "-oL",
+    "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+    "--config",
+    "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/presets/optics/reflective-dragon.json",
+    "--width",
+    "1000",
+    "--height",
+    "760",
+    "--require-validation",
+    "--save-config",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/reflective-dragon/window/saved.json",
+    "--metrics",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/reflective-dragon/window/metrics.json"
+  ],
+  "as_builds": 3,
+  "target_generations": 3,
+  "scope": "owned Xvfb; physical desktop acceptance separate"
+}
