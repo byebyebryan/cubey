@@ -63,8 +63,13 @@ rtk proxy build/dev/projects/raytracing/raytracing --config projects/raytracing/
 `reflection-fixture`, `refraction-fixture` and `slab` are generated controls that
 need no downloaded model. Add `--environment atmosphere --target-y .55` for a
 shared-sky fixture. The dragon stays opaque; the separate prism is a consistently
-wound, closed dielectric. One scene unit is one metre, and the local floor is y=0.
-The camera must remain outside the glass.
+wound, closed dielectric. The dragon presentation scenes use a compact, matte,
+bevelled base with visible sides and sky around its complete outline. Colored
+props fit on the base; the curved mirror supplies scene reflection. Broad floor
+planes remain in generated diagnostic fixtures and the original opaque controls.
+One scene unit is one metre; support tops are y=0. The camera must remain outside
+the glass. See the [contained-scene follow-up](../../docs/notes/raytracing-contained-scene.md)
+for the revised composition and current captures.
 
 `--reflection-source environment|scene` and `--transmission-source environment|scene`
 select paired comparisons with identical geometry, light and camera. Scene rays
@@ -79,7 +84,7 @@ prefiltered sky. The RT adapter converts both angle units and azimuth convention
 legacy RT azimuth starts at +Z, shared azimuth at −Z. `--intensity 3` uses the
 shared lighting's nominal gain; other values scale sun and environment together.
 `--ambient` applies only to the legacy route. Exposure is applied once in shared
-HDR postprocessing. The finite scene floor occludes real rays; the far-field
+HDR postprocessing. The base and fixture floors occlude real rays; the far-field
 probe uses the shared `SkyOnlyNoGroundOcclusion` policy. This is a directional
 sky cache, without per-segment aerial perspective or cloud composition.
 
@@ -95,7 +100,8 @@ and pipeline recursion depth one. Defaults are `--max-events 8`,
 The qualification control uses 12, 64, 256 and 0 respectively. There are at most
 eight shadow interfaces. Exhausted/unsupported paths discard their remaining
 throughput and expose a status; they do not silently replace it with sky.
-Repeated mirror reflections can therefore show a small dark termination region.
+Repeated mirror reflections in diagnostic fixtures can therefore show a small
+dark termination region.
 
 ## Controls and reproducibility
 

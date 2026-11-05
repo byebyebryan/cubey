@@ -1,0 +1,22 @@
+[
+  {
+    "scene": "reflection-fixture",
+    "png_byte_identical": true,
+    "sha256": "bd597eb3745286a7a002065978e533beb37648238968be59b754cfe0c7447b43"
+  },
+  {
+    "scene": "refraction-fixture",
+    "png_byte_identical": true,
+    "sha256": "161eb8a83d51c010c7d7d910a470a60a22e21513ccc821b218c5db5960f251e1"
+  },
+  {
+    "scene": "slab",
+    "png_byte_identical": true,
+    "sha256": "2dde208daf82dec4aedda7adddde1674842600c437ff76dc0c97a1cd902b4145"
+  },
+  {
+    "scene": "dragon",
+    "png_byte_identical": true,
+    "sha256": "cef05ddd249d2bb83a6ac03ae0a81d5b90882a8463f6a2ba612e18ed3edbf5e5"
+  }
+]

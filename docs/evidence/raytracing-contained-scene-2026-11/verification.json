@@ -1,0 +1,24 @@
+{
+  "source": "01dd539632d2f44549704cbf592863825af359e1",
+  "before_source": "92aef33cc293d7ea0d6f69d7ba9b2889462ee96b",
+  "before_binary_sha256": "febd9a70b936700debdc1172d3da60d5bbef146e9b928a7e7f169174ca5ec959",
+  "shaders_unchanged": true,
+  "dragon_model_unchanged": true,
+  "focused_rt_sync_tests_passed": 10,
+  "normal_docs_tests_passed": 7,
+  "fixture_and_legacy_png_byte_identical": true,
+  "protected_original_files_unchanged": 11,
+  "video": {
+    "width": 1280,
+    "height": 720,
+    "frames": 120,
+    "fps": 30,
+    "duration_seconds": 4,
+    "as_builds": 7
+  },
+  "full_dev_suite": "not rerun for this scene-only change; 279/279 belongs to the earlier optics checkpoint",
+  "browser_layout_and_physical_acceptance": "open",
+  "push": false,
+  "merge": false,
+  "public_demo_site_publication": false
+}

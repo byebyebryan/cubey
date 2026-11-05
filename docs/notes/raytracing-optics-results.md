@@ -4,6 +4,10 @@ Date: 2026-11-05. Runtime: `dd432598`, following `2a99e523`.
 Branch: `raytracing-first-pass-20261104` in the isolated
 `/home/bryan/code/cubey-raytracing-first-pass` worktree.
 
+The later [contained-scene follow-up](raytracing-contained-scene.md) replaces the
+broad floor in dragon presentation scenes. This page retains the original
+floor-based optical qualification and its exact source/capture scope.
+
 ## Result
 
 The [optics plan](raytracing-optics-plan.md) now has a native implementation:

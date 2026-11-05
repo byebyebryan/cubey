@@ -1,0 +1,992 @@
+[
+  {
+    "name": "reflection-environment-0",
+    "view": "reflection",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/reflection.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/reflection-environment-0.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.9116313909180462,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 843, 31",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 7, 0, 843, 31",
+      "error": ""
+    },
+    "repeat": 0,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.565792,
+        "p95_ms": 0.567392,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.57984,
+        "p95_ms": 0.581664,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.581456,
+        "p95_ms": 0.5831999999999999,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "reflection-scene-0",
+    "view": "reflection",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/reflection.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/reflection-scene-0.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.735998498974368,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 7, 0, 843, 31",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 85, 0, 843, 39",
+      "error": ""
+    },
+    "repeat": 0,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.569824,
+        "p95_ms": 0.571808,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.583984,
+        "p95_ms": 0.586048,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.585648,
+        "p95_ms": 0.587616,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "curved-mirror-environment-0",
+    "view": "curved-mirror",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/curved-mirror.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/curved-mirror-environment-0.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7404215950518847,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 85, 0, 843, 39",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 4, 0, 843, 34",
+      "error": ""
+    },
+    "repeat": 0,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.617984,
+        "p95_ms": 0.6196656,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.631552,
+        "p95_ms": 0.6332479999999999,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000224,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.633184,
+        "p95_ms": 0.6350752,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "curved-mirror-scene-0",
+    "view": "curved-mirror",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/curved-mirror.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/curved-mirror-scene-0.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.7406997460639104,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 4, 0, 843, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 97, 0, 843, 40",
+      "error": ""
+    },
+    "repeat": 0,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.635408,
+        "p95_ms": 0.6369344,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.6492,
+        "p95_ms": 0.650832,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.650816,
+        "p95_ms": 0.6524112,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "refraction-environment-0",
+    "view": "refraction",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/refraction.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/refraction-environment-0.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7431130439508706,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 97, 0, 843, 40",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 5, 0, 843, 34",
+      "error": ""
+    },
+    "repeat": 0,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.6392,
+        "p95_ms": 0.6416959999999999,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.6533279999999999,
+        "p95_ms": 0.6557792,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.65504,
+        "p95_ms": 0.6575216,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "refraction-scene-0",
+    "view": "refraction",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/refraction.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/refraction-scene-0.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.7602361669996753,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 5, 0, 843, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 51, 0, 843, 38",
+      "error": ""
+    },
+    "repeat": 0,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.689952,
+        "p95_ms": 0.694488,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.7048,
+        "p95_ms": 0.7093296,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.00016319999999999893,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.706336,
+        "p95_ms": 0.7110639999999999,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "reflection-environment-1",
+    "view": "reflection",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/reflection.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/reflection-environment-1.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7270746160065755,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 51, 0, 843, 38",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 1,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.566144,
+        "p95_ms": 0.5678896,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.580272,
+        "p95_ms": 0.5820976,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.00011359999999999945,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.581952,
+        "p95_ms": 0.583648,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "reflection-scene-1",
+    "view": "reflection",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/reflection.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/reflection-scene-1.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.7284769900143147,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 13, 0, 843, 34",
+      "error": ""
+    },
+    "repeat": 1,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.5707199999999999,
+        "p95_ms": 0.5721952,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.5847519999999999,
+        "p95_ms": 0.5862896,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.586496,
+        "p95_ms": 0.5880415999999999,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "curved-mirror-environment-1",
+    "view": "curved-mirror",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/curved-mirror.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/curved-mirror-environment-1.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7139006269862875,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 13, 0, 843, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 1,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.617696,
+        "p95_ms": 0.6191536,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.631248,
+        "p95_ms": 0.6325936,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000192,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.63288,
+        "p95_ms": 0.6343424,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "curved-mirror-scene-1",
+    "view": "curved-mirror",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/curved-mirror.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/curved-mirror-scene-1.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.7055300759384409,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 17, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 1,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.637184,
+        "p95_ms": 0.6386879999999999,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.650752,
+        "p95_ms": 0.6525215999999999,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000224,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.6523519999999999,
+        "p95_ms": 0.6541152,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "refraction-environment-1",
+    "view": "refraction",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/refraction.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/refraction-environment-1.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7462680850876495,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 17, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 9, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 1,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.639424,
+        "p95_ms": 0.6412192,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.653696,
+        "p95_ms": 0.6556976,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000256,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.6553279999999999,
+        "p95_ms": 0.657312,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "refraction-scene-1",
+    "view": "refraction",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/refraction.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/refraction-scene-1.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.7527151090325788,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 9, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 1,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.690336,
+        "p95_ms": 0.6957616,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.7051839999999999,
+        "p95_ms": 0.7107696,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000224,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.706816,
+        "p95_ms": 0.7124431999999999,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "reflection-environment-2",
+    "view": "reflection",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/reflection.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/reflection-environment-2.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7325379049871117,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 6, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 843, 37",
+      "error": ""
+    },
+    "repeat": 2,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.566928,
+        "p95_ms": 0.5681456,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.5809279999999999,
+        "p95_ms": 0.5823072,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.58256,
+        "p95_ms": 0.5839712,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "reflection-scene-2",
+    "view": "reflection",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/reflection.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/reflection-scene-2.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.786225410993211,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 843, 37",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 2,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.571296,
+        "p95_ms": 0.5723056,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.5853119999999999,
+        "p95_ms": 0.586464,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000224,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.586896,
+        "p95_ms": 0.5881456,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "curved-mirror-environment-2",
+    "view": "curved-mirror",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/curved-mirror.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/curved-mirror-environment-2.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7420435500098392,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 72, 0, 843, 41",
+      "error": ""
+    },
+    "repeat": 2,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.6178239999999999,
+        "p95_ms": 0.619296,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.6315839999999999,
+        "p95_ms": 0.633184,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.00027359999999999944,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.633184,
+        "p95_ms": 0.6348656,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "curved-mirror-scene-2",
+    "view": "curved-mirror",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/curved-mirror.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/curved-mirror-scene-2.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.753952733008191,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 72, 0, 843, 41",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 3, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 2,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.6360319999999999,
+        "p95_ms": 0.6376336,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.649664,
+        "p95_ms": 0.6513167999999999,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.000192,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.651376,
+        "p95_ms": 0.6530368,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "refraction-environment-2",
+    "view": "refraction",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/refraction.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/refraction-environment-2.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "environment",
+      "--transmission-source",
+      "environment"
+    ],
+    "wall_seconds": 0.7598849349888042,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 3, 0, 843, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 75, 0, 843, 40",
+      "error": ""
+    },
+    "repeat": 2,
+    "source": "environment",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.639328,
+        "p95_ms": 0.6414143999999999,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.6536959999999999,
+        "p95_ms": 0.6556048,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 0.00020959999999999946,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.655296,
+        "p95_ms": 0.6572192,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "refraction-scene-2",
+    "view": "refraction",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/optics/refraction.json",
+      "--headless",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/qualified/refraction-scene-2.json",
+      "--no-validation",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--reflection-source",
+      "scene",
+      "--transmission-source",
+      "scene"
+    ],
+    "wall_seconds": 0.7700352319516242,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 75, 0, 843, 40",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 8, 0, 843, 35",
+      "error": ""
+    },
+    "repeat": 2,
+    "source": "scene",
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.6902079999999999,
+        "p95_ms": 0.6955199999999999,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.7049759999999999,
+        "p95_ms": 0.7104528,
+        "samples": 150
+      },
+      "raytracing.environment_update": {
+        "p50_ms": 3.2e-05,
+        "p95_ms": 6.4e-05,
+        "samples": 150
+      },
+      "raytracing.total_frame": {
+        "p50_ms": 0.7066079999999999,
+        "p95_ms": 0.7120848,
+        "samples": 150
+      }
+    }
+  }
+]

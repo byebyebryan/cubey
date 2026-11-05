@@ -5,6 +5,12 @@ Pre-implementation source audit: `fdd13397`, branch `raytracing-first-pass-20261
 The later user request to run the goal loop authorized implementation of this
 contract. The audit below records the starting state.
 
+Presentation amendment: the user subsequently rejected the broad ground plane
+and accepted other objects or a constrained base. The
+[contained-scene follow-up](raytracing-contained-scene.md) implements that
+revision for dragon views; the original floor remains in numerical fixtures.
+The implementation contracts below retain their historical starting scope.
+
 ## Intended result
 
 Extend the [first hardware pass](raytracing-first-pass-results.md) into an

@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "command": [
+    "stdbuf",
+    "-oL",
+    "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+    "--config",
+    "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/presets/optics/refraction.json",
+    "--width",
+    "1000",
+    "--height",
+    "760",
+    "--require-validation",
+    "--save-config",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/window/saved.json",
+    "--metrics",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/contained-scene/window/metrics.json"
+  ],
+  "as_builds": 7,
+  "target_generations": 3,
+  "scope": "owned Xvfb; physical desktop acceptance separate"
+}
