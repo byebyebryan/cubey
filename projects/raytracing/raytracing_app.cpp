@@ -16,14 +16,60 @@ class App {
         cpu_scene_ms_ =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start_)
                 .count();
+        if (!config_.scene_output.empty()) {
+            nlohmann::json data;
+            data["meshes"] = nlohmann::json::array();
+            data["instances"] = nlohmann::json::array();
+            for (const auto& mesh : scene_.meshes) {
+                nlohmann::json m;
+                m["positions"] = nlohmann::json::array();
+                m["normals"] = nlohmann::json::array();
+                for (const auto& v : mesh.vertices) {
+                    m["positions"].push_back({v.position.x, v.position.y, v.position.z});
+                    m["normals"].push_back({v.normal.x, v.normal.y, v.normal.z});
+                }
+                m["indices"] = mesh.indices;
+                data["meshes"].push_back(m);
+            }
+            for (const auto& i : scene_.instances) {
+                nlohmann::json matrix = nlohmann::json::array();
+                for (int r = 0; r < 4; ++r)
+                    matrix.push_back({i.transform[0][r], i.transform[1][r], i.transform[2][r],
+                                      i.transform[3][r]});
+                data["instances"].push_back({{"mesh", i.mesh},
+                                             {"world", matrix},
+                                             {"material", i.material},
+                                             {"color", {i.color.x, i.color.y, i.color.z}}});
+            }
+            data["materials"] = nlohmann::json::array();
+            for (const auto& m : scene_.materials)
+                data["materials"].push_back(
+                    {{"kind", m.optics.x},
+                     {"base", {m.base_roughness.x, m.base_roughness.y, m.base_roughness.z}},
+                     {"roughness", m.base_roughness.w},
+                     {"global", m.optics.w},
+                     {"reflectance", {m.reflectance.x, m.reflectance.y, m.reflectance.z}}});
+            data["config"] = schema(config_).template_json();
+            if (config_.scene_output.has_parent_path())
+                std::filesystem::create_directories(config_.scene_output.parent_path());
+            std::ofstream file(config_.scene_output);
+            if (!file)
+                throw std::runtime_error("cannot write RT scene identity");
+            file << data.dump(2);
+        }
         orbit_.set_home_distance(config_.distance);
         orbit_.set_distance(config_.distance);
     }
     Config current() const {
         auto c = config_;
-        c.yaw += orbit_.yaw();
+        c.yaw += orbit_.yaw() + config_.orbit_speed * float(presentation_seconds_);
+        c.sun_azimuth += config_.sun_speed * float(presentation_seconds_);
         c.pitch += orbit_.pitch();
         c.distance = orbit_.distance();
+        if (c.environment == "atmosphere")
+            c.pitch = std::clamp(
+                c.pitch, std::asin(std::clamp((.05F - c.target_y) / c.distance, -.99F, .99F)),
+                1.4F);
         return c;
     }
     void create(vulkan::Device& device, vulkan::GpuRuntime& gpu, std::uint32_t slots,
@@ -32,7 +78,8 @@ class App {
             if (config_.exercise_retry && config_.fault != "target") {
                 bool failed = false;
                 try {
-                    Renderer rejected(device, gpu, scene_, slots, config_.fault);
+                    Renderer rejected(device, gpu, scene_, slots, config_.fault, false, false,
+                                      &config_);
                 } catch (const std::runtime_error& e) {
                     if (std::string_view(e.what()).find("owned RT creation fault:") ==
                         std::string_view::npos)
@@ -45,7 +92,7 @@ class App {
             }
             renderer_ = std::make_unique<Renderer>(
                 device, gpu, scene_, slots, config_.exercise_retry ? "none" : config_.fault,
-                !config_.query_output.empty(), !config_.metrics.empty());
+                dump_mode(config_) != 0, !config_.metrics.empty(), &config_);
         }
         if (config_.exercise_retry && config_.fault == "target" && !target_fault_used_) {
             bool failed = false;
@@ -67,8 +114,12 @@ class App {
     void shutdown() {
         if (renderer_) {
             renderer_->finish();
-            if (!config_.query_output.empty())
-                renderer_->save_queries(config_.query_output);
+            if (dump_mode(config_))
+                renderer_->save_queries(!config_.query_output.empty()
+                                            ? config_.query_output
+                                            : (!config_.optics_output.empty()
+                                                   ? config_.optics_output
+                                                   : config_.hdr_output));
             auto data = renderer_->metrics();
             data["cpu_scene_prepare_ms"] = cpu_scene_ms_;
             data["total_app_wall_ms"] =
@@ -91,22 +142,28 @@ class App {
         }
     }
     void ui() {
+        const bool optical = config_.scene.find("reflection-") == 0 ||
+                             config_.scene.find("refraction-") == 0 || config_.scene == "slab";
         ImGui::SetNextWindowPos({12, 12}, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize({320, 0}, ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize({optical ? 400.F : 320.F, 0}, ImGuiCond_FirstUseEver);
         ImGui::Begin("Ray tracing");
+        if (optical)
+            ImGui::PushItemWidth(210);
         ImGui::TextUnformatted("Hardware triangle tracing");
         ImGui::TextUnformatted("Drag to orbit, scroll to zoom, R to reset");
-        const char* views[] = {"final", "geometric-normal", "shading-normal",
-                               "depth", "instance-id",      "barycentric"};
+        const char* views[] = {"final",       "geometric-normal", "shading-normal", "depth",
+                               "instance-id", "barycentric",      "secondary-id",   "path-class",
+                               "path-events", "transport-limit",  "environment"};
         int view = 0;
-        for (int i = 0; i < 6; ++i)
+        for (int i = 0; i < 11; ++i)
             if (config_.view == views[i])
                 view = i;
-        if (ImGui::Combo("View", &view, views, 6))
+        if (ImGui::Combo("View", &view, views, 11))
             config_.view = views[view];
         ImGui::Checkbox("Shadows", &config_.shadows);
         ImGui::SliderFloat("Sun azimuth", &config_.sun_azimuth, -3.14159F, 3.14159F);
-        ImGui::SliderFloat("Sun elevation", &config_.sun_elevation, .02F, 1.55F);
+        ImGui::SliderFloat("Sun elevation", &config_.sun_elevation,
+                           config_.environment == "atmosphere" ? -.15F : .02F, 1.55F);
         ImGui::SliderFloat("Light intensity", &config_.intensity, 0, 10);
         float color[] = {config_.red, config_.green, config_.blue};
         if (ImGui::ColorEdit3("Base color", color)) {
@@ -115,18 +172,52 @@ class App {
             config_.blue = color[2];
         }
         ImGui::SliderFloat("Roughness", &config_.roughness, .04F, 1);
+        ImGui::BeginDisabled(config_.environment == "atmosphere");
         ImGui::SliderFloat("Ambient fill", &config_.ambient, 0, .5F);
+        ImGui::EndDisabled();
         ImGui::SliderFloat("Exposure", &config_.exposure, -4, 4);
         if (ImGui::Button("Reset camera"))
             orbit_.reset();
         if (!config_.save_config.empty() && ImGui::Button("Save view"))
             save();
+        if (config_.scene.find("reflection-") == 0 || config_.scene.find("refraction-") == 0 ||
+            config_.scene == "slab") {
+            const char* sources[] = {"environment", "scene"};
+            int reflection = config_.reflection_source == "scene";
+            if (ImGui::Combo("Reflection source", &reflection, sources, 2))
+                config_.reflection_source = sources[reflection];
+            const bool glass = config_.scene.find("refraction-") == 0 || config_.scene == "slab";
+            if (glass) {
+                int transmission = config_.transmission_source == "scene";
+                if (ImGui::Combo("Transmission source", &transmission, sources, 2))
+                    config_.transmission_source = sources[transmission];
+                ImGui::SliderFloat("Glass IOR", &config_.ior, 1, 2.5F);
+                float attenuation[] = {config_.attenuation_red, config_.attenuation_green,
+                                       config_.attenuation_blue};
+                if (ImGui::ColorEdit3("Glass transmittance", attenuation)) {
+                    config_.attenuation_red = std::max(attenuation[0], .001F);
+                    config_.attenuation_green = std::max(attenuation[1], .001F);
+                    config_.attenuation_blue = std::max(attenuation[2], .001F);
+                }
+                ImGui::TextWrapped("Sharp optics; straight glass shadows; no caustics");
+            } else
+                ImGui::TextWrapped(
+                    "Sharp scene reflections; rough materials use environment lighting");
+        }
+        if (optical)
+            ImGui::PopItemWidth();
         ImGui::End();
     }
     void save() {
         auto c = current();
         c.save_config.clear();
         c.metrics.clear();
+        c.query_output.clear();
+        c.optics_output.clear();
+        c.hdr_output.clear();
+        c.scene_output.clear();
+        c.orbit_speed = 0;
+        c.sun_speed = 0;
         c.fault = "none";
         c.exercise_retry = false;
         schema(c).write_template(config_.save_config);
@@ -146,6 +237,7 @@ class App {
             cb.record_frame = [&](host::HeadlessPngContext& c, const host::HeadlessCaptureFrame& f,
                                   VkCommandBuffer command,
                                   const host::HeadlessRenderTarget& target) {
+                presentation_seconds_ = double(f.index) / double(std::max(config_.common.fps, 1U));
                 renderer_->render(command, target, f.frame_slot, current(), false,
                                   c.profile_recorder(), f.index);
             };
@@ -170,6 +262,7 @@ class App {
                    c.swapchain().format());
         };
         cb.update = [&](host::WindowedAppContext& c, const FrameTiming& t) {
+            presentation_seconds_ += t.delta_seconds;
             orbit_.update_from_input(c.filtered_input(), t.delta_seconds);
         };
         cb.draw_ui = [&](host::WindowedAppContext&) { ui(); };
@@ -189,6 +282,7 @@ class App {
     OrbitController orbit_;
     std::unique_ptr<Renderer> renderer_;
     std::uint64_t frame_ = 0;
+    double presentation_seconds_ = 0;
     bool target_fault_used_ = false;
 };
 } // namespace

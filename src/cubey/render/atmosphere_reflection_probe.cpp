@@ -200,10 +200,20 @@ void AtmosphereReflectionProbe::create_resources(const cubey::vulkan::Device& de
     if (resources_created()) {
         throw std::runtime_error("atmosphere reflection probe resources are already initialized");
     }
+    constexpr VkPipelineStageFlags allowed = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                             VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+    if (!config.consumer_stage_mask || (config.consumer_stage_mask & ~allowed) ||
+        ((config.consumer_stage_mask & VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR) &&
+         !device.ray_tracing_enabled()))
+        throw std::invalid_argument(
+            "atmosphere probe consumer stages are unsupported or not enabled");
     validate_atmosphere_background_texture_bindings(config.atmosphere_textures);
 
     extent_ = config.extent;
     ground_mode_ = config.ground_mode;
+    // Prefiltering always reads the sky in a fragment shader as well.
+    consumer_stage_mask_ = config.consumer_stage_mask | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     mip_levels_ = config.mip_levels;
     format_ = config.format;
     const cubey::vulkan::SamplerConfig cube_sampler{
@@ -485,7 +495,7 @@ void AtmosphereReflectionProbe::record_sky_face(const cubey::vulkan::CommandReco
                     current_sky_layout(face_index), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     sky_face_initialized_.at(face_index) ? VK_ACCESS_SHADER_READ_BIT : 0,
                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                    sky_face_initialized_.at(face_index) ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+                    sky_face_initialized_.at(face_index) ? consumer_stage_mask_
                                                          : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     atmosphere_frame_.record_pass(
@@ -496,7 +506,7 @@ void AtmosphereReflectionProbe::record_sky_face(const cubey::vulkan::CommandReco
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                    consumer_stage_mask_);
     sky_face_initialized_.at(face_index) = true;
 }
 
@@ -522,14 +532,13 @@ void AtmosphereReflectionProbe::record_prefilter_face_mip(
     const std::size_t index = face_mip_index(mip_level, face_index);
     TextureCube& prefiltered = prefiltered_cubes_.at(buffer_index).value();
     std::vector<bool>& initialized = prefiltered_face_mip_initialized_.at(buffer_index);
-    transition_face(recorder, prefiltered.handle(), mip_level, face_index,
-                    current_prefiltered_layout(buffer_index, mip_level, face_index),
-                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                    initialized.at(index) ? VK_ACCESS_SHADER_READ_BIT : 0,
-                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                    initialized.at(index) ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-                                          : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    transition_face(
+        recorder, prefiltered.handle(), mip_level, face_index,
+        current_prefiltered_layout(buffer_index, mip_level, face_index),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        initialized.at(index) ? VK_ACCESS_SHADER_READ_BIT : 0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        initialized.at(index) ? consumer_stage_mask_ : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     record_render_target_pass(
         recorder,
         render_target_view(face_target(prefiltered, extent_, format_,
@@ -548,7 +557,7 @@ void AtmosphereReflectionProbe::record_prefilter_face_mip(
                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                     VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+                    consumer_stage_mask_);
     initialized.at(index) = true;
 }
 

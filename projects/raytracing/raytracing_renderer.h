@@ -12,6 +12,7 @@
 #include <nlohmann/json.hpp>
 
 namespace cubey::projects::raytracing {
+class Environment;
 struct RtFunctions {
     PFN_vkCreateAccelerationStructureKHR create_as{};
     PFN_vkDestroyAccelerationStructureKHR destroy_as{};
@@ -37,7 +38,7 @@ class Renderer {
   public:
     Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene& scene,
              std::uint32_t slots, std::string_view fault = "none", bool diagnostic = false,
-             bool collect_metrics = false);
+             bool collect_metrics = false, const Config* config = nullptr);
     ~Renderer();
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
@@ -77,6 +78,10 @@ class Renderer {
     std::vector<Acceleration> accelerations_;
     std::unique_ptr<vulkan::Buffer> vertices_, indices_, instances_, sbt_;
     std::vector<std::unique_ptr<vulkan::Buffer>> uniforms_;
+    std::vector<std::unique_ptr<vulkan::Buffer>> environment_uniforms_, material_buffers_;
+    std::vector<OpticalMaterial> material_values_;
+    std::unique_ptr<Environment> environment_;
+    std::vector<math::Vec4> glass_planes_;
     std::unique_ptr<vulkan::DescriptorSetArray> descriptors_;
     VkPipelineLayout layout_{};
     VkPipeline pipeline_{};
@@ -87,6 +92,7 @@ class Renderer {
     render::HdrPostFrame post_;
     render::RenderGraphFrameExecutor executor_;
     std::optional<vulkan::GpuTimestampProfiler> trace_timer_, whole_timer_;
+    std::optional<vulkan::GpuTimestampProfiler> environment_timer_, total_timer_;
     std::vector<std::optional<std::uint64_t>> recorded_;
     profiling::ProfileRecorder* profile_ = nullptr;
     nlohmann::json timing_ = nlohmann::json::array();
@@ -97,5 +103,7 @@ class Renderer {
     bool diagnostic_ = false, collect_metrics_ = false;
     std::uint64_t dropped_samples_ = 0;
     std::optional<std::uint32_t> last_slot_;
+    int dump_mode_ = 0;
+    std::uint64_t dump_stride_ = 64;
 };
 } // namespace cubey::projects::raytracing

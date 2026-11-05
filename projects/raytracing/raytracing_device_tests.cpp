@@ -1,3 +1,4 @@
+#include <cubey/render/atmosphere_reflection_probe.h>
 #include <cubey/vulkan/buffer.h>
 #include <cubey/vulkan/device.h>
 #include <cubey/vulkan/instance.h>
@@ -26,6 +27,21 @@ int main() {
         }
         if (!rejected)
             throw std::runtime_error("address allocation did not reject disabled capability");
+        for (auto mask : {VkPipelineStageFlags(VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR),
+                          VkPipelineStageFlags(VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)}) {
+            bool stage_rejected = false;
+            try {
+                cubey::render::AtmosphereReflectionProbe probe;
+                cubey::render::AtmosphereReflectionProbeConfig request;
+                request.consumer_stage_mask = mask;
+                probe.create_resources(ordinary, request);
+            } catch (const std::invalid_argument& e) {
+                stage_rejected =
+                    std::string_view(e.what()).find("consumer stages") != std::string_view::npos;
+            }
+            if (!stage_rejected)
+                throw std::runtime_error("probe accepted unsupported consumer stages");
+        }
         config.require_ray_tracing = true;
         Device tracing(instance, config);
         if (!tracing.ray_tracing_enabled())

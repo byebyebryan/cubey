@@ -100,6 +100,7 @@ void AtmosphereEnvironmentRuntime::create_resources(
                                            .frame_slot_count = config.frame_slot_count,
                                            .atmosphere_textures = config.atmosphere_textures,
                                            .ground_mode = config.reflection_ground_mode,
+                                           .consumer_stage_mask = config.consumer_stage_mask,
                                        });
 }
 

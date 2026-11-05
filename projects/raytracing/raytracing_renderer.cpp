@@ -2,6 +2,7 @@
 // ray_tracing_basic, 56a72bd1c43268781a75d73a520e4458b6cac766.
 // Copyright (c) 2019-2026, Sascha Willems. SPDX-License-Identifier: Apache-2.0
 #include "raytracing_renderer.h"
+#include "raytracing_environment.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -49,7 +50,7 @@ void build_barrier(VkCommandBuffer command) {
 }
 } // namespace
 CameraUniform camera_uniform(const Config& c, VkExtent2D extent) {
-    const math::Vec3 target{0, c.target_y, 0};
+    const math::Vec3 target{c.target_x, c.target_y, c.target_z};
     const auto eye = target + math::Vec3{std::cos(c.pitch) * std::sin(c.yaw), std::sin(c.pitch),
                                          std::cos(c.pitch) * std::cos(c.yaw)} *
                                   c.distance;
@@ -57,8 +58,10 @@ CameraUniform camera_uniform(const Config& c, VkExtent2D extent) {
     const math::Vec3 sun{std::cos(c.sun_elevation) * std::sin(c.sun_azimuth),
                          std::sin(c.sun_elevation),
                          std::cos(c.sun_elevation) * std::cos(c.sun_azimuth)};
-    const std::array<std::string_view, 6> views{"final", "geometric-normal", "shading-normal",
-                                                "depth", "instance-id",      "barycentric"};
+    const std::array<std::string_view, 11> views{
+        "final",       "geometric-normal", "shading-normal", "depth",
+        "instance-id", "barycentric",      "secondary-id",   "path-class",
+        "path-events", "transport-limit",  "environment"};
     return {inverse_view,
             {eye, float(extent.width) / float(extent.height)},
             {sun, 0},
@@ -69,7 +72,7 @@ CameraUniform camera_uniform(const Config& c, VkExtent2D extent) {
 }
 Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene& scene,
                    std::uint32_t slots, std::string_view fault, bool diagnostic,
-                   bool collect_metrics)
+                   bool collect_metrics, const Config* config)
     : device_(device), slots_(slots), executor_(slots), recorded_(slots), diagnostic_(diagnostic),
       collect_metrics_(collect_metrics) {
     if (!device.ray_tracing_enabled() || !slots || slots > 8)
@@ -95,8 +98,31 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
         properties_.pNext = &as_properties_;
         vkGetPhysicalDeviceProperties2(device.physical_device(), &p);
         create_scene(gpu, scene);
+        for (const auto& instance : scene.instances) {
+            if (scene.materials.at(instance.material).optics.x != 2)
+                continue;
+            if (!glass_planes_.empty())
+                throw std::invalid_argument("RT optics admits one glass volume");
+            const auto& mesh = scene.meshes.at(instance.mesh);
+            for (std::size_t i = 0; i < mesh.indices.size(); i += 3) {
+                const auto a =
+                    math::Vec3(instance.transform * mesh.vertices[mesh.indices[i]].position);
+                const auto b =
+                    math::Vec3(instance.transform * mesh.vertices[mesh.indices[i + 1]].position);
+                const auto c =
+                    math::Vec3(instance.transform * mesh.vertices[mesh.indices[i + 2]].position);
+                const auto normal = glm::normalize(glm::cross(b - a, c - a));
+                glass_planes_.push_back({normal, -glm::dot(normal, a)});
+            }
+        }
         if (fault == "scene")
             throw std::runtime_error("owned RT creation fault: scene");
+        const Config fallback_config;
+        const auto& settings = config ? *config : fallback_config;
+        dump_mode_ = dump_mode(settings);
+        dump_stride_ = dump_stride(settings);
+        material_values_ = scene.materials;
+        environment_ = std::make_unique<Environment>(device, gpu, settings, slots);
         auto start = Clock::now();
         create_pipeline();
         pipeline_ms_ = elapsed(start);
@@ -104,6 +130,8 @@ Renderer::Renderer(vulkan::Device& device, vulkan::GpuRuntime& gpu, const Scene&
             throw std::runtime_error("owned RT creation fault: pipeline");
         trace_timer_.emplace(device, slots, 1);
         whole_timer_.emplace(device, slots, 1);
+        environment_timer_.emplace(device, slots, 1);
+        total_timer_.emplace(device, slots, 1);
         post_.create_materials(device, {slots});
     } catch (...) {
         destroy();
@@ -132,8 +160,12 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
     indices_ = upload(indices.data(), indices.size() * 4, geometry_usage);
     std::vector<GpuInstance> shading;
     for (const auto& i : scene.instances) {
+        auto geometry = offsets.at(i.mesh);
+        if (i.material >= scene.materials.size())
+            throw std::invalid_argument("invalid RT material index");
+        geometry.z = i.material;
         shading.push_back(
-            {i.transform, glm::transpose(glm::inverse(i.transform)), offsets.at(i.mesh), i.color});
+            {i.transform, glm::transpose(glm::inverse(i.transform)), geometry, i.color});
         triangle_count_ += offsets.at(i.mesh).w;
     }
     instances_ = upload(shading.data(), shading.size() * sizeof(GpuInstance),
@@ -233,7 +265,7 @@ void Renderer::create_scene(vulkan::GpuRuntime& gpu, const Scene& scene) {
                        for (int c = 0; c < 4; ++c)
                            instance.transform.matrix[r][c] = i.transform[c][r];
                    instance.instanceCustomIndex = static_cast<std::uint32_t>(n);
-                   instance.mask = 255;
+                   instance.mask = scene.materials.at(i.material).optics.x == 2 ? 2 : 1;
                    instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
                    instance.accelerationStructureReference = accelerations_.at(i.mesh).address;
                    data.push_back(instance);
@@ -262,14 +294,20 @@ void Renderer::create_pipeline() {
     const VkShaderStageFlags stages = VK_SHADER_STAGE_RAYGEN_BIT_KHR |
                                       VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR |
                                       VK_SHADER_STAGE_MISS_BIT_KHR;
-    const std::array<vulkan::DescriptorSetBindingConfig, 7> bindings{
+    const std::array<vulkan::DescriptorSetBindingConfig, 13> bindings{
         {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, stages},
          {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
          {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stages},
          {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
          {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
          {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, stages},
-         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
+         {6, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {7, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {10, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {11, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR},
+         {12, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, VK_SHADER_STAGE_RAYGEN_BIT_KHR}}};
     descriptors_ = std::make_unique<vulkan::DescriptorSetArray>(
         device_, vulkan::DescriptorSetInfo(bindings, slots_));
     auto layout = cubey::vulkan::vk_struct<VkPipelineLayoutCreateInfo>(
@@ -342,8 +380,19 @@ void Renderer::create_pipeline() {
         uniforms_.push_back(std::make_unique<vulkan::Buffer>(
             device_, vulkan::BufferConfig{sizeof(CameraUniform), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                           host_memory}));
+        environment_uniforms_.push_back(std::make_unique<vulkan::Buffer>(
+            device_, vulkan::BufferConfig{sizeof(EnvironmentUniform),
+                                          VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, host_memory}));
+        material_buffers_.push_back(std::make_unique<vulkan::Buffer>(
+            device_, vulkan::BufferConfig{material_values_.size() * sizeof(OpticalMaterial),
+                                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory}));
+        environment_->bind(device_, descriptors_->set(i));
         vulkan::DescriptorWriteBatch writes;
         writes
+            .uniform_buffer(descriptors_->set(i), 11, environment_uniforms_.back()->handle(),
+                            sizeof(EnvironmentUniform))
+            .storage_buffer(descriptors_->set(i), 12, material_buffers_.back()->handle(),
+                            material_buffers_.back()->size())
             .uniform_buffer(descriptors_->set(i), 2, uniforms_.back()->handle(),
                             sizeof(CameraUniform))
             .storage_buffer(descriptors_->set(i), 3, vertices_->handle(), vertices_->size())
@@ -381,9 +430,10 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
                                                   .create_sampler = false,
                                                   .sampler = {}}),
              std::make_unique<vulkan::Buffer>(
-                 device_, vulkan::BufferConfig{
-                              diagnostic_ ? std::uint64_t(extent.width) * extent.height * 64 : 64,
-                              VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory})});
+                 device_,
+                 vulkan::BufferConfig{
+                     diagnostic_ ? std::uint64_t(extent.width) * extent.height * dump_stride_ : 64,
+                     VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, host_memory})});
         if (fault)
             throw std::runtime_error("owned RT creation fault: target");
     }
@@ -409,7 +459,7 @@ void Renderer::resize(VkExtent2D extent, VkFormat format, bool fault) {
 void Renderer::collect(std::uint32_t slot) {
     if (!recorded_[slot])
         return;
-    for (auto* timer : {&*trace_timer_, &*whole_timer_}) {
+    for (auto* timer : {&*trace_timer_, &*whole_timer_, &*environment_timer_, &*total_timer_}) {
         timer->collect(slot);
         for (const auto& t : timer->latest_timings()) {
             if (profile_)
@@ -432,14 +482,43 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
     collect(slot.index);
     profile_ = profile;
     auto camera = camera_uniform(c, extent_);
-    camera.options.z = diagnostic_ ? 1.F : 0.F;
+    if (!glass_planes_.empty() &&
+        std::all_of(glass_planes_.begin(), glass_planes_.end(), [&](auto p) {
+            return glm::dot(p, math::Vec4(math::Vec3(camera.eye), 1)) <= 1e-6F;
+        }))
+        throw std::invalid_argument(
+            "camera-inside-glass is unsupported; move outside the closed volume");
+    vulkan::CommandRecorder recorder(command);
+    if (present)
+        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    total_timer_->begin_frame(command, slot.index);
+    environment_timer_->begin_frame(command, slot.index);
+    total_timer_->begin_pass(command, slot.index, "raytracing.total_frame");
+    environment_timer_->begin_pass(command, slot.index, "raytracing.environment_update");
+    auto sun = math::Vec3(camera.sun);
+    const auto environment = environment_->prepare(c, command, slot, math::Vec3(camera.eye), sun);
+    camera.sun = math::Vec4(sun, 0);
+    environment_->bind(device_, descriptors_->set(slot.index));
+    environment_uniforms_.at(slot.index)->upload(&environment, sizeof(environment));
+    auto materials = material_values_;
+    for (auto& material : materials) {
+        if (material.optics.w > 0)
+            material.base_roughness = {c.red, c.green, c.blue, c.roughness};
+        if (material.optics.x == 2) {
+            material.optics.y = c.ior;
+            material.optics.z = c.attenuation_distance;
+            material.attenuation = {c.attenuation_red, c.attenuation_green, c.attenuation_blue, 1};
+        }
+    }
+    material_buffers_.at(slot.index)
+        ->upload(materials.data(), materials.size() * sizeof(OpticalMaterial));
+    environment_timer_->end_pass(command, slot.index);
+    camera.options.z = diagnostic_ ? float(dump_mode_) : 0.F;
+    camera.options.w = c.optics_contract ? 1.F : 0.F;
     uniforms_.at(slot.index)->upload(&camera, sizeof(camera));
     post_.upload(slot, render::hdr_post_uniforms(output.format, c.exposure,
                                                  c.view == "final" ? render::PbrTonemap::Aces
                                                                    : render::PbrTonemap::Linear));
-    vulkan::CommandRecorder recorder(command);
-    if (present)
-        recorder.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     whole_timer_->begin_frame(command, slot.index);
     trace_timer_->begin_frame(command, slot.index);
     whole_timer_->begin_pass(command, slot.index, "raytracing.whole_scene");
@@ -503,6 +582,7 @@ void Renderer::render(VkCommandBuffer command, render::ColorTargetView output,
             post_.update_scene_color_descriptor(device_, slot, graph, resources, scene);
         });
     whole_timer_->end_pass(command, slot.index);
+    total_timer_->end_pass(command, slot.index);
     recorded_[slot.index] = frame;
     target.initialized = true;
     last_slot_ = slot.index;
@@ -539,13 +619,26 @@ std::uint64_t Renderer::requested_bytes() const {
         bytes += uniform->size();
     for (const auto& target : targets_)
         bytes += std::uint64_t(extent_.width) * extent_.height * 8 + target.queries->size();
+    for (const auto& buffer : material_buffers_)
+        bytes += buffer->size();
+    for (const auto& buffer : environment_uniforms_)
+        bytes += buffer->size();
     return bytes;
 }
 nlohmann::json Renderer::metrics() const {
     const auto memory = device_.device_memory_budget();
     return {
         {"format", "cubey.raytracing.metrics"},
-        {"version", 1},
+        {"version", 2},
+        {"environment_setup_ms", environment_ ? environment_->setup_ms() : 0},
+        {"environment_probe_build_gpu_ms", environment_ ? environment_->probe_gpu_ms() : 0},
+        {"environment_pipeline_setup_ms", environment_ ? environment_->pipeline_ms() : 0},
+        {"environment_fallback_setup_ms", environment_ ? environment_->fallback_ms() : 0},
+        {"environment_generation", environment_ ? environment_->generation() : 0},
+        {"material_bytes", material_values_.size() * sizeof(OpticalMaterial) * slots_},
+        {"environment_uniform_bytes", sizeof(EnvironmentUniform) * slots_},
+        {"environment_texture_allocation_bytes",
+         environment_ ? environment_->texture_allocation_bytes(device_) : 0},
         {"device", device_.device_name()},
         {"triangles", triangle_count_},
         {"scene_upload_and_build_ms", scene_ms_},
@@ -560,14 +653,16 @@ nlohmann::json Renderer::metrics() const {
         {"peak_simultaneous_project_requested_bytes", requested_peak_},
         {"project_memory_scope", "requested RT buffers/images including build scratch, TLAS inputs "
                                  "and resize overlap; excludes host targets, upload staging, "
-                                 "driver allocation padding and pipeline/descriptor internals"},
+                                 "driver allocation padding, shared probe textures/uniform "
+                                 "internals and pipeline/descriptor internals"},
         {"target_bytes", std::uint64_t(extent_.width) * extent_.height * 8 * slots_},
         {"observed_device_local_usage_bytes",
          memory.available ? nlohmann::json(memory.device_local_usage) : nlohmann::json(nullptr)},
         {"memory_usage_scope", "VK_EXT_memory_budget estimate of current-process device-local heap "
                                "allocations at shutdown; not a peak"},
-        {"query_bytes",
-         diagnostic_ ? std::uint64_t(extent_.width) * extent_.height * 64 * slots_ : 64 * slots_},
+        {"query_bytes", diagnostic_
+                            ? std::uint64_t(extent_.width) * extent_.height * dump_stride_ * slots_
+                            : 64 * slots_},
         {"uniform_bytes", sizeof(CameraUniform) * slots_},
         {"target_generations", target_generations_},
         {"as_builds", accelerations_.size()},
@@ -580,6 +675,11 @@ void Renderer::destroy() noexcept {
     post_.destroy();
     trace_timer_.reset();
     whole_timer_.reset();
+    environment_timer_.reset();
+    total_timer_.reset();
+    environment_.reset();
+    environment_uniforms_.clear();
+    material_buffers_.clear();
     if (pipeline_)
         vkDestroyPipeline(device_.handle(), pipeline_, nullptr);
     if (layout_)

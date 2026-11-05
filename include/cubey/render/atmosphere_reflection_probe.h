@@ -43,6 +43,7 @@ struct AtmosphereReflectionProbeConfig {
     std::uint32_t frame_slot_count = 1;
     AtmosphereBackgroundTextureBindings atmosphere_textures{};
     AtmosphereEnvironmentGroundMode ground_mode = AtmosphereEnvironmentGroundMode::SkyOnly;
+    VkPipelineStageFlags consumer_stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 };
 
 struct AtmosphereReflectionProbePipelineConfig {
@@ -159,6 +160,7 @@ class AtmosphereReflectionProbe {
 
     std::uint32_t extent_ = 0;
     AtmosphereEnvironmentGroundMode ground_mode_ = AtmosphereEnvironmentGroundMode::SkyOnly;
+    VkPipelineStageFlags consumer_stage_mask_ = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     std::uint32_t mip_levels_ = 0;
     VkFormat format_ = VK_FORMAT_UNDEFINED;
     std::optional<TextureCube> sky_radiance_cube_{};

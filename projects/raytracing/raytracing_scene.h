@@ -14,10 +14,23 @@ struct Instance {
     std::uint32_t mesh;
     math::Mat4 transform{1};
     math::Vec4 color{1};
+    std::uint32_t material = 0;
 };
+struct alignas(16) OpticalMaterial {
+    math::Vec4 base_roughness{1, 1, 1, .4F};
+    math::Vec4 optics{0, 1.5F, 1,
+                      0}; // kind: opaque/mirror/glass, IOR, attenuation distance, use global base
+    math::Vec4 attenuation{1};
+    math::Vec4 reflectance{1};
+};
+static_assert(sizeof(OpticalMaterial) == 64);
 struct Scene {
     std::vector<Mesh> meshes;
     std::vector<Instance> instances;
+    std::vector<OpticalMaterial> materials{
+        {{1, 1, 1, .4F}, {0, 1.5F, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}},
+        {{.38F, .41F, .45F, .75F}, {0, 1.5F, 1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1}}};
 };
 Scene make_scene(const Config& config);
+Scene make_optical_scene(const Config& config);
 } // namespace cubey::projects::raytracing

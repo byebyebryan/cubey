@@ -24,6 +24,7 @@ struct AtmosphereEnvironmentRuntimeResourceConfig {
     render::AtmosphereBackgroundTextureBindings atmosphere_textures{};
     render::AtmosphereEnvironmentGroundMode reflection_ground_mode =
         render::AtmosphereEnvironmentGroundMode::SkyOnly;
+    VkPipelineStageFlags consumer_stage_mask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 };
 
 struct AtmosphereEnvironmentRuntimePipelineConfig {

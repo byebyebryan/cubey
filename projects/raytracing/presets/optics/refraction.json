@@ -1,0 +1,23 @@
+{
+  "environment": "atmosphere",
+  "model": "cache/raytracing/stanford-dragon/dragon.glb",
+  "width": 1920,
+  "height": 1080,
+  "fov": 45,
+  "red": 0.65,
+  "green": 0.38,
+  "blue": 0.2,
+  "roughness": 0.6,
+  "sun-azimuth": 0.6,
+  "sun-elevation": 0.65,
+  "intensity": 3,
+  "exposure": 0,
+  "reflection-source": "scene",
+  "transmission-source": "scene",
+  "target-y": 0.5,
+  "scene": "refraction-dragon",
+  "yaw": 0.2,
+  "pitch": 0.12,
+  "distance": 2.3,
+  "target-x": 0.15
+}

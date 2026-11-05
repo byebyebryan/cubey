@@ -7,14 +7,29 @@ struct Config {
     host::CommonRunConfig common;
     std::string scene = "fixture", view = "final";
     std::filesystem::path model, metrics, save_config, query_output;
+    std::filesystem::path optics_output, hdr_output, scene_output;
+    std::string environment = "legacy", reflection_source = "scene", transmission_source = "scene";
     float fov = 45.F;
-    float yaw = .6F, pitch = .25F, distance = 2.6F, target_y = 0;
+    float yaw = .6F, pitch = .25F, distance = 2.6F, target_y = 0, target_x = 0, target_z = 0;
     float red = .55F, green = .34F, blue = .15F, roughness = .4F;
     float sun_azimuth = -.8F, sun_elevation = .8F, intensity = 3, ambient = .12F, exposure = 0;
     bool shadows = true;
     std::string fault = "none";
     bool exercise_retry = false;
+    bool optics_contract = false;
+    float ior = 1.5F, attenuation_red = .94F, attenuation_green = .98F, attenuation_blue = .99F;
+    float attenuation_distance = 1.F, throughput_cutoff = .0001F;
+    float orbit_speed = 0, sun_speed = 0;
+    int max_events = 8, max_path_rays = 32, max_total_rays = 128;
 };
+inline int dump_mode(const Config& c) {
+    return !c.query_output.empty()
+               ? 1
+               : (!c.optics_output.empty() ? 2 : (!c.hdr_output.empty() ? 3 : 0));
+}
+inline std::uint64_t dump_stride(const Config& c) {
+    return dump_mode(c) == 2 ? 256 : (dump_mode(c) == 3 ? 16 : 64);
+}
 inline config::Schema schema(Config& c) {
     using config::ValueType;
     auto b = config::Schema::builder();
@@ -31,22 +46,55 @@ inline config::Schema schema(Config& c) {
                                   .enum_values = {}};
     };
     auto scene = opt("scene", ValueType::Enum);
-    scene.enum_values = {"triangle", "fixture", "dragon"};
+    scene.enum_values = {"triangle",
+                         "fixture",
+                         "dragon",
+                         "reflection-fixture",
+                         "reflection-dragon",
+                         "refraction-fixture",
+                         "refraction-dragon",
+                         "slab"};
     auto view = opt("view", ValueType::Enum);
-    view.enum_values = {"final", "geometric-normal", "shading-normal",
-                        "depth", "instance-id",      "barycentric"};
+    view.enum_values = {"final",       "geometric-normal", "shading-normal", "depth",
+                        "instance-id", "barycentric",      "secondary-id",   "path-class",
+                        "path-events", "transport-limit",  "environment"};
     auto fault = opt("fault", ValueType::Enum);
     fault.enum_values = {"none", "scene", "pipeline", "target"};
     b.bind(scene, c.scene).bind(view, c.view).bind(fault, c.fault);
+    auto environment = opt("environment", ValueType::Enum);
+    environment.enum_values = {"legacy", "atmosphere"};
+    auto reflection = opt("reflection-source", ValueType::Enum);
+    reflection.enum_values = {"environment", "scene"};
+    auto transmission = opt("transmission-source", ValueType::Enum);
+    transmission.enum_values = {"environment", "scene"};
+    b.bind(environment, c.environment)
+        .bind(reflection, c.reflection_source)
+        .bind(transmission, c.transmission_source);
     b.bind(opt("model", ValueType::Path), c.model)
         .bind(opt("metrics", ValueType::Path), c.metrics)
         .bind(opt("save-config", ValueType::Path), c.save_config)
-        .bind(opt("query-output", ValueType::Path), c.query_output);
+        .bind(opt("query-output", ValueType::Path), c.query_output)
+        .bind(opt("optics-output", ValueType::Path), c.optics_output)
+        .bind(opt("hdr-output", ValueType::Path), c.hdr_output)
+        .bind(opt("scene-output", ValueType::Path), c.scene_output);
+    b.bind(opt("max-events", ValueType::Int), c.max_events)
+        .bind(opt("max-path-rays", ValueType::Int), c.max_path_rays)
+        .bind(opt("max-total-rays", ValueType::Int), c.max_total_rays);
     for (auto [name, value] : {std::pair{"yaw", &c.yaw},
                                {"pitch", &c.pitch},
                                {"distance", &c.distance},
                                {"fov", &c.fov},
                                {"target-y", &c.target_y},
+                               {"target-x", &c.target_x},
+                               {"target-z", &c.target_z},
+                               {"ior", &c.ior},
+                               {"attenuation-red", &c.attenuation_red},
+                               {"attenuation-green", &c.attenuation_green},
+                               {"attenuation-blue", &c.attenuation_blue},
+                               {"attenuation-distance", &c.attenuation_distance},
+                               {"throughput-cutoff", &c.throughput_cutoff},
+                               {"orbit-speed", &c.orbit_speed},
+                               {"sun-speed", &c.sun_speed},
                                {"red", &c.red},
                                {"green", &c.green},
                                {"blue", &c.blue},
@@ -60,6 +108,7 @@ inline config::Schema schema(Config& c) {
     auto shadows = opt("shadows", ValueType::Bool);
     shadows.negative_cli_name = "--no-shadows";
     b.bind(shadows, c.shadows).bind(opt("exercise-retry", ValueType::Bool), c.exercise_retry);
+    b.bind(opt("optics-contract", ValueType::Bool), c.optics_contract);
     return b.build();
 }
 inline Config parse_config(int argc, char** argv, config::ParseResult* result = nullptr) {
@@ -68,9 +117,30 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
     auto c = host::parse_configured_app<Config>(argc, argv, schema, parsed);
     if (parsed->write_config_template_path)
         return c;
-    for (float value :
-         {c.fov, c.yaw, c.pitch, c.distance, c.target_y, c.red, c.green, c.blue, c.roughness,
-          c.sun_azimuth, c.sun_elevation, c.intensity, c.ambient, c.exposure})
+    for (float value : {c.fov,
+                        c.yaw,
+                        c.pitch,
+                        c.distance,
+                        c.target_y,
+                        c.target_x,
+                        c.target_z,
+                        c.red,
+                        c.green,
+                        c.blue,
+                        c.roughness,
+                        c.sun_azimuth,
+                        c.sun_elevation,
+                        c.intensity,
+                        c.ambient,
+                        c.exposure,
+                        c.ior,
+                        c.attenuation_red,
+                        c.attenuation_green,
+                        c.attenuation_blue,
+                        c.attenuation_distance,
+                        c.throughput_cutoff,
+                        c.orbit_speed,
+                        c.sun_speed})
         if (!std::isfinite(value))
             throw std::invalid_argument("raytracing settings must be finite");
     if (!(c.fov >= 10 && c.fov <= 100 && c.distance > .05F && c.distance < 100 &&
@@ -79,18 +149,32 @@ inline Config parse_config(int argc, char** argv, config::ParseResult* result = 
           c.intensity >= 0 && c.intensity <= 100 && c.ambient >= 0 && c.ambient <= 10 &&
           std::abs(c.exposure) <= 16))
         throw std::invalid_argument("raytracing: invalid camera, material or lighting range");
-    if (c.scene == "dragon" && (c.model.empty() || !std::filesystem::is_regular_file(c.model)))
+    if (c.ior < 1 || c.ior > 2.5F || c.attenuation_distance <= 0 || c.attenuation_distance > 100 ||
+        c.attenuation_red <= 0 || c.attenuation_red > 1 || c.attenuation_green <= 0 ||
+        c.attenuation_green > 1 || c.attenuation_blue <= 0 || c.attenuation_blue > 1 ||
+        c.throughput_cutoff < 0 || c.throughput_cutoff > .01F || c.max_events < 1 ||
+        c.max_events > 12 || c.max_path_rays < 1 || c.max_path_rays > 64 || c.max_total_rays < 1 ||
+        c.max_total_rays > 256 || std::abs(c.orbit_speed) > 2 || std::abs(c.sun_speed) > 2)
+        throw std::invalid_argument("raytracing: invalid optical range or path budget");
+    const bool dragon = c.scene.find("dragon") != std::string::npos;
+    if (dragon && (c.model.empty() || !std::filesystem::is_regular_file(c.model)))
         throw std::invalid_argument("dragon requires --model prepared.glb; run "
                                     "projects/raytracing/tools/prepare_dragon.py first");
-    if (c.scene != "dragon" && !c.model.empty())
+    if (!dragon && !c.model.empty())
         throw std::invalid_argument("--model requires --scene dragon");
     if (c.exercise_retry && c.fault == "none")
         throw std::invalid_argument("--exercise-retry requires --fault scene|pipeline|target");
-    if (!c.query_output.empty() &&
-        (!c.common.headless || c.common.frames > 1 || c.common.headless_render_only ||
-         c.common.capture_mode != CaptureMode::Png || c.common.width > 2048 ||
-         c.common.height > 2048 ||
-         std::uint64_t(c.common.width) * c.common.height * 64 > 32 * 1024 * 1024))
+    const auto outputs =
+        int(!c.query_output.empty()) + int(!c.optics_output.empty()) + int(!c.hdr_output.empty());
+    if (c.optics_contract && (dump_mode(c) != 2 || !c.common.headless))
+        throw std::invalid_argument("optics contract requires headless --optics-output");
+    if (outputs > 1)
+        throw std::invalid_argument("select one raw diagnostic output");
+    if (outputs && (!c.common.headless || c.common.frames > 1 || c.common.headless_render_only ||
+                    c.common.capture_mode != CaptureMode::Png || c.common.width > 2048 ||
+                    c.common.height > 2048 ||
+                    std::uint64_t(c.common.width) * c.common.height * dump_stride(c) >
+                        (dump_mode(c) == 3 ? 64ULL : 32ULL) * 1024 * 1024))
         throw std::invalid_argument(
             "query output requires one headless PNG frame and at most 32 MiB of raw geometry");
     return c;

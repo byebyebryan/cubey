@@ -15,7 +15,12 @@ def main():
     parser.add_argument("--binary", type=Path, default=Path("build/dev/projects/raytracing/raytracing"))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--inspect", action="store_true")
+    parser.add_argument("--config",type=Path)
+    parser.add_argument("--optics",action="store_true")
     args = parser.parse_args()
+    initial=json.loads(args.config.read_text()) if args.config else {}
+    home_yaw=initial.get("yaw",.6); home_distance=initial.get("distance",2.6)
+    home_sun=initial.get("sun-azimuth",-.8)
     if os.environ.get("CUBEY_RT_PRIVATE_XVFB") != "1":
         raise SystemExit("Requires CUBEY_RT_PRIVATE_XVFB=1 in an owned xvfb-run display")
     out = args.output.resolve()
@@ -51,6 +56,8 @@ def main():
     env.pop("WAYLAND_DISPLAY", None)
     command = ["stdbuf", "-oL", str(args.binary.resolve()), "--width", "1000", "--height", "760",
                "--require-validation", "--save-config", str(out / "saved.json"), "--metrics", str(out / "metrics.json")]
+
+    if args.config: command[3:3] = ["--config",str(args.config.resolve())]
 
     def wait_for(predicate, description):
         deadline = time.monotonic() + 45
@@ -122,7 +129,7 @@ def main():
                 click(60, 398)
                 wait_for(lambda: (out / "saved.json").exists(), "orbit configuration save")
                 orbit_config=json.loads((out / "saved.json").read_text())
-                assert abs(orbit_config["yaw"]-.6)>.01 and orbit_config["distance"]<2.6
+                assert abs(orbit_config["yaw"]-home_yaw)>.01 and orbit_config["distance"]<home_distance
                 click(800, 500)
                 key("r")
                 capture("reset")
@@ -136,8 +143,8 @@ def main():
                 wait_for(lambda: json.loads((out / "saved.json").read_text())["view"]!="final", "diagnostic view save")
                 edited=json.loads((out / "saved.json").read_text())
                 assert not edited["shadows"] and abs(edited["roughness"]-.4)>.05
-                assert abs(edited["sun-azimuth"]+.8)>.05
-                assert abs(edited["yaw"]-.6)<1e-5 and abs(edited["distance"]-2.6)<1e-5
+                assert abs(edited["sun-azimuth"]-home_sun)>.05
+                assert abs(edited["yaw"]-home_yaw)<1e-5 and abs(edited["distance"]-home_distance)<1e-5
                 click(140,98)
                 click(130,129)
                 click(60,398)
@@ -151,6 +158,15 @@ def main():
                 x.XSync(display, 0)
                 time.sleep(.4)
                 capture("restored")
+                if args.optics:
+                    # Controls follow Save view in the optical panel.
+                    click(140,428);click(130,458);click(60,398)
+                    wait_for(lambda:json.loads((out/"saved.json").read_text())["reflection-source"]=="environment","reflection route edit")
+                    click(140,458);click(130,488);click(60,398)
+                    wait_for(lambda:json.loads((out/"saved.json").read_text())["transmission-source"]=="environment","transmission route edit")
+                    click(180,488);click(60,398)
+                    wait_for(lambda:abs(json.loads((out/"saved.json").read_text())["ior"]-1.5)>.05,"IOR edit")
+                    capture("optical-edits")
             key("Escape")
             code = process.wait(timeout=15)
             text = log.read_text()
@@ -158,7 +174,7 @@ def main():
                 raise RuntimeError(text)
             metrics = json.loads((out / "metrics.json").read_text())
             if not args.inspect:
-                assert metrics["as_builds"] == 3
+                assert metrics["as_builds"] == (7 if args.config else 3)
                 assert metrics["target_generations"] >= 3
             (out / "result.json").write_text(json.dumps({"passed": True, "command": command,
                 "as_builds": metrics["as_builds"], "target_generations": metrics["target_generations"],

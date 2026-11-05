@@ -6,6 +6,8 @@
 #include <stdexcept>
 namespace cubey::projects::raytracing {
 Scene make_scene(const Config& c) {
+    if (c.scene.find("reflection-") == 0 || c.scene.find("refraction-") == 0 || c.scene == "slab")
+        return make_optical_scene(c);
     Scene s;
     if (c.scene == "dragon") {
         const auto asset = asset::load_gltf_asset(
@@ -61,7 +63,7 @@ Scene make_scene(const Config& c) {
                           {{2, y, -2, 1}, {0, 1, 0, 0}}};
         floor.indices = {0, 1, 2, 0, 2, 3};
         s.meshes.push_back(std::move(floor));
-        s.instances.push_back({1, math::Mat4(1), {.38F, .41F, .45F, 1}});
+        s.instances.push_back({1, math::Mat4(1), {1, 1, 1, 1}, 1});
     }
     for (const auto& m : s.meshes) {
         if (m.vertices.empty() || m.indices.empty() || m.indices.size() % 3)

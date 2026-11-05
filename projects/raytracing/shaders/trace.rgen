@@ -6,53 +6,164 @@
 layout(rgba16f,set=0,binding=1) uniform writeonly image2D outputImage;
 layout(location=0) rayPayloadEXT Hit hit;
 layout(location=1) rayPayloadEXT bool occluded;
+layout(std430,set=0,binding=6) writeonly buffer Queries { vec4 queries[]; };
+layout(set=0,binding=7) uniform samplerCube skyRadiance;
+layout(set=0,binding=8) uniform samplerCube currentEnvironment;
+layout(set=0,binding=9) uniform samplerCube previousEnvironment;
+layout(set=0,binding=10) uniform sampler2D brdfLut;
+layout(std140,set=0,binding=11) uniform Environment {
+ vec4 directColor; vec4 irradiance[9]; vec4 options; vec4 transport;
+ ivec4 limits; vec4 glass; vec4 attenuation;
+} environment;
+struct Material { vec4 base; vec4 optics; vec4 attenuation; vec4 reflectance; };
+layout(std430,set=0,binding=12) readonly buffer Materials { Material materials[]; };
 struct Query { vec4 hit; vec4 geometric; vec4 shading; vec4 bary; };
-layout(std430,set=0,binding=6) writeonly buffer Queries { Query queries[]; };
-void main() {
-    vec2 uv=(vec2(gl_LaunchIDEXT.xy)+.5)/vec2(gl_LaunchSizeEXT.xy);
-    vec2 screen=uv*2-1;
-    vec3 origin=camera.eye.xyz;
-    vec3 direction=normalize(mat3(camera.inverseView)*vec3(screen.x*camera.eye.w*camera.light.z,-screen.y*camera.light.z,-1));
-    hit.t=-1;
-    traceRayEXT(scene,gl_RayFlagsOpaqueEXT,255,0,0,0,origin,.00001,direction,100,0);
-    vec3 color=vec3(.035,.045,.06);
-    Query query=Query(vec4(-1,0,0,0),vec4(0),vec4(0),vec4(0));
-    if(hit.t>=0) {
-        Instance instance=instances[hit.instance];
-        uint start=instance.offsets.y+3*hit.primitive;
-        Vertex a=vertices[indices[start]+instance.offsets.x];
-        Vertex b=vertices[indices[start+1]+instance.offsets.x];
-        Vertex c=vertices[indices[start+2]+instance.offsets.x];
-        vec3 bary=vec3(1-hit.bary.x-hit.bary.y,hit.bary);
-        vec3 wa=(instance.world*a.position).xyz,wb=(instance.world*b.position).xyz,wc=(instance.world*c.position).xyz;
-        vec3 geometric=normalize(cross(wb-wa,wc-wa));
-        geometric=faceforward(geometric,direction,geometric);
-        vec3 n=normalize(mat3(instance.normalWorld)*(a.normal.xyz*bary.x+b.normal.xyz*bary.y+c.normal.xyz*bary.z));
-        if(dot(n,geometric)<0) n=-n;
-        vec3 p=origin+direction*hit.t,l=normalize(camera.sun.xyz),v=-direction;
-        float nl=dot(geometric,l)>0 ? max(dot(n,l),0):0,nv=max(dot(n,v),.001);
-        bool floor=instance.color.w>.5;
-        vec3 base=floor ? instance.color.rgb : camera.base.rgb*instance.color.rgb;
-        float rough=floor ? .75 : camera.base.w;
-        occluded=false;
-        if(camera.options.x>.5 && nl>0 && dot(geometric,l)>0) {
-            occluded=true;
-            float offset=max(.00002,2e-6*max(max(abs(p.x),abs(p.y)),abs(p.z)));
-            traceRayEXT(scene,gl_RayFlagsOpaqueEXT|gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsSkipClosestHitShaderEXT,
-                255,0,0,1,p+geometric*offset,0,l,100,1);
-        }
-        vec3 h=normalize(l+v),f=cubey_pbr_fresnel_schlick(max(dot(h,v),0),vec3(.04));
-        float d=cubey_pbr_distribution_ggx(max(dot(n,h),0),rough);
-        float vis=cubey_pbr_visibility_smith_ggx_correlated(nv,nl,rough);
-        color=base*camera.light.y+((1-f)*base/3.141592654+f*d*vis)*camera.light.x*nl*(occluded ? 0 : 1);
-        int view=int(camera.options.y+.5);
-        if(view==1) color=geometric*.5+.5;
-        if(view==2) color=n*.5+.5;
-        if(view==3) color=vec3(hit.t/6);
-        if(view==4) color=vec3(uvec3((hit.instance+1)*1664525u)*uvec3(1,17,113)&255u)/255;
-        if(view==5) color=bary;
-        query=Query(vec4(hit.t,float(hit.instance),float(hit.primitive),occluded?0:1),vec4(geometric,0),vec4(n,0),vec4(bary,0));
-    }
-    imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(color,1));
-    if(camera.options.z>.5) queries[gl_LaunchIDEXT.x+gl_LaunchIDEXT.y*gl_LaunchSizeEXT.x]=query;
+#include "legacy_trace.glsl"
+#include "optics.glsl"
+struct Surface { vec3 p; vec3 outward; vec3 n; vec3 bary; float t; int id; uint material; uint primitive; };
+struct Path { vec3 origin; vec3 direction; vec3 weight; int medium; int depth; bool environmentOnly; int tag; bool trunk; };
+vec4 observation[16];
+int totalQueries=0,radianceQueries=0,shadowQueries=0,maximumDepth=0,stackPeak=0,tirEvents=0;
+uint status=0u;
+vec3 discarded=vec3(0);
+vec3 sky(vec3 d) {return environment.options.z>.5?textureLod(skyRadiance,d,0).rgb*environment.options.w:vec3(.035,.045,.06);}
+vec3 irradiance(vec3 n) {
+ float x=n.x,y=n.y,z=n.z;
+ float b[9]=float[9](.282095,.488603*y,.488603*z,.488603*x,1.092548*x*y,1.092548*y*z,.315392*(3*z*z-1),1.092548*x*z,.546274*(x*x-y*y));
+ vec3 result=vec3(0);for(int i=0;i<9;++i)result+=b[i]*environment.irradiance[i].xyz;return max(result,0);
+}
+float epsilon(vec3 p){return max(.00002,2e-6*max(max(abs(p.x),abs(p.y)),abs(p.z)));}
+vec3 offsetOrigin(Surface s,vec3 d){return s.p+s.outward*(dot(d,s.outward)>=0?1:-1)*epsilon(s.p);}
+Surface surfaceRay(vec3 origin,vec3 direction,uint mask) {
+ Surface s=Surface(vec3(0),vec3(0),vec3(0),vec3(0),-1,-1,0u,0u);
+ if(totalQueries>=environment.limits.z){status|=1u;return s;}
+ ++totalQueries;hit.t=-1;
+ traceRayEXT(scene,gl_RayFlagsOpaqueEXT,mask,0,0,0,origin,.000001,direction,100,0);
+ if(hit.t<0)return s;
+ Instance inst=instances[hit.instance];uint start=inst.offsets.y+3*hit.primitive;
+ Vertex a=vertices[indices[start]+inst.offsets.x],b=vertices[indices[start+1]+inst.offsets.x],c=vertices[indices[start+2]+inst.offsets.x];
+ vec3 bary=vec3(1-hit.bary.x-hit.bary.y,hit.bary);
+ vec3 wa=(inst.world*a.position).xyz,wb=(inst.world*b.position).xyz,wc=(inst.world*c.position).xyz;
+ vec3 outward=normalize(cross(wb-wa,wc-wa));
+ vec3 n=normalize(mat3(inst.normalWorld)*(a.normal.xyz*bary.x+b.normal.xyz*bary.y+c.normal.xyz*bary.z));
+ if(dot(n,faceforward(outward,direction,outward))<0)n=-n;
+ return Surface(origin+direction*hit.t,outward,n,bary,hit.t,int(hit.instance),inst.offsets.z,hit.primitive);
+}
+vec3 shadowVisibility(Surface receiver,vec3 light) {
+ if(camera.options.x<.5)return vec3(1);
+ if(environment.transport.z<.5){
+  if(totalQueries>=environment.limits.z){status|=1u;return vec3(0);}
+  ++totalQueries;++shadowQueries;occluded=true;
+  traceRayEXT(scene,gl_RayFlagsOpaqueEXT|gl_RayFlagsTerminateOnFirstHitEXT|gl_RayFlagsSkipClosestHitShaderEXT,255,0,0,1,offsetOrigin(receiver,light),0,light,100,1);
+  return occluded?vec3(0):vec3(1);
+ }
+ vec3 origin=offsetOrigin(receiver,light),visibility=vec3(1);bool inside=false;
+ for(int i=0;i<8;++i){
+  if(totalQueries>=environment.limits.z){status|=1u;return vec3(0);}
+  Surface s=surfaceRay(origin,light,255u);++shadowQueries;
+  if(s.id<0){if(inside){status|=16u;return vec3(0);}return visibility;}
+  if(inside)visibility*=absorption(s.t);
+  if(materials[s.material].optics.x<1.5)return vec3(0);
+  bool entering=dot(light,s.outward)<0;if(entering==inside){status|=16u;return vec3(0);}
+  Interface b=opticalInterface(light,s.outward,inside,environment.glass.x);
+  visibility*=1-b.fresnel;inside=entering;origin=offsetOrigin(s,light);
+ }
+ status|=32u;return vec3(0);
+}
+vec3 shade(Surface s,vec3 direction,out vec3 visibility){
+ Material m=materials[s.material];vec3 n=s.n,l=normalize(camera.sun.xyz),v=-direction;
+ vec3 geometric=faceforward(s.outward,direction,s.outward);
+ float nl=dot(geometric,l)>0?max(dot(n,l),0):0,nv=max(dot(n,v),.001);
+ vec3 base=m.base.rgb*instances[s.id].color.rgb;float rough=m.base.w;
+ visibility=nl>0?shadowVisibility(s,l):vec3(1);
+ vec3 h=normalize(l+v),f=cubey_pbr_fresnel_schlick(max(dot(h,v),0),vec3(.04));
+ float d=cubey_pbr_distribution_ggx(max(dot(n,h),0),rough),vis=cubey_pbr_visibility_smith_ggx_correlated(nv,nl,rough);
+ vec3 ambient=environment.options.z>.5?base*irradiance(n)/3.141592654:base*camera.light.y;
+ vec3 direct=environment.options.z>.5?environment.directColor.rgb:vec3(camera.light.x);
+ vec3 result=ambient+((1-f)*base/3.141592654+f*d*vis)*direct*nl*visibility;
+ if(environment.options.z>.5){
+  vec3 r=reflect(direction,n);float lod=rough*environment.options.y;
+  vec3 filtered=mix(textureLod(previousEnvironment,r,lod).rgb,textureLod(currentEnvironment,r,lod).rgb,environment.options.x);
+  vec3 dfg=textureLod(brdfLut,vec2(nv,rough),0).rgb;
+  result+=environment.options.w*filtered*cubey_pbr_indirect_specular(vec3(.04),vec3(1),dfg);
+ }
+ return result;
+}
+void contractProbe(){
+ for(int i=0;i<16;++i)observation[i]=vec4(0);
+ float angle=1.57079632679*(float(gl_LaunchIDEXT.x)+.5)/float(gl_LaunchSizeEXT.x);
+ bool inside=gl_LaunchIDEXT.y>=gl_LaunchSizeEXT.y/2;
+ vec3 incident=vec3(sin(angle),0,inside?cos(angle):-cos(angle));
+ Interface b=opticalInterface(incident,vec3(0,0,1),inside,environment.glass.x);
+ float distance=2*(float(gl_LaunchIDEXT.y)+.5)/float(gl_LaunchSizeEXT.y);
+ observation[4]=vec4(incident,inside?1:0);observation[5]=vec4(b.reflected,b.fresnel);
+ observation[6]=vec4(b.transmitted,b.tir?1:0);observation[9]=vec4(absorption(distance),distance);
+ uint pixel=gl_LaunchIDEXT.x+gl_LaunchIDEXT.y*gl_LaunchSizeEXT.x;
+ for(uint i=0;i<16;++i)queries[pixel*16+i]=observation[i];
+ imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(b.fresnel,b.tir?1:0,0,1));
+}
+void main(){
+ if(camera.options.w>.5){contractProbe();return;}
+ if(environment.options.z<.5&&environment.transport.w<.5&&camera.options.z<1.5&&camera.options.y<5.5){traceLegacy();return;}
+ for(int i=0;i<16;++i)observation[i]=vec4(0);
+ observation[0].x=-1;observation[7].w=-3;observation[8].w=-3;observation[14].w=-3;
+ vec2 uv=(vec2(gl_LaunchIDEXT.xy)+.5)/vec2(gl_LaunchSizeEXT.xy),screen=uv*2-1;
+ vec3 origin=camera.eye.xyz,direction=normalize(mat3(camera.inverseView)*vec3(screen.x*camera.eye.w*camera.light.z,-screen.y*camera.light.z,-1));
+ if(int(camera.options.y+.5)==10){
+  vec3 color=sky(direction);imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(color,1));
+  uint pixel=gl_LaunchIDEXT.x+gl_LaunchIDEXT.y*gl_LaunchSizeEXT.x;int mode=int(camera.options.z+.5);
+  observation[10]=vec4(color,0);
+  if(mode==3)queries[pixel]=vec4(color,0);
+  if(mode==2)for(uint i=0;i<16;++i)queries[pixel*16+i]=observation[i];
+  if(mode==1)for(uint i=0;i<4;++i)queries[pixel*4+i]=observation[i];
+  return;
+ }
+ Path pending[16];int count=1;pending[0]=Path(origin,direction,vec3(1),-1,0,false,0,true);
+ vec3 color=vec3(0);bool recordedBoundary=false;
+ while(count>0){
+  Path p=pending[--count];maximumDepth=max(maximumDepth,p.depth);
+  if(max(max(p.weight.r,p.weight.g),p.weight.b)<=environment.glass.z){discarded+=p.weight;status|=8u;continue;}
+  if(p.environmentOnly&&p.medium<0){color+=p.weight*sky(p.direction);continue;}
+  if(radianceQueries>=environment.limits.y||totalQueries>=environment.limits.z){discarded+=p.weight;status|=radianceQueries>=environment.limits.y?4u:1u;continue;}
+  Surface s=surfaceRay(p.origin,p.direction,p.environmentOnly&&p.medium>=0?2u:255u);++radianceQueries;
+  if(p.tag!=0)observation[p.tag==1?7:8]=vec4(s.p,float(s.id));
+  if(p.medium>=0){if(s.id<0){status|=16u;discarded+=p.weight;continue;}vec3 a=absorption(s.t);p.weight*=a;if(p.tag==1)observation[9]=vec4(a,s.t);}
+  if(s.id<0){if(p.trunk&&p.depth>1)observation[14].w=-1;color+=p.weight*sky(p.direction);continue;}
+  Material m=materials[s.material];
+  if(p.depth==0){observation[0]=vec4(s.t,float(s.id),float(s.primitive),1);observation[1]=vec4(faceforward(s.outward,p.direction,s.outward),m.optics.x);observation[2]=vec4(s.n,0);observation[3]=vec4(s.bary,0);}
+  if(m.optics.x<.5){if(p.trunk&&p.depth>1)observation[14].w=float(s.id);vec3 visibility;color+=p.weight*shade(s,p.direction,visibility);if(p.depth==0)observation[0].w=dot(visibility,vec3(1.0/3));if(p.trunk)observation[12]=vec4(visibility,float(shadowQueries));continue;}
+  if(p.depth>=environment.limits.x){status|=2u;discarded+=p.weight;continue;}
+  if(m.optics.x<1.5){
+   vec3 r=normalize(reflect(p.direction,s.n)),geometric=faceforward(s.outward,p.direction,s.outward);
+   if(dot(r,geometric)<=0)r=reflect(p.direction,geometric);
+   if(!recordedBoundary){observation[4]=vec4(p.direction,float(p.medium));observation[5]=vec4(r,1);}
+   pending[count++]=Path(offsetOrigin(s,r),r,p.weight*m.reflectance.rgb,p.medium,p.depth+1,environment.transport.x<.5,recordedBoundary?0:2,p.trunk);recordedBoundary=true;
+  }else{
+   bool entering=dot(p.direction,s.outward)<0,inside=p.medium>=0;
+   if(entering==inside||(inside&&p.medium!=s.id)){status|=16u;discarded+=p.weight;continue;}
+   Interface b=opticalInterface(p.direction,s.outward,inside,environment.glass.x);if(b.tir)++tirEvents;bool first=!recordedBoundary;
+   if(first){observation[4]=vec4(p.direction,float(p.medium));observation[5]=vec4(b.reflected,b.fresnel);observation[6]=vec4(b.transmitted,b.tir?1:0);observation[13]=vec4(s.outward,float(s.id));}
+   if(b.fresnel>0)pending[count++]=Path(offsetOrigin(s,b.reflected),b.reflected,p.weight*b.fresnel,p.medium,p.depth+1,p.environmentOnly||environment.transport.x<.5,first?2:0,false);
+   if(!b.tir){float eta=inside?environment.glass.x:1/environment.glass.x;int medium=entering?s.id:-1;
+    pending[count++]=Path(offsetOrigin(s,b.transmitted),b.transmitted,p.weight*((1-b.fresnel)*eta*eta),medium,p.depth+1,p.environmentOnly||environment.transport.y<.5,first?1:0,p.trunk);
+    if(inside&&p.trunk)observation[14]=vec4(b.transmitted,-2);}
+   recordedBoundary=true;
+  }
+  stackPeak=max(stackPeak,count);
+ }
+ observation[2].w=float(tirEvents);
+ observation[10]=vec4(color,float(totalQueries));observation[11]=vec4(discarded,float(status));observation[15]=vec4(float(radianceQueries),float(maximumDepth),float(stackPeak),float(shadowQueries));
+ int view=int(camera.options.y+.5);vec3 displayed=color;
+ if(view==1)displayed=observation[1].xyz*.5+.5;if(view==2)displayed=observation[2].xyz*.5+.5;
+ if(view==3)displayed=vec3(observation[0].x/6);if(view==4)displayed=vec3(uvec3(uint(observation[0].y+1)*1664525u)*uvec3(1,17,113)&255u)/255;
+ if(view==5)displayed=observation[3].xyz;
+ if(view==6){int id=int(observation[8].w>=-1?observation[8].w:observation[7].w);displayed=id<0?vec3(0):vec3(uvec3(uint(id+1)*1664525u)*uvec3(1,17,113)&255u)/255;}
+ if(view==7)displayed=observation[1].w<.5?vec3(.15):observation[1].w<1.5?vec3(.1,.5,1):vec3(.1,1,.5);
+ if(view==8)displayed=vec3(float(maximumDepth)/float(environment.limits.x));
+ if(view==9)displayed=vec3((status&~8u)!=0u?1:0,(status&8u)!=0u?.5:0,0);
+ imageStore(outputImage,ivec2(gl_LaunchIDEXT.xy),vec4(displayed,1));
+ uint pixel=gl_LaunchIDEXT.x+gl_LaunchIDEXT.y*gl_LaunchSizeEXT.x;int mode=int(camera.options.z+.5);
+ if(mode==1)for(uint i=0;i<4;++i)queries[pixel*4+i]=observation[i];
+ if(mode==2)for(uint i=0;i<16;++i)queries[pixel*16+i]=observation[i];
+ if(mode==3)queries[pixel]=vec4(color,float(status));
 }
