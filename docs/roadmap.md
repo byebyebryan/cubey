@@ -13,11 +13,15 @@ new work from a concrete product need. The [design](DESIGN.md),
 [architecture index](architecture/README.md) and
 [project guides](README.md#project-docs) describe those ownership boundaries.
 
-The next selected rendering direction is a dedicated ray-tracing project. The
-[first-pass plan](notes/raytracing-first-pass-plan.md) proposes a native hardware
-triangle renderer around a static Stanford dragon, followed by a matched SDF
-comparison and later light-transport work. This is planning, not an implemented
-renderer or a new runtime qualification.
+The dedicated [ray-tracing project](../projects/raytracing/README.md) now has a
+locally qualified first hardware pass: static Stanford dragon/floor geometry,
+direct lighting, hard shadows, native controls, diagnostics and reproducible
+headless output. The [results](notes/raytracing-first-pass-results.md) retain
+reference/numerical/window evidence and separately scoped frame/startup/memory
+costs. Physical interaction and human artistic acceptance remain open. The next
+stage is matched mesh/SDF representation and traversal, followed by progressive
+light transport. This project receipt does not replace historical qualification
+of the other renderers or authorize public-site promotion.
 
 ## Current Readiness Checkpoint
 

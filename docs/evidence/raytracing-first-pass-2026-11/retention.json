@@ -1,0 +1,26 @@
+{
+  "keep": [
+    "outputs/raytracing/reference/source",
+    "outputs/raytracing/reference/build",
+    "outputs/raytracing/reference/triangle-external.png",
+    "outputs/raytracing/first-pass/dragon-source",
+    "cache/raytracing/stanford-dragon",
+    "build/dev/projects/raytracing",
+    "outputs/raytracing/first-pass/qualified-packet",
+    "outputs/raytracing/first-pass/geometry-final",
+    "outputs/raytracing/first-pass/window-final",
+    "outputs/raytracing/first-pass/regressions-final",
+    "outputs/raytracing/first-pass/ctest-final.log",
+    "outputs/raytracing/first-pass/ctest-fixtures-final.log",
+    "outputs/raytracing/first-pass/report"
+  ],
+  "excluded_investigations": [
+    "donor internal screenshot validation failure",
+    "geometry-v1/v2 checker and camera investigations",
+    "window-inspect false-positive receipt corrected to failed",
+    "window-v2 control harness investigation",
+    "final-packet superseded by qualified-packet after memory usage scope correction"
+  ],
+  "source_assets": "local ignored data; not bundled in builds, git or report",
+  "rollback": "leave isolated worktree/branch intact; original sdf-tracing-comparison branch and protected dirty/untracked files unchanged"
+}

@@ -1,0 +1,200 @@
+[
+  {
+    "name": "hero-final",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "final",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-final.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-final-capture.json"
+    ],
+    "sha256": "cfd69901f54374e36cc8288bd56f777e669f987e26ac8e7502669876a48f09f9",
+    "process_to_completed_png_seconds": 0.6424765599658713
+  },
+  {
+    "name": "hero-geometric-normal",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "geometric-normal",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-geometric-normal.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-geometric-normal-capture.json"
+    ],
+    "sha256": "656287f86bf886b1d9959521c1b402d57dec08fff18796d9946a8368dc871b0d",
+    "process_to_completed_png_seconds": 0.6555451209424064
+  },
+  {
+    "name": "hero-shading-normal",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "shading-normal",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-shading-normal.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-shading-normal-capture.json"
+    ],
+    "sha256": "71e2aaa2875932e552135ffa12a53e46012fac9943193b8163a9b640f5bd9ade",
+    "process_to_completed_png_seconds": 0.6015708179911599
+  },
+  {
+    "name": "opposite-final",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "final",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-final.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-final-capture.json"
+    ],
+    "sha256": "73ce3e93de15f628754185ece1cbb8d56a758d69dd57fe98efa0a4c66f87af35",
+    "process_to_completed_png_seconds": 0.5842306360136718
+  },
+  {
+    "name": "opposite-geometric-normal",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "geometric-normal",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-geometric-normal.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-geometric-normal-capture.json"
+    ],
+    "sha256": "19706911d0abbc127c5363de23a548eb2ad601dfd3e73c016f66d72bfb5c5010",
+    "process_to_completed_png_seconds": 0.5945916749769822
+  },
+  {
+    "name": "opposite-shading-normal",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "shading-normal",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-shading-normal.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-shading-normal-capture.json"
+    ],
+    "sha256": "53ebd4378e3f7b70d39fe9807cff8652c4cc611088e736456eeb50cdcd422966",
+    "process_to_completed_png_seconds": 0.55134885199368
+  },
+  {
+    "name": "detail-final",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "final",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-final.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-final-capture.json"
+    ],
+    "sha256": "4d08b9218c380d7821d7ec6a7800cd9982fbf0926ac7b6a3adcded84a5647c6f",
+    "process_to_completed_png_seconds": 0.5977315489435568
+  },
+  {
+    "name": "detail-geometric-normal",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "geometric-normal",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-geometric-normal.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-geometric-normal-capture.json"
+    ],
+    "sha256": "8a9b7bb422e0bea8341b4d0e6fe016f5cd70534dd94b4add70550b8d80621d44",
+    "process_to_completed_png_seconds": 0.5668391539948061
+  },
+  {
+    "name": "detail-shading-normal",
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--view",
+      "shading-normal",
+      "--output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-shading-normal.png",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-shading-normal-capture.json"
+    ],
+    "sha256": "1f5b70d83b3407aa2343cbd351c59c009887884b7c2e4c7943d7c23ddb8b8a90",
+    "process_to_completed_png_seconds": 0.5855582810472697
+  }
+]

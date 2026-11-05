@@ -97,3 +97,23 @@ The RT setup follows Khronos Vulkan Samples `ray_tracing_basic`, pinned at
 Apache-2.0 attribution; see [NOTICE](NOTICE) and [donor license](third_party/LICENSE.Apache-2.0).
 The [implementation plan](../../docs/notes/raytracing-first-pass-plan.md)
 records the initial contracts and acceptance boundaries.
+The [first-pass results](../../docs/notes/raytracing-first-pass-results.md) and
+[evidence index](../../docs/evidence/raytracing-first-pass-2026-11/README.md)
+record actual runtime qualification, costs and remaining acceptance limits.
+
+Collect the serial 1080p timing/capture packet with an optimized binary:
+
+```sh
+rtk cmake --preset release
+rtk cmake --build --preset release --target cubey_project_raytracing
+rtk proxy python3 -B projects/raytracing/tools/profile_first_pass.py --binary build/release/projects/raytracing/raytracing --output outputs/raytracing/review-packet
+```
+
+The dated evidence used a `build/dev` directory explicitly configured as
+RelWithDebInfo (`-O2 -g -DNDEBUG`); an ordinary Debug build has different costs.
+
+Run the native control check only in an owned virtual display:
+
+```sh
+rtk proxy xvfb-run -a -s '-screen 0 1280x960x24' env CUBEY_RT_PRIVATE_XVFB=1 python3 projects/raytracing/tools/check_window.py --output outputs/raytracing/window-check
+```

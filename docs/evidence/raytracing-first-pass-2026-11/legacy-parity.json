@@ -1,0 +1,20 @@
+[
+  {
+    "name": "sdf",
+    "max_channel_error": 0,
+    "mean_channel_error": 0.0,
+    "channels_differing": 0,
+    "before_raw_sha256": "13d319728b0982403569e1b4034c160d4f3c2b790707417e45b082641e7b08a8",
+    "after_raw_sha256": "13d319728b0982403569e1b4034c160d4f3c2b790707417e45b082641e7b08a8",
+    "passed": true
+  },
+  {
+    "name": "pbr_materials",
+    "max_channel_error": 0,
+    "mean_channel_error": 0.0,
+    "channels_differing": 0,
+    "before_raw_sha256": "c8dba83df0795fe47f19dd84735bb42c071f0dc629397acad88f2cf5bc01ee38",
+    "after_raw_sha256": "c8dba83df0795fe47f19dd84735bb42c071f0dc629397acad88f2cf5bc01ee38",
+    "passed": true
+  }
+]

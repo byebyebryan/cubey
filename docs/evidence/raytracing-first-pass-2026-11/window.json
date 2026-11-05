@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "command": [
+    "stdbuf",
+    "-oL",
+    "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+    "--width",
+    "1000",
+    "--height",
+    "760",
+    "--require-validation",
+    "--save-config",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/window-final/saved.json",
+    "--metrics",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/window-final/metrics.json"
+  ],
+  "as_builds": 3,
+  "target_generations": 3,
+  "scope": "owned Xvfb; physical desktop acceptance separate"
+}

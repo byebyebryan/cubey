@@ -1,0 +1,111 @@
+[
+  {
+    "name": "window-headless",
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/first-pass/window-final/saved.json",
+      "--headless",
+      "--frames",
+      "1",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/first-pass/regressions-final/window-headless.png"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "seconds": 0.5389922100584954
+  },
+  {
+    "name": "sdf-before",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/sdf/sdf",
+      "--config",
+      "projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+      "--time",
+      "0",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/first-pass/regressions-final/sdf-before.png"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "seconds": 0.7192457190249115
+  },
+  {
+    "name": "sdf-after",
+    "command": [
+      "build/dev/projects/sdf/sdf",
+      "--config",
+      "projects/sdf/presets/csg-showcase-2026-11/observatory.json",
+      "--time",
+      "0",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/first-pass/regressions-final/sdf-after.png"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "seconds": 0.7225574650801718
+  },
+  {
+    "name": "pbr_materials-before",
+    "command": [
+      "/home/bryan/code/cubey/build/release/projects/pbr_materials/pbr_materials",
+      "--material",
+      "clay",
+      "--specimen",
+      "block",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/first-pass/regressions-final/pbr_materials-before.png"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "seconds": 0.5122188400710002
+  },
+  {
+    "name": "pbr_materials-after",
+    "command": [
+      "build/dev/projects/pbr_materials/pbr_materials",
+      "--material",
+      "clay",
+      "--specimen",
+      "block",
+      "--headless",
+      "--frames",
+      "1",
+      "--width",
+      "640",
+      "--height",
+      "480",
+      "--require-validation",
+      "--output",
+      "outputs/raytracing/first-pass/regressions-final/pbr_materials-after.png"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "seconds": 0.48386111203581095
+  }
+]

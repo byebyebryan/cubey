@@ -1,0 +1,50 @@
+{
+  "runtime_source": "92bc389d0726f2ed5619fd98173ccc7eafa39e1c",
+  "binary_sha256": "2a16807df69dd2a69c926a3e5b7e6dc6019042d489e51ebb03d017625176bd7c",
+  "build": "RelWithDebInfo, clang 23.1.4, -O2 -g -DNDEBUG, Vulkan 1.3 RT shaders",
+  "dev_suite": {
+    "selected": 275,
+    "initial_pass": 273,
+    "initial_fail": 2,
+    "fixture_fixes_retested_pass": 2,
+    "outcome": "275 groups covered by full run plus focused reruns",
+    "limits": "not a single all-green full run; later runtime changes only project memory accounting/metadata and output screening"
+  },
+  "final_raytracing_tests": {
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "geometry": {
+    "passed": true,
+    "rays": 49152,
+    "cameras": 4,
+    "source": "407d7922",
+    "shadow_disagreements": 0
+  },
+  "window": {
+    "passed": true,
+    "source": "407d7922",
+    "as_builds": 3,
+    "target_generations": 3,
+    "scope": "owned Xvfb, Vulkan and synchronization validation"
+  },
+  "later_source_change": "92bc389d changes only memory-scope text and capture-log screening; RT SPIR-V unchanged",
+  "legacy_captures": "640x480 SDF observatory and clay/block mesh PBR, decoded RGB byte-identical before/after, validation clean",
+  "capability_boundary": "ordinary opt-out and disabled-address rejection executed; no second non-RT GPU available to exercise hardware rejection",
+  "timing": "18 serial 1080p processes, 180 frames each, 30 warmup + 150 completed timestamps/pass, validation disabled; 9 separate validated PNG captures",
+  "original_files_preserved": 11,
+  "publication": "local branch and private/shared report only; no source push, merge or public demo-site changes",
+  "open": [
+    "physical desktop interaction and latency",
+    "human artistic acceptance",
+    "unsupported-GPU runtime execution",
+    "true process-wide allocation peak including driver internals"
+  ],
+  "report_checks": {
+    "assets_and_javascript_syntax": "passed",
+    "browser_acceptance": "open: available browser automation failed before navigation (undefined timeoutMs)",
+    "documentation_tests": 4,
+    "layout_build_policy_tests": 4
+  }
+}

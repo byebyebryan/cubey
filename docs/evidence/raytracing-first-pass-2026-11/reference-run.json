@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/reference/build/app/bin/Release/x86_64/vulkan_samples",
+    "sample",
+    "ray_tracing_basic",
+    "--data-path",
+    "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/reference/source/",
+    "--width",
+    "640",
+    "--height",
+    "480",
+    "--hideui",
+    "--vsync",
+    "ON",
+    "--stop-after-frame",
+    "180",
+    "--force-close"
+  ],
+  "exit": 0,
+  "validation_errors": [],
+  "capture": "triangle-external.png",
+  "method": "external X11 capture; donor source and shaders unchanged"
+}

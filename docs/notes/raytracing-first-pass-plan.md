@@ -1,6 +1,9 @@
 # Ray tracing first pass plan
 
-Date: 2026-11-04. Status: proposed implementation contract; planning only.
+Date: 2026-11-04. Status: first pass implemented and qualified locally;
+see the [execution results](raytracing-first-pass-results.md) for actual asset
+counts, measurements and remaining acceptance limits. The text below retains
+the initial implementation contract and planning audit.
 Source audit: `0fd2147f`, `sdf-tracing-comparison`.
 
 ## Direction and first result

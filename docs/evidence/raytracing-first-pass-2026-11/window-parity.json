@@ -1,0 +1,12 @@
+[
+  {
+    "name": "window-headless",
+    "max_channel_error": 1,
+    "mean_channel_error": 0.029725146198830408,
+    "channels_differing": 40664,
+    "pixels_scored": 456000,
+    "crop_x_start": 400,
+    "tolerance": 1,
+    "passed": true
+  }
+]

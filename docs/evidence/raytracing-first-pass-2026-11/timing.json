@@ -1,0 +1,785 @@
+[
+  {
+    "name": "hero-shadow-0",
+    "view": "hero",
+    "shadows": true,
+    "repetition": 0,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-shadow-0.json"
+    ],
+    "process_wall_seconds": 0.5640660969074816,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 33",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 594, 34",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.18103999999999998,
+        "p95_ms": 0.1829936,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.194656,
+        "p95_ms": 0.196608,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "hero-unshadowed-0",
+    "view": "hero",
+    "shadows": false,
+    "repetition": 0,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-unshadowed-0.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.5423854059772566,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 594, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 34",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.13369599999999998,
+        "p95_ms": 0.135328,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.147008,
+        "p95_ms": 0.1485616,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "opposite-shadow-0",
+    "view": "opposite",
+    "shadows": true,
+    "repetition": 0,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-shadow-0.json"
+    ],
+    "process_wall_seconds": 0.5109990579076111,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 34",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.17449599999999998,
+        "p95_ms": 0.174976,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.18767999999999999,
+        "p95_ms": 0.1883552,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "opposite-unshadowed-0",
+    "view": "opposite",
+    "shadows": false,
+    "repetition": 0,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-unshadowed-0.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.49332347488962114,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 34",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.131456,
+        "p95_ms": 0.131872,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.144608,
+        "p95_ms": 0.1451872,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "detail-shadow-0",
+    "view": "detail",
+    "shadows": true,
+    "repetition": 0,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-shadow-0.json"
+    ],
+    "process_wall_seconds": 0.551250817021355,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.205696,
+        "p95_ms": 0.20745919999999998,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.21921599999999997,
+        "p95_ms": 0.22089599999999998,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "detail-unshadowed-0",
+    "view": "detail",
+    "shadows": false,
+    "repetition": 0,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-unshadowed-0.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.49236258992459625,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 31, 0, 594, 36",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.152064,
+        "p95_ms": 0.153952,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.16539199999999998,
+        "p95_ms": 0.16716799999999998,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "hero-shadow-1",
+    "view": "hero",
+    "shadows": true,
+    "repetition": 1,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-shadow-1.json"
+    ],
+    "process_wall_seconds": 0.5018301639938727,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 31, 0, 594, 36",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 40, 0, 594, 38",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.18223999999999999,
+        "p95_ms": 0.18281599999999998,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.19576,
+        "p95_ms": 0.196576,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "hero-unshadowed-1",
+    "view": "hero",
+    "shadows": false,
+    "repetition": 1,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-unshadowed-1.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.4912807249929756,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 40, 0, 594, 38",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 31, 0, 594, 40",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.133632,
+        "p95_ms": 0.1352816,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.147328,
+        "p95_ms": 0.1488816,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "opposite-shadow-1",
+    "view": "opposite",
+    "shadows": true,
+    "repetition": 1,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-shadow-1.json"
+    ],
+    "process_wall_seconds": 0.5427688650088385,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 31, 0, 594, 40",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 32, 0, 594, 37",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.17460799999999999,
+        "p95_ms": 0.176256,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.188032,
+        "p95_ms": 0.1897168,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "opposite-unshadowed-1",
+    "view": "opposite",
+    "shadows": false,
+    "repetition": 1,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-unshadowed-1.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.48387213004752994,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 32, 0, 594, 37",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 5, 0, 594, 34",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.131488,
+        "p95_ms": 0.1320352,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.144752,
+        "p95_ms": 0.1454752,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "detail-shadow-1",
+    "view": "detail",
+    "shadows": true,
+    "repetition": 1,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-shadow-1.json"
+    ],
+    "process_wall_seconds": 0.5017705929931253,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 5, 0, 594, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 5, 0, 594, 34",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.20704,
+        "p95_ms": 0.20774399999999998,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.22049599999999997,
+        "p95_ms": 0.22131199999999998,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "detail-unshadowed-1",
+    "view": "detail",
+    "shadows": false,
+    "repetition": 1,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-unshadowed-1.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.49743404297623783,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 5, 0, 594, 34",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.152032,
+        "p95_ms": 0.1535216,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.16532799999999997,
+        "p95_ms": 0.1668832,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "hero-shadow-2",
+    "view": "hero",
+    "shadows": true,
+    "repetition": 2,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-shadow-2.json"
+    ],
+    "process_wall_seconds": 0.4953818720532581,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.182384,
+        "p95_ms": 0.1830576,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.195968,
+        "p95_ms": 0.19672479999999998,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "hero-unshadowed-2",
+    "view": "hero",
+    "shadows": false,
+    "repetition": 2,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/hero.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/hero-unshadowed-2.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.4999624938936904,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.133824,
+        "p95_ms": 0.1354736,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.147264,
+        "p95_ms": 0.1488992,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "opposite-shadow-2",
+    "view": "opposite",
+    "shadows": true,
+    "repetition": 2,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-shadow-2.json"
+    ],
+    "process_wall_seconds": 0.495842264033854,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.174656,
+        "p95_ms": 0.17632319999999999,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.18807999999999997,
+        "p95_ms": 0.1898096,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "opposite-unshadowed-2",
+    "view": "opposite",
+    "shadows": false,
+    "repetition": 2,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/opposite.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/opposite-unshadowed-2.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.4979024740168825,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.131456,
+        "p95_ms": 0.131968,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.14476799999999998,
+        "p95_ms": 0.145536,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "detail-shadow-2",
+    "view": "detail",
+    "shadows": true,
+    "repetition": 2,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-shadow-2.json"
+    ],
+    "process_wall_seconds": 0.5058329210150987,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.20704,
+        "p95_ms": 0.2076512,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.22051199999999999,
+        "p95_ms": 0.2211552,
+        "samples": 150
+      }
+    }
+  },
+  {
+    "name": "detail-unshadowed-2",
+    "view": "detail",
+    "shadows": false,
+    "repetition": 2,
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--config",
+      "projects/raytracing/presets/detail.json",
+      "--model",
+      "/home/bryan/code/cubey-raytracing-first-pass/cache/raytracing/stanford-dragon/dragon.glb",
+      "--headless",
+      "--headless-render-only",
+      "--frames",
+      "180",
+      "--no-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/first-pass/qualified-packet/detail-unshadowed-2.json",
+      "--no-shadows"
+    ],
+    "process_wall_seconds": 0.4986898060888052,
+    "before": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "after": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 35",
+      "error": ""
+    },
+    "gpu": {
+      "raytracing.trace": {
+        "p50_ms": 0.15209599999999998,
+        "p95_ms": 0.1539056,
+        "samples": 150
+      },
+      "raytracing.whole_scene": {
+        "p50_ms": 0.165376,
+        "p95_ms": 0.167296,
+        "samples": 150
+      }
+    }
+  }
+]

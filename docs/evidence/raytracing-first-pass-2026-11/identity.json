@@ -1,0 +1,20 @@
+{
+  "source": "92bc389d0726f2ed5619fd98173ccc7eafa39e1c",
+  "source_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "binary_sha256": "2a16807df69dd2a69c926a3e5b7e6dc6019042d489e51ebb03d017625176bd7c",
+  "model_sha256": "3f9dc36d34ce148e92ac4d096339a5cc48a9c4a86126b9963b052676a8a2260e",
+  "shader_sha256": {
+    "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+    "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+    "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+    "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+    "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+    "trace.rgen.spv": "8d7f91c1941c2349a0a2bcfe8cc09e08641f52d3950b895de0d07617482a7b6a"
+  },
+  "gpu": {
+    "exit": 0,
+    "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 0, 0, 594, 33",
+    "error": ""
+  },
+  "host_scope": "shared host; boundary observations do not prove continuous exclusivity"
+}

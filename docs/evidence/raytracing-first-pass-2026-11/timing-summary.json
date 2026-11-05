@@ -1,0 +1,158 @@
+[
+  {
+    "view": "hero",
+    "shadows": true,
+    "repeats": 3,
+    "samples_per_repeat": 150,
+    "raytracing.trace": {
+      "p50_ms": [
+        0.18103999999999998,
+        0.182384
+      ],
+      "p95_ms": [
+        0.18281599999999998,
+        0.1830576
+      ]
+    },
+    "raytracing.whole_scene": {
+      "p50_ms": [
+        0.194656,
+        0.195968
+      ],
+      "p95_ms": [
+        0.196576,
+        0.19672479999999998
+      ]
+    }
+  },
+  {
+    "view": "hero",
+    "shadows": false,
+    "repeats": 3,
+    "samples_per_repeat": 150,
+    "raytracing.trace": {
+      "p50_ms": [
+        0.133632,
+        0.133824
+      ],
+      "p95_ms": [
+        0.1352816,
+        0.1354736
+      ]
+    },
+    "raytracing.whole_scene": {
+      "p50_ms": [
+        0.147008,
+        0.147328
+      ],
+      "p95_ms": [
+        0.1485616,
+        0.1488992
+      ]
+    }
+  },
+  {
+    "view": "opposite",
+    "shadows": true,
+    "repeats": 3,
+    "samples_per_repeat": 150,
+    "raytracing.trace": {
+      "p50_ms": [
+        0.17449599999999998,
+        0.174656
+      ],
+      "p95_ms": [
+        0.174976,
+        0.17632319999999999
+      ]
+    },
+    "raytracing.whole_scene": {
+      "p50_ms": [
+        0.18767999999999999,
+        0.18807999999999997
+      ],
+      "p95_ms": [
+        0.1883552,
+        0.1898096
+      ]
+    }
+  },
+  {
+    "view": "opposite",
+    "shadows": false,
+    "repeats": 3,
+    "samples_per_repeat": 150,
+    "raytracing.trace": {
+      "p50_ms": [
+        0.131456,
+        0.131488
+      ],
+      "p95_ms": [
+        0.131872,
+        0.1320352
+      ]
+    },
+    "raytracing.whole_scene": {
+      "p50_ms": [
+        0.144608,
+        0.14476799999999998
+      ],
+      "p95_ms": [
+        0.1451872,
+        0.145536
+      ]
+    }
+  },
+  {
+    "view": "detail",
+    "shadows": true,
+    "repeats": 3,
+    "samples_per_repeat": 150,
+    "raytracing.trace": {
+      "p50_ms": [
+        0.205696,
+        0.20704
+      ],
+      "p95_ms": [
+        0.20745919999999998,
+        0.20774399999999998
+      ]
+    },
+    "raytracing.whole_scene": {
+      "p50_ms": [
+        0.21921599999999997,
+        0.22051199999999999
+      ],
+      "p95_ms": [
+        0.22089599999999998,
+        0.22131199999999998
+      ]
+    }
+  },
+  {
+    "view": "detail",
+    "shadows": false,
+    "repeats": 3,
+    "samples_per_repeat": 150,
+    "raytracing.trace": {
+      "p50_ms": [
+        0.152032,
+        0.15209599999999998
+      ],
+      "p95_ms": [
+        0.1535216,
+        0.153952
+      ]
+    },
+    "raytracing.whole_scene": {
+      "p50_ms": [
+        0.16532799999999997,
+        0.16539199999999998
+      ],
+      "p95_ms": [
+        0.1668832,
+        0.167296
+      ]
+    }
+  }
+]

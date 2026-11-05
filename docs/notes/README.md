@@ -27,9 +27,11 @@ These records explain why the current contracts exist. Their measurements,
 manual-acceptance limits and historical sections retain their original scope;
 the architecture and project guides remain current authority.
 
-- [Ray tracing first pass plan](raytracing-first-pass-plan.md): proposed dedicated
-  hardware triangle renderer, pinned reference, dragon input, Vulkan integration,
-  native acceptance and later SDF comparison boundary.
+- [Ray tracing first pass results](raytracing-first-pass-results.md): implemented
+  hardware dragon renderer, reference/numerical/window qualification, timing and
+  memory scopes, preservation and remaining acceptance boundaries.
+- [Ray tracing first pass plan](raytracing-first-pass-plan.md): initial dedicated
+  renderer contract, pinned reference and later SDF comparison boundary.
 - [SDF thread closeout](sdf-thread-closeout.md): the complete port/content/material
   journey, accepted results and deferred experiments; its publication section is
   explicitly an as-of-2026-10-24 checkpoint.

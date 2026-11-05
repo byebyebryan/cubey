@@ -1,0 +1,10 @@
+{
+  "pixels": 48984,
+  "mask_disagreement": 0,
+  "barycentric_rgb_error_max": 0.0021870358317506167,
+  "barycentric_rgb_error_p95": 0.001908628613341068,
+  "coordinate_adapter": "vertical image flip for Cubey Vulkan projection convention",
+  "source": "unmodified Khronos native window captured externally",
+  "tolerance": 0.005,
+  "reference_mask": "barycentric RGB sum > 0.5; background sum is 0.2"
+}

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "rt-ctest-qualified",
+    "command": [
+      "ctest",
+      "--preset",
+      "dev",
+      "-R",
+      "raytracing",
+      "--output-on-failure"
+    ],
+    "exit": 0,
+    "seconds": 2.3569513469701633
+  },
+  {
+    "name": "profile-qualified",
+    "command": [
+      "python3",
+      "-B",
+      "projects/raytracing/tools/profile_first_pass.py",
+      "--output",
+      "outputs/raytracing/first-pass/qualified-packet"
+    ],
+    "exit": 0,
+    "seconds": 15.149262974970043
+  }
+]
