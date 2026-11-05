@@ -1,0 +1,127 @@
+{
+  "url": "http://starship:8787/reports/eda21c11324c7f412342cfca9aafd9673a36d7af655a00cb10e8f22c72ec4d71/",
+  "source_commit": "349beb8ab7c60f88c3773d63639a340e2b049080",
+  "runtime_commit": "421708f9",
+  "http_delivery": "all authored files HTTP 200 and exact SHA-256 match",
+  "files": [
+    {
+      "path": "app.js",
+      "bytes": 908,
+      "sha256": "65c71c7e05c8a551c505c0cb645c8188a924609c81b0078c6bedb90dc49cea51"
+    },
+    {
+      "path": "data/commands.json",
+      "bytes": 23011,
+      "sha256": "25866753f1cf478b44581afbc55930e41e349310484922db4dc14f25b4f571c4"
+    },
+    {
+      "path": "data/convergence.json",
+      "bytes": 308,
+      "sha256": "4826eebcb1bb9ce0376b8fae7cfccbbf3ce6b62a1e1c98ce72cdbab260c1218c"
+    },
+    {
+      "path": "data/guide.md",
+      "bytes": 14748,
+      "sha256": "138bc1ed98f7908e8e4787c1a2ac091e761890d9eda8000dedaaa2e7b5aa9cc4"
+    },
+    {
+      "path": "data/identity.json",
+      "bytes": 1624,
+      "sha256": "e41ccb666fd7b0fc0a16e2a31cfcc47adc2eae845b5bd03765c6e6f01f7a27d9"
+    },
+    {
+      "path": "data/parity.json",
+      "bytes": 459,
+      "sha256": "f7622a592729d2df0423b5fe67a2fd5097c4d172c795ce6d12191573100d15f0"
+    },
+    {
+      "path": "data/results.md",
+      "bytes": 3910,
+      "sha256": "351157a861716d800272c1d179d831203ea3a5cc6ce2bbb2f109ee5374c05d48"
+    },
+    {
+      "path": "data/secondary-hits.json",
+      "bytes": 128,
+      "sha256": "95f4acac10a43b6f70e10eeafe8418db8203faada15b525d61fb5b93e6112132"
+    },
+    {
+      "path": "data/timing-summary.json",
+      "bytes": 3050,
+      "sha256": "91a1a19193394940c654e2b9d6ac395454887b2145cdfdc5382c39676f3f3905"
+    },
+    {
+      "path": "data/timing.json",
+      "bytes": 12377,
+      "sha256": "24bf7a4d1728c2a12d541e40c7c0e4df5303a6f116756e7ac7a01f4bae77457d"
+    },
+    {
+      "path": "data/verification.json",
+      "bytes": 874,
+      "sha256": "c6d62baa5eac5a20d25a048ae52763c62af37209a35e29e267dc71e12ebde9d4"
+    },
+    {
+      "path": "data/window-parity.json",
+      "bytes": 71,
+      "sha256": "0bbcd0af241a6bd1e7c9a69ccae0e9c9fa1f1b7b1e6a63cf8bf2cbae4e451418"
+    },
+    {
+      "path": "data/window.json",
+      "bytes": 728,
+      "sha256": "9de3128425ca9e2b380cb7ccb8381b0b154d10c8ccd46be6c4bfcc68164d4a4e"
+    },
+    {
+      "path": "images/clay.png",
+      "bytes": 503174,
+      "sha256": "d530963e0f82b308f22006e8503e2a0e9499162a6418998c7dd61e6883e8a70a"
+    },
+    {
+      "path": "images/environment.png",
+      "bytes": 680862,
+      "sha256": "0ac1777c630ab8b6a9b355f03d0b5d364d12923029beeb821c4f82896a817ad3"
+    },
+    {
+      "path": "images/mirror.png",
+      "bytes": 726535,
+      "sha256": "79fe5563e1c3e1f80fa761d0e145203dd76201b2b8c3a9e53b37893109deaf84"
+    },
+    {
+      "path": "images/orbit.mp4",
+      "bytes": 1999631,
+      "sha256": "36a5ab11b125a3c82cfacc7742cd00eefdcb77ba32eb097e22b6c5b8cfda7708"
+    },
+    {
+      "path": "images/proof-reflection.png",
+      "bytes": 616901,
+      "sha256": "635f185d012010fe7d3fa222ef43d1ba7f7f8e53492bc0e58ff18448833ab367"
+    },
+    {
+      "path": "images/proof-refraction.png",
+      "bytes": 252610,
+      "sha256": "c6027123408b47ba14b30bbba2ab49c38441b09f8766984f2c958f37d42f70eb"
+    },
+    {
+      "path": "images/secondary.png",
+      "bytes": 103412,
+      "sha256": "9852817fd2eb1b6cde5da55f897bb5d7d6debbbcfef4388bb6887bef41896ac6"
+    },
+    {
+      "path": "images/status.png",
+      "bytes": 82781,
+      "sha256": "29548fbd578317bfc80989e82df48afaa9e2b154434f24d4d2daf09f06715296"
+    },
+    {
+      "path": "index.html",
+      "bytes": 6998,
+      "sha256": "125f1b6eb8d1700d8025cf1fe8e23b71f6195be5ad38fb8f884f36249e8b1d4c"
+    },
+    {
+      "path": "style.css",
+      "bytes": 4921,
+      "sha256": "8167b89daded5c48aaa4932bc77a445afe7ec92151c51b3deff50c0714046f96"
+    }
+  ],
+  "javascript_syntax": "passed",
+  "interaction_states": 5,
+  "browser_render_acceptance": "open",
+  "server": "existing shared report server reused and left running"
+}

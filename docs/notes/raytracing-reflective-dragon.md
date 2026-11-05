@@ -67,3 +67,12 @@ defaults remain 8 / 32 / 128 with cutoff 1e-4.
 retain source, asset, binary/shader, lifecycle and timing identities. The full
 normal dev suite is not rerun for this bounded change; the earlier 279/279
 receipt retains its original source scope.
+
+## Visual review
+
+[Primitive proof, reflective dragon](http://starship:8787/reports/eda21c11324c7f412342cfca9aafd9673a36d7af655a00cb10e8f22c72ec4d71/).
+The report presents primitive proofs first, followed by the reflective dragon,
+clay/environment comparisons, diagnostics and native orbit. All 23 bundle files
+return HTTP 200 and match their authored SHA-256 bytes; five DOM states pass.
+The existing shared report server was reused and left running. Browser rendering
+and human artistic acceptance remain separate.

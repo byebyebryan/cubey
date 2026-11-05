@@ -16,3 +16,7 @@ qualification helper and the pre-change binary remain in ignored
 `outputs/raytracing/reflective-dragon/`. Source push/merge and public demo-site
 publication are not performed. Browser rendering, physical desktop and human
 artistic acceptance remain separate from native/HTTP checks.
+
+[Primitive proof, reflective dragon report](http://starship:8787/reports/eda21c11324c7f412342cfca9aafd9673a36d7af655a00cb10e8f22c72ec4d71/) · [delivery receipt](delivery.json).
+All 23 bundle files match the authored SHA-256 bytes over HTTP; five DOM state
+checks pass. Browser rendering remains separate.
