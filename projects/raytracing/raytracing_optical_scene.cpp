@@ -71,9 +71,52 @@ Mesh sphere() {
     }
     return mesh;
 }
+Mesh plinth(bool glass) {
+    // A closed, bevelled object with visible sides, rather than a world floor.
+    Mesh mesh;
+    std::array<std::array<math::Vec3, 8>, 4> rings{};
+    for (std::size_t ring = 0; ring < rings.size(); ++ring) {
+        const bool bevel = ring == 0 || ring == 3;
+        const float x = bevel ? 1.2F : 1.24F;
+        const float z = (glass ? .79F : .63F) + (bevel ? 0 : .04F);
+        const float corner = .24F;
+        const float y = std::array{0.F, -.035F, -.125F, -.16F}[ring];
+        rings[ring] = {{{-x + corner, y, -z},
+                        {-x, y, -z + corner},
+                        {-x, y, z - corner},
+                        {-x + corner, y, z},
+                        {x - corner, y, z},
+                        {x, y, z - corner},
+                        {x, y, -z + corner},
+                        {x - corner, y, -z}}};
+    }
+    const math::Vec3 center{0, -.08F, 0};
+    auto triangle = [&](math::Vec3 a, math::Vec3 b, math::Vec3 c) {
+        auto normal = glm::normalize(glm::cross(b - a, c - a));
+        if (glm::dot(normal, (a + b + c) / 3.F - center) < 0) {
+            std::swap(b, c);
+            normal = -normal;
+        }
+        for (const auto p : {a, b, c}) {
+            mesh.indices.push_back(std::uint32_t(mesh.vertices.size()));
+            mesh.vertices.push_back({{p, 1}, {normal, 0}});
+        }
+    };
+    for (std::size_t i = 0; i < 8; ++i) {
+        const auto next = (i + 1) % 8;
+        triangle({0, 0, 0}, rings.front()[i], rings.front()[next]);
+        triangle({0, -.16F, 0}, rings.back()[i], rings.back()[next]);
+        for (std::size_t ring = 0; ring + 1 < rings.size(); ++ring) {
+            triangle(rings[ring][i], rings[ring + 1][i], rings[ring][next]);
+            triangle(rings[ring][next], rings[ring + 1][i], rings[ring + 1][next]);
+        }
+    }
+    return mesh;
+}
 } // namespace
 Scene make_optical_scene(const Config& config) {
     Scene scene;
+    const bool presentation = config.scene.find("dragon") != std::string::npos;
     const bool glass = config.scene.find("refraction-") == 0 || config.scene == "slab";
     scene.materials = {{{.66F, .36F, .16F, .55F}, {0, 1.5F, 1, 1}, {1, 1, 1, 1}, {1, 1, 1, 1}},
                        {{.35F, .38F, .42F, .7F},
@@ -87,6 +130,13 @@ Scene make_optical_scene(const Config& config) {
                        {{.85F, .035F, .025F, .5F}, {0, 1.5F, 1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1}},
                        {{.03F, .16F, .8F, .5F}, {0, 1.5F, 1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1}},
                        {{.03F, .7F, .12F, .5F}, {0, 1.5F, 1, 0}, {1, 1, 1, 1}, {1, 1, 1, 1}}};
+    if (presentation) {
+        scene.materials[1].base_roughness = {.19F, .22F, .24F, .72F};
+        scene.materials[1].optics.x = 0; // The contained base is matte in both views.
+        scene.materials[3].base_roughness = {.52F, .12F, .07F, .55F};
+        scene.materials[4].base_roughness = {.055F, .18F, .38F, .5F};
+        scene.materials[5].base_roughness = {.08F, .32F, .19F, .55F};
+    }
     auto add = [&](Mesh mesh, math::Vec3 position, math::Vec3 scale, std::uint32_t material) {
         const auto index = std::uint32_t(scene.meshes.size());
         scene.meshes.push_back(std::move(mesh));
@@ -95,7 +145,7 @@ Scene make_optical_scene(const Config& config) {
                                    {1, 1, 1, 1},
                                    material});
     };
-    if (config.scene.find("dragon") != std::string::npos) {
+    if (presentation) {
         auto source = config;
         source.scene = "dragon";
         auto dragon = make_scene(source);
@@ -105,13 +155,17 @@ Scene make_optical_scene(const Config& config) {
         add(std::move(dragon.meshes[0]), {-.45F, -low + .001F, -.25F}, {1, 1, 1}, 0);
     } else
         add(box(), {-.5F, .5F, -.5F}, {.5F, 1, .4F}, 0);
-    Mesh floor;
-    floor.vertices = {{{-16, 0, -16, 1}, {0, 1, 0, 0}},
-                      {{-16, 0, 16, 1}, {0, 1, 0, 0}},
-                      {{16, 0, 16, 1}, {0, 1, 0, 0}},
-                      {{16, 0, -16, 1}, {0, 1, 0, 0}}};
-    floor.indices = {0, 1, 2, 0, 2, 3};
-    add(std::move(floor), {0, 0, 0}, {1, 1, 1}, 1);
+    if (presentation)
+        add(plinth(glass), {.1F, 0, glass ? -.08F : -.27F}, {1, 1, 1}, 1);
+    else {
+        Mesh floor;
+        floor.vertices = {{{-16, 0, -16, 1}, {0, 1, 0, 0}},
+                          {{-16, 0, 16, 1}, {0, 1, 0, 0}},
+                          {{16, 0, 16, 1}, {0, 1, 0, 0}},
+                          {{16, 0, -16, 1}, {0, 1, 0, 0}}};
+        floor.indices = {0, 1, 2, 0, 2, 3};
+        add(std::move(floor), {0, 0, 0}, {1, 1, 1}, 1);
+    }
     if (config.scene == "slab")
         add(box(), {0, .8F, 0}, {2, 1.5F, .3F}, 2);
     else if (glass) {
@@ -123,12 +177,21 @@ Scene make_optical_scene(const Config& config) {
                         {.35F, .8F, -.22F},
                         {0, .8F, .38F}},
                        {0, 1, 2, 3, 4, 5, 0, 1, 4, 0, 4, 3, 1, 2, 5, 1, 5, 4, 2, 0, 3, 2, 3, 5});
-        add(std::move(prism), {.28F, .025F, .45F}, {1, 1, 1}, 2);
-    } else
+        add(std::move(prism), {.28F, .025F, presentation ? .28F : .45F},
+            presentation ? math::Vec3(.9F, .85F, .9F) : math::Vec3(1), 2);
+    } else if (presentation)
+        add(sphere(), {.65F, .34F, -.5F}, {.34F, .34F, .34F}, 2);
+    else
         add(sphere(), {.65F, .38F, .1F}, {.38F, .38F, .38F}, 2);
-    add(box(), {.35F, .4F, -.65F}, {.4F, .8F, .2F}, 3);
-    add(box(), {1.35F, .6F, -.55F}, {.3F, 1.2F, .3F}, 4);
-    add(box(), {-.2F, .3F, 3.8F}, {.35F, .6F, .2F}, 5);
+    if (presentation) {
+        add(box(), {.16F, .18F, -.76F}, {.16F, .36F, .12F}, 3);
+        add(box(), {1.1F, .29F, -.5F}, {.16F, .58F, .16F}, 4);
+        add(box(), {.98F, .12F, .1F}, {.16F, .24F, .16F}, 5);
+    } else {
+        add(box(), {.35F, .4F, -.65F}, {.4F, .8F, .2F}, 3);
+        add(box(), {1.35F, .6F, -.55F}, {.3F, 1.2F, .3F}, 4);
+        add(box(), {-.2F, .3F, 3.8F}, {.35F, .6F, .2F}, 5);
+    }
     return scene;
 }
 } // namespace cubey::projects::raytracing

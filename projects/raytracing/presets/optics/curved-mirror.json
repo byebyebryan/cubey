@@ -14,11 +14,11 @@
   "exposure": 0,
   "reflection-source": "scene",
   "transmission-source": "scene",
-  "target-y": 0.38,
+  "target-y": 0.37,
   "scene": "reflection-dragon",
-  "yaw": -0.2,
+  "yaw": -0.25,
   "pitch": 0.1,
   "distance": 1.5,
-  "target-x": 0.65,
-  "target-z": 0.1
+  "target-x": 0.55,
+  "target-z": -0.48
 }
