@@ -121,7 +121,7 @@ Active projects:
 - [Fractal 2D](../projects/fractal_2d/README.md)
 - [PBR materials](../projects/pbr_materials/README.md): shared mesh material
   gallery and parameter workshop, with a matched SDF workshop.
-- [Ray tracing](../projects/raytracing/README.md): dedicated hardware triangle renderer, native diagnostics and captures.
+- [Ray tracing](../projects/raytracing/README.md): hardware triangle renderer with shared-sky mirrors/glass, native diagnostics and captures.
 - [SDF](../projects/sdf/README.md): native procedural and authored scenes,
   the robot's saved construction history and shared material workshop.
   [Guardian is a retired study](../studies/sdf/guardian/README.md), with current

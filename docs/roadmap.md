@@ -13,18 +13,18 @@ new work from a concrete product need. The [design](DESIGN.md),
 [architecture index](architecture/README.md) and
 [project guides](README.md#project-docs) describe those ownership boundaries.
 
-The dedicated [ray-tracing project](../projects/raytracing/README.md) now has a
-locally qualified first hardware pass: static Stanford dragon/floor geometry,
-direct lighting, hard shadows, native controls, diagnostics and reproducible
-headless output. The [results](notes/raytracing-first-pass-results.md) retain
-reference/numerical/window evidence and separately scoped frame/startup/memory
-costs. Physical interaction and human artistic acceptance remain open. The
-[next proposed pass](notes/raytracing-optics-plan.md) integrates shared clear-sky
-lighting, sharp scene reflections and clear-glass refraction. Diffuse GI and
-full cloud composition remain later choices; matched mesh/SDF representation
-and traversal follows as a dedicated comparison. The optics plan is not a
-runtime implementation or qualification. The first-pass receipt does not replace
-historical qualification of the other renderers or authorize public-site promotion.
+The dedicated [ray-tracing project](../projects/raytracing/README.md) has a
+locally qualified opaque hardware baseline and a shared-sky optics pass.
+Sharp floor/curved-mirror scene reflections and a closed clear-glass prism use
+Cubey's existing atmosphere, lighting and HDR postprocessing. The
+[optics results](notes/raytracing-optics-results.md) retain reference/numerical,
+window, convergence, regression and cost evidence, including visible transport
+limits. The [first-pass results](notes/raytracing-first-pass-results.md) remain
+the historical opaque baseline. Physical interaction and human artistic
+acceptance remain open. Rough/stochastic transport or diffuse GI is a later
+selection; full cloud composition and the matched mesh/SDF representation and
+traversal comparison remain separate. These receipts do not replace historical
+qualification of other renderers or authorize public-site promotion.
 
 ## Current Readiness Checkpoint
 

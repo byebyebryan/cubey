@@ -1,7 +1,9 @@
 # Ray tracing reflections and refraction plan
 
-Date: 2026-11-05. Status: proposed next implementation contract; planning only.
-Source audit: `fdd13397`, branch `raytracing-first-pass-20261104`.
+Date: 2026-11-05. Status: implemented; see the [execution results](raytracing-optics-results.md).
+Pre-implementation source audit: `fdd13397`, branch `raytracing-first-pass-20261104`.
+The later user request to run the goal loop authorized implementation of this
+contract. The audit below records the starting state.
 
 ## Intended result
 
@@ -287,8 +289,8 @@ allocation-scope limitations as the first pass.
 Deliver frozen presets, native stills and a short deterministic camera sequence,
 numerical and lifecycle receipts, source/binary/shader/asset identities, matched
 costs, retention and the operational guide. Source push, merge and public-site
-promotion remain separate. This planning change does not authorize runtime
-implementation.
+promotion remain separate. The original planning change did not authorize runtime
+implementation; the subsequent explicit goal-loop request did.
 
 After this milestone, choose between rough/stochastic transport and diffuse GI
 based on the visible result. The mesh/SDF comparison remains a dedicated follow-up
