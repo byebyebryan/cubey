@@ -1,0 +1,147 @@
+{
+  "url": "http://starship:8787/reports/2b982da05790b498e6954d21fb437f636c227c45085aee0d035f8dac128aba5a/",
+  "source_commit": "243c717f340a25ce3b9a50c8f5db9bb92d81c7fc",
+  "runtime_commit": "01dd5396",
+  "http_delivery": "all authored files HTTP 200 and exact SHA-256 match",
+  "files": [
+    {
+      "path": "app.js",
+      "bytes": 909,
+      "sha256": "e55a03f5a1bf0e4bdfb9f46d47671ef07918c99ba3e7c718e9ef05b1b2ea40c5"
+    },
+    {
+      "path": "data/convergence.json",
+      "bytes": 8978,
+      "sha256": "e96d8cbaac95e2bdfdcb0a4ec39ee31ed985ac22c02dfa07a5ac214f8e532672"
+    },
+    {
+      "path": "data/fixture-parity.json",
+      "bytes": 605,
+      "sha256": "842134d5a8679fde4bd271d9ca8185773986a3982b36989d95adfcfe4dc14159"
+    },
+    {
+      "path": "data/guide.md",
+      "bytes": 14077,
+      "sha256": "775b04931c2d1da0e2450fa8a4d91b6e1420036d5ae5705139ffe32fd1df100f"
+    },
+    {
+      "path": "data/identity.json",
+      "bytes": 1697,
+      "sha256": "3a7afbcccc6b7864c2cb93b2e9d5e614780c2b9dbcbf8d8a1e4e7f7ff19122bb"
+    },
+    {
+      "path": "data/native-commands.json",
+      "bytes": 7707,
+      "sha256": "d956edeab8c806abca2c4d73ef266e5838d831b8dcc3de16be44127503f80ff9"
+    },
+    {
+      "path": "data/refresh-timing.json",
+      "bytes": 3256,
+      "sha256": "b40726df6771002186211179f742ea4b352dd3bdad55be6ae2ac7afe26737590"
+    },
+    {
+      "path": "data/results.md",
+      "bytes": 3995,
+      "sha256": "99ebede1ff16c9e21a61990a8b291138ddd256a93e6de83be855d1dca34c419d"
+    },
+    {
+      "path": "data/timing-summary.json",
+      "bytes": 2841,
+      "sha256": "c7f899ba1d859e346c1bd2ec1bf102ef356e98c137bd7ea2550305639894769e"
+    },
+    {
+      "path": "data/timing.json",
+      "bytes": 26678,
+      "sha256": "230bda9ab89b125d4f83cee6f5308fff020cf6cd90c57dc24cc154873b6cb6b5"
+    },
+    {
+      "path": "data/verification.json",
+      "bytes": 817,
+      "sha256": "01b06826ab709e8be9504b9447a6a9928af0fa3fd3195c0c89ee903571daccba"
+    },
+    {
+      "path": "data/window.json",
+      "bytes": 717,
+      "sha256": "322ad658513d5087e7f5eb89d186251b5a1c35c1689b223c6999a477e5583f83"
+    },
+    {
+      "path": "images/curved-mirror-after.png",
+      "bytes": 902092,
+      "sha256": "ec57cdb26c8adf2638aea9284fa8d99b6b12ef651f07c617808f26c9b1508099"
+    },
+    {
+      "path": "images/curved-mirror-before.png",
+      "bytes": 1251417,
+      "sha256": "b427ed9733563897a1b1142d1b9109a30b4bafa8ca13518b0098120a5cc5b15d"
+    },
+    {
+      "path": "images/curved-mirror-environment.png",
+      "bytes": 917996,
+      "sha256": "f178a64d9703a77d4316bcae51ea0b85b1ded6b08190c880436b22d1c3b4c300"
+    },
+    {
+      "path": "images/curved-mirror-status.png",
+      "bytes": 82420,
+      "sha256": "e320cebac9889dbcf22003cd5435c75b522b3a3f6a16b0db8a052fe3d6e471c6"
+    },
+    {
+      "path": "images/orbit.mp4",
+      "bytes": 779138,
+      "sha256": "0c062627187175178f1ebfd1d6b2217381297214082f0432b5f834ee5cce7a3e"
+    },
+    {
+      "path": "images/reflection-after.png",
+      "bytes": 441071,
+      "sha256": "661222fdc80787d3d0cd95be69c7769f15059ee6dd90309629596c02ce0eccd8"
+    },
+    {
+      "path": "images/reflection-before.png",
+      "bytes": 815751,
+      "sha256": "0cf9a868c2b86370511035cec45eabe3d9168476f863a4b9b8d5a1113cace66e"
+    },
+    {
+      "path": "images/reflection-environment.png",
+      "bytes": 443131,
+      "sha256": "9b643c2f94dd26db86abe71ebc33bb6c2257b692621dfc206946813f9e4bcc40"
+    },
+    {
+      "path": "images/reflection-status.png",
+      "bytes": 82420,
+      "sha256": "e320cebac9889dbcf22003cd5435c75b522b3a3f6a16b0db8a052fe3d6e471c6"
+    },
+    {
+      "path": "images/refraction-after.png",
+      "bytes": 473483,
+      "sha256": "dc24792611807b88f86d691fe4b47a7c76b93c643458d223403ef654e1d727ac"
+    },
+    {
+      "path": "images/refraction-before.png",
+      "bytes": 468180,
+      "sha256": "3d443b3d6b748e1cea797a9fbe0e91c63f027a08726755fe16cbe3569f25f8ae"
+    },
+    {
+      "path": "images/refraction-environment.png",
+      "bytes": 389077,
+      "sha256": "7d3c27668131afa625b2ea9b0397e861a010c5d6424aa55ce0b18c17a7574c4a"
+    },
+    {
+      "path": "images/refraction-status.png",
+      "bytes": 83180,
+      "sha256": "43848f894f674de74819038e091698eaad6a32df906b763bcbf66485ac4ff360"
+    },
+    {
+      "path": "index.html",
+      "bytes": 6259,
+      "sha256": "0f9828638dd1d77f3b90643ace8a2f06be989b68b282ffdee84c79e8d9a978b3"
+    },
+    {
+      "path": "style.css",
+      "bytes": 4921,
+      "sha256": "8167b89daded5c48aaa4932bc77a445afe7ec92151c51b3deff50c0714046f96"
+    }
+  ],
+  "interaction_states_checked": 12,
+  "javascript_syntax": "passed",
+  "browser_layout_acceptance": "open",
+  "server": "existing shared server reused and left running"
+}

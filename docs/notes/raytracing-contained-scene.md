@@ -68,3 +68,11 @@ convergence limits pass; a uniform per-pixel correctness claim is not made.
 
 [Evidence and reproduction receipts](../evidence/raytracing-contained-scene-2026-11/README.md)
 retain the exact scope and original comparison identities.
+
+## Visual review
+
+[Before/after comparison and native orbit](http://starship:8787/reports/2b982da05790b498e6954d21fb437f636c227c45085aee0d035f8dac128aba5a/).
+The revised base is the initial view; the previous floor is available at the same
+camera/light settings. All 27 published bundle files return HTTP 200 and match
+the authored SHA-256 bytes; 12 UI state checks pass. Browser layout and human
+artistic acceptance remain separate. The existing report server was reused.

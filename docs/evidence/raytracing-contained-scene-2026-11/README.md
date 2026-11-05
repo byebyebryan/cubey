@@ -16,3 +16,6 @@ previous binary remain in ignored `outputs/raytracing/contained-scene/`.
 The previous floor-based evidence/report is preserved. No source push, merge or
 public demo-site promotion is performed. Browser layout, physical desktop and
 human artistic acceptance remain separate from native/HTTP verification.
+
+[Before/after and native orbit](http://starship:8787/reports/2b982da05790b498e6954d21fb437f636c227c45085aee0d035f8dac128aba5a/) · [delivery receipt](delivery.json).
+All 27 published files match their authored SHA-256 bytes over HTTP.
