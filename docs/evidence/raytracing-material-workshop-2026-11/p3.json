@@ -1,0 +1,1816 @@
+{
+  "passed": true,
+  "source": "ff979923b4525cc87b754b1914aac876e70bbb12",
+  "identity": {
+    "source": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "status": "",
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "shaders": {
+      "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+      "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+      "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+      "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+      "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+      "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+      "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+      "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+      "trace.rgen.spv": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657"
+    },
+    "recipes": {
+      "bronze.json": "fe9474f73eda0389f43596ada8857527802e1911867bc5002f6f932f5c9012ae",
+      "catalog.json": "f4701d806b2e517e5cfe705777de54454f43e6bf13a5d161035432271656ea6d",
+      "ceramic.json": "b0697acafe549744f5f8a259e3d35cca4e20efd0f47691bbbed8264f015f9304",
+      "clay.json": "a84d85caabc22353a9ec601bc7fb56a0e1941a780f4ed4ff65058e960472dfc8",
+      "frosted-glass.json": "18dbb3c951418635ada6944ef44284ff2fdf5305ab27d1b5620295a6266957cb",
+      "glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+      "kraft-cardboard.json": "499f05ba5309bc5c81024103f78babff6d63a001831ef7309e7f993f60e94e94",
+      "limestone.json": "cccc023571523d052823b6e27658ca88b461c3b6b2a90763919687943db372e3",
+      "marble.json": "dce3505445117ba30ee642eed6b8263a67a585eed81764aea47bd9fc4083eda5",
+      "plain.json": "401cfb72ff2e41fb3bcd8a07c0a0f751abda1002959a74920aba769934438ea7",
+      "rusted-steel.json": "78643660334fcdf353e34bd7a70615f33c034cc537329d4fe58ded6c21f15a07",
+      "wood.json": "2aa55215acdae9b64fa0518f511445a9e50f9592e09f21069bb7db279807cfde",
+      "woven-cloth.json": "9e376270d7a174ea67709eb82a148237c749c480b621e3f50f3ed69c72ab2f80"
+    },
+    "gpu": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 759, 35",
+      "error": ""
+    },
+    "build": {
+      "compiler": "/usr/bin/clang++",
+      "flags": [
+        "-DGLM_FORCE_DEPTH_ZERO_TO_ONE",
+        "-DGLM_FORCE_RADIANS",
+        "-O2",
+        "-g",
+        "-DNDEBUG",
+        "-std=c++20"
+      ],
+      "compiler_version": "clang version 23.1.4"
+    },
+    "scope": "Serial, source-identified workshop captures and completed-sample GPU costs.\n\nRun with no other owned GPU workload. Boundary observations describe the shared\nhost; they cannot establish uninterrupted exclusive hardware access.\n"
+  },
+  "math": {
+    "passed": true,
+    "direction_error": 2.2874206876001996e-06,
+    "fresnel_error": 1.877672940464592e-07,
+    "classification_mismatches": 0,
+    "arithmetic_tolerance_ratio": 0.34322801889062554,
+    "arbitrary_tolerance_ratio": 0.3259810163694981,
+    "component_pdf_tolerance_ratio": 0.02609549902214494,
+    "critical_or_grazing_observations": 3,
+    "arbitrary_critical_or_grazing_observations": 80,
+    "arithmetic_observations": 131072,
+    "integral_samples_per_row": 32768,
+    "joint_proposal_blocks": 512,
+    "conditional_proposal_index_cases": 512,
+    "all_direction_error": 2.2874206876001996e-06,
+    "direction_limit": 1e-05,
+    "arithmetic_absolute_limit": 1e-06,
+    "arithmetic_relative_limit": 0.0001,
+    "energy_integral_limit": 0.02,
+    "mass_integral_limit": 0.025,
+    "probe_sha256": "8ea3eaf69840f295f593b6fc94c8d6eac2d8bbea114b4e5de8b0fb3aed9b8244",
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "shader_sha256": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657",
+    "source_base": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "source_files_sha256": {
+      "projects/raytracing/shaders/material_dielectric.glsl": "bf2cda199e31ccc654c565d985f74d440265bae437f4f768efc67d4b78a1f84e",
+      "projects/raytracing/shaders/material_bsdf.glsl": "35dcfd9bb6dd373ce5ca2ea927932c74dbe462ad25ba90048e4e7e46407431a4",
+      "projects/raytracing/shaders/material_workshop.glsl": "763368e35f0dac6c988ca13b76dd05a7e4e23b9dce1232a1150faefed693189c",
+      "projects/raytracing/shaders/trace.rgen": "64e0455bacd34044980e416de2a273563e13be3a7e195778163802ef883199dd",
+      "/home/bryan/code/cubey-raytracing-first-pass/projects/raytracing/tools/qualify_material_dielectric.py": "5b6dd657b21b6cb4903029cf002d74a8ee3fcc9daaf1bd70ee656e3ff2b4f289"
+    }
+  },
+  "integral_cases": 208,
+  "maximum_integral_energy_error": 0.019506532725934944,
+  "maximum_solar_estimator_error": 0.00022373007626660946,
+  "maximum_split_energy_error": 0.006758892069214095,
+  "quality": [
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.000374246298834477,
+      "roi_p95": 0.002152590081095695,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 9.160548001634597e-05,
+      "all_pixel_p95": 0.0005045831203460693,
+      "maximum_error": 0.8085022478106519,
+      "candidate_status_counts": {
+        "0": 297372,
+        "2": 9828
+      },
+      "candidate_sha256": "da4d0ff50c5e043aec1f4bb3b097568d9d0d284ed737af5f1d4e0b34d959acbc",
+      "reference_sha256": "93a2b200bb9ca86b1844e4e22a5cc0b4e24810e851c791d7d09610fec4f451e0",
+      "name": "glass-environment-256-seed7",
+      "material": "glass",
+      "source": "environment",
+      "samples": 256,
+      "seed": 7
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.00040084301375368093,
+      "roi_p95": 0.002223929017782211,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 9.632743959213193e-05,
+      "all_pixel_p95": 0.0005037218332290642,
+      "maximum_error": 1.7635229599092552,
+      "candidate_status_counts": {
+        "0": 297360,
+        "2": 9840
+      },
+      "candidate_sha256": "9771f5d176d0c27e1d64db3ef9c841be7c5c043930061d28fc70b30bf8d026ec",
+      "reference_sha256": "93a2b200bb9ca86b1844e4e22a5cc0b4e24810e851c791d7d09610fec4f451e0",
+      "name": "glass-environment-256-seed31",
+      "material": "glass",
+      "source": "environment",
+      "samples": 256,
+      "seed": 31
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.00011531319661766147,
+      "roi_p95": 0.0006556895561516278,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 2.796522043216547e-05,
+      "all_pixel_p95": 0.0001501746475696562,
+      "maximum_error": 0.2857066160110492,
+      "candidate_status_counts": {
+        "0": 293338,
+        "2": 13861,
+        "18": 1
+      },
+      "candidate_sha256": "6c1aeb9218dbdb1d2b8f2867c1a65216f00ce38fdf2997f2f0b515f4d49bdd6b",
+      "reference_sha256": "93a2b200bb9ca86b1844e4e22a5cc0b4e24810e851c791d7d09610fec4f451e0",
+      "name": "glass-environment-8192-seed43",
+      "material": "glass",
+      "source": "environment",
+      "samples": 8192,
+      "seed": 43
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.000374246298834477,
+      "roi_p95": 0.002152590081095695,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 9.160548001634597e-05,
+      "all_pixel_p95": 0.0005045831203460693,
+      "maximum_error": 0.8085022478106519,
+      "candidate_status_counts": {
+        "0": 297372,
+        "2": 9828
+      },
+      "candidate_sha256": "da4d0ff50c5e043aec1f4bb3b097568d9d0d284ed737af5f1d4e0b34d959acbc",
+      "reference_sha256": "93a2b200bb9ca86b1844e4e22a5cc0b4e24810e851c791d7d09610fec4f451e0",
+      "name": "glass-scene-256-seed7",
+      "material": "glass",
+      "source": "scene",
+      "samples": 256,
+      "seed": 7
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.00040084301375368093,
+      "roi_p95": 0.002223929017782211,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 9.632743959213193e-05,
+      "all_pixel_p95": 0.0005037218332290642,
+      "maximum_error": 1.7635229599092552,
+      "candidate_status_counts": {
+        "0": 297360,
+        "2": 9840
+      },
+      "candidate_sha256": "9771f5d176d0c27e1d64db3ef9c841be7c5c043930061d28fc70b30bf8d026ec",
+      "reference_sha256": "93a2b200bb9ca86b1844e4e22a5cc0b4e24810e851c791d7d09610fec4f451e0",
+      "name": "glass-scene-256-seed31",
+      "material": "glass",
+      "source": "scene",
+      "samples": 256,
+      "seed": 31
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.00011531319661766147,
+      "roi_p95": 0.0006556895561516278,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 2.796522043216547e-05,
+      "all_pixel_p95": 0.0001501746475696562,
+      "maximum_error": 0.2857066160110492,
+      "candidate_status_counts": {
+        "0": 293338,
+        "2": 13861,
+        "18": 1
+      },
+      "candidate_sha256": "6c1aeb9218dbdb1d2b8f2867c1a65216f00ce38fdf2997f2f0b515f4d49bdd6b",
+      "reference_sha256": "93a2b200bb9ca86b1844e4e22a5cc0b4e24810e851c791d7d09610fec4f451e0",
+      "name": "glass-scene-8192-seed43",
+      "material": "glass",
+      "source": "scene",
+      "samples": 8192,
+      "seed": 43
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.003406108701999019,
+      "roi_p95": 0.01740351617336273,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 0.0007186761791379265,
+      "all_pixel_p95": 0.006221930682659133,
+      "maximum_error": 0.10446667671203613,
+      "candidate_status_counts": {
+        "0": 243337,
+        "6": 63863
+      },
+      "candidate_sha256": "00ce2d63104bb006a3ab85633073dddbd412c20a787222045fcb9a403e4a6520",
+      "reference_sha256": "63b894b9a884e8f362fb7219548a4d3d2299eaaf2e1e4708cb6820b1a3c05451",
+      "name": "frosted-glass-environment-256-seed7",
+      "material": "frosted-glass",
+      "source": "environment",
+      "samples": 256,
+      "seed": 7
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.003414734559699782,
+      "roi_p95": 0.01748189851641655,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 0.0007200704316740788,
+      "all_pixel_p95": 0.006212224811315532,
+      "maximum_error": 0.09796291589736938,
+      "candidate_status_counts": {
+        "0": 243336,
+        "4": 1,
+        "6": 63863
+      },
+      "candidate_sha256": "0c2054b1e8a6397438415c29063b2e550c0aae44f48d7fc24f1a2cf96661f146",
+      "reference_sha256": "63b894b9a884e8f362fb7219548a4d3d2299eaaf2e1e4708cb6820b1a3c05451",
+      "name": "frosted-glass-environment-256-seed31",
+      "material": "frosted-glass",
+      "source": "environment",
+      "samples": 256,
+      "seed": 31
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.0010468556259387737,
+      "roi_p95": 0.0050739929080009455,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 0.00022060093529742314,
+      "all_pixel_p95": 0.0020075798034667955,
+      "maximum_error": 0.03130704164505005,
+      "candidate_status_counts": {
+        "0": 243311,
+        "2": 1,
+        "6": 63887,
+        "22": 1
+      },
+      "candidate_sha256": "eb73a42948022582997206a4d5e25f20612e6cd213784c2c331d1d6fff10d1cb",
+      "reference_sha256": "63b894b9a884e8f362fb7219548a4d3d2299eaaf2e1e4708cb6820b1a3c05451",
+      "name": "frosted-glass-environment-8192-seed43",
+      "material": "frosted-glass",
+      "source": "environment",
+      "samples": 8192,
+      "seed": 43
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.003406108701999019,
+      "roi_p95": 0.01740351617336273,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 0.0007186761791379265,
+      "all_pixel_p95": 0.006221930682659133,
+      "maximum_error": 0.10446667671203613,
+      "candidate_status_counts": {
+        "0": 243337,
+        "6": 63863
+      },
+      "candidate_sha256": "00ce2d63104bb006a3ab85633073dddbd412c20a787222045fcb9a403e4a6520",
+      "reference_sha256": "63b894b9a884e8f362fb7219548a4d3d2299eaaf2e1e4708cb6820b1a3c05451",
+      "name": "frosted-glass-scene-256-seed7",
+      "material": "frosted-glass",
+      "source": "scene",
+      "samples": 256,
+      "seed": 7
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.003414734559699782,
+      "roi_p95": 0.01748189851641655,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 0.0007200704316740788,
+      "all_pixel_p95": 0.006212224811315532,
+      "maximum_error": 0.09796291589736938,
+      "candidate_status_counts": {
+        "0": 243336,
+        "4": 1,
+        "6": 63863
+      },
+      "candidate_sha256": "0c2054b1e8a6397438415c29063b2e550c0aae44f48d7fc24f1a2cf96661f146",
+      "reference_sha256": "63b894b9a884e8f362fb7219548a4d3d2299eaaf2e1e4708cb6820b1a3c05451",
+      "name": "frosted-glass-scene-256-seed31",
+      "material": "frosted-glass",
+      "source": "scene",
+      "samples": 256,
+      "seed": 31
+    },
+    {
+      "passed": true,
+      "mean_limit": 0.005,
+      "p95_limit": 0.02,
+      "roi_mean": 0.0010468556259387737,
+      "roi_p95": 0.0050739929080009455,
+      "roi_pixels": 62464,
+      "guarded_pixels": 936,
+      "guard_policy": "one pixel inside the analytic primary sphere silhouette",
+      "projected_radius_pixels": 142.03986997523958,
+      "all_pixel_mean": 0.00022060093529742314,
+      "all_pixel_p95": 0.0020075798034667955,
+      "maximum_error": 0.03130704164505005,
+      "candidate_status_counts": {
+        "0": 243311,
+        "2": 1,
+        "6": 63887,
+        "22": 1
+      },
+      "candidate_sha256": "eb73a42948022582997206a4d5e25f20612e6cd213784c2c331d1d6fff10d1cb",
+      "reference_sha256": "63b894b9a884e8f362fb7219548a4d3d2299eaaf2e1e4708cb6820b1a3c05451",
+      "name": "frosted-glass-scene-8192-seed43",
+      "material": "frosted-glass",
+      "source": "scene",
+      "samples": 8192,
+      "seed": 43
+    }
+  ],
+  "timing": [
+    {
+      "material": "glass",
+      "route": "environment",
+      "repetition": 0,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 0.897872,
+          "p95_ms": 0.9013039999999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 0.913712,
+          "p95_ms": 0.9171727999999999,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.567616,
+          "p95_ms": 0.573248,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 1.483248,
+          "p95_ms": 1.4919231999999998,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "glass",
+      "route": "environment",
+      "repetition": 1,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 0.898656,
+          "p95_ms": 0.901824,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 0.9144479999999999,
+          "p95_ms": 0.9176704,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.5676479999999999,
+          "p95_ms": 0.5737136,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 1.484224,
+          "p95_ms": 1.4926464,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "glass",
+      "route": "environment",
+      "repetition": 2,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 0.899152,
+          "p95_ms": 0.9024352,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 0.914752,
+          "p95_ms": 0.9184384,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.567664,
+          "p95_ms": 0.5736816,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 1.484192,
+          "p95_ms": 1.4925328,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "glass",
+      "route": "scene",
+      "repetition": 0,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 0.899216,
+          "p95_ms": 0.9020431999999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 0.9148799999999999,
+          "p95_ms": 0.9181616,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.567728,
+          "p95_ms": 0.5737952,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 1.484672,
+          "p95_ms": 1.4932464,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "glass",
+      "route": "scene",
+      "repetition": 1,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 0.899072,
+          "p95_ms": 0.9015216,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 0.9148,
+          "p95_ms": 0.917408,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.567584,
+          "p95_ms": 0.568288,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 1.4844,
+          "p95_ms": 1.4869359999999998,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "glass",
+      "route": "scene",
+      "repetition": 2,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 0.8988799999999999,
+          "p95_ms": 0.9016495999999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 0.9146399999999999,
+          "p95_ms": 0.9176239999999999,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.567584,
+          "p95_ms": 0.568256,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 1.484144,
+          "p95_ms": 1.487512,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "frosted-glass",
+      "route": "environment",
+      "repetition": 0,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 7.752847999999999,
+          "p95_ms": 7.8086112,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 7.770543999999999,
+          "p95_ms": 7.8254512,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.5761919999999999,
+          "p95_ms": 0.578016,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 8.348655999999998,
+          "p95_ms": 8.4049696,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "frosted-glass",
+      "route": "environment",
+      "repetition": 1,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 7.761264,
+          "p95_ms": 7.794359999999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 7.778064,
+          "p95_ms": 7.811311999999999,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.5763039999999999,
+          "p95_ms": 0.57744,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 8.355567999999998,
+          "p95_ms": 8.389001599999999,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "frosted-glass",
+      "route": "environment",
+      "repetition": 2,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 7.763983999999999,
+          "p95_ms": 7.808411199999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 7.781504,
+          "p95_ms": 7.825336,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.57648,
+          "p95_ms": 0.5779584,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 8.359968,
+          "p95_ms": 8.4051008,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "frosted-glass",
+      "route": "scene",
+      "repetition": 0,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 7.77328,
+          "p95_ms": 7.8148447999999995,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 7.7904,
+          "p95_ms": 7.831735999999999,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.576928,
+          "p95_ms": 0.5798896,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 8.369712,
+          "p95_ms": 8.417190399999999,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "frosted-glass",
+      "route": "scene",
+      "repetition": 1,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 7.778112,
+          "p95_ms": 7.829420799999999,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 7.795375999999999,
+          "p95_ms": 7.8462432,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.578384,
+          "p95_ms": 0.5799679999999999,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 8.375376,
+          "p95_ms": 8.4279376,
+          "samples": 150
+        }
+      }
+    },
+    {
+      "material": "frosted-glass",
+      "route": "scene",
+      "repetition": 2,
+      "gpu": {
+        "raytracing.trace": {
+          "p50_ms": 7.787343999999999,
+          "p95_ms": 7.8320352,
+          "samples": 150
+        },
+        "raytracing.whole_scene": {
+          "p50_ms": 7.804576,
+          "p95_ms": 7.848824,
+          "samples": 150
+        },
+        "raytracing.environment_update": {
+          "p50_ms": 0.57824,
+          "p95_ms": 0.580288,
+          "samples": 150
+        },
+        "raytracing.total_frame": {
+          "p50_ms": 8.385472,
+          "p95_ms": 8.429768000000001,
+          "samples": 150
+        }
+      }
+    }
+  ],
+  "maximum_total_gpu_p95_ms": 8.429768000000001,
+  "optics": {
+    "passed": true,
+    "source": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "shader_sha256": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657",
+    "scope": "Qualify two disjoint workshop bodies against independent plane/Snell/Beer controls.",
+    "cases": [
+      {
+        "case": "index-matched",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--scene",
+          "materials",
+          "--optical-pair",
+          "index-matched",
+          "--headless",
+          "--frames",
+          "1",
+          "--width",
+          "192",
+          "--height",
+          "144",
+          "--samples",
+          "1",
+          "--workshop-lighting",
+          "furnace",
+          "--ior",
+          "2.2",
+          "--attenuation-red",
+          ".2",
+          "--attenuation-green",
+          ".3",
+          "--attenuation-blue",
+          ".4",
+          "--attenuation-distance",
+          ".01",
+          "--require-validation",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/optics/index-matched.png",
+          "--optics-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/optics/index-matched.bin",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/optics/index-matched.json"
+        ],
+        "regular_pixels": 565,
+        "excluded_pixels": 27083,
+        "position_error": 5.707615845528324e-06,
+        "direction_error": 1.1967404487884797e-07,
+        "fresnel_error": 2.180156253543667e-15,
+        "optical_distance_error": 1.8881751707305883e-07,
+        "relative_absorption_error": 3.5303693956082433e-07,
+        "relative_two_body_color_error": 3.891053552581181e-07,
+        "body_ids": [
+          16,
+          17
+        ],
+        "iors": [
+          1,
+          1
+        ]
+      },
+      {
+        "case": "unequal-ior",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--scene",
+          "materials",
+          "--optical-pair",
+          "unequal-ior",
+          "--headless",
+          "--frames",
+          "1",
+          "--width",
+          "192",
+          "--height",
+          "144",
+          "--samples",
+          "1",
+          "--workshop-lighting",
+          "furnace",
+          "--ior",
+          "2.2",
+          "--attenuation-red",
+          ".2",
+          "--attenuation-green",
+          ".3",
+          "--attenuation-blue",
+          ".4",
+          "--attenuation-distance",
+          ".01",
+          "--require-validation",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/optics/unequal-ior.png",
+          "--optics-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/optics/unequal-ior.bin",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/optics/unequal-ior.json"
+        ],
+        "regular_pixels": 461,
+        "excluded_pixels": 27187,
+        "position_error": 4.392003701442433e-06,
+        "direction_error": 1.1967404487884797e-07,
+        "fresnel_error": 1.0500543851099664e-08,
+        "optical_distance_error": 7.401142174817688e-08,
+        "relative_absorption_error": 0.0,
+        "relative_two_body_color_error": null,
+        "body_ids": [
+          16,
+          17
+        ],
+        "iors": [
+          1.33,
+          1.8
+        ]
+      }
+    ]
+  },
+  "controls": {
+    "passed": true,
+    "mode": "controls",
+    "results": [
+      {
+        "name": "glass-furnace",
+        "mean": [
+          0.9979626318563595,
+          0.9979626318563595,
+          0.9979626318563595
+        ],
+        "maximum": 1.0,
+        "limit": 1.02,
+        "mean_radiance_calls_per_primary": 3.1336896594175894,
+        "mean_discarded_throughput": [
+          0.0009054970268721457,
+          0.0009054970268721457,
+          0.0009054970268721457
+        ],
+        "terminated_branches": 17625.0,
+        "primary_samples_with_status": 17625.0,
+        "primary_samples": 2404352
+      },
+      {
+        "name": "frosted-glass-furnace",
+        "mean": [
+          0.8673462549913071,
+          0.8673462549913071,
+          0.8673462549913071
+        ],
+        "maximum": 0.98431795835495,
+        "limit": 1.02,
+        "mean_radiance_calls_per_primary": 28.461009868771296,
+        "mean_discarded_throughput": [
+          0.041901865588430495,
+          0.041901865588430495,
+          0.041901865588430495
+        ],
+        "terminated_branches": 4274384.0,
+        "primary_samples_with_status": 1584228.0,
+        "primary_samples": 2404352
+      },
+      {
+        "name": "complete-body-near-delta",
+        "mean_error": 0.0038969740906200376,
+        "limit": 0.02
+      },
+      {
+        "name": "budget-one",
+        "fallback_sky": false,
+        "all_hit_pixels_report_exhaustion": true
+      },
+      {
+        "name": "default",
+        "mean_discarded_throughput": [
+          0.039565017972033614,
+          0.04088970755520527,
+          0.03999769472460254
+        ],
+        "terminated_branches": 1067127.0,
+        "primary_samples_with_status": 395589.0,
+        "primary_samples": 601088,
+        "mean_radiance_calls_per_primary": 28.45883631015758
+      },
+      {
+        "name": "rays-control",
+        "mean_discarded_throughput": [
+          0.015383036904803714,
+          0.016914346390642786,
+          0.015882129911692286
+        ],
+        "terminated_branches": 666122.0,
+        "primary_samples_with_status": 388972.0,
+        "primary_samples": 601088,
+        "mean_radiance_calls_per_primary": 31.4431797008092
+      },
+      {
+        "name": "deep-control",
+        "mean_discarded_throughput": [
+          0.007564559071549366,
+          0.008598707021349225,
+          0.007896985296546017
+        ],
+        "terminated_branches": 380099.0,
+        "primary_samples_with_status": 270428.0,
+        "primary_samples": 601088,
+        "mean_radiance_calls_per_primary": 34.47754738074958
+      },
+      {
+        "name": "default-versus-rays-control",
+        "mean": 0.0113989917303857,
+        "p95": 0.05002745538949975,
+        "scope": "measured bounded-transport bias; not the same-budget SPP convergence screen"
+      },
+      {
+        "name": "default-versus-deep-control",
+        "mean": 0.014780866462644243,
+        "p95": 0.06055239439010622,
+        "scope": "measured bounded-transport bias; not the same-budget SPP convergence screen"
+      },
+      {
+        "name": "sun-sky-accounting",
+        "maximum_error": 5.21540641784668e-07,
+        "limit": 0.0005
+      }
+    ],
+    "source": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "shader_sha256": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657",
+    "scope": "Closed-body glass energy, budget, mesh-density and lifetime controls."
+  },
+  "density": {
+    "passed": true,
+    "mode": "density",
+    "results": [
+      {
+        "name": "glass-standard",
+        "active_triangles": 16128,
+        "geometry": {
+          "closed": true,
+          "maximum": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "maximum_position_snap": 4.371138828673797e-08,
+          "minimum": [
+            -0.25,
+            -0.25,
+            -0.25
+          ],
+          "removed_degenerate_triangles": 256,
+          "signed_volume": 0.06538416331725905,
+          "snapped_positions": 191,
+          "welded_topology_vertices": 8066
+        },
+        "as_bytes": 3265152
+      },
+      {
+        "name": "glass-dense",
+        "active_triangles": 65024,
+        "geometry": {
+          "closed": true,
+          "maximum": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "maximum_position_snap": 4.371138828673797e-08,
+          "minimum": [
+            -0.25,
+            -0.25,
+            -0.25
+          ],
+          "removed_degenerate_triangles": 512,
+          "signed_volume": 0.06543342081980205,
+          "snapped_positions": 383,
+          "welded_topology_vertices": 32514
+        },
+        "as_bytes": 9304704
+      },
+      {
+        "name": "glass-density-difference",
+        "mean": 0.036801388900764266,
+        "p95": 0.04165732339024543,
+        "scope": "geometry approximation plus finite-sample noise, not a material equality claim"
+      },
+      {
+        "name": "frosted-glass-standard",
+        "active_triangles": 16128,
+        "geometry": {
+          "closed": true,
+          "maximum": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "maximum_position_snap": 4.371138828673797e-08,
+          "minimum": [
+            -0.25,
+            -0.25,
+            -0.25
+          ],
+          "removed_degenerate_triangles": 256,
+          "signed_volume": 0.06538416331725905,
+          "snapped_positions": 191,
+          "welded_topology_vertices": 8066
+        },
+        "as_bytes": 3265152
+      },
+      {
+        "name": "frosted-glass-dense",
+        "active_triangles": 65024,
+        "geometry": {
+          "closed": true,
+          "maximum": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "maximum_position_snap": 4.371138828673797e-08,
+          "minimum": [
+            -0.25,
+            -0.25,
+            -0.25
+          ],
+          "removed_degenerate_triangles": 512,
+          "signed_volume": 0.06543342081980205,
+          "snapped_positions": 383,
+          "welded_topology_vertices": 32514
+        },
+        "as_bytes": 9304704
+      },
+      {
+        "name": "frosted-glass-density-difference",
+        "mean": 0.0042962694265316305,
+        "p95": 0.027186480164527873,
+        "scope": "geometry approximation plus finite-sample noise, not a material equality claim"
+      }
+    ],
+    "source": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "shader_sha256": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657",
+    "scope": "Closed-body glass energy, budget, mesh-density and lifetime controls."
+  },
+  "lifecycle": {
+    "passed": true,
+    "mode": "lifecycle",
+    "results": [
+      {
+        "name": "glass-1000-edits",
+        "epochs": 1000,
+        "as_builds": 10,
+        "resident_requested_bytes": 5222880
+      },
+      {
+        "name": "frosted-glass-1000-edits",
+        "epochs": 1000,
+        "as_builds": 10,
+        "resident_requested_bytes": 5222880
+      },
+      {
+        "name": "moving-sun",
+        "generations": 7,
+        "epochs": 90
+      }
+    ],
+    "source": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "shader_sha256": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657",
+    "scope": "Closed-body glass energy, budget, mesh-density and lifetime controls."
+  },
+  "records": {
+    "passed": true,
+    "cases": [
+      {
+        "name": "catalog",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--headless",
+          "--frames",
+          "1",
+          "--scene",
+          "materials",
+          "--material-contract",
+          "--samples",
+          "1",
+          "--width",
+          "96",
+          "--height",
+          "96",
+          "--require-validation",
+          "--optics-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/catalog/probe.bin",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/catalog/metrics.json",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/catalog/probe.png"
+        ],
+        "reference_command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/cubey_project_raytracing_material_reference",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/catalog/metrics.json",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/catalog/probe.bin",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/catalog/receipt.json"
+        ],
+        "cases": [
+          {
+            "catalog_id": "plain",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "plain",
+            "samples": 768,
+            "slot": 0
+          },
+          {
+            "catalog_id": "limestone",
+            "maximum_component_error": 1.043081283569336e-07,
+            "maximum_normal_degrees": 5.399738656763834e-06,
+            "resolved_id": "limestone",
+            "samples": 768,
+            "slot": 1
+          },
+          {
+            "catalog_id": "marble",
+            "maximum_component_error": 1.0192394256591797e-05,
+            "maximum_normal_degrees": 5.193302344775284e-06,
+            "resolved_id": "marble",
+            "samples": 768,
+            "slot": 2
+          },
+          {
+            "catalog_id": "clay",
+            "maximum_component_error": 2.7911490141363515e-07,
+            "maximum_normal_degrees": 7.636383641665695e-06,
+            "resolved_id": "clay",
+            "samples": 768,
+            "slot": 3
+          },
+          {
+            "catalog_id": "ceramic",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "ceramic",
+            "samples": 768,
+            "slot": 4
+          },
+          {
+            "catalog_id": "bronze",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "bronze",
+            "samples": 768,
+            "slot": 5
+          },
+          {
+            "catalog_id": "glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "glass",
+            "samples": 768,
+            "slot": 6
+          },
+          {
+            "catalog_id": "wood",
+            "maximum_component_error": 1.1920928955078125e-06,
+            "maximum_normal_degrees": 2.5513408025137336e-05,
+            "resolved_id": "wood",
+            "samples": 768,
+            "slot": 7
+          },
+          {
+            "catalog_id": "rusted-steel",
+            "maximum_component_error": 1.6689300537109375e-06,
+            "maximum_normal_degrees": 9.2743557084027e-06,
+            "resolved_id": "rusted-steel",
+            "samples": 768,
+            "slot": 8
+          },
+          {
+            "catalog_id": "kraft-cardboard",
+            "maximum_component_error": 2.8986832401045604e-07,
+            "maximum_normal_degrees": 6.668185343934157e-06,
+            "resolved_id": "kraft-cardboard",
+            "samples": 768,
+            "slot": 9
+          },
+          {
+            "catalog_id": "woven-cloth",
+            "maximum_component_error": 4.598870873451233e-06,
+            "maximum_normal_degrees": 0.00021001443402086207,
+            "resolved_id": "woven-cloth",
+            "samples": 768,
+            "slot": 10
+          },
+          {
+            "catalog_id": "frosted-glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "frosted-glass",
+            "samples": 768,
+            "slot": 11
+          }
+        ],
+        "component_limit": 0.0005,
+        "normal_degrees_limit": 0.5,
+        "passed": true,
+        "samples": 9216,
+        "scope": "shared CPU evaluator versus actual RT recipe-record sampling; not transport"
+      },
+      {
+        "name": "patterns-off",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--headless",
+          "--frames",
+          "1",
+          "--scene",
+          "materials",
+          "--material-contract",
+          "--samples",
+          "1",
+          "--width",
+          "96",
+          "--height",
+          "96",
+          "--require-validation",
+          "--optics-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/patterns-off/probe.bin",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/patterns-off/metrics.json",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/patterns-off/probe.png",
+          "--no-pattern"
+        ],
+        "reference_command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/cubey_project_raytracing_material_reference",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/patterns-off/metrics.json",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/patterns-off/probe.bin",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/patterns-off/receipt.json"
+        ],
+        "cases": [
+          {
+            "catalog_id": "plain",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "plain",
+            "samples": 768,
+            "slot": 0
+          },
+          {
+            "catalog_id": "limestone",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "limestone",
+            "samples": 768,
+            "slot": 1
+          },
+          {
+            "catalog_id": "marble",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "marble",
+            "samples": 768,
+            "slot": 2
+          },
+          {
+            "catalog_id": "clay",
+            "maximum_component_error": 2.7911490141363515e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "clay",
+            "samples": 768,
+            "slot": 3
+          },
+          {
+            "catalog_id": "ceramic",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "ceramic",
+            "samples": 768,
+            "slot": 4
+          },
+          {
+            "catalog_id": "bronze",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "bronze",
+            "samples": 768,
+            "slot": 5
+          },
+          {
+            "catalog_id": "glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "glass",
+            "samples": 768,
+            "slot": 6
+          },
+          {
+            "catalog_id": "wood",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "wood",
+            "samples": 768,
+            "slot": 7
+          },
+          {
+            "catalog_id": "rusted-steel",
+            "maximum_component_error": 1.3359484962727208e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "rusted-steel",
+            "samples": 768,
+            "slot": 8
+          },
+          {
+            "catalog_id": "kraft-cardboard",
+            "maximum_component_error": 2.8986832401045604e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "kraft-cardboard",
+            "samples": 768,
+            "slot": 9
+          },
+          {
+            "catalog_id": "woven-cloth",
+            "maximum_component_error": 1.8711958693629072e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "woven-cloth",
+            "samples": 768,
+            "slot": 10
+          },
+          {
+            "catalog_id": "frosted-glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "frosted-glass",
+            "samples": 768,
+            "slot": 11
+          }
+        ],
+        "component_limit": 0.0005,
+        "normal_degrees_limit": 0.5,
+        "passed": true,
+        "samples": 9216,
+        "scope": "shared CPU evaluator versus actual RT recipe-record sampling; not transport"
+      },
+      {
+        "name": "bump-off",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--headless",
+          "--frames",
+          "1",
+          "--scene",
+          "materials",
+          "--material-contract",
+          "--samples",
+          "1",
+          "--width",
+          "96",
+          "--height",
+          "96",
+          "--require-validation",
+          "--optics-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/bump-off/probe.bin",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/bump-off/metrics.json",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/bump-off/probe.png",
+          "--no-bump"
+        ],
+        "reference_command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/cubey_project_raytracing_material_reference",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/bump-off/metrics.json",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/bump-off/probe.bin",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/bump-off/receipt.json"
+        ],
+        "cases": [
+          {
+            "catalog_id": "plain",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "plain",
+            "samples": 768,
+            "slot": 0
+          },
+          {
+            "catalog_id": "limestone",
+            "maximum_component_error": 1.043081283569336e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "limestone",
+            "samples": 768,
+            "slot": 1
+          },
+          {
+            "catalog_id": "marble",
+            "maximum_component_error": 1.0192394256591797e-05,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "marble",
+            "samples": 768,
+            "slot": 2
+          },
+          {
+            "catalog_id": "clay",
+            "maximum_component_error": 2.7911490141363515e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "clay",
+            "samples": 768,
+            "slot": 3
+          },
+          {
+            "catalog_id": "ceramic",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "ceramic",
+            "samples": 768,
+            "slot": 4
+          },
+          {
+            "catalog_id": "bronze",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "bronze",
+            "samples": 768,
+            "slot": 5
+          },
+          {
+            "catalog_id": "glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "glass",
+            "samples": 768,
+            "slot": 6
+          },
+          {
+            "catalog_id": "wood",
+            "maximum_component_error": 1.1920928955078125e-06,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "wood",
+            "samples": 768,
+            "slot": 7
+          },
+          {
+            "catalog_id": "rusted-steel",
+            "maximum_component_error": 1.6689300537109375e-06,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "rusted-steel",
+            "samples": 768,
+            "slot": 8
+          },
+          {
+            "catalog_id": "kraft-cardboard",
+            "maximum_component_error": 2.8986832401045604e-07,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "kraft-cardboard",
+            "samples": 768,
+            "slot": 9
+          },
+          {
+            "catalog_id": "woven-cloth",
+            "maximum_component_error": 4.598870873451233e-06,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "woven-cloth",
+            "samples": 768,
+            "slot": 10
+          },
+          {
+            "catalog_id": "frosted-glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "frosted-glass",
+            "samples": 768,
+            "slot": 11
+          }
+        ],
+        "component_limit": 0.0005,
+        "normal_degrees_limit": 0.5,
+        "passed": true,
+        "samples": 9216,
+        "scope": "shared CPU evaluator versus actual RT recipe-record sampling; not transport"
+      },
+      {
+        "name": "nonidentity-domain",
+        "command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+          "--headless",
+          "--frames",
+          "1",
+          "--scene",
+          "materials",
+          "--material-contract",
+          "--samples",
+          "1",
+          "--width",
+          "96",
+          "--height",
+          "96",
+          "--require-validation",
+          "--optics-output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-domain/probe.bin",
+          "--metrics",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-domain/metrics.json",
+          "--output",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-domain/probe.png",
+          "--recipe-input",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-marble.json"
+        ],
+        "reference_command": [
+          "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/cubey_project_raytracing_material_reference",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-domain/metrics.json",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-domain/probe.bin",
+          "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/records/nonidentity-domain/receipt.json"
+        ],
+        "cases": [
+          {
+            "catalog_id": "plain",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "plain",
+            "samples": 768,
+            "slot": 0
+          },
+          {
+            "catalog_id": "limestone",
+            "maximum_component_error": 1.043081283569336e-07,
+            "maximum_normal_degrees": 5.399738656763834e-06,
+            "resolved_id": "limestone",
+            "samples": 768,
+            "slot": 1
+          },
+          {
+            "catalog_id": "marble",
+            "maximum_component_error": 1.0192394256591797e-05,
+            "maximum_normal_degrees": 5.193302344775284e-06,
+            "resolved_id": "marble",
+            "samples": 768,
+            "slot": 2
+          },
+          {
+            "catalog_id": "clay",
+            "maximum_component_error": 2.7911490141363515e-07,
+            "maximum_normal_degrees": 7.636383641665695e-06,
+            "resolved_id": "clay",
+            "samples": 768,
+            "slot": 3
+          },
+          {
+            "catalog_id": "ceramic",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "ceramic",
+            "samples": 768,
+            "slot": 4
+          },
+          {
+            "catalog_id": "bronze",
+            "maximum_component_error": 2.0742416381835938e-05,
+            "maximum_normal_degrees": 0.00017735490732767768,
+            "resolved_id": "marble",
+            "samples": 768,
+            "slot": 5
+          },
+          {
+            "catalog_id": "glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "glass",
+            "samples": 768,
+            "slot": 6
+          },
+          {
+            "catalog_id": "wood",
+            "maximum_component_error": 1.1920928955078125e-06,
+            "maximum_normal_degrees": 2.5513408025137336e-05,
+            "resolved_id": "wood",
+            "samples": 768,
+            "slot": 7
+          },
+          {
+            "catalog_id": "rusted-steel",
+            "maximum_component_error": 1.6689300537109375e-06,
+            "maximum_normal_degrees": 9.2743557084027e-06,
+            "resolved_id": "rusted-steel",
+            "samples": 768,
+            "slot": 8
+          },
+          {
+            "catalog_id": "kraft-cardboard",
+            "maximum_component_error": 2.8986832401045604e-07,
+            "maximum_normal_degrees": 6.668185343934157e-06,
+            "resolved_id": "kraft-cardboard",
+            "samples": 768,
+            "slot": 9
+          },
+          {
+            "catalog_id": "woven-cloth",
+            "maximum_component_error": 4.598870873451233e-06,
+            "maximum_normal_degrees": 0.00021001443402086207,
+            "resolved_id": "woven-cloth",
+            "samples": 768,
+            "slot": 10
+          },
+          {
+            "catalog_id": "frosted-glass",
+            "maximum_component_error": 0.0,
+            "maximum_normal_degrees": 1.2074182697257333e-06,
+            "resolved_id": "frosted-glass",
+            "samples": 768,
+            "slot": 11
+          }
+        ],
+        "component_limit": 0.0005,
+        "normal_degrees_limit": 0.5,
+        "passed": true,
+        "samples": 9216,
+        "scope": "shared CPU evaluator versus actual RT recipe-record sampling; not transport"
+      }
+    ],
+    "binary_sha256": "9b69734da340fda08cf4aba558ad1cecbff07efa6fff56ef92ee148763327c47",
+    "reference_sha256": "2551a5173d792f7295a06ce9c923e787249ee23f98f0bc9fe7df503e711e47b4",
+    "shader_sha256": "2682d6053965873bed2be1f176af7267e6914078a34bf9b89edf08e5627e1657",
+    "source_base": "ff979923b4525cc87b754b1914aac876e70bbb12",
+    "scope": "GPU record layout, shared evaluator, pattern/bump controls and nonidentity affine domain; no image transport claim"
+  },
+  "native": {
+    "native-frost": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--scene",
+        "materials",
+        "--material",
+        "frosted-glass",
+        "--samples",
+        "32",
+        "--width",
+        "1000",
+        "--height",
+        "760",
+        "--require-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-frost/metrics.json",
+        "--recipe-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-frost/edited-recipe.json",
+        "--save-config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-frost/view.json"
+      ],
+      "exit": 0,
+      "validation_clean": true,
+      "preview": false,
+      "catalog": false,
+      "gallery": false,
+      "optics": false,
+      "edited_roughness": 0.7710000276565552,
+      "samples": 32,
+      "epochs": 6,
+      "as_builds": 10
+    },
+    "native-catalog": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--scene",
+        "materials",
+        "--material",
+        "bronze",
+        "--samples",
+        "32",
+        "--width",
+        "1000",
+        "--height",
+        "760",
+        "--require-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-catalog/metrics.json",
+        "--recipe-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-catalog/edited-recipe.json",
+        "--save-config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-catalog/view.json"
+      ],
+      "exit": 0,
+      "validation_clean": true,
+      "preview": false,
+      "catalog": true,
+      "gallery": false,
+      "optics": false,
+      "edited_roughness": 0.7710000276565552,
+      "samples": 32,
+      "epochs": 4,
+      "as_builds": 10
+    },
+    "native-gallery": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--scene",
+        "materials",
+        "--material",
+        "bronze",
+        "--samples",
+        "32",
+        "--width",
+        "1000",
+        "--height",
+        "760",
+        "--require-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-gallery/metrics.json",
+        "--recipe-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-gallery/edited-recipe.json",
+        "--save-config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-gallery/view.json"
+      ],
+      "exit": 0,
+      "validation_clean": true,
+      "preview": false,
+      "catalog": false,
+      "gallery": true,
+      "optics": false,
+      "edited_roughness": null,
+      "samples": 32,
+      "epochs": 2,
+      "as_builds": 10
+    },
+    "native-optics": {
+      "command": [
+        "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+        "--scene",
+        "materials",
+        "--material",
+        "glass",
+        "--samples",
+        "32",
+        "--width",
+        "1000",
+        "--height",
+        "760",
+        "--require-validation",
+        "--metrics",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-optics/metrics.json",
+        "--recipe-output",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-optics/edited-recipe.json",
+        "--save-config",
+        "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p3-ff979923/native-optics/view.json"
+      ],
+      "exit": 0,
+      "validation_clean": true,
+      "preview": false,
+      "catalog": false,
+      "gallery": false,
+      "optics": true,
+      "edited_roughness": null,
+      "samples": 32,
+      "epochs": 2,
+      "as_builds": 10
+    }
+  },
+  "saved_view_replay": {
+    "passed": true,
+    "command": [
+      "build/dev/projects/raytracing/raytracing",
+      "--config",
+      "outputs/raytracing/material-workshop/p3-ff979923/native-gallery/view.json",
+      "--headless",
+      "--frames",
+      "1",
+      "--output",
+      "outputs/raytracing/material-workshop/p3-ff979923/saved-gallery.png",
+      "--metrics",
+      "outputs/raytracing/material-workshop/p3-ff979923/saved-gallery.json"
+    ],
+    "source": "ff979923b4525cc87b754b1914aac876e70bbb12"
+  },
+  "focused_tests": {
+    "passed": 17,
+    "total": 17,
+    "log_sha256": "c3b274d67174e622c1b56bbb23f80261435cfaa222d137252a86d51edf052186"
+  },
+  "raw_evidence": "outputs/raytracing/material-workshop/p3-ff979923",
+  "scope": "P3 on the standard sphere: qualified per-body sharp/rough dielectric math and bounded transport, not unbiased GI. Density is a reported geometry approximation control; dense matched presentation remains P4.",
+  "receipt_sha256": {
+    "math/receipt.json": "cb7c0181096cf52d48c9fafb54ab690ecf60ccbf132e3e43b9aac80018445bad",
+    "optics/receipt.json": "3c98c0cc67f1b10db6aaaa675897335bab2fe82798a764ed6c7a2b488a105a2e",
+    "quality/receipt.json": "6a8e9617139729d888bccc2ea71d48780c3304a96d96f7d390008973e8d06499",
+    "controls/receipt.json": "9fef8dfc6d106c3a99d8239e7f62ccfdbb6bfa90cc75586a7c75101cc92d5685",
+    "density/receipt.json": "281a2c7de6b355c02e92d58ebe4c161327a866420d46af663c6cdd7a38a9ff67",
+    "lifecycle/receipt.json": "c678c3eab1f6429c62b11f08da64865c4a1ce5a4f3effb86ed58d3e89403dd73",
+    "native-frost/receipt.json": "fc890fad8916e0cf57dd2d7dfed7a961ff3bacc26b81cbf4578fc4bdab47c8ae",
+    "native-catalog/receipt.json": "06c24bfab2536c694eff86dca92b8cf5616fe7698dca2679e2dc7fcf380f6aae",
+    "native-gallery/receipt.json": "d3e6a3846cb54f6e55cded65abea268c4c7ca3191a1407369b490f9d932ef79d",
+    "native-optics/receipt.json": "253aeb0a1cfe610a51ece7527bee4599f403d79754de9c3745e9ef47c84c9614",
+    "timing/receipt.json": "ab71f6db6d5bbbffd802da64182cbaaa3f5f8b0883e60daaeeafe566b1812373",
+    "records/receipt.json": "fa06ac6d345045df84aa73048b8b906bee41d15c560b20c09151105a194c3da2",
+    "records/catalog/receipt.json": "9c1a69cb116be9d18d3691151154d9c814909890af51373922f33af14a590cd0",
+    "records/patterns-off/receipt.json": "a0b21067b1ca6b819e7456eac80020a9f9018675b892896c2ce5e691a49309d7",
+    "records/bump-off/receipt.json": "794a9c55a8682ae46340e916cc7db9f1c2913899c1ac9b7b4d0218174cbbab30",
+    "records/nonidentity-domain/receipt.json": "9ab1ef1b77a501c2520bc102163fb871e02fdca1a1a0891903ba28ceb747ef7f"
+  }
+}

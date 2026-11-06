@@ -484,3 +484,28 @@ P4 will use a matched dense comparison mesh for the presentation.
 
 These are implementation observations, pending the committed-source P3 replay.
 P4 matched media, final gallery qualification and full integration remain open.
+
+## P3 accepted evidence
+
+The [committed-source P3 receipt](../evidence/raytracing-material-workshop-2026-11/p3.json)
+pins ff979923, a clean source tree, executable/shaders, actual build flags and
+unchanged recipes. Both glasses pass two 256-SPP seeds against 4096-SPP and the
+8192-SPP stability control in both routes. The worst mean is .003415 and p95
+.017482 (frosted glass); clear glass is at most .000401/.002224.
+
+The extended 208-case independent integral screen, joint proposal checks,
+component PDF and solar/split estimators pass unchanged limits. Two-body Snell/
+Beer, exterior furnace bounds, rough limit, exhaustion, sun/sky additivity,
+mesh-density observations, 1,000 edits for each glass and moving-sun resets pass.
+The actual native UI passes frosted edit/save/reject/load/reset/resize, family/
+material/swatch selection, gallery switching and glass IOR editing. Its saved
+gallery view also replays through the public typed configuration loader.
+CPU/GPU material records retain a maximum component error of 2.08e-5.
+
+All 17 focused RT tests pass. Twelve serial 1080p timings preserve 150 completed
+one-primary-sample measurements after warmup for each glass/route/repetition;
+maximum total-frame p95 is 8.429768 ms, below 16.7 ms. These sample scopes include
+the ten conditional rough-glass trials and the original shared ray budgets.
+The measured truncation and sharp-glass faceting limits above remain explicit.
+P4 is still required for matched dense presentation, full-library gallery
+qualification/media, final integration and delivery.
