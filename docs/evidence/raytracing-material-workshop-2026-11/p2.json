@@ -1,0 +1,897 @@
+{
+  "passed": true,
+  "source": "afd050c5ccbba62ab78fe9cd48f69fd46b392abe",
+  "identity": {
+    "source": "afd050c5ccbba62ab78fe9cd48f69fd46b392abe",
+    "status": "",
+    "binary_sha256": "c432500dd594c208f431cc2bc239e07a5965d10d504a38a3c6cc49c1af9dfd78",
+    "shaders": {
+      "atmosphere.frag.spv": "621b4073823ab3f46b7449ad36311ca30e1d9b8633668aa8ed709e96751ae6a7",
+      "atmosphere.vert.spv": "ef76215d4ceda1d2cbbfdb66c84727acd83acb33045c0613b1feafc32b311dba",
+      "atmosphere_reflection_prefilter.frag.spv": "ce2b2109bd6ee82f0340ae64ea8bc913e50364b15fe09fb124d0627975192233",
+      "forward_pbr_post.frag.spv": "c67650e7b08f96c13547d6cdfdd40cfec55f5bb63274284e4a5132365a8fa01b",
+      "forward_pbr_post.vert.spv": "ddd27346c623c9d36dfdf7528f34ec32f031b134e57ce9eb5f191c148fe37fbe",
+      "primary.rchit.spv": "5bf46fe3adcab96e1e1f8c1d61d18335fa1373ef8eb31142ab212cd98b626799",
+      "primary.rmiss.spv": "864c939820866f1d0c10c6cb1c3771aece566312d89e663bc70b892fbd86e7a6",
+      "shadow.rmiss.spv": "aa66b92973aacdc1126f52b2ef23fd2100d2a75cc6e4a5bf7be21f15928e7537",
+      "trace.rgen.spv": "ccc4300e98ac10a757f769670fa644af4e740dff8515c41a51ef0a720ce76005"
+    },
+    "recipes": {
+      "bronze.json": "fe9474f73eda0389f43596ada8857527802e1911867bc5002f6f932f5c9012ae",
+      "catalog.json": "f4701d806b2e517e5cfe705777de54454f43e6bf13a5d161035432271656ea6d",
+      "ceramic.json": "b0697acafe549744f5f8a259e3d35cca4e20efd0f47691bbbed8264f015f9304",
+      "clay.json": "a84d85caabc22353a9ec601bc7fb56a0e1941a780f4ed4ff65058e960472dfc8",
+      "frosted-glass.json": "18dbb3c951418635ada6944ef44284ff2fdf5305ab27d1b5620295a6266957cb",
+      "glass.json": "2003b0bb8de2980f2d47f2875a53144756332f7e27efecfef9ef0ff5727e2537",
+      "kraft-cardboard.json": "499f05ba5309bc5c81024103f78babff6d63a001831ef7309e7f993f60e94e94",
+      "limestone.json": "cccc023571523d052823b6e27658ca88b461c3b6b2a90763919687943db372e3",
+      "marble.json": "dce3505445117ba30ee642eed6b8263a67a585eed81764aea47bd9fc4083eda5",
+      "plain.json": "401cfb72ff2e41fb3bcd8a07c0a0f751abda1002959a74920aba769934438ea7",
+      "rusted-steel.json": "78643660334fcdf353e34bd7a70615f33c034cc537329d4fe58ded6c21f15a07",
+      "wood.json": "2aa55215acdae9b64fa0518f511445a9e50f9592e09f21069bb7db279807cfde",
+      "woven-cloth.json": "9e376270d7a174ea67709eb82a148237c749c480b621e3f50f3ed69c72ab2f80"
+    },
+    "gpu": {
+      "exit": 0,
+      "csv": "NVIDIA GeForce RTX 5070 Ti, 610.57.04, 1, 0, 794, 37",
+      "error": ""
+    },
+    "build": {
+      "compiler": "/usr/bin/clang++",
+      "flags": [
+        "-DGLM_FORCE_DEPTH_ZERO_TO_ONE",
+        "-DGLM_FORCE_RADIANS",
+        "-O2",
+        "-g",
+        "-DNDEBUG",
+        "-std=c++20"
+      ],
+      "compiler_version": "clang version 23.1.4"
+    },
+    "scope": "Serial, source-identified workshop captures and completed-sample GPU costs.\n\nRun with no other owned GPU workload. Boundary observations describe the shared\nhost; they cannot establish uninterrupted exclusive hardware access.\n"
+  },
+  "opaque_materials": [
+    {
+      "material": "plain",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 8.375849689112383e-07,
+          "roi_p95": 4.162732511758802e-06,
+          "maximum_error": 0.02428525686264038,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 8.345197655147328e-07,
+          "roi_p95": 4.120171070098877e-06,
+          "maximum_error": 0.021859675645828247,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 2.7584715620624133e-07,
+          "roi_p95": 1.2874836102128022e-06,
+          "maximum_error": 0.0056830644607543945,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00041021342333364064,
+          "roi_p95": 0.001564969029277562,
+          "maximum_error": 0.022980570793151855,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.0004119404025184929,
+          "roi_p95": 0.0015787053853273392,
+          "maximum_error": 0.022374510765075684,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.0001222067396639193,
+          "roi_p95": 0.0004700113087892532,
+          "maximum_error": 0.006211280822753906,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0071872,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "limestone",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 3.5662062563475407e-06,
+          "roi_p95": 2.065300941467285e-05,
+          "maximum_error": 0.02432882785797119,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 3.5647249081546742e-06,
+          "roi_p95": 2.063065767288208e-05,
+          "maximum_error": 0.020977824926376343,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 1.0869858779386576e-06,
+          "roi_p95": 6.124377250671387e-06,
+          "maximum_error": 0.005704402923583984,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00040582411189614534,
+          "roi_p95": 0.0015535492449998856,
+          "maximum_error": 0.022921264171600342,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.00040696679166246305,
+          "roi_p95": 0.001544562354683876,
+          "maximum_error": 0.020482420921325684,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.00012063993959287235,
+          "roi_p95": 0.00045449808239936826,
+          "maximum_error": 0.006262600421905518,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0156832,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "marble",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 1.6983134588630632e-05,
+          "roi_p95": 0.0001246035099029541,
+          "maximum_error": 0.022701919078826904,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 1.7023048432071694e-05,
+          "roi_p95": 0.00012638717889785762,
+          "maximum_error": 0.019704580307006836,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 5.044326259893915e-06,
+          "roi_p95": 3.6934576928615554e-05,
+          "maximum_error": 0.005316674709320068,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00036757997881580053,
+          "roi_p95": 0.0016914520412683479,
+          "maximum_error": 0.030477374792099,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.00036910241410244754,
+          "roi_p95": 0.0017046570777893063,
+          "maximum_error": 0.028080254793167114,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.00011082563119455704,
+          "roi_p95": 0.0004995763301849365,
+          "maximum_error": 0.008347153663635254,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.026176,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "clay",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 1.1654629813408755e-06,
+          "roi_p95": 8.67880880832671e-06,
+          "maximum_error": 0.024442613124847412,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 1.156124708458528e-06,
+          "roi_p95": 8.574500679969777e-06,
+          "maximum_error": 0.02087503671646118,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 4.030801496586808e-07,
+          "roi_p95": 2.816319465637207e-06,
+          "maximum_error": 0.005750477313995361,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00035496933034504554,
+          "roi_p95": 0.001319320872426033,
+          "maximum_error": 0.02330756187438965,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.0003553680315816566,
+          "roi_p95": 0.0013159714639186856,
+          "maximum_error": 0.02154296636581421,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.00010597078939661047,
+          "roi_p95": 0.0003985717892646789,
+          "maximum_error": 0.0061684250831604,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.017888,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "ceramic",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 3.697425517863645e-06,
+          "roi_p95": 1.9848346710205078e-05,
+          "maximum_error": 0.021837472915649414,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 3.676930646179244e-06,
+          "roi_p95": 1.9936636090278615e-05,
+          "maximum_error": 0.019076287746429443,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 1.172595488530478e-06,
+          "roi_p95": 6.079673767089844e-06,
+          "maximum_error": 0.005182981491088867,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00033251055325852905,
+          "roi_p95": 0.0016543854027986527,
+          "maximum_error": 0.043734416365623474,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.00033119258195818006,
+          "roi_p95": 0.0016518935561180114,
+          "maximum_error": 0.03216201066970825,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 9.95438269541027e-05,
+          "roi_p95": 0.00048088133335113517,
+          "maximum_error": 0.009011685848236084,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0057136,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "bronze",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 1.1556783071324732e-05,
+          "roi_p95": 8.541345596313477e-05,
+          "maximum_error": 0.018379509449005127,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 1.1399679720324761e-05,
+          "roi_p95": 8.237194269895552e-05,
+          "maximum_error": 0.018269479274749756,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 3.473280313416799e-06,
+          "roi_p95": 2.4778395891189554e-05,
+          "maximum_error": 0.004640519618988037,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.0026234477073727013,
+          "roi_p95": 0.018864946090616275,
+          "maximum_error": 0.1144101619720459,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.002599318860174491,
+          "roi_p95": 0.01874424964189529,
+          "maximum_error": 0.13125324249267578,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.0008105399353829744,
+          "roi_p95": 0.005301471799612044,
+          "maximum_error": 0.03600904975441524,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0028512,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "wood",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 5.6662300222178305e-06,
+          "roi_p95": 4.215538501739502e-05,
+          "maximum_error": 0.024100184440612793,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 5.700649562193755e-06,
+          "roi_p95": 4.175305366516113e-05,
+          "maximum_error": 0.021038323640823364,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 1.692354407829749e-06,
+          "roi_p95": 1.2271106243133545e-05,
+          "maximum_error": 0.005619466304779053,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00041282560516704437,
+          "roi_p95": 0.001650333683937788,
+          "maximum_error": 0.02570796012878418,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.0004139315436284468,
+          "roi_p95": 0.0016538731753826135,
+          "maximum_error": 0.021068990230560303,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.00012342880324503252,
+          "roi_p95": 0.000488157570362091,
+          "maximum_error": 0.005926549434661865,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.1431744,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "rusted-steel",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 2.0389156699958745e-05,
+          "roi_p95": 0.00010782573372125623,
+          "maximum_error": 0.029887260995037426,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 1.921063378167245e-05,
+          "roi_p95": 0.00010741576552391046,
+          "maximum_error": 0.020141631364822388,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 5.7510750472706835e-06,
+          "roi_p95": 3.217477351427078e-05,
+          "maximum_error": 0.005828723187838708,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.0013427769509466848,
+          "roi_p95": 0.007486386131495237,
+          "maximum_error": 0.2034296989440918,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.0013474668456176122,
+          "roi_p95": 0.007519550621509549,
+          "maximum_error": 0.2658913078307149,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.00042057489638646554,
+          "roi_p95": 0.0021674920339137312,
+          "maximum_error": 0.05832529067993164,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0118927999999998,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "kraft-cardboard",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 1.6235218061639321e-06,
+          "roi_p95": 1.0967254638671875e-05,
+          "maximum_error": 0.024444222450256348,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 1.6174161619793997e-06,
+          "roi_p95": 1.11311674118042e-05,
+          "maximum_error": 0.020875632762908936,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 5.10760234592354e-07,
+          "roi_p95": 3.337860107421875e-06,
+          "maximum_error": 0.005750775337219238,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.0003543825849271736,
+          "roi_p95": 0.0013234943151473996,
+          "maximum_error": 0.023308753967285156,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.0003549971008634137,
+          "roi_p95": 0.0013169333338737485,
+          "maximum_error": 0.02154320478439331,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.00010579085362510863,
+          "roi_p95": 0.0003985628485679625,
+          "maximum_error": 0.006169319152832031,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0163183999999996,
+      "serial_timing_repetitions": 6
+    },
+    {
+      "material": "woven-cloth",
+      "quality": [
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 6.212872476730485e-06,
+          "roi_p95": 2.6403740048408497e-05,
+          "maximum_error": 0.024238765239715576,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 6.210644167496936e-06,
+          "roi_p95": 2.617277204990386e-05,
+          "maximum_error": 0.0210953950881958,
+          "passed": true
+        },
+        {
+          "source": "environment",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 1.827704725984091e-06,
+          "roi_p95": 7.692165672779078e-06,
+          "maximum_error": 0.005643665790557861,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 7,
+          "roi_mean": 0.00036550158475853853,
+          "roi_p95": 0.0013590071350336073,
+          "maximum_error": 0.022306859493255615,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 256,
+          "seed": 31,
+          "roi_mean": 0.0003657899076175762,
+          "roi_p95": 0.0013600010424852371,
+          "maximum_error": 0.020942211151123047,
+          "passed": true
+        },
+        {
+          "source": "scene",
+          "samples": 8192,
+          "seed": 43,
+          "roi_mean": 0.0001092178375651092,
+          "roi_p95": 0.0004097551107406616,
+          "maximum_error": 0.006096839904785156,
+          "passed": true
+        }
+      ],
+      "total_frame_p95_max_ms": 1.0121456,
+      "serial_timing_repetitions": 6
+    }
+  ],
+  "component_and_scale": [
+    {
+      "material": "plain",
+      "component_additivity_max_error": 1.1920928955078125e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "limestone",
+      "component_additivity_max_error": 1.4901161193847656e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "marble",
+      "component_additivity_max_error": 1.9185245037078857e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "clay",
+      "component_additivity_max_error": 1.4901161193847656e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "ceramic",
+      "component_additivity_max_error": 2.1979212760925293e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "bronze",
+      "component_additivity_max_error": 0.0,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "wood",
+      "component_additivity_max_error": 1.1920928955078125e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "rusted-steel",
+      "component_additivity_max_error": 9.5367431640625e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "kraft-cardboard",
+      "component_additivity_max_error": 1.1920928955078125e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "material": "woven-cloth",
+      "component_additivity_max_error": 1.334119588136673e-07,
+      "scaled_base_max_error": 0.0,
+      "component_limit": 0.0005
+    },
+    {
+      "footprint_center_distance_ratio": 2.3211348056793213
+    }
+  ],
+  "furnace_cases": 160,
+  "maximum_furnace_center": 0.777406632900238,
+  "solar_additivity": [
+    {
+      "material": "plain",
+      "component_additivity_max_error": 1.1175870895385742e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "limestone",
+      "component_additivity_max_error": 2.2351741790771484e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "marble",
+      "component_additivity_max_error": 4.470348358154297e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "clay",
+      "component_additivity_max_error": 2.086162567138672e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "ceramic",
+      "component_additivity_max_error": 6.556510925292969e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "bronze",
+      "component_additivity_max_error": 4.76837158203125e-06,
+      "limit": 0.0005
+    },
+    {
+      "material": "wood",
+      "component_additivity_max_error": 2.5331974029541016e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "rusted-steel",
+      "component_additivity_max_error": 2.86102294921875e-06,
+      "limit": 0.0005
+    },
+    {
+      "material": "kraft-cardboard",
+      "component_additivity_max_error": 1.9371509552001953e-07,
+      "limit": 0.0005
+    },
+    {
+      "material": "woven-cloth",
+      "component_additivity_max_error": 6.332993507385254e-08,
+      "limit": 0.0005
+    }
+  ],
+  "records": [
+    {
+      "name": "catalog",
+      "samples": 9216,
+      "maximum_component_error": 1.0192394256591797e-05,
+      "maximum_normal_degrees": 0.00021001443402086207
+    },
+    {
+      "name": "patterns-off",
+      "samples": 9216,
+      "maximum_component_error": 2.8986832401045604e-07,
+      "maximum_normal_degrees": 1.2074182697257333e-06
+    },
+    {
+      "name": "bump-off",
+      "samples": 9216,
+      "maximum_component_error": 1.0192394256591797e-05,
+      "maximum_normal_degrees": 1.2074182697257333e-06
+    },
+    {
+      "name": "nonidentity-domain",
+      "samples": 9216,
+      "maximum_component_error": 2.0742416381835938e-05,
+      "maximum_normal_degrees": 0.00021001443402086207
+    }
+  ],
+  "native": {
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--scene",
+      "materials",
+      "--samples",
+      "32",
+      "--width",
+      "1000",
+      "--height",
+      "760",
+      "--require-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p2-afd050c5/native/metrics.json",
+      "--recipe-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p2-afd050c5/native/edited-recipe.json",
+      "--save-config",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p2-afd050c5/native/view.json"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "preview": false,
+    "catalog": false,
+    "edited_roughness": 0.7710000276565552,
+    "samples": 32,
+    "epochs": 6,
+    "as_builds": 8
+  },
+  "native_catalog": {
+    "command": [
+      "/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/raytracing",
+      "--scene",
+      "materials",
+      "--samples",
+      "32",
+      "--width",
+      "1000",
+      "--height",
+      "760",
+      "--require-validation",
+      "--metrics",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p2-afd050c5/native-catalog/metrics.json",
+      "--recipe-output",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p2-afd050c5/native-catalog/edited-recipe.json",
+      "--save-config",
+      "/home/bryan/code/cubey-raytracing-first-pass/outputs/raytracing/material-workshop/p2-afd050c5/native-catalog/view.json"
+    ],
+    "exit": 0,
+    "validation_clean": true,
+    "preview": false,
+    "catalog": true,
+    "edited_roughness": 0.7710000276565552,
+    "samples": 32,
+    "epochs": 4,
+    "as_builds": 8
+  },
+  "geometry_retention": {
+    "passed": true,
+    "baseline": "8d5b414e",
+    "current": "afd050c5",
+    "scope": "exact PbrVertex and index bytes for block, swatch and cut-block",
+    "result": "block 1 swatch 1 cut 1\n",
+    "command": [
+      "/usr/bin/clang++",
+      "-std=c++20",
+      "-O2",
+      "-DCUBEY_HAS_LIBAV=1",
+      "-DCUBEY_MATERIAL_RECIPE_DIR=\"/home/bryan/code/cubey-raytracing-first-pass/assets/materials\"",
+      "-DCUBEY_RAYTRACING_SHADER_DIR=\"/home/bryan/code/cubey-raytracing-first-pass/build/dev/projects/raytracing/shaders\"",
+      "-DGLM_FORCE_DEPTH_ZERO_TO_ONE",
+      "-DGLM_FORCE_RADIANS",
+      "-I/home/bryan/code/cubey-raytracing-first-pass/include",
+      "-I/home/bryan/code/cubey/build/release/_deps/nlohmann_json-src/include",
+      "-I/home/bryan/code/cubey/build/release/_deps/glfw-src/include",
+      "-isystem",
+      "/home/bryan/code/cubey/build/release/_deps/imgui-src",
+      "-isystem",
+      "/home/bryan/code/cubey/build/release/_deps/imgui-src/backends",
+      "-DNDEBUG",
+      "outputs/raytracing/material-workshop/p2-afd050c5/geometry-retention/compare.cpp",
+      "-o",
+      "outputs/raytracing/material-workshop/p2-afd050c5/geometry-retention/compare"
+    ]
+  },
+  "focused_tests": "14/14",
+  "scope": "P2 ten opaque recipes; P3 dielectric admission and P4 matched gallery/media remain required",
+  "raw_evidence": "outputs/raytracing/material-workshop/p2-afd050c5"
+}

@@ -13,7 +13,7 @@ implementation choices; an isolated math probe does not constitute a workshop.
 | P0 sampling arithmetic and estimator controls | Isolated native GGX probe passes independent direction, evaluation/PDF, integral/rejection and analytic sun/sky mixture controls |
 | P0 integration contracts | Choices below frozen; opt-in native configuration admission/round trips pass; record layout and history implementation checks belong to the integration |
 | P1 bronze | Passed at 74f42e3c; matched three-way stills, two-seed convergence, reference stability, furnace/component, native lifecycle and serial 1080p costs recorded |
-| P2 ten opaque recipes | Runtime and native controls implemented; component/minification/convergence/cost qualification in progress |
+| P2 ten opaque recipes | Passed at afd050c5; all ten materials, four routes, content/components/filtering, two-seed convergence and stability, native operations and serial costs recorded |
 | P3 two dielectric recipes | Pending |
 | P4 full matched workshop and delivery | Pending |
 
@@ -366,3 +366,28 @@ a bound on the unbounded GGX tail.
 Native family/material/specimen selection, recipe detail controls and keyboard
 navigation are available in the existing workshop panel. Base color, roughness,
 metallic, footprint, diffuse/specular and sheen views expose component evidence.
+
+## P2 accepted evidence
+
+The [P2 receipt](../evidence/raytracing-material-workshop-2026-11/p2.json) pins
+afd050c5, its executable/shaders, actual compiler/flags, recipes and scoped results.
+All ten opaque recipes pass two 256-SPP seeds against independent 4096-SPP controls
+in both optical routes, plus 8192-SPP reference stability. The worst mean is
+0.002624 and p95 0.018865 (bronze), under the original 0.005/0.02 limits.
+
+The matrix covers four specimen routes per material, pattern/bump switches, a
+grazing swatch, distance, component sums and matched double-size/distance local
+coordinates. Scale comparisons preserve base-color samples exactly. The center
+footprint distance ratio is 2.321, consistent with the longer camera-to-surface
+segment. All 160 furnace roughness/route cases are finite/nonnegative; sun/sky
+component additivity passes. GPU/CPU surface, rough-diffuse and sheen records
+meet the unchanged component/normal limits.
+
+Sixty serial 1080p timing runs retain 150 completed one-sample iterations per pass
+after 30 warmups; the maximum total-frame p95 is 1.144 ms. Native edit/import/
+rejection/reset/resize and family/material/swatch selection pass with clean sync
+validation, fixed residency and eight prepared AS builds. Focused RT tests pass
+14/14. The forward sphere capture retains exact PNG bytes, and separate C++
+comparison against the old private builders proves exact PbrVertex/index bytes
+for block, swatch and bored block. All ten cached-RT sphere captures were visually
+reviewed. P3/P4 remain required; these are bounded frozen-clear-light results.
